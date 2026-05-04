@@ -105,3 +105,10 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
     localDate,
   );
 }
+
+export async function deleteAllLogData(): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM location_points');
+    await db.runAsync('DELETE FROM daily_logs');
+  });
+}

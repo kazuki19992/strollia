@@ -1,4 +1,6 @@
+import { AntDesign, Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import * as Location from 'expo-location';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -32,7 +34,7 @@ import {
   hasRequiredLocationPermission,
   LocationPermissionState,
 } from '../features/location/locationPermission';
-import { getAllLocationPoints, getDailyLogs, getLocationPointsByDate } from '../features/logs/logRepository';
+import { deleteAllLogData, getAllLocationPoints, getDailyLogs, getLocationPointsByDate } from '../features/logs/logRepository';
 import { getEndpointMarkers } from '../features/map/endpointMarkers';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { createInitialRegion, toRouteCoordinates } from '../features/map/routeMapper';
@@ -76,6 +78,7 @@ export default function App() {
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
+  const [currentAreaName, setCurrentAreaName] = useState('現在地を確認中');
 
   const routeCoordinates = useMemo(() => toRouteCoordinates(points), [points]);
   const initialRegion = useMemo(() => createInitialRegion(points), [points]);
@@ -143,6 +146,27 @@ export default function App() {
     }
   }, [points]);
 
+
+  const deleteAllData = useCallback(async (): Promise<void> => {
+    Alert.alert('すべてのデータを削除', '保存済みのGPSログをすべて削除します。この操作は取り消せません。', [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: '削除する',
+        style: 'destructive',
+        onPress: () => {
+          deleteAllLogData()
+            .then(async () => {
+              await refreshData();
+              setMessage('保存済みGPSログをすべて削除しました。');
+            })
+            .catch((error: unknown) => {
+              Alert.alert('削除失敗', error instanceof Error ? error.message : 'データを削除できませんでした。');
+            });
+        },
+      },
+    ]);
+  }, [refreshData]);
+
   const updateKeepScreenAwake = useCallback(async (enabled: boolean): Promise<void> => {
     setKeepScreenAwake(enabled);
     await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
@@ -197,6 +221,21 @@ export default function App() {
     return () => subscription.remove();
   }, [refreshData]);
 
+
+  useEffect(() => {
+    if (!isReady || appState !== 'active') {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      refreshData().catch((error: unknown) => {
+        setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
+      });
+    }, 10_000);
+
+    return () => clearInterval(intervalId);
+  }, [appState, isReady, refreshData]);
+
   useEffect(() => {
     if (keepScreenAwake && appState === 'active') {
       activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => undefined);
@@ -212,6 +251,35 @@ export default function App() {
     };
   }, []);
 
+
+
+  useEffect(() => {
+    if (!userCoordinate || appState !== 'active') {
+      return;
+    }
+
+    let cancelled = false;
+
+    Location.reverseGeocodeAsync(userCoordinate)
+      .then((addresses) => {
+        if (cancelled) {
+          return;
+        }
+
+        const address = addresses[0];
+        const area = address?.city ?? address?.district ?? address?.subregion ?? address?.region ?? '現在地付近';
+        setCurrentAreaName(area);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCurrentAreaName('現在地付近');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [appState, userCoordinate]);
 
   useEffect(() => {
     Animated.timing(recenterButtonOpacity, {
@@ -314,6 +382,9 @@ export default function App() {
           onUserLocationChange={handleUserLocationChange}
           onPanDrag={handleMapPanDrag}
           onRegionChangeComplete={handleRegionChangeComplete}
+          compassOffset={{ x: -16, y: 96 }}
+          legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
+          mapPadding={{ bottom: 96, left: 0, right: 0, top: 96 }}
         >
           {routeCoordinates.length > 1 && (
             <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
@@ -329,11 +400,8 @@ export default function App() {
               <Text style={styles.statusText}>{isRecording ? '記録中' : '停止中'}</Text>
             </View>
             <View style={styles.rightControls}>
-              <Pressable onPress={refreshData} style={styles.iconButton}>
-                <Text style={styles.iconButtonText}>更新</Text>
-              </Pressable>
               <Pressable onPress={() => setIsMenuOpen((open) => !open)} style={styles.menuButton}>
-                <Text style={styles.menuButtonText}>⋮</Text>
+                <Entypo name="dots-three-vertical" size={24} color={theme.colors.text} />
               </Pressable>
             </View>
           </View>
@@ -341,9 +409,11 @@ export default function App() {
           {isMenuOpen && (
             <View style={styles.menuCard}>
               <Pressable onPress={openDailyLogs} style={styles.menuItem}>
+                <Feather name="calendar" size={18} color={theme.colors.text} />
                 <Text style={styles.menuItemText}>日ごとの記録</Text>
               </Pressable>
               <Pressable onPress={openSettings} style={styles.menuItem}>
+                <Feather name="settings" size={18} color={theme.colors.text} />
                 <Text style={styles.menuItemText}>設定</Text>
               </Pressable>
             </View>
@@ -355,7 +425,7 @@ export default function App() {
             style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}
           >
             <Pressable onPress={recenterOnUserLocation} style={styles.recenterButton}>
-              <Text style={styles.recenterButtonText}>現在地</Text>
+              <AntDesign name="aim" size={24} color={theme.colors.primary} />
             </Pressable>
           </Animated.View>
 
@@ -376,14 +446,9 @@ export default function App() {
             </View>
           )}
 
-          <View style={styles.bottomPanel}>
-            <Text style={styles.message}>{message}</Text>
-            <View style={styles.statsRow}>
-              <Text style={styles.stat}>{points.length} pts</Text>
-              <Text style={styles.stat}>{(distance / 1000).toFixed(2)} km</Text>
-              <Text style={styles.stat}>{dailyLogs.length} days</Text>
-            </View>
-            <Text style={styles.autoRecordNote}>{getAutoRecordNote(autoStartStatus)}</Text>
+          <View style={styles.locationPill}>
+            <Text style={styles.locationName}>{currentAreaName}</Text>
+            <Text style={styles.locationMeta}>{(distance / 1000).toFixed(2)} km · {points.length} pts</Text>
           </View>
         </SafeAreaView>
       </View>
@@ -398,9 +463,7 @@ export default function App() {
             <Text style={styles.backButtonText}>地図へ</Text>
           </Pressable>
           <Text style={styles.dailyTitle}>日ごとの記録</Text>
-          <Pressable onPress={refreshData} style={styles.iconButton}>
-            <Text style={styles.iconButtonText}>更新</Text>
-          </Pressable>
+          <View style={styles.headerSpacer} />
         </View>
 
         {dailyLogs.length === 0 ? (
@@ -427,9 +490,7 @@ export default function App() {
             <Text style={styles.backButtonText}>地図へ</Text>
           </Pressable>
           <Text style={styles.dailyTitle}>設定</Text>
-          <Pressable onPress={refreshData} style={styles.iconButton}>
-            <Text style={styles.iconButtonText}>更新</Text>
-          </Pressable>
+          <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView contentContainerStyle={styles.settingsList}>
@@ -491,10 +552,16 @@ export default function App() {
             <Text style={styles.settingsTitle}>データ</Text>
             <Text style={styles.settingsDescription}>GPSログのバックアップや他アプリ連携に使います。</Text>
             <Pressable onPress={exportAllLogs} style={styles.settingsAction}>
+              <Feather name="upload" size={18} color={theme.colors.primary} />
               <Text style={styles.settingsActionText}>データのエクスポート</Text>
             </Pressable>
             <Pressable onPress={showImportPlaceholder} style={styles.settingsAction}>
+              <Feather name="download" size={18} color={theme.colors.primary} />
               <Text style={styles.settingsActionText}>データのインポート</Text>
+            </Pressable>
+            <Pressable onPress={deleteAllData} style={styles.dangerAction}>
+              <MaterialCommunityIcons name="delete-outline" size={20} color={theme.colors.danger} />
+              <Text style={styles.dangerActionText}>すべてのデータを削除</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -638,6 +705,21 @@ function createStyles(theme: AppTheme) {
       backgroundColor: colors.background,
       flex: 1,
     },
+    dangerAction: {
+      alignItems: 'center',
+      backgroundColor: colors.dangerSurface,
+      borderColor: colors.danger,
+      borderRadius: 18,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    dangerActionText: {
+      color: colors.danger,
+      fontWeight: '900',
+    },
     dailyCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
@@ -746,6 +828,36 @@ function createStyles(theme: AppTheme) {
       color: colors.text,
       fontWeight: '800',
     },
+    headerSpacer: {
+      width: 70,
+    },
+    locationMeta: {
+      color: colors.mutedText,
+      fontSize: 12,
+      fontWeight: '800',
+    },
+    locationName: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '900',
+    },
+    locationPill: {
+      alignSelf: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.surfaceOverlay,
+      borderColor: colors.border,
+      borderRadius: 999,
+      borderWidth: 1,
+      gap: 2,
+      marginBottom: 26,
+      maxWidth: '72%',
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.12,
+      shadowRadius: 18,
+    },
     loadingContainer: {
       alignItems: 'center',
       backgroundColor: colors.background,
@@ -767,13 +879,7 @@ function createStyles(theme: AppTheme) {
       justifyContent: 'center',
       width: 42,
     },
-    menuButtonText: {
-      color: colors.text,
-      fontSize: 34,
-      fontWeight: '900',
-      lineHeight: 34,
-      transform: [{ translateY: -1 }],
-    },
+
     menuCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
@@ -792,8 +898,11 @@ function createStyles(theme: AppTheme) {
       zIndex: 1,
     },
     menuItem: {
+      alignItems: 'center',
       borderBottomColor: colors.border,
       borderBottomWidth: 1,
+      flexDirection: 'row',
+      gap: 10,
       paddingHorizontal: 16,
       paddingVertical: 14,
     },
@@ -875,33 +984,35 @@ function createStyles(theme: AppTheme) {
       fontWeight: '900',
     },
     recenterButton: {
+      alignItems: 'center',
       backgroundColor: colors.surfaceOverlay,
       borderColor: colors.border,
       borderRadius: 999,
       borderWidth: 1,
-      paddingHorizontal: 18,
-      paddingVertical: 12,
+      height: 50,
+      justifyContent: 'center',
       shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.14,
       shadowRadius: 16,
+      width: 50,
     },
     recenterButtonContainer: {
-      alignItems: 'center',
-      marginTop: 70,
+      alignItems: 'flex-end',
+      marginRight: 16,
+      marginTop: 60,
       zIndex: 2,
-    },
-    recenterButtonText: {
-      color: colors.primary,
-      fontWeight: '900',
     },
     rightControls: {
       flexDirection: 'row',
       gap: 10,
     },
     settingsAction: {
+      alignItems: 'center',
       backgroundColor: colors.cardStrong,
       borderRadius: 18,
+      flexDirection: 'row',
+      gap: 10,
       paddingHorizontal: 16,
       paddingVertical: 14,
     },

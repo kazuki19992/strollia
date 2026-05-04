@@ -28,7 +28,8 @@ import { DailyLogSummary, LocationPoint } from '../types/gps';
 import { formatTime } from '../utils/date';
 import { totalDistanceMeters } from '../utils/distance';
 
-type ScreenMode = 'map' | 'dailyLogs';
+type ScreenMode = 'map' | 'dailyLogs' | 'settings';
+type AutoStartStatus = 'checking' | 'recording' | 'needsPermission' | 'failed';
 
 export default function App() {
   const mapRef = useRef<MapView | null>(null);
@@ -40,6 +41,7 @@ export default function App() {
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
   const [points, setPoints] = useState<LocationPoint[]>([]);
   const [message, setMessage] = useState('起動後に自動でGPS記録を開始します。');
+  const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
 
   const routeCoordinates = useMemo(() => toRouteCoordinates(points), [points]);
   const initialRegion = useMemo(() => createInitialRegion(points), [points]);
@@ -65,8 +67,10 @@ export default function App() {
         await startBackgroundLocationRecording();
         await refreshData();
         setMessage(reason === 'auto' ? 'GPS記録を自動開始しました。' : 'バックグラウンドGPS記録を開始しました。');
+        setAutoStartStatus('recording');
       } catch (error: unknown) {
         setMessage(error instanceof Error ? error.message : 'GPS記録の開始に失敗しました。');
+        setAutoStartStatus('failed');
       }
     },
     [refreshData],
@@ -77,6 +81,7 @@ export default function App() {
       await stopBackgroundLocationRecording();
       await refreshData();
       setMessage('GPS記録を停止しました。');
+      setAutoStartStatus('needsPermission');
     } catch (error: unknown) {
       setMessage(error instanceof Error ? error.message : 'GPS記録の停止に失敗しました。');
     }
@@ -113,9 +118,11 @@ export default function App() {
         }
 
         setIsRecording(true);
+        setAutoStartStatus('recording');
         setMessage('GPS記録はすでに開始されています。');
       })
       .catch((error: unknown) => {
+        setAutoStartStatus('failed');
         setMessage(error instanceof Error ? error.message : '自動記録の確認に失敗しました。');
       });
   }, [isReady, startRecording]);
@@ -153,8 +160,12 @@ export default function App() {
     setIsMenuOpen(false);
   }
 
-  function showImportPlaceholder(): void {
+  function openSettings(): void {
     setIsMenuOpen(false);
+    setScreenMode('settings');
+  }
+
+  function showImportPlaceholder(): void {
     Alert.alert('インポート', 'GPX / KML インポートは今後実装予定です。');
   }
 
@@ -168,19 +179,21 @@ export default function App() {
         </MapView>
 
         <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
+          {isMenuOpen && <Pressable onPress={() => setIsMenuOpen(false)} style={styles.menuScrim} />}
+
           <View style={styles.topBar}>
-            <View style={styles.leftControls}>
+            <View style={styles.statusPill}>
+              <View style={[styles.statusDot, isRecording && styles.statusDotActive]} />
+              <Text style={styles.statusText}>{isRecording ? '記録中' : '停止中'}</Text>
+            </View>
+            <View style={styles.rightControls}>
+              <Pressable onPress={refreshData} style={styles.iconButton}>
+                <Text style={styles.iconButtonText}>更新</Text>
+              </Pressable>
               <Pressable onPress={() => setIsMenuOpen((open) => !open)} style={styles.menuButton}>
                 <Text style={styles.menuButtonText}>⋮</Text>
               </Pressable>
-              <View style={styles.statusPill}>
-                <View style={[styles.statusDot, isRecording && styles.statusDotActive]} />
-                <Text style={styles.statusText}>{isRecording ? '記録中' : '停止中'}</Text>
-              </View>
             </View>
-            <Pressable onPress={refreshData} style={styles.iconButton}>
-              <Text style={styles.iconButtonText}>更新</Text>
-            </Pressable>
           </View>
 
           {isMenuOpen && (
@@ -188,11 +201,8 @@ export default function App() {
               <Pressable onPress={openDailyLogs} style={styles.menuItem}>
                 <Text style={styles.menuItemText}>日ごとの記録</Text>
               </Pressable>
-              <Pressable onPress={exportAllLogs} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>データのエクスポート</Text>
-              </Pressable>
-              <Pressable onPress={showImportPlaceholder} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>データのインポート</Text>
+              <Pressable onPress={openSettings} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>設定</Text>
               </Pressable>
             </View>
           )}
@@ -211,22 +221,7 @@ export default function App() {
               <Text style={styles.stat}>{(distance / 1000).toFixed(2)} km</Text>
               <Text style={styles.stat}>{dailyLogs.length} days</Text>
             </View>
-            <View style={styles.actions}>
-              <Pressable
-                disabled={isRecording}
-                onPress={() => startRecording('manual')}
-                style={[styles.primaryButton, isRecording && styles.buttonDisabled]}
-              >
-                <Text style={styles.primaryButtonText}>記録開始</Text>
-              </Pressable>
-              <Pressable
-                disabled={!isRecording}
-                onPress={stopRecording}
-                style={[styles.secondaryButton, !isRecording && styles.buttonDisabled]}
-              >
-                <Text style={styles.secondaryButtonText}>停止</Text>
-              </Pressable>
-            </View>
+            <Text style={styles.autoRecordNote}>{getAutoRecordNote(autoStartStatus)}</Text>
           </View>
         </SafeAreaView>
       </View>
@@ -262,6 +257,60 @@ export default function App() {
     );
   }
 
+  function renderSettingsScreen() {
+    return (
+      <SafeAreaView style={styles.dailyContainer}>
+        <View style={styles.dailyHeader}>
+          <Pressable onPress={openMap} style={styles.backButton}>
+            <Text style={styles.backButtonText}>地図へ</Text>
+          </Pressable>
+          <Text style={styles.dailyTitle}>設定</Text>
+          <Pressable onPress={refreshData} style={styles.iconButton}>
+            <Text style={styles.iconButtonText}>更新</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.settingsList}>
+          <View style={styles.settingsCard}>
+            <Text style={styles.settingsTitle}>GPS記録</Text>
+            <View style={styles.settingsStatusRow}>
+              <View style={[styles.statusDot, isRecording && styles.statusDotActive]} />
+              <Text style={styles.settingsStatusText}>{isRecording ? '記録中' : '停止中'}</Text>
+            </View>
+            <Text style={styles.settingsDescription}>{getAutoRecordNote(autoStartStatus)} 権限が不足している場合は、記録開始を押すとOSの権限確認が表示されます。</Text>
+            <View style={styles.actions}>
+              <Pressable
+                disabled={isRecording}
+                onPress={() => startRecording('manual')}
+                style={[styles.primaryButton, isRecording && styles.buttonDisabled]}
+              >
+                <Text style={styles.primaryButtonText}>記録開始</Text>
+              </Pressable>
+              <Pressable
+                disabled={!isRecording}
+                onPress={stopRecording}
+                style={[styles.secondaryButton, !isRecording && styles.buttonDisabled]}
+              >
+                <Text style={styles.secondaryButtonText}>停止</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.settingsCard}>
+            <Text style={styles.settingsTitle}>データ</Text>
+            <Text style={styles.settingsDescription}>GPSログのバックアップや他アプリ連携に使います。</Text>
+            <Pressable onPress={exportAllLogs} style={styles.settingsAction}>
+              <Text style={styles.settingsActionText}>データのエクスポート</Text>
+            </Pressable>
+            <Pressable onPress={showImportPlaceholder} style={styles.settingsAction}>
+              <Text style={styles.settingsActionText}>データのインポート</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
 
   if (!isReady) {
     return (
@@ -275,11 +324,27 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
-      {screenMode === 'map' ? renderMapScreen() : renderDailyLogsScreen()}
+      {screenMode === 'map' && renderMapScreen()}
+      {screenMode === 'dailyLogs' && renderDailyLogsScreen()}
+      {screenMode === 'settings' && renderSettingsScreen()}
     </View>
   );
 }
 
+
+
+function getAutoRecordNote(status: AutoStartStatus): string {
+  switch (status) {
+    case 'checking':
+      return '自動記録の状態を確認しています。';
+    case 'recording':
+      return '自動記録は有効です。GPSログをバックグラウンドで保存します。';
+    case 'needsPermission':
+      return '自動記録は待機中です。位置情報権限を許可すると記録できます。';
+    case 'failed':
+      return '自動記録を開始できませんでした。設定から権限と記録状態を確認してください。';
+  }
+}
 
 function DailyLogCard({ log }: { log: DailyLogSummary }) {
   const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
@@ -343,6 +408,12 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 10,
+  },
+  autoRecordNote: {
+    color: '#675c4d',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
   },
   backButton: {
     backgroundColor: '#fffdf8',
@@ -483,10 +554,6 @@ const styles = StyleSheet.create({
     color: '#2d2416',
     fontWeight: '800',
   },
-  leftControls: {
-    flexDirection: 'row',
-    gap: 10,
-  },
   loadingContainer: {
     alignItems: 'center',
     backgroundColor: '#f4ead8',
@@ -504,26 +571,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 253, 248, 0.92)',
     borderRadius: 999,
-    height: 40,
+    height: 42,
     justifyContent: 'center',
-    width: 40,
+    width: 42,
   },
   menuButtonText: {
     color: '#2d2416',
-    fontSize: 24,
+    fontSize: 34,
     fontWeight: '900',
-    lineHeight: 28,
+    lineHeight: 34,
+    transform: [{ translateY: -1 }],
   },
   menuCard: {
     backgroundColor: 'rgba(255, 253, 248, 0.97)',
     borderColor: 'rgba(45, 36, 22, 0.12)',
     borderRadius: 22,
     borderWidth: 1,
-    left: 16,
     overflow: 'hidden',
     position: 'absolute',
-    top: 64,
-    width: 220,
+    right: 16,
+    top: 66,
+    width: 190,
+    zIndex: 3,
+  },
+  menuScrim: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   menuItem: {
     borderBottomColor: 'rgba(45, 36, 22, 0.1)',
@@ -569,6 +642,51 @@ const styles = StyleSheet.create({
     color: '#1f7a5c',
     fontWeight: '900',
   },
+  rightControls: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  settingsAction: {
+    backgroundColor: '#f4ead8',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  settingsActionText: {
+    color: '#1f7a5c',
+    fontWeight: '900',
+  },
+  settingsCard: {
+    backgroundColor: '#fffdf8',
+    borderColor: '#e5ddcd',
+    borderRadius: 24,
+    borderWidth: 1,
+    gap: 14,
+    padding: 16,
+  },
+  settingsDescription: {
+    color: '#675c4d',
+    lineHeight: 20,
+  },
+  settingsList: {
+    gap: 12,
+    padding: 16,
+    paddingTop: 0,
+  },
+  settingsStatusRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  settingsStatusText: {
+    color: '#2d2416',
+    fontWeight: '900',
+  },
+  settingsTitle: {
+    color: '#2d2416',
+    fontSize: 20,
+    fontWeight: '900',
+  },
   stat: {
     color: '#2d2416',
     fontWeight: '800',
@@ -604,5 +722,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
+    zIndex: 2,
   },
 });

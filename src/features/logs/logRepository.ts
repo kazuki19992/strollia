@@ -1,0 +1,98 @@
+import { db } from '../../db/database';
+import { DailyLogSummary, LocationPoint, NewLocationPoint } from '../../types/gps';
+
+const pointColumns = `
+  id,
+  recorded_at as recordedAt,
+  local_date as localDate,
+  latitude,
+  longitude,
+  altitude,
+  speed,
+  heading,
+  accuracy,
+  altitude_accuracy as altitudeAccuracy
+`;
+
+export async function insertLocationPoint(point: NewLocationPoint): Promise<void> {
+  const now = new Date().toISOString();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `INSERT INTO location_points (
+        recorded_at,
+        local_date,
+        latitude,
+        longitude,
+        altitude,
+        speed,
+        heading,
+        accuracy,
+        altitude_accuracy,
+        source,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'expo-location', ?)`,
+      point.recordedAt,
+      point.localDate,
+      point.latitude,
+      point.longitude,
+      point.altitude,
+      point.speed,
+      point.heading,
+      point.accuracy,
+      point.altitudeAccuracy,
+      now,
+    );
+
+    await db.runAsync(
+      `INSERT INTO daily_logs (
+        local_date,
+        started_at,
+        ended_at,
+        point_count,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, 1, ?, ?)
+      ON CONFLICT(local_date) DO UPDATE SET
+        started_at = CASE
+          WHEN daily_logs.started_at IS NULL OR excluded.started_at < daily_logs.started_at
+          THEN excluded.started_at
+          ELSE daily_logs.started_at
+        END,
+        ended_at = CASE
+          WHEN daily_logs.ended_at IS NULL OR excluded.ended_at > daily_logs.ended_at
+          THEN excluded.ended_at
+          ELSE daily_logs.ended_at
+        END,
+        point_count = daily_logs.point_count + 1,
+        updated_at = excluded.updated_at`,
+      point.localDate,
+      point.recordedAt,
+      point.recordedAt,
+      now,
+      now,
+    );
+  });
+}
+
+export async function getDailyLogs(): Promise<DailyLogSummary[]> {
+  return db.getAllAsync<DailyLogSummary>(
+    `SELECT
+      local_date as localDate,
+      point_count as pointCount,
+      started_at as startedAt,
+      ended_at as endedAt
+    FROM daily_logs
+    ORDER BY local_date DESC`,
+  );
+}
+
+export async function getLocationPointsByDate(localDate: string): Promise<LocationPoint[]> {
+  return db.getAllAsync<LocationPoint>(
+    `SELECT ${pointColumns}
+     FROM location_points
+     WHERE local_date = ?
+     ORDER BY recorded_at ASC`,
+    localDate,
+  );
+}

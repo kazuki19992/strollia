@@ -1,0 +1,32 @@
+import { LocationPoint } from '../../types/gps';
+import { distanceMeters, totalDistanceMeters } from '../distance';
+
+function point(latitude: number, longitude: number): LocationPoint {
+  return {
+    id: 1,
+    recordedAt: '2026-05-04T00:00:00.000Z',
+    localDate: '2026-05-04',
+    latitude,
+    longitude,
+    altitude: null,
+    speed: null,
+    heading: null,
+    accuracy: null,
+    altitudeAccuracy: null,
+  };
+}
+
+describe('distance utilities', () => {
+  it('returns zero for the same point', () => {
+    const a = point(35.681236, 139.767125);
+
+    expect(distanceMeters(a, a)).toBeCloseTo(0);
+  });
+
+  it('sums distances across adjacent points', () => {
+    const points = [point(35, 139), point(35.001, 139), point(35.002, 139)];
+
+    expect(totalDistanceMeters(points)).toBeGreaterThan(200);
+    expect(totalDistanceMeters(points)).toBeLessThan(230);
+  });
+});

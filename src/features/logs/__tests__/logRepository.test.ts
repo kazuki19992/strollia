@@ -1,12 +1,48 @@
 import { db } from '../../../db/database';
-import { deleteAllLogData } from '../logRepository';
+import { NewLocationPoint } from '../../../types/gps';
+import { deleteAllLogData, insertLocationPoint } from '../logRepository';
 
 jest.mock('../../../db/database', () => ({
   db: {
+    getFirstAsync: jest.fn(),
     withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
     runAsync: jest.fn(),
   },
 }));
+
+function point(latitude: number, longitude: number): NewLocationPoint {
+  return {
+    recordedAt: '2026-05-05T00:00:00.000Z',
+    localDate: '2026-05-05',
+    latitude,
+    longitude,
+    altitude: null,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  };
+}
+
+describe('insertLocationPoint', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('stores the segment distance in the daily summary incrementally', async () => {
+    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+      ...point(35, 139),
+      id: 1,
+    });
+
+    await insertLocationPoint(point(35.001, 139));
+
+    expect(db.runAsync).toHaveBeenCalledTimes(2);
+    const dailySummaryArgs = (db.runAsync as jest.Mock).mock.calls[1];
+    expect(dailySummaryArgs[4]).toBeGreaterThan(100);
+    expect(dailySummaryArgs[4]).toBeLessThan(120);
+  });
+});
 
 describe('deleteAllLogData', () => {
   beforeEach(() => {

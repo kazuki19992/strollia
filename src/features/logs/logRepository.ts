@@ -1,5 +1,6 @@
 import { db } from '../../db/database';
 import { DailyLogSummary, LocationPoint, NewLocationPoint } from '../../types/gps';
+import { distanceMeters } from '../../utils/distance';
 
 const pointColumns = `
   id,
@@ -16,6 +17,8 @@ const pointColumns = `
 
 export async function insertLocationPoint(point: NewLocationPoint): Promise<void> {
   const now = new Date().toISOString();
+  const previousPoint = await getLatestLocationPointByDate(point.localDate);
+  const segmentDistanceMeters = previousPoint ? distanceMeters(previousPoint, point) : 0;
 
   await db.withTransactionAsync(async () => {
     await db.runAsync(
@@ -50,9 +53,10 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<void
         started_at,
         ended_at,
         point_count,
+        distance_meters,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, 1, ?, ?)
+      ) VALUES (?, ?, ?, 1, ?, ?, ?)
       ON CONFLICT(local_date) DO UPDATE SET
         started_at = CASE
           WHEN daily_logs.started_at IS NULL OR excluded.started_at < daily_logs.started_at
@@ -65,10 +69,12 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<void
           ELSE daily_logs.ended_at
         END,
         point_count = daily_logs.point_count + 1,
+        distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
         updated_at = excluded.updated_at`,
       point.localDate,
       point.recordedAt,
       point.recordedAt,
+      segmentDistanceMeters,
       now,
       now,
     );
@@ -81,12 +87,26 @@ export async function getDailyLogs(): Promise<DailyLogSummary[]> {
       local_date as localDate,
       point_count as pointCount,
       started_at as startedAt,
-      ended_at as endedAt
+      ended_at as endedAt,
+      distance_meters as distanceMeters
     FROM daily_logs
     ORDER BY local_date DESC`,
   );
 }
 
+
+async function getLatestLocationPointByDate(localDate: string): Promise<LocationPoint | null> {
+  const point = await db.getFirstAsync<LocationPoint>(
+    `SELECT ${pointColumns}
+     FROM location_points
+     WHERE local_date = ?
+     ORDER BY recorded_at DESC
+     LIMIT 1`,
+    localDate,
+  );
+
+  return point ?? null;
+}
 
 export async function getLatestLocationPoint(): Promise<LocationPoint | null> {
   const point = await db.getFirstAsync<LocationPoint>(

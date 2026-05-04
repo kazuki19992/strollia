@@ -18,4 +18,5 @@ export type DailyLogSummary = {
   pointCount: number;
   startedAt: string | null;
   endedAt: string | null;
+  distanceMeters: number | null;
 };

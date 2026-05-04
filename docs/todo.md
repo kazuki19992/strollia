@@ -129,9 +129,9 @@ Strollia は、まず小さなMVPを完成させる。
 - [x] 保存前に位置精度50m超のGPS点を破棄する
 - [x] 前回保存点から5m未満のGPS点を破棄する
 - [x] `expo-location` の `distanceInterval` を5mに設定する
-- [ ] 描画用ルートをDouglas-Peucker法で簡略化する
-- [ ] 表示範囲内の描画点だけをPolylineへ渡す
-- [ ] 日別距離を保存時の累積更新にする
+- [x] 描画用ルートをDouglas-Peucker法で簡略化する
+- [x] 表示範囲内の描画点だけをPolylineへ渡す
+- [x] 日別距離を保存時の累積更新にする
 
 ## 3. MVPでは後回しにすること
 

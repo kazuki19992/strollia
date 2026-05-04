@@ -37,7 +37,7 @@ import {
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs, getLocationPointsByDate } from '../features/logs/logRepository';
 import { getEndpointMarkers } from '../features/map/endpointMarkers';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
-import { createInitialRegion, toRouteCoordinates } from '../features/map/routeMapper';
+import { createInitialRegion, filterRouteCoordinatesByRegion, toRenderRouteCoordinates } from '../features/map/routeMapper';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import type { LatLng } from 'react-native-maps';
@@ -79,10 +79,23 @@ export default function App() {
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [currentAreaName, setCurrentAreaName] = useState('現在地を確認中');
+  const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
 
-  const routeCoordinates = useMemo(() => toRouteCoordinates(points), [points]);
+  const renderRouteCoordinates = useMemo(() => toRenderRouteCoordinates(points), [points]);
+  const visibleRouteCoordinates = useMemo(
+    () => filterRouteCoordinatesByRegion(renderRouteCoordinates, visibleRegion),
+    [renderRouteCoordinates, visibleRegion],
+  );
   const initialRegion = useMemo(() => createInitialRegion(points), [points]);
-  const distance = useMemo(() => totalDistanceMeters(points), [points]);
+  const distance = useMemo(() => {
+    const canUseStoredDistance = dailyLogs.every((log) => log.distanceMeters != null);
+
+    if (canUseStoredDistance) {
+      return dailyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0);
+    }
+
+    return totalDistanceMeters(points);
+  }, [dailyLogs, points]);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
@@ -290,15 +303,15 @@ export default function App() {
   }, [isFollowingUserLocation, recenterButtonOpacity]);
 
   useEffect(() => {
-    if (screenMode !== 'map' || routeCoordinates.length < 2 || userCoordinate) {
+    if (screenMode !== 'map' || renderRouteCoordinates.length < 2 || userCoordinate) {
       return;
     }
 
-    mapRef.current?.fitToCoordinates(routeCoordinates, {
+    mapRef.current?.fitToCoordinates(renderRouteCoordinates, {
       animated: true,
       edgePadding: { bottom: 180, left: 48, right: 48, top: 96 },
     });
-  }, [routeCoordinates, screenMode, userCoordinate]);
+  }, [renderRouteCoordinates, screenMode, userCoordinate]);
 
 
   function handleUserLocationChange(event: UserLocationChangeEvent): void {
@@ -321,6 +334,8 @@ export default function App() {
   }
 
   function handleRegionChangeComplete(region: Region): void {
+    setVisibleRegion(region);
+
     if (!userCoordinate) {
       return;
     }
@@ -386,8 +401,8 @@ export default function App() {
           legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
           mapPadding={{ bottom: 96, left: 0, right: 0, top: 96 }}
         >
-          {routeCoordinates.length > 1 && (
-            <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
+          {visibleRouteCoordinates.length > 1 && (
+            <Polyline coordinates={visibleRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
           )}
         </MapView>
 
@@ -610,8 +625,8 @@ function DailyLogCard({ log, styles, theme }: { log: DailyLogSummary; styles: Re
       .catch(() => setDailyPoints([]));
   }, [log.localDate]);
 
-  const dailyDistance = useMemo(() => totalDistanceMeters(dailyPoints), [dailyPoints]);
-  const dailyRouteCoordinates = useMemo(() => toRouteCoordinates(dailyPoints), [dailyPoints]);
+  const dailyDistance = useMemo(() => log.distanceMeters ?? totalDistanceMeters(dailyPoints), [dailyPoints, log.distanceMeters]);
+  const dailyRouteCoordinates = useMemo(() => toRenderRouteCoordinates(dailyPoints), [dailyPoints]);
   const dailyRegion = useMemo(() => createInitialRegion(dailyPoints), [dailyPoints]);
   const endpointMarkers = useMemo(() => getEndpointMarkers(dailyPoints), [dailyPoints]);
 

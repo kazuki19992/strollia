@@ -162,3 +162,11 @@ GPSログは長期間蓄積されるため、マップ描画の負荷を抑え�
 - Expo react-native-maps: https://docs.expo.dev/versions/latest/sdk/map-view/
 - react-native-maps: https://github.com/react-native-maps/react-native-maps
 - OpenStreetMap Tile Usage Policy: https://operations.osmfoundation.org/policies/tiles/
+
+## 12. 現在地追従
+
+メインマップでは、通常は現在地に追従する。
+
+ユーザーが地図をスワイプして現在地中心から離れた場合、現在地ボタンを表示する。表示・非表示は0.5秒のフェードアニメーションとする。
+
+現在地ボタンを押した場合、または地図中心が現在地付近に戻った場合、再び現在地追従を有効にする。

@@ -7,6 +7,7 @@ import {
   AppState,
   AppStateStatus,
   Linking,
+  Animated,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -16,7 +17,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -33,9 +34,11 @@ import {
 } from '../features/location/locationPermission';
 import { getAllLocationPoints, getDailyLogs, getLocationPointsByDate } from '../features/logs/logRepository';
 import { getEndpointMarkers } from '../features/map/endpointMarkers';
+import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { createInitialRegion, toRouteCoordinates } from '../features/map/routeMapper';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
+import type { LatLng } from 'react-native-maps';
 import { AppTheme, getAppTheme } from '../theme/theme';
 import { formatTime } from '../utils/date';
 import { totalDistanceMeters } from '../utils/distance';
@@ -59,6 +62,7 @@ export default function App() {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const mapRef = useRef<MapView | null>(null);
   const autoStartAttemptedRef = useRef(false);
+  const recenterButtonOpacity = useRef(new Animated.Value(0)).current;
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -70,6 +74,8 @@ export default function App() {
   const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+  const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
+  const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
 
   const routeCoordinates = useMemo(() => toRouteCoordinates(points), [points]);
   const initialRegion = useMemo(() => createInitialRegion(points), [points]);
@@ -206,8 +212,17 @@ export default function App() {
     };
   }, []);
 
+
   useEffect(() => {
-    if (screenMode !== 'map' || routeCoordinates.length < 2) {
+    Animated.timing(recenterButtonOpacity, {
+      toValue: isFollowingUserLocation ? 0 : 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [isFollowingUserLocation, recenterButtonOpacity]);
+
+  useEffect(() => {
+    if (screenMode !== 'map' || routeCoordinates.length < 2 || userCoordinate) {
       return;
     }
 
@@ -215,7 +230,58 @@ export default function App() {
       animated: true,
       edgePadding: { bottom: 180, left: 48, right: 48, top: 96 },
     });
-  }, [routeCoordinates, screenMode]);
+  }, [routeCoordinates, screenMode, userCoordinate]);
+
+
+  function handleUserLocationChange(event: UserLocationChangeEvent): void {
+    const coordinate = event.nativeEvent.coordinate;
+
+    if (!coordinate) {
+      return;
+    }
+
+    const nextCoordinate = { latitude: coordinate.latitude, longitude: coordinate.longitude };
+    setUserCoordinate(nextCoordinate);
+
+    if (isFollowingUserLocation) {
+      centerOnCoordinate(nextCoordinate, false);
+    }
+  }
+
+  function handleMapPanDrag(): void {
+    setIsFollowingUserLocation(false);
+  }
+
+  function handleRegionChangeComplete(region: Region): void {
+    if (!userCoordinate) {
+      return;
+    }
+
+    if (isRegionCenteredOnCoordinate(region, userCoordinate)) {
+      setIsFollowingUserLocation(true);
+    }
+  }
+
+  function centerOnCoordinate(coordinate: LatLng, animated = true): void {
+    mapRef.current?.animateToRegion(
+      {
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      },
+      animated ? 500 : 250,
+    );
+  }
+
+  function recenterOnUserLocation(): void {
+    if (!userCoordinate) {
+      return;
+    }
+
+    setIsFollowingUserLocation(true);
+    centerOnCoordinate(userCoordinate);
+  }
 
   function openDailyLogs(): void {
     setIsMenuOpen(false);
@@ -239,7 +305,16 @@ export default function App() {
   function renderMapScreen() {
     return (
       <View style={styles.container}>
-        <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion} showsUserLocation>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          initialRegion={initialRegion}
+          showsUserLocation
+          followsUserLocation={isFollowingUserLocation}
+          onUserLocationChange={handleUserLocationChange}
+          onPanDrag={handleMapPanDrag}
+          onRegionChangeComplete={handleRegionChangeComplete}
+        >
           {routeCoordinates.length > 1 && (
             <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
           )}
@@ -273,6 +348,16 @@ export default function App() {
               </Pressable>
             </View>
           )}
+
+
+          <Animated.View
+            pointerEvents={isFollowingUserLocation ? 'none' : 'auto'}
+            style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}
+          >
+            <Pressable onPress={recenterOnUserLocation} style={styles.recenterButton}>
+              <Text style={styles.recenterButtonText}>現在地</Text>
+            </Pressable>
+          </Animated.View>
 
           {points.length === 0 && (
             <View style={styles.emptyCard}>
@@ -495,7 +580,7 @@ function DailyLogCard({ log, styles, theme }: { log: DailyLogSummary; styles: Re
                 title={marker.label}
                 description={marker.point.recordedAt}
               >
-                <View style={[styles.endpointMarker, { backgroundColor: marker.color }]}> 
+                <View style={[styles.endpointMarker, { backgroundColor: marker.color }]}>
                   <Text style={styles.endpointMarkerText}>{marker.label}</Text>
                 </View>
               </Marker>
@@ -786,6 +871,27 @@ function createStyles(theme: AppTheme) {
       paddingVertical: 14,
     },
     secondaryButtonText: {
+      color: colors.primary,
+      fontWeight: '900',
+    },
+    recenterButton: {
+      backgroundColor: colors.surfaceOverlay,
+      borderColor: colors.border,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.14,
+      shadowRadius: 16,
+    },
+    recenterButtonContainer: {
+      alignItems: 'center',
+      marginTop: 70,
+      zIndex: 2,
+    },
+    recenterButtonText: {
       color: colors.primary,
       fontWeight: '900',
     },

@@ -12,11 +12,12 @@ Strollia は Expo + React Native + TypeScript で実装する。
 | --- | --- | --- |
 | アプリ基盤 | Expo | React Nativeアプリの開発・ビルド |
 | 言語 | TypeScript | 型安全な実装 |
-| 位置情報 | `expo-location` | GPS取得、権限リクエスト |
+| 位置情報 | `expo-location` | GPS取得、フォアグラウンド/バックグラウンド権限リクエスト |
 | ローカルDB | `expo-sqlite` | GPSログ保存 |
 | マップ | `react-native-maps` | GPSログの地図表示 |
 | ファイル | `expo-file-system` | GPXファイル作成 |
 | 共有 | `expo-sharing` | GPXファイル共有 |
+| バックグラウンドタスク | `expo-task-manager` | バックグラウンドGPS記録 |
 | 写真 | `expo-media-library` | 将来の写真ジオタグ表示 |
 
 ## 3. ディレクトリ構成案
@@ -31,7 +32,9 @@ src/
     RouteMap.tsx
   features/
     location/
+      backgroundLocationTask.ts
       locationService.ts
+      locationTrackingConfig.ts
       recordingService.ts
     logs/
       logRepository.ts
@@ -118,8 +121,10 @@ flowchart TD
 
 初期実装では以下を採用する。
 
-- 記録は手動開始・停止
+- 記録は手動開始・停止。ただし開始後はバックグラウンド位置情報タスクで記録する
 - データはSQLiteにローカル保存
+- メイン画面は全履歴マップを全面表示する
+- 日別ログ表示は別画面として扱う
 - マップは `react-native-maps`
 - エクスポートはまずGPXのみ
 - 画面設計はシンプルにし、動く縦切りを優先する
@@ -128,10 +133,25 @@ flowchart TD
 
 将来的に以下を追加しやすいようにする。
 
-- バックグラウンド記録
 - GPX / KML インポート
 - KMLエクスポート
 - from-to 範囲指定UI
 - 全履歴マップ
 - 写真ジオタグ表示
 - 独自バックアップ形式
+
+## 9. バックグラウンド記録方針
+
+バックグラウンド記録は `expo-location` の `startLocationUpdatesAsync` と `expo-task-manager` の `defineTask` を使用する。
+
+タスク定義はReactコンポーネント内ではなく、JavaScriptバンドルのトップレベルで読み込まれるモジュールに置く。
+
+記録開始時は以下を行う。
+
+- フォアグラウンド位置情報権限を確認する
+- バックグラウンド位置情報権限を確認する
+- 未開始の場合のみバックグラウンド位置情報タスクを開始する
+
+記録停止時はバックグラウンド位置情報タスクを停止する。
+
+iOS / Android ともにバックグラウンド位置情報にはOS側の制約があるため、10秒間隔は目標値であり、OSによって間引かれる可能性がある。

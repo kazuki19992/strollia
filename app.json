@@ -15,8 +15,12 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "すとろりあは、移動ルートを記録するために現在地を使用します。"
-      }
+        "NSLocationWhenInUseUsageDescription": "すとろりあは、移動ルートを記録するために現在地を使用します。",
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
+        "NSLocationAlwaysUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。"
+      },
+      "bundleIdentifier": "com.kazuki19992.strollia"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,15 +31,31 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ]
     ],
-    "description": "Strollia is a local-first GPS logger built with Expo."
+    "description": "Strollia is a local-first GPS logger built with Expo.",
+    "extra": {
+      "eas": {
+        "projectId": "76afa2eb-27a4-4486-b25f-a2fa730af7b2"
+      }
+    }
   }
 }

@@ -88,6 +88,17 @@ export async function getDailyLogs(): Promise<DailyLogSummary[]> {
 }
 
 
+export async function getLatestLocationPoint(): Promise<LocationPoint | null> {
+  const point = await db.getFirstAsync<LocationPoint>(
+    `SELECT ${pointColumns}
+     FROM location_points
+     ORDER BY recorded_at DESC
+     LIMIT 1`,
+  );
+
+  return point ?? null;
+}
+
 export async function getAllLocationPoints(): Promise<LocationPoint[]> {
   return db.getAllAsync<LocationPoint>(
     `SELECT ${pointColumns}

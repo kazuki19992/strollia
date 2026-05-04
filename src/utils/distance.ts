@@ -1,12 +1,17 @@
 import { LocationPoint } from '../types/gps';
 
+export type CoordinateLike = {
+  latitude: number;
+  longitude: number;
+};
+
 const EARTH_RADIUS_METERS = 6371000;
 
 function toRadians(value: number): number {
   return (value * Math.PI) / 180;
 }
 
-export function distanceMeters(a: LocationPoint, b: LocationPoint): number {
+export function distanceMeters(a: CoordinateLike, b: CoordinateLike): number {
   const dLat = toRadians(b.latitude - a.latitude);
   const dLon = toRadians(b.longitude - a.longitude);
   const lat1 = toRadians(a.latitude);

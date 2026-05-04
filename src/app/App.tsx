@@ -392,14 +392,14 @@ export default function App() {
           ref={mapRef}
           style={styles.map}
           initialRegion={initialRegion}
+          showsCompass
           showsUserLocation
           followsUserLocation={isFollowingUserLocation}
           onUserLocationChange={handleUserLocationChange}
           onPanDrag={handleMapPanDrag}
           onRegionChangeComplete={handleRegionChangeComplete}
-          compassOffset={{ x: -16, y: 96 }}
           legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
-          mapPadding={{ bottom: 96, left: 0, right: 0, top: 96 }}
+          mapPadding={{ bottom: 96, left: 0, right: 0, top: 58 }}
         >
           {visibleRouteCoordinates.length > 1 && (
             <Polyline coordinates={visibleRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
@@ -435,15 +435,6 @@ export default function App() {
           )}
 
 
-          <Animated.View
-            pointerEvents={isFollowingUserLocation ? 'none' : 'auto'}
-            style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}
-          >
-            <Pressable onPress={recenterOnUserLocation} style={styles.recenterButton}>
-              <AntDesign name="aim" size={24} color={theme.colors.primary} />
-            </Pressable>
-          </Animated.View>
-
           {points.length === 0 && (
             <View style={styles.emptyCard}>
               <Text style={styles.emptyTitle}>まだ足あとがありません</Text>
@@ -461,9 +452,20 @@ export default function App() {
             </View>
           )}
 
-          <View style={styles.locationPill}>
-            <Text style={styles.locationName}>{currentAreaName}</Text>
-            <Text style={styles.locationMeta}>{(distance / 1000).toFixed(2)} km · {points.length} pts</Text>
+          <View pointerEvents="box-none" style={styles.bottomBar}>
+            <View style={styles.bottomSideSpacer} />
+            <View style={styles.locationPill}>
+              <Text style={styles.locationName}>{currentAreaName}</Text>
+              <Text style={styles.locationMeta}>{(distance / 1000).toFixed(2)} km · {points.length} pts</Text>
+            </View>
+            <Animated.View
+              pointerEvents={isFollowingUserLocation ? 'none' : 'auto'}
+              style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}
+            >
+              <Pressable onPress={recenterOnUserLocation} style={styles.recenterButton}>
+                <AntDesign name="aim" size={24} color={theme.colors.primary} />
+              </Pressable>
+            </Animated.View>
           </View>
         </SafeAreaView>
       </View>
@@ -700,18 +702,18 @@ function createStyles(theme: AppTheme) {
       color: colors.primary,
       fontWeight: '900',
     },
-    bottomPanel: {
-      backgroundColor: colors.surfaceOverlay,
-      borderColor: colors.border,
-      borderRadius: 28,
-      borderWidth: 1,
-      gap: 14,
-      margin: 16,
-      padding: 16,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 14 },
-      shadowOpacity: 0.16,
-      shadowRadius: 28,
+    bottomBar: {
+      alignItems: 'center',
+      bottom: 26,
+      flexDirection: 'row',
+      gap: 12,
+      left: 16,
+      position: 'absolute',
+      right: 16,
+      zIndex: 2,
+    },
+    bottomSideSpacer: {
+      width: 50,
     },
     buttonDisabled: {
       opacity: 0.38,
@@ -857,15 +859,14 @@ function createStyles(theme: AppTheme) {
       fontWeight: '900',
     },
     locationPill: {
-      alignSelf: 'center',
       alignItems: 'center',
       backgroundColor: colors.surfaceOverlay,
       borderColor: colors.border,
       borderRadius: 999,
       borderWidth: 1,
       gap: 2,
-      marginBottom: 26,
-      maxWidth: '72%',
+      flex: 1,
+      maxWidth: 260,
       paddingHorizontal: 18,
       paddingVertical: 10,
       shadowColor: colors.shadow,
@@ -931,7 +932,6 @@ function createStyles(theme: AppTheme) {
     },
     overlay: {
       ...StyleSheet.absoluteFillObject,
-      justifyContent: 'space-between',
     },
     permissionButton: {
       alignItems: 'center',
@@ -1014,9 +1014,7 @@ function createStyles(theme: AppTheme) {
     },
     recenterButtonContainer: {
       alignItems: 'flex-end',
-      marginRight: 16,
-      marginTop: 60,
-      zIndex: 2,
+      width: 50,
     },
     rightControls: {
       flexDirection: 'row',

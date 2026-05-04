@@ -12,7 +12,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import MapView, { Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -22,6 +22,7 @@ import {
   stopBackgroundLocationRecording,
 } from '../features/location/locationService';
 import { getAllLocationPoints, getDailyLogs, getLocationPointsByDate } from '../features/logs/logRepository';
+import { getEndpointMarkers } from '../features/map/endpointMarkers';
 import { createInitialRegion, toRouteCoordinates } from '../features/map/routeMapper';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import { formatTime } from '../utils/date';
@@ -281,24 +282,59 @@ export default function App() {
 
 
 function DailyLogCard({ log }: { log: DailyLogSummary }) {
-  const [dailyDistance, setDailyDistance] = useState<number | null>(null);
+  const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
 
   useEffect(() => {
     getLocationPointsByDate(log.localDate)
-      .then((dailyPoints) => setDailyDistance(totalDistanceMeters(dailyPoints)))
-      .catch(() => setDailyDistance(null));
+      .then(setDailyPoints)
+      .catch(() => setDailyPoints([]));
   }, [log.localDate]);
+
+  const dailyDistance = useMemo(() => totalDistanceMeters(dailyPoints), [dailyPoints]);
+  const dailyRouteCoordinates = useMemo(() => toRouteCoordinates(dailyPoints), [dailyPoints]);
+  const dailyRegion = useMemo(() => createInitialRegion(dailyPoints), [dailyPoints]);
+  const endpointMarkers = useMemo(() => getEndpointMarkers(dailyPoints), [dailyPoints]);
 
   return (
     <View style={styles.dailyCard}>
       <Text style={styles.dailyDate}>{log.localDate}</Text>
       <View style={styles.dailyStatsRow}>
         <Text style={styles.dailyStat}>{log.pointCount} pts</Text>
-        <Text style={styles.dailyStat}>{dailyDistance == null ? '-- km' : `${(dailyDistance / 1000).toFixed(2)} km`}</Text>
+        <Text style={styles.dailyStat}>{(dailyDistance / 1000).toFixed(2)} km</Text>
       </View>
       <Text style={styles.dailyTime}>
         {formatTime(log.startedAt)} - {formatTime(log.endedAt)}
       </Text>
+
+      {dailyPoints.length > 0 && (
+        <View style={styles.dailyMapFrame}>
+          <MapView
+            style={styles.dailyMap}
+            initialRegion={dailyRegion}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            rotateEnabled={false}
+            pitchEnabled={false}
+          >
+            {dailyRouteCoordinates.length > 1 && (
+              <Polyline coordinates={dailyRouteCoordinates} strokeColor="#1f7a5c" strokeWidth={4} />
+            )}
+            {endpointMarkers.map((marker) => (
+              <Marker
+                key={marker.id}
+                coordinate={{ latitude: marker.point.latitude, longitude: marker.point.longitude }}
+                anchor={{ x: 0.5, y: 1 }}
+                title={marker.label}
+                description={marker.point.recordedAt}
+              >
+                <View style={[styles.endpointMarker, { backgroundColor: marker.color }]}>
+                  <Text style={styles.endpointMarkerText}>{marker.label}</Text>
+                </View>
+              </Marker>
+            ))}
+          </MapView>
+        </View>
+      )}
     </View>
   );
 }
@@ -375,6 +411,15 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 0,
   },
+  dailyMap: {
+    height: 180,
+    width: '100%',
+  },
+  dailyMapFrame: {
+    borderRadius: 20,
+    marginTop: 4,
+    overflow: 'hidden',
+  },
   dailyStat: {
     color: '#2d2416',
     fontWeight: '800',
@@ -393,6 +438,22 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
     textAlign: 'center',
+  },
+  endpointMarker: {
+    borderColor: '#fffdf8',
+    borderRadius: 999,
+    borderWidth: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    shadowColor: '#2d2416',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  endpointMarkerText: {
+    color: '#fffdf8',
+    fontSize: 12,
+    fontWeight: '900',
   },
   emptyCard: {
     alignSelf: 'center',

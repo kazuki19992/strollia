@@ -1,4 +1,5 @@
 import { AntDesign, Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Location from 'expo-location';
 import { StatusBar } from 'expo-status-bar';
@@ -10,6 +11,7 @@ import {
   AppStateStatus,
   Linking,
   Animated,
+  Easing,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -40,7 +42,7 @@ import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation
 import { createInitialRegion, filterRouteCoordinatesByRegion, toRenderRouteCoordinates } from '../features/map/routeMapper';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
-import type { LatLng } from 'react-native-maps';
+import type { LatLng, MapType } from 'react-native-maps';
 import { AppTheme, getAppTheme } from '../theme/theme';
 import { formatTime } from '../utils/date';
 import { totalDistanceMeters } from '../utils/distance';
@@ -50,6 +52,8 @@ type AutoStartStatus = 'checking' | 'recording' | 'needsPermission' | 'failed';
 
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
+const MENU_ANIMATION_DURATION_MS = 220;
+const SCREEN_TRANSITION_DURATION_MS = 180;
 
 const EMPTY_PERMISSION_STATE: LocationPermissionState = {
   foregroundGranted: false,
@@ -65,9 +69,12 @@ export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const autoStartAttemptedRef = useRef(false);
   const recenterButtonOpacity = useRef(new Animated.Value(0)).current;
+  const menuProgress = useRef(new Animated.Value(0)).current;
+  const screenTransitionOpacity = useRef(new Animated.Value(1)).current;
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
   const [points, setPoints] = useState<LocationPoint[]>([]);
@@ -80,6 +87,7 @@ export default function App() {
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [currentAreaName, setCurrentAreaName] = useState('現在地を確認中');
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
+  const [mapType, setMapType] = useState<MapType>('standard');
 
   const renderRouteCoordinates = useMemo(() => toRenderRouteCoordinates(points), [points]);
   const visibleRouteCoordinates = useMemo(
@@ -303,6 +311,33 @@ export default function App() {
   }, [isFollowingUserLocation, recenterButtonOpacity]);
 
   useEffect(() => {
+    if (isMenuOpen) {
+      setIsMenuVisible(true);
+    }
+
+    Animated.timing(menuProgress, {
+      toValue: isMenuOpen ? 1 : 0,
+      duration: MENU_ANIMATION_DURATION_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished && !isMenuOpen) {
+        setIsMenuVisible(false);
+      }
+    });
+  }, [isMenuOpen, menuProgress]);
+
+  useEffect(() => {
+    screenTransitionOpacity.setValue(0);
+    Animated.timing(screenTransitionOpacity, {
+      toValue: 1,
+      duration: SCREEN_TRANSITION_DURATION_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [screenMode, screenTransitionOpacity]);
+
+  useEffect(() => {
     if (screenMode !== 'map' || renderRouteCoordinates.length < 2 || userCoordinate) {
       return;
     }
@@ -366,22 +401,62 @@ export default function App() {
     centerOnCoordinate(userCoordinate);
   }
 
-  function openDailyLogs(): void {
+  function triggerSelectionHaptic(): void {
+    Haptics.selectionAsync().catch(() => undefined);
+  }
+
+  function triggerLightImpactHaptic(): void {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  }
+
+  function resetMenuImmediately(): void {
+    menuProgress.stopAnimation();
+    menuProgress.setValue(0);
     setIsMenuOpen(false);
-    setScreenMode('dailyLogs');
+    setIsMenuVisible(false);
+  }
+
+  function toggleMenu(): void {
+    triggerSelectionHaptic();
+    setIsMenuOpen((open) => !open);
+  }
+
+  function closeMenu(): void {
+    if (isMenuOpen) {
+      triggerSelectionHaptic();
+    }
+
+    setIsMenuOpen(false);
+  }
+
+  function navigateToScreen(nextScreenMode: ScreenMode): void {
+    triggerLightImpactHaptic();
+    setIsMenuOpen(false);
+    setScreenMode(nextScreenMode);
+  }
+
+  function openDailyLogs(): void {
+    navigateToScreen('dailyLogs');
   }
 
   function openMap(): void {
+    triggerLightImpactHaptic();
+    resetMenuImmediately();
     setScreenMode('map');
-    setIsMenuOpen(false);
   }
 
   function openSettings(): void {
+    navigateToScreen('settings');
+  }
+
+  function toggleMapType(): void {
+    triggerSelectionHaptic();
+    setMapType((currentMapType) => (currentMapType === 'standard' ? 'hybrid' : 'standard'));
     setIsMenuOpen(false);
-    setScreenMode('settings');
   }
 
   function showImportPlaceholder(): void {
+    triggerSelectionHaptic();
     Alert.alert('インポート', 'GPX / KML インポートは今後実装予定です。');
   }
 
@@ -392,6 +467,7 @@ export default function App() {
           ref={mapRef}
           style={styles.map}
           initialRegion={initialRegion}
+          mapType={mapType}
           showsCompass
           showsUserLocation
           followsUserLocation={isFollowingUserLocation}
@@ -407,7 +483,11 @@ export default function App() {
         </MapView>
 
         <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
-          {isMenuOpen && <Pressable onPress={() => setIsMenuOpen(false)} style={styles.menuScrim} />}
+          {isMenuVisible && (
+            <Animated.View pointerEvents={isMenuOpen ? 'auto' : 'none'} style={[styles.menuScrim, { opacity: menuProgress }]}>
+              <Pressable onPress={closeMenu} style={styles.menuScrimPressable} />
+            </Animated.View>
+          )}
 
           <View style={styles.topBar}>
             <View style={styles.statusPill}>
@@ -415,23 +495,42 @@ export default function App() {
               <Text style={styles.statusText}>{isRecording ? '記録中' : '停止中'}</Text>
             </View>
             <View style={styles.rightControls}>
-              <Pressable onPress={() => setIsMenuOpen((open) => !open)} style={styles.menuButton}>
+              <Pressable onPress={toggleMenu} style={styles.menuButton}>
                 <Entypo name="dots-three-vertical" size={24} color={theme.colors.text} />
               </Pressable>
             </View>
           </View>
 
-          {isMenuOpen && (
-            <View style={styles.menuCard}>
+          {isMenuVisible && (
+            <Animated.View
+              style={[
+                styles.menuCard,
+                {
+                  opacity: menuProgress,
+                  transform: [
+                    { translateY: menuProgress.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) },
+                    { scale: menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) },
+                  ],
+                },
+              ]}
+            >
               <Pressable onPress={openDailyLogs} style={styles.menuItem}>
-                <Feather name="calendar" size={18} color={theme.colors.text} />
+                <Feather name="calendar" size={22} color={theme.colors.text} />
                 <Text style={styles.menuItemText}>日ごとの記録</Text>
               </Pressable>
+              <Pressable onPress={toggleMapType} style={styles.menuItem}>
+                <MaterialCommunityIcons
+                  name={mapType === 'standard' ? 'satellite-variant' : 'map-outline'}
+                  size={23}
+                  color={theme.colors.text}
+                />
+                <Text style={styles.menuItemText}>{mapType === 'standard' ? '航空写真に切替' : '標準地図に切替'}</Text>
+              </Pressable>
               <Pressable onPress={openSettings} style={styles.menuItem}>
-                <Feather name="settings" size={18} color={theme.colors.text} />
+                <Feather name="settings" size={22} color={theme.colors.text} />
                 <Text style={styles.menuItemText}>設定</Text>
               </Pressable>
-            </View>
+            </Animated.View>
           )}
 
 
@@ -598,9 +697,19 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
-      {screenMode === 'map' && renderMapScreen()}
-      {screenMode === 'dailyLogs' && renderDailyLogsScreen()}
-      {screenMode === 'settings' && renderSettingsScreen()}
+      <Animated.View
+        style={[
+          styles.screenTransition,
+          {
+            opacity: screenTransitionOpacity,
+            transform: [{ translateY: screenTransitionOpacity.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
+          },
+        ]}
+      >
+        {screenMode === 'map' && renderMapScreen()}
+        {screenMode === 'dailyLogs' && renderDailyLogsScreen()}
+        {screenMode === 'settings' && renderSettingsScreen()}
+      </Animated.View>
     </View>
   );
 }
@@ -897,34 +1006,42 @@ function createStyles(theme: AppTheme) {
     },
 
     menuCard: {
-      backgroundColor: colors.card,
+      backgroundColor: colors.cardStrong,
       borderColor: colors.border,
-      borderRadius: 22,
+      borderRadius: 26,
       borderWidth: 1,
       overflow: 'hidden',
       position: 'absolute',
       right: 16,
-      top: 66,
-      width: 190,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 18 },
+      shadowOpacity: 0.2,
+      shadowRadius: 28,
+      top: 70,
+      width: 248,
       zIndex: 3,
     },
     menuScrim: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: colors.scrim,
+      backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(45, 36, 22, 0.24)',
       zIndex: 1,
+    },
+    menuScrimPressable: {
+      flex: 1,
     },
     menuItem: {
       alignItems: 'center',
       borderBottomColor: colors.border,
       borderBottomWidth: 1,
       flexDirection: 'row',
-      gap: 10,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
+      gap: 14,
+      paddingHorizontal: 20,
+      paddingVertical: 18,
     },
     menuItemText: {
       color: colors.text,
-      fontWeight: '800',
+      fontSize: 17,
+      fontWeight: '900',
     },
     message: {
       color: colors.mutedText,
@@ -983,6 +1100,9 @@ function createStyles(theme: AppTheme) {
     primaryButtonText: {
       color: colors.primaryText,
       fontWeight: '900',
+    },
+    screenTransition: {
+      flex: 1,
     },
     secondaryButton: {
       alignItems: 'center',

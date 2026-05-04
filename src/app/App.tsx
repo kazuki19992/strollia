@@ -1,3 +1,4 @@
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -5,11 +6,14 @@ import {
   Alert,
   AppState,
   AppStateStatus,
+  Linking,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  useColorScheme,
   View,
 } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -21,17 +25,38 @@ import {
   startBackgroundLocationRecording,
   stopBackgroundLocationRecording,
 } from '../features/location/locationService';
+import {
+  canRequestLocationPermissionInApp,
+  getLocationPermissionState,
+  hasRequiredLocationPermission,
+  LocationPermissionState,
+} from '../features/location/locationPermission';
 import { getAllLocationPoints, getDailyLogs, getLocationPointsByDate } from '../features/logs/logRepository';
 import { getEndpointMarkers } from '../features/map/endpointMarkers';
 import { createInitialRegion, toRouteCoordinates } from '../features/map/routeMapper';
+import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
+import { AppTheme, getAppTheme } from '../theme/theme';
 import { formatTime } from '../utils/date';
 import { totalDistanceMeters } from '../utils/distance';
 
 type ScreenMode = 'map' | 'dailyLogs' | 'settings';
 type AutoStartStatus = 'checking' | 'recording' | 'needsPermission' | 'failed';
 
+const KEEP_AWAKE_TAG = 'strollia-foreground-map';
+const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
+
+const EMPTY_PERMISSION_STATE: LocationPermissionState = {
+  foregroundGranted: false,
+  backgroundGranted: false,
+  canAskForeground: true,
+  canAskBackground: true,
+};
+
 export default function App() {
+  const colorScheme = useColorScheme();
+  const theme = useMemo(() => getAppTheme(colorScheme), [colorScheme]);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const mapRef = useRef<MapView | null>(null);
   const autoStartAttemptedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
@@ -42,33 +67,41 @@ export default function App() {
   const [points, setPoints] = useState<LocationPoint[]>([]);
   const [message, setMessage] = useState('起動後に自動でGPS記録を開始します。');
   const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
+  const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
+  const [keepScreenAwake, setKeepScreenAwake] = useState(false);
+  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
 
   const routeCoordinates = useMemo(() => toRouteCoordinates(points), [points]);
   const initialRegion = useMemo(() => createInitialRegion(points), [points]);
   const distance = useMemo(() => totalDistanceMeters(points), [points]);
+  const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
+  const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
   const refreshData = useCallback(async () => {
-    const [logs, allPoints, recording] = await Promise.all([
+    const [logs, allPoints, recording, permissions] = await Promise.all([
       getDailyLogs(),
       getAllLocationPoints(),
       isBackgroundLocationRecording(),
+      getLocationPermissionState(),
     ]);
 
     setDailyLogs(logs);
     setPoints(allPoints);
     setIsRecording(recording);
+    setPermissionState(permissions);
 
-    return { logs, allPoints, recording };
+    return { logs, allPoints, recording, permissions };
   }, []);
 
   const startRecording = useCallback(
     async (reason: 'auto' | 'manual' = 'manual'): Promise<void> => {
       try {
         await startBackgroundLocationRecording();
-        await refreshData();
+        const result = await refreshData();
         setMessage(reason === 'auto' ? 'GPS記録を自動開始しました。' : 'バックグラウンドGPS記録を開始しました。');
-        setAutoStartStatus('recording');
+        setAutoStartStatus(hasRequiredLocationPermission(result.permissions) ? 'recording' : 'needsPermission');
       } catch (error: unknown) {
+        await refreshData().catch(() => undefined);
         setMessage(error instanceof Error ? error.message : 'GPS記録の開始に失敗しました。');
         setAutoStartStatus('failed');
       }
@@ -87,6 +120,15 @@ export default function App() {
     }
   }, [refreshData]);
 
+  const requestLocationPermission = useCallback(async (): Promise<void> => {
+    if (shouldOpenSettingsForPermission) {
+      await Linking.openSettings();
+      return;
+    }
+
+    await startRecording('manual');
+  }, [shouldOpenSettingsForPermission, startRecording]);
+
   const exportAllLogs = useCallback(async (): Promise<void> => {
     try {
       await shareGpx(points, 'all');
@@ -95,9 +137,18 @@ export default function App() {
     }
   }, [points]);
 
+  const updateKeepScreenAwake = useCallback(async (enabled: boolean): Promise<void> => {
+    setKeepScreenAwake(enabled);
+    await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
+  }, []);
+
   useEffect(() => {
     initializeDatabase()
-      .then(refreshData)
+      .then(async () => {
+        const savedKeepScreenAwake = await getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false);
+        setKeepScreenAwake(savedKeepScreenAwake);
+        await refreshData();
+      })
       .catch((error: unknown) => {
         setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
       })
@@ -129,6 +180,7 @@ export default function App() {
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      setAppState(state);
       if (state === 'active') {
         refreshData().catch((error: unknown) => {
           setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
@@ -138,6 +190,21 @@ export default function App() {
 
     return () => subscription.remove();
   }, [refreshData]);
+
+  useEffect(() => {
+    if (keepScreenAwake && appState === 'active') {
+      activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => undefined);
+      return;
+    }
+
+    deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => undefined);
+  }, [appState, keepScreenAwake]);
+
+  useEffect(() => {
+    return () => {
+      deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => undefined);
+    };
+  }, []);
 
   useEffect(() => {
     if (screenMode !== 'map' || routeCoordinates.length < 2) {
@@ -174,7 +241,7 @@ export default function App() {
       <View style={styles.container}>
         <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion} showsUserLocation>
           {routeCoordinates.length > 1 && (
-            <Polyline coordinates={routeCoordinates} strokeColor="#1f7a5c" strokeWidth={5} />
+            <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
           )}
         </MapView>
 
@@ -214,6 +281,16 @@ export default function App() {
             </View>
           )}
 
+          {!hasRequiredPermission && (
+            <View style={styles.permissionCard}>
+              <Text style={styles.permissionTitle}>位置情報の常時許可が必要です</Text>
+              <Text style={styles.permissionText}>バックグラウンドでGPSログを残すには、位置情報を常に許可してください。</Text>
+              <Pressable onPress={requestLocationPermission} style={styles.permissionButton}>
+                <Text style={styles.permissionButtonText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
+              </Pressable>
+            </View>
+          )}
+
           <View style={styles.bottomPanel}>
             <Text style={styles.message}>{message}</Text>
             <View style={styles.statsRow}>
@@ -249,7 +326,7 @@ export default function App() {
         ) : (
           <ScrollView contentContainerStyle={styles.dailyList}>
             {dailyLogs.map((log) => (
-              <DailyLogCard key={log.localDate} log={log} />
+              <DailyLogCard key={log.localDate} log={log} styles={styles} theme={theme} />
             ))}
           </ScrollView>
         )}
@@ -277,22 +354,51 @@ export default function App() {
               <View style={[styles.statusDot, isRecording && styles.statusDotActive]} />
               <Text style={styles.settingsStatusText}>{isRecording ? '記録中' : '停止中'}</Text>
             </View>
-            <Text style={styles.settingsDescription}>{getAutoRecordNote(autoStartStatus)} 権限が不足している場合は、記録開始を押すとOSの権限確認が表示されます。</Text>
-            <View style={styles.actions}>
-              <Pressable
-                disabled={isRecording}
-                onPress={() => startRecording('manual')}
-                style={[styles.primaryButton, isRecording && styles.buttonDisabled]}
-              >
-                <Text style={styles.primaryButtonText}>記録開始</Text>
-              </Pressable>
-              <Pressable
-                disabled={!isRecording}
-                onPress={stopRecording}
-                style={[styles.secondaryButton, !isRecording && styles.buttonDisabled]}
-              >
-                <Text style={styles.secondaryButtonText}>停止</Text>
-              </Pressable>
+            <Text style={styles.settingsDescription}>{getAutoRecordNote(autoStartStatus)} 権限が不足している場合は、下のボタンから許可してください。</Text>
+            {!hasRequiredPermission ? (
+              <View style={styles.permissionSettingsBox}>
+                <Text style={styles.permissionTitle}>位置情報の常時許可が必要です</Text>
+                <Text style={styles.permissionText}>OSの権限で「常に」許可すると、画面を閉じても記録できます。</Text>
+                <Pressable onPress={requestLocationPermission} style={styles.permissionButton}>
+                  <Text style={styles.permissionButtonText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.actions}>
+                <Pressable
+                  disabled={isRecording}
+                  onPress={() => startRecording('manual')}
+                  style={[styles.primaryButton, isRecording && styles.buttonDisabled]}
+                >
+                  <Text style={styles.primaryButtonText}>記録開始</Text>
+                </Pressable>
+                <Pressable
+                  disabled={!isRecording}
+                  onPress={stopRecording}
+                  style={[styles.secondaryButton, !isRecording && styles.buttonDisabled]}
+                >
+                  <Text style={styles.secondaryButtonText}>停止</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.settingsCard}>
+            <View style={styles.settingsToggleRow}>
+              <View style={styles.settingsToggleTextColumn}>
+                <Text style={styles.settingsTitle}>常に画面をONにする</Text>
+                <Text style={styles.settingsDescription}>アプリが前面にある間は画面をロックしません。記録の精度が上がる可能性がありますが、消費電力が増えます。</Text>
+              </View>
+              <Switch
+                value={keepScreenAwake}
+                onValueChange={(value) => {
+                  updateKeepScreenAwake(value).catch((error: unknown) => {
+                    Alert.alert('設定保存失敗', error instanceof Error ? error.message : '設定を保存できませんでした。');
+                  });
+                }}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor={theme.colors.cardStrong}
+              />
             </View>
           </View>
 
@@ -311,11 +417,10 @@ export default function App() {
     );
   }
 
-
   if (!isReady) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator />
+        <ActivityIndicator color={theme.colors.primary} />
         <Text style={styles.loadingText}>Strolliaを準備しています...</Text>
       </SafeAreaView>
     );
@@ -323,15 +428,13 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
       {screenMode === 'map' && renderMapScreen()}
       {screenMode === 'dailyLogs' && renderDailyLogsScreen()}
       {screenMode === 'settings' && renderSettingsScreen()}
     </View>
   );
 }
-
-
 
 function getAutoRecordNote(status: AutoStartStatus): string {
   switch (status) {
@@ -346,7 +449,7 @@ function getAutoRecordNote(status: AutoStartStatus): string {
   }
 }
 
-function DailyLogCard({ log }: { log: DailyLogSummary }) {
+function DailyLogCard({ log, styles, theme }: { log: DailyLogSummary; styles: ReturnType<typeof createStyles>; theme: AppTheme }) {
   const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
 
   useEffect(() => {
@@ -382,7 +485,7 @@ function DailyLogCard({ log }: { log: DailyLogSummary }) {
             pitchEnabled={false}
           >
             {dailyRouteCoordinates.length > 1 && (
-              <Polyline coordinates={dailyRouteCoordinates} strokeColor="#1f7a5c" strokeWidth={4} />
+              <Polyline coordinates={dailyRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={4} />
             )}
             {endpointMarkers.map((marker) => (
               <Marker
@@ -392,7 +495,7 @@ function DailyLogCard({ log }: { log: DailyLogSummary }) {
                 title={marker.label}
                 description={marker.point.recordedAt}
               >
-                <View style={[styles.endpointMarker, { backgroundColor: marker.color }]}>
+                <View style={[styles.endpointMarker, { backgroundColor: marker.color }]}> 
                   <Text style={styles.endpointMarkerText}>{marker.label}</Text>
                 </View>
               </Marker>
@@ -404,324 +507,378 @@ function DailyLogCard({ log }: { log: DailyLogSummary }) {
   );
 }
 
-const styles = StyleSheet.create({
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  autoRecordNote: {
-    color: '#675c4d',
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  backButton: {
-    backgroundColor: '#fffdf8',
-    borderColor: '#d6cbb8',
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  backButtonText: {
-    color: '#1f7a5c',
-    fontWeight: '900',
-  },
-  bottomPanel: {
-    backgroundColor: 'rgba(255, 253, 248, 0.94)',
-    borderColor: 'rgba(45, 36, 22, 0.12)',
-    borderRadius: 28,
-    borderWidth: 1,
-    gap: 14,
-    margin: 16,
-    padding: 16,
-    shadowColor: '#2d2416',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.16,
-    shadowRadius: 28,
-  },
-  buttonDisabled: {
-    opacity: 0.38,
-  },
-  container: {
-    flex: 1,
-  },
-  dailyCard: {
-    backgroundColor: '#fffdf8',
-    borderColor: '#e5ddcd',
-    borderRadius: 24,
-    borderWidth: 1,
-    gap: 10,
-    padding: 16,
-  },
-  dailyContainer: {
-    backgroundColor: '#f4ead8',
-    flex: 1,
-  },
-  dailyDate: {
-    color: '#2d2416',
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  dailyEmptyCard: {
-    backgroundColor: '#fffdf8',
-    borderRadius: 24,
-    gap: 8,
-    margin: 16,
-    padding: 18,
-  },
-  dailyHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  dailyList: {
-    gap: 12,
-    padding: 16,
-    paddingTop: 0,
-  },
-  dailyMap: {
-    height: 180,
-    width: '100%',
-  },
-  dailyMapFrame: {
-    borderRadius: 20,
-    marginTop: 4,
-    overflow: 'hidden',
-  },
-  dailyStat: {
-    color: '#2d2416',
-    fontWeight: '800',
-  },
-  dailyStatsRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  dailyTime: {
-    color: '#675c4d',
-    fontWeight: '700',
-  },
-  dailyTitle: {
-    color: '#2d2416',
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  endpointMarker: {
-    borderColor: '#fffdf8',
-    borderRadius: 999,
-    borderWidth: 2,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    shadowColor: '#2d2416',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  endpointMarkerText: {
-    color: '#fffdf8',
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  emptyCard: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255, 253, 248, 0.92)',
-    borderRadius: 24,
-    gap: 6,
-    marginHorizontal: 24,
-    marginTop: 92,
-    padding: 18,
-  },
-  emptyText: {
-    color: '#675c4d',
-    lineHeight: 20,
-  },
-  emptyTitle: {
-    color: '#2d2416',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  iconButton: {
-    backgroundColor: 'rgba(255, 253, 248, 0.92)',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  iconButtonText: {
-    color: '#2d2416',
-    fontWeight: '800',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    backgroundColor: '#f4ead8',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: '#2d2416',
-    marginTop: 12,
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  menuButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 253, 248, 0.92)',
-    borderRadius: 999,
-    height: 42,
-    justifyContent: 'center',
-    width: 42,
-  },
-  menuButtonText: {
-    color: '#2d2416',
-    fontSize: 34,
-    fontWeight: '900',
-    lineHeight: 34,
-    transform: [{ translateY: -1 }],
-  },
-  menuCard: {
-    backgroundColor: 'rgba(255, 253, 248, 0.97)',
-    borderColor: 'rgba(45, 36, 22, 0.12)',
-    borderRadius: 22,
-    borderWidth: 1,
-    overflow: 'hidden',
-    position: 'absolute',
-    right: 16,
-    top: 66,
-    width: 190,
-    zIndex: 3,
-  },
-  menuScrim: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
-  },
-  menuItem: {
-    borderBottomColor: 'rgba(45, 36, 22, 0.1)',
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  menuItemText: {
-    color: '#2d2416',
-    fontWeight: '800',
-  },
-  message: {
-    color: '#4f4638',
-    lineHeight: 20,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: '#1f7a5c',
-    borderRadius: 999,
-    flex: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-  },
-  primaryButtonText: {
-    color: '#fffdf8',
-    fontWeight: '900',
-  },
-  secondaryButton: {
-    alignItems: 'center',
-    backgroundColor: '#fffdf8',
-    borderColor: '#1f7a5c',
-    borderRadius: 999,
-    borderWidth: 1,
-    minWidth: 92,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  secondaryButtonText: {
-    color: '#1f7a5c',
-    fontWeight: '900',
-  },
-  rightControls: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  settingsAction: {
-    backgroundColor: '#f4ead8',
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  settingsActionText: {
-    color: '#1f7a5c',
-    fontWeight: '900',
-  },
-  settingsCard: {
-    backgroundColor: '#fffdf8',
-    borderColor: '#e5ddcd',
-    borderRadius: 24,
-    borderWidth: 1,
-    gap: 14,
-    padding: 16,
-  },
-  settingsDescription: {
-    color: '#675c4d',
-    lineHeight: 20,
-  },
-  settingsList: {
-    gap: 12,
-    padding: 16,
-    paddingTop: 0,
-  },
-  settingsStatusRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  settingsStatusText: {
-    color: '#2d2416',
-    fontWeight: '900',
-  },
-  settingsTitle: {
-    color: '#2d2416',
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  stat: {
-    color: '#2d2416',
-    fontWeight: '800',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  statusDot: {
-    backgroundColor: '#b8afa1',
-    borderRadius: 999,
-    height: 9,
-    width: 9,
-  },
-  statusDotActive: {
-    backgroundColor: '#1f7a5c',
-  },
-  statusPill: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 253, 248, 0.92)',
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  statusText: {
-    color: '#2d2416',
-    fontWeight: '900',
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    zIndex: 2,
-  },
-});
+function createStyles(theme: AppTheme) {
+  const { colors } = theme;
+
+  return StyleSheet.create({
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    autoRecordNote: {
+      color: colors.mutedText,
+      fontSize: 13,
+      fontWeight: '700',
+      lineHeight: 18,
+    },
+    backButton: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    backButtonText: {
+      color: colors.primary,
+      fontWeight: '900',
+    },
+    bottomPanel: {
+      backgroundColor: colors.surfaceOverlay,
+      borderColor: colors.border,
+      borderRadius: 28,
+      borderWidth: 1,
+      gap: 14,
+      margin: 16,
+      padding: 16,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 14 },
+      shadowOpacity: 0.16,
+      shadowRadius: 28,
+    },
+    buttonDisabled: {
+      opacity: 0.38,
+    },
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    dailyCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 24,
+      borderWidth: 1,
+      gap: 10,
+      padding: 16,
+    },
+    dailyContainer: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    dailyDate: {
+      color: colors.text,
+      fontSize: 22,
+      fontWeight: '900',
+    },
+    dailyEmptyCard: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      gap: 8,
+      margin: 16,
+      padding: 18,
+    },
+    dailyHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 12,
+      justifyContent: 'space-between',
+      padding: 16,
+    },
+    dailyList: {
+      gap: 12,
+      padding: 16,
+      paddingTop: 0,
+    },
+    dailyMap: {
+      height: 180,
+      width: '100%',
+    },
+    dailyMapFrame: {
+      borderRadius: 20,
+      marginTop: 4,
+      overflow: 'hidden',
+    },
+    dailyStat: {
+      color: colors.text,
+      fontWeight: '800',
+    },
+    dailyStatsRow: {
+      flexDirection: 'row',
+      gap: 16,
+    },
+    dailyTime: {
+      color: colors.mutedText,
+      fontWeight: '700',
+    },
+    dailyTitle: {
+      color: colors.text,
+      flex: 1,
+      fontSize: 20,
+      fontWeight: '900',
+      textAlign: 'center',
+    },
+    endpointMarker: {
+      borderColor: colors.card,
+      borderRadius: 999,
+      borderWidth: 2,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+    },
+    endpointMarkerText: {
+      color: colors.primaryText,
+      fontSize: 12,
+      fontWeight: '900',
+    },
+    emptyCard: {
+      alignSelf: 'center',
+      backgroundColor: colors.surfaceOverlay,
+      borderRadius: 24,
+      gap: 6,
+      marginHorizontal: 24,
+      marginTop: 92,
+      padding: 18,
+    },
+    emptyText: {
+      color: colors.mutedText,
+      lineHeight: 20,
+    },
+    emptyTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '800',
+    },
+    iconButton: {
+      backgroundColor: colors.surfaceOverlay,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    iconButtonText: {
+      color: colors.text,
+      fontWeight: '800',
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      flex: 1,
+      justifyContent: 'center',
+    },
+    loadingText: {
+      color: colors.text,
+      marginTop: 12,
+    },
+    map: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    menuButton: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceOverlay,
+      borderRadius: 999,
+      height: 42,
+      justifyContent: 'center',
+      width: 42,
+    },
+    menuButtonText: {
+      color: colors.text,
+      fontSize: 34,
+      fontWeight: '900',
+      lineHeight: 34,
+      transform: [{ translateY: -1 }],
+    },
+    menuCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 22,
+      borderWidth: 1,
+      overflow: 'hidden',
+      position: 'absolute',
+      right: 16,
+      top: 66,
+      width: 190,
+      zIndex: 3,
+    },
+    menuScrim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.scrim,
+      zIndex: 1,
+    },
+    menuItem: {
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    menuItemText: {
+      color: colors.text,
+      fontWeight: '800',
+    },
+    message: {
+      color: colors.mutedText,
+      lineHeight: 20,
+    },
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'space-between',
+    },
+    permissionButton: {
+      alignItems: 'center',
+      backgroundColor: colors.danger,
+      borderRadius: 999,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    permissionButtonText: {
+      color: colors.primaryText,
+      fontWeight: '900',
+    },
+    permissionCard: {
+      alignSelf: 'center',
+      backgroundColor: colors.dangerSurface,
+      borderColor: colors.danger,
+      borderRadius: 24,
+      borderWidth: 1,
+      gap: 10,
+      marginHorizontal: 20,
+      marginTop: 92,
+      padding: 16,
+    },
+    permissionSettingsBox: {
+      backgroundColor: colors.dangerSurface,
+      borderColor: colors.danger,
+      borderRadius: 20,
+      borderWidth: 1,
+      gap: 10,
+      padding: 14,
+    },
+    permissionText: {
+      color: colors.mutedText,
+      lineHeight: 20,
+    },
+    permissionTitle: {
+      color: colors.danger,
+      fontSize: 17,
+      fontWeight: '900',
+    },
+    primaryButton: {
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 999,
+      flex: 1,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+    },
+    primaryButtonText: {
+      color: colors.primaryText,
+      fontWeight: '900',
+    },
+    secondaryButton: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderColor: colors.primary,
+      borderRadius: 999,
+      borderWidth: 1,
+      minWidth: 92,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    secondaryButtonText: {
+      color: colors.primary,
+      fontWeight: '900',
+    },
+    rightControls: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    settingsAction: {
+      backgroundColor: colors.cardStrong,
+      borderRadius: 18,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    settingsActionText: {
+      color: colors.primary,
+      fontWeight: '900',
+    },
+    settingsCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 24,
+      borderWidth: 1,
+      gap: 14,
+      padding: 16,
+    },
+    settingsDescription: {
+      color: colors.mutedText,
+      lineHeight: 20,
+    },
+    settingsList: {
+      gap: 12,
+      padding: 16,
+      paddingTop: 0,
+    },
+    settingsStatusRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    settingsStatusText: {
+      color: colors.text,
+      fontWeight: '900',
+    },
+    settingsTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '900',
+    },
+    settingsToggleRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 14,
+    },
+    settingsToggleTextColumn: {
+      flex: 1,
+      gap: 8,
+    },
+    stat: {
+      color: colors.text,
+      fontWeight: '800',
+    },
+    statsRow: {
+      flexDirection: 'row',
+      gap: 16,
+    },
+    statusDot: {
+      backgroundColor: colors.border,
+      borderRadius: 999,
+      height: 9,
+      width: 9,
+    },
+    statusDotActive: {
+      backgroundColor: colors.primary,
+    },
+    statusPill: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceOverlay,
+      borderRadius: 999,
+      flexDirection: 'row',
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    statusText: {
+      color: colors.text,
+      fontWeight: '900',
+    },
+    topBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      zIndex: 2,
+    },
+  });
+}

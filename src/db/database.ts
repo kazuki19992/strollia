@@ -32,6 +32,12 @@ export async function initializeDatabase(): Promise<void> {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 

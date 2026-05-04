@@ -208,3 +208,13 @@ GPSログは端末内に保存し、ユーザーの明示操作なしに外部�
 ## 10. 参考資料
 
 - Expo SQLite: https://docs.expo.dev/versions/latest/sdk/sqlite/
+
+## 11. 設定保存
+
+アプリ設定は `app_settings` テーブルに保存する。
+
+初期設定キーは以下とする。
+
+| キー | 型 | 説明 |
+| --- | --- | --- |
+| `keepScreenAwake` | boolean | アプリがフォアグラウンドの場合に画面ロックを抑止するか |

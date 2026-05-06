@@ -477,6 +477,16 @@ export function createStyles(theme: AppTheme) {
       color: colors.primaryText,
       fontWeight: '900',
     },
+    premiumBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 999,
+      color: colors.primaryText,
+      fontSize: 11,
+      fontWeight: '900',
+      overflow: 'hidden',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
     screenTransition: {
       flex: 1,
     },
@@ -528,6 +538,16 @@ export function createStyles(theme: AppTheme) {
     settingsActionText: {
       color: colors.primary,
       fontWeight: '900',
+    },
+    settingsActionTextColumn: {
+      flex: 1,
+      gap: 5,
+    },
+    settingsActionTitleRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
     },
     settingsCard: {
       backgroundColor: colors.card,

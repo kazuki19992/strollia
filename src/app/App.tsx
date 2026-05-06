@@ -40,6 +40,8 @@ import {
 } from '../features/location/locationPermission';
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
+import { PREMIUM_CUSTOMIZATION_ITEMS, PremiumCustomizationItem } from '../features/premium/premiumCatalog';
+import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAccess';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
@@ -119,6 +121,7 @@ export default function App() {
     () => paginateMapPhotos(selectedPhotoCluster?.photos ?? []),
     [selectedPhotoCluster],
   );
+  const premiumAccessState = useMemo(() => getDefaultPremiumAccessState(), []);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
@@ -593,6 +596,42 @@ export default function App() {
   }
 
   /**
+   * RevenueCat連携予定の有料カスタマイズ導線を表示する。
+   *
+   * @param item - ユーザーが選択したカスタマイズ項目。
+   * @returns なし。
+   */
+  function showPremiumCustomizationPlaceholder(item: PremiumCustomizationItem): void {
+    triggerSelectionHaptic();
+    Alert.alert(
+      item.title,
+      'Strollia Plusで開放予定のカスタマイズです。RevenueCat連携後に購入状態を確認して選択できるようにします。',
+    );
+  }
+
+  /**
+   * 設定画面に表示する有料カスタマイズ行を描画する。
+   *
+   * @param item - 描画する有料カスタマイズ項目。
+   * @returns 設定画面のアクション行。
+   */
+  function renderPremiumCustomizationAction(item: PremiumCustomizationItem) {
+    return (
+      <Pressable key={item.id} onPress={() => showPremiumCustomizationPlaceholder(item)} style={styles.settingsAction}>
+        <MaterialCommunityIcons name="lock-outline" size={20} color={theme.colors.primary} />
+        <View style={styles.settingsActionTextColumn}>
+          <View style={styles.settingsActionTitleRow}>
+            <Text style={styles.settingsActionText}>{item.title}</Text>
+            <Text style={styles.premiumBadge}>Plus</Text>
+          </View>
+          <Text style={styles.settingsDescription}>{item.description}</Text>
+        </View>
+      </Pressable>
+    );
+  }
+
+
+  /**
    * 全履歴ルートを表示するメイン地図画面を描画する。
    *
    * @returns メイン地図画面のReact要素。
@@ -846,6 +885,28 @@ export default function App() {
                 thumbColor={theme.colors.cardStrong}
               />
             </View>
+          </View>
+
+
+          <View style={styles.settingsCard}>
+            <View style={styles.settingsActionTitleRow}>
+              <Text style={styles.settingsTitle}>Strollia Plus</Text>
+              <Text style={styles.premiumBadge}>RevenueCat準備中</Text>
+            </View>
+            <Text style={styles.settingsDescription}>
+              ルート線の色や発光、現在地アイコン、アプリアイコン変更をPlus特典として用意します。現在は購入導線と設定保存の準備段階です。
+            </Text>
+            <View style={styles.settingsStatusRow}>
+              <MaterialCommunityIcons
+                name={premiumAccessState.isPlusActive ? 'check-decagram-outline' : 'lock-outline'}
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.settingsStatusText}>
+                {premiumAccessState.isPlusActive ? 'Plus有効' : 'Plus未加入'} / {premiumAccessState.entitlementId}
+              </Text>
+            </View>
+            {PREMIUM_CUSTOMIZATION_ITEMS.map((item) => renderPremiumCustomizationAction(item))}
           </View>
 
           <View style={styles.settingsCard}>

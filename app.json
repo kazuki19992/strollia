@@ -18,9 +18,11 @@
         "NSLocationWhenInUseUsageDescription": "すとろりあは、移動ルートを記録するために現在地を使用します。",
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
-        "NSLocationAlwaysUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。"
+        "NSLocationAlwaysUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
+        "NSPhotoLibraryUsageDescription": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。"
       },
-      "bundleIdentifier": "com.kazuki19992.strollia"
+      "bundleIdentifier": "com.kazuki19992.strollia",
+      "icon": "./assets/app.icon"
     },
     "android": {
       "adaptiveIcon": {
@@ -34,7 +36,8 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION"
+        "FOREGROUND_SERVICE_LOCATION",
+        "ACCESS_MEDIA_LOCATION"
       ]
     },
     "web": {
@@ -48,6 +51,16 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。",
+          "isAccessMediaLocationEnabled": true,
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ]
     ],

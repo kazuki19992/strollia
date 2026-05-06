@@ -1,6 +1,6 @@
 import { isRegionCenteredOnCoordinate } from '../followUserLocation';
 
-describe('isRegionCenteredOnCoordinate', () => {
+describe('現在地追従判定 isRegionCenteredOnCoordinate', () => {
   const region = {
     latitude: 35,
     longitude: 139,

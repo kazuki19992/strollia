@@ -24,7 +24,7 @@ function point(latitude: number, longitude: number): NewLocationPoint {
   };
 }
 
-describe('insertLocationPoint', () => {
+describe('GPSポイント保存 insertLocationPoint', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -44,7 +44,7 @@ describe('insertLocationPoint', () => {
   });
 });
 
-describe('deleteAllLogData', () => {
+describe('全ログ削除 deleteAllLogData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

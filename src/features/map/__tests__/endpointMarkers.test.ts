@@ -16,7 +16,7 @@ function point(id: number): LocationPoint {
   };
 }
 
-describe('getEndpointMarkers', () => {
+describe('日別ルート端点マーカー getEndpointMarkers', () => {
   it('ポイントがない場合はマーカーを返さない', () => {
     expect(getEndpointMarkers([])).toEqual([]);
   });

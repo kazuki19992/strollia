@@ -1,6 +1,6 @@
 import { darkTheme, getAppTheme, lightTheme } from '../theme';
 
-describe('getAppTheme', () => {
+describe('テーマ選択 getAppTheme', () => {
   it('OSがダークモードでない場合はライトテーマを返す', () => {
     expect(getAppTheme('light')).toBe(lightTheme);
     expect(getAppTheme(null)).toBe(lightTheme);

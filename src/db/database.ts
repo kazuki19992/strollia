@@ -1,7 +1,13 @@
 import * as SQLite from 'expo-sqlite';
 
+/** アプリ内に永続化されるStrollia用SQLite接続。 */
 export const db = SQLite.openDatabaseSync('strollia.db');
 
+/**
+ * アプリ起動時に必要なテーブルとインデックスを作成する。
+ *
+ * SQLiteには軽量な永続化だけを任せ、スキーマ更新はこの関数に集約する。
+ */
 export async function initializeDatabase(): Promise<void> {
   await db.execAsync(`
     PRAGMA journal_mode = WAL;

@@ -15,7 +15,7 @@ function point(latitude: number, longitude: number, accuracy: number | null = 10
   };
 }
 
-describe('shouldSaveLocationPoint', () => {
+describe('GPSポイント保存判定 shouldSaveLocationPoint', () => {
   it('水平方向の精度が低いポイントは破棄する', () => {
     expect(shouldSaveLocationPoint(point(35, 139, 51), null)).toBe(false);
   });

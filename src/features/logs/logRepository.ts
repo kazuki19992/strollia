@@ -2,6 +2,7 @@ import { db } from '../../db/database';
 import { DailyLogSummary, LocationPoint, NewLocationPoint } from '../../types/gps';
 import { distanceMeters } from '../../utils/distance';
 
+/** DB列名をアプリ内のcamelCaseプロパティへ揃える共通SELECT句。 */
 const pointColumns = `
   id,
   recorded_at as recordedAt,
@@ -15,6 +16,7 @@ const pointColumns = `
   altitude_accuracy as altitudeAccuracy
 `;
 
+/** GPSポイントを保存し、日別サマリーの点数と距離を同時に更新する。 */
 export async function insertLocationPoint(point: NewLocationPoint): Promise<void> {
   const now = new Date().toISOString();
   const previousPoint = await getLatestLocationPointByDate(point.localDate);
@@ -81,6 +83,7 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<void
   });
 }
 
+/** 日別ログの一覧表示に使うサマリーを新しい日付順で取得する。 */
 export async function getDailyLogs(): Promise<DailyLogSummary[]> {
   return db.getAllAsync<DailyLogSummary>(
     `SELECT
@@ -95,6 +98,7 @@ export async function getDailyLogs(): Promise<DailyLogSummary[]> {
 }
 
 
+/** 日別距離を差分加算するため、同じ日の最後の保存点を取得する。 */
 async function getLatestLocationPointByDate(localDate: string): Promise<LocationPoint | null> {
   const point = await db.getFirstAsync<LocationPoint>(
     `SELECT ${pointColumns}
@@ -108,6 +112,7 @@ async function getLatestLocationPointByDate(localDate: string): Promise<Location
   return point ?? null;
 }
 
+/** バックグラウンドタスクの保存フィルタで使う直近の保存済みGPS点を取得する。 */
 export async function getLatestLocationPoint(): Promise<LocationPoint | null> {
   const point = await db.getFirstAsync<LocationPoint>(
     `SELECT ${pointColumns}
@@ -119,6 +124,7 @@ export async function getLatestLocationPoint(): Promise<LocationPoint | null> {
   return point ?? null;
 }
 
+/** メインマップに表示する全期間のGPSポイントを時系列で取得する。 */
 export async function getAllLocationPoints(): Promise<LocationPoint[]> {
   return db.getAllAsync<LocationPoint>(
     `SELECT ${pointColumns}
@@ -127,6 +133,7 @@ export async function getAllLocationPoints(): Promise<LocationPoint[]> {
   );
 }
 
+/** 日別ログ画面で使う指定日のGPSポイントを時系列で取得する。 */
 export async function getLocationPointsByDate(localDate: string): Promise<LocationPoint[]> {
   return db.getAllAsync<LocationPoint>(
     `SELECT ${pointColumns}
@@ -137,6 +144,7 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
   );
 }
 
+/** ユーザー操作による全GPSログ削除を1トランザクションで実行する。 */
 export async function deleteAllLogData(): Promise<void> {
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM location_points');

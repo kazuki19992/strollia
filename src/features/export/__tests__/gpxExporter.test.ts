@@ -28,7 +28,7 @@ const points: LocationPoint[] = [
   },
 ];
 
-describe('buildGpx', () => {
+describe('GPX生成 buildGpx', () => {
   it('位置情報ポイントをGPXのトラックポイントとして出力する', () => {
     const gpx = buildGpx(points, 'Strollia 2026-05-04');
 

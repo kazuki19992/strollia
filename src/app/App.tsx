@@ -47,14 +47,21 @@ import { AppTheme, getAppTheme } from '../theme/theme';
 import { formatTime } from '../utils/date';
 import { totalDistanceMeters } from '../utils/distance';
 
+/** ルートライブラリを使わない単一App内の簡易画面状態。 */
 type ScreenMode = 'map' | 'dailyLogs' | 'settings';
+/** 自動GPS記録の開始状態をユーザー向け文言へ変換するための状態。 */
 type AutoStartStatus = 'checking' | 'recording' | 'needsPermission' | 'failed';
 
+/** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
+/** 画面ON維持設定をSQLiteへ保存するキー。 */
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
+/** メニュー開閉が軽く感じる短めのアニメーション時間。 */
 const MENU_ANIMATION_DURATION_MS = 220;
+/** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
 
+/** 権限状態を取得する前にUIが参照する安全な初期値。 */
 const EMPTY_PERMISSION_STATE: LocationPermissionState = {
   foregroundGranted: false,
   backgroundGranted: false,
@@ -62,6 +69,7 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
   canAskBackground: true,
 };
 
+/** Strolliaの画面状態、地図表示、端末API連携を束ねるルートコンポーネント。 */
 export default function App() {
   const colorScheme = useColorScheme();
   const theme = useMemo(() => getAppTheme(colorScheme), [colorScheme]);
@@ -107,6 +115,7 @@ export default function App() {
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
+  /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
   const refreshData = useCallback(async () => {
     const [logs, allPoints, recording, permissions] = await Promise.all([
       getDailyLogs(),
@@ -123,6 +132,7 @@ export default function App() {
     return { logs, allPoints, recording, permissions };
   }, []);
 
+  /** GPSバックグラウンド記録を開始し、結果をユーザー向けメッセージへ反映する。 */
   const startRecording = useCallback(
     async (reason: 'auto' | 'manual' = 'manual'): Promise<void> => {
       try {
@@ -139,6 +149,7 @@ export default function App() {
     [refreshData],
   );
 
+  /** GPSバックグラウンド記録を停止し、最新状態を再読み込みする。 */
   const stopRecording = useCallback(async (): Promise<void> => {
     try {
       await stopBackgroundLocationRecording();
@@ -150,6 +161,7 @@ export default function App() {
     }
   }, [refreshData]);
 
+  /** 権限状態に応じてアプリ内要求またはOS設定画面への誘導を行う。 */
   const requestLocationPermission = useCallback(async (): Promise<void> => {
     if (shouldOpenSettingsForPermission) {
       await Linking.openSettings();
@@ -159,6 +171,7 @@ export default function App() {
     await startRecording('manual');
   }, [shouldOpenSettingsForPermission, startRecording]);
 
+  /** 全期間のGPSログをGPXとして共有する。 */
   const exportAllLogs = useCallback(async (): Promise<void> => {
     try {
       await shareGpx(points, 'all');
@@ -168,6 +181,7 @@ export default function App() {
   }, [points]);
 
 
+  /** 確認ダイアログを挟んで保存済みGPSログを全削除する。 */
   const deleteAllData = useCallback(async (): Promise<void> => {
     Alert.alert('すべてのデータを削除', '保存済みのGPSログをすべて削除します。この操作は取り消せません。', [
       { text: 'キャンセル', style: 'cancel' },
@@ -188,6 +202,7 @@ export default function App() {
     ]);
   }, [refreshData]);
 
+  /** 画面ON維持設定をUI状態とSQLiteの両方へ反映する。 */
   const updateKeepScreenAwake = useCallback(async (enabled: boolean): Promise<void> => {
     setKeepScreenAwake(enabled);
     await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
@@ -274,6 +289,7 @@ export default function App() {
 
 
 
+  // 逆ジオコーディングは現在地ピルの市区町村表示にだけ使う。
   useEffect(() => {
     if (!userCoordinate || appState !== 'active') {
       return;
@@ -310,6 +326,7 @@ export default function App() {
     }).start();
   }, [isFollowingUserLocation, recenterButtonOpacity]);
 
+  // 閉じる時はアニメーション完了までメニューをアンマウントしない。
   useEffect(() => {
     if (isMenuOpen) {
       setIsMenuVisible(true);
@@ -349,6 +366,7 @@ export default function App() {
   }, [renderRouteCoordinates, screenMode, userCoordinate]);
 
 
+  /** 現在地更新を受け取り、追従中であれば地図中心も更新する。 */
   function handleUserLocationChange(event: UserLocationChangeEvent): void {
     const coordinate = event.nativeEvent.coordinate;
 
@@ -364,10 +382,12 @@ export default function App() {
     }
   }
 
+  /** ユーザーが地図を動かしたら現在地追従を一時停止する。 */
   function handleMapPanDrag(): void {
     setIsFollowingUserLocation(false);
   }
 
+  /** 表示範囲を保存し、中心が現在地付近に戻った場合は追従を再開する。 */
   function handleRegionChangeComplete(region: Region): void {
     setVisibleRegion(region);
 
@@ -380,6 +400,7 @@ export default function App() {
     }
   }
 
+  /** 指定座標が画面中心になるよう地図を移動する。 */
   function centerOnCoordinate(coordinate: LatLng, animated = true): void {
     mapRef.current?.animateToRegion(
       {
@@ -392,6 +413,7 @@ export default function App() {
     );
   }
 
+  /** 現在地ボタン押下時に追従を再開して現在地へ戻す。 */
   function recenterOnUserLocation(): void {
     if (!userCoordinate) {
       return;
@@ -401,14 +423,17 @@ export default function App() {
     centerOnCoordinate(userCoordinate);
   }
 
+  /** 軽い選択操作に使うタプティックを鳴らす。 */
   function triggerSelectionHaptic(): void {
     Haptics.selectionAsync().catch(() => undefined);
   }
 
+  /** 画面遷移など少し強い操作に使うタプティックを鳴らす。 */
   function triggerLightImpactHaptic(): void {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
   }
 
+  /** 画面遷移時にメニュー状態とアニメーション値を即座に初期化する。 */
   function resetMenuImmediately(): void {
     menuProgress.stopAnimation();
     menuProgress.setValue(0);
@@ -416,11 +441,13 @@ export default function App() {
     setIsMenuVisible(false);
   }
 
+  /** 右上メニューを開閉する。 */
   function toggleMenu(): void {
     triggerSelectionHaptic();
     setIsMenuOpen((open) => !open);
   }
 
+  /** 背景タップなどでメニューを閉じる。通常操作では閉じアニメーションを残す。 */
   function closeMenu(): void {
     if (isMenuOpen) {
       triggerSelectionHaptic();
@@ -429,37 +456,44 @@ export default function App() {
     setIsMenuOpen(false);
   }
 
+  /** メニューから別画面へ移動する。背景のちらつきを避けるため即時アンマウントはしない。 */
   function navigateToScreen(nextScreenMode: ScreenMode): void {
     triggerLightImpactHaptic();
     setIsMenuOpen(false);
     setScreenMode(nextScreenMode);
   }
 
+  /** 日ごとの記録画面へ移動する。 */
   function openDailyLogs(): void {
     navigateToScreen('dailyLogs');
   }
 
+  /** 地図画面へ戻る。戻る時は残留メニューを確実に掃除する。 */
   function openMap(): void {
     triggerLightImpactHaptic();
     resetMenuImmediately();
     setScreenMode('map');
   }
 
+  /** 設定画面へ移動する。 */
   function openSettings(): void {
     navigateToScreen('settings');
   }
 
+  /** 標準地図とラベル付き航空写真を切り替える。 */
   function toggleMapType(): void {
     triggerSelectionHaptic();
     setMapType((currentMapType) => (currentMapType === 'standard' ? 'hybrid' : 'standard'));
     setIsMenuOpen(false);
   }
 
+  /** 未実装のインポート導線として予定メッセージを表示する。 */
   function showImportPlaceholder(): void {
     triggerSelectionHaptic();
     Alert.alert('インポート', 'GPX / KML インポートは今後実装予定です。');
   }
 
+  /** 全履歴ルートを表示するメイン地図画面を描画する。 */
   function renderMapScreen() {
     return (
       <View style={styles.container}>
@@ -571,6 +605,7 @@ export default function App() {
     );
   }
 
+  /** 日別ログ一覧画面を描画する。 */
   function renderDailyLogsScreen() {
     return (
       <SafeAreaView style={styles.dailyContainer}>
@@ -598,6 +633,7 @@ export default function App() {
     );
   }
 
+  /** GPS記録、画面ON維持、データ操作をまとめた設定画面を描画する。 */
   function renderSettingsScreen() {
     return (
       <SafeAreaView style={styles.dailyContainer}>
@@ -714,6 +750,7 @@ export default function App() {
   );
 }
 
+/** 自動記録状態を設定画面向けの説明文へ変換する。 */
 function getAutoRecordNote(status: AutoStartStatus): string {
   switch (status) {
     case 'checking':
@@ -727,6 +764,7 @@ function getAutoRecordNote(status: AutoStartStatus): string {
   }
 }
 
+/** 1日分の記録サマリーとミニマップを表示するカード。 */
 function DailyLogCard({ log, styles, theme }: { log: DailyLogSummary; styles: ReturnType<typeof createStyles>; theme: AppTheme }) {
   const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
 
@@ -785,6 +823,7 @@ function DailyLogCard({ log, styles, theme }: { log: DailyLogSummary; styles: Re
   );
 }
 
+/** 現在のテーマから画面全体のStyleSheetを生成する。 */
 function createStyles(theme: AppTheme) {
   const { colors } = theme;
 

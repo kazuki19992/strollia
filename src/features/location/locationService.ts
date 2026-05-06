@@ -3,6 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 
 import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions } from './locationTrackingConfig';
 
+/** フォアグラウンド位置情報権限を確認し、必要ならOSダイアログで要求する。 */
 export async function ensureForegroundLocationPermission(): Promise<boolean> {
   const current = await Location.getForegroundPermissionsAsync();
 
@@ -15,6 +16,7 @@ export async function ensureForegroundLocationPermission(): Promise<boolean> {
 }
 
 
+/** バックグラウンド位置情報権限を確認し、前提となるフォアグラウンド権限から順に要求する。 */
 export async function ensureBackgroundLocationPermission(): Promise<boolean> {
   const foregroundGranted = await ensureForegroundLocationPermission();
 
@@ -32,6 +34,7 @@ export async function ensureBackgroundLocationPermission(): Promise<boolean> {
   return requested.granted;
 }
 
+/** バックグラウンドGPS記録を開始する。すでに開始済みの場合は何もしない。 */
 export async function startBackgroundLocationRecording(): Promise<void> {
   const available = await TaskManager.isAvailableAsync();
 
@@ -54,6 +57,7 @@ export async function startBackgroundLocationRecording(): Promise<void> {
   await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
 }
 
+/** バックグラウンドGPS記録を停止する。未開始の場合は何もしない。 */
 export async function stopBackgroundLocationRecording(): Promise<void> {
   const alreadyStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
 
@@ -64,6 +68,7 @@ export async function stopBackgroundLocationRecording(): Promise<void> {
   await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
 }
 
+/** Expo Locationのバックグラウンドタスクが開始済みか返す。 */
 export async function isBackgroundLocationRecording(): Promise<boolean> {
   return Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
 }

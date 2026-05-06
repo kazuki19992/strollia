@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { loadGeotaggedPhotos, MapPhoto } from '../../features/photos/photoLibrary';
 
@@ -23,11 +23,15 @@ export function usePhotoMapOverlay(enabled: boolean): PhotoMapOverlayState {
   const [photos, setPhotos] = useState<MapPhoto[]>([]);
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [photoErrorMessage, setPhotoErrorMessage] = useState<string | null>(null);
+  const photoLoadSeqRef = useRef(0);
 
   const reloadPhotos = useCallback(async (): Promise<void> => {
+    const loadSeq = ++photoLoadSeqRef.current;
+
     if (!enabled) {
       setPhotos([]);
       setPhotoErrorMessage(null);
+      setIsLoadingPhotos(false);
       return;
     }
 
@@ -35,12 +39,20 @@ export function usePhotoMapOverlay(enabled: boolean): PhotoMapOverlayState {
     setPhotoErrorMessage(null);
 
     try {
-      setPhotos(await loadGeotaggedPhotos());
+      const loadedPhotos = await loadGeotaggedPhotos();
+
+      if (loadSeq === photoLoadSeqRef.current) {
+        setPhotos(loadedPhotos);
+      }
     } catch (error: unknown) {
-      setPhotos([]);
-      setPhotoErrorMessage(error instanceof Error ? error.message : '写真の読み込みに失敗しました。');
+      if (loadSeq === photoLoadSeqRef.current) {
+        setPhotos([]);
+        setPhotoErrorMessage(error instanceof Error ? error.message : '写真の読み込みに失敗しました。');
+      }
     } finally {
-      setIsLoadingPhotos(false);
+      if (loadSeq === photoLoadSeqRef.current) {
+        setIsLoadingPhotos(false);
+      }
     }
   }, [enabled]);
 

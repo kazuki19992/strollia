@@ -65,12 +65,16 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     sortBy: [[MediaLibrary.SortBy.creationTime, false]],
   });
 
-  const details = await Promise.all(
+  const details = await Promise.allSettled(
     page.assets.map((asset) => MediaLibrary.getAssetInfoAsync(asset, { shouldDownloadFromNetwork: false })),
   );
 
-  return details.flatMap((asset) => {
-    const photo = toMapPhoto(asset);
+  return details.flatMap((result) => {
+    if (result.status !== 'fulfilled') {
+      return [];
+    }
+
+    const photo = toMapPhoto(result.value);
     return photo ? [photo] : [];
   });
 }

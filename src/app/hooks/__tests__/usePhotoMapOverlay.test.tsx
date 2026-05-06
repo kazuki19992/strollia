@@ -67,4 +67,40 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     expect(loadGeotaggedPhotos).not.toHaveBeenCalled();
     expect(states.at(-1)?.photos).toEqual([]);
   });
+
+  it('読み込み中に無効化された場合は古い読み込み結果を反映しない', async () => {
+    const photo: MapPhoto = {
+      id: 'photo-1',
+      uri: 'file:///photo-1.jpg',
+      latitude: 35,
+      longitude: 139,
+      creationTime: 1,
+      width: 100,
+      height: 100,
+    };
+    const states: PhotoMapOverlayState[] = [];
+    let resolvePhotos: (photos: MapPhoto[]) => void = () => undefined;
+    (loadGeotaggedPhotos as jest.Mock).mockReturnValue(
+      new Promise<MapPhoto[]>((resolve) => {
+        resolvePhotos = resolve;
+      }),
+    );
+
+    let renderer: any;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<HookProbe enabled onState={(state) => states.push(state)} />);
+    });
+
+    await act(async () => {
+      renderer.update(<HookProbe enabled={false} onState={(state) => states.push(state)} />);
+    });
+
+    await act(async () => {
+      resolvePhotos([photo]);
+    });
+
+    expect(states.at(-1)?.photos).toEqual([]);
+    expect(states.at(-1)?.isLoadingPhotos).toBe(false);
+  });
 });

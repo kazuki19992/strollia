@@ -23,7 +23,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -51,6 +51,7 @@ import { createStyles } from './appStyles';
 import { getAutoRecordNote } from './appText';
 import { AutoStartStatus, ScreenMode } from './appTypes';
 import { DailyLogCard } from './components/DailyLogCard';
+import { PhotoClusterMarker } from './components/PhotoClusterMarker';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { useMenuAnimation } from './hooks/useMenuAnimation';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
@@ -84,6 +85,7 @@ export default function App() {
   const autoStartAttemptedRef = useRef(false);
   const recenterButtonOpacity = useRef(new Animated.Value(0)).current;
   const screenTransitionOpacity = useRef(new Animated.Value(1)).current;
+  const isUpdatingPhotoSettingRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -95,6 +97,7 @@ export default function App() {
   const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
+  const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
@@ -219,26 +222,38 @@ export default function App() {
    * @returns なし。
    */
   const updateShowPhotosOnMap = useCallback(async (enabled: boolean): Promise<void> => {
-    if (!enabled) {
-      setShowPhotosOnMap(false);
-      await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+    if (isUpdatingPhotoSettingRef.current) {
       return;
     }
 
-    const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+    isUpdatingPhotoSettingRef.current = true;
+    setIsUpdatingPhotoSetting(true);
 
-    if (!hasFullPhotoAccess(permission)) {
-      setShowPhotosOnMap(false);
-      await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
-      Alert.alert(
-        '写真のフルアクセスが必要です',
-        'マップ上に写真を表示するには、写真ライブラリへのフルアクセスを許可してください。限定アクセスではジオタグ付き写真を十分に読み取れません。',
-      );
-      return;
+    try {
+      if (!enabled) {
+        setShowPhotosOnMap(false);
+        await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+        return;
+      }
+
+      const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+
+      if (!hasFullPhotoAccess(permission)) {
+        setShowPhotosOnMap(false);
+        await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+        Alert.alert(
+          '写真のフルアクセスが必要です',
+          'マップ上に写真を表示するには、写真ライブラリへのフルアクセスを許可してください。限定アクセスではジオタグ付き写真を十分に読み取れません。',
+        );
+        return;
+      }
+
+      setShowPhotosOnMap(true);
+      await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, true);
+    } finally {
+      isUpdatingPhotoSettingRef.current = false;
+      setIsUpdatingPhotoSetting(false);
     }
-
-    setShowPhotosOnMap(true);
-    await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, true);
   }, []);
 
   /**
@@ -494,22 +509,6 @@ export default function App() {
   }
 
   /**
-   * 写真クラスタ内の写真枚数を示すバッジ文言を作る。
-   *
-   * @param cluster - 対象の写真クラスタ。
-   * @returns 追加写真枚数。単体写真の場合はnull。
-   */
-  function getPhotoClusterBadgeLabel(cluster: MapPhotoCluster): string | null {
-    const hiddenPhotoCount = cluster.photos.length - 1;
-
-    if (hiddenPhotoCount <= 0) {
-      return null;
-    }
-
-    return `+${hiddenPhotoCount}`;
-  }
-
-  /**
    * 写真マーカーの単体/複数タップを処理する。
    *
    * @param cluster - タップされた写真クラスタ。
@@ -525,45 +524,6 @@ export default function App() {
     }
 
     setSelectedPhotoCluster(cluster);
-  }
-
-  /**
-   * 地図上に表示する写真クラスタマーカーを描画する。
-   *
-   * @param cluster - 描画対象の写真クラスタ。
-   * @returns 写真クラスタのMarker要素。
-   */
-  function renderPhotoClusterMarker(cluster: MapPhotoCluster) {
-    const representativePhoto = cluster.photos[0];
-    const badgeLabel = getPhotoClusterBadgeLabel(cluster);
-    const isCluster = cluster.photos.length > 1;
-
-    if (!representativePhoto) {
-      return null;
-    }
-
-    return (
-      <Marker
-        key={cluster.id}
-        coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
-        anchor={{ x: 0.5, y: 1 }}
-        identifier={cluster.id}
-        tracksViewChanges
-        zIndex={cluster.photos.length}
-        onPress={() => handlePhotoClusterPress(cluster)}
-      >
-        <View collapsable={false} style={isCluster ? styles.photoClusterMarkerContainer : styles.photoMarkerContainer}>
-          <View collapsable={false} style={isCluster ? styles.photoClusterMarkerBubble : styles.photoMarkerBubble}>
-            <Image source={{ uri: representativePhoto.uri }} style={styles.photoMarkerImage} />
-          </View>
-          {badgeLabel ? (
-            <View style={styles.photoClusterBadge}>
-              <Text style={styles.photoClusterBadgeText}>{badgeLabel}</Text>
-            </View>
-          ) : null}
-        </View>
-      </Marker>
-    );
   }
 
   /** 軽い選択操作に使うタプティックを鳴らす。 */
@@ -657,7 +617,10 @@ export default function App() {
           {visibleRouteCoordinates.length > 1 && (
             <Polyline coordinates={visibleRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
           )}
-          {showPhotosOnMap && photoClusters.map((cluster) => renderPhotoClusterMarker(cluster))}
+          {showPhotosOnMap &&
+            photoClusters.map((cluster) => (
+              <PhotoClusterMarker key={cluster.id} cluster={cluster} styles={styles} onPress={handlePhotoClusterPress} />
+            ))}
         </MapView>
 
         <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
@@ -873,6 +836,7 @@ export default function App() {
               </View>
               <Switch
                 value={showPhotosOnMap}
+                disabled={isUpdatingPhotoSetting}
                 onValueChange={(value) => {
                   updateShowPhotosOnMap(value).catch((error: unknown) => {
                     Alert.alert('写真設定失敗', error instanceof Error ? error.message : '写真表示設定を保存できませんでした。');

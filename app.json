@@ -57,7 +57,6 @@
         "expo-media-library",
         {
           "photosPermission": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。",
-          "savePhotosPermission": false,
           "isAccessMediaLocationEnabled": true,
           "granularPermissions": [
             "photo"

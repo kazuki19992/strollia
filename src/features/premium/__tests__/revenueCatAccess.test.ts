@@ -1,10 +1,15 @@
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from '../premiumCatalog';
-import { getDefaultPremiumAccessState, resolvePremiumAccessState, RevenueCatClient } from '../revenueCatAccess';
+import {
+  DEVELOPMENT_PREMIUM_ACCESS_ENABLED,
+  getDefaultPremiumAccessState,
+  resolvePremiumAccessState,
+  RevenueCatClient,
+} from '../revenueCatAccess';
 
 describe('RevenueCat課金状態 revenueCatAccess', () => {
-  it('未接続時はPlus無効の既定状態を返す', () => {
+  it('未接続時は開発用フラグに応じた既定状態を返す', () => {
     expect(getDefaultPremiumAccessState()).toEqual({
-      isPlusActive: false,
+      isPlusActive: DEVELOPMENT_PREMIUM_ACCESS_ENABLED,
       entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
     });
   });

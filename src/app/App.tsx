@@ -2,6 +2,7 @@ import { AntDesign, Entypo, Feather, MaterialCommunityIcons } from '@expo/vector
 import * as Haptics from 'expo-haptics';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Location from 'expo-location';
+import * as MediaLibrary from 'expo-media-library';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -12,6 +13,8 @@ import {
   Linking,
   Animated,
   Easing,
+  Image,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -20,7 +23,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import MapView, { Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -38,6 +41,7 @@ import {
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
+import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import type { LatLng, MapType } from 'react-native-maps';
 import { getAppTheme } from '../theme/theme';
@@ -48,12 +52,15 @@ import { AutoStartStatus, ScreenMode } from './appTypes';
 import { DailyLogCard } from './components/DailyLogCard';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { useMenuAnimation } from './hooks/useMenuAnimation';
+import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
 import { getNextMapType } from './mapType';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
 /** 画面ON維持設定をSQLiteへ保存するキー。 */
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
+/** マップ上の写真表示設定をSQLiteへ保存するキー。 */
+const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 /** メニュー開閉が軽く感じる短めのアニメーション時間。 */
 const MENU_ANIMATION_DURATION_MS = 220;
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
@@ -86,6 +93,8 @@ export default function App() {
   const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
   const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
+  const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
@@ -99,6 +108,7 @@ export default function App() {
     visibleRegion,
   );
   const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
+  const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
@@ -196,13 +206,46 @@ export default function App() {
   }, []);
 
   /**
+   * 写真表示設定を切り替える。初回ON時は写真ライブラリのフルアクセス権限を要求する。
+   *
+   * @param enabled - マップ上の写真表示を有効にするかどうか。
+   * @returns なし。
+   */
+  const updateShowPhotosOnMap = useCallback(async (enabled: boolean): Promise<void> => {
+    if (!enabled) {
+      setShowPhotosOnMap(false);
+      await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+      return;
+    }
+
+    const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+
+    if (!hasFullPhotoAccess(permission)) {
+      setShowPhotosOnMap(false);
+      await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+      Alert.alert(
+        '写真のフルアクセスが必要です',
+        'マップ上に写真を表示するには、写真ライブラリへのフルアクセスを許可してください。限定アクセスではジオタグ付き写真を十分に読み取れません。',
+      );
+      return;
+    }
+
+    setShowPhotosOnMap(true);
+    await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, true);
+  }, []);
+
+  /**
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
    */
   useEffect(() => {
     initializeDatabase()
       .then(async () => {
-        const savedKeepScreenAwake = await getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false);
+        const [savedKeepScreenAwake, savedShowPhotosOnMap] = await Promise.all([
+          getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
+          getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
+        ]);
         setKeepScreenAwake(savedKeepScreenAwake);
+        setShowPhotosOnMap(savedShowPhotosOnMap);
         await refreshData();
       })
       .catch((error: unknown) => {
@@ -534,6 +577,19 @@ export default function App() {
           {visibleRouteCoordinates.length > 1 && (
             <Polyline coordinates={visibleRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
           )}
+          {showPhotosOnMap &&
+            photos.map((photo) => (
+              <Marker
+                key={photo.id}
+                coordinate={{ latitude: photo.latitude, longitude: photo.longitude }}
+                anchor={{ x: 0.5, y: 1 }}
+                onPress={() => setSelectedPhoto(photo)}
+              >
+                <View style={styles.photoMarkerBubble}>
+                  <Image source={{ uri: photo.uri }} style={styles.photoMarkerImage} />
+                </View>
+              </Marker>
+            ))}
         </MapView>
 
         <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
@@ -602,6 +658,18 @@ export default function App() {
               <Pressable onPress={requestLocationPermission} style={styles.permissionButton}>
                 <Text style={styles.permissionButtonText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
               </Pressable>
+            </View>
+          )}
+
+          {showPhotosOnMap && photoErrorMessage && (
+            <View style={styles.photoStatusCard}>
+              <Text style={styles.permissionText}>{photoErrorMessage}</Text>
+            </View>
+          )}
+
+          {showPhotosOnMap && isLoadingPhotos && (
+            <View style={styles.photoStatusCard}>
+              <Text style={styles.permissionText}>ジオタグ付き写真を読み込んでいます...</Text>
             </View>
           )}
 
@@ -729,6 +797,25 @@ export default function App() {
           </View>
 
           <View style={styles.settingsCard}>
+            <View style={styles.settingsToggleRow}>
+              <View style={styles.settingsToggleTextColumn}>
+                <Text style={styles.settingsTitle}>マップ上に写真を表示</Text>
+                <Text style={styles.settingsDescription}>ジオタグ付き写真だけを地図上に小さく表示します。初回ON時に写真ライブラリのフルアクセスを要求します。</Text>
+              </View>
+              <Switch
+                value={showPhotosOnMap}
+                onValueChange={(value) => {
+                  updateShowPhotosOnMap(value).catch((error: unknown) => {
+                    Alert.alert('写真設定失敗', error instanceof Error ? error.message : '写真表示設定を保存できませんでした。');
+                  });
+                }}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor={theme.colors.cardStrong}
+              />
+            </View>
+          </View>
+
+          <View style={styles.settingsCard}>
             <Text style={styles.settingsTitle}>データ</Text>
             <Text style={styles.settingsDescription}>GPSログのバックアップや他アプリ連携に使います。</Text>
             <Pressable onPress={exportAllLogs} style={styles.settingsAction}>
@@ -774,6 +861,14 @@ export default function App() {
         {screenMode === 'dailyLogs' && renderDailyLogsScreen()}
         {screenMode === 'settings' && renderSettingsScreen()}
       </Animated.View>
+      <Modal visible={selectedPhoto != null} transparent animationType="fade" onRequestClose={() => setSelectedPhoto(null)}>
+        <View style={styles.photoPreviewBackdrop}>
+          <Pressable onPress={() => setSelectedPhoto(null)} style={styles.photoPreviewCloseArea}>
+            {selectedPhoto && <Image source={{ uri: selectedPhoto.uri }} style={styles.photoPreviewImage} resizeMode="contain" />}
+            <Text style={styles.photoPreviewHint}>タップして閉じる</Text>
+          </Pressable>
+        </View>
+      </Modal>
     </View>
   );
 }

@@ -15,13 +15,12 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   useColorScheme,
   View,
 } from 'react-native';
-import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -36,21 +35,20 @@ import {
   hasRequiredLocationPermission,
   LocationPermissionState,
 } from '../features/location/locationPermission';
-import { deleteAllLogData, getAllLocationPoints, getDailyLogs, getLocationPointsByDate } from '../features/logs/logRepository';
-import { getEndpointMarkers } from '../features/map/endpointMarkers';
+import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
-import { createInitialRegion, filterRouteCoordinatesByRegion, toRenderRouteCoordinates } from '../features/map/routeMapper';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import type { LatLng, MapType } from 'react-native-maps';
-import { AppTheme, getAppTheme } from '../theme/theme';
-import { formatTime } from '../utils/date';
-import { totalDistanceMeters } from '../utils/distance';
-
-/** ルートライブラリを使わない単一App内の簡易画面状態。 */
-type ScreenMode = 'map' | 'dailyLogs' | 'settings';
-/** 自動GPS記録の開始状態をユーザー向け文言へ変換するための状態。 */
-type AutoStartStatus = 'checking' | 'recording' | 'needsPermission' | 'failed';
+import { getAppTheme } from '../theme/theme';
+import { getAreaNameFromAddress } from './areaName';
+import { createStyles } from './appStyles';
+import { getAutoRecordNote } from './appText';
+import { AutoStartStatus, ScreenMode } from './appTypes';
+import { DailyLogCard } from './components/DailyLogCard';
+import { useMapRouteState } from './hooks/useMapRouteState';
+import { useMenuAnimation } from './hooks/useMenuAnimation';
+import { getNextMapType } from './mapType';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -77,12 +75,10 @@ export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const autoStartAttemptedRef = useRef(false);
   const recenterButtonOpacity = useRef(new Animated.Value(0)).current;
-  const menuProgress = useRef(new Animated.Value(0)).current;
   const screenTransitionOpacity = useRef(new Animated.Value(1)).current;
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
   const [points, setPoints] = useState<LocationPoint[]>([]);
@@ -97,21 +93,12 @@ export default function App() {
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [mapType, setMapType] = useState<MapType>('standard');
 
-  const renderRouteCoordinates = useMemo(() => toRenderRouteCoordinates(points), [points]);
-  const visibleRouteCoordinates = useMemo(
-    () => filterRouteCoordinatesByRegion(renderRouteCoordinates, visibleRegion),
-    [renderRouteCoordinates, visibleRegion],
+  const { renderRouteCoordinates, visibleRouteCoordinates, initialRegion, distance } = useMapRouteState(
+    points,
+    dailyLogs,
+    visibleRegion,
   );
-  const initialRegion = useMemo(() => createInitialRegion(points), [points]);
-  const distance = useMemo(() => {
-    const canUseStoredDistance = dailyLogs.every((log) => log.distanceMeters != null);
-
-    if (canUseStoredDistance) {
-      return dailyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0);
-    }
-
-    return totalDistanceMeters(points);
-  }, [dailyLogs, points]);
+  const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
@@ -208,6 +195,9 @@ export default function App() {
     await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
   }, []);
 
+  /**
+   * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
+   */
   useEffect(() => {
     initializeDatabase()
       .then(async () => {
@@ -221,6 +211,9 @@ export default function App() {
       .finally(() => setIsReady(true));
   }, [refreshData]);
 
+  /**
+   * アプリ準備完了後に一度だけバックグラウンドGPS記録の自動開始を試みる。
+   */
   useEffect(() => {
     if (!isReady || autoStartAttemptedRef.current) {
       return;
@@ -244,6 +237,9 @@ export default function App() {
       });
   }, [isReady, startRecording]);
 
+  /**
+   * フォアグラウンド復帰時にDBと権限状態を再同期する。
+   */
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       setAppState(state);
@@ -258,6 +254,9 @@ export default function App() {
   }, [refreshData]);
 
 
+  /**
+   * 更新ボタンを不要にするため、フォアグラウンド中は定期的にログを再読み込みする。
+   */
   useEffect(() => {
     if (!isReady || appState !== 'active') {
       return;
@@ -272,6 +271,9 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [appState, isReady, refreshData]);
 
+  /**
+   * 画面ON維持設定が有効でフォアグラウンドの場合だけロック抑止を有効化する。
+   */
   useEffect(() => {
     if (keepScreenAwake && appState === 'active') {
       activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => undefined);
@@ -281,6 +283,9 @@ export default function App() {
     deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => undefined);
   }, [appState, keepScreenAwake]);
 
+  /**
+   * アンマウント時にロック抑止を解除し、次回起動や他アプリへ影響を残さない。
+   */
   useEffect(() => {
     return () => {
       deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => undefined);
@@ -289,7 +294,9 @@ export default function App() {
 
 
 
-  // 逆ジオコーディングは現在地ピルの市区町村表示にだけ使う。
+  /**
+   * 逆ジオコーディングは現在地ピルの市区町村表示にだけ使う。
+   */
   useEffect(() => {
     if (!userCoordinate || appState !== 'active') {
       return;
@@ -303,9 +310,7 @@ export default function App() {
           return;
         }
 
-        const address = addresses[0];
-        const area = address?.city ?? address?.district ?? address?.subregion ?? address?.region ?? '現在地付近';
-        setCurrentAreaName(area);
+        setCurrentAreaName(getAreaNameFromAddress(addresses[0]));
       })
       .catch(() => {
         if (!cancelled) {
@@ -318,6 +323,9 @@ export default function App() {
     };
   }, [appState, userCoordinate]);
 
+  /**
+   * 現在地追従が外れた時だけ現在地ボタンをフェード表示する。
+   */
   useEffect(() => {
     Animated.timing(recenterButtonOpacity, {
       toValue: isFollowingUserLocation ? 0 : 1,
@@ -326,24 +334,9 @@ export default function App() {
     }).start();
   }, [isFollowingUserLocation, recenterButtonOpacity]);
 
-  // 閉じる時はアニメーション完了までメニューをアンマウントしない。
-  useEffect(() => {
-    if (isMenuOpen) {
-      setIsMenuVisible(true);
-    }
-
-    Animated.timing(menuProgress, {
-      toValue: isMenuOpen ? 1 : 0,
-      duration: MENU_ANIMATION_DURATION_MS,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished && !isMenuOpen) {
-        setIsMenuVisible(false);
-      }
-    });
-  }, [isMenuOpen, menuProgress]);
-
+  /**
+   * 画面切り替え時に軽いフェード/スライドを入れて遷移の唐突さを抑える。
+   */
   useEffect(() => {
     screenTransitionOpacity.setValue(0);
     Animated.timing(screenTransitionOpacity, {
@@ -354,6 +347,9 @@ export default function App() {
     }).start();
   }, [screenMode, screenTransitionOpacity]);
 
+  /**
+   * 初回の現在地取得前だけ、保存済みルート全体が見えるよう地図をフィットする。
+   */
   useEffect(() => {
     if (screenMode !== 'map' || renderRouteCoordinates.length < 2 || userCoordinate) {
       return;
@@ -366,7 +362,12 @@ export default function App() {
   }, [renderRouteCoordinates, screenMode, userCoordinate]);
 
 
-  /** 現在地更新を受け取り、追従中であれば地図中心も更新する。 */
+  /**
+   * 現在地更新を受け取り、追従中であれば地図中心も更新する。
+   *
+   * @param event - react-native-mapsから渡される現在地更新イベント。
+   * @returns なし。
+   */
   function handleUserLocationChange(event: UserLocationChangeEvent): void {
     const coordinate = event.nativeEvent.coordinate;
 
@@ -382,12 +383,21 @@ export default function App() {
     }
   }
 
-  /** ユーザーが地図を動かしたら現在地追従を一時停止する。 */
+  /**
+   * ユーザーが地図を動かしたら現在地追従を一時停止する。
+   *
+   * @returns なし。
+   */
   function handleMapPanDrag(): void {
     setIsFollowingUserLocation(false);
   }
 
-  /** 表示範囲を保存し、中心が現在地付近に戻った場合は追従を再開する。 */
+  /**
+   * 表示範囲を保存し、中心が現在地付近に戻った場合は追従を再開する。
+   *
+   * @param region - MapViewの現在表示範囲。
+   * @returns なし。
+   */
   function handleRegionChangeComplete(region: Region): void {
     setVisibleRegion(region);
 
@@ -400,7 +410,13 @@ export default function App() {
     }
   }
 
-  /** 指定座標が画面中心になるよう地図を移動する。 */
+  /**
+   * 指定座標が画面中心になるよう地図を移動する。
+   *
+   * @param coordinate - 中心へ移動したい緯度経度。
+   * @param animated - アニメーション付きで移動するか。
+   * @returns なし。
+   */
   function centerOnCoordinate(coordinate: LatLng, animated = true): void {
     mapRef.current?.animateToRegion(
       {
@@ -413,7 +429,11 @@ export default function App() {
     );
   }
 
-  /** 現在地ボタン押下時に追従を再開して現在地へ戻す。 */
+  /**
+   * 現在地ボタン押下時に追従を再開して現在地へ戻す。
+   *
+   * @returns なし。
+   */
   function recenterOnUserLocation(): void {
     if (!userCoordinate) {
       return;
@@ -431,14 +451,6 @@ export default function App() {
   /** 画面遷移など少し強い操作に使うタプティックを鳴らす。 */
   function triggerLightImpactHaptic(): void {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-  }
-
-  /** 画面遷移時にメニュー状態とアニメーション値を即座に初期化する。 */
-  function resetMenuImmediately(): void {
-    menuProgress.stopAnimation();
-    menuProgress.setValue(0);
-    setIsMenuOpen(false);
-    setIsMenuVisible(false);
   }
 
   /** 右上メニューを開閉する。 */
@@ -480,10 +492,14 @@ export default function App() {
     navigateToScreen('settings');
   }
 
-  /** 標準地図とラベル付き航空写真を切り替える。 */
+  /**
+   * 標準地図とラベル付き航空写真を切り替える。
+   *
+   * @returns なし。
+   */
   function toggleMapType(): void {
     triggerSelectionHaptic();
-    setMapType((currentMapType) => (currentMapType === 'standard' ? 'hybrid' : 'standard'));
+    setMapType(getNextMapType);
     setIsMenuOpen(false);
   }
 
@@ -493,7 +509,11 @@ export default function App() {
     Alert.alert('インポート', 'GPX / KML インポートは今後実装予定です。');
   }
 
-  /** 全履歴ルートを表示するメイン地図画面を描画する。 */
+  /**
+   * 全履歴ルートを表示するメイン地図画面を描画する。
+   *
+   * @returns メイン地図画面のReact要素。
+   */
   function renderMapScreen() {
     return (
       <View style={styles.container}>
@@ -605,7 +625,11 @@ export default function App() {
     );
   }
 
-  /** 日別ログ一覧画面を描画する。 */
+  /**
+   * 日別ログ一覧画面を描画する。
+   *
+   * @returns 日別ログ一覧画面のReact要素。
+   */
   function renderDailyLogsScreen() {
     return (
       <SafeAreaView style={styles.dailyContainer}>
@@ -633,7 +657,11 @@ export default function App() {
     );
   }
 
-  /** GPS記録、画面ON維持、データ操作をまとめた設定画面を描画する。 */
+  /**
+   * GPS記録、画面ON維持、データ操作をまとめた設定画面を描画する。
+   *
+   * @returns 設定画面のReact要素。
+   */
   function renderSettingsScreen() {
     return (
       <SafeAreaView style={styles.dailyContainer}>
@@ -748,526 +776,4 @@ export default function App() {
       </Animated.View>
     </View>
   );
-}
-
-/** 自動記録状態を設定画面向けの説明文へ変換する。 */
-function getAutoRecordNote(status: AutoStartStatus): string {
-  switch (status) {
-    case 'checking':
-      return '自動記録の状態を確認しています。';
-    case 'recording':
-      return '自動記録は有効です。GPSログをバックグラウンドで保存します。';
-    case 'needsPermission':
-      return '自動記録は待機中です。位置情報権限を許可すると記録できます。';
-    case 'failed':
-      return '自動記録を開始できませんでした。設定から権限と記録状態を確認してください。';
-  }
-}
-
-/** 1日分の記録サマリーとミニマップを表示するカード。 */
-function DailyLogCard({ log, styles, theme }: { log: DailyLogSummary; styles: ReturnType<typeof createStyles>; theme: AppTheme }) {
-  const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
-
-  useEffect(() => {
-    getLocationPointsByDate(log.localDate)
-      .then(setDailyPoints)
-      .catch(() => setDailyPoints([]));
-  }, [log.localDate]);
-
-  const dailyDistance = useMemo(() => log.distanceMeters ?? totalDistanceMeters(dailyPoints), [dailyPoints, log.distanceMeters]);
-  const dailyRouteCoordinates = useMemo(() => toRenderRouteCoordinates(dailyPoints), [dailyPoints]);
-  const dailyRegion = useMemo(() => createInitialRegion(dailyPoints), [dailyPoints]);
-  const endpointMarkers = useMemo(() => getEndpointMarkers(dailyPoints), [dailyPoints]);
-
-  return (
-    <View style={styles.dailyCard}>
-      <Text style={styles.dailyDate}>{log.localDate}</Text>
-      <View style={styles.dailyStatsRow}>
-        <Text style={styles.dailyStat}>{log.pointCount} pts</Text>
-        <Text style={styles.dailyStat}>{(dailyDistance / 1000).toFixed(2)} km</Text>
-      </View>
-      <Text style={styles.dailyTime}>
-        {formatTime(log.startedAt)} - {formatTime(log.endedAt)}
-      </Text>
-
-      {dailyPoints.length > 0 && (
-        <View style={styles.dailyMapFrame}>
-          <MapView
-            style={styles.dailyMap}
-            initialRegion={dailyRegion}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-          >
-            {dailyRouteCoordinates.length > 1 && (
-              <Polyline coordinates={dailyRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={4} />
-            )}
-            {endpointMarkers.map((marker) => (
-              <Marker
-                key={marker.id}
-                coordinate={{ latitude: marker.point.latitude, longitude: marker.point.longitude }}
-                anchor={{ x: 0.5, y: 1 }}
-                title={marker.label}
-                description={marker.point.recordedAt}
-              >
-                <View style={[styles.endpointMarker, { backgroundColor: marker.color }]}>
-                  <Text style={styles.endpointMarkerText}>{marker.label}</Text>
-                </View>
-              </Marker>
-            ))}
-          </MapView>
-        </View>
-      )}
-    </View>
-  );
-}
-
-/** 現在のテーマから画面全体のStyleSheetを生成する。 */
-function createStyles(theme: AppTheme) {
-  const { colors } = theme;
-
-  return StyleSheet.create({
-    actions: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    autoRecordNote: {
-      color: colors.mutedText,
-      fontSize: 13,
-      fontWeight: '700',
-      lineHeight: 18,
-    },
-    backButton: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 999,
-      borderWidth: 1,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
-    backButtonText: {
-      color: colors.primary,
-      fontWeight: '900',
-    },
-    bottomBar: {
-      alignItems: 'center',
-      bottom: 26,
-      flexDirection: 'row',
-      gap: 12,
-      left: 16,
-      position: 'absolute',
-      right: 16,
-      zIndex: 2,
-    },
-    bottomSideSpacer: {
-      width: 50,
-    },
-    buttonDisabled: {
-      opacity: 0.38,
-    },
-    container: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    dangerAction: {
-      alignItems: 'center',
-      backgroundColor: colors.dangerSurface,
-      borderColor: colors.danger,
-      borderRadius: 18,
-      borderWidth: 1,
-      flexDirection: 'row',
-      gap: 10,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-    },
-    dangerActionText: {
-      color: colors.danger,
-      fontWeight: '900',
-    },
-    dailyCard: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 24,
-      borderWidth: 1,
-      gap: 10,
-      padding: 16,
-    },
-    dailyContainer: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
-    dailyDate: {
-      color: colors.text,
-      fontSize: 22,
-      fontWeight: '900',
-    },
-    dailyEmptyCard: {
-      backgroundColor: colors.card,
-      borderRadius: 24,
-      gap: 8,
-      margin: 16,
-      padding: 18,
-    },
-    dailyHeader: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: 12,
-      justifyContent: 'space-between',
-      padding: 16,
-    },
-    dailyList: {
-      gap: 12,
-      padding: 16,
-      paddingTop: 0,
-    },
-    dailyMap: {
-      height: 180,
-      width: '100%',
-    },
-    dailyMapFrame: {
-      borderRadius: 20,
-      marginTop: 4,
-      overflow: 'hidden',
-    },
-    dailyStat: {
-      color: colors.text,
-      fontWeight: '800',
-    },
-    dailyStatsRow: {
-      flexDirection: 'row',
-      gap: 16,
-    },
-    dailyTime: {
-      color: colors.mutedText,
-      fontWeight: '700',
-    },
-    dailyTitle: {
-      color: colors.text,
-      flex: 1,
-      fontSize: 20,
-      fontWeight: '900',
-      textAlign: 'center',
-    },
-    endpointMarker: {
-      borderColor: colors.card,
-      borderRadius: 999,
-      borderWidth: 2,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-    },
-    endpointMarkerText: {
-      color: colors.primaryText,
-      fontSize: 12,
-      fontWeight: '900',
-    },
-    emptyCard: {
-      alignSelf: 'center',
-      backgroundColor: colors.surfaceOverlay,
-      borderRadius: 24,
-      gap: 6,
-      marginHorizontal: 24,
-      marginTop: 92,
-      padding: 18,
-    },
-    emptyText: {
-      color: colors.mutedText,
-      lineHeight: 20,
-    },
-    emptyTitle: {
-      color: colors.text,
-      fontSize: 18,
-      fontWeight: '800',
-    },
-    iconButton: {
-      backgroundColor: colors.surfaceOverlay,
-      borderRadius: 999,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
-    iconButtonText: {
-      color: colors.text,
-      fontWeight: '800',
-    },
-    headerSpacer: {
-      width: 70,
-    },
-    locationMeta: {
-      color: colors.mutedText,
-      fontSize: 12,
-      fontWeight: '800',
-    },
-    locationName: {
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: '900',
-    },
-    locationPill: {
-      alignItems: 'center',
-      backgroundColor: colors.surfaceOverlay,
-      borderColor: colors.border,
-      borderRadius: 999,
-      borderWidth: 1,
-      gap: 2,
-      flex: 1,
-      maxWidth: 260,
-      paddingHorizontal: 18,
-      paddingVertical: 10,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.12,
-      shadowRadius: 18,
-    },
-    loadingContainer: {
-      alignItems: 'center',
-      backgroundColor: colors.background,
-      flex: 1,
-      justifyContent: 'center',
-    },
-    loadingText: {
-      color: colors.text,
-      marginTop: 12,
-    },
-    map: {
-      ...StyleSheet.absoluteFillObject,
-    },
-    menuButton: {
-      alignItems: 'center',
-      backgroundColor: colors.surfaceOverlay,
-      borderRadius: 999,
-      height: 42,
-      justifyContent: 'center',
-      width: 42,
-    },
-
-    menuCard: {
-      backgroundColor: colors.cardStrong,
-      borderColor: colors.border,
-      borderRadius: 26,
-      borderWidth: 1,
-      overflow: 'hidden',
-      position: 'absolute',
-      right: 16,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 18 },
-      shadowOpacity: 0.2,
-      shadowRadius: 28,
-      top: 70,
-      width: 248,
-      zIndex: 3,
-    },
-    menuScrim: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(45, 36, 22, 0.24)',
-      zIndex: 1,
-    },
-    menuScrimPressable: {
-      flex: 1,
-    },
-    menuItem: {
-      alignItems: 'center',
-      borderBottomColor: colors.border,
-      borderBottomWidth: 1,
-      flexDirection: 'row',
-      gap: 14,
-      paddingHorizontal: 20,
-      paddingVertical: 18,
-    },
-    menuItemText: {
-      color: colors.text,
-      fontSize: 17,
-      fontWeight: '900',
-    },
-    message: {
-      color: colors.mutedText,
-      lineHeight: 20,
-    },
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-    },
-    permissionButton: {
-      alignItems: 'center',
-      backgroundColor: colors.danger,
-      borderRadius: 999,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-    permissionButtonText: {
-      color: colors.primaryText,
-      fontWeight: '900',
-    },
-    permissionCard: {
-      alignSelf: 'center',
-      backgroundColor: colors.dangerSurface,
-      borderColor: colors.danger,
-      borderRadius: 24,
-      borderWidth: 1,
-      gap: 10,
-      marginHorizontal: 20,
-      marginTop: 92,
-      padding: 16,
-    },
-    permissionSettingsBox: {
-      backgroundColor: colors.dangerSurface,
-      borderColor: colors.danger,
-      borderRadius: 20,
-      borderWidth: 1,
-      gap: 10,
-      padding: 14,
-    },
-    permissionText: {
-      color: colors.mutedText,
-      lineHeight: 20,
-    },
-    permissionTitle: {
-      color: colors.danger,
-      fontSize: 17,
-      fontWeight: '900',
-    },
-    primaryButton: {
-      alignItems: 'center',
-      backgroundColor: colors.primary,
-      borderRadius: 999,
-      flex: 1,
-      paddingHorizontal: 18,
-      paddingVertical: 14,
-    },
-    primaryButtonText: {
-      color: colors.primaryText,
-      fontWeight: '900',
-    },
-    screenTransition: {
-      flex: 1,
-    },
-    secondaryButton: {
-      alignItems: 'center',
-      backgroundColor: colors.card,
-      borderColor: colors.primary,
-      borderRadius: 999,
-      borderWidth: 1,
-      minWidth: 92,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-    },
-    secondaryButtonText: {
-      color: colors.primary,
-      fontWeight: '900',
-    },
-    recenterButton: {
-      alignItems: 'center',
-      backgroundColor: colors.surfaceOverlay,
-      borderColor: colors.border,
-      borderRadius: 999,
-      borderWidth: 1,
-      height: 50,
-      justifyContent: 'center',
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.14,
-      shadowRadius: 16,
-      width: 50,
-    },
-    recenterButtonContainer: {
-      alignItems: 'flex-end',
-      width: 50,
-    },
-    rightControls: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    settingsAction: {
-      alignItems: 'center',
-      backgroundColor: colors.cardStrong,
-      borderRadius: 18,
-      flexDirection: 'row',
-      gap: 10,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-    },
-    settingsActionText: {
-      color: colors.primary,
-      fontWeight: '900',
-    },
-    settingsCard: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 24,
-      borderWidth: 1,
-      gap: 14,
-      padding: 16,
-    },
-    settingsDescription: {
-      color: colors.mutedText,
-      lineHeight: 20,
-    },
-    settingsList: {
-      gap: 12,
-      padding: 16,
-      paddingTop: 0,
-    },
-    settingsStatusRow: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: 8,
-    },
-    settingsStatusText: {
-      color: colors.text,
-      fontWeight: '900',
-    },
-    settingsTitle: {
-      color: colors.text,
-      fontSize: 20,
-      fontWeight: '900',
-    },
-    settingsToggleRow: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: 14,
-    },
-    settingsToggleTextColumn: {
-      flex: 1,
-      gap: 8,
-    },
-    stat: {
-      color: colors.text,
-      fontWeight: '800',
-    },
-    statsRow: {
-      flexDirection: 'row',
-      gap: 16,
-    },
-    statusDot: {
-      backgroundColor: colors.border,
-      borderRadius: 999,
-      height: 9,
-      width: 9,
-    },
-    statusDotActive: {
-      backgroundColor: colors.primary,
-    },
-    statusPill: {
-      alignItems: 'center',
-      backgroundColor: colors.surfaceOverlay,
-      borderRadius: 999,
-      flexDirection: 'row',
-      gap: 8,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
-    statusText: {
-      color: colors.text,
-      fontWeight: '900',
-    },
-    topBar: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingTop: 8,
-      zIndex: 2,
-    },
-  });
 }

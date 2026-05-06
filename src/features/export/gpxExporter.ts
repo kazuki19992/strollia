@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 
 import { LocationPoint } from '../../types/gps';
 
+/** GPX内のテキスト要素でXML構文を壊す文字をエスケープする。 */
 function escapeXml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -12,6 +13,7 @@ function escapeXml(value: string): string {
     .replaceAll("'", '&apos;');
 }
 
+/** GPSポイント列をGPX 1.1形式の文字列へ変換する。 */
 export function buildGpx(points: LocationPoint[], name: string): string {
   const trackPoints = points
     .map((point) => {
@@ -35,6 +37,7 @@ ${trackPoints}
 `;
 }
 
+/** GPXファイルを一時領域へ書き出し、OS標準共有UIを開く。 */
 export async function shareGpx(points: LocationPoint[], localDate: string): Promise<void> {
   if (points.length === 0) {
     throw new Error('GPXとして出力できるGPSポイントがありません。');

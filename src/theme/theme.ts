@@ -1,5 +1,7 @@
+/** OSカラースキームに対応するアプリテーマ名。 */
 export type AppThemeName = 'light' | 'dark';
 
+/** 画面全体で共有する色トークン一式。 */
 export type AppTheme = {
   name: AppThemeName;
   colors: {
@@ -20,6 +22,7 @@ export type AppTheme = {
   };
 };
 
+/** ライトモード用の色定義。 */
 export const lightTheme: AppTheme = {
   name: 'light',
   colors: {
@@ -40,6 +43,7 @@ export const lightTheme: AppTheme = {
   },
 };
 
+/** ダークモード用の色定義。 */
 export const darkTheme: AppTheme = {
   name: 'dark',
   colors: {
@@ -60,6 +64,7 @@ export const darkTheme: AppTheme = {
   },
 };
 
+/** OSのカラースキームから利用するテーマを選ぶ。 */
 export function getAppTheme(colorScheme: 'light' | 'dark' | null | undefined): AppTheme {
   return colorScheme === 'dark' ? darkTheme : lightTheme;
 }

@@ -2,16 +2,19 @@ import type { Region } from 'react-native-maps';
 
 import { LocationPoint } from '../../types/gps';
 
+/** react-native-mapsのPolylineへ渡す緯度経度座標。 */
 export type RouteCoordinate = {
   latitude: number;
   longitude: number;
 };
 
+/** Douglas-Peucker計算用にメートル近似の平面座標を付与した点。 */
 type ProjectedPoint = RouteCoordinate & {
   x: number;
   y: number;
 };
 
+/** GPSログがない場合の初期表示位置。東京駅付近を暫定値にする。 */
 const DEFAULT_REGION: Region = {
   latitude: 35.681236,
   longitude: 139.767125,
@@ -19,12 +22,15 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
+/** 徒歩ログの形状を保ちつつ描画点を減らすデフォルト許容誤差。 */
 export const DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS = 10;
 
+/** 保存済みGPSポイントを地図描画用の緯度経度へ変換する。 */
 export function toRouteCoordinates(points: LocationPoint[]): RouteCoordinate[] {
   return points.map((point) => ({ latitude: point.latitude, longitude: point.longitude }));
 }
 
+/** 保存用ポイントから簡略化済みの描画用座標を生成する。 */
 export function toRenderRouteCoordinates(
   points: LocationPoint[],
   toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS,
@@ -32,6 +38,7 @@ export function toRenderRouteCoordinates(
   return simplifyRouteCoordinates(toRouteCoordinates(points), toleranceMeters);
 }
 
+/** Douglas-Peucker法でルート形状を保ちながら座標数を減らす。 */
 export function simplifyRouteCoordinates(coordinates: RouteCoordinate[], toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS): RouteCoordinate[] {
   if (coordinates.length <= 2 || toleranceMeters <= 0) {
     return coordinates;
@@ -45,6 +52,7 @@ export function simplifyRouteCoordinates(coordinates: RouteCoordinate[], toleran
   return coordinates.filter((_, index) => keptIndexes.has(index));
 }
 
+/** 表示範囲とその周辺に関係する座標だけを残し、Polyline描画負荷を抑える。 */
 export function filterRouteCoordinatesByRegion(
   coordinates: RouteCoordinate[],
   region: Region | null,
@@ -76,6 +84,7 @@ export function filterRouteCoordinatesByRegion(
   });
 }
 
+/** GPSポイント群が収まる初期表示範囲を作る。 */
 export function createInitialRegion(points: LocationPoint[]): Region {
   if (points.length === 0) {
     return DEFAULT_REGION;
@@ -98,6 +107,7 @@ export function createInitialRegion(points: LocationPoint[]): Region {
   };
 }
 
+/** 緯度経度を距離誤差計算しやすいメートル近似の平面座標へ投影する。 */
 function projectCoordinates(coordinates: RouteCoordinate[]): ProjectedPoint[] {
   const averageLatitude = coordinates.reduce((total, coordinate) => total + coordinate.latitude, 0) / coordinates.length;
   const metersPerLatitudeDegree = 111_320;
@@ -110,6 +120,7 @@ function projectCoordinates(coordinates: RouteCoordinate[]): ProjectedPoint[] {
   }));
 }
 
+/** Douglas-Peucker法の再帰処理で残すべき点のindexを集める。 */
 function simplifySection(
   points: ProjectedPoint[],
   startIndex: number,
@@ -142,6 +153,7 @@ function simplifySection(
   simplifySection(points, maxIndex, endIndex, toleranceMeters, keptIndexes);
 }
 
+/** 点から線分までの最短距離をメートル近似座標上で求める。 */
 function distanceToSegment(point: ProjectedPoint, start: ProjectedPoint, end: ProjectedPoint): number {
   const dx = end.x - start.x;
   const dy = end.y - start.y;

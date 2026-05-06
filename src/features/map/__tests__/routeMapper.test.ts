@@ -22,14 +22,14 @@ function point(latitude: number, longitude: number): LocationPoint {
   };
 }
 
-describe('routeMapper', () => {
-  it('converts stored points to map coordinates', () => {
+describe('ルート描画変換', () => {
+  it('保存済みポイントを地図座標へ変換する', () => {
     expect(toRouteCoordinates([point(35.1, 139.1)])).toEqual([
       { latitude: 35.1, longitude: 139.1 },
     ]);
   });
 
-  it('simplifies nearly straight route coordinates while keeping endpoints', () => {
+  it('ほぼ直線のルートは端点を残して簡略化する', () => {
     const route = [
       { latitude: 35, longitude: 139 },
       { latitude: 35.00001, longitude: 139.00001 },
@@ -40,7 +40,7 @@ describe('routeMapper', () => {
     expect(simplifyRouteCoordinates(route, 10)).toEqual([route[0], route[3]]);
   });
 
-  it('keeps shape points that exceed the simplification tolerance', () => {
+  it('許容誤差を超える形状点は残す', () => {
     const route = [
       { latitude: 35, longitude: 139 },
       { latitude: 35.001, longitude: 139.002 },
@@ -50,14 +50,14 @@ describe('routeMapper', () => {
     expect(simplifyRouteCoordinates(route, 10)).toEqual(route);
   });
 
-  it('creates render coordinates from stored points', () => {
+  it('保存済みポイントから描画用座標を生成する', () => {
     const coordinates = toRenderRouteCoordinates([point(35, 139), point(35.00001, 139), point(35.001, 139)], 10);
 
     expect(coordinates[0]).toEqual({ latitude: 35, longitude: 139 });
     expect(coordinates.at(-1)).toEqual({ latitude: 35.001, longitude: 139 });
   });
 
-  it('filters route coordinates to a padded visible region', () => {
+  it('余白付き表示範囲に関係するルート座標だけを残す', () => {
     const route = [
       { latitude: 34, longitude: 138 },
       { latitude: 35, longitude: 139 },
@@ -75,7 +75,7 @@ describe('routeMapper', () => {
     expect(filterRouteCoordinatesByRegion(route, region, 0)).toEqual([route[0], route[1], route[2], route[3]]);
   });
 
-  it('creates a region that includes all points', () => {
+  it('すべてのポイントを含む初期表示範囲を作る', () => {
     const region = createInitialRegion([point(35, 139), point(36, 140)]);
 
     expect(region.latitude).toBeCloseTo(35.5);

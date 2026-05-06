@@ -28,8 +28,8 @@ const points: LocationPoint[] = [
   },
 ];
 
-describe('buildGpx', () => {
-  it('serializes location points into GPX track points', () => {
+describe('GPX生成 buildGpx', () => {
+  it('位置情報ポイントをGPXのトラックポイントとして出力する', () => {
     const gpx = buildGpx(points, 'Strollia 2026-05-04');
 
     expect(gpx).toContain('<?xml version="1.0" encoding="UTF-8"?>');
@@ -39,7 +39,7 @@ describe('buildGpx', () => {
     expect(gpx).toContain('<time>2026-05-04T00:01:00.000Z</time>');
   });
 
-  it('escapes XML-sensitive track names', () => {
+  it('XMLで特別扱いされる文字をトラック名内でエスケープする', () => {
     const gpx = buildGpx(points, 'A&B <walk>');
 
     expect(gpx).toContain('A&amp;B &lt;walk&gt;');

@@ -24,12 +24,12 @@ function point(latitude: number, longitude: number): NewLocationPoint {
   };
 }
 
-describe('insertLocationPoint', () => {
+describe('GPSポイント保存 insertLocationPoint', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('stores the segment distance in the daily summary incrementally', async () => {
+  it('日別サマリーへ区間距離を累積保存する', async () => {
     (db.getFirstAsync as jest.Mock).mockResolvedValue({
       ...point(35, 139),
       id: 1,
@@ -44,12 +44,12 @@ describe('insertLocationPoint', () => {
   });
 });
 
-describe('deleteAllLogData', () => {
+describe('全ログ削除 deleteAllLogData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('deletes location points and daily summaries in one transaction', async () => {
+  it('位置情報ポイントと日別サマリーを1つのトランザクションで削除する', async () => {
     await deleteAllLogData();
 
     expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);

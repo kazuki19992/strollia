@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import { NewLocationPoint } from '../../types/gps';
 import { toLocalDate } from '../../utils/date';
 
+/** Expo Locationの取得結果をSQLite保存用のGPSポイントへ変換する。 */
 export function toLocationPoint(location: Location.LocationObject): NewLocationPoint {
   const recordedDate = new Date(location.timestamp);
   const coords = location.coords;

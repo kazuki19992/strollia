@@ -1,7 +1,7 @@
 import { canRequestLocationPermissionInApp, hasRequiredLocationPermission } from '../locationPermission';
 
-describe('locationPermission helpers', () => {
-  it('requires both foreground and background permission', () => {
+describe('位置情報権限ヘルパー', () => {
+  it('フォアグラウンドとバックグラウンドの両方の権限を必要とする', () => {
     expect(hasRequiredLocationPermission({
       foregroundGranted: true,
       backgroundGranted: true,
@@ -17,7 +17,7 @@ describe('locationPermission helpers', () => {
     })).toBe(false);
   });
 
-  it('requests foreground first, then background', () => {
+  it('フォアグラウンド権限を先に要求してからバックグラウンド権限を要求する', () => {
     expect(canRequestLocationPermissionInApp({
       foregroundGranted: false,
       backgroundGranted: false,

@@ -3,7 +3,7 @@ import { LocationObject } from 'expo-location';
 import { toLocationPoint } from '../locationMapper';
 
 describe('toLocationPoint', () => {
-  it('maps Expo location objects to persisted location points', () => {
+  it('Expoの位置情報オブジェクトを保存用ポイントへ変換する', () => {
     const location: LocationObject = {
       timestamp: new Date(2026, 4, 4, 12, 34, 56).getTime(),
       coords: {

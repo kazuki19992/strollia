@@ -16,22 +16,22 @@ function point(latitude: number, longitude: number, accuracy: number | null = 10
 }
 
 describe('shouldSaveLocationPoint', () => {
-  it('rejects points with poor horizontal accuracy', () => {
+  it('水平方向の精度が低いポイントは破棄する', () => {
     expect(shouldSaveLocationPoint(point(35, 139, 51), null)).toBe(false);
   });
 
-  it('keeps the first accurate point', () => {
+  it('精度が十分な最初のポイントは保存対象にする', () => {
     expect(shouldSaveLocationPoint(point(35, 139, 50), null)).toBe(true);
   });
 
-  it('rejects points that moved less than the minimum distance', () => {
+  it('最小距離未満しか移動していないポイントは破棄する', () => {
     const previous = point(35, 139);
     const next = point(35.00001, 139);
 
     expect(shouldSaveLocationPoint(next, previous, { minDistanceMeters: 5 })).toBe(false);
   });
 
-  it('keeps points that moved beyond the minimum distance', () => {
+  it('最小距離以上移動したポイントは保存対象にする', () => {
     const previous = point(35, 139);
     const next = point(35.0001, 139);
 

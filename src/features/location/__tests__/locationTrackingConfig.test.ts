@@ -7,12 +7,12 @@ import {
   LOCATION_UPDATE_INTERVAL_MS,
 } from '../locationTrackingConfig';
 
-describe('locationTrackingConfig', () => {
-  it('uses a stable background task name', () => {
+describe('位置情報追跡設定', () => {
+  it('安定したバックグラウンドタスク名を使う', () => {
     expect(BACKGROUND_LOCATION_TASK_NAME).toBe('strollia-background-location-task');
   });
 
-  it('targets 10 second updates with distance gating', () => {
+  it('10秒間隔と距離条件を位置情報更新の目安にする', () => {
     const options = getLocationTaskOptions();
 
     expect(LOCATION_UPDATE_INTERVAL_MS).toBe(10000);

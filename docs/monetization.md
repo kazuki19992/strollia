@@ -40,7 +40,7 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 - Plusで開放するスタイル候補
 - Plus未加入時にロック表示する設定画面項目
 
-実際の購入、復元、RevenueCat CustomerInfo 連携、カスタマイズ選択UIと設定保存は次段階で実装する。
+実際の購入、復元、RevenueCat CustomerInfo 連携は次段階で実装する。カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plusが無効な場合は反映時に無料状態へフォールバックする。
 
 ### 4.1 ルート線スタイル
 
@@ -52,7 +52,7 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 
 無料状態では `react-native-maps` のOS標準現在地表示を使う。Plus有効時に有料アイコンが選択された場合のみ、`showsUserLocation=false` として独自Markerで現在地を描画する。
 
-実装上は `resolveUserLocationIcon` でOS標準表示を使うか独自Markerへ切り替えるかを判定する。
+実装上は `resolveUserLocationIcon` でOS標準表示を使うか独自Markerへ切り替えるかを判定する。選択値が有料アイコンで、Plusが無効な場合はOS標準表示へフォールバックする。
 
 ## 5. 設定画面
 

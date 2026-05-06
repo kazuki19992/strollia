@@ -21,7 +21,8 @@
         "NSLocationAlwaysUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
         "NSPhotoLibraryUsageDescription": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。"
       },
-      "bundleIdentifier": "com.kazuki19992.strollia"
+      "bundleIdentifier": "com.kazuki19992.strollia",
+      "icon": "./assets/app.icon"
     },
     "android": {
       "adaptiveIcon": {
@@ -58,7 +59,9 @@
           "photosPermission": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。",
           "savePhotosPermission": false,
           "isAccessMediaLocationEnabled": true,
-          "granularPermissions": ["photo"]
+          "granularPermissions": [
+            "photo"
+          ]
         }
       ]
     ],

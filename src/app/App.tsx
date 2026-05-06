@@ -23,7 +23,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import MapView, { Callout, CalloutSubview, Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -96,6 +96,7 @@ export default function App() {
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
+  const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
@@ -514,8 +515,12 @@ export default function App() {
     triggerSelectionHaptic();
 
     if (cluster.photos.length === 1) {
+      setSelectedPhotoCluster(null);
       setSelectedPhoto(cluster.photos[0]);
+      return;
     }
+
+    setSelectedPhotoCluster(cluster);
   }
 
   /**
@@ -527,6 +532,7 @@ export default function App() {
   function renderPhotoClusterMarker(cluster: MapPhotoCluster) {
     const representativePhoto = cluster.photos[0];
     const badgeLabel = getPhotoClusterBadgeLabel(cluster);
+    const isCluster = cluster.photos.length > 1;
 
     if (!representativePhoto) {
       return null;
@@ -537,29 +543,20 @@ export default function App() {
         key={cluster.id}
         coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
         anchor={{ x: 0.5, y: 1 }}
+        zIndex={cluster.photos.length}
         onPress={() => handlePhotoClusterPress(cluster)}
       >
-        <View style={styles.photoMarkerBubble}>
-          <Image source={{ uri: representativePhoto.uri }} style={styles.photoMarkerImage} />
-          {badgeLabel && (
-            <View style={styles.photoClusterBadge}>
-              <Text style={styles.photoClusterBadgeText}>{badgeLabel}</Text>
+        {isCluster ? (
+          <View style={styles.photoClusterMarkerBubble}>
+            <Text style={styles.photoClusterMarkerCount}>{badgeLabel}</Text>
+            <Text style={styles.photoClusterMarkerLabel}>写真</Text>
+          </View>
+        ) : (
+          <View style={styles.photoMarkerContainer}>
+            <View style={styles.photoMarkerBubble}>
+              <Image source={{ uri: representativePhoto.uri }} style={styles.photoMarkerImage} />
             </View>
-          )}
-        </View>
-        {cluster.photos.length > 1 && (
-          <Callout tooltip onPress={() => undefined}>
-            <View style={styles.photoClusterCallout}>
-              <View style={styles.photoClusterGrid}>
-                {cluster.photos.slice(0, 9).map((photo) => (
-                  <CalloutSubview key={photo.id} onPress={() => setSelectedPhoto(photo)} style={styles.photoClusterGridItem}>
-                    <Image source={{ uri: photo.uri }} style={styles.photoClusterGridImage} />
-                  </CalloutSubview>
-                ))}
-              </View>
-              {cluster.photos.length > 9 && <Text style={styles.photoClusterMoreText}>ほか {cluster.photos.length - 9} 件</Text>}
-            </View>
-          </Callout>
+          </View>
         )}
       </Marker>
     );
@@ -737,6 +734,14 @@ export default function App() {
           {showPhotosOnMap && isLoadingPhotos && (
             <View style={styles.photoStatusCard}>
               <Text style={styles.permissionText}>ジオタグ付き写真を読み込んでいます...</Text>
+            </View>
+          )}
+
+          {showPhotosOnMap && !isLoadingPhotos && photos.length > 0 && (
+            <View style={styles.photoStatusCard}>
+              <Text style={styles.permissionText}>
+                写真 {photos.length} 件 / クラスタ {photoClusters.length} 件
+              </Text>
             </View>
           )}
 
@@ -928,6 +933,31 @@ export default function App() {
         {screenMode === 'dailyLogs' && renderDailyLogsScreen()}
         {screenMode === 'settings' && renderSettingsScreen()}
       </Animated.View>
+
+      <Modal visible={selectedPhotoCluster != null} transparent animationType="fade" onRequestClose={() => setSelectedPhotoCluster(null)}>
+        <Pressable onPress={() => setSelectedPhotoCluster(null)} style={styles.photoClusterOverlay}>
+          <Pressable onPress={() => undefined} style={styles.photoClusterCallout}>
+            <Text style={styles.photoClusterTitle}>この場所の写真</Text>
+            <View style={styles.photoClusterGrid}>
+              {selectedPhotoCluster?.photos.slice(0, 9).map((photo) => (
+                <Pressable
+                  key={photo.id}
+                  onPress={() => {
+                    setSelectedPhotoCluster(null);
+                    setSelectedPhoto(photo);
+                  }}
+                  style={styles.photoClusterGridItem}
+                >
+                  <Image source={{ uri: photo.uri }} style={styles.photoClusterGridImage} />
+                </Pressable>
+              ))}
+            </View>
+            {selectedPhotoCluster && selectedPhotoCluster.photos.length > 9 && (
+              <Text style={styles.photoClusterMoreText}>ほか {selectedPhotoCluster.photos.length - 9} 件</Text>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
       <Modal visible={selectedPhoto != null} transparent animationType="fade" onRequestClose={() => setSelectedPhoto(null)}>
         <View style={styles.photoPreviewBackdrop}>
           <Pressable onPress={() => setSelectedPhoto(null)} style={styles.photoPreviewCloseArea}>

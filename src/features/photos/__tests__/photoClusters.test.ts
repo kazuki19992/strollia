@@ -40,8 +40,8 @@ describe('写真クラスタ clusterMapPhotos', () => {
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['new', 'old']);
-    expect(clusters[0].latitude).toBeCloseTo(35.00011);
-    expect(clusters[0].longitude).toBeCloseTo(139.00011);
+    expect(clusters[0].latitude).toBe(35.00012);
+    expect(clusters[0].longitude).toBe(139.00012);
   });
 
   it('離れた写真は別クラスタに分ける', () => {
@@ -52,6 +52,38 @@ describe('写真クラスタ clusterMapPhotos', () => {
 
     expect(clusters).toHaveLength(2);
     expect(clusters.flatMap((cluster) => cluster.photos.map((photo) => photo.id)).sort()).toEqual(['a', 'b']);
+  });
+
+  it('グリッド境界をまたいだ近接写真も1つのクラスタにまとめる', () => {
+    const clusters = clusterMapPhotos(
+      [createPhoto('a', 35.00049, 139.00099, 1), createPhoto('b', 35.00051, 139.00101, 2)],
+      region,
+    );
+
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['b', 'a']);
+  });
+
+  it('同じ場所と言えない距離の写真は別クラスタに分ける', () => {
+    const clusters = clusterMapPhotos(
+      [createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)],
+      region,
+    );
+
+    expect(clusters).toHaveLength(2);
+  });
+
+  it('連鎖的に離れた写真を巨大クラスタにまとめない', () => {
+    const clusters = clusterMapPhotos(
+      [
+        createPhoto('a', 35.0001, 139.0001, 3),
+        createPhoto('b', 35.00035, 139.0001, 2),
+        createPhoto('c', 35.0006, 139.0001, 1),
+      ],
+      region,
+    );
+
+    expect(clusters.length).toBeGreaterThan(1);
   });
 
   it('表示範囲がない場合も安全にクラスタを作る', () => {

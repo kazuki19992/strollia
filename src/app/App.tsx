@@ -23,7 +23,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import MapView, { Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -40,7 +40,19 @@ import {
 } from '../features/location/locationPermission';
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
-import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
+import { resolveRouteLineStyle, resolveUserLocationIcon } from '../features/customization/customizationResolver';
+import {
+  DEFAULT_ROUTE_LINE_STYLE_ID,
+  DEFAULT_USER_LOCATION_ICON_ID,
+  getRouteLineStyleOption,
+  getUserLocationIconOption,
+  ROUTE_LINE_STYLE_OPTIONS,
+  RouteLineStyleId,
+  USER_LOCATION_ICON_OPTIONS,
+  UserLocationIconId,
+} from '../features/customization/customizationOptions';
+import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAccess';
+import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
@@ -63,6 +75,10 @@ const KEEP_AWAKE_TAG = 'strollia-foreground-map';
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
 /** マップ上の写真表示設定をSQLiteへ保存するキー。 */
 const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
+/** ルート線スタイル設定をSQLiteへ保存するキー。 */
+const ROUTE_LINE_STYLE_SETTING_KEY = 'routeLineStyle';
+/** 現在地アイコン設定をSQLiteへ保存するキー。 */
+const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 /** メニュー開閉が軽く感じる短めのアニメーション時間。 */
 const MENU_ANIMATION_DURATION_MS = 220;
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
@@ -106,6 +122,8 @@ export default function App() {
   const [currentAreaName, setCurrentAreaName] = useState('現在地を確認中');
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [mapType, setMapType] = useState<MapType>('standard');
+  const [selectedRouteLineStyleId, setSelectedRouteLineStyleId] = useState<RouteLineStyleId>(DEFAULT_ROUTE_LINE_STYLE_ID);
+  const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
 
   const { renderRouteCoordinates, visibleRouteCoordinates, initialRegion, distance } = useMapRouteState(
     points,
@@ -118,6 +136,15 @@ export default function App() {
   const selectedPhotoClusterPages = useMemo(
     () => paginateMapPhotos(selectedPhotoCluster?.photos ?? []),
     [selectedPhotoCluster],
+  );
+  const premiumAccessState = useMemo(() => getDefaultPremiumAccessState(), []);
+  const routeLineStyle = useMemo(
+    () => resolveRouteLineStyle(selectedRouteLineStyleId, premiumAccessState.isPlusActive, theme.colors.mapLine),
+    [premiumAccessState.isPlusActive, selectedRouteLineStyleId, theme.colors.mapLine],
+  );
+  const userLocationIcon = useMemo(
+    () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
+    [premiumAccessState.isPlusActive, selectedUserLocationIconId],
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
@@ -262,12 +289,16 @@ export default function App() {
   useEffect(() => {
     initializeDatabase()
       .then(async () => {
-        const [savedKeepScreenAwake, savedShowPhotosOnMap] = await Promise.all([
+        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedRouteLineStyle, savedUserLocationIcon] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
+          getStringSetting(ROUTE_LINE_STYLE_SETTING_KEY, DEFAULT_ROUTE_LINE_STYLE_ID),
+          getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
         setShowPhotosOnMap(savedShowPhotosOnMap);
+        setSelectedRouteLineStyleId(getRouteLineStyleOption(savedRouteLineStyle as RouteLineStyleId).id);
+        setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         await refreshData();
       })
       .catch((error: unknown) => {
@@ -592,6 +623,143 @@ export default function App() {
     Alert.alert('インポート', 'GPX / KML インポートは今後実装予定です。');
   }
 
+
+  /**
+   * ルート線スタイルを保存して地図へ即時反映する。
+   *
+   * @param styleId - 保存するルート線スタイルID。
+   * @returns なし。
+   */
+  function updateRouteLineStyle(styleId: RouteLineStyleId): void {
+    const option = getRouteLineStyleOption(styleId);
+
+    if (option.premium && !premiumAccessState.isPlusActive) {
+      showPremiumLockedMessage(option.label);
+      return;
+    }
+
+    triggerSelectionHaptic();
+    setSelectedRouteLineStyleId(option.id);
+    setSetting(ROUTE_LINE_STYLE_SETTING_KEY, option.id).catch((error: unknown) => {
+      Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'ルート線スタイルを保存できませんでした。');
+    });
+  }
+
+  /**
+   * 現在地アイコンを保存して地図へ即時反映する。
+   *
+   * @param iconId - 保存する現在地アイコンID。
+   * @returns なし。
+   */
+  function updateUserLocationIcon(iconId: UserLocationIconId): void {
+    const option = getUserLocationIconOption(iconId);
+
+    if (option.premium && !premiumAccessState.isPlusActive) {
+      showPremiumLockedMessage(option.label);
+      return;
+    }
+
+    triggerSelectionHaptic();
+    setSelectedUserLocationIconId(option.id);
+    setSetting(USER_LOCATION_ICON_SETTING_KEY, option.id).catch((error: unknown) => {
+      Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
+    });
+  }
+
+  /**
+   * Plus未加入時に有料項目を選んだ場合の案内を表示する。
+   *
+   * @param label - 選択しようとした項目名。
+   * @returns なし。
+   */
+  function showPremiumLockedMessage(label: string): void {
+    triggerSelectionHaptic();
+    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放予定です。RevenueCat連携後に購入状態を確認して選択できるようにします。`);
+  }
+
+
+  /**
+   * ルート線スタイルの選択ボタン一覧を描画する。
+   *
+   * @returns ルート線スタイル選択UI。
+   */
+  function renderRouteLineStylePicker() {
+    return (
+      <View style={styles.customizationSection}>
+        <Text style={styles.settingsStatusText}>ルート線の見た目</Text>
+        <View style={styles.customizationOptionGrid}>
+          {ROUTE_LINE_STYLE_OPTIONS.map((option) => {
+            const isSelected = selectedRouteLineStyleId === option.id;
+            const isLocked = option.premium && !premiumAccessState.isPlusActive;
+
+            return (
+              <Pressable
+                key={option.id}
+                onPress={() => updateRouteLineStyle(option.id)}
+                style={[styles.customizationOption, isSelected && styles.customizationOptionSelected]}
+              >
+                <View style={styles.routeLinePreviewRow}>
+                  {option.glow && <View style={[styles.routeLinePreviewGlow, { backgroundColor: option.color ?? theme.colors.mapLine }]} />}
+                  <View
+                    style={[
+                      styles.routeLinePreview,
+                      {
+                        backgroundColor: option.color ?? theme.colors.mapLine,
+                        height: Math.max(4, option.width),
+                      },
+                    ]}
+                  />
+                </View>
+                <View style={styles.settingsActionTitleRow}>
+                  <Text style={styles.customizationOptionText}>{option.label}</Text>
+                  {isLocked && <MaterialCommunityIcons name="lock-outline" size={14} color={theme.colors.mutedText} />}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
+  /**
+   * 現在地アイコンの選択ボタン一覧を描画する。
+   *
+   * @returns 現在地アイコン選択UI。
+   */
+  function renderUserLocationIconPicker() {
+    return (
+      <View style={styles.customizationSection}>
+        <Text style={styles.settingsStatusText}>現在地アイコン</Text>
+        <View style={styles.customizationOptionGrid}>
+          {USER_LOCATION_ICON_OPTIONS.map((option) => {
+            const isSelected = selectedUserLocationIconId === option.id;
+            const isLocked = option.premium && !premiumAccessState.isPlusActive;
+
+            return (
+              <Pressable
+                key={option.id}
+                onPress={() => updateUserLocationIcon(option.id)}
+                style={[styles.customizationOption, isSelected && styles.customizationOptionSelected]}
+              >
+                <MaterialCommunityIcons
+                  name={option.id === 'compass' ? 'compass-outline' : option.id === 'walker' ? 'walk' : 'crosshairs-gps'}
+                  size={24}
+                  color={isSelected ? theme.colors.primary : theme.colors.text}
+                />
+                <View style={styles.settingsActionTitleRow}>
+                  <Text style={styles.customizationOptionText}>{option.label}</Text>
+                  {isLocked && <MaterialCommunityIcons name="lock-outline" size={14} color={theme.colors.mutedText} />}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+  }
+
+
   /**
    * 全履歴ルートを表示するメイン地図画面を描画する。
    *
@@ -606,16 +774,30 @@ export default function App() {
           initialRegion={initialRegion}
           mapType={mapType}
           showsCompass
-          showsUserLocation
-          followsUserLocation={isFollowingUserLocation}
+          showsUserLocation={userLocationIcon.useNativeUserLocation}
+          followsUserLocation={isFollowingUserLocation && userLocationIcon.useNativeUserLocation}
           onUserLocationChange={handleUserLocationChange}
           onPanDrag={handleMapPanDrag}
           onRegionChangeComplete={handleRegionChangeComplete}
           legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
           mapPadding={{ bottom: 96, left: 0, right: 0, top: 58 }}
         >
+          {visibleRouteCoordinates.length > 1 && routeLineStyle.glow && (
+            <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width + 8} />
+          )}
           {visibleRouteCoordinates.length > 1 && (
-            <Polyline coordinates={visibleRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
+            <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} />
+          )}
+          {!userLocationIcon.useNativeUserLocation && userCoordinate && (
+            <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
+              <View style={styles.customUserLocationMarker}>
+                <MaterialCommunityIcons
+                  name={userLocationIcon.customIconId === 'compass' ? 'compass' : 'walk'}
+                  size={22}
+                  color={theme.colors.primaryText}
+                />
+              </View>
+            </Marker>
           )}
           {showPhotosOnMap &&
             photoClusters.map((cluster) => (
@@ -846,6 +1028,29 @@ export default function App() {
                 thumbColor={theme.colors.cardStrong}
               />
             </View>
+          </View>
+
+
+          <View style={styles.settingsCard}>
+            <View style={styles.settingsActionTitleRow}>
+              <Text style={styles.settingsTitle}>Strollia Plus</Text>
+              <Text style={styles.premiumBadge}>RevenueCat準備中</Text>
+            </View>
+            <Text style={styles.settingsDescription}>
+              ルート線の色や発光、現在地アイコン変更をPlus特典として用意します。無料時は現在のルート線とOS標準の現在地アイコンを使います。
+            </Text>
+            <View style={styles.settingsStatusRow}>
+              <MaterialCommunityIcons
+                name={premiumAccessState.isPlusActive ? 'check-decagram-outline' : 'lock-outline'}
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.settingsStatusText}>
+                {premiumAccessState.isPlusActive ? 'Plus有効' : 'Plus未加入'} / {premiumAccessState.entitlementId}
+              </Text>
+            </View>
+            {renderRouteLineStylePicker()}
+            {renderUserLocationIconPicker()}
           </View>
 
           <View style={styles.settingsCard}>

@@ -54,6 +54,46 @@ export function createStyles(theme: AppTheme) {
       backgroundColor: colors.background,
       flex: 1,
     },
+    customUserLocationMarker: {
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderColor: colors.card,
+      borderRadius: 999,
+      borderWidth: 3,
+      height: 42,
+      justifyContent: 'center',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.22,
+      shadowRadius: 14,
+      width: 42,
+    },
+    customizationOption: {
+      backgroundColor: colors.cardStrong,
+      borderColor: colors.border,
+      borderRadius: 18,
+      borderWidth: 1,
+      flex: 1,
+      gap: 8,
+      minWidth: 96,
+      padding: 12,
+    },
+    customizationOptionGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    customizationOptionSelected: {
+      borderColor: colors.primary,
+      borderWidth: 2,
+    },
+    customizationOptionText: {
+      color: colors.text,
+      fontWeight: '900',
+    },
+    customizationSection: {
+      gap: 10,
+    },
     dangerAction: {
       alignItems: 'center',
       backgroundColor: colors.dangerSurface,
@@ -477,6 +517,16 @@ export function createStyles(theme: AppTheme) {
       color: colors.primaryText,
       fontWeight: '900',
     },
+    premiumBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 999,
+      color: colors.primaryText,
+      fontSize: 11,
+      fontWeight: '900',
+      overflow: 'hidden',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
     screenTransition: {
       flex: 1,
     },
@@ -516,6 +566,22 @@ export function createStyles(theme: AppTheme) {
       flexDirection: 'row',
       gap: 10,
     },
+    routeLinePreview: {
+      borderRadius: 999,
+      width: 56,
+    },
+    routeLinePreviewGlow: {
+      borderRadius: 999,
+      height: 14,
+      opacity: 0.28,
+      position: 'absolute',
+      width: 64,
+    },
+    routeLinePreviewRow: {
+      alignItems: 'center',
+      height: 18,
+      justifyContent: 'center',
+    },
     settingsAction: {
       alignItems: 'center',
       backgroundColor: colors.cardStrong,
@@ -528,6 +594,16 @@ export function createStyles(theme: AppTheme) {
     settingsActionText: {
       color: colors.primary,
       fontWeight: '900',
+    },
+    settingsActionTextColumn: {
+      flex: 1,
+      gap: 5,
+    },
+    settingsActionTitleRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
     },
     settingsCard: {
       backgroundColor: colors.card,

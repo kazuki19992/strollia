@@ -40,6 +40,8 @@ import {
 } from '../features/location/locationPermission';
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
+import { resolveRouteLineStyle, resolveUserLocationIcon } from '../features/customization/customizationResolver';
+import { DEFAULT_ROUTE_LINE_STYLE_ID, DEFAULT_USER_LOCATION_ICON_ID } from '../features/customization/customizationOptions';
 import { PREMIUM_CUSTOMIZATION_ITEMS, PremiumCustomizationItem } from '../features/premium/premiumCatalog';
 import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAccess';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
@@ -122,6 +124,14 @@ export default function App() {
     [selectedPhotoCluster],
   );
   const premiumAccessState = useMemo(() => getDefaultPremiumAccessState(), []);
+  const routeLineStyle = useMemo(
+    () => resolveRouteLineStyle(DEFAULT_ROUTE_LINE_STYLE_ID, premiumAccessState.isPlusActive, theme.colors.mapLine),
+    [premiumAccessState.isPlusActive, theme.colors.mapLine],
+  );
+  const userLocationIcon = useMemo(
+    () => resolveUserLocationIcon(DEFAULT_USER_LOCATION_ICON_ID, premiumAccessState.isPlusActive),
+    [premiumAccessState.isPlusActive],
+  );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
@@ -645,16 +655,19 @@ export default function App() {
           initialRegion={initialRegion}
           mapType={mapType}
           showsCompass
-          showsUserLocation
-          followsUserLocation={isFollowingUserLocation}
+          showsUserLocation={userLocationIcon.useNativeUserLocation}
+          followsUserLocation={isFollowingUserLocation && userLocationIcon.useNativeUserLocation}
           onUserLocationChange={handleUserLocationChange}
           onPanDrag={handleMapPanDrag}
           onRegionChangeComplete={handleRegionChangeComplete}
           legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
           mapPadding={{ bottom: 96, left: 0, right: 0, top: 58 }}
         >
+          {visibleRouteCoordinates.length > 1 && routeLineStyle.glow && (
+            <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width + 8} />
+          )}
           {visibleRouteCoordinates.length > 1 && (
-            <Polyline coordinates={visibleRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
+            <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} />
           )}
           {showPhotosOnMap &&
             photoClusters.map((cluster) => (
@@ -894,7 +907,7 @@ export default function App() {
               <Text style={styles.premiumBadge}>RevenueCat準備中</Text>
             </View>
             <Text style={styles.settingsDescription}>
-              ルート線の色や発光、現在地アイコン、アプリアイコン変更をPlus特典として用意します。現在は購入導線と設定保存の準備段階です。
+              ルート線の色や発光、現在地アイコン変更をPlus特典として用意します。無料時は現在のルート線とOS標準の現在地アイコンを使います。
             </Text>
             <View style={styles.settingsStatusRow}>
               <MaterialCommunityIcons

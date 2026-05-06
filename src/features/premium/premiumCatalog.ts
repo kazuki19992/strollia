@@ -8,7 +8,7 @@ export const STROLLIA_PLUS_MONTHLY_PRODUCT_ID = 'strollia_plus_monthly';
 export const STROLLIA_PLUS_YEARLY_PRODUCT_ID = 'strollia_plus_yearly';
 
 /** 課金で開放するカスタマイズカテゴリ。 */
-export type PremiumCustomizationCategory = 'routeLine' | 'userLocationIcon' | 'appIcon';
+export type PremiumCustomizationCategory = 'routeLine' | 'userLocationIcon';
 
 /** 設定画面に表示する課金カスタマイズ項目。 */
 export type PremiumCustomizationItem = {
@@ -31,10 +31,5 @@ export const PREMIUM_CUSTOMIZATION_ITEMS: PremiumCustomizationItem[] = [
     id: 'userLocationIcon',
     title: '現在地アイコン',
     description: '現在地を表すアイコンを好みの見た目へ変更できるようにします。',
-  },
-  {
-    id: 'appIcon',
-    title: 'アプリアイコン',
-    description: 'ホーム画面に表示されるアプリアイコンを選択できるようにします。',
   },
 ];

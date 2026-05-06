@@ -179,6 +179,8 @@ iOS / Android ともにバックグラウンド位置情報にはOS側の制約�
 
 見た目のカスタマイズは Strollia Plus として RevenueCat で管理する。
 
-課金状態の取得は UI に直接書かず、`src/features/premium/` の境界を通す。ルート線、現在地アイコン、アプリアイコンの候補は `src/features/customization/` にまとめる。
+課金状態の取得は UI に直接書かず、`src/features/premium/` の境界を通す。ルート線と現在地アイコンの候補は `src/features/customization/` にまとめる。アプリアイコン変更は初期の課金対象から外す。
+
+無料状態では、ルート線は現在のクラシック表示、現在地アイコンはOS標準表示を使う。Plus有効時にのみ、ルート線は解決済みスタイルを `Polyline` に反映し、現在地アイコンはOS標準表示から独自Markerへ切り替えられる設計とする。
 
 GPSログや写真メタデータはRevenueCatへ送信しない。

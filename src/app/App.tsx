@@ -23,7 +23,7 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Callout, CalloutSubview, Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -41,6 +41,7 @@ import {
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
+import { clusterMapPhotos, MapPhotoCluster } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import type { LatLng, MapType } from 'react-native-maps';
@@ -109,6 +110,7 @@ export default function App() {
   );
   const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
   const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
+  const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
@@ -486,6 +488,83 @@ export default function App() {
     centerOnCoordinate(userCoordinate);
   }
 
+  /**
+   * 写真クラスタ内の写真枚数を示すバッジ文言を作る。
+   *
+   * @param cluster - 対象の写真クラスタ。
+   * @returns 追加写真枚数。単体写真の場合はnull。
+   */
+  function getPhotoClusterBadgeLabel(cluster: MapPhotoCluster): string | null {
+    const hiddenPhotoCount = cluster.photos.length - 1;
+
+    if (hiddenPhotoCount <= 0) {
+      return null;
+    }
+
+    return `+${hiddenPhotoCount}`;
+  }
+
+  /**
+   * 写真マーカーの単体/複数タップを処理する。
+   *
+   * @param cluster - タップされた写真クラスタ。
+   * @returns なし。
+   */
+  function handlePhotoClusterPress(cluster: MapPhotoCluster): void {
+    triggerSelectionHaptic();
+
+    if (cluster.photos.length === 1) {
+      setSelectedPhoto(cluster.photos[0]);
+    }
+  }
+
+  /**
+   * 地図上に表示する写真クラスタマーカーを描画する。
+   *
+   * @param cluster - 描画対象の写真クラスタ。
+   * @returns 写真クラスタのMarker要素。
+   */
+  function renderPhotoClusterMarker(cluster: MapPhotoCluster) {
+    const representativePhoto = cluster.photos[0];
+    const badgeLabel = getPhotoClusterBadgeLabel(cluster);
+
+    if (!representativePhoto) {
+      return null;
+    }
+
+    return (
+      <Marker
+        key={cluster.id}
+        coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+        anchor={{ x: 0.5, y: 1 }}
+        onPress={() => handlePhotoClusterPress(cluster)}
+      >
+        <View style={styles.photoMarkerBubble}>
+          <Image source={{ uri: representativePhoto.uri }} style={styles.photoMarkerImage} />
+          {badgeLabel && (
+            <View style={styles.photoClusterBadge}>
+              <Text style={styles.photoClusterBadgeText}>{badgeLabel}</Text>
+            </View>
+          )}
+        </View>
+        {cluster.photos.length > 1 && (
+          <Callout tooltip onPress={() => undefined}>
+            <View style={styles.photoClusterCallout}>
+              <View style={styles.photoClusterGrid}>
+                {cluster.photos.slice(0, 9).map((photo) => (
+                  <CalloutSubview key={photo.id} onPress={() => setSelectedPhoto(photo)} style={styles.photoClusterGridItem}>
+                    <Image source={{ uri: photo.uri }} style={styles.photoClusterGridImage} />
+                  </CalloutSubview>
+                ))}
+              </View>
+              {cluster.photos.length > 9 && <Text style={styles.photoClusterMoreText}>ほか {cluster.photos.length - 9} 件</Text>}
+            </View>
+          </Callout>
+        )}
+      </Marker>
+    );
+  }
+
   /** 軽い選択操作に使うタプティックを鳴らす。 */
   function triggerSelectionHaptic(): void {
     Haptics.selectionAsync().catch(() => undefined);
@@ -577,19 +656,7 @@ export default function App() {
           {visibleRouteCoordinates.length > 1 && (
             <Polyline coordinates={visibleRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
           )}
-          {showPhotosOnMap &&
-            photos.map((photo) => (
-              <Marker
-                key={photo.id}
-                coordinate={{ latitude: photo.latitude, longitude: photo.longitude }}
-                anchor={{ x: 0.5, y: 1 }}
-                onPress={() => setSelectedPhoto(photo)}
-              >
-                <View style={styles.photoMarkerBubble}>
-                  <Image source={{ uri: photo.uri }} style={styles.photoMarkerImage} />
-                </View>
-              </Marker>
-            ))}
+          {showPhotosOnMap && photoClusters.map((cluster) => renderPhotoClusterMarker(cluster))}
         </MapView>
 
         <SafeAreaView pointerEvents="box-none" style={styles.overlay}>

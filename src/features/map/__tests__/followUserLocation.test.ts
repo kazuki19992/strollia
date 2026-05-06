@@ -1,6 +1,6 @@
 import { isRegionCenteredOnCoordinate } from '../followUserLocation';
 
-describe('isRegionCenteredOnCoordinate', () => {
+describe('現在地追従判定 isRegionCenteredOnCoordinate', () => {
   const region = {
     latitude: 35,
     longitude: 139,
@@ -8,11 +8,11 @@ describe('isRegionCenteredOnCoordinate', () => {
     longitudeDelta: 0.02,
   };
 
-  it('returns true when the coordinate is near the region center', () => {
+  it('座標が表示範囲の中心付近にある場合はtrueを返す', () => {
     expect(isRegionCenteredOnCoordinate(region, { latitude: 35.001, longitude: 139.001 })).toBe(true);
   });
 
-  it('returns false when the coordinate is away from the region center', () => {
+  it('座標が表示範囲の中心から離れている場合はfalseを返す', () => {
     expect(isRegionCenteredOnCoordinate(region, { latitude: 35.01, longitude: 139.01 })).toBe(false);
   });
 });

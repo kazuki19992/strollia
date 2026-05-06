@@ -16,14 +16,14 @@ function point(latitude: number, longitude: number): LocationPoint {
   };
 }
 
-describe('distance utilities', () => {
-  it('returns zero for the same point', () => {
+describe('距離計算ユーティリティ', () => {
+  it('同じ地点同士の距離は0mになる', () => {
     const a = point(35.681236, 139.767125);
 
     expect(distanceMeters(a, a)).toBeCloseTo(0);
   });
 
-  it('sums distances across adjacent points', () => {
+  it('隣接する地点間の距離を合計できる', () => {
     const points = [point(35, 139), point(35.001, 139), point(35.002, 139)];
 
     expect(totalDistanceMeters(points)).toBeGreaterThan(200);

@@ -12,9 +12,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
     "expo": "~54.0.33",
     "expo-dev-client": "~6.0.21",
     "expo-file-system": "~19.0.22",
+    "expo-haptics": "~15.0.8",
     "expo-keep-awake": "~15.0.8",
     "expo-location": "~19.0.8",
     "expo-sharing": "~14.0.8",

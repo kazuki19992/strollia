@@ -1,7 +1,9 @@
 import { db } from '../../db/database';
 
+/** SQLiteへJSON文字列として保存するアプリ設定値。 */
 export type AppSettingValue = boolean | number | string | null;
 
+/** boolean設定を読み込み、未保存または壊れた値の場合はfallbackを返す。 */
 export async function getBooleanSetting(key: string, fallback: boolean): Promise<boolean> {
   const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', key);
 
@@ -16,6 +18,7 @@ export async function getBooleanSetting(key: string, fallback: boolean): Promise
   }
 }
 
+/** アプリ設定をUPSERTで保存する。 */
 export async function setSetting(key: string, value: AppSettingValue): Promise<void> {
   const now = new Date().toISOString();
 

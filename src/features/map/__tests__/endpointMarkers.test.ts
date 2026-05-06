@@ -16,19 +16,19 @@ function point(id: number): LocationPoint {
   };
 }
 
-describe('getEndpointMarkers', () => {
-  it('returns no markers when there are no points', () => {
+describe('日別ルート端点マーカー getEndpointMarkers', () => {
+  it('ポイントがない場合はマーカーを返さない', () => {
     expect(getEndpointMarkers([])).toEqual([]);
   });
 
-  it('returns only start marker for a single point', () => {
+  it('ポイントが1件の場合は開始マーカーのみ返す', () => {
     const markers = getEndpointMarkers([point(1)]);
 
     expect(markers).toHaveLength(1);
     expect(markers[0]).toMatchObject({ id: 'start', label: '開始', color: '#1f7a5c' });
   });
 
-  it('returns labeled start and latest markers for multiple points', () => {
+  it('複数ポイントの場合は開始と最新のラベル付きマーカーを返す', () => {
     const markers = getEndpointMarkers([point(1), point(2), point(3)]);
 
     expect(markers.map((marker) => marker.id)).toEqual(['start', 'latest']);

@@ -1,5 +1,6 @@
 import { LocationPoint } from '../../types/gps';
 
+/** 日別ルート上に表示する開始/最新地点マーカー。 */
 export type EndpointMarker = {
   id: 'start' | 'latest';
   label: string;
@@ -7,6 +8,7 @@ export type EndpointMarker = {
   point: LocationPoint;
 };
 
+/** 日別ルートの開始地点と最新地点をラベル付きマーカーとして返す。 */
 export function getEndpointMarkers(points: LocationPoint[]): EndpointMarker[] {
   const first = points[0];
 

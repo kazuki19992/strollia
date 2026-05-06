@@ -1,3 +1,4 @@
+/** 端末のローカルタイムゾーンで日別ログ用のYYYY-MM-DD文字列を作る。 */
 export function toLocalDate(value: Date): string {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, '0');
@@ -5,6 +6,7 @@ export function toLocalDate(value: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+/** ISO日時文字列を画面表示用の時刻へ変換する。 */
 export function formatTime(value: string | null): string {
   if (!value) {
     return '--:--';

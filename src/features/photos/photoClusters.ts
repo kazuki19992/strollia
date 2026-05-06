@@ -15,14 +15,15 @@ export type MapPhotoCluster = {
   photos: MapPhoto[];
 };
 
+/** クラスタ詳細で1ページに表示する写真枚数。 */
+export const PHOTO_CLUSTER_PAGE_SIZE = 9;
+
 const FALLBACK_LATITUDE_DELTA = 0.01;
 const METERS_PER_LATITUDE_DEGREE = 111_000;
-/** 同じ地点で撮った写真をまとめるための最小半径。広げすぎると別地点まで1クラスタになる。 */
-const MINIMUM_CLUSTER_RADIUS_METERS = 18;
-/** ズームアウト時に画面上で重なる写真だけ少し広めにまとめる。 */
-const REGION_CLUSTER_RATIO = 0.008;
-/** 別スポットの写真が一緒にまとまらないよう、クラスタ半径は控えめに上限を置く。 */
-const MAXIMUM_CLUSTER_RADIUS_METERS = 45;
+/** 最大拡大時でも同じ地点の連写をまとめるための最小半径。 */
+const MINIMUM_CLUSTER_RADIUS_METERS = 10;
+/** ズームアウト時にクラスタ範囲を線形に広げるため、表示高の3%を半径にする。 */
+const REGION_CLUSTER_RATIO = 0.03;
 
 type MutablePhotoCluster = {
   seed: MapPhoto;
@@ -37,7 +38,7 @@ type MutablePhotoCluster = {
  * @returns 近接写真をまとめたクラスタ一覧。
  */
 export function clusterMapPhotos(photos: MapPhoto[], region: Region | null): MapPhotoCluster[] {
-  const clusterRadiusMeters = getClusterRadiusMeters(region);
+  const clusterRadiusMeters = getPhotoClusterRadiusMeters(region);
   const clusters: MutablePhotoCluster[] = [];
 
   // 新しい写真を代表サムネイルと代表座標にし、平均化で別地点へ飛ばないようにする。
@@ -61,16 +62,37 @@ export function clusterMapPhotos(photos: MapPhoto[], region: Region | null): Map
 }
 
 /**
+ * クラスタ内写真を横スワイプ表示用にページ分割する。
+ *
+ * @param photos - ページ分割する写真一覧。
+ * @param pageSize - 1ページあたりの写真枚数。
+ * @returns ページごとの写真配列。
+ */
+export function paginateMapPhotos(photos: MapPhoto[], pageSize = PHOTO_CLUSTER_PAGE_SIZE): MapPhoto[][] {
+  if (pageSize <= 0) {
+    return [];
+  }
+
+  const pages: MapPhoto[][] = [];
+
+  for (let index = 0; index < photos.length; index += pageSize) {
+    pages.push(photos.slice(index, index + pageSize));
+  }
+
+  return pages;
+}
+
+/**
  * 地図の表示範囲から写真クラスタ半径をメートル単位で求める。
  *
  * @param region - 現在の地図表示範囲。
  * @returns クラスタ判定に使う半径メートル。
  */
-function getClusterRadiusMeters(region: Region | null): number {
+export function getPhotoClusterRadiusMeters(region: Region | null): number {
   const visibleHeightMeters = Math.abs(region?.latitudeDelta ?? FALLBACK_LATITUDE_DELTA) * METERS_PER_LATITUDE_DEGREE;
   const dynamicRadiusMeters = visibleHeightMeters * REGION_CLUSTER_RATIO;
 
-  return Math.min(Math.max(dynamicRadiusMeters, MINIMUM_CLUSTER_RADIUS_METERS), MAXIMUM_CLUSTER_RADIUS_METERS);
+  return Math.max(dynamicRadiusMeters, MINIMUM_CLUSTER_RADIUS_METERS);
 }
 
 /**

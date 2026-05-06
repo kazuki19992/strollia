@@ -41,7 +41,7 @@ import {
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { getBooleanSetting, setSetting } from '../features/settings/settingsRepository';
-import { clusterMapPhotos, MapPhotoCluster } from '../features/photos/photoClusters';
+import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import type { LatLng, MapType } from 'react-native-maps';
@@ -112,6 +112,10 @@ export default function App() {
   const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
   const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
   const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
+  const selectedPhotoClusterPages = useMemo(
+    () => paginateMapPhotos(selectedPhotoCluster?.photos ?? []),
+    [selectedPhotoCluster],
+  );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
 
@@ -543,21 +547,21 @@ export default function App() {
         key={cluster.id}
         coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
         anchor={{ x: 0.5, y: 1 }}
+        identifier={cluster.id}
+        tracksViewChanges
         zIndex={cluster.photos.length}
         onPress={() => handlePhotoClusterPress(cluster)}
       >
-        {isCluster ? (
-          <View style={styles.photoClusterMarkerBubble}>
-            <Text style={styles.photoClusterMarkerCount}>{badgeLabel}</Text>
-            <Text style={styles.photoClusterMarkerLabel}>写真</Text>
+        <View collapsable={false} style={isCluster ? styles.photoClusterMarkerContainer : styles.photoMarkerContainer}>
+          <View collapsable={false} style={isCluster ? styles.photoClusterMarkerBubble : styles.photoMarkerBubble}>
+            <Image source={{ uri: representativePhoto.uri }} style={styles.photoMarkerImage} />
           </View>
-        ) : (
-          <View style={styles.photoMarkerContainer}>
-            <View style={styles.photoMarkerBubble}>
-              <Image source={{ uri: representativePhoto.uri }} style={styles.photoMarkerImage} />
+          {badgeLabel ? (
+            <View style={styles.photoClusterBadge}>
+              <Text style={styles.photoClusterBadgeText}>{badgeLabel}</Text>
             </View>
-          </View>
-        )}
+          ) : null}
+        </View>
       </Marker>
     );
   }
@@ -737,19 +741,12 @@ export default function App() {
             </View>
           )}
 
-          {showPhotosOnMap && !isLoadingPhotos && photos.length > 0 && (
-            <View style={styles.photoStatusCard}>
-              <Text style={styles.permissionText}>
-                写真 {photos.length} 件 / クラスタ {photoClusters.length} 件
-              </Text>
-            </View>
-          )}
 
           <View pointerEvents="box-none" style={styles.bottomBar}>
             <View style={styles.bottomSideSpacer} />
             <View style={styles.locationPill}>
               <Text style={styles.locationName}>{currentAreaName}</Text>
-              <Text style={styles.locationMeta}>{(distance / 1000).toFixed(2)} km · {points.length} pts</Text>
+              <Text style={styles.locationMeta}>ODO {(distance / 1000).toFixed(2)} km</Text>
             </View>
             <Animated.View
               pointerEvents={isFollowingUserLocation ? 'none' : 'auto'}
@@ -938,22 +935,31 @@ export default function App() {
         <Pressable onPress={() => setSelectedPhotoCluster(null)} style={styles.photoClusterOverlay}>
           <Pressable onPress={() => undefined} style={styles.photoClusterCallout}>
             <Text style={styles.photoClusterTitle}>この場所の写真</Text>
-            <View style={styles.photoClusterGrid}>
-              {selectedPhotoCluster?.photos.slice(0, 9).map((photo) => (
-                <Pressable
-                  key={photo.id}
-                  onPress={() => {
-                    setSelectedPhotoCluster(null);
-                    setSelectedPhoto(photo);
-                  }}
-                  style={styles.photoClusterGridItem}
-                >
-                  <Image source={{ uri: photo.uri }} style={styles.photoClusterGridImage} />
-                </Pressable>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={selectedPhotoClusterPages.length > 1}
+              style={styles.photoClusterPager}
+            >
+              {selectedPhotoClusterPages.map((pagePhotos, pageIndex) => (
+                <View key={`photo-cluster-page-${pageIndex}`} style={styles.photoClusterPage}>
+                  {pagePhotos.map((photo) => (
+                    <Pressable
+                      key={photo.id}
+                      onPress={() => {
+                        setSelectedPhotoCluster(null);
+                        setSelectedPhoto(photo);
+                      }}
+                      style={styles.photoClusterGridItem}
+                    >
+                      <Image source={{ uri: photo.uri }} style={styles.photoClusterGridImage} />
+                    </Pressable>
+                  ))}
+                </View>
               ))}
-            </View>
-            {selectedPhotoCluster && selectedPhotoCluster.photos.length > 9 && (
-              <Text style={styles.photoClusterMoreText}>ほか {selectedPhotoCluster.photos.length - 9} 件</Text>
+            </ScrollView>
+            {selectedPhotoClusterPages.length > 1 && (
+              <Text style={styles.photoClusterMoreText}>横にスワイプして他の写真を見る</Text>
             )}
           </Pressable>
         </Pressable>

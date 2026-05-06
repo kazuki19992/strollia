@@ -1,7 +1,7 @@
 import { Region } from 'react-native-maps';
 
 import { MapPhoto } from '../photoLibrary';
-import { clusterMapPhotos } from '../photoClusters';
+import { clusterMapPhotos, getPhotoClusterRadiusMeters, paginateMapPhotos } from '../photoClusters';
 
 /**
  * テスト用の地図写真を最小プロパティで作る。
@@ -30,6 +30,41 @@ const region: Region = {
   latitudeDelta: 0.01,
   longitudeDelta: 0.01,
 };
+
+
+describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
+  it('拡大率が低いほどクラスタ範囲を広げる', () => {
+    const zoomedIn = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.001 });
+    const zoomedOut = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
+
+    expect(zoomedOut).toBeGreaterThan(zoomedIn);
+  });
+
+  it('クラスタ範囲に下限を適用し、上限なしで広域ほど大きくする', () => {
+    const veryZoomedIn = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 });
+    const veryZoomedOut = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 5 });
+
+    expect(veryZoomedIn).toBe(10);
+    expect(veryZoomedOut).toBeCloseTo(16_650);
+  });
+
+  it('よく使うズーム範囲でもクラスタ範囲が十分変化する', () => {
+    const closeRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.001 });
+    const neighborhoodRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.01 });
+    const wideRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
+
+    expect(closeRange).toBe(10);
+    expect(neighborhoodRange).toBeGreaterThanOrEqual(30);
+    expect(wideRange).toBeCloseTo(266.4);
+  });
+
+  it('表示範囲の高さに比例してクラスタ範囲を線形に広げる', () => {
+    const rangeA = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.02 });
+    const rangeB = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 });
+
+    expect(rangeB).toBeCloseTo(rangeA * 2);
+  });
+});
 
 describe('写真クラスタ clusterMapPhotos', () => {
   it('近い写真を1つのクラスタにまとめる', () => {
@@ -91,5 +126,28 @@ describe('写真クラスタ clusterMapPhotos', () => {
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].photos[0].id).toBe('a');
+  });
+
+  it('同じ写真間隔でも拡大時は分けて縮小時はまとめる', () => {
+    const photos = [createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)];
+    const zoomedInClusters = clusterMapPhotos(photos, { ...region, latitudeDelta: 0.001 });
+    const zoomedOutClusters = clusterMapPhotos(photos, { ...region, latitudeDelta: 0.08 });
+
+    expect(zoomedInClusters).toHaveLength(2);
+    expect(zoomedOutClusters).toHaveLength(1);
+  });
+});
+
+describe('写真クラスタページ paginateMapPhotos', () => {
+  it('写真を9枚ずつページ分割する', () => {
+    const photos = Array.from({ length: 20 }, (_, index) => createPhoto(`photo-${index}`, 35, 139, index));
+    const pages = paginateMapPhotos(photos);
+
+    expect(pages).toHaveLength(3);
+    expect(pages.map((page) => page.length)).toEqual([9, 9, 2]);
+  });
+
+  it('ページサイズが不正な場合は空配列を返す', () => {
+    expect(paginateMapPhotos([createPhoto('a', 35, 139, 1)], 0)).toEqual([]);
   });
 });

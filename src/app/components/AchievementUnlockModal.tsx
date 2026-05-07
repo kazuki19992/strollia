@@ -8,7 +8,9 @@ import { ConfettiOverlay } from './ConfettiOverlay';
 /** 自動で閉じるまでの待機時間。 */
 const AUTO_CLOSE_DELAY_MS = 10_000;
 /** スワイプ閉じとして扱う移動量。 */
-const SWIPE_DISMISS_THRESHOLD = 70;
+const SWIPE_DISMISS_DISTANCE = 64;
+/** 勢いで閉じる場合の速度。 */
+const SWIPE_DISMISS_VELOCITY = 0.65;
 
 /** 実績解除モーダルのprops。 */
 export type AchievementUnlockModalProps = {
@@ -27,36 +29,44 @@ export type AchievementUnlockModalProps = {
 /** 実績解除時の紙吹雪付きモーダル。 */
 export function AchievementUnlockModal({ achievement, animationKey, styles, onShareToX, onClose }: AchievementUnlockModalProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
+  const autoCloseProgress = useRef(new Animated.Value(0)).current;
+  const dragX = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const isClosingRef = useRef(false);
   const [renderedAchievement, setRenderedAchievement] = useState<AchievementDefinition | null>(achievement);
   const visible = renderedAchievement != null;
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4,
+      onPanResponderGrant: () => {
+        dragX.stopAnimation();
+        dragY.stopAnimation();
+      },
       onPanResponderMove: (_, gestureState) => {
+        dragX.setValue(gestureState.dx);
         dragY.setValue(gestureState.dy);
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (Math.abs(gestureState.dy) >= SWIPE_DISMISS_THRESHOLD) {
+        const distance = Math.hypot(gestureState.dx, gestureState.dy);
+        const velocity = Math.hypot(gestureState.vx, gestureState.vy);
+
+        if (distance >= SWIPE_DISMISS_DISTANCE || velocity >= SWIPE_DISMISS_VELOCITY) {
           closeWithAnimation();
           return;
         }
 
-        Animated.spring(dragY, {
-          toValue: 0,
-          damping: 11,
-          stiffness: 180,
-          useNativeDriver: true,
-        }).start();
+        resetDragPosition();
       },
-      onPanResponderTerminate: () => {
-        Animated.spring(dragY, {
-          toValue: 0,
-          damping: 11,
-          stiffness: 180,
-          useNativeDriver: true,
-        }).start();
+      onPanResponderTerminate: (_, gestureState) => {
+        const distance = Math.hypot(gestureState.dx, gestureState.dy);
+
+        if (distance >= SWIPE_DISMISS_DISTANCE) {
+          closeWithAnimation();
+          return;
+        }
+
+        resetDragPosition();
       },
     }),
   ).current;
@@ -68,8 +78,10 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
 
     isClosingRef.current = false;
     setRenderedAchievement(achievement);
+    dragX.setValue(0);
     dragY.setValue(0);
     modalProgress.setValue(0);
+    autoCloseProgress.setValue(0);
     Animated.spring(modalProgress, {
       toValue: 1,
       damping: 9,
@@ -77,7 +89,12 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
       stiffness: 190,
       useNativeDriver: true,
     }).start();
-  }, [achievement, dragY, modalProgress]);
+    Animated.timing(autoCloseProgress, {
+      toValue: 1,
+      duration: AUTO_CLOSE_DELAY_MS,
+      useNativeDriver: false,
+    }).start();
+  }, [achievement, autoCloseProgress, dragX, dragY, modalProgress]);
 
   useEffect(() => {
     if (!visible) {
@@ -88,6 +105,22 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
     return () => clearTimeout(timerId);
   }, [visible, animationKey]);
 
+  /** スワイプが閉じる条件に満たない場合に中央へ戻す。 */
+  function resetDragPosition(): void {
+    Animated.spring(dragX, {
+      toValue: 0,
+      damping: 12,
+      stiffness: 210,
+      useNativeDriver: true,
+    }).start();
+    Animated.spring(dragY, {
+      toValue: 0,
+      damping: 12,
+      stiffness: 210,
+      useNativeDriver: true,
+    }).start();
+  }
+
   /** 退場アニメーション後に親へ閉じたことを通知する。 */
   function closeWithAnimation(): void {
     if (isClosingRef.current) {
@@ -95,8 +128,14 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
     }
 
     isClosingRef.current = true;
+    autoCloseProgress.stopAnimation();
     Animated.parallel([
       Animated.timing(modalProgress, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(dragX, {
         toValue: 0,
         duration: 500,
         useNativeDriver: true,
@@ -116,6 +155,12 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
     });
   }
 
+  const distanceOpacity = Animated.add(dragX, dragY).interpolate({
+    inputRange: [-260, -90, 0, 90, 260],
+    outputRange: [0.35, 0.68, 1, 0.68, 0.35],
+    extrapolate: 'clamp',
+  });
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={closeWithAnimation}>
       <View style={styles.achievementModalBackdrop}>
@@ -126,11 +171,12 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
             style={[
               styles.achievementModalCard,
               {
-                opacity: modalProgress,
+                opacity: Animated.multiply(modalProgress, distanceOpacity),
                 transform: [
                   {
                     scale: modalProgress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [0.62, 1.08, 1] }),
                   },
+                  { translateX: dragX },
                   {
                     translateY: Animated.add(
                       dragY,
@@ -141,6 +187,20 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
               },
             ]}
           >
+            <View style={styles.achievementAutoCloseTrack}>
+              <Animated.View
+                style={[
+                  styles.achievementAutoCloseProgress,
+                  {
+                    transform: [
+                      {
+                        scaleX: autoCloseProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+            </View>
             <Text style={styles.achievementModalEyebrow}>実績解除</Text>
             <Image source={renderedAchievement.trophyImage} style={styles.achievementModalImage} />
             <Text style={styles.achievementModalTitle}>{renderedAchievement.title}を達成しました！</Text>
@@ -149,9 +209,7 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
               <Pressable onPress={() => onShareToX(renderedAchievement)} style={styles.achievementPrimaryButton}>
                 <Text style={styles.primaryButtonText}>Xで自慢する</Text>
               </Pressable>
-              <Pressable onPress={closeWithAnimation} style={styles.achievementSecondaryButton}>
-                <Text style={styles.secondaryButtonText}>閉じる</Text>
-              </Pressable>
+              <Text style={styles.achievementSwipeHint}>スワイプで閉じる</Text>
             </View>
           </Animated.View>
         )}

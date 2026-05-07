@@ -67,6 +67,23 @@ export function createStyles(theme: AppTheme) {
       right: 6,
       width: 28,
     },
+    achievementAutoCloseProgress: {
+      backgroundColor: colors.primary,
+      height: '100%',
+      transformOrigin: 'left',
+      width: '100%',
+    },
+    achievementAutoCloseTrack: {
+      backgroundColor: colors.border,
+      borderRadius: 999,
+      height: 4,
+      left: 18,
+      opacity: 0.75,
+      overflow: 'hidden',
+      position: 'absolute',
+      right: 18,
+      top: 12,
+    },
     achievementModalActions: {
       alignSelf: 'stretch',
       gap: 10,
@@ -140,6 +157,12 @@ export function createStyles(theme: AppTheme) {
     },
     achievementSection: {
       gap: 12,
+    },
+    achievementSwipeHint: {
+      color: colors.mutedText,
+      fontSize: 12,
+      fontWeight: '900',
+      textAlign: 'center',
     },
     achievementTitle: {
       color: colors.text,

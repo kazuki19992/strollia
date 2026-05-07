@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Image, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
@@ -35,44 +35,16 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
   const dragY = useRef(new Animated.Value(0)).current;
   const isClosingRef = useRef(false);
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onCloseRef = useRef(onClose);
+  const onShareToXRef = useRef(onShareToX);
   const [isAutoClosePaused, setIsAutoClosePaused] = useState(false);
   const [renderedAchievement, setRenderedAchievement] = useState<AchievementDefinition | null>(achievement);
   const visible = renderedAchievement != null;
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4,
-      onPanResponderGrant: () => {
-        dragX.stopAnimation();
-        dragY.stopAnimation();
-      },
-      onPanResponderMove: (_, gestureState) => {
-        dragX.setValue(gestureState.dx);
-        dragY.setValue(gestureState.dy);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const distance = Math.hypot(gestureState.dx, gestureState.dy);
-        const velocity = Math.hypot(gestureState.vx, gestureState.vy);
 
-        if (distance >= SWIPE_DISMISS_DISTANCE || velocity >= SWIPE_DISMISS_VELOCITY) {
-          closeWithAnimation();
-          return;
-        }
-
-        resetDragPosition();
-      },
-      onPanResponderTerminate: (_, gestureState) => {
-        const distance = Math.hypot(gestureState.dx, gestureState.dy);
-
-        if (distance >= SWIPE_DISMISS_DISTANCE) {
-          closeWithAnimation();
-          return;
-        }
-
-        resetDragPosition();
-      },
-    }),
-  ).current;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    onShareToXRef.current = onShareToX;
+  }, [onClose, onShareToX]);
 
   useEffect(() => {
     if (!achievement) {
@@ -104,21 +76,6 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
     }).start();
   }, [achievement, autoCloseProgress, dragX, dragY, modalProgress]);
 
-  useEffect(() => {
-    if (!visible || isAutoClosePaused) {
-      return;
-    }
-
-    autoCloseTimerRef.current = setTimeout(closeWithAnimation, AUTO_CLOSE_DELAY_MS);
-
-    return () => {
-      if (autoCloseTimerRef.current) {
-        clearTimeout(autoCloseTimerRef.current);
-        autoCloseTimerRef.current = null;
-      }
-    };
-  }, [visible, animationKey, isAutoClosePaused]);
-
   /** 共有シートを開く前に自動クローズを止める。 */
   function shareAndPauseAutoClose(): void {
     setIsAutoClosePaused(true);
@@ -129,12 +86,12 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
     }
 
     if (renderedAchievement) {
-      onShareToX(renderedAchievement);
+      onShareToXRef.current(renderedAchievement);
     }
   }
 
   /** スワイプが閉じる条件に満たない場合に中央へ戻す。 */
-  function resetDragPosition(): void {
+  const resetDragPosition = useCallback(function resetDragPosition(): void {
     Animated.spring(dragX, {
       toValue: 0,
       damping: 12,
@@ -147,10 +104,10 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
       stiffness: 210,
       useNativeDriver: true,
     }).start();
-  }
+  }, [dragX, dragY]);
 
   /** 退場アニメーション後に親へ閉じたことを通知する。 */
-  function closeWithAnimation(): void {
+  const closeWithAnimation = useCallback(function closeWithAnimation(): void {
     if (isClosingRef.current) {
       return;
     }
@@ -161,7 +118,7 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
       clearTimeout(autoCloseTimerRef.current);
       autoCloseTimerRef.current = null;
     }
-    onClose();
+    onCloseRef.current();
     Animated.parallel([
       Animated.timing(modalProgress, {
         toValue: 0,
@@ -185,7 +142,60 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
 
       setRenderedAchievement(null);
     });
-  }
+  }, [autoCloseProgress, dragX, dragY, modalProgress]);
+
+  useEffect(() => {
+    if (!visible || isAutoClosePaused) {
+      return;
+    }
+
+    autoCloseTimerRef.current = setTimeout(closeWithAnimation, AUTO_CLOSE_DELAY_MS);
+
+    return () => {
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
+      }
+    };
+  }, [visible, animationKey, isAutoClosePaused, closeWithAnimation]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4,
+        onPanResponderGrant: () => {
+          dragX.stopAnimation();
+          dragY.stopAnimation();
+        },
+        onPanResponderMove: (_, gestureState) => {
+          dragX.setValue(gestureState.dx);
+          dragY.setValue(gestureState.dy);
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const distance = Math.hypot(gestureState.dx, gestureState.dy);
+          const velocity = Math.hypot(gestureState.vx, gestureState.vy);
+
+          if (distance >= SWIPE_DISMISS_DISTANCE || velocity >= SWIPE_DISMISS_VELOCITY) {
+            closeWithAnimation();
+            return;
+          }
+
+          resetDragPosition();
+        },
+        onPanResponderTerminate: (_, gestureState) => {
+          const distance = Math.hypot(gestureState.dx, gestureState.dy);
+
+          if (distance >= SWIPE_DISMISS_DISTANCE) {
+            closeWithAnimation();
+            return;
+          }
+
+          resetDragPosition();
+        },
+      }),
+    [closeWithAnimation, dragX, dragY, resetDragPosition],
+  );
 
   const distanceOpacity = Animated.add(dragX, dragY).interpolate({
     inputRange: [-260, -90, 0, 90, 260],

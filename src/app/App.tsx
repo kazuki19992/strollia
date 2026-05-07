@@ -39,6 +39,7 @@ import {
   markAchievementShownInApp,
 } from '../features/achievements/achievementRepository';
 import { evaluateAchievementsAndNotify } from '../features/achievements/achievementService';
+import { filterDismissedAchievementNotifications } from '../features/achievements/pendingNotifications';
 import { shareGpx } from '../features/export/gpxExporter';
 import {
   isBackgroundLocationRecording,
@@ -141,6 +142,8 @@ export default function App() {
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedRouteLineStyleId, setSelectedRouteLineStyleId] = useState<RouteLineStyleId>(DEFAULT_ROUTE_LINE_STYLE_ID);
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
+  /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
+  const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
   const { renderRouteCoordinates, visibleRouteCoordinates, initialRegion, distance } = useMapRouteState(
     points,
@@ -196,7 +199,7 @@ export default function App() {
     setAchievementItems(items);
 
     if (showPendingNotifications) {
-      setPendingAchievementNotifications(pendingNotifications);
+      setPendingAchievementNotifications(filterDismissedAchievementNotifications(pendingNotifications, dismissedAchievementQueueIdsRef.current));
     }
   }, []);
 
@@ -688,6 +691,7 @@ export default function App() {
       return;
     }
 
+    dismissedAchievementQueueIdsRef.current.add(current.queueId);
     markAchievementShownInApp(current.queueId).catch(() => undefined);
     setPendingAchievementNotifications((notifications) => notifications.slice(1));
   }

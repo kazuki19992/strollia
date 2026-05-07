@@ -34,6 +34,8 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
   const dragX = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const isClosingRef = useRef(false);
+  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isAutoClosePaused, setIsAutoClosePaused] = useState(false);
   const [renderedAchievement, setRenderedAchievement] = useState<AchievementDefinition | null>(achievement);
   const visible = renderedAchievement != null;
   const panResponder = useRef(
@@ -78,11 +80,16 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
     }
 
     isClosingRef.current = false;
+    setIsAutoClosePaused(false);
     setRenderedAchievement(achievement);
     dragX.setValue(0);
     dragY.setValue(0);
     modalProgress.setValue(0);
     autoCloseProgress.setValue(0);
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
     Animated.spring(modalProgress, {
       toValue: 1,
       damping: 9,
@@ -98,13 +105,33 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
   }, [achievement, autoCloseProgress, dragX, dragY, modalProgress]);
 
   useEffect(() => {
-    if (!visible) {
+    if (!visible || isAutoClosePaused) {
       return;
     }
 
-    const timerId = setTimeout(closeWithAnimation, AUTO_CLOSE_DELAY_MS);
-    return () => clearTimeout(timerId);
-  }, [visible, animationKey]);
+    autoCloseTimerRef.current = setTimeout(closeWithAnimation, AUTO_CLOSE_DELAY_MS);
+
+    return () => {
+      if (autoCloseTimerRef.current) {
+        clearTimeout(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
+      }
+    };
+  }, [visible, animationKey, isAutoClosePaused]);
+
+  /** 共有シートを開く前に自動クローズを止める。 */
+  function shareAndPauseAutoClose(): void {
+    setIsAutoClosePaused(true);
+    autoCloseProgress.stopAnimation();
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
+
+    if (renderedAchievement) {
+      onShareToX(renderedAchievement);
+    }
+  }
 
   /** スワイプが閉じる条件に満たない場合に中央へ戻す。 */
   function resetDragPosition(): void {
@@ -130,6 +157,11 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
 
     isClosingRef.current = true;
     autoCloseProgress.stopAnimation();
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
+    onClose();
     Animated.parallel([
       Animated.timing(modalProgress, {
         toValue: 0,
@@ -152,7 +184,6 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
       }
 
       setRenderedAchievement(null);
-      onClose();
     });
   }
 
@@ -191,26 +222,28 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
             <Pressable onPress={closeWithAnimation} hitSlop={10} style={styles.achievementCloseButton}>
               <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButton.color} />
             </Pressable>
-            <View style={styles.achievementAutoCloseTrack}>
-              <Animated.View
-                style={[
-                  styles.achievementAutoCloseProgress,
-                  {
-                    transform: [
-                      {
-                        scaleX: autoCloseProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-                      },
-                    ],
-                  },
-                ]}
-              />
-            </View>
+            {!isAutoClosePaused && (
+              <View style={styles.achievementAutoCloseTrack}>
+                <Animated.View
+                  style={[
+                    styles.achievementAutoCloseProgress,
+                    {
+                      transform: [
+                        {
+                          scaleX: autoCloseProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              </View>
+            )}
             <Text style={styles.achievementModalEyebrow}>実績解除</Text>
             <Image source={renderedAchievement.trophyImage} style={styles.achievementModalImage} />
             <Text style={styles.achievementModalTitle}>{renderedAchievement.title}を達成しました！</Text>
             <Text style={styles.achievementModalDescription}>{renderedAchievement.description}</Text>
             <View style={styles.achievementModalActions}>
-              <Pressable onPress={() => onShareToX(renderedAchievement)} style={styles.achievementPrimaryButton}>
+              <Pressable onPress={shareAndPauseAutoClose} style={styles.achievementPrimaryButton}>
                 <Feather name="share-2" size={18} color={styles.primaryButtonText.color} />
                 <Text style={styles.primaryButtonText}>ともだちに自慢する</Text>
               </Pressable>

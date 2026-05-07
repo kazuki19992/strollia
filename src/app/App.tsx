@@ -23,6 +23,7 @@ import {
   useColorScheme,
   View,
   Vibration,
+  Share,
 } from 'react-native';
 import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
@@ -691,12 +692,11 @@ export default function App() {
     setPendingAchievementNotifications((notifications) => notifications.slice(1));
   }
 
-  /** X投稿画面へ実績共有文言を渡す。 */
+  /** OS標準共有シートへ実績共有文言を渡す。 */
   function shareAchievementToX(achievement: AchievementDefinition): void {
     triggerSelectionHaptic();
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(achievement.shareText)}`;
-    Linking.openURL(url).catch((error: unknown) => {
-      Alert.alert('共有失敗', error instanceof Error ? error.message : 'Xの投稿画面を開けませんでした。');
+    Share.share({ message: achievement.shareText }).catch((error: unknown) => {
+      Alert.alert('共有失敗', error instanceof Error ? error.message : '共有シートを開けませんでした。');
     });
   }
 

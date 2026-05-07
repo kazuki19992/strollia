@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Image, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
 import { AchievementDefinition } from '../../features/achievements/achievementDefinitions';
@@ -211,7 +211,8 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
             <Text style={styles.achievementModalDescription}>{renderedAchievement.description}</Text>
             <View style={styles.achievementModalActions}>
               <Pressable onPress={() => onShareToX(renderedAchievement)} style={styles.achievementPrimaryButton}>
-                <Text style={styles.primaryButtonText}>Xで自慢する</Text>
+                <Feather name="share-2" size={18} color={styles.primaryButtonText.color} />
+                <Text style={styles.primaryButtonText}>ともだちに自慢する</Text>
               </Pressable>
               <Text style={styles.achievementSwipeHint}>スワイプで閉じる</Text>
             </View>

@@ -38,6 +38,7 @@ import {
   getPendingInAppAchievementNotifications,
   markAchievementShownInApp,
 } from '../features/achievements/achievementRepository';
+import { canEvaluateAchievementsInForeground } from '../features/achievements/achievementEvaluationGate';
 import { evaluateAchievementsAndNotify } from '../features/achievements/achievementService';
 import { filterDismissedAchievementNotifications } from '../features/achievements/pendingNotifications';
 import { shareGpx } from '../features/export/gpxExporter';
@@ -118,6 +119,8 @@ export default function App() {
   const recenterButtonOpacity = useRef(new Animated.Value(0)).current;
   const screenTransitionOpacity = useRef(new Animated.Value(1)).current;
   const isUpdatingPhotoSettingRef = useRef(false);
+  const isAchievementDialogVisibleRef = useRef(false);
+  const wasAchievementEvaluationPausedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -202,6 +205,35 @@ export default function App() {
       setPendingAchievementNotifications(filterDismissedAchievementNotifications(pendingNotifications, dismissedAchievementQueueIdsRef.current));
     }
   }, []);
+
+  /**
+   * 実績解除ダイアログが出ていない時だけ実績を評価する。
+   *
+   * @returns 実績評価を実行した場合はtrue。
+   */
+  const evaluateAchievementsIfDialogIdle = useCallback(async (): Promise<boolean> => {
+    if (!canEvaluateAchievementsInForeground(isAchievementDialogVisibleRef.current)) {
+      wasAchievementEvaluationPausedRef.current = true;
+      return false;
+    }
+
+    await evaluateAchievementsAndNotify();
+    return true;
+  }, []);
+
+  /**
+   * GPSログを再読み込みし、実績解除ダイアログが出ていなければ実績評価まで進める。
+   *
+   * @returns なし。
+   */
+  const refreshDataAndEvaluateAchievementsIfDialogIdle = useCallback(async (): Promise<void> => {
+    await refreshData();
+    const didEvaluate = await evaluateAchievementsIfDialogIdle();
+
+    if (didEvaluate) {
+      await refreshAchievementState(true);
+    }
+  }, [evaluateAchievementsIfDialogIdle, refreshAchievementState, refreshData]);
 
   /** GPSバックグラウンド記録を開始し、結果をユーザー向けメッセージへ反映する。 */
   const startRecording = useCallback(
@@ -380,9 +412,7 @@ export default function App() {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       setAppState(state);
       if (state === 'active') {
-        refreshData()
-          .then(() => evaluateAchievementsAndNotify())
-          .then(() => refreshAchievementState(true))
+        refreshDataAndEvaluateAchievementsIfDialogIdle()
           .catch((error: unknown) => {
             setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
           });
@@ -390,7 +420,7 @@ export default function App() {
     });
 
     return () => subscription.remove();
-  }, [refreshAchievementState, refreshData]);
+  }, [refreshDataAndEvaluateAchievementsIfDialogIdle]);
 
 
   /**
@@ -402,16 +432,14 @@ export default function App() {
     }
 
     const intervalId = setInterval(() => {
-      refreshData()
-        .then(() => evaluateAchievementsAndNotify())
-        .then(() => refreshAchievementState(true))
+      refreshDataAndEvaluateAchievementsIfDialogIdle()
         .catch((error: unknown) => {
           setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
         });
     }, 10_000);
 
     return () => clearInterval(intervalId);
-  }, [appState, isReady, refreshAchievementState, refreshData]);
+  }, [appState, isReady, refreshDataAndEvaluateAchievementsIfDialogIdle]);
 
   /**
    * 画面ON維持設定が有効でフォアグラウンドの場合だけロック抑止を有効化する。
@@ -434,6 +462,22 @@ export default function App() {
     };
   }, []);
 
+  /**
+   * 実績解除ダイアログ表示中は評価を止め、全件閉じたあとに保留した評価を再開する。
+   */
+  useEffect(() => {
+    const isDialogVisible = activeAchievementNotification != null;
+    isAchievementDialogVisibleRef.current = isDialogVisible;
+
+    if (isDialogVisible || !wasAchievementEvaluationPausedRef.current || !isReady || appState !== 'active') {
+      return;
+    }
+
+    wasAchievementEvaluationPausedRef.current = false;
+    refreshDataAndEvaluateAchievementsIfDialogIdle().catch((error: unknown) => {
+      setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
+    });
+  }, [activeAchievementNotification, appState, isReady, refreshDataAndEvaluateAchievementsIfDialogIdle]);
 
   /**
    * 実績解除演出が表示されたタイミングで成功タプティックを鳴らす。

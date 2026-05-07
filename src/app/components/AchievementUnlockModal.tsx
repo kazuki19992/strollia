@@ -4,14 +4,11 @@ import { Animated, Image, Modal, PanResponder, Pressable, Text, View } from 'rea
 
 import { AchievementDefinition } from '../../features/achievements/achievementDefinitions';
 import { AppStyles } from '../appStyles';
+import { shouldDismissAchievementModalSwipe, shouldDismissAchievementModalTerminate } from './achievementUnlockModalLogic';
 import { ConfettiOverlay } from './ConfettiOverlay';
 
 /** 自動で閉じるまでの待機時間。 */
 const AUTO_CLOSE_DELAY_MS = 10_000;
-/** スワイプ閉じとして扱う移動量。 */
-const SWIPE_DISMISS_DISTANCE = 64;
-/** 勢いで閉じる場合の速度。 */
-const SWIPE_DISMISS_VELOCITY = 0.65;
 
 /** 実績解除モーダルのprops。 */
 export type AchievementUnlockModalProps = {
@@ -173,10 +170,7 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
           dragY.setValue(gestureState.dy);
         },
         onPanResponderRelease: (_, gestureState) => {
-          const distance = Math.hypot(gestureState.dx, gestureState.dy);
-          const velocity = Math.hypot(gestureState.vx, gestureState.vy);
-
-          if (distance >= SWIPE_DISMISS_DISTANCE || velocity >= SWIPE_DISMISS_VELOCITY) {
+          if (shouldDismissAchievementModalSwipe(gestureState)) {
             closeWithAnimation();
             return;
           }
@@ -184,9 +178,7 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
           resetDragPosition();
         },
         onPanResponderTerminate: (_, gestureState) => {
-          const distance = Math.hypot(gestureState.dx, gestureState.dy);
-
-          if (distance >= SWIPE_DISMISS_DISTANCE) {
+          if (shouldDismissAchievementModalTerminate(gestureState)) {
             closeWithAnimation();
             return;
           }

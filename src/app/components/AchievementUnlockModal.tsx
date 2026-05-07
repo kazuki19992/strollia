@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Image, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
 import { AchievementDefinition } from '../../features/achievements/achievementDefinitions';
@@ -187,6 +188,9 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
               },
             ]}
           >
+            <Pressable onPress={closeWithAnimation} hitSlop={10} style={styles.achievementCloseButton}>
+              <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButton.color} />
+            </Pressable>
             <View style={styles.achievementAutoCloseTrack}>
               <Animated.View
                 style={[

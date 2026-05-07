@@ -40,6 +40,11 @@ export async function notifyAchievementUnlocked(definition: AchievementDefinitio
     content: {
       title: '実績を達成しました！',
       body: `${definition.title}を達成しました！`,
+      attachments: definition.trophyImageUri
+        ? [{ identifier: definition.id, url: definition.trophyImageUri, type: 'image/png' }]
+        : undefined,
+      data: { achievementId: definition.id, trophyImageUri: definition.trophyImageUri },
+      vibrate: [0, 1000],
     },
     trigger: null,
   });

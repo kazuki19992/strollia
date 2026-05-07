@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
-import { AchievementCategory } from '../../features/achievements/achievementDefinitions';
+import { AchievementCategory, formatAchievementDistance } from '../../features/achievements/achievementDefinitions';
 import { AchievementListItem } from '../../features/achievements/achievementRepository';
 import { AppTheme } from '../../theme/theme';
 import { AppStyles } from '../appStyles';
@@ -84,7 +84,7 @@ function getAchievementProgressLabel(item: AchievementListItem): string {
 
   switch (item.definition.condition.type) {
     case 'totalDistanceMeters':
-      return `${Math.floor(item.progressValue)} / ${threshold} m`;
+      return `${formatAchievementDistance(item.progressValue / 1000)} / ${formatAchievementDistance(threshold / 1000)}`;
     case 'logDays':
       return `${item.progressValue} / ${threshold} 日`;
     case 'prefectureCount':

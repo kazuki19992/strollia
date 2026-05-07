@@ -72,8 +72,15 @@ export async function getAchievementListItems(): Promise<AchievementListItem[]> 
   }).sort((a, b) => a.definition.sortOrder - b.definition.sortOrder);
 }
 
+/** 実績再評価の挙動オプション。 */
+export type EvaluateAchievementUnlockOptions = {
+  /** テストや一括処理で使う評価時刻。 */
+  now?: string;
+};
+
 /** 現在の進捗から新しく解除できる実績を保存し、通知キューに積む。 */
-export async function evaluateAndStoreAchievementUnlocks(now = new Date().toISOString()): Promise<AchievementDefinition[]> {
+export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchievementUnlockOptions = {}): Promise<AchievementDefinition[]> {
+  const now = options.now ?? new Date().toISOString();
   const [progress, unlockedIds] = await Promise.all([getAchievementProgress(), getUnlockedAchievementIds()]);
   const newlyUnlocked = evaluateAchievementUnlocks(progress, unlockedIds);
 
@@ -104,6 +111,15 @@ export async function evaluateAndStoreAchievementUnlocks(now = new Date().toISOS
   });
 
   return newlyUnlocked;
+}
+
+
+/** 開発中の動作確認用に解除済み実績と通知キューを削除する。 */
+export async function resetAchievementUnlocksForDevelopment(): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM achievement_notification_queue');
+    await db.runAsync('DELETE FROM achievement_unlocks');
+  });
 }
 
 /** ローカル通知を送信済みにする。 */

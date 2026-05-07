@@ -32,13 +32,13 @@ describe('実績リポジトリ achievementRepository', () => {
 
   it('達成済みで未解除の実績を保存して通知キューに積む', async () => {
     (db.getFirstAsync as jest.Mock)
-      .mockResolvedValueOnce({ totalDistanceMeters: 100 })
+      .mockResolvedValueOnce({ totalDistanceMeters: 100000 })
       .mockResolvedValueOnce({ logDays: 1 })
       .mockResolvedValueOnce({ count: 0 })
       .mockResolvedValueOnce({ count: 0 });
     (db.getAllAsync as jest.Mock).mockResolvedValue([]);
 
-    const unlocked = await evaluateAndStoreAchievementUnlocks('2026-05-07T00:00:00.000Z');
+    const unlocked = await evaluateAndStoreAchievementUnlocks({ now: '2026-05-07T00:00:00.000Z' });
 
     expect(unlocked.map((definition) => definition.id)).toEqual(expect.arrayContaining(['distance-100', 'log-days-1']));
     expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
@@ -46,7 +46,7 @@ describe('実績リポジトリ achievementRepository', () => {
       expect.stringContaining('INSERT OR IGNORE INTO achievement_unlocks'),
       'distance-100',
       '2026-05-07T00:00:00.000Z',
-      100,
+      100000,
       '2026-05-07T00:00:00.000Z',
     );
   });

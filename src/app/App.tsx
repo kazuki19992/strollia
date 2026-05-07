@@ -22,11 +22,13 @@ import {
   Text,
   useColorScheme,
   View,
+  Vibration,
 } from 'react-native';
 import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
 import { AchievementDefinition } from '../features/achievements/achievementDefinitions';
+import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '../config/developmentFlags';
 import { requestAchievementNotificationPermissionOnFirstLaunch } from '../features/achievements/achievementNotificationService';
 import {
   AchievementListItem,
@@ -162,6 +164,7 @@ export default function App() {
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
+  const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
@@ -331,7 +334,7 @@ export default function App() {
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         await requestAchievementNotificationPermissionOnFirstLaunch().catch(() => undefined);
         await refreshData();
-        await evaluateAchievementsAndNotify();
+        await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         await refreshAchievementState(true);
       })
       .catch((error: unknown) => {
@@ -439,6 +442,9 @@ export default function App() {
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    Vibration.vibrate(1000);
+
+    return () => Vibration.cancel();
   }, [activeAchievementNotification]);
 
   /**
@@ -1179,6 +1185,11 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
+      {shouldShowDevelopmentFlagBanner && (
+        <SafeAreaView pointerEvents="none" style={styles.developmentFlagBannerContainer}>
+          <Text style={styles.developmentFlagBannerText}>開発フラグ有効</Text>
+        </SafeAreaView>
+      )}
       <Animated.View
         style={[
           styles.screenTransition,
@@ -1196,6 +1207,7 @@ export default function App() {
 
       <AchievementUnlockModal
         achievement={activeAchievementNotification?.definition ?? null}
+        animationKey={activeAchievementNotification ? `${activeAchievementNotification.queueId}:${activeAchievementNotification.definition.id}` : null}
         styles={styles}
         onShareToX={shareAchievementToX}
         onClose={closeAchievementUnlockModal}

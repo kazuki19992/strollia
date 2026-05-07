@@ -3,14 +3,19 @@ import { Animated, View } from 'react-native';
 
 import { AppStyles } from '../appStyles';
 
+/** 紙吹雪の吹き上げ開始位置。 */
+type ConfettiOrigin = 'left' | 'right';
+
 /** 紙吹雪の1片。 */
 type ConfettiPiece = {
   id: number;
-  left: `${number}%`;
+  origin: ConfettiOrigin;
   color: string;
   delay: number;
-  translateY: Animated.Value;
-  rotate: Animated.Value;
+  peak: number;
+  drift: number;
+  fallDrift: number;
+  progress: Animated.Value;
 };
 
 /** 紙吹雪オーバーレイのprops。 */
@@ -19,10 +24,12 @@ export type ConfettiOverlayProps = {
   styles: AppStyles;
   /** アニメーションを開始するか。 */
   active: boolean;
+  /** 表示対象が変わるたびにアニメーションを再生するためのキー。 */
+  animationKey: string | null;
 };
 
-/** 軽量な紙吹雪アニメーション。 */
-export function ConfettiOverlay({ styles, active }: ConfettiOverlayProps) {
+/** 左右下から吹き上がり、重力で画面外へ落ちる軽量な紙吹雪アニメーション。 */
+export function ConfettiOverlay({ styles, active, animationKey }: ConfettiOverlayProps) {
   const piecesRef = useRef<ConfettiPiece[] | null>(null);
   const pieces = useMemo(() => {
     if (!piecesRef.current) {
@@ -38,45 +45,53 @@ export function ConfettiOverlay({ styles, active }: ConfettiOverlayProps) {
     }
 
     pieces.forEach((piece) => {
-      piece.translateY.setValue(-80);
-      piece.rotate.setValue(0);
-      Animated.parallel([
-        Animated.timing(piece.translateY, {
-          toValue: 760,
-          duration: 1800,
-          delay: piece.delay,
-          useNativeDriver: true,
-        }),
-        Animated.timing(piece.rotate, {
-          toValue: 1,
-          duration: 1800,
-          delay: piece.delay,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      piece.progress.setValue(0);
+      Animated.timing(piece.progress, {
+        toValue: 1,
+        duration: 1900,
+        delay: piece.delay,
+        useNativeDriver: true,
+      }).start();
     });
-  }, [active, pieces]);
+  }, [active, animationKey, pieces]);
 
   return (
     <View pointerEvents="none" style={styles.confettiLayer}>
-      {pieces.map((piece) => (
-        <Animated.View
-          key={piece.id}
-          style={[
-            styles.confettiPiece,
-            {
-              backgroundColor: piece.color,
-              left: piece.left,
-              transform: [
-                { translateY: piece.translateY },
-                {
-                  rotate: piece.rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '540deg'] }),
-                },
-              ],
-            },
-          ]}
-        />
-      ))}
+      {pieces.map((piece) => {
+        const direction = piece.origin === 'left' ? 1 : -1;
+
+        return (
+          <Animated.View
+            key={piece.id}
+            style={[
+              styles.confettiPiece,
+              {
+                backgroundColor: piece.color,
+                bottom: -28,
+                left: piece.origin === 'left' ? -16 : undefined,
+                right: piece.origin === 'right' ? -16 : undefined,
+                transform: [
+                  {
+                    translateX: piece.progress.interpolate({
+                      inputRange: [0, 0.45, 1],
+                      outputRange: [0, direction * piece.drift, direction * (piece.drift + piece.fallDrift)],
+                    }),
+                  },
+                  {
+                    translateY: piece.progress.interpolate({
+                      inputRange: [0, 0.45, 1],
+                      outputRange: [0, -piece.peak, 110],
+                    }),
+                  },
+                  {
+                    rotate: piece.progress.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '720deg'] }),
+                  },
+                ],
+              },
+            ]}
+          />
+        );
+      })}
     </View>
   );
 }
@@ -85,12 +100,14 @@ export function ConfettiOverlay({ styles, active }: ConfettiOverlayProps) {
 function createConfettiPieces(): ConfettiPiece[] {
   const colors = ['#73c7a2', '#f0b84f', '#ff8899', '#8bb7ff', '#fffdf8'];
 
-  return Array.from({ length: 34 }, (_, index) => ({
+  return Array.from({ length: 44 }, (_, index) => ({
     id: index,
-    left: `${(index * 29) % 100}%` as `${number}%`,
+    origin: index % 2 === 0 ? 'left' : 'right',
     color: colors[index % colors.length],
-    delay: (index % 9) * 70,
-    translateY: new Animated.Value(-80),
-    rotate: new Animated.Value(0),
+    delay: (index % 11) * 35,
+    peak: 300 + (index % 9) * 38,
+    drift: 70 + (index % 8) * 24,
+    fallDrift: 80 + (index % 7) * 30,
+    progress: new Animated.Value(0),
   }));
 }

@@ -191,10 +191,9 @@ export function createStyles(theme: AppTheme) {
       zIndex: 1,
     },
     confettiPiece: {
-      borderRadius: 4,
-      height: 16,
+      borderRadius: 1,
+      height: 13,
       position: 'absolute',
-      top: 0,
       width: 9,
     },
     container: {
@@ -255,6 +254,25 @@ export function createStyles(theme: AppTheme) {
     dangerActionText: {
       color: colors.danger,
       fontWeight: '900',
+    },
+    developmentFlagBannerContainer: {
+      alignItems: 'center',
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      zIndex: 20,
+    },
+    developmentFlagBannerText: {
+      backgroundColor: colors.danger,
+      borderBottomLeftRadius: 12,
+      borderBottomRightRadius: 12,
+      color: colors.primaryText,
+      fontSize: 12,
+      fontWeight: '900',
+      overflow: 'hidden',
+      paddingHorizontal: 12,
+      paddingVertical: 5,
     },
     dailyCard: {
       backgroundColor: colors.card,

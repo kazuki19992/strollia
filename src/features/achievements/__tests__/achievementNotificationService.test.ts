@@ -27,6 +27,7 @@ const definition = {
   category: 'logDays',
   condition: { type: 'logDays', threshold: 1 },
   trophyImage: 1,
+  trophyImageUri: 'file:///trophy.png',
   shareText: 'share',
   sortOrder: 1,
   enabled: true,
@@ -60,7 +61,13 @@ describe('実績通知 achievementNotificationService', () => {
     await notifyAchievementUnlocked(definition);
 
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ content: expect.objectContaining({ body: 'はじめの一歩を達成しました！' }) }),
+      expect.objectContaining({
+        content: expect.objectContaining({
+          body: 'はじめの一歩を達成しました！',
+          attachments: [{ identifier: 'log-days-1', url: 'file:///trophy.png', type: 'image/png' }],
+          vibrate: [0, 1000],
+        }),
+      }),
     );
     expect(markAchievementPushDelivered).toHaveBeenCalledWith('log-days-1');
   });

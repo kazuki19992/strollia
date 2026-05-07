@@ -1,15 +1,11 @@
+import { developmentFlags } from '../../../config/developmentFlags';
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from '../premiumCatalog';
-import {
-  DEVELOPMENT_PREMIUM_ACCESS_ENABLED,
-  getDefaultPremiumAccessState,
-  resolvePremiumAccessState,
-  RevenueCatClient,
-} from '../revenueCatAccess';
+import { getDefaultPremiumAccessState, resolvePremiumAccessState, RevenueCatClient } from '../revenueCatAccess';
 
 describe('RevenueCat課金状態 revenueCatAccess', () => {
   it('未接続時は開発用フラグに応じた既定状態を返す', () => {
     expect(getDefaultPremiumAccessState()).toEqual({
-      isPlusActive: DEVELOPMENT_PREMIUM_ACCESS_ENABLED,
+      isPlusActive: developmentFlags.enablePremiumAccessWithoutRevenueCat,
       entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
     });
   });

@@ -1,4 +1,4 @@
-import { ImageSourcePropType } from 'react-native';
+import { Image, ImageSourcePropType } from 'react-native';
 
 /** 実績の分類。 */
 export type AchievementCategory = 'distance' | 'logDays' | 'prefecture' | 'municipality';
@@ -24,6 +24,8 @@ export type AchievementDefinition = {
   condition: AchievementCondition;
   /** トロフィー画像。 */
   trophyImage: ImageSourcePropType;
+  /** 通知添付に使うトロフィー画像URI。 */
+  trophyImageUri: string | null;
   /** X共有やOS共有で使う文言。 */
   shareText: string;
   /** 実績画面の表示順。 */
@@ -158,40 +160,52 @@ const cityTrophyImages: Record<number, ImageSourcePropType> = {
   1000: require('../../../assets/achievements/cities/1000.png'),
 };
 
-/** メートル値をユーザー向け距離表記に変換する。 */
-export function formatAchievementDistance(meters: number): string {
-  if (meters < 1000) {
-    return `${meters}m`;
-  }
-
-  const kilometers = meters / 1000;
+/** km値をユーザー向け距離表記に変換する。 */
+export function formatAchievementDistance(kilometers: number): string {
   return Number.isInteger(kilometers) ? `${kilometers}km` : `${kilometers.toFixed(1)}km`;
+}
+
+/** km単位の実績閾値を内部判定用のmへ変換する。 */
+export function kilometersToMeters(kilometers: number): number {
+  return kilometers * 1000;
+}
+
+/** 通知添付で使えるトロフィー画像URIを取得する。 */
+export function getTrophyImageUri(source: ImageSourcePropType): string | null {
+  return Image.resolveAssetSource(source)?.uri ?? null;
 }
 
 /** 初期実装で有効にする全実績定義。 */
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
-  ...distanceSteps.map((meters, index): AchievementDefinition => ({
-    id: `distance-${meters}`,
-    title: `${formatAchievementDistance(meters)}歩いた`,
-    description: `総移動距離が${formatAchievementDistance(meters)}に到達する`,
+  ...distanceSteps.map((kilometers, index): AchievementDefinition => ({
+    id: `distance-${kilometers}`,
+    title: `${formatAchievementDistance(kilometers)}移動した`,
+    description: `総移動距離が${formatAchievementDistance(kilometers)}に到達する`,
     category: 'distance',
-    condition: { type: 'totalDistanceMeters', threshold: meters },
-    trophyImage: distanceTrophyImages[meters],
-    shareText: createAchievementShareText(`${formatAchievementDistance(meters)}歩いた`),
+    condition: { type: 'totalDistanceMeters', threshold: kilometersToMeters(kilometers) },
+    trophyImage: distanceTrophyImages[kilometers],
+    trophyImageUri: getTrophyImageUri(distanceTrophyImages[kilometers]),
+    shareText: createAchievementShareText(`${formatAchievementDistance(kilometers)}移動した`),
     sortOrder: 1000 + index,
     enabled: true,
   })),
-  ...earthDistanceSteps.map((meters, index): AchievementDefinition => ({
-    id: `distance-earth-${meters}`,
-    title: `地球級 ${formatAchievementDistance(meters)}`,
-    description: `総移動距離が${formatAchievementDistance(meters)}に到達する`,
-    category: 'distance',
-    condition: { type: 'totalDistanceMeters', threshold: meters },
-    trophyImage: earthDistanceTrophyImages[meters],
-    shareText: createAchievementShareText(`地球級 ${formatAchievementDistance(meters)}`),
-    sortOrder: 2000 + index,
-    enabled: true,
-  })),
+  ...earthDistanceSteps.map((kilometers, index): AchievementDefinition => {
+    const lapCount = index + 1;
+    const title = `地球${lapCount}周した`;
+
+    return {
+      id: `distance-earth-${kilometers}`,
+      title,
+      description: `総移動距離が地球${lapCount}周相当（${formatAchievementDistance(kilometers)}）に到達する`,
+      category: 'distance',
+      condition: { type: 'totalDistanceMeters', threshold: kilometersToMeters(kilometers) },
+      trophyImage: earthDistanceTrophyImages[kilometers],
+      trophyImageUri: getTrophyImageUri(earthDistanceTrophyImages[kilometers]),
+      shareText: createAchievementShareText(title),
+      sortOrder: 2000 + index,
+      enabled: true,
+    };
+  }),
   ...logDaySteps.map((days, index): AchievementDefinition => ({
     id: `log-days-${days}`,
     title: days === 1 ? 'はじめの一歩' : `${days}日記録`,
@@ -199,6 +213,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     category: 'logDays',
     condition: { type: 'logDays', threshold: days },
     trophyImage: logDayTrophyImages[days],
+    trophyImageUri: getTrophyImageUri(logDayTrophyImages[days]),
     shareText: createAchievementShareText(days === 1 ? 'はじめの一歩' : `${days}日記録`),
     sortOrder: 3000 + index,
     enabled: true,
@@ -210,6 +225,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     category: 'prefecture',
     condition: { type: 'prefectureCount', threshold: count },
     trophyImage: prefectureTrophyImages[count],
+    trophyImageUri: getTrophyImageUri(prefectureTrophyImages[count]),
     shareText: createAchievementShareText(`${count}都道府県を訪問`),
     sortOrder: 4000 + index,
     enabled: true,
@@ -221,6 +237,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     category: 'municipality',
     condition: { type: 'municipalityCount', threshold: count },
     trophyImage: cityTrophyImages[count],
+    trophyImageUri: getTrophyImageUri(cityTrophyImages[count]),
     shareText: createAchievementShareText(`${count}市区町村を訪問`),
     sortOrder: 5000 + index,
     enabled: true,

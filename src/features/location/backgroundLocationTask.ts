@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 import { initializeDatabase } from '../../db/database';
+import { processAchievementsForSavedPoint } from '../achievements/achievementService';
 import { CoordinateLike } from '../../utils/distance';
 import { getLatestLocationPoint, insertLocationPoint } from '../logs/logRepository';
 import { BACKGROUND_LOCATION_TASK_NAME } from './locationTrackingConfig';
@@ -40,6 +41,9 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
       }
 
       await insertLocationPoint(point);
+      await processAchievementsForSavedPoint(point).catch((achievementError: unknown) => {
+        console.warn('Achievement processing failed:', achievementError);
+      });
       previousPoint = point;
     }
   });

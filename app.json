@@ -45,6 +45,7 @@
     },
     "plugins": [
       "expo-sqlite",
+      "expo-notifications",
       [
         "expo-location",
         {

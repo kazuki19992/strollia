@@ -26,6 +26,16 @@ import {
 import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '../db/database';
+import { AchievementDefinition } from '../features/achievements/achievementDefinitions';
+import { requestAchievementNotificationPermissionOnFirstLaunch } from '../features/achievements/achievementNotificationService';
+import {
+  AchievementListItem,
+  PendingAchievementNotification,
+  getAchievementListItems,
+  getPendingInAppAchievementNotifications,
+  markAchievementShownInApp,
+} from '../features/achievements/achievementRepository';
+import { evaluateAchievementsAndNotify } from '../features/achievements/achievementService';
 import { shareGpx } from '../features/export/gpxExporter';
 import {
   isBackgroundLocationRecording,
@@ -62,6 +72,8 @@ import { getAreaNameFromAddress } from './areaName';
 import { createStyles } from './appStyles';
 import { getAutoRecordNote } from './appText';
 import { AutoStartStatus, ScreenMode } from './appTypes';
+import { AchievementListScreen } from './components/AchievementListScreen';
+import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { DailyLogCard } from './components/DailyLogCard';
 import { PhotoClusterMarker } from './components/PhotoClusterMarker';
 import { useMapRouteState } from './hooks/useMapRouteState';
@@ -115,6 +127,8 @@ export default function App() {
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
+  const [achievementItems, setAchievementItems] = useState<AchievementListItem[]>([]);
+  const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
@@ -148,6 +162,7 @@ export default function App() {
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
+  const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
   const refreshData = useCallback(async () => {
@@ -164,6 +179,21 @@ export default function App() {
     setPermissionState(permissions);
 
     return { logs, allPoints, recording, permissions };
+  }, []);
+
+
+  /** 実績一覧と未表示の解除演出キューを再読み込みする。 */
+  const refreshAchievementState = useCallback(async (showPendingNotifications = false): Promise<void> => {
+    const [items, pendingNotifications] = await Promise.all([
+      getAchievementListItems(),
+      showPendingNotifications ? getPendingInAppAchievementNotifications() : Promise.resolve([]),
+    ]);
+
+    setAchievementItems(items);
+
+    if (showPendingNotifications) {
+      setPendingAchievementNotifications(pendingNotifications);
+    }
   }, []);
 
   /** GPSバックグラウンド記録を開始し、結果をユーザー向けメッセージへ反映する。 */
@@ -299,13 +329,16 @@ export default function App() {
         setShowPhotosOnMap(savedShowPhotosOnMap);
         setSelectedRouteLineStyleId(getRouteLineStyleOption(savedRouteLineStyle as RouteLineStyleId).id);
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
+        await requestAchievementNotificationPermissionOnFirstLaunch().catch(() => undefined);
         await refreshData();
+        await evaluateAchievementsAndNotify();
+        await refreshAchievementState(true);
       })
       .catch((error: unknown) => {
         setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
       })
       .finally(() => setIsReady(true));
-  }, [refreshData]);
+  }, [refreshAchievementState, refreshData]);
 
   /**
    * アプリ準備完了後に一度だけバックグラウンドGPS記録の自動開始を試みる。
@@ -340,14 +373,17 @@ export default function App() {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       setAppState(state);
       if (state === 'active') {
-        refreshData().catch((error: unknown) => {
-          setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
-        });
+        refreshData()
+          .then(() => evaluateAchievementsAndNotify())
+          .then(() => refreshAchievementState(true))
+          .catch((error: unknown) => {
+            setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
+          });
       }
     });
 
     return () => subscription.remove();
-  }, [refreshData]);
+  }, [refreshAchievementState, refreshData]);
 
 
   /**
@@ -359,13 +395,16 @@ export default function App() {
     }
 
     const intervalId = setInterval(() => {
-      refreshData().catch((error: unknown) => {
-        setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
-      });
+      refreshData()
+        .then(() => evaluateAchievementsAndNotify())
+        .then(() => refreshAchievementState(true))
+        .catch((error: unknown) => {
+          setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
+        });
     }, 10_000);
 
     return () => clearInterval(intervalId);
-  }, [appState, isReady, refreshData]);
+  }, [appState, isReady, refreshAchievementState, refreshData]);
 
   /**
    * 画面ON維持設定が有効でフォアグラウンドの場合だけロック抑止を有効化する。
@@ -389,6 +428,18 @@ export default function App() {
   }, []);
 
 
+
+
+  /**
+   * 実績解除演出が表示されたタイミングで成功タプティックを鳴らす。
+   */
+  useEffect(() => {
+    if (!activeAchievementNotification) {
+      return;
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+  }, [activeAchievementNotification]);
 
   /**
    * 逆ジオコーディングは現在地ピルの市区町村表示にだけ使う。
@@ -601,6 +652,12 @@ export default function App() {
     setScreenMode('map');
   }
 
+  /** 実績画面へ移動する。 */
+  function openAchievements(): void {
+    refreshAchievementState().catch(() => undefined);
+    navigateToScreen('achievements');
+  }
+
   /** 設定画面へ移動する。 */
   function openSettings(): void {
     navigateToScreen('settings');
@@ -615,6 +672,28 @@ export default function App() {
     triggerSelectionHaptic();
     setMapType(getNextMapType);
     setIsMenuOpen(false);
+  }
+
+
+  /** 実績解除モーダルを閉じ、次の未表示実績があれば続けて表示する。 */
+  function closeAchievementUnlockModal(): void {
+    const current = activeAchievementNotification;
+
+    if (!current) {
+      return;
+    }
+
+    markAchievementShownInApp(current.queueId).catch(() => undefined);
+    setPendingAchievementNotifications((notifications) => notifications.slice(1));
+  }
+
+  /** X投稿画面へ実績共有文言を渡す。 */
+  function shareAchievementToX(achievement: AchievementDefinition): void {
+    triggerSelectionHaptic();
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(achievement.shareText)}`;
+    Linking.openURL(url).catch((error: unknown) => {
+      Alert.alert('共有失敗', error instanceof Error ? error.message : 'Xの投稿画面を開けませんでした。');
+    });
   }
 
   /** 未実装のインポート導線として予定メッセージを表示する。 */
@@ -841,6 +920,10 @@ export default function App() {
                 <Feather name="calendar" size={22} color={theme.colors.text} />
                 <Text style={styles.menuItemText}>日ごとの記録</Text>
               </Pressable>
+              <Pressable onPress={openAchievements} style={styles.menuItem}>
+                <MaterialCommunityIcons name="trophy-outline" size={23} color={theme.colors.text} />
+                <Text style={styles.menuItemText}>実績</Text>
+              </Pressable>
               <Pressable onPress={toggleMapType} style={styles.menuItem}>
                 <MaterialCommunityIcons
                   name={mapType === 'standard' ? 'satellite-variant' : 'map-outline'}
@@ -937,6 +1020,16 @@ export default function App() {
         )}
       </SafeAreaView>
     );
+  }
+
+
+  /**
+   * 獲得済み/未獲得の実績一覧画面を描画する。
+   *
+   * @returns 実績一覧画面のReact要素。
+   */
+  function renderAchievementsScreen() {
+    return <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />;
   }
 
   /**
@@ -1097,8 +1190,16 @@ export default function App() {
       >
         {screenMode === 'map' && renderMapScreen()}
         {screenMode === 'dailyLogs' && renderDailyLogsScreen()}
+        {screenMode === 'achievements' && renderAchievementsScreen()}
         {screenMode === 'settings' && renderSettingsScreen()}
       </Animated.View>
+
+      <AchievementUnlockModal
+        achievement={activeAchievementNotification?.definition ?? null}
+        styles={styles}
+        onShareToX={shareAchievementToX}
+        onClose={closeAchievementUnlockModal}
+      />
 
       <Modal visible={selectedPhotoCluster != null} transparent animationType="fade" onRequestClose={() => setSelectedPhotoCluster(null)}>
         <Pressable onPress={() => setSelectedPhotoCluster(null)} style={styles.photoClusterOverlay}>

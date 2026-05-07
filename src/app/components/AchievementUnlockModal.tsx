@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Modal, Pressable, Text, View } from 'react-native';
+import { Animated, Image, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
 import { AchievementDefinition } from '../../features/achievements/achievementDefinitions';
 import { AppStyles } from '../appStyles';
 import { ConfettiOverlay } from './ConfettiOverlay';
+
+/** 自動で閉じるまでの待機時間。 */
+const AUTO_CLOSE_DELAY_MS = 10_000;
+/** スワイプ閉じとして扱う移動量。 */
+const SWIPE_DISMISS_THRESHOLD = 70;
 
 /** 実績解除モーダルのprops。 */
 export type AchievementUnlockModalProps = {
@@ -22,15 +27,48 @@ export type AchievementUnlockModalProps = {
 /** 実績解除時の紙吹雪付きモーダル。 */
 export function AchievementUnlockModal({ achievement, animationKey, styles, onShareToX, onClose }: AchievementUnlockModalProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
+  const dragY = useRef(new Animated.Value(0)).current;
+  const isClosingRef = useRef(false);
   const [renderedAchievement, setRenderedAchievement] = useState<AchievementDefinition | null>(achievement);
   const visible = renderedAchievement != null;
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+      onPanResponderMove: (_, gestureState) => {
+        dragY.setValue(gestureState.dy);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (Math.abs(gestureState.dy) >= SWIPE_DISMISS_THRESHOLD) {
+          closeWithAnimation();
+          return;
+        }
+
+        Animated.spring(dragY, {
+          toValue: 0,
+          damping: 11,
+          stiffness: 180,
+          useNativeDriver: true,
+        }).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(dragY, {
+          toValue: 0,
+          damping: 11,
+          stiffness: 180,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     if (!achievement) {
       return;
     }
 
+    isClosingRef.current = false;
     setRenderedAchievement(achievement);
+    dragY.setValue(0);
     modalProgress.setValue(0);
     Animated.spring(modalProgress, {
       toValue: 1,
@@ -39,15 +77,36 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
       stiffness: 190,
       useNativeDriver: true,
     }).start();
-  }, [achievement, modalProgress]);
+  }, [achievement, dragY, modalProgress]);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    const timerId = setTimeout(closeWithAnimation, AUTO_CLOSE_DELAY_MS);
+    return () => clearTimeout(timerId);
+  }, [visible, animationKey]);
 
   /** 退場アニメーション後に親へ閉じたことを通知する。 */
   function closeWithAnimation(): void {
-    Animated.timing(modalProgress, {
-      toValue: 0,
-      duration: 500,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
+    if (isClosingRef.current) {
+      return;
+    }
+
+    isClosingRef.current = true;
+    Animated.parallel([
+      Animated.timing(modalProgress, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(dragY, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
       if (!finished) {
         return;
       }
@@ -63,6 +122,7 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
         <ConfettiOverlay styles={styles} active={visible} animationKey={animationKey} />
         {renderedAchievement && (
           <Animated.View
+            {...panResponder.panHandlers}
             style={[
               styles.achievementModalCard,
               {
@@ -72,7 +132,10 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
                     scale: modalProgress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [0.62, 1.08, 1] }),
                   },
                   {
-                    translateY: modalProgress.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }),
+                    translateY: Animated.add(
+                      dragY,
+                      modalProgress.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }),
+                    ),
                   },
                 ],
               },

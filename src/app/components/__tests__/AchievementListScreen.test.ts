@@ -27,8 +27,10 @@ function item(condition: AchievementDefinition['condition'], progressValue: numb
 }
 
 describe('実績進捗ラベル getAchievementProgressLabel', () => {
-  test('解除済みの場合は達成日を表示する', () => {
-    expect(getAchievementProgressLabel(item({ type: 'logDays', threshold: 7 }, 7, '2026-05-08T00:00:00.000Z'))).toContain('達成:');
+  test('解除済みの場合はロケールに応じた達成日を表示する', () => {
+    const unlockedAt = '2026-05-08T00:00:00.000Z';
+
+    expect(getAchievementProgressLabel(item({ type: 'logDays', threshold: 7 }, 7, unlockedAt))).toBe(`達成: ${new Date(unlockedAt).toLocaleDateString()}`);
   });
 
   test('総移動距離の進捗をkmで表示する', () => {

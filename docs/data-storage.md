@@ -142,6 +142,48 @@ GPX / KML インポート履歴を保存するテーブル。
 | `value` | TEXT | JSON文字列などで保存する値 |
 | `updated_at` | TEXT | 更新日時 |
 
+### 4.8 `visited_admin_areas`
+
+実績システムで都道府県・市区町村の訪問状態を判定するため、訪問済み行政区域を保存するテーブル。
+
+| カラム | 型 | 説明 |
+| --- | --- | --- |
+| `id` | INTEGER | 主キー |
+| `area_type` | TEXT | `prefecture` または `municipality` |
+| `area_code` | TEXT NULL | 行政区域コード。初期はNULL許容 |
+| `prefecture_name` | TEXT | 都道府県名 |
+| `municipality_name` | TEXT NULL | 市区町村名 |
+| `normalized_name` | TEXT | 重複判定用の正規化名 |
+| `first_visited_at` | TEXT | 初回訪問時刻 |
+| `last_visited_at` | TEXT | 最終訪問時刻 |
+| `first_location_point_id` | INTEGER NULL | 初回訪問の根拠GPSポイントID |
+| `created_at` | TEXT | 作成日時 |
+| `updated_at` | TEXT | 更新日時 |
+
+### 4.9 `achievement_unlocks`
+
+解除済み実績を保存するテーブル。
+
+| カラム | 型 | 説明 |
+| --- | --- | --- |
+| `achievement_id` | TEXT | 実績定義ID。主キー |
+| `unlocked_at` | TEXT | 解除日時 |
+| `progress_value` | REAL NULL | 解除時点の進捗値 |
+| `created_at` | TEXT | 作成日時 |
+
+### 4.10 `achievement_notification_queue`
+
+実績解除通知とフォアグラウンド演出を安全に扱うためのキュー。
+
+| カラム | 型 | 説明 |
+| --- | --- | --- |
+| `id` | INTEGER | 主キー |
+| `achievement_id` | TEXT | 通知対象の実績ID。同じ実績を重複キュー投入しないため `UNIQUE` 制約を付与する。再enqueue時は `INSERT OR IGNORE` で既存キューを優先し、エラーにせず無視する |
+| `queued_at` | TEXT | キュー追加日時 |
+| `delivered_push_at` | TEXT NULL | ローカル通知送信日時 |
+| `shown_in_app_at` | TEXT NULL | アプリ内演出表示日時 |
+| `created_at` | TEXT | 作成日時 |
+
 ## 5. インデックス方針
 
 GPSログは時系列検索と日付検索が中心になるため、以下のインデックスを作成する。
@@ -149,6 +191,10 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `location_points(recorded_at)`
 - `location_points(local_date)`
 - `location_points(local_date, recorded_at)`
+- `visited_admin_areas(area_type, normalized_name)`
+- `achievement_notification_queue(achievement_id)`
+- `achievement_notification_queue(shown_in_app_at, queued_at)`
+- `achievement_notification_queue(delivered_push_at)`
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 

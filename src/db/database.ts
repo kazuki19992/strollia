@@ -44,6 +44,38 @@ export async function initializeDatabase(): Promise<void> {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS visited_admin_areas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      area_type TEXT NOT NULL,
+      area_code TEXT NULL,
+      prefecture_name TEXT NOT NULL,
+      municipality_name TEXT NULL,
+      normalized_name TEXT NOT NULL,
+      first_visited_at TEXT NOT NULL,
+      last_visited_at TEXT NOT NULL,
+      first_location_point_id INTEGER NULL REFERENCES location_points(id) ON DELETE SET NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(area_type, normalized_name)
+    );
+
+    CREATE TABLE IF NOT EXISTS achievement_unlocks (
+      achievement_id TEXT PRIMARY KEY,
+      unlocked_at TEXT NOT NULL,
+      progress_value REAL NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS achievement_notification_queue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      achievement_id TEXT NOT NULL,
+      queued_at TEXT NOT NULL,
+      delivered_push_at TEXT NULL,
+      shown_in_app_at TEXT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE(achievement_id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 
@@ -52,5 +84,17 @@ export async function initializeDatabase(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_location_points_local_date_recorded_at
       ON location_points(local_date, recorded_at);
+
+    CREATE INDEX IF NOT EXISTS idx_visited_admin_areas_area_type_normalized_name
+      ON visited_admin_areas(area_type, normalized_name);
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_achievement_notification_queue_achievement_id
+      ON achievement_notification_queue(achievement_id);
+
+    CREATE INDEX IF NOT EXISTS idx_achievement_notification_queue_shown
+      ON achievement_notification_queue(shown_in_app_at, queued_at);
+
+    CREATE INDEX IF NOT EXISTS idx_achievement_notification_queue_delivered_push
+      ON achievement_notification_queue(delivered_push_at);
   `);
 }

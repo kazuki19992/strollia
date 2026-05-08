@@ -1,7 +1,5 @@
+import { developmentFlags } from '../../config/developmentFlags';
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from './premiumCatalog';
-
-/** RevenueCat導入前にPlus特典の動作確認を行うための開発用フラグ。 */
-export const DEVELOPMENT_PREMIUM_ACCESS_ENABLED = true;
 
 /** RevenueCatから得る購読/買い切りの利用可否。 */
 export type PremiumAccessState = {
@@ -29,7 +27,7 @@ export type RevenueCatClient = {
  */
 export function getDefaultPremiumAccessState(): PremiumAccessState {
   return {
-    isPlusActive: DEVELOPMENT_PREMIUM_ACCESS_ENABLED,
+    isPlusActive: developmentFlags.enablePremiumAccessWithoutRevenueCat,
     entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
   };
 }

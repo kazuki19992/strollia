@@ -141,7 +141,7 @@ RevenueCatへ送る情報は購入状態の管理に必要なアプリユーザ�
 RevenueCat導入前に有料カスタマイズを確認するため、以下のフラグでPlus状態を仮に有効化している。
 
 - `src/config/developmentFlags.ts`
-- `developmentFlags.enablePremiumAccessWithoutRevenueCat`
+- `EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT=true`
 
 RevenueCat導入後は、このフラグではなくRevenueCatの `CustomerInfo.entitlements.active` をもとに `isPlusActive` を決定する。
 

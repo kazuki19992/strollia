@@ -75,7 +75,7 @@ export function AchievementListScreen({ items, styles, theme, onBackToMap }: Ach
 }
 
 /** 実績カードに表示する進捗文言を作る。 */
-function getAchievementProgressLabel(item: AchievementListItem): string {
+export function getAchievementProgressLabel(item: AchievementListItem): string {
   if (item.unlockedAt) {
     return `達成: ${new Date(item.unlockedAt).toLocaleDateString()}`;
   }

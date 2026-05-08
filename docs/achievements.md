@@ -347,15 +347,9 @@ App Store URLは `STROLLIA_APP_STORE_URL` に集約し、公開後に正式URL�
 
 このフラグが有効な場合、起動時に `achievement_unlocks` と `achievement_notification_queue` を削除し、保存済み進捗から再評価する。これにより、一度解除済みになった実績でも毎起動ごとに通知・紙吹雪・モーダルを確認できる。
 
-フラグは `src/config/developmentFlags.ts` の `developmentFlags.resetAchievementsOnLaunch` を変更する。
+フラグは環境変数 `EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH=true` で有効化する。既定値は本番混入を防ぐため `false` とする。
 
-```ts
-export const developmentFlags = {
-  resetAchievementsOnLaunch: true,
-} as const;
-```
-
-通常の確認が終わったら `false` に戻す。このフラグは `__DEV__` では判定せず、previewビルドでも値だけをもとに動作する。
+previewビルドで確認したい場合は、EASのビルド環境変数に `EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH=true` を設定する。このフラグは `__DEV__` では判定せず、環境変数の値だけをもとに動作する。
 
 ## 11. 実装方針
 

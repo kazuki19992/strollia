@@ -42,7 +42,6 @@ export function createStyles(theme: AppTheme) {
       borderColor: colors.border,
       borderRadius: 999,
       borderWidth: 1,
-      color: colors.text,
       height: 32,
       justifyContent: 'center',
       position: 'absolute',
@@ -50,6 +49,9 @@ export function createStyles(theme: AppTheme) {
       top: 22,
       width: 32,
       zIndex: 3,
+    },
+    achievementCloseButtonIcon: {
+      color: colors.text,
     },
     achievementImage: {
       height: 78,

@@ -37,7 +37,8 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
-        "ACCESS_MEDIA_LOCATION"
+        "ACCESS_MEDIA_LOCATION",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -45,7 +46,13 @@
     },
     "plugins": [
       "expo-sqlite",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "achievements",
+          "color": "#1f7a5c"
+        }
+      ],
       [
         "expo-location",
         {

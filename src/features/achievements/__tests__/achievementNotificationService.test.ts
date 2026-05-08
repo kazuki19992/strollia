@@ -1,14 +1,17 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 import { getBooleanSetting, setSetting } from '../../settings/settingsRepository';
 import { markAchievementPushDelivered } from '../achievementRepository';
-import { requestAchievementNotificationPermissionOnFirstLaunch, notifyAchievementUnlocked } from '../achievementNotificationService';
+import { ACHIEVEMENT_NOTIFICATION_CHANNEL_ID, requestAchievementNotificationPermissionOnFirstLaunch, notifyAchievementUnlocked, setupAchievementNotificationChannel } from '../achievementNotificationService';
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
   requestPermissionsAsync: jest.fn(),
   scheduleNotificationAsync: jest.fn(),
   setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(),
+  AndroidImportance: { HIGH: 'high' },
 }));
 
 jest.mock('../../settings/settingsRepository', () => ({
@@ -33,9 +36,15 @@ const definition = {
   enabled: true,
 } as any;
 
+const originalPlatformOS = Platform.OS;
+
 describe('実績通知 achievementNotificationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    Platform.OS = originalPlatformOS;
   });
 
   it('初回起動時だけ通知権限を要求する', async () => {
@@ -65,11 +74,24 @@ describe('実績通知 achievementNotificationService', () => {
         content: expect.objectContaining({
           body: 'はじめの一歩を達成しました！',
           attachments: [{ identifier: 'log-days-1', url: 'file:///trophy.png', type: 'image/png' }],
+          channelId: ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
           vibrate: [0, 1000],
         }),
       }),
     );
     expect(markAchievementPushDelivered).toHaveBeenCalledWith('log-days-1');
+  });
+
+  it('Android通知チャンネルを作成できる', async () => {
+    Platform.OS = 'android';
+
+    await setupAchievementNotificationChannel();
+
+    expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(ACHIEVEMENT_NOTIFICATION_CHANNEL_ID, expect.objectContaining({
+      name: '実績',
+      vibrationPattern: [0, 1000],
+      enableVibrate: true,
+    }));
   });
 
   it('通知未許可の場合は解除通知を送らない', async () => {

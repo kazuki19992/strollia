@@ -35,7 +35,8 @@ const achievement = {
 const styles = {
   achievementModalBackdrop: {},
   achievementModalCard: {},
-  achievementCloseButton: { color: '#111111' },
+  achievementCloseButton: {},
+  achievementCloseButtonIcon: { color: '#111111' },
   achievementAutoCloseTrack: {},
   achievementAutoCloseProgress: {},
   achievementModalEyebrow: {},
@@ -48,19 +49,23 @@ const styles = {
   achievementSwipeHint: {},
 };
 
+let renderer: { unmount: () => void } | null = null;
+
 describe('実績解除ダイアログ AchievementUnlockModal', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
 
   afterEach(() => {
+    act(() => {
+      renderer?.unmount();
+    });
+    renderer = null;
     jest.useRealTimers();
   });
 
   test('10秒経過すると自動で閉じる', () => {
     const onClose = jest.fn();
-    let renderer: { unmount: () => void } | null = null;
-
     act(() => {
       renderer = create(
         <AchievementUnlockModal
@@ -80,9 +85,5 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
     });
 
     expect(onClose).toHaveBeenCalledTimes(1);
-
-    act(() => {
-      renderer?.unmount();
-    });
   });
 });

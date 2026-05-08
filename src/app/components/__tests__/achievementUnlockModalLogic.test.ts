@@ -7,7 +7,14 @@ import {
 
 describe('実績解除ダイアログの閉じ判定', () => {
   test('移動量がしきい値未満で速度も遅い場合は閉じない', () => {
-    expect(shouldDismissAchievementModalSwipe({ dx: 12, dy: 10, vx: 0.1, vy: 0.1 })).toBe(false);
+    expect(
+      shouldDismissAchievementModalSwipe({
+        dx: ACHIEVEMENT_MODAL_SWIPE_DISMISS_DISTANCE - 1,
+        dy: 0,
+        vx: ACHIEVEMENT_MODAL_SWIPE_DISMISS_VELOCITY - 0.01,
+        vy: 0,
+      }),
+    ).toBe(false);
   });
 
   test('移動量がしきい値以上の場合は閉じる', () => {

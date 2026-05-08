@@ -29,9 +29,11 @@ describe('実績サービス achievementService', () => {
     expect(notifyAchievementUnlocks).toHaveBeenCalledWith([]);
   });
 
-  it('通常評価では解除済み実績をリセットしない', async () => {
+  it('通常評価では解除済み実績をリセットせず評価と通知を行う', async () => {
     await evaluateAchievementsAndNotify();
 
     expect(resetAchievementUnlocksForDevelopment).not.toHaveBeenCalled();
+    expect(evaluateAndStoreAchievementUnlocks).toHaveBeenCalledTimes(1);
+    expect(notifyAchievementUnlocks).toHaveBeenCalledTimes(1);
   });
 });

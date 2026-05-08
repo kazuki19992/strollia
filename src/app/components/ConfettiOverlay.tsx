@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, View } from 'react-native';
 
 import { AppStyles } from '../appStyles';
@@ -30,14 +30,7 @@ export type ConfettiOverlayProps = {
 
 /** 左右下から吹き上がり、重力で画面外へ落ちる軽量な紙吹雪アニメーション。 */
 export function ConfettiOverlay({ styles, active, animationKey }: ConfettiOverlayProps) {
-  const piecesRef = useRef<ConfettiPiece[] | null>(null);
-  const pieces = useMemo(() => {
-    if (!piecesRef.current) {
-      piecesRef.current = createConfettiPieces();
-    }
-
-    return piecesRef.current;
-  }, []);
+  const [pieces] = useState<ConfettiPiece[]>(() => createConfettiPieces());
 
   useEffect(() => {
     if (!active) {

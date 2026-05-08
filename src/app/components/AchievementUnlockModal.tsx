@@ -221,8 +221,8 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
               },
             ]}
           >
-            <Pressable onPress={closeWithAnimation} hitSlop={10} style={styles.achievementCloseButton}>
-              <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButton.color} />
+            <Pressable onPress={closeWithAnimation} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
+              <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
             </Pressable>
             {!isAutoClosePaused && (
               <View style={styles.achievementAutoCloseTrack}>

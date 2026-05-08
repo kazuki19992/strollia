@@ -1,15 +1,23 @@
+/** 開発用フラグの値として扱う環境変数値。 */
+const ENABLED_ENV_VALUE = 'true';
+
 /**
- * 開発・検証用の一時フラグを集約する。
+ * 環境変数から開発用フラグを読む。
  *
- * previewビルドや開発中の動作確認だけで使う値をここに置く。
- * 本番公開前には各フラグの意図を確認し、不要なものはfalseまたは正式実装へ差し替える。
+ * @param name - 読み取る環境変数名。
+ * @returns 環境変数の値がtrue文字列ならtrue。
  */
-export const developmentFlags = {
+function readDevelopmentFlag(name: string): boolean {
+  return process.env[name] === ENABLED_ENV_VALUE;
+}
+
+/** 開発・検証用の一時フラグを集約する。 */
+export const developmentFlags: Record<'enablePremiumAccessWithoutRevenueCat' | 'resetAchievementsOnLaunch', boolean> = {
   /** RevenueCat導入前にStrollia Plus特典を仮に有効化する。 */
-  enablePremiumAccessWithoutRevenueCat: true,
+  enablePremiumAccessWithoutRevenueCat: readDevelopmentFlag('EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT'),
   /** 開発中に起動時の実績解除状態と通知キューをリセットして再評価する。 */
-  resetAchievementsOnLaunch: true,
-} as const;
+  resetAchievementsOnLaunch: readDevelopmentFlag('EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH'),
+};
 
 /** いずれかの開発用フラグが有効か。 */
 export function hasEnabledDevelopmentFlags(): boolean {

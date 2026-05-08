@@ -14,6 +14,9 @@ describe('実績定義 achievementDefinitions', () => {
 
   it('km単位の画像ファイル名を内部判定用のmへ変換する', () => {
     expect(kilometersToMeters(100)).toBe(100000);
+  });
+
+  it('距離実績の判定しきい値をm単位で持つ', () => {
     expect(ACHIEVEMENT_DEFINITIONS.find((definition) => definition.id === 'distance-100')?.condition.threshold).toBe(100000);
   });
 

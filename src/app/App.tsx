@@ -21,7 +21,7 @@ import MapView, { Region, UserLocationChangeEvent } from 'react-native-maps';
 import { initializeDatabase } from '../db/database';
 import { AchievementDefinition } from '../features/achievements/achievementDefinitions';
 import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '../config/developmentFlags';
-import { requestAchievementNotificationPermissionOnFirstLaunch } from '../features/achievements/achievementNotificationService';
+import { initializeAchievementNotificationHandler, requestAchievementNotificationPermissionOnFirstLaunch, setupAchievementNotificationChannel } from '../features/achievements/achievementNotificationService';
 import {
   AchievementListItem,
   PendingAchievementNotification,
@@ -363,6 +363,8 @@ export default function App() {
         setShowPhotosOnMap(savedShowPhotosOnMap);
         setSelectedRouteLineStyleId(getRouteLineStyleOption(savedRouteLineStyle as RouteLineStyleId).id);
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
+        initializeAchievementNotificationHandler();
+        await setupAchievementNotificationChannel().catch(() => undefined);
         await requestAchievementNotificationPermissionOnFirstLaunch().catch(() => undefined);
         await refreshData();
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });

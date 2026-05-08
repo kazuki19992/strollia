@@ -191,6 +191,10 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `location_points(recorded_at)`
 - `location_points(local_date)`
 - `location_points(local_date, recorded_at)`
+- `visited_admin_areas(area_type, normalized_name)`
+- `achievement_notification_queue(achievement_id)`
+- `achievement_notification_queue(shown_in_app_at, queued_at)`
+- `achievement_notification_queue(delivered_push_at)`
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 

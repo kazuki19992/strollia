@@ -178,7 +178,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | カラム | 型 | 説明 |
 | --- | --- | --- |
 | `id` | INTEGER | 主キー |
-| `achievement_id` | TEXT | 通知対象の実績ID |
+| `achievement_id` | TEXT | 通知対象の実績ID。同じ実績を重複キュー投入しないため `UNIQUE` 制約を付与する。再enqueue時は `INSERT OR IGNORE` で既存キューを優先し、エラーにせず無視する |
 | `queued_at` | TEXT | キュー追加日時 |
 | `delivered_push_at` | TEXT NULL | ローカル通知送信日時 |
 | `shown_in_app_at` | TEXT NULL | アプリ内演出表示日時 |

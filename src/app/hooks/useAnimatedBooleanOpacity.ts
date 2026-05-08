@@ -6,11 +6,16 @@ export function useAnimatedBooleanOpacity(visible: boolean, durationMs: number):
   const opacity = useRef(new Animated.Value(visible ? 1 : 0)).current;
 
   useEffect(() => {
-    Animated.timing(opacity, {
+    const animation = Animated.timing(opacity, {
       toValue: visible ? 1 : 0,
       duration: durationMs,
       useNativeDriver: true,
-    }).start();
+    });
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
   }, [durationMs, opacity, visible]);
 
   return opacity;

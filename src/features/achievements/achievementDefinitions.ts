@@ -76,8 +76,8 @@ const distanceSteps = [
   1_000_000,
   2_000_000,
   3_000_000,
-  4_000_000,
   5_000_000,
+  7_500_000,
   9_999_999,
 ] as const;
 
@@ -118,8 +118,8 @@ const distanceTrophyImages: Record<number, ImageSourcePropType> = {
   1000000: require('../../../assets/achievements/odo/odo-1000000.png'),
   2000000: require('../../../assets/achievements/odo/odo-2000000.png'),
   3000000: require('../../../assets/achievements/odo/odo-3000000.png'),
-  4000000: require('../../../assets/achievements/odo/odo-4000000.png'),
   5000000: require('../../../assets/achievements/odo/odo-5000000.png'),
+  7500000: require('../../../assets/achievements/odo/odo-7500000.png'),
   9999999: require('../../../assets/achievements/odo/odo-9999999.png'),
 };
 

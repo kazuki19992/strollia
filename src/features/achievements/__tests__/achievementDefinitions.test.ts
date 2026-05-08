@@ -38,10 +38,16 @@ describe('実績定義 achievementDefinitions', () => {
     expect(ACHIEVEMENT_DEFINITIONS).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'distance-100', category: 'distance', title: '100km移動した' }),
+        expect.objectContaining({ id: 'distance-5000000', category: 'distance', title: '5000000km移動した' }),
+        expect.objectContaining({ id: 'distance-7500000', category: 'distance', title: '7500000km移動した' }),
         expect.objectContaining({ id: 'distance-earth-40000', category: 'distance', title: '地球1周した' }),
         expect.objectContaining({ id: 'prefectures-47', category: 'prefecture' }),
         expect.objectContaining({ id: 'cities-1000', category: 'municipality' }),
       ]),
     );
+  });
+
+  it('存在しない400万km実績を含まない', () => {
+    expect(ACHIEVEMENT_DEFINITIONS.some((definition) => definition.id === 'distance-4000000')).toBe(false);
   });
 });

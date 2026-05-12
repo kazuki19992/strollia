@@ -61,6 +61,7 @@ import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../feature
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import type { LatLng, MapType } from 'react-native-maps';
+import { loadAppFonts } from '../theme/fonts';
 import { getAppTheme } from '../theme/theme';
 import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
@@ -351,7 +352,7 @@ export default function App() {
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
    */
   useEffect(() => {
-    initializeDatabase()
+    Promise.all([initializeDatabase(), loadAppFonts()])
       .then(async () => {
         const [savedKeepScreenAwake, savedShowPhotosOnMap, savedRouteLineStyle, savedUserLocationIcon] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),

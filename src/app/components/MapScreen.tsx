@@ -264,7 +264,11 @@ export function MapScreen({
           <View style={styles.bottomSideSpacer} />
           <View style={styles.locationPill}>
             <Text style={styles.locationName}>{currentAreaName}</Text>
-            <Text style={styles.locationMeta}>ODO {(distance / 1000).toFixed(2)} km</Text>
+            <View style={styles.locationMetaRow}>
+              <Text style={styles.locationMetaLabel}>ODO</Text>
+              <Text style={styles.locationMetaValue}>{(distance / 1000).toFixed(2)}</Text>
+              <Text style={styles.locationMetaLabel}>km</Text>
+            </View>
           </View>
           <Animated.View pointerEvents={isFollowingUserLocation ? 'none' : 'auto'} style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}>
             <Pressable onPress={onRecenterOnUserLocation} style={styles.recenterButton}>

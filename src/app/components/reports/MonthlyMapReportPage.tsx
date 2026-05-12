@@ -20,6 +20,7 @@ export function MonthlyMapReportPage({ report, pageCount, pageIndex, onShare }: 
         {Array.from({ length: 12 }).map((_, index) => (
           <View key={index} style={[reportStyles.mapGridLine, { top: 80 + index * 70 }]} />
         ))}
+        <View style={reportStyles.mapRouteHalo} />
         <View style={reportStyles.mapRoute} />
         <View style={reportStyles.mapOverlay} />
       </View>

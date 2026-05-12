@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
 
 import { reportStyles } from './reportStyles';
@@ -33,7 +33,7 @@ export function ReportFrame({ title, label, pageCount, pageIndex, children, onSh
       </View>
       <View style={reportStyles.header}>
         <View style={reportStyles.headerIcon}>
-          <Text style={reportStyles.headerIconText}>⌖</Text>
+          <Image source={require('../../../../assets/icon.png')} style={reportStyles.headerIconImage} resizeMode="contain" />
         </View>
         <View style={reportStyles.headerText}>
           <Text style={reportStyles.headerTitle}>{title}</Text>

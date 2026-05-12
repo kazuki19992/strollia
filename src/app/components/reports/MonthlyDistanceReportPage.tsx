@@ -69,16 +69,17 @@ export function MonthlyDistanceReportPage({ report, pageCount, pageIndex, onShar
           <Text style={reportStyles.distanceUnit}>km</Text>
         </View>
         <Text style={reportStyles.distanceVerdict}>移動しました!</Text>
-      </View>
-      <View style={reportStyles.targetGauge}>
-        <View style={reportStyles.targetGaugeLabels}>
+        <Text style={reportStyles.distanceCaption}>次の節目まで、あと少しです。</Text>
+        <View style={reportStyles.targetGauge}>
+          <View style={reportStyles.targetGaugeLabels}>
           <Text style={reportStyles.targetGaugeText}>{previousMilestone}km</Text>
           <Text style={reportStyles.targetGaugeText}>{nextMilestone}km</Text>
-        </View>
-        <View style={reportStyles.targetGaugeBar}>
+          </View>
+          <View style={reportStyles.targetGaugeBar}>
           <View style={[reportStyles.targetGaugeFill, { width: `${Math.max(0, Math.min(progress, 1)) * 100}%` }]} />
+          </View>
+          <Text style={reportStyles.targetHere}>現在地</Text>
         </View>
-        <Text style={reportStyles.targetHere}>現在地</Text>
       </View>
     </ReportFrame>
   );

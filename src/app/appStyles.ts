@@ -747,6 +747,31 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 8,
       paddingVertical: 4,
     },
+
+    reportCloseButton: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceOverlay,
+      borderColor: colors.border,
+      borderRadius: 999,
+      borderWidth: 1,
+      left: 20,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      position: 'absolute',
+      top: 52,
+      zIndex: 20,
+    },
+    reportNavigationOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      flexDirection: 'row',
+      zIndex: 8,
+    },
+    reportNextZone: {
+      flex: 1,
+    },
+    reportPreviousZone: {
+      flex: 1,
+    },
     screenTransition: {
       flex: 1,
     },

@@ -70,6 +70,7 @@ import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { MapScreen } from './components/MapScreen';
 import { PhotoPreviewModals } from './components/PhotoPreviewModals';
+import { MonthlyReportScreen } from './components/reports/MonthlyReportScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
 import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
@@ -600,6 +601,12 @@ export default function App() {
     navigateToScreen('achievements');
   }
 
+  /** 月次レポート画面へ移動する。 */
+  function openMonthlyReport(): void {
+    refreshAchievementState().catch(() => undefined);
+    navigateToScreen('monthlyReport');
+  }
+
   /** 設定画面へ移動する。 */
   function openSettings(): void {
     navigateToScreen('settings');
@@ -759,6 +766,7 @@ export default function App() {
             onCloseMenu={closeMenu}
             onOpenDailyLogs={openDailyLogs}
             onOpenAchievements={openAchievements}
+            onOpenMonthlyReport={openMonthlyReport}
             onToggleMapType={toggleMapType}
             onOpenSettings={openSettings}
             onRequestLocationPermission={requestLocationPermission}
@@ -767,6 +775,9 @@ export default function App() {
         )}
         {screenMode === 'dailyLogs' && <DailyLogsScreen dailyLogs={dailyLogs} styles={styles} theme={theme} onBackToMap={openMap} />}
         {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
+        {screenMode === 'monthlyReport' && (
+          <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />
+        )}
         {screenMode === 'settings' && (
           <SettingsScreen
             styles={styles}

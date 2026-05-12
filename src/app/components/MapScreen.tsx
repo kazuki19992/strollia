@@ -94,6 +94,8 @@ export type MapScreenProps = {
   onOpenDailyLogs: () => void;
   /** 実績画面を開くハンドラ。 */
   onOpenAchievements: () => void;
+  /** 月次レポート画面を開くハンドラ。 */
+  onOpenMonthlyReport: () => void;
   /** 地図種別切り替えハンドラ。 */
   onToggleMapType: () => void;
   /** 設定画面を開くハンドラ。 */
@@ -138,6 +140,7 @@ export function MapScreen({
   onCloseMenu,
   onOpenDailyLogs,
   onOpenAchievements,
+  onOpenMonthlyReport,
   onToggleMapType,
   onOpenSettings,
   onRequestLocationPermission,
@@ -219,6 +222,10 @@ export function MapScreen({
             <Pressable onPress={onOpenAchievements} style={styles.menuItem}>
               <MaterialCommunityIcons name="trophy-outline" size={23} color={theme.colors.text} />
               <Text style={styles.menuItemText}>実績</Text>
+            </Pressable>
+            <Pressable onPress={onOpenMonthlyReport} style={styles.menuItem}>
+              <MaterialCommunityIcons name="chart-timeline-variant" size={23} color={theme.colors.text} />
+              <Text style={styles.menuItemText}>レポートを見る</Text>
             </Pressable>
             <Pressable onPress={onToggleMapType} style={styles.menuItem}>
               <MaterialCommunityIcons name={mapType === 'standard' ? 'satellite-variant' : 'map-outline'} size={23} color={theme.colors.text} />

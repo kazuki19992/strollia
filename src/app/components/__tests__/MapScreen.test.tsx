@@ -71,6 +71,7 @@ function createProps() {
     onCloseMenu: jest.fn(),
     onOpenDailyLogs: jest.fn(),
     onOpenAchievements: jest.fn(),
+    onOpenMonthlyReport: jest.fn(),
     onToggleMapType: jest.fn(),
     onOpenSettings: jest.fn(),
     onRequestLocationPermission: jest.fn(),

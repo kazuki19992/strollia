@@ -22,7 +22,7 @@ export async function evaluateAchievementsAndNotify(options: EvaluateAchievement
 }
 
 /** 新規GPSポイント保存後に訪問エリアと実績を更新する。 */
-export async function processAchievementsForSavedPoint(point: NewLocationPoint): Promise<AchievementDefinition[]> {
-  await recordVisitedAdminAreasForPoint(point).catch(() => undefined);
+export async function processAchievementsForSavedPoint(point: NewLocationPoint, locationPointId?: number): Promise<AchievementDefinition[]> {
+  await recordVisitedAdminAreasForPoint(point, locationPointId).catch(() => undefined);
   return evaluateAchievementsAndNotify();
 }

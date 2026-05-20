@@ -1,5 +1,5 @@
 import { db } from '../../../db/database';
-import { upsertVisitedAdminArea } from '../adminAreaRepository';
+import { upsertLocationPointAdminArea, upsertVisitedAdminArea } from '../adminAreaRepository';
 
 type VisitedAdminAreaRow = {
   area_type: string;
@@ -14,24 +14,63 @@ type VisitedAdminAreaRow = {
   updated_at: string;
 };
 
+type LocationPointAdminAreaRow = {
+  location_point_id: number;
+  recorded_at: string;
+  local_date: string;
+  prefecture_name: string;
+  municipality_name: string | null;
+  normalized_prefecture_name: string;
+  normalized_municipality_name: string | null;
+  created_at: string;
+};
+
 const mockVisitedAdminAreas = new Map<string, VisitedAdminAreaRow>();
+const mockLocationPointAdminAreas = new Map<number, LocationPointAdminAreaRow>();
 
 jest.mock('../../../db/database', () => ({
   db: {
     runAsync: jest.fn(
       async (
-        _sql: string,
-        areaType: string,
-        areaCode: string | null,
-        prefectureName: string,
-        municipalityName: string | null,
-        normalizedName: string,
-        firstVisitedAt: string,
-        lastVisitedAt: string,
-        firstLocationPointId: number | null,
-        createdAt: string,
-        updatedAt: string,
+        sql: string,
+        ...params: (string | number | null)[]
       ) => {
+        if (sql.includes('location_point_admin_areas')) {
+          const [
+            locationPointId,
+            recordedAt,
+            localDate,
+            prefectureName,
+            municipalityName,
+            normalizedPrefectureName,
+            normalizedMunicipalityName,
+            createdAt,
+          ] = params as [number, string, string, string, string | null, string, string | null, string];
+          mockLocationPointAdminAreas.set(locationPointId, {
+            location_point_id: locationPointId,
+            recorded_at: recordedAt,
+            local_date: localDate,
+            prefecture_name: prefectureName,
+            municipality_name: municipalityName,
+            normalized_prefecture_name: normalizedPrefectureName,
+            normalized_municipality_name: normalizedMunicipalityName,
+            created_at: createdAt,
+          });
+          return;
+        }
+
+        const [
+          areaType,
+          areaCode,
+          prefectureName,
+          municipalityName,
+          normalizedName,
+          firstVisitedAt,
+          lastVisitedAt,
+          firstLocationPointId,
+          createdAt,
+          updatedAt,
+        ] = params as [string, string | null, string, string | null, string, string, string, number | null, string, string];
         const key = `${areaType}:${normalizedName}`;
         const current = mockVisitedAdminAreas.get(key);
 
@@ -58,7 +97,13 @@ jest.mock('../../../db/database', () => ({
         });
       },
     ),
-    getFirstAsync: jest.fn(async (_sql: string, areaType: string, normalizedName: string) => mockVisitedAdminAreas.get(`${areaType}:${normalizedName}`) ?? null),
+    getFirstAsync: jest.fn(async (sql: string, ...params: (string | number)[]) => {
+      if (sql.includes('location_point_admin_areas')) {
+        return mockLocationPointAdminAreas.get(params[0] as number) ?? null;
+      }
+
+      return mockVisitedAdminAreas.get(`${params[0]}:${params[1]}`) ?? null;
+    }),
   },
 }));
 
@@ -71,11 +116,20 @@ async function findVisitedAdminArea(areaType: string, normalizedName: string): P
   );
 }
 
+/** GPSポイント単位の行政区域履歴テスト用DB行を取得する。 */
+async function findLocationPointAdminArea(locationPointId: number): Promise<LocationPointAdminAreaRow | null> {
+  return db.getFirstAsync<LocationPointAdminAreaRow>(
+    'SELECT * FROM location_point_admin_areas WHERE location_point_id = ?',
+    locationPointId,
+  );
+}
+
 describe('訪問行政区域リポジトリ upsertVisitedAdminArea', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockVisitedAdminAreas.clear();
+    mockLocationPointAdminAreas.clear();
   });
 
   afterEach(() => {
@@ -171,5 +225,60 @@ describe('訪問行政区域リポジトリ upsertVisitedAdminArea', () => {
     const row = await findVisitedAdminArea('prefecture', '東京都');
 
     expect(row?.first_location_point_id).toBeNull();
+  });
+});
+
+describe('GPSポイント行政区域履歴 upsertLocationPointAdminArea', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+    mockVisitedAdminAreas.clear();
+    mockLocationPointAdminAreas.clear();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('GPSポイントごとの都道府県と市区町村を保存する', async () => {
+    jest.setSystemTime(new Date('2026-05-08T00:01:00.000Z'));
+
+    await upsertLocationPointAdminArea({
+      locationPointId: 123,
+      recordedAt: '2026-05-08T00:00:00.000Z',
+      localDate: '2026-05-08',
+      prefectureName: '東京都',
+      municipalityName: '渋谷区',
+      normalizedPrefectureName: '東京都',
+      normalizedMunicipalityName: '東京都:渋谷区',
+    });
+
+    await expect(findLocationPointAdminArea(123)).resolves.toMatchObject({
+      location_point_id: 123,
+      recorded_at: '2026-05-08T00:00:00.000Z',
+      local_date: '2026-05-08',
+      prefecture_name: '東京都',
+      municipality_name: '渋谷区',
+      normalized_prefecture_name: '東京都',
+      normalized_municipality_name: '東京都:渋谷区',
+      created_at: expect.any(String),
+    });
+  });
+
+  it('市区町村が取得できない場合はnullで保存する', async () => {
+    await upsertLocationPointAdminArea({
+      locationPointId: 456,
+      recordedAt: '2026-05-08T00:00:00.000Z',
+      localDate: '2026-05-08',
+      prefectureName: '東京都',
+      municipalityName: null,
+      normalizedPrefectureName: '東京都',
+      normalizedMunicipalityName: null,
+    });
+
+    const row = await findLocationPointAdminArea(456);
+
+    expect(row?.municipality_name).toBeNull();
+    expect(row?.normalized_municipality_name).toBeNull();
   });
 });

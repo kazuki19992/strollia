@@ -239,7 +239,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
           <MonthlyReportAnimatedCard key={rank} scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={{ backgroundColor: surfaceColor }}>
             <Text style={[reportStyles.monthlyRankText, { color: textColor }]}>{rank}</Text>
             <Text style={[reportStyles.monthlyRankingName, { color: textColor }]}>{item?.name ?? '---'}</Text>
-            <Text style={[reportStyles.monthlyRankingDays, { color: mutedTextColor }]}>''</Text>
+            <Text style={[reportStyles.monthlyRankingDays, { color: mutedTextColor }]}>{item ? `${item.count}pt` : ''}</Text>
           </MonthlyReportAnimatedCard>
         ))}
 

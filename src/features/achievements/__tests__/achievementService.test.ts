@@ -1,6 +1,7 @@
 import { evaluateAndStoreAchievementUnlocks, resetAchievementUnlocksForDevelopment } from '../achievementRepository';
-import { evaluateAchievementsAndNotify } from '../achievementService';
+import { evaluateAchievementsAndNotify, processAchievementsForSavedPoint } from '../achievementService';
 import { notifyAchievementUnlocks } from '../achievementNotificationService';
+import { recordVisitedAdminAreasForPoint } from '../adminAreaResolver';
 
 jest.mock('../adminAreaResolver', () => ({
   recordVisitedAdminAreasForPoint: jest.fn(),
@@ -19,6 +20,7 @@ describe('実績サービス achievementService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (evaluateAndStoreAchievementUnlocks as jest.Mock).mockResolvedValue([]);
+    (recordVisitedAdminAreasForPoint as jest.Mock).mockResolvedValue(undefined);
   });
 
   it('開発用オプションが有効な場合は解除済み実績をリセットしてから再評価する', async () => {
@@ -35,5 +37,24 @@ describe('実績サービス achievementService', () => {
     expect(resetAchievementUnlocksForDevelopment).not.toHaveBeenCalled();
     expect(evaluateAndStoreAchievementUnlocks).toHaveBeenCalledTimes(1);
     expect(notifyAchievementUnlocks).toHaveBeenCalledTimes(1);
+  });
+
+  it('保存済みGPSポイントIDを行政区域履歴の記録へ渡す', async () => {
+    await processAchievementsForSavedPoint(
+      {
+        recordedAt: '2026-05-07T00:00:00.000Z',
+        localDate: '2026-05-07',
+        latitude: 35,
+        longitude: 139,
+        altitude: null,
+        speed: null,
+        heading: null,
+        accuracy: 10,
+        altitudeAccuracy: null,
+      },
+      123,
+    );
+
+    expect(recordVisitedAdminAreasForPoint).toHaveBeenCalledWith(expect.objectContaining({ localDate: '2026-05-07' }), 123);
   });
 });

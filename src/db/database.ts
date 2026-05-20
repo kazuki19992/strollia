@@ -59,6 +59,19 @@ export async function initializeDatabase(): Promise<void> {
       UNIQUE(area_type, normalized_name)
     );
 
+    CREATE TABLE IF NOT EXISTS location_point_admin_areas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      location_point_id INTEGER NOT NULL REFERENCES location_points(id) ON DELETE CASCADE,
+      recorded_at TEXT NOT NULL,
+      local_date TEXT NOT NULL,
+      prefecture_name TEXT NOT NULL,
+      municipality_name TEXT NULL,
+      normalized_prefecture_name TEXT NOT NULL,
+      normalized_municipality_name TEXT NULL,
+      created_at TEXT NOT NULL,
+      UNIQUE(location_point_id)
+    );
+
     CREATE TABLE IF NOT EXISTS achievement_unlocks (
       achievement_id TEXT PRIMARY KEY,
       unlocked_at TEXT NOT NULL,
@@ -87,6 +100,12 @@ export async function initializeDatabase(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_visited_admin_areas_area_type_normalized_name
       ON visited_admin_areas(area_type, normalized_name);
+
+    CREATE INDEX IF NOT EXISTS idx_location_point_admin_areas_local_date_prefecture
+      ON location_point_admin_areas(local_date, normalized_prefecture_name);
+
+    CREATE INDEX IF NOT EXISTS idx_location_point_admin_areas_local_date_municipality
+      ON location_point_admin_areas(local_date, normalized_municipality_name);
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_achievement_notification_queue_achievement_id
       ON achievement_notification_queue(achievement_id);

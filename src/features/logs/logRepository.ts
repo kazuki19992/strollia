@@ -17,13 +17,14 @@ const pointColumns = `
 `;
 
 /** GPSポイントを保存し、日別サマリーの点数と距離を同時に更新する。 */
-export async function insertLocationPoint(point: NewLocationPoint): Promise<void> {
+export async function insertLocationPoint(point: NewLocationPoint): Promise<number> {
   const now = new Date().toISOString();
   const previousPoint = await getLatestLocationPointByDate(point.localDate);
   const segmentDistanceMeters = previousPoint ? distanceMeters(previousPoint, point) : 0;
+  let insertedLocationPointId = 0;
 
   await db.withTransactionAsync(async () => {
-    await db.runAsync(
+    const result = await db.runAsync(
       `INSERT INTO location_points (
         recorded_at,
         local_date,
@@ -48,6 +49,7 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<void
       point.altitudeAccuracy,
       now,
     );
+    insertedLocationPointId = result.lastInsertRowId;
 
     await db.runAsync(
       `INSERT INTO daily_logs (
@@ -81,6 +83,8 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<void
       now,
     );
   });
+
+  return insertedLocationPointId;
 }
 
 /** 日別ログの一覧表示に使うサマリーを新しい日付順で取得する。 */
@@ -150,6 +154,7 @@ export async function deleteAllUserData(): Promise<void> {
     await db.runAsync('DELETE FROM achievement_notification_queue');
     await db.runAsync('DELETE FROM achievement_unlocks');
     await db.runAsync('DELETE FROM visited_admin_areas');
+    await db.runAsync('DELETE FROM location_point_admin_areas');
     await db.runAsync('DELETE FROM location_points');
     await db.runAsync('DELETE FROM daily_logs');
   });

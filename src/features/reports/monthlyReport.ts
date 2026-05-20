@@ -28,6 +28,11 @@ export function getReportMonth(date = new Date()): ReportMonth {
   return { year: date.getFullYear(), month: date.getMonth() + 1 };
 }
 
+/** Dateから直前月の月次レポート対象年月を作る。 */
+export function getPreviousReportMonth(date = new Date()): ReportMonth {
+  return getReportMonth(new Date(date.getFullYear(), date.getMonth() - 1, 1));
+}
+
 /** 月次レポート対象年月を`YYYY-MM`形式にする。 */
 export function formatReportMonth(month: ReportMonth): string {
   return `${month.year}-${String(month.month).padStart(2, '0')}`;
@@ -42,6 +47,7 @@ export function isInReportMonth(localDate: string, month: ReportMonth): boolean 
 export function createMonthlyReport(dailyLogs: DailyLogSummary[], points: LocationPoint[], month = getReportMonth()): MonthlyReport {
   const monthlyLogs = dailyLogs.filter((log) => isInReportMonth(log.localDate, month));
   const monthlyPoints = points.filter((point) => isInReportMonth(point.localDate, month));
+  // monthlyLogsに距離欠落が1件でもある場合は、canUseStoredDistanceをfalseにしてmonthlyPointsからtotalDistanceMetersで再計算する。
   const canUseStoredDistance = monthlyLogs.length > 0 && monthlyLogs.every((log) => log.distanceMeters != null);
   const totalDistance = canUseStoredDistance
     ? monthlyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0)

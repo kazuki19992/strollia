@@ -160,7 +160,27 @@ GPX / KML インポート履歴を保存するテーブル。
 | `created_at` | TEXT | 作成日時 |
 | `updated_at` | TEXT | 更新日時 |
 
-### 4.9 `achievement_unlocks`
+### 4.9 `location_point_admin_areas`
+
+月次レポートや将来の期間指定集計で、都道府県・市区町村ごとのGPSポイント数を集計するための履歴テーブル。
+
+`visited_admin_areas` は実績判定向けの「訪問済みかどうか」を保持し、こちらはGPSポイント単位の期間集計に使う。
+
+| カラム | 型 | 説明 |
+| --- | --- | --- |
+| `id` | INTEGER | 主キー |
+| `location_point_id` | INTEGER | 根拠GPSポイントID。`location_points(id)` を参照し、1GPSポイントにつき1行のみ保存する |
+| `recorded_at` | TEXT | GPSポイントの記録時刻 |
+| `local_date` | TEXT | GPSポイントのローカル日付 |
+| `prefecture_name` | TEXT | 都道府県名 |
+| `municipality_name` | TEXT NULL | 市区町村名。取得できない場合はNULL |
+| `normalized_prefecture_name` | TEXT | 都道府県の重複判定用正規化名 |
+| `normalized_municipality_name` | TEXT NULL | 市区町村の重複判定用正規化名 |
+| `created_at` | TEXT | 作成日時 |
+
+月次レポートの「よくいた都道府県」「一番よくいた市区町村」は、このテーブルの対象期間内GPSポイント数を集計して算出する。
+
+### 4.10 `achievement_unlocks`
 
 解除済み実績を保存するテーブル。
 
@@ -171,7 +191,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `progress_value` | REAL NULL | 解除時点の進捗値 |
 | `created_at` | TEXT | 作成日時 |
 
-### 4.10 `achievement_notification_queue`
+### 4.11 `achievement_notification_queue`
 
 実績解除通知とフォアグラウンド演出を安全に扱うためのキュー。
 
@@ -192,6 +212,8 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `location_points(local_date)`
 - `location_points(local_date, recorded_at)`
 - `visited_admin_areas(area_type, normalized_name)`
+- `location_point_admin_areas(local_date, normalized_prefecture_name)`
+- `location_point_admin_areas(local_date, normalized_municipality_name)`
 - `achievement_notification_queue(achievement_id)`
 - `achievement_notification_queue(shown_in_app_at, queued_at)`
 - `achievement_notification_queue(delivered_push_at)`

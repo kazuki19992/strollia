@@ -32,7 +32,7 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
 
     // 同一バッチ内でも直前保存点を更新し、細かすぎる連続点を保存しない。
     let previousPoint: CoordinateLike | null = await getLatestLocationPoint();
-    const savedPoints: ReturnType<typeof toLocationPoint>[] = [];
+    const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
 
     for (const location of locations) {
       const point = toLocationPoint(location);
@@ -41,14 +41,14 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
         continue;
       }
 
-      await insertLocationPoint(point);
-      savedPoints.push(point);
+      const locationPointId = await insertLocationPoint(point);
+      savedPoints.push({ point, locationPointId });
       previousPoint = point;
     }
 
     // GPSポイント保存を先に完了させ、逆ジオコーディングを含む実績処理は後段で行う。
-    for (const point of savedPoints) {
-      await processAchievementsForSavedPoint(point).catch((achievementError: unknown) => {
+    for (const { point, locationPointId } of savedPoints) {
+      await processAchievementsForSavedPoint(point, locationPointId).catch((achievementError: unknown) => {
         console.warn('Achievement processing failed:', achievementError);
       });
     }

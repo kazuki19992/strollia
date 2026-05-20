@@ -27,7 +27,7 @@ export function ReportFrame({ title, label, pageCount, pageIndex, children, onSh
       <View style={reportStyles.progressRow}>
         {Array.from({ length: pageCount }).map((_, index) => (
           <View key={index} style={reportStyles.progressBar}>
-            <View style={[reportStyles.progressFill, { width: index <= pageIndex ? '100%' : '0%' }]} />
+            <View testID={`report-progress-fill-${index}`} style={[reportStyles.progressFill, { width: index <= pageIndex ? '100%' : '0%' }]} />
           </View>
         ))}
       </View>
@@ -37,7 +37,7 @@ export function ReportFrame({ title, label, pageCount, pageIndex, children, onSh
         </View>
         <View style={reportStyles.headerText}>
           <Text style={reportStyles.headerTitle}>{title}</Text>
-          <Text style={reportStyles.headerSubtitle}>Report {label}</Text>
+          <Text style={reportStyles.headerSubtitle}>レポート {label}</Text>
         </View>
       </View>
       {children}

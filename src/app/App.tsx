@@ -46,6 +46,8 @@ import {
 } from '../features/location/locationPermission';
 import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
+import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
+import { getPreviousReportMonth } from '../features/reports/monthlyReport';
 import { resolveRouteLineStyle, resolveUserLocationIcon } from '../features/customization/customizationResolver';
 import {
   DEFAULT_ROUTE_LINE_STYLE_ID,
@@ -121,6 +123,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
+  const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
   const [points, setPoints] = useState<LocationPoint[]>([]);
   const [message, setMessage] = useState('起動後に自動でGPS記録を開始します。');
   const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
@@ -184,6 +187,12 @@ export default function App() {
     setPoints(allPoints);
     setIsRecording(recording);
     setPermissionState(permissions);
+
+    getMonthlyAreaReport(getPreviousReportMonth())
+      .then(setMonthlyAreaReport)
+      .catch((error: unknown) => {
+        console.warn('Failed to refresh monthly area report:', error);
+      });
 
     return { logs, allPoints, recording, permissions };
   }, []);
@@ -353,8 +362,11 @@ export default function App() {
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
    */
   useEffect(() => {
-    Promise.all([initializeDatabase(), loadAppFonts()])
+    initializeDatabase()
       .then(async () => {
+        await loadAppFonts().catch((error: unknown) => {
+          console.warn('Failed to load app fonts:', error);
+        });
         const [savedKeepScreenAwake, savedShowPhotosOnMap, savedRouteLineStyle, savedUserLocationIcon] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
@@ -775,9 +787,7 @@ export default function App() {
         )}
         {screenMode === 'dailyLogs' && <DailyLogsScreen dailyLogs={dailyLogs} styles={styles} theme={theme} onBackToMap={openMap} />}
         {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
-        {screenMode === 'monthlyReport' && (
-          <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} styles={styles} onBackToMap={openMap} />
-        )}
+        {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
         {screenMode === 'settings' && (
           <SettingsScreen
             styles={styles}

@@ -46,6 +46,8 @@ import {
 } from '../features/location/locationPermission';
 import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
+import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
+import { getPreviousReportMonth } from '../features/reports/monthlyReport';
 import { resolveRouteLineStyle, resolveUserLocationIcon } from '../features/customization/customizationResolver';
 import {
   DEFAULT_ROUTE_LINE_STYLE_ID,
@@ -61,6 +63,7 @@ import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../feature
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import type { LatLng, MapType } from 'react-native-maps';
+import { loadAppFonts } from '../theme/fonts';
 import { getAppTheme } from '../theme/theme';
 import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
@@ -69,6 +72,7 @@ import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { MapScreen } from './components/MapScreen';
 import { PhotoPreviewModals } from './components/PhotoPreviewModals';
+import { MonthlyReportScreen } from './components/reports/MonthlyReportScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
 import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
@@ -119,6 +123,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
+  const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
   const [points, setPoints] = useState<LocationPoint[]>([]);
   const [message, setMessage] = useState('起動後に自動でGPS記録を開始します。');
   const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
@@ -182,6 +187,12 @@ export default function App() {
     setPoints(allPoints);
     setIsRecording(recording);
     setPermissionState(permissions);
+
+    getMonthlyAreaReport(getPreviousReportMonth())
+      .then(setMonthlyAreaReport)
+      .catch((error: unknown) => {
+        console.warn('Failed to refresh monthly area report:', error);
+      });
 
     return { logs, allPoints, recording, permissions };
   }, []);
@@ -353,6 +364,9 @@ export default function App() {
   useEffect(() => {
     initializeDatabase()
       .then(async () => {
+        await loadAppFonts().catch((error: unknown) => {
+          console.warn('Failed to load app fonts:', error);
+        });
         const [savedKeepScreenAwake, savedShowPhotosOnMap, savedRouteLineStyle, savedUserLocationIcon] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
@@ -599,6 +613,12 @@ export default function App() {
     navigateToScreen('achievements');
   }
 
+  /** 月次レポート画面へ移動する。 */
+  function openMonthlyReport(): void {
+    refreshAchievementState().catch(() => undefined);
+    navigateToScreen('monthlyReport');
+  }
+
   /** 設定画面へ移動する。 */
   function openSettings(): void {
     navigateToScreen('settings');
@@ -758,6 +778,7 @@ export default function App() {
             onCloseMenu={closeMenu}
             onOpenDailyLogs={openDailyLogs}
             onOpenAchievements={openAchievements}
+            onOpenMonthlyReport={openMonthlyReport}
             onToggleMapType={toggleMapType}
             onOpenSettings={openSettings}
             onRequestLocationPermission={requestLocationPermission}
@@ -766,6 +787,7 @@ export default function App() {
         )}
         {screenMode === 'dailyLogs' && <DailyLogsScreen dailyLogs={dailyLogs} styles={styles} theme={theme} onBackToMap={openMap} />}
         {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
+        {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
         {screenMode === 'settings' && (
           <SettingsScreen
             styles={styles}

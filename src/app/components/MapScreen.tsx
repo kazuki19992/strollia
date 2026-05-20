@@ -94,6 +94,8 @@ export type MapScreenProps = {
   onOpenDailyLogs: () => void;
   /** 実績画面を開くハンドラ。 */
   onOpenAchievements: () => void;
+  /** 月次レポート画面を開くハンドラ。 */
+  onOpenMonthlyReport: () => void;
   /** 地図種別切り替えハンドラ。 */
   onToggleMapType: () => void;
   /** 設定画面を開くハンドラ。 */
@@ -138,6 +140,7 @@ export function MapScreen({
   onCloseMenu,
   onOpenDailyLogs,
   onOpenAchievements,
+  onOpenMonthlyReport,
   onToggleMapType,
   onOpenSettings,
   onRequestLocationPermission,
@@ -220,6 +223,10 @@ export function MapScreen({
               <MaterialCommunityIcons name="trophy-outline" size={23} color={theme.colors.text} />
               <Text style={styles.menuItemText}>実績</Text>
             </Pressable>
+            <Pressable onPress={onOpenMonthlyReport} style={styles.menuItem}>
+              <MaterialCommunityIcons name="chart-timeline-variant" size={23} color={theme.colors.text} />
+              <Text style={styles.menuItemText}>レポートを見る</Text>
+            </Pressable>
             <Pressable onPress={onToggleMapType} style={styles.menuItem}>
               <MaterialCommunityIcons name={mapType === 'standard' ? 'satellite-variant' : 'map-outline'} size={23} color={theme.colors.text} />
               <Text style={styles.menuItemText}>{mapType === 'standard' ? '航空写真に切替' : '標準地図に切替'}</Text>
@@ -264,7 +271,11 @@ export function MapScreen({
           <View style={styles.bottomSideSpacer} />
           <View style={styles.locationPill}>
             <Text style={styles.locationName}>{currentAreaName}</Text>
-            <Text style={styles.locationMeta}>ODO {(distance / 1000).toFixed(2)} km</Text>
+            <View style={styles.locationMetaRow}>
+              <Text style={styles.locationMetaLabel}>ODO</Text>
+              <Text style={styles.locationMetaValue}>{(distance / 1000).toFixed(2)}</Text>
+              <Text style={styles.locationMetaLabel}>km</Text>
+            </View>
           </View>
           <Animated.View pointerEvents={isFollowingUserLocation ? 'none' : 'auto'} style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}>
             <Pressable onPress={onRecenterOnUserLocation} style={styles.recenterButton}>

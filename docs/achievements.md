@@ -52,9 +52,9 @@ Strollia の継続利用を促すため、GPSログから算出できる行動�
 
 ## 4. 訪問エリア記録
 
-現状はGPSポイントと日別ログを保存しているが、都道府県・市区町村の訪問記録は保存していない。
+GPSポイントと日別ログに加えて、行政区域の訪問状態とGPSポイント単位の行政区域履歴を保存する。
 
-実績判定に必要なため、機能追加後に保存されるGPSポイントについて、GPS保存時または後続処理で位置情報から行政区域を解決し、訪問済みエリアとして保存する。
+実績判定には `visited_admin_areas` を使い、月次レポートなどの期間集計には `location_point_admin_areas` を使う。
 
 ### 4.1 行政区域の解決方法
 
@@ -102,7 +102,23 @@ GPSログのすべての点に対して逆ジオコーディングすると重�
 
 将来的に行政区域コードが安定取得できる場合は、`area_type, area_code` を優先する。
 
-### 5.2 `achievement_unlocks`
+### 5.2 `location_point_admin_areas`
+
+GPSポイントごとの都道府県・市区町村を保存する。月次レポートなどで対象期間内の都道府県別・市区町村別GPSポイント数を集計するために使う。
+
+| カラム | 型 | 説明 |
+| --- | --- | --- |
+| `id` | INTEGER | 主キー |
+| `location_point_id` | INTEGER | 根拠GPSポイントID |
+| `recorded_at` | TEXT | GPSポイントの記録時刻 |
+| `local_date` | TEXT | GPSポイントのローカル日付 |
+| `prefecture_name` | TEXT | 都道府県名 |
+| `municipality_name` | TEXT NULL | 市区町村名 |
+| `normalized_prefecture_name` | TEXT | 都道府県の正規化名 |
+| `normalized_municipality_name` | TEXT NULL | 市区町村の正規化名 |
+| `created_at` | TEXT | 作成日時 |
+
+### 5.3 `achievement_unlocks`
 
 解除済み実績を保存する。
 
@@ -115,7 +131,7 @@ GPSログのすべての点に対して逆ジオコーディングすると重�
 
 同じ実績は一度だけ解除する。
 
-### 5.3 `achievement_notification_queue`
+### 5.4 `achievement_notification_queue`
 
 実績解除時の通知・演出を安全に処理するためのキュー。
 

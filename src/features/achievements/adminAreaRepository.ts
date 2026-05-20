@@ -14,6 +14,17 @@ export type VisitedAdminAreaInput = {
   firstLocationPointId?: number | null;
 };
 
+/** GPSポイントごとの行政区域履歴として保存する値。 */
+export type LocationPointAdminAreaInput = {
+  locationPointId: number;
+  recordedAt: string;
+  localDate: string;
+  prefectureName: string;
+  municipalityName: string | null;
+  normalizedPrefectureName: string;
+  normalizedMunicipalityName: string | null;
+};
+
 /** 訪問済み行政区域をUPSERTで保存する。 */
 export async function upsertVisitedAdminArea(area: VisitedAdminAreaInput): Promise<void> {
   const now = new Date().toISOString();
@@ -47,6 +58,39 @@ export async function upsertVisitedAdminArea(area: VisitedAdminAreaInput): Promi
     area.visitedAt,
     area.firstLocationPointId ?? null,
     now,
+    now,
+  );
+}
+
+/** GPSポイント単位の行政区域履歴を保存する。 */
+export async function upsertLocationPointAdminArea(area: LocationPointAdminAreaInput): Promise<void> {
+  const now = new Date().toISOString();
+
+  await db.runAsync(
+    `INSERT INTO location_point_admin_areas (
+      location_point_id,
+      recorded_at,
+      local_date,
+      prefecture_name,
+      municipality_name,
+      normalized_prefecture_name,
+      normalized_municipality_name,
+      created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(location_point_id) DO UPDATE SET
+      recorded_at = excluded.recorded_at,
+      local_date = excluded.local_date,
+      prefecture_name = excluded.prefecture_name,
+      municipality_name = excluded.municipality_name,
+      normalized_prefecture_name = excluded.normalized_prefecture_name,
+      normalized_municipality_name = excluded.normalized_municipality_name`,
+    area.locationPointId,
+    area.recordedAt,
+    area.localDate,
+    area.prefectureName,
+    area.municipalityName,
+    area.normalizedPrefectureName,
+    area.normalizedMunicipalityName,
     now,
   );
 }

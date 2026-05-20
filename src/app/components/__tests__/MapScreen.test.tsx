@@ -1,7 +1,9 @@
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Animated } from 'react-native';
 
+import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
 import { lightTheme } from '../../../theme/theme';
+import { createStyles } from '../../appStyles';
 import { MapScreen } from '../MapScreen';
 
 jest.mock('@expo/vector-icons', () => {
@@ -32,12 +34,7 @@ jest.mock('../PhotoClusterMarker', () => ({
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
 
-const styles = new Proxy(
-  {},
-  {
-    get: () => ({}),
-  },
-);
+const styles = createStyles(lightTheme);
 
 /** 地図画面テスト用の既定propsを作る。 */
 function createProps() {
@@ -74,6 +71,7 @@ function createProps() {
     onCloseMenu: jest.fn(),
     onOpenDailyLogs: jest.fn(),
     onOpenAchievements: jest.fn(),
+    onOpenMonthlyReport: jest.fn(),
     onToggleMapType: jest.fn(),
     onOpenSettings: jest.fn(),
     onRequestLocationPermission: jest.fn(),
@@ -101,5 +99,32 @@ describe('地図画面 MapScreen', () => {
 
     expect(texts).toContain('記録中');
     expect(texts).toContain('渋谷区');
+  });
+
+  test('ODOメーターの数値に7セグフォントを使う', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+    });
+
+    const distanceText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '1.23');
+
+    expect(distanceText).toBeDefined();
+    expect(StyleSheet.flatten(distanceText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
+  });
+
+  test('メニューのレポートを見るを押すと月次レポートを開く', () => {
+    const props = { ...createProps(), isMenuVisible: true, isMenuOpen: true };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const reportMenuItem = renderer.root.findAll((node: any) => node.props.children?.some?.((child: any) => child?.props?.children === 'レポートを見る'))[0];
+    act(() => reportMenuItem.props.onPress());
+
+    expect(props.onOpenMonthlyReport).toHaveBeenCalledTimes(1);
   });
 });

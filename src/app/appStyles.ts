@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 
+import { NUMERIC_DISPLAY_FONT } from '../theme/fonts';
 import { AppTheme } from '../theme/theme';
 
 /**
@@ -428,10 +429,21 @@ export function createStyles(theme: AppTheme) {
     headerSpacer: {
       width: 70,
     },
-    locationMeta: {
+    locationMetaLabel: {
       color: colors.mutedText,
       fontSize: 12,
       fontWeight: '800',
+    },
+    locationMetaRow: {
+      alignItems: 'baseline',
+      flexDirection: 'row',
+      gap: 3,
+    },
+    locationMetaValue: {
+      color: colors.mutedText,
+      fontFamily: NUMERIC_DISPLAY_FONT,
+      fontSize: 14,
+      letterSpacing: 1,
     },
     locationName: {
       color: colors.text,
@@ -734,6 +746,18 @@ export function createStyles(theme: AppTheme) {
       overflow: 'hidden',
       paddingHorizontal: 8,
       paddingVertical: 4,
+    },
+
+    reportNavigationOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      flexDirection: 'row',
+      zIndex: 8,
+    },
+    reportNextZone: {
+      flex: 1,
+    },
+    reportPreviousZone: {
+      flex: 1,
     },
     screenTransition: {
       flex: 1,

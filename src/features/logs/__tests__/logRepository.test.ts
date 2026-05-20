@@ -6,7 +6,7 @@ jest.mock('../../../db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
-    runAsync: jest.fn(),
+    runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
   },
 }));
 
@@ -35,7 +35,7 @@ describe('GPSポイント保存 insertLocationPoint', () => {
       id: 1,
     });
 
-    await insertLocationPoint(point(35.001, 139));
+    await expect(insertLocationPoint(point(35.001, 139))).resolves.toBe(100);
 
     expect(db.runAsync).toHaveBeenCalledTimes(2);
     const dailySummaryArgs = (db.runAsync as jest.Mock).mock.calls[1];
@@ -49,11 +49,12 @@ describe('全ログ削除 deleteAllLogData', () => {
     jest.clearAllMocks();
   });
 
-  it('位置情報ポイントと日別サマリーを1つのトランザクションで削除する', async () => {
+  it('行政区域履歴、位置情報ポイント、日別サマリーを1つのトランザクションで削除する', async () => {
     await deleteAllLogData();
 
     expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM location_points');
-    expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM daily_logs');
+    expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM location_point_admin_areas');
+    expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM location_points');
+    expect(db.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM daily_logs');
   });
 });

@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
 import { NewLocationPoint } from '../../../types/gps';
-import { deleteAllLogData, insertLocationPoint } from '../logRepository';
+import { deleteAllUserData, insertLocationPoint } from '../logRepository';
 
 jest.mock('../../../db/database', () => ({
   db: {
@@ -44,16 +44,19 @@ describe('GPSポイント保存 insertLocationPoint', () => {
   });
 });
 
-describe('全ログ削除 deleteAllLogData', () => {
+describe('全ユーザーデータ削除 deleteAllUserData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('位置情報ポイントと日別サマリーを1つのトランザクションで削除する', async () => {
-    await deleteAllLogData();
+  it('GPSログと実績関連データを1つのトランザクションで削除する', async () => {
+    await deleteAllUserData();
 
     expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM location_points');
-    expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM daily_logs');
+    expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM achievement_notification_queue');
+    expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_unlocks');
+    expect(db.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM visited_admin_areas');
+    expect(db.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM location_points');
+    expect(db.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM daily_logs');
   });
 });

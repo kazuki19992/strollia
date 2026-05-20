@@ -1,3 +1,5 @@
+import * as Location from 'expo-location';
+
 import {
   BACKGROUND_LOCATION_TASK_NAME,
   getLocationTaskOptions,
@@ -17,6 +19,7 @@ describe('位置情報追跡設定', () => {
 
     expect(LOCATION_UPDATE_INTERVAL_MS).toBe(10000);
     expect(options.timeInterval).toBe(10000);
+    expect(options.accuracy).toBe(Location.Accuracy.High);
     expect(LOCATION_UPDATE_DISTANCE_METERS).toBe(5);
     expect(LOCATION_MAX_ACCURACY_METERS).toBe(50);
     expect(LOCATION_MIN_SAVE_DISTANCE_METERS).toBe(5);

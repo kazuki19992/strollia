@@ -144,9 +144,12 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
   );
 }
 
-/** ユーザー操作による全GPSログ削除を1トランザクションで実行する。 */
-export async function deleteAllLogData(): Promise<void> {
+/** ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。 */
+export async function deleteAllUserData(): Promise<void> {
   await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM achievement_notification_queue');
+    await db.runAsync('DELETE FROM achievement_unlocks');
+    await db.runAsync('DELETE FROM visited_admin_areas');
     await db.runAsync('DELETE FROM location_points');
     await db.runAsync('DELETE FROM daily_logs');
   });

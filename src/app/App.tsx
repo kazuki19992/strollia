@@ -44,7 +44,7 @@ import {
   hasRequiredLocationPermission,
   LocationPermissionState,
 } from '../features/location/locationPermission';
-import { deleteAllLogData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
+import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { resolveRouteLineStyle, resolveUserLocationIcon } from '../features/customization/customizationResolver';
 import {
@@ -281,18 +281,18 @@ export default function App() {
   }, [points]);
 
 
-  /** 確認ダイアログを挟んで保存済みGPSログを全削除する。 */
+  /** 確認ダイアログを挟んで保存済みデータを全削除する。 */
   const deleteAllData = useCallback(async (): Promise<void> => {
-    Alert.alert('すべてのデータを削除', '保存済みのGPSログをすべて削除します。この操作は取り消せません。', [
+    Alert.alert('すべてのデータを削除', '保存済みのGPSログ、訪問エリア、実績の解除状況をすべて削除します。この操作は取り消せません。', [
       { text: 'キャンセル', style: 'cancel' },
       {
         text: '削除する',
         style: 'destructive',
         onPress: () => {
-          deleteAllLogData()
+          deleteAllUserData()
             .then(async () => {
               await refreshData();
-              setMessage('保存済みGPSログをすべて削除しました。');
+              setMessage('保存済みデータをすべて削除しました。');
             })
             .catch((error: unknown) => {
               Alert.alert('削除失敗', error instanceof Error ? error.message : 'データを削除できませんでした。');

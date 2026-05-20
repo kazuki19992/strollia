@@ -5,7 +5,7 @@ import { formatReportMonth, ReportMonth } from './monthlyReport';
 export type MonthlyPrefectureRankingItem = {
   /** 都道府県名。 */
   name: string;
-  /** 対象月内に訪問済みとして扱えた市区町村数。 */
+  /** 並び順に使う内部スコア。現状は対象月内に訪問済みとして扱えた市区町村数。 */
   count: number;
 };
 

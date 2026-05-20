@@ -36,6 +36,10 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     jest.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    });
     (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(true);
     (Sharing.shareAsync as jest.Mock).mockResolvedValue(undefined);
     (captureRef as jest.Mock).mockResolvedValue('file:///tmp/monthly-report.png');

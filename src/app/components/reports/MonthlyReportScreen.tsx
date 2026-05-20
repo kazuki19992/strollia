@@ -72,11 +72,16 @@ function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: Mont
     .reduce((longest, log) => Math.max(longest, log.distanceMeters ?? 0), 0);
 
   return {
-    isMonthlyDistanceRecord: report.totalDistanceMeters >= previousBestMonthlyDistance && report.totalDistanceMeters >= 0,
+    isMonthlyDistanceRecord: previousBestMonthlyDistance > 0 && report.totalDistanceMeters > previousBestMonthlyDistance,
     lifetimeDistanceMeters,
     longestDay,
-    isLongestDayRecord: (longestDay?.distanceMeters ?? 0) > previousLongestDistance && (longestDay?.distanceMeters ?? 0) > 0,
+    isLongestDayRecord: previousLongestDistance > 0 && (longestDay?.distanceMeters ?? 0) > previousLongestDistance,
   };
+}
+
+/** React Nativeの描画反映を1フレーム待つ。 */
+function waitForNextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 /** スクロール型の月次レポート画面。 */
@@ -93,7 +98,6 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
   const reportMapRegion = useMemo(() => createInitialRegion(report.routePoints), [report.routePoints]);
   const monthlyAchievements = achievements.filter((item) => item.unlockedAt?.startsWith(report.label)).slice(0, 6);
   const hasReportData = report.activeDays > 0 || report.routePoints.length > 0 || report.totalDistanceMeters > 0;
-  const activeDayRecord = report.activeDays >= 25;
   const prefectureRanking = rankingLabels.map((rank, index) => ({
     rank,
     item: monthlyAreaReport?.prefectureRanking[index] ?? null,
@@ -112,6 +116,8 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
     setIsSharingReport(true);
 
     try {
+      await waitForNextFrame();
+
       const uri = await captureRef(reportCaptureRef.current, {
         format: 'png',
         quality: 1,
@@ -161,21 +167,21 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
         </View>
 
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>移動距離</Text>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
           <View style={reportStyles.monthlyMetricRow}>
             <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>月間移動距離</Text>
             {hasReportData ? <MonthlyReportMetricValue value={kilometers(report.totalDistanceMeters)} unit="km" color={textColor} /> : <Text style={[reportStyles.monthlyNoDataText, { color: mutedTextColor }]}>データなし</Text>}
           </View>
           <NewRecordPill visible={summary.isMonthlyDistanceRecord} />
         </MonthlyReportAnimatedCard>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={{ backgroundColor: surfaceColor }}>
           <View>
             <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>総移動距離</Text>
             <Text style={[reportStyles.monthlyCardSubLabel, { color: mutedTextColor }]}>先月末時点</Text>
           </View>
           <MonthlyReportMetricValue value={kilometers(summary.lifetimeDistanceMeters)} unit="km" color={textColor} />
         </MonthlyReportAnimatedCard>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
           <View style={reportStyles.monthlyMetricRow}>
             <View>
               <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>1日の最多移動距離</Text>
@@ -187,7 +193,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
         </MonthlyReportAnimatedCard>
 
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>移動マップ</Text>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyMapCard, { backgroundColor: surfaceColor }]}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={[reportStyles.monthlyMapCard, { backgroundColor: surfaceColor }]}>
           {reportRouteCoordinates.length > 1 ? (
             <MapView
               initialRegion={reportMapRegion}
@@ -207,13 +213,13 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
             </View>
           )}
         </MonthlyReportAnimatedCard>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={{ backgroundColor: surfaceColor }}>
           <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>1番よくいた市町村</Text>
           <Text style={[reportStyles.monthlyPlaceText, { color: textColor }]}>{monthlyAreaReport?.topMunicipalityName ?? 'データなし'}</Text>
         </MonthlyReportAnimatedCard>
 
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>月間取得した実績</Text>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyAchievementsCard, { backgroundColor: 'transparent' }]}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={[reportStyles.monthlyAchievementsCard, { backgroundColor: 'transparent' }]}>
           {monthlyAchievements.length === 0 ? (
             <Text style={[reportStyles.monthlyEmptyText, { color: mutedTextColor }]}>この月はまだ実績達成なし</Text>
           ) : (
@@ -230,24 +236,23 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
 
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>よくいた都道府県</Text>
         {prefectureRanking.map(({ rank, item }) => (
-          <MonthlyReportAnimatedCard key={rank} scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
+          <MonthlyReportAnimatedCard key={rank} scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={{ backgroundColor: surfaceColor }}>
             <Text style={[reportStyles.monthlyRankText, { color: textColor }]}>{rank}</Text>
             <Text style={[reportStyles.monthlyRankingName, { color: textColor }]}>{item?.name ?? '---'}</Text>
-            <Text style={[reportStyles.monthlyRankingDays, { color: mutedTextColor }]}>{item == null ? '' : `(${item.count}回)`}</Text>
+            <Text style={[reportStyles.monthlyRankingDays, { color: mutedTextColor }]}>''</Text>
           </MonthlyReportAnimatedCard>
         ))}
 
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>すとろりあ</Text>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={{ backgroundColor: surfaceColor }}>
           <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>起動日数</Text>
           {hasReportData ? <MonthlyReportMetricValue value={String(report.activeDays)} unit="日 / 30日" color={textColor} /> : <Text style={[reportStyles.monthlyNoDataText, { color: mutedTextColor }]}>データなし</Text>}
         </MonthlyReportAnimatedCard>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} forceVisible={isSharingReport} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
           <View style={reportStyles.monthlyMetricRow}>
             <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>最長連続起動日数</Text>
             <MonthlyReportMetricValue value={String(Math.max(report.activeDays - 3, 0))} unit="日" color={textColor} />
           </View>
-          <NewRecordPill visible={activeDayRecord} />
         </MonthlyReportAnimatedCard>
         <SafeAreaView style={reportStyles.monthlyBottomSafeArea}>
           <View style={reportStyles.monthlyBottomSpacer} />

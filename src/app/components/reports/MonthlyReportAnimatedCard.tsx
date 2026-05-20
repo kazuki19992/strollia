@@ -11,10 +11,12 @@ export type MonthlyReportAnimatedCardProps = PropsWithChildren<{
   viewportHeight: number;
   /** 追加スタイル。 */
   style?: ViewStyle | ViewStyle[];
+  /** 共有画像生成時など、スクロール位置に関係なく表示する場合はtrue。 */
+  forceVisible?: boolean;
 }>;
 
 /** 画面下部に近づいたタイミングで奥から手前へ出る月次レポートカード。 */
-export function MonthlyReportAnimatedCard({ children, scrollY, viewportHeight, style }: MonthlyReportAnimatedCardProps) {
+export function MonthlyReportAnimatedCard({ children, scrollY, viewportHeight, style, forceVisible = false }: MonthlyReportAnimatedCardProps) {
   const [cardY, setCardY] = useState(0);
 
   /** レイアウト位置を保持し、スクロール量から登場タイミングを算出する。 */
@@ -24,9 +26,9 @@ export function MonthlyReportAnimatedCard({ children, scrollY, viewportHeight, s
 
   const start = cardY - viewportHeight * 0.9;
   const end = cardY - viewportHeight * 0.75;
-  const opacity = scrollY.interpolate({ inputRange: [start, end], outputRange: [0, 1], extrapolate: 'clamp' });
-  const scale = scrollY.interpolate({ inputRange: [start, end], outputRange: [0.9, 1], extrapolate: 'clamp' });
-  const translateY = scrollY.interpolate({ inputRange: [start, end], outputRange: [26, 0], extrapolate: 'clamp' });
+  const opacity = forceVisible ? 1 : scrollY.interpolate({ inputRange: [start, end], outputRange: [0, 1], extrapolate: 'clamp' });
+  const scale = forceVisible ? 1 : scrollY.interpolate({ inputRange: [start, end], outputRange: [0.9, 1], extrapolate: 'clamp' });
+  const translateY = forceVisible ? 0 : scrollY.interpolate({ inputRange: [start, end], outputRange: [26, 0], extrapolate: 'clamp' });
 
   return (
     <Animated.View onLayout={handleLayout} style={[reportStyles.monthlyAnimatedCard, style, { opacity, transform: [{ translateY }, { scale }] }]}>

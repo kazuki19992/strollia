@@ -131,7 +131,7 @@ GPSポイントごとの都道府県・市区町村を保存する。月次レ�
 
 同じ実績は一度だけ解除する。
 
-### 5.3 `achievement_notification_queue`
+### 5.4 `achievement_notification_queue`
 
 実績解除時の通知・演出を安全に処理するためのキュー。
 

@@ -23,6 +23,12 @@ export async function evaluateAchievementsAndNotify(options: EvaluateAchievement
 
 /** 新規GPSポイント保存後に訪問エリアと実績を更新する。 */
 export async function processAchievementsForSavedPoint(point: NewLocationPoint, locationPointId?: number): Promise<AchievementDefinition[]> {
-  await recordVisitedAdminAreasForPoint(point, locationPointId).catch(() => undefined);
+  await recordVisitedAdminAreasForPoint(point, locationPointId).catch((error: unknown) => {
+    console.warn('Failed to record admin area for saved point:', {
+      localDate: point.localDate,
+      locationPointId,
+      error,
+    });
+  });
   return evaluateAchievementsAndNotify();
 }

@@ -17,11 +17,24 @@ export type MonthlyAreaReport = {
   topMunicipalityName: string | null;
 };
 
+/**
+ * 月次都道府県ランキング集計クエリの内部行。
+ *
+ * @property name 都道府県名。
+ * @property count 対象月内に保存されたGPSポイント数。
+ */
 type PrefectureRankingRow = {
   name: string;
   count: number;
 };
 
+/**
+ * 月次代表市区町村集計クエリの内部行。
+ *
+ * @property prefectureName 都道府県名。
+ * @property municipalityName 市区町村名。
+ * @property count 対象月内に保存されたGPSポイント数。
+ */
 type MunicipalityRow = {
   prefectureName: string;
   municipalityName: string;
@@ -63,8 +76,8 @@ export async function getMonthlyAreaReport(month: ReportMonth): Promise<MonthlyA
      WHERE local_date >= ?
        AND local_date < ?
        AND municipality_name IS NOT NULL
-     GROUP BY normalized_municipality_name
-     ORDER BY count DESC, municipality_name ASC
+     GROUP BY normalized_prefecture_name, normalized_municipality_name
+     ORDER BY count DESC, prefecture_name ASC, municipality_name ASC
      LIMIT 1`,
     from,
     to,

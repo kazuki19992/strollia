@@ -47,6 +47,7 @@ export function isInReportMonth(localDate: string, month: ReportMonth): boolean 
 export function createMonthlyReport(dailyLogs: DailyLogSummary[], points: LocationPoint[], month = getReportMonth()): MonthlyReport {
   const monthlyLogs = dailyLogs.filter((log) => isInReportMonth(log.localDate, month));
   const monthlyPoints = points.filter((point) => isInReportMonth(point.localDate, month));
+  // monthlyLogsに距離欠落が1件でもある場合は、canUseStoredDistanceをfalseにしてmonthlyPointsからtotalDistanceMetersで再計算する。
   const canUseStoredDistance = monthlyLogs.length > 0 && monthlyLogs.every((log) => log.distanceMeters != null);
   const totalDistance = canUseStoredDistance
     ? monthlyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0)

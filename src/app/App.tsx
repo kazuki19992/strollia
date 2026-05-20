@@ -176,19 +176,23 @@ export default function App() {
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
   const refreshData = useCallback(async () => {
-    const [logs, allPoints, recording, permissions, areaReport] = await Promise.all([
+    const [logs, allPoints, recording, permissions] = await Promise.all([
       getDailyLogs(),
       getAllLocationPoints(),
       isBackgroundLocationRecording(),
       getLocationPermissionState(),
-      getMonthlyAreaReport(getPreviousReportMonth()),
     ]);
 
     setDailyLogs(logs);
-    setMonthlyAreaReport(areaReport);
     setPoints(allPoints);
     setIsRecording(recording);
     setPermissionState(permissions);
+
+    getMonthlyAreaReport(getPreviousReportMonth())
+      .then(setMonthlyAreaReport)
+      .catch((error: unknown) => {
+        console.warn('Failed to refresh monthly area report:', error);
+      });
 
     return { logs, allPoints, recording, permissions };
   }, []);
@@ -358,8 +362,11 @@ export default function App() {
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
    */
   useEffect(() => {
-    Promise.all([initializeDatabase(), loadAppFonts()])
+    initializeDatabase()
       .then(async () => {
+        await loadAppFonts().catch((error: unknown) => {
+          console.warn('Failed to load app fonts:', error);
+        });
         const [savedKeepScreenAwake, savedShowPhotosOnMap, savedRouteLineStyle, savedUserLocationIcon] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
@@ -780,9 +787,7 @@ export default function App() {
         )}
         {screenMode === 'dailyLogs' && <DailyLogsScreen dailyLogs={dailyLogs} styles={styles} theme={theme} onBackToMap={openMap} />}
         {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
-        {screenMode === 'monthlyReport' && (
-          <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} styles={styles} onBackToMap={openMap} />
-        )}
+        {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
         {screenMode === 'settings' && (
           <SettingsScreen
             styles={styles}

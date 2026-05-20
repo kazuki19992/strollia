@@ -2,8 +2,6 @@ import { Alert, Text } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
-import { lightTheme } from '../../../../theme/theme';
-import { createStyles } from '../../../appStyles';
 import { MonthlyReportScreen } from '../MonthlyReportScreen';
 
 jest.mock('@expo/vector-icons', () => {
@@ -62,7 +60,6 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
-          styles={createStyles(lightTheme)}
           onBackToMap={jest.fn()}
         />,
       );
@@ -83,7 +80,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} styles={createStyles(lightTheme)} onBackToMap={onBackToMap} />,
+        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} onBackToMap={onBackToMap} />,
       );
     });
 
@@ -101,7 +98,6 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
-          styles={createStyles(lightTheme)}
           onBackToMap={jest.fn()}
         />,
       );
@@ -115,5 +111,23 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     expect(captureRef).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ format: 'png' }));
     expect(captureRef).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ snapshotContentContainer: true }));
     expect(Sharing.shareAsync).toHaveBeenCalledWith('file:///tmp/monthly-report.png', expect.objectContaining({ mimeType: 'image/png' }));
+  });
+
+  it('共有シートが使えない場合は画像生成せず警告する', async () => {
+    (Sharing.isAvailableAsync as jest.Mock).mockResolvedValueOnce(false);
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} onBackToMap={jest.fn()} />,
+      );
+    });
+
+    const shareButton = renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function')[0];
+    await act(async () => {
+      await shareButton.props.onPress();
+    });
+
+    expect(captureRef).not.toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalledWith('共有できません', 'この環境では共有シートを利用できません。');
   });
 });

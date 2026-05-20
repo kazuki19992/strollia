@@ -10,6 +10,7 @@ export const db = SQLite.openDatabaseSync('strollia.db');
  */
 export async function initializeDatabase(): Promise<void> {
   await db.execAsync(`
+    PRAGMA foreign_keys = ON;
     PRAGMA journal_mode = WAL;
 
     CREATE TABLE IF NOT EXISTS location_points (

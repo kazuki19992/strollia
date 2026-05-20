@@ -1,10 +1,25 @@
 import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, getReportMonth, isInReportMonth } from '../monthlyReport';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 
+/**
+ * 月次レポートテスト用の日別ログ最小フィクスチャを作る。
+ *
+ * @param localDate - 対象ローカル日付。
+ * @param distanceMeters - 日別保存距離。nullの場合はGPS点からの再計算対象。
+ * @returns 固定pointCountとnull時刻を持つ日別ログサマリー。
+ */
 function log(localDate: string, distanceMeters: number | null): DailyLogSummary {
   return { localDate, distanceMeters, pointCount: 2, startedAt: null, endedAt: null };
 }
 
+/**
+ * 月次レポートテスト用のGPSポイント最小フィクスチャを作る。
+ *
+ * @param localDate - 対象ローカル日付。
+ * @param latitude - 緯度。
+ * @param longitude - 経度。
+ * @returns 距離計算に必要な座標と最小フィールドだけを持つGPSポイント。
+ */
 function point(localDate: string, latitude: number, longitude: number): LocationPoint {
   return {
     id: Number(`${localDate.replaceAll('-', '')}${Math.round(latitude * 1000)}`),
@@ -60,5 +75,16 @@ describe('月次レポート集計 monthlyReport', () => {
 
     expect(report.totalDistanceMeters).toBeGreaterThan(100);
     expect(report.totalDistanceMeters).toBeLessThan(120);
+  });
+
+  it('一部の日別距離がない場合もGPSポイントから月間距離を再計算する', () => {
+    const report = createMonthlyReport(
+      [log('2026-04-01', 9999), log('2026-04-02', null)],
+      [point('2026-04-01', 35, 139), point('2026-04-01', 35.001, 139), point('2026-04-02', 35.001, 139), point('2026-04-02', 35.002, 139)],
+      { year: 2026, month: 4 },
+    );
+
+    expect(report.totalDistanceMeters).toBeGreaterThan(200);
+    expect(report.totalDistanceMeters).toBeLessThan(230);
   });
 });

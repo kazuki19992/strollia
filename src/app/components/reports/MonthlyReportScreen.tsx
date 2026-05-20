@@ -11,7 +11,6 @@ import { createMonthlyReport, getPreviousReportMonth, MonthlyReport } from '../.
 import { createInitialRegion, toRenderRouteCoordinates } from '../../../features/map/routeMapper';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 import { darkTheme, lightTheme } from '../../../theme/theme';
-import { AppStyles } from '../../appStyles';
 import { MonthlyReportAnimatedCard } from './MonthlyReportAnimatedCard';
 import { MonthlyReportMetricValue } from './MonthlyReportMetricValue';
 import { MonthlyReportScrollIndicator } from './MonthlyReportScrollIndicator';
@@ -28,8 +27,6 @@ export type MonthlyReportScreenProps = {
   achievements: AchievementListItem[];
   /** 月次行政区域サマリー。 */
   monthlyAreaReport: MonthlyAreaReport | null;
-  /** 共通スタイル。 */
-  styles: AppStyles;
   /** 地図画面へ戻る処理。 */
   onBackToMap: () => void;
 };
@@ -120,16 +117,16 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
     try {
       await waitForNextFrame();
 
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
+        return;
+      }
+
       const uri = await captureRef(reportCaptureRef.current, {
         format: 'png',
         quality: 1,
         result: 'tmpfile',
       });
-
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
-        return;
-      }
 
       await Sharing.shareAsync(uri, {
         dialogTitle: `すとろりあ 月次レポート ${report.label}`,

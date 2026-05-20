@@ -162,8 +162,11 @@ RevenueCat導入後は、このフラグではなくRevenueCatの `CustomerInfo.
 2. `USER_LOCATION_ICON_OPTIONS` に画像情報を持たせる
 3. 独自現在地Markerを画像表示へ差し替える
 4. ルート線スタイルの本命デザインを `ROUTE_LINE_STYLE_OPTIONS` に追加・調整する
-5. 月次レポートMVPを実装する
-6. 高度統計の集計仕様と画面を実装する
-7. 日別移動リプレイMVPを実装する
-8. RevenueCat SDKを導入し、`isPlusActive` の供給元を差し替える
-9. 購入・復元UIを設定画面に追加する
+5. 高度統計の集計仕様と画面を実装する
+6. 日別移動リプレイMVPを実装する
+7. RevenueCat SDKを導入し、`isPlusActive` の供給元を差し替える
+8. 購入・復元UIを設定画面に追加する
+
+実装済み:
+
+- 月次レポートMVP

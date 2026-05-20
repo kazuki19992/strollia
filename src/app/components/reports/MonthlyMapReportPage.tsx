@@ -16,13 +16,13 @@ export type MonthlyMapReportPageProps = {
 export function MonthlyMapReportPage({ report, pageCount, pageIndex, onShare }: MonthlyMapReportPageProps) {
   return (
     <ReportFrame title="今月の移動マップ" label={report.label} pageCount={pageCount} pageIndex={pageIndex} onShare={onShare}>
-      <View style={reportStyles.mapBackground}>
+      <View testID="monthly-map-background" style={reportStyles.mapBackground}>
         {Array.from({ length: 12 }).map((_, index) => (
-          <View key={index} style={[reportStyles.mapGridLine, { top: 80 + index * 70 }]} />
+          <View key={index} testID="monthly-map-grid-line" style={[reportStyles.mapGridLine, { top: 80 + index * 70 }]} />
         ))}
-        <View style={reportStyles.mapRouteHalo} />
-        <View style={reportStyles.mapRoute} />
-        <View style={reportStyles.mapOverlay} />
+        <View testID="monthly-map-route-halo" style={reportStyles.mapRouteHalo} />
+        <View testID="monthly-map-route" style={reportStyles.mapRoute} />
+        <View testID="monthly-map-overlay" style={reportStyles.mapOverlay} />
       </View>
     </ReportFrame>
   );

@@ -344,7 +344,6 @@ export const reportStyles = StyleSheet.create({
     fontSize: 21,
     letterSpacing: -0.5,
     lineHeight: 30,
-    marginBottom: 3,
   },
   monthlyCardNumberInteger: {
     fontFamily: NUMERIC_DISPLAY_FONT,
@@ -362,14 +361,22 @@ export const reportStyles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: 7,
     marginLeft: 5,
+  },
+  monthlyBottomSafeArea: {
+    alignSelf: 'stretch',
+  },
+  monthlyBottomSpacer: {
+    height: 170,
+  },
+  monthlyCaptureContent: {
+    paddingBottom: 0,
   },
   monthlyContainer: {
     flex: 1,
   },
   monthlyContent: {
-    paddingBottom: 116,
+    paddingBottom: 0,
   },
   monthlyCloseButton: {
     alignItems: 'center',
@@ -459,6 +466,14 @@ export const reportStyles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
   },
+  monthlyMapNoData: {
+    alignItems: 'center',
+    backgroundColor: '#14222a',
+    borderRadius: 22,
+    flex: 1,
+    justifyContent: 'center',
+    width: '100%',
+  },
   monthlyMapRoute: {
     backgroundColor: '#4f87bd',
     borderRadius: 999,
@@ -479,6 +494,12 @@ export const reportStyles = StyleSheet.create({
     top: '46%',
     transform: [{ rotate: '-20deg' }],
   },
+  monthlyMapView: {
+    borderRadius: 22,
+    flex: 1,
+    overflow: 'hidden',
+    width: '100%',
+  },
   monthlyMetricRow: {
     alignItems: 'center',
     alignSelf: 'stretch',
@@ -486,10 +507,16 @@ export const reportStyles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   monthlyMetricValueRow: {
-    alignItems: 'flex-end',
+    alignItems: 'baseline',
     flexDirection: 'row',
     flexShrink: 0,
     justifyContent: 'flex-end',
+  },
+  monthlyNoDataText: {
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 24,
+    textAlign: 'right',
   },
   monthlyPlaceText: {
     flex: 1,

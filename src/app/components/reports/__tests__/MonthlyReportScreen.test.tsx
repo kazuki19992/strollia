@@ -20,6 +20,11 @@ jest.mock('react-native-view-shot', () => ({
   captureRef: jest.fn(),
 }));
 
+jest.mock('react-native-maps', () => {
+  const { View } = require('react-native');
+  return { __esModule: true, default: View, Polyline: View };
+});
+
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
 
@@ -52,6 +57,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234 }]}
           points={[]}
           achievements={[]}
+          monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
           styles={createStyles(lightTheme)}
           onBackToMap={jest.fn()}
         />,
@@ -73,7 +79,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} styles={createStyles(lightTheme)} onBackToMap={onBackToMap} />,
+        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} styles={createStyles(lightTheme)} onBackToMap={onBackToMap} />,
       );
     });
 
@@ -90,6 +96,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234 }]}
           points={[]}
           achievements={[]}
+          monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
           styles={createStyles(lightTheme)}
           onBackToMap={jest.fn()}
         />,
@@ -101,7 +108,8 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       await shareButton.props.onPress();
     });
 
-    expect(captureRef).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ format: 'png', snapshotContentContainer: true }));
+    expect(captureRef).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ format: 'png' }));
+    expect(captureRef).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ snapshotContentContainer: true }));
     expect(Sharing.shareAsync).toHaveBeenCalledWith('file:///tmp/monthly-report.png', expect.objectContaining({ mimeType: 'image/png' }));
   });
 });

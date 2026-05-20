@@ -37,7 +37,6 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           points={[]}
           achievements={[]}
           styles={createStyles(lightTheme)}
-          theme={lightTheme}
           onBackToMap={jest.fn()}
         />,
       );
@@ -47,5 +46,33 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     expect(texts).toContain('今月の総移動距離');
     expect(texts).toContain('あなたは今月');
+  });
+
+  it('最後のページの次操作で地図へ戻る', () => {
+    const onBackToMap = jest.fn();
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MonthlyReportScreen
+          dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234 }]}
+          points={[]}
+          achievements={[]}
+          styles={createStyles(lightTheme)}
+          onBackToMap={onBackToMap}
+        />,
+      );
+    });
+
+    const nextZone = () => renderer!.root.findAll((node: any) => node.props.accessibilityLabel === '次のレポートページ')[0];
+
+    act(() => nextZone()?.props.onPress());
+    act(() => nextZone()?.props.onPress());
+    act(() => nextZone()?.props.onPress());
+
+    expect(renderer!.root.findAllByType(Text).map((node: any) => node.props.children)).toContain('今月達成した実績');
+
+    act(() => nextZone()?.props.onPress());
+
+    expect(onBackToMap).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Alert, Pressable, SafeAreaView, View } from 'react-native';
 
 import { AchievementListItem } from '../../../features/achievements/achievementRepository';
 import { createMonthlyReport, getReportMonth } from '../../../features/reports/monthlyReport';
-import { AppTheme } from '../../../theme/theme';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 import { AppStyles } from '../../appStyles';
 import { AchievementHighlightReportPage } from './AchievementHighlightReportPage';
@@ -22,8 +21,6 @@ export type MonthlyReportScreenProps = {
   achievements: AchievementListItem[];
   /** 共通スタイル。 */
   styles: AppStyles;
-  /** 現在テーマ。 */
-  theme: AppTheme;
   /** 地図画面へ戻る処理。 */
   onBackToMap: () => void;
 };
@@ -34,7 +31,7 @@ type ReportPageId = 'distance' | 'map' | 'prefectureRanking' | 'achievements';
 const reportPages: ReportPageId[] = ['distance', 'map', 'prefectureRanking', 'achievements'];
 
 /** ストーリー形式の月次レポート画面。 */
-export function MonthlyReportScreen({ dailyLogs, points, achievements, styles, theme, onBackToMap }: MonthlyReportScreenProps) {
+export function MonthlyReportScreen({ dailyLogs, points, achievements, styles, onBackToMap }: MonthlyReportScreenProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const report = useMemo(() => createMonthlyReport(dailyLogs, points, getReportMonth()), [dailyLogs, points]);
   const currentPage = reportPages[pageIndex];
@@ -44,9 +41,14 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, styles, t
     Alert.alert('共有は準備中です', 'まずはアプリ内で見られる月次レポートのプロトタイプを作成しています。');
   }
 
-  /** 次のページへ進む。 */
+  /** 次のページへ進む。最終ページの次操作では地図へ戻る。 */
   function goNext(): void {
-    setPageIndex((index) => Math.min(index + 1, reportPages.length - 1));
+    if (pageIndex >= reportPages.length - 1) {
+      onBackToMap();
+      return;
+    }
+
+    setPageIndex(pageIndex + 1);
   }
 
   /** 前のページへ戻る。 */
@@ -67,9 +69,6 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, styles, t
           <Pressable accessibilityLabel="前のレポートページ" onPress={goPrevious} style={styles.reportPreviousZone} />
           <Pressable accessibilityLabel="次のレポートページ" onPress={goNext} style={styles.reportNextZone} />
         </View>
-        <Pressable onPress={onBackToMap} style={styles.reportCloseButton}>
-          <Text style={[styles.backButtonText, { color: theme.colors.text }]}>地図へ</Text>
-        </Pressable>
       </View>
     </SafeAreaView>
   );

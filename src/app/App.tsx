@@ -776,7 +776,7 @@ export default function App() {
         {screenMode === 'dailyLogs' && <DailyLogsScreen dailyLogs={dailyLogs} styles={styles} theme={theme} onBackToMap={openMap} />}
         {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
         {screenMode === 'monthlyReport' && (
-          <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />
+          <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} styles={styles} onBackToMap={openMap} />
         )}
         {screenMode === 'settings' && (
           <SettingsScreen

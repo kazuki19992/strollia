@@ -196,7 +196,7 @@ export const reportStyles = StyleSheet.create({
   progressRow: {
     flexDirection: 'row',
     gap: 6,
-    left: 84,
+    left: 24,
     position: 'absolute',
     right: 24,
     top: 25,

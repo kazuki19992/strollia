@@ -782,7 +782,10 @@ export function createStyles(theme: AppTheme) {
     recenterButton: {
       alignItems: 'center',
       backgroundColor: mapPanelBackground,
-      borderRadius: 14,
+      borderBottomLeftRadius: 14,
+      borderBottomRightRadius: 14,
+      borderTopLeftRadius: 56,
+      borderTopRightRadius: 14,
       gap: 5,
       height: 88,
       justifyContent: 'center',
@@ -798,7 +801,7 @@ export function createStyles(theme: AppTheme) {
       width: 132,
     },
     recenterButtonText: {
-      color: mapPanelText,
+      color: '#ffffff',
       fontSize: 13,
       fontWeight: '900',
     },
@@ -833,7 +836,15 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '800',
       marginLeft: 3,
     },
-    speedometerDistanceValue: {
+    speedometerDistanceValueDecimal: {
+      color: mapPanelText,
+      fontFamily: NUMERIC_DISPLAY_FONT,
+      fontSize: 11,
+      letterSpacing: 0.2,
+      lineHeight: 16,
+      marginBottom: 2,
+    },
+    speedometerDistanceValueInteger: {
       color: mapPanelText,
       fontFamily: NUMERIC_DISPLAY_FONT,
       fontSize: 17,

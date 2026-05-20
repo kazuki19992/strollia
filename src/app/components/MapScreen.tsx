@@ -152,6 +152,7 @@ export function MapScreen({
   const [isTodayDistanceVisible, setIsTodayDistanceVisible] = useState(false);
   const speedMeter = getSpeedMeterAppearance(currentSpeedKmh, theme.colors.primary);
   const distanceValue = isTodayDistanceVisible ? todayDistance : distance;
+  const distanceParts = formatDistanceKilometers(distanceValue).split('.');
   const distanceLabel = isTodayDistanceVisible ? 'TODAY' : 'ODO';
 
   return (
@@ -295,14 +296,15 @@ export function MapScreen({
             <View style={styles.speedometerDistanceRow}>
               <Text style={styles.speedometerLabel}>{distanceLabel}</Text>
               <View style={styles.speedometerDistanceValueRow}>
-                <Text style={styles.speedometerDistanceValue}>{formatDistanceKilometers(distanceValue)}</Text>
+                <Text style={styles.speedometerDistanceValueInteger}>{distanceParts[0]}</Text>
+                <Text style={styles.speedometerDistanceValueDecimal}>.{distanceParts[1]}</Text>
                 <Text style={styles.speedometerDistanceUnit}>km</Text>
               </View>
             </View>
           </Pressable>
           <Animated.View pointerEvents={isFollowingUserLocation ? 'none' : 'auto'} style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}>
             <Pressable onPress={onRecenterOnUserLocation} style={styles.recenterButton}>
-              <Feather name="navigation" size={38} color={theme.colors.primaryText} />
+              <Feather name="navigation" size={38} color="#ffffff" />
               <Text style={styles.recenterButtonText}>現在地</Text>
             </Pressable>
           </Animated.View>
@@ -317,18 +319,18 @@ export function getSpeedMeterAppearance(speedKmh: number, fallbackColor: string)
   const normalizedSpeed = Math.max(0, speedKmh);
 
   if (normalizedSpeed >= 55) {
-    return { color: '#f06fe8', progressPercent: Math.min((normalizedSpeed / 400) * 100, 100) };
+    return { color: '#ff75f6', progressPercent: Math.min((normalizedSpeed / 400) * 100, 100) };
   }
 
   if (normalizedSpeed >= 8) {
-    return { color: '#ffab20', progressPercent: Math.min((normalizedSpeed / 54) * 100, 100) };
+    return { color: '#ffb22e', progressPercent: Math.min((normalizedSpeed / 54) * 100, 100) };
   }
 
   if (normalizedSpeed >= 1) {
-    return { color: '#35e9ae', progressPercent: Math.min((normalizedSpeed / 7) * 100, 100) };
+    return { color: '#39d9ff', progressPercent: Math.min((normalizedSpeed / 7) * 100, 100) };
   }
 
-  return { color: fallbackColor, progressPercent: 0 };
+  return { color: brightenColor(fallbackColor), progressPercent: 0 };
 }
 
 /** km/h表示用に速度を整数へ丸める。 */
@@ -339,4 +341,17 @@ export function formatSpeedKmh(speedKmh: number): string {
 /** メートル単位の距離をkm小数2桁にする。 */
 export function formatDistanceKilometers(distanceMeters: number): string {
   return (Math.max(0, distanceMeters) / 1000).toFixed(2);
+}
+
+/** 停止状態でもマップ上で読めるよう、テーマカラーを少し明るくする。 */
+function brightenColor(color: string): string {
+  if (!color.startsWith('#') || color.length !== 7) {
+    return color;
+  }
+
+  const red = Math.min(parseInt(color.slice(1, 3), 16) + 42, 255);
+  const green = Math.min(parseInt(color.slice(3, 5), 16) + 42, 255);
+  const blue = Math.min(parseInt(color.slice(5, 7), 16) + 42, 255);
+
+  return `#${[red, green, blue].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }

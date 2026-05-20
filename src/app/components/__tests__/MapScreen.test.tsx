@@ -110,10 +110,14 @@ describe('地図画面 MapScreen', () => {
       renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
     });
 
-    const distanceText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '1.23');
+    const distanceText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '1');
+    const decimalText = renderer.root.findAllByType(Text).find((node: any) => Array.isArray(node.props.children) && node.props.children.join('') === '.23');
 
     expect(distanceText).toBeDefined();
+    expect(decimalText).toBeDefined();
     expect(StyleSheet.flatten(distanceText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
+    expect(StyleSheet.flatten(decimalText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
+    expect(StyleSheet.flatten(decimalText!.props.style)?.fontSize).toBeLessThan(StyleSheet.flatten(distanceText!.props.style)?.fontSize ?? 0);
   });
 
   test('メーターボタンを押すと今日の移動距離表示へ切り替える', () => {
@@ -128,7 +132,19 @@ describe('地図画面 MapScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('TODAY');
-    expect(texts).toContain('0.46');
+    expect(texts).toContain('0');
+    expect(texts.some((text: unknown) => Array.isArray(text) && text.join('') === '.46')).toBe(true);
+  });
+
+  test('現在地アイコンは常に白で表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+    });
+
+    const navigationIcon = renderer.root.findAll((node: any) => node.props.name === 'navigation')[0];
+    expect(navigationIcon.props.color).toBe('#ffffff');
   });
 
   test('メニューのレポートを見るを押すと月次レポートを開く', () => {
@@ -157,9 +173,9 @@ describe('スピードメーター表示ロジック', () => {
   });
 
   test('速度帯に応じてゲージ色と進捗を変える', () => {
-    expect(getSpeedMeterAppearance(0, '#00aaff')).toEqual({ color: '#00aaff', progressPercent: 0 });
-    expect(getSpeedMeterAppearance(7, '#00aaff').color).toBe('#35e9ae');
-    expect(getSpeedMeterAppearance(50, '#00aaff').color).toBe('#ffab20');
-    expect(getSpeedMeterAppearance(350, '#00aaff').color).toBe('#f06fe8');
+    expect(getSpeedMeterAppearance(0, '#00aaff')).toEqual({ color: '#2ad4ff', progressPercent: 0 });
+    expect(getSpeedMeterAppearance(7, '#00aaff').color).toBe('#39d9ff');
+    expect(getSpeedMeterAppearance(50, '#00aaff').color).toBe('#ffb22e');
+    expect(getSpeedMeterAppearance(350, '#00aaff').color).toBe('#ff75f6');
   });
 });

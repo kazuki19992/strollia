@@ -106,6 +106,8 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
   const textColor = theme.name === 'dark' ? '#f7f2ea' : '#333333';
   const mutedTextColor = theme.name === 'dark' ? '#c9c1b6' : '#4d4d4d';
   const backgroundColor = theme.name === 'dark' ? '#111111' : '#ffffff';
+  const shareButtonBackgroundColor = theme.name === 'dark' ? '#f7f2ea' : '#333333';
+  const shareButtonTextColor = theme.name === 'dark' ? '#111111' : '#ffffff';
 
   /** レポートのスクロール本文全体をPNG化して共有する。 */
   async function shareReportImage(): Promise<void> {
@@ -254,20 +256,26 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
             <MonthlyReportMetricValue value={String(Math.max(report.activeDays - 3, 0))} unit="日" color={textColor} />
           </View>
         </MonthlyReportAnimatedCard>
+        <View style={reportStyles.monthlyReportEndSpacer} />
+        </View>
+        <Pressable
+          accessibilityLabel="レポートを共有"
+          accessibilityRole="button"
+          disabled={isSharingReport}
+          onPress={shareReportImage}
+          style={[reportStyles.monthlyInlineShareButton, { backgroundColor: shareButtonBackgroundColor, opacity: isSharingReport ? 0.64 : 1 }]}
+        >
+          <Feather name="share-2" size={24} color={shareButtonTextColor} />
+          <Text style={[reportStyles.monthlyInlineShareText, { color: shareButtonTextColor }]}>レポートを共有</Text>
+        </Pressable>
         <SafeAreaView style={reportStyles.monthlyBottomSafeArea}>
           <View style={reportStyles.monthlyBottomSpacer} />
         </SafeAreaView>
-        </View>
       </Animated.ScrollView>
 
       <SafeAreaView pointerEvents="box-none" style={reportStyles.monthlyCloseSafeArea}>
         <Pressable accessibilityLabel="レポートを閉じる" accessibilityRole="button" onPress={onBackToMap} style={reportStyles.monthlyCloseButton}>
           <Feather name="x" size={26} color="#777777" />
-        </Pressable>
-      </SafeAreaView>
-      <SafeAreaView pointerEvents="box-none" style={reportStyles.monthlyShareSafeArea}>
-        <Pressable accessibilityLabel="レポートを共有" accessibilityRole="button" disabled={isSharingReport} onPress={shareReportImage} style={reportStyles.monthlyFloatingShareButton}>
-          <Feather name="share-2" size={28} color="#777777" />
         </Pressable>
       </SafeAreaView>
     </View>

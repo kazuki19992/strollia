@@ -367,7 +367,7 @@ export const reportStyles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   monthlyBottomSpacer: {
-    height: 170,
+    height: 56,
   },
   monthlyCaptureContent: {
     paddingBottom: 0,
@@ -405,23 +405,28 @@ export const reportStyles = StyleSheet.create({
     lineHeight: 22,
     paddingHorizontal: 24,
   },
-  monthlyFloatingShareButton: {
+  monthlyInlineShareButton: {
     alignItems: 'center',
-    backgroundColor: '#ffffff',
     borderRadius: 999,
-    bottom: 16,
-    height: 58,
+    flexDirection: 'row',
+    gap: 14,
     justifyContent: 'center',
-    minHeight: 44,
-    minWidth: 44,
-    position: 'absolute',
-    right: 24,
+    marginHorizontal: 26,
+    marginTop: 72,
+    minHeight: 66,
+    paddingHorizontal: 24,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.24,
+    shadowOpacity: 0.18,
     shadowRadius: 14,
-    width: 58,
-    zIndex: 10,
+  },
+  monthlyInlineShareText: {
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 24,
+  },
+  monthlyReportEndSpacer: {
+    height: 24,
   },
   monthlyHero: {
     alignItems: 'center',
@@ -511,7 +516,7 @@ export const reportStyles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   monthlyMetricValueRow: {
-    alignItems: 'baseline',
+    alignItems: 'flex-end',
     flexDirection: 'row',
     flexShrink: 0,
     justifyContent: 'flex-end',
@@ -572,14 +577,11 @@ export const reportStyles = StyleSheet.create({
     marginHorizontal: 26,
     marginTop: 24,
   },
-  monthlyShareSafeArea: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 10,
-  },
   monthlyStackCard: {
     alignItems: 'stretch',
     flexDirection: 'column',
     gap: 10,
+    justifyContent: 'center',
   },
   monthlyTopSafeArea: {
     alignSelf: 'stretch',

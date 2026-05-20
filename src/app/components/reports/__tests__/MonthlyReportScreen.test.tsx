@@ -29,7 +29,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     jest.restoreAllMocks();
   });
 
-  it('月間総移動距離ページを表示する', () => {
+  it('スクロール型の月次レポートを表示する', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <MonthlyReportScreen
@@ -44,13 +44,14 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     const texts = renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('今月の総移動距離');
-    expect(texts).toContain('あなたは今月');
+    expect(texts).toContain('すとろりあ');
+    expect(texts).toContain('SCROLL');
+    expect(texts).toContain('移動距離');
+    expect(texts).toContain('移動マップ');
+    expect(texts).toContain('今月取得した実績');
   });
 
-  it('最後のページの次操作で地図へ戻る', () => {
-    const onBackToMap = jest.fn();
-
+  it('共有ボタンを常に表示する', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <MonthlyReportScreen
@@ -58,21 +59,11 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           points={[]}
           achievements={[]}
           styles={createStyles(lightTheme)}
-          onBackToMap={onBackToMap}
+          onBackToMap={jest.fn()}
         />,
       );
     });
 
-    const nextZone = () => renderer!.root.findAll((node: any) => node.props.accessibilityLabel === '次のレポートページ')[0];
-
-    act(() => nextZone()?.props.onPress());
-    act(() => nextZone()?.props.onPress());
-    act(() => nextZone()?.props.onPress());
-
-    expect(renderer!.root.findAllByType(Text).map((node: any) => node.props.children)).toContain('今月達成した実績');
-
-    act(() => nextZone()?.props.onPress());
-
-    expect(onBackToMap).toHaveBeenCalledTimes(1);
+    expect(renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function')).toHaveLength(1);
   });
 });

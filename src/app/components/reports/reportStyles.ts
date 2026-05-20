@@ -427,7 +427,7 @@ export const reportStyles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 328,
     paddingHorizontal: 28,
-    paddingTop: 64,
+    paddingTop: 0,
   },
   monthlyIcon: {
     height: 60,
@@ -576,6 +576,12 @@ export const reportStyles = StyleSheet.create({
     alignItems: 'stretch',
     flexDirection: 'column',
     gap: 10,
+  },
+  monthlyTopSafeArea: {
+    alignSelf: 'stretch',
+  },
+  monthlyTopSpacer: {
+    height: 64,
   },
   monthlySubtitle: {
     fontSize: 20,

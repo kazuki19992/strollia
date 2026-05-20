@@ -145,6 +145,9 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
       >
         <View ref={reportCaptureRef} collapsable={false} style={[reportStyles.monthlyCaptureContent, { backgroundColor }]}>
         <View style={reportStyles.monthlyHero}>
+          <SafeAreaView style={reportStyles.monthlyTopSafeArea}>
+            <View style={reportStyles.monthlyTopSpacer} />
+          </SafeAreaView>
           <View style={reportStyles.monthlyTitleRow}>
             <View style={[reportStyles.monthlyIconFrame, { backgroundColor: theme.name === 'dark' ? '#f7f2ea' : '#ffffff' }]}>
               <Image source={require('../../../../assets/icon.png')} style={reportStyles.monthlyIcon} resizeMode="contain" />
@@ -230,7 +233,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
           <MonthlyReportAnimatedCard key={rank} scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
             <Text style={[reportStyles.monthlyRankText, { color: textColor }]}>{rank}</Text>
             <Text style={[reportStyles.monthlyRankingName, { color: textColor }]}>{item?.name ?? '---'}</Text>
-            <Text style={[reportStyles.monthlyRankingDays, { color: mutedTextColor }]}>{item == null ? '' : `(${item.count}件)`}</Text>
+            <Text style={[reportStyles.monthlyRankingDays, { color: mutedTextColor }]}>{item == null ? '' : `(${item.count}回)`}</Text>
           </MonthlyReportAnimatedCard>
         ))}
 

@@ -1,6 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import { useMemo, useRef } from 'react';
+import * as Sharing from 'expo-sharing';
+import { useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
 
 import { AchievementListItem } from '../../../features/achievements/achievementRepository';
 import { createMonthlyReport, getPreviousReportMonth, MonthlyReport } from '../../../features/reports/monthlyReport';
@@ -76,17 +78,14 @@ function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: Mont
   };
 }
 
-/** 共有プロトタイプの案内を表示する。 */
-function shareReportPrototype(): void {
-  Alert.alert('共有は準備中です', '月次レポートを画像として共有できるようにする予定です。');
-}
-
 /** スクロール型の月次レポート画面。 */
-export function MonthlyReportScreen({ dailyLogs, points, achievements }: MonthlyReportScreenProps) {
+export function MonthlyReportScreen({ dailyLogs, points, achievements, onBackToMap }: MonthlyReportScreenProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const reportScrollRef = useRef<ScrollView | null>(null);
+  const [isSharingReport, setIsSharingReport] = useState(false);
   const report = useMemo(() => createMonthlyReport(dailyLogs, points, getPreviousReportMonth()), [dailyLogs, points]);
   const summary = useMemo(() => createMonthlyDistanceSummary(dailyLogs, report), [dailyLogs, report]);
   const monthlyAchievements = achievements.filter((item) => item.unlockedAt?.startsWith(report.label)).slice(0, 6);
@@ -96,9 +95,43 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
   const mutedTextColor = theme.name === 'dark' ? '#c9c1b6' : '#4d4d4d';
   const backgroundColor = theme.name === 'dark' ? '#111111' : '#ffffff';
 
+  /** レポートのスクロール本文全体をPNG化して共有する。 */
+  async function shareReportImage(): Promise<void> {
+    if (!reportScrollRef.current || isSharingReport) {
+      return;
+    }
+
+    setIsSharingReport(true);
+
+    try {
+      const uri = await captureRef(reportScrollRef.current, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+        snapshotContentContainer: true,
+      });
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
+        return;
+      }
+
+      await Sharing.shareAsync(uri, {
+        dialogTitle: `すとろりあ 月次レポート ${report.label}`,
+        mimeType: 'image/png',
+        UTI: 'public.png',
+      });
+    } catch (error: unknown) {
+      Alert.alert('共有失敗', error instanceof Error ? error.message : 'レポート画像を共有できませんでした。');
+    } finally {
+      setIsSharingReport(false);
+    }
+  }
+
   return (
     <View style={[reportStyles.monthlyContainer, { backgroundColor }]}>
       <Animated.ScrollView
+        ref={reportScrollRef}
         contentContainerStyle={reportStyles.monthlyContent}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
@@ -197,8 +230,13 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
         </MonthlyReportAnimatedCard>
       </Animated.ScrollView>
 
+      <SafeAreaView pointerEvents="box-none" style={reportStyles.monthlyCloseSafeArea}>
+        <Pressable accessibilityLabel="レポートを閉じる" accessibilityRole="button" onPress={onBackToMap} style={reportStyles.monthlyCloseButton}>
+          <Feather name="x" size={26} color="#777777" />
+        </Pressable>
+      </SafeAreaView>
       <SafeAreaView pointerEvents="box-none" style={reportStyles.monthlyShareSafeArea}>
-        <Pressable accessibilityLabel="レポートを共有" accessibilityRole="button" onPress={shareReportPrototype} style={reportStyles.monthlyFloatingShareButton}>
+        <Pressable accessibilityLabel="レポートを共有" accessibilityRole="button" disabled={isSharingReport} onPress={shareReportImage} style={reportStyles.monthlyFloatingShareButton}>
           <Feather name="share-2" size={28} color="#777777" />
         </Pressable>
       </SafeAreaView>

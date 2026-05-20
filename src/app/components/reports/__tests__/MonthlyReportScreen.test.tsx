@@ -1,4 +1,6 @@
-import { Text } from 'react-native';
+import { Alert, Text } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 
 import { lightTheme } from '../../../../theme/theme';
 import { createStyles } from '../../../appStyles';
@@ -8,6 +10,15 @@ jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
   return { Feather: Text };
 });
+
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn(),
+  shareAsync: jest.fn(),
+}));
+
+jest.mock('react-native-view-shot', () => ({
+  captureRef: jest.fn(),
+}));
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
@@ -19,6 +30,10 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(true);
+    (Sharing.shareAsync as jest.Mock).mockResolvedValue(undefined);
+    (captureRef as jest.Mock).mockResolvedValue('file:///tmp/monthly-report.png');
   });
 
   afterEach(() => {
@@ -53,7 +68,22 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     expect(texts).toContain('月間取得した実績');
   });
 
-  it('共有ボタンを常に表示する', () => {
+  it('閉じるボタンで地図へ戻る', () => {
+    const onBackToMap = jest.fn();
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} styles={createStyles(lightTheme)} onBackToMap={onBackToMap} />,
+      );
+    });
+
+    const closeButton = renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを閉じる' && typeof node.props.onPress === 'function')[0];
+    act(() => closeButton.props.onPress());
+
+    expect(onBackToMap).toHaveBeenCalledTimes(1);
+  });
+
+  it('共有ボタンでレポート画像を共有する', async () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <MonthlyReportScreen
@@ -66,6 +96,12 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       );
     });
 
-    expect(renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function')).toHaveLength(1);
+    const shareButton = renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function')[0];
+    await act(async () => {
+      await shareButton.props.onPress();
+    });
+
+    expect(captureRef).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ format: 'png', snapshotContentContainer: true }));
+    expect(Sharing.shareAsync).toHaveBeenCalledWith('file:///tmp/monthly-report.png', expect.objectContaining({ mimeType: 'image/png' }));
   });
 });

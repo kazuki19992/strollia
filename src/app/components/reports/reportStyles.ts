@@ -371,6 +371,27 @@ export const reportStyles = StyleSheet.create({
   monthlyContent: {
     paddingBottom: 116,
   },
+  monthlyCloseButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    backgroundColor: '#ffffff',
+    borderRadius: 999,
+    height: 48,
+    justifyContent: 'center',
+    marginRight: 20,
+    marginTop: 12,
+    minHeight: 44,
+    minWidth: 44,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    width: 48,
+  },
+  monthlyCloseSafeArea: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 11,
+  },
   monthlyEmptyText: {
     fontSize: 16,
     fontWeight: '800',

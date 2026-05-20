@@ -4,7 +4,7 @@ import { Animated } from 'react-native';
 import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
 import { lightTheme } from '../../../theme/theme';
 import { createStyles } from '../../appStyles';
-import { MapScreen } from '../MapScreen';
+import { formatDistanceKilometers, formatSpeedKmh, getSpeedMeterAppearance, MapScreen } from '../MapScreen';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -60,8 +60,9 @@ function createProps() {
     shouldOpenSettingsForPermission: false,
     photoErrorMessage: null,
     isLoadingPhotos: false,
-    currentAreaName: '渋谷区',
     distance: 1234,
+    todayDistance: 456,
+    currentSpeedKmh: 7,
     recenterButtonOpacity: new Animated.Value(0),
     onUserLocationChange: jest.fn(),
     onPanDrag: jest.fn(),
@@ -88,7 +89,7 @@ describe('地図画面 MapScreen', () => {
     jest.restoreAllMocks();
   });
 
-  test('現在地名と記録状態を表示する', () => {
+  test('記録状態とスピードメーターを表示する', () => {
     let renderer: any;
 
     act(() => {
@@ -98,7 +99,8 @@ describe('地図画面 MapScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
     expect(texts).toContain('記録中');
-    expect(texts).toContain('渋谷区');
+    expect(texts).toContain('SPEED');
+    expect(texts).toContain('ODO');
   });
 
   test('ODOメーターの数値に7セグフォントを使う', () => {
@@ -114,6 +116,21 @@ describe('地図画面 MapScreen', () => {
     expect(StyleSheet.flatten(distanceText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
   });
 
+  test('メーターボタンを押すと今日の移動距離表示へ切り替える', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+    });
+
+    const meterButton = renderer.root.findAll((node: any) => node.props.accessibilityLabel?.includes?.('オドメーターを表示中'))[0];
+    act(() => meterButton.props.onPress());
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('TODAY');
+    expect(texts).toContain('0.46');
+  });
+
   test('メニューのレポートを見るを押すと月次レポートを開く', () => {
     const props = { ...createProps(), isMenuVisible: true, isMenuOpen: true };
     let renderer: any;
@@ -126,5 +143,23 @@ describe('地図画面 MapScreen', () => {
     act(() => reportMenuItem.props.onPress());
 
     expect(props.onOpenMonthlyReport).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('スピードメーター表示ロジック', () => {
+  test('速度を整数km/hへ丸める', () => {
+    expect(formatSpeedKmh(7.4)).toBe('7');
+    expect(formatSpeedKmh(7.5)).toBe('8');
+  });
+
+  test('距離をkm小数2桁へ変換する', () => {
+    expect(formatDistanceKilometers(1234)).toBe('1.23');
+  });
+
+  test('速度帯に応じてゲージ色と進捗を変える', () => {
+    expect(getSpeedMeterAppearance(0, '#00aaff')).toEqual({ color: '#00aaff', progressPercent: 0 });
+    expect(getSpeedMeterAppearance(7, '#00aaff').color).toBe('#35e9ae');
+    expect(getSpeedMeterAppearance(50, '#00aaff').color).toBe('#ffab20');
+    expect(getSpeedMeterAppearance(350, '#00aaff').color).toBe('#f06fe8');
   });
 });

@@ -62,6 +62,7 @@ import { getBooleanSetting, getStringSetting, setSetting } from '../features/set
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
+import { toLocalDate } from '../utils/date';
 import type { LatLng, MapType } from 'react-native-maps';
 import { loadAppFonts } from '../theme/fonts';
 import { getAppTheme } from '../theme/theme';
@@ -77,7 +78,6 @@ import { SettingsScreen } from './components/SettingsScreen';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
 import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
 import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
-import { useCurrentAreaName } from './hooks/useCurrentAreaName';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { useMenuAnimation } from './hooks/useMenuAnimation';
@@ -137,6 +137,7 @@ export default function App() {
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
+  const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [mapType, setMapType] = useState<MapType>('standard');
@@ -153,7 +154,10 @@ export default function App() {
   const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
-  const currentAreaName = useCurrentAreaName({ userCoordinate, appState });
+  const todayDistanceMeters = useMemo(() => {
+    const today = toLocalDate(new Date());
+    return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
+  }, [dailyLogs]);
   const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
   const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
   const selectedPhotoClusterPages = useMemo(
@@ -479,6 +483,8 @@ export default function App() {
 
     const nextCoordinate = { latitude: coordinate.latitude, longitude: coordinate.longitude };
     setUserCoordinate(nextCoordinate);
+    const speedMps = (coordinate as typeof coordinate & { speed?: number | null }).speed;
+    setCurrentSpeedKmh(speedMps != null && speedMps > 0 ? speedMps * 3.6 : 0);
 
     if (isFollowingUserLocation) {
       centerOnCoordinate(nextCoordinate, false);
@@ -767,8 +773,9 @@ export default function App() {
             shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
             photoErrorMessage={photoErrorMessage}
             isLoadingPhotos={isLoadingPhotos}
-            currentAreaName={currentAreaName}
             distance={distance}
+            todayDistance={todayDistanceMeters}
+            currentSpeedKmh={currentSpeedKmh}
             recenterButtonOpacity={recenterButtonOpacity}
             onUserLocationChange={handleUserLocationChange}
             onPanDrag={handleMapPanDrag}

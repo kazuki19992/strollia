@@ -1,8 +1,8 @@
-import { AntDesign, Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
-import type { RefObject } from 'react';
+import { useState, type RefObject } from 'react';
 
 import { MapPhotoCluster } from '../../features/photos/photoClusters';
 import { AppTheme } from '../../theme/theme';
@@ -72,10 +72,12 @@ export type MapScreenProps = {
   photoErrorMessage: string | null;
   /** 写真読み込み中か。 */
   isLoadingPhotos: boolean;
-  /** 現在地ピルに表示する地域名。 */
-  currentAreaName: string;
   /** 表示距離。 */
   distance: number;
+  /** 今日の移動距離。 */
+  todayDistance: number;
+  /** 現在速度。単位はkm/h。 */
+  currentSpeedKmh: number;
   /** 現在地ボタンの透明度。 */
   recenterButtonOpacity: Animated.Value;
   /** 現在地更新ハンドラ。 */
@@ -129,8 +131,9 @@ export function MapScreen({
   shouldOpenSettingsForPermission,
   photoErrorMessage,
   isLoadingPhotos,
-  currentAreaName,
   distance,
+  todayDistance,
+  currentSpeedKmh,
   recenterButtonOpacity,
   onUserLocationChange,
   onPanDrag,
@@ -146,6 +149,11 @@ export function MapScreen({
   onRequestLocationPermission,
   onRecenterOnUserLocation,
 }: MapScreenProps) {
+  const [isTodayDistanceVisible, setIsTodayDistanceVisible] = useState(false);
+  const speedMeter = getSpeedMeterAppearance(currentSpeedKmh, theme.colors.primary);
+  const distanceValue = isTodayDistanceVisible ? todayDistance : distance;
+  const distanceLabel = isTodayDistanceVisible ? 'TODAY' : 'ODO';
+
   return (
     <View style={styles.container}>
       <MapView
@@ -268,22 +276,67 @@ export function MapScreen({
         )}
 
         <View pointerEvents="box-none" style={styles.bottomBar}>
-          <View style={styles.bottomSideSpacer} />
-          <View style={styles.locationPill}>
-            <Text style={styles.locationName}>{currentAreaName}</Text>
-            <View style={styles.locationMetaRow}>
-              <Text style={styles.locationMetaLabel}>ODO</Text>
-              <Text style={styles.locationMetaValue}>{(distance / 1000).toFixed(2)}</Text>
-              <Text style={styles.locationMetaLabel}>km</Text>
+          <Pressable
+            accessibilityLabel={isTodayDistanceVisible ? '今日の移動距離を表示中。タップでオドメーターへ切り替え' : 'オドメーターを表示中。タップで今日の移動距離へ切り替え'}
+            accessibilityRole="button"
+            onPress={() => setIsTodayDistanceVisible((value) => !value)}
+            style={styles.speedometerPanel}
+          >
+            <View style={styles.speedometerGaugeTrack}>
+              <View style={[styles.speedometerGaugeFill, { backgroundColor: speedMeter.color, width: `${speedMeter.progressPercent}%` }]} />
             </View>
-          </View>
+            <View style={styles.speedometerSpeedRow}>
+              <Text style={styles.speedometerLabel}>SPEED</Text>
+              <View style={styles.speedometerValueRow}>
+                <Text style={[styles.speedometerSpeedValue, { color: speedMeter.color }]}>{formatSpeedKmh(currentSpeedKmh)}</Text>
+                <Text style={styles.speedometerSpeedUnit}>km/h</Text>
+              </View>
+            </View>
+            <View style={styles.speedometerDistanceRow}>
+              <Text style={styles.speedometerLabel}>{distanceLabel}</Text>
+              <View style={styles.speedometerDistanceValueRow}>
+                <Text style={styles.speedometerDistanceValue}>{formatDistanceKilometers(distanceValue)}</Text>
+                <Text style={styles.speedometerDistanceUnit}>km</Text>
+              </View>
+            </View>
+          </Pressable>
           <Animated.View pointerEvents={isFollowingUserLocation ? 'none' : 'auto'} style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}>
             <Pressable onPress={onRecenterOnUserLocation} style={styles.recenterButton}>
-              <AntDesign name="aim" size={24} color={theme.colors.primary} />
+              <Feather name="navigation" size={38} color={theme.colors.primaryText} />
+              <Text style={styles.recenterButtonText}>現在地</Text>
             </Pressable>
           </Animated.View>
         </View>
       </SafeAreaView>
     </View>
   );
+}
+
+/** スピードメーターの色とゲージ幅を速度から決める。 */
+export function getSpeedMeterAppearance(speedKmh: number, fallbackColor: string): { color: string; progressPercent: number } {
+  const normalizedSpeed = Math.max(0, speedKmh);
+
+  if (normalizedSpeed >= 55) {
+    return { color: '#f06fe8', progressPercent: Math.min((normalizedSpeed / 400) * 100, 100) };
+  }
+
+  if (normalizedSpeed >= 8) {
+    return { color: '#ffab20', progressPercent: Math.min((normalizedSpeed / 54) * 100, 100) };
+  }
+
+  if (normalizedSpeed >= 1) {
+    return { color: '#35e9ae', progressPercent: Math.min((normalizedSpeed / 7) * 100, 100) };
+  }
+
+  return { color: fallbackColor, progressPercent: 0 };
+}
+
+/** km/h表示用に速度を整数へ丸める。 */
+export function formatSpeedKmh(speedKmh: number): string {
+  return String(Math.max(0, Math.round(speedKmh)));
+}
+
+/** メートル単位の距離をkm小数2桁にする。 */
+export function formatDistanceKilometers(distanceMeters: number): string {
+  return (Math.max(0, distanceMeters) / 1000).toFixed(2);
 }

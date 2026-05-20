@@ -11,6 +11,8 @@ import { AppTheme } from '../theme/theme';
  */
 export function createStyles(theme: AppTheme) {
   const { colors } = theme;
+  const mapPanelBackground = theme.name === 'dark' ? 'rgba(34, 38, 29, 0.88)' : 'rgba(45, 36, 22, 0.80)';
+  const mapPanelText = theme.name === 'dark' ? colors.text : colors.primaryText;
 
   return StyleSheet.create({
 
@@ -218,6 +220,7 @@ export function createStyles(theme: AppTheme) {
       bottom: 26,
       flexDirection: 'row',
       gap: 12,
+      justifyContent: 'space-between',
       left: 16,
       position: 'absolute',
       right: 16,
@@ -778,21 +781,26 @@ export function createStyles(theme: AppTheme) {
     },
     recenterButton: {
       alignItems: 'center',
-      backgroundColor: colors.surfaceOverlay,
-      borderColor: colors.border,
-      borderRadius: 999,
-      borderWidth: 1,
-      height: 50,
+      backgroundColor: mapPanelBackground,
+      borderRadius: 14,
+      gap: 5,
+      height: 88,
       justifyContent: 'center',
+      paddingHorizontal: 20,
       shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.14,
-      shadowRadius: 16,
-      width: 50,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.24,
+      shadowRadius: 10,
+      width: 132,
     },
     recenterButtonContainer: {
       alignItems: 'flex-end',
-      width: 50,
+      width: 132,
+    },
+    recenterButtonText: {
+      color: mapPanelText,
+      fontSize: 13,
+      fontWeight: '900',
     },
     rightControls: {
       flexDirection: 'row',
@@ -813,6 +821,86 @@ export function createStyles(theme: AppTheme) {
       alignItems: 'center',
       height: 18,
       justifyContent: 'center',
+    },
+    speedometerDistanceRow: {
+      alignItems: 'flex-end',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    speedometerDistanceUnit: {
+      color: mapPanelText,
+      fontSize: 9,
+      fontWeight: '800',
+      marginLeft: 3,
+    },
+    speedometerDistanceValue: {
+      color: mapPanelText,
+      fontFamily: NUMERIC_DISPLAY_FONT,
+      fontSize: 17,
+      letterSpacing: 0.5,
+      lineHeight: 22,
+    },
+    speedometerDistanceValueRow: {
+      alignItems: 'flex-end',
+      flexDirection: 'row',
+    },
+    speedometerGaugeFill: {
+      borderRadius: 999,
+      height: 8,
+    },
+    speedometerGaugeTrack: {
+      backgroundColor: '#070707',
+      borderColor: '#000000',
+      borderRadius: 999,
+      borderWidth: 2,
+      height: 13,
+      overflow: 'hidden',
+      width: 122,
+    },
+    speedometerLabel: {
+      color: mapPanelText,
+      fontSize: 12,
+      fontWeight: '900',
+      letterSpacing: -0.2,
+    },
+    speedometerPanel: {
+      backgroundColor: mapPanelBackground,
+      borderBottomLeftRadius: 14,
+      borderBottomRightRadius: 14,
+      borderTopLeftRadius: 14,
+      borderTopRightRadius: 56,
+      gap: 3,
+      minHeight: 108,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.24,
+      shadowRadius: 10,
+      width: 160,
+    },
+    speedometerSpeedRow: {
+      gap: 0,
+    },
+    speedometerSpeedUnit: {
+      color: mapPanelText,
+      fontSize: 9,
+      fontWeight: '800',
+      marginBottom: 5,
+      marginLeft: 4,
+    },
+    speedometerSpeedValue: {
+      fontFamily: NUMERIC_DISPLAY_FONT,
+      fontSize: 37,
+      letterSpacing: 0.5,
+      lineHeight: 43,
+    },
+    speedometerValueRow: {
+      alignItems: 'flex-end',
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: -5,
+      paddingRight: 16,
     },
     settingsAction: {
       alignItems: 'center',

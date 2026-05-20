@@ -8,6 +8,7 @@ import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 import { darkTheme, lightTheme } from '../../../theme/theme';
 import { AppStyles } from '../../appStyles';
 import { MonthlyReportAnimatedCard } from './MonthlyReportAnimatedCard';
+import { MonthlyReportMetricValue } from './MonthlyReportMetricValue';
 import { MonthlyReportScrollIndicator } from './MonthlyReportScrollIndicator';
 import { NewRecordPill } from './NewRecordPill';
 import { reportStyles } from './reportStyles';
@@ -111,14 +112,14 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>移動距離</Text>
         <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
           <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>先月移動した距離</Text>
-          <Text style={[reportStyles.monthlyCardNumber, { color: textColor }]}>{kilometers(summary.previousMonthDistanceMeters)} <Text style={reportStyles.monthlyCardUnit}>km</Text></Text>
+          <MonthlyReportMetricValue value={kilometers(summary.previousMonthDistanceMeters)} unit="km" color={textColor} />
         </MonthlyReportAnimatedCard>
         <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
           <View>
             <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>総移動距離</Text>
             <Text style={[reportStyles.monthlyCardSubLabel, { color: mutedTextColor }]}>先月末時点</Text>
           </View>
-          <Text style={[reportStyles.monthlyCardNumber, { color: textColor }]}>{kilometers(summary.lifetimeDistanceMeters)} <Text style={reportStyles.monthlyCardUnit}>km</Text></Text>
+          <MonthlyReportMetricValue value={kilometers(summary.lifetimeDistanceMeters)} unit="km" color={textColor} />
         </MonthlyReportAnimatedCard>
         <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
           <View style={reportStyles.monthlyMetricRow}>
@@ -126,7 +127,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
               <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>1日の最多移動距離</Text>
               <Text style={[reportStyles.monthlyCardSubLabel, { color: mutedTextColor }]}>{summary.longestDay?.localDate ?? `${report.label}---`}</Text>
             </View>
-            <Text style={[reportStyles.monthlyCardNumber, { color: textColor }]}>{kilometers(summary.longestDay?.distanceMeters ?? 0)} <Text style={reportStyles.monthlyCardUnit}>km</Text></Text>
+            <MonthlyReportMetricValue value={kilometers(summary.longestDay?.distanceMeters ?? 0)} unit="km" color={textColor} />
           </View>
           <NewRecordPill visible={summary.isLongestDayRecord} />
         </MonthlyReportAnimatedCard>
@@ -174,12 +175,12 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>すとろりあ</Text>
         <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
           <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>起動日数</Text>
-          <Text style={[reportStyles.monthlyCardNumber, { color: textColor }]}>{report.activeDays} <Text style={reportStyles.monthlyCardUnit}>日 / 30日</Text></Text>
+          <MonthlyReportMetricValue value={String(report.activeDays)} unit="日 / 30日" color={textColor} />
         </MonthlyReportAnimatedCard>
         <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
           <View style={reportStyles.monthlyMetricRow}>
             <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>最長連続起動日数</Text>
-            <Text style={[reportStyles.monthlyCardNumber, { color: textColor }]}>{Math.max(report.activeDays - 3, 0)} <Text style={reportStyles.monthlyCardUnit}>日</Text></Text>
+            <MonthlyReportMetricValue value={String(Math.max(report.activeDays - 3, 0))} unit="日" color={textColor} />
           </View>
           <NewRecordPill visible={activeDayRecord} />
         </MonthlyReportAnimatedCard>

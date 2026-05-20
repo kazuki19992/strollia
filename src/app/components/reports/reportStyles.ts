@@ -339,12 +339,18 @@ export const reportStyles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 22,
   },
-  monthlyCardNumber: {
+  monthlyCardNumberDecimal: {
     fontFamily: NUMERIC_DISPLAY_FONT,
-    fontSize: 32,
+    fontSize: 21,
+    letterSpacing: -0.5,
+    lineHeight: 30,
+    marginBottom: 3,
+  },
+  monthlyCardNumberInteger: {
+    fontFamily: NUMERIC_DISPLAY_FONT,
+    fontSize: 33,
     letterSpacing: -0.5,
     lineHeight: 42,
-    textAlign: 'right',
   },
   monthlyCardSubLabel: {
     fontSize: 12,
@@ -353,9 +359,11 @@ export const reportStyles = StyleSheet.create({
     marginTop: 2,
   },
   monthlyCardUnit: {
-    fontFamily: undefined,
     fontSize: 15,
     fontWeight: '700',
+    lineHeight: 20,
+    marginBottom: 7,
+    marginLeft: 5,
   },
   monthlyContainer: {
     flex: 1,
@@ -456,6 +464,12 @@ export const reportStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  monthlyMetricValueRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    flexShrink: 0,
+    justifyContent: 'flex-end',
+  },
   monthlyPlaceText: {
     flex: 1,
     fontSize: 22,
@@ -481,16 +495,13 @@ export const reportStyles = StyleSheet.create({
     lineHeight: 31,
     textAlign: 'right',
   },
-  monthlyScrollArrow: {
-    height: 35,
-    marginTop: 7,
-    width: 80,
-  },
-  monthlyScrollArrowLine: {
-    height: 2,
-    position: 'absolute',
-    top: 15,
-    width: 45,
+  monthlyScrollChevron: {
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    height: 42,
+    marginTop: -8,
+    transform: [{ rotate: '45deg' }],
+    width: 42,
   },
   monthlyScrollIndicator: {
     alignItems: 'center',

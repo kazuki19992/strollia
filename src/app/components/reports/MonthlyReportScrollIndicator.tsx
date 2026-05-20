@@ -29,10 +29,7 @@ export function MonthlyReportScrollIndicator({ color }: MonthlyReportScrollIndic
   return (
     <Animated.View style={[reportStyles.monthlyScrollIndicator, { transform: [{ translateY: offset }] }]}>
       <Animated.Text style={[reportStyles.monthlyScrollText, { color }]}>SCROLL</Animated.Text>
-      <View style={reportStyles.monthlyScrollArrow}>
-        <View style={[reportStyles.monthlyScrollArrowLine, { backgroundColor: color, left: 3, transform: [{ rotate: '42deg' }] }]} />
-        <View style={[reportStyles.monthlyScrollArrowLine, { backgroundColor: color, right: 3, transform: [{ rotate: '-42deg' }] }]} />
-      </View>
+      <View style={[reportStyles.monthlyScrollChevron, { borderBottomColor: color, borderRightColor: color }]} />
     </Animated.View>
   );
 }

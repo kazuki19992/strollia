@@ -1,4 +1,4 @@
-import { createMonthlyReport, formatReportMonth, getReportMonth, isInReportMonth } from '../monthlyReport';
+import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, getReportMonth, isInReportMonth } from '../monthlyReport';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 
 function log(localDate: string, distanceMeters: number | null): DailyLogSummary {
@@ -23,6 +23,11 @@ function point(localDate: string, latitude: number, longitude: number): Location
 describe('月次レポート集計 monthlyReport', () => {
   it('Dateから対象年月を作る', () => {
     expect(getReportMonth(new Date('2026-04-15T00:00:00.000Z'))).toEqual({ year: 2026, month: 4 });
+  });
+
+  it('Dateから直前月の対象年月を作る', () => {
+    expect(getPreviousReportMonth(new Date('2026-01-15T00:00:00.000Z'))).toEqual({ year: 2025, month: 12 });
+    expect(getPreviousReportMonth(new Date('2026-04-15T00:00:00.000Z'))).toEqual({ year: 2026, month: 3 });
   });
 
   it('対象年月をYYYY-MM形式にする', () => {

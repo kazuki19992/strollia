@@ -17,6 +17,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -47,8 +48,9 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     expect(texts).toContain('すとろりあ');
     expect(texts).toContain('SCROLL');
     expect(texts).toContain('移動距離');
+    expect(texts).toContain('月間移動距離');
     expect(texts).toContain('移動マップ');
-    expect(texts).toContain('今月取得した実績');
+    expect(texts).toContain('月間取得した実績');
   });
 
   it('共有ボタンを常に表示する', () => {

@@ -28,6 +28,11 @@ export function getReportMonth(date = new Date()): ReportMonth {
   return { year: date.getFullYear(), month: date.getMonth() + 1 };
 }
 
+/** Dateから直前月の月次レポート対象年月を作る。 */
+export function getPreviousReportMonth(date = new Date()): ReportMonth {
+  return getReportMonth(new Date(date.getFullYear(), date.getMonth() - 1, 1));
+}
+
 /** 月次レポート対象年月を`YYYY-MM`形式にする。 */
 export function formatReportMonth(month: ReportMonth): string {
   return `${month.year}-${String(month.month).padStart(2, '0')}`;

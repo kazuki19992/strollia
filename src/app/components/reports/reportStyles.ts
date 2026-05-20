@@ -381,7 +381,7 @@ export const reportStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
     borderRadius: 999,
-    bottom: 28,
+    bottom: 16,
     height: 58,
     justifyContent: 'center',
     minHeight: 44,
@@ -519,6 +519,10 @@ export const reportStyles = StyleSheet.create({
     lineHeight: 22,
     marginHorizontal: 26,
     marginTop: 24,
+  },
+  monthlyShareSafeArea: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
   },
   monthlyStackCard: {
     alignItems: 'stretch',

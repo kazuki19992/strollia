@@ -3,7 +3,7 @@ import { useMemo, useRef } from 'react';
 import { Alert, Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
 
 import { AchievementListItem } from '../../../features/achievements/achievementRepository';
-import { createMonthlyReport, getReportMonth, MonthlyReport } from '../../../features/reports/monthlyReport';
+import { createMonthlyReport, getPreviousReportMonth, MonthlyReport } from '../../../features/reports/monthlyReport';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 import { darkTheme, lightTheme } from '../../../theme/theme';
 import { AppStyles } from '../../appStyles';
@@ -28,7 +28,7 @@ export type MonthlyReportScreenProps = {
 };
 
 type MonthlyDistanceSummary = {
-  previousMonthDistanceMeters: number;
+  isMonthlyDistanceRecord: boolean;
   lifetimeDistanceMeters: number;
   longestDay: DailyLogSummary | null;
   isLongestDayRecord: boolean;
@@ -45,14 +45,22 @@ function kilometers(valueMeters: number, fractionDigits = 2): string {
   return (valueMeters / 1000).toFixed(fractionDigits);
 }
 
-/** 月の日別ログから前月・通算・最長日を集計する。 */
+/** 月ごとの移動距離を日別ログから集計する。 */
+function createMonthlyDistanceMap(dailyLogs: DailyLogSummary[]): Map<string, number> {
+  return dailyLogs.reduce((distanceMap, log) => {
+    const monthKey = log.localDate.slice(0, 7);
+    distanceMap.set(monthKey, (distanceMap.get(monthKey) ?? 0) + (log.distanceMeters ?? 0));
+    return distanceMap;
+  }, new Map<string, number>());
+}
+
+/** 月の日別ログから通算・最長日・月間記録を集計する。 */
 function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: MonthlyReport): MonthlyDistanceSummary {
-  const previousMonthDate = new Date(report.month.year, report.month.month - 2, 1);
-  const previousMonthKey = `${previousMonthDate.getFullYear()}-${String(previousMonthDate.getMonth() + 1).padStart(2, '0')}`;
-  const previousMonthDistanceMeters = dailyLogs
-    .filter((log) => log.localDate.startsWith(previousMonthKey))
-    .reduce((total, log) => total + (log.distanceMeters ?? 0), 0);
-  const lifetimeDistanceMeters = dailyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0);
+  const monthlyDistanceMap = createMonthlyDistanceMap(dailyLogs);
+  const previousBestMonthlyDistance = Array.from(monthlyDistanceMap.entries())
+    .filter(([monthKey]) => monthKey < report.label)
+    .reduce((best, [, distance]) => Math.max(best, distance), 0);
+  const lifetimeDistanceMeters = dailyLogs.filter((log) => log.localDate.slice(0, 7) <= report.label).reduce((total, log) => total + (log.distanceMeters ?? 0), 0);
   const longestDay = dailyLogs
     .filter((log) => log.localDate.startsWith(report.label))
     .reduce<DailyLogSummary | null>((longest, log) => ((log.distanceMeters ?? 0) > (longest?.distanceMeters ?? 0) ? log : longest), null);
@@ -61,7 +69,7 @@ function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: Mont
     .reduce((longest, log) => Math.max(longest, log.distanceMeters ?? 0), 0);
 
   return {
-    previousMonthDistanceMeters,
+    isMonthlyDistanceRecord: report.totalDistanceMeters >= previousBestMonthlyDistance && report.totalDistanceMeters >= 0,
     lifetimeDistanceMeters,
     longestDay,
     isLongestDayRecord: (longestDay?.distanceMeters ?? 0) > previousLongestDistance && (longestDay?.distanceMeters ?? 0) > 0,
@@ -79,7 +87,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
   const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
-  const report = useMemo(() => createMonthlyReport(dailyLogs, points, getReportMonth()), [dailyLogs, points]);
+  const report = useMemo(() => createMonthlyReport(dailyLogs, points, getPreviousReportMonth()), [dailyLogs, points]);
   const summary = useMemo(() => createMonthlyDistanceSummary(dailyLogs, report), [dailyLogs, report]);
   const monthlyAchievements = achievements.filter((item) => item.unlockedAt?.startsWith(report.label)).slice(0, 6);
   const activeDayRecord = report.activeDays >= 25;
@@ -89,7 +97,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
   const backgroundColor = theme.name === 'dark' ? '#111111' : '#ffffff';
 
   return (
-    <SafeAreaView style={[reportStyles.monthlyContainer, { backgroundColor }]}>
+    <View style={[reportStyles.monthlyContainer, { backgroundColor }]}>
       <Animated.ScrollView
         contentContainerStyle={reportStyles.monthlyContent}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
@@ -110,9 +118,12 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
         </View>
 
         <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>移動距離</Text>
-        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
-          <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>先月移動した距離</Text>
-          <MonthlyReportMetricValue value={kilometers(summary.previousMonthDistanceMeters)} unit="km" color={textColor} />
+        <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyStackCard, { backgroundColor: surfaceColor }]}>
+          <View style={reportStyles.monthlyMetricRow}>
+            <Text style={[reportStyles.monthlyCardLabel, { color: textColor }]}>月間移動距離</Text>
+            <MonthlyReportMetricValue value={kilometers(report.totalDistanceMeters)} unit="km" color={textColor} />
+          </View>
+          <NewRecordPill visible={summary.isMonthlyDistanceRecord} />
         </MonthlyReportAnimatedCard>
         <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={{ backgroundColor: surfaceColor }}>
           <View>
@@ -147,10 +158,10 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
           <Text style={[reportStyles.monthlyPlaceText, { color: textColor }]}>集計準備中</Text>
         </MonthlyReportAnimatedCard>
 
-        <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>今月取得した実績</Text>
+        <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>月間取得した実績</Text>
         <MonthlyReportAnimatedCard scrollY={scrollY} viewportHeight={height} style={[reportStyles.monthlyAchievementsCard, { backgroundColor: 'transparent' }]}>
           {monthlyAchievements.length === 0 ? (
-            <Text style={[reportStyles.monthlyEmptyText, { color: mutedTextColor }]}>今月はまだ実績達成なし</Text>
+            <Text style={[reportStyles.monthlyEmptyText, { color: mutedTextColor }]}>この月はまだ実績達成なし</Text>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={reportStyles.monthlyAchievementList}>
               {monthlyAchievements.map((item) => (
@@ -186,9 +197,11 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements }: Monthly
         </MonthlyReportAnimatedCard>
       </Animated.ScrollView>
 
-      <Pressable accessibilityLabel="レポートを共有" accessibilityRole="button" onPress={shareReportPrototype} style={reportStyles.monthlyFloatingShareButton}>
-        <Feather name="share-2" size={28} color="#777777" />
-      </Pressable>
-    </SafeAreaView>
+      <SafeAreaView pointerEvents="box-none" style={reportStyles.monthlyShareSafeArea}>
+        <Pressable accessibilityLabel="レポートを共有" accessibilityRole="button" onPress={shareReportPrototype} style={reportStyles.monthlyFloatingShareButton}>
+          <Feather name="share-2" size={28} color="#777777" />
+        </Pressable>
+      </SafeAreaView>
+    </View>
   );
 }

@@ -485,13 +485,46 @@ export function createStyles(theme: AppTheme) {
     locationDivider: {
       backgroundColor: 'rgba(255, 255, 255, 0.7)',
       height: 1,
-      marginHorizontal: -14,
+      marginRight: 50,
+    },
+    locationFadeSegment1: {
+      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.77)' : 'rgba(45, 36, 22, 0.70)',
+      flex: 1,
+    },
+    locationFadeSegment2: {
+      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.62)' : 'rgba(45, 36, 22, 0.56)',
+      flex: 1,
+    },
+    locationFadeSegment3: {
+      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.44)' : 'rgba(45, 36, 22, 0.40)',
+      flex: 1,
+    },
+    locationFadeSegment4: {
+      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.24)' : 'rgba(45, 36, 22, 0.22)',
+      flex: 1,
+    },
+    locationFadeSegment5: {
+      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.08)' : 'rgba(45, 36, 22, 0.07)',
+      flex: 1,
+    },
+    locationPanelBackground: {
+      ...StyleSheet.absoluteFillObject,
+      flexDirection: 'row',
+    },
+    locationPanelFade: {
+      flexDirection: 'row',
+      width: 64,
+    },
+    locationPanelSolid: {
+      backgroundColor: mapPanelBackground,
+      flex: 1,
     },
     locationMovementText: {
       color: '#ffffff',
       fontSize: 17,
       fontWeight: '700',
-      paddingHorizontal: 14,
+      paddingLeft: 32,
+      paddingRight: 78,
       paddingTop: 5,
     },
     locationPrimaryText: {
@@ -513,7 +546,7 @@ export function createStyles(theme: AppTheme) {
       marginLeft: 2,
     },
     locationStatusPanel: {
-      backgroundColor: '#5f5f5f',
+      backgroundColor: 'transparent',
       flex: 1,
       marginRight: 12,
       maxWidth: 280,
@@ -524,11 +557,12 @@ export function createStyles(theme: AppTheme) {
     locationTitleRow: {
       alignItems: 'flex-end',
       flexDirection: 'row',
-      paddingHorizontal: 14,
+      paddingLeft: 32,
+      paddingRight: 78,
     },
     menuButton: {
       alignItems: 'center',
-      backgroundColor: '#5f5f5f',
+      backgroundColor: mapPanelBackground,
       borderBottomLeftRadius: 42,
       borderBottomRightRadius: 14,
       borderTopLeftRadius: 14,
@@ -1073,7 +1107,8 @@ export function createStyles(theme: AppTheme) {
       alignItems: 'flex-start',
       flexDirection: 'row',
       justifyContent: 'space-between',
-      paddingHorizontal: 16,
+      paddingLeft: 0,
+      paddingRight: 16,
       paddingTop: 8,
       zIndex: 2,
     },

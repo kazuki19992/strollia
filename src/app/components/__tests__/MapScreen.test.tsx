@@ -159,6 +159,15 @@ describe('地図画面 MapScreen', () => {
     expect(StyleSheet.flatten(styles.recenterButton)?.height).toBe(StyleSheet.flatten(styles.speedometerPanel)?.minHeight);
   });
 
+
+
+  test('現在地パネルは左端から表示し背景だけをフェードさせる', () => {
+    expect(StyleSheet.flatten(styles.topBar)?.paddingLeft).toBe(0);
+    expect(StyleSheet.flatten(styles.locationTitleRow)?.paddingLeft).toBeGreaterThan(0);
+    expect(StyleSheet.flatten(styles.locationStatusPanel)?.backgroundColor).toBe('transparent');
+    expect(StyleSheet.flatten(styles.locationPanelFade)?.width).toBeGreaterThan(0);
+  });
+
   test('現在地アイコンは常に白で表示する', () => {
     let renderer: any;
 

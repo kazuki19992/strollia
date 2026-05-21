@@ -207,6 +207,16 @@ export function MapScreen({
 
         <View style={styles.topBar}>
           <View style={styles.locationStatusPanel}>
+            <View pointerEvents="none" style={styles.locationPanelBackground}>
+              <View style={styles.locationPanelSolid} />
+              <View style={styles.locationPanelFade}>
+                <View style={styles.locationFadeSegment1} />
+                <View style={styles.locationFadeSegment2} />
+                <View style={styles.locationFadeSegment3} />
+                <View style={styles.locationFadeSegment4} />
+                <View style={styles.locationFadeSegment5} />
+              </View>
+            </View>
             <View style={styles.locationTitleRow}>
               <Text numberOfLines={1} style={styles.locationPrimaryText}>
                 {currentAreaLabel.primary}

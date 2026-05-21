@@ -4,7 +4,7 @@ import { Animated } from 'react-native';
 import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
 import { lightTheme } from '../../../theme/theme';
 import { createStyles } from '../../appStyles';
-import { formatDistanceKilometers, formatSpeedKmh, getMovementStatus, getSpeedMeterAppearance, MapScreen } from '../MapScreen';
+import { formatDistanceKilometers, formatSpeedKmh, getLocationPanelFadeColors, getMovementStatus, getSpeedMeterAppearance, MapScreen } from '../MapScreen';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -202,6 +202,16 @@ describe('スピードメーター表示ロジック', () => {
 
   test('距離をkm小数2桁へ変換する', () => {
     expect(formatDistanceKilometers(1234)).toBe('1.23');
+  });
+
+
+
+  test('現在地パネル背景のフェード色を細かく生成する', () => {
+    const colors = getLocationPanelFadeColors('light');
+
+    expect(colors).toHaveLength(18);
+    expect(colors[0]).toMatch(/rgba\(45, 36, 22, 0\./);
+    expect(colors.at(-1)).toBe('rgba(45, 36, 22, 0.000)');
   });
 
   test('速度から移動状態の表示文言を作る', () => {

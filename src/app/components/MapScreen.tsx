@@ -160,6 +160,7 @@ export function MapScreen({
   const distanceParts = formatDistanceKilometers(distanceValue).split('.');
   const distanceLabel = isTodayDistanceVisible ? 'TODAY' : 'ODO';
   const movementStatus = getMovementStatus(currentSpeedKmh);
+  const locationPanelFadeColors = getLocationPanelFadeColors(theme.name);
 
   return (
     <View style={styles.container}>
@@ -210,11 +211,9 @@ export function MapScreen({
             <View pointerEvents="none" style={styles.locationPanelBackground}>
               <View style={styles.locationPanelSolid} />
               <View style={styles.locationPanelFade}>
-                <View style={styles.locationFadeSegment1} />
-                <View style={styles.locationFadeSegment2} />
-                <View style={styles.locationFadeSegment3} />
-                <View style={styles.locationFadeSegment4} />
-                <View style={styles.locationFadeSegment5} />
+                {locationPanelFadeColors.map((backgroundColor, index) => (
+                  <View key={`${backgroundColor}-${index}`} style={[styles.locationFadeSegment, { backgroundColor }]} />
+                ))}
               </View>
             </View>
             <View style={styles.locationTitleRow}>
@@ -404,4 +403,16 @@ export function getMovementStatusByMode(movementMode: MovementMode): string {
     case 'fast':
       return '🚄 高速移動中...';
   }
+}
+
+/** 現在地パネル背景の右端フェード色を細かく生成する。 */
+export function getLocationPanelFadeColors(themeName: AppTheme['name']): string[] {
+  const [red, green, blue, alpha] = themeName === 'dark' ? [34, 38, 29, 0.88] : [45, 36, 22, 0.8];
+  const segmentCount = 18;
+
+  return Array.from({ length: segmentCount }, (_, index) => {
+    const progress = (index + 1) / segmentCount;
+    const easedAlpha = alpha * (1 - progress) ** 1.8;
+    return `rgba(${red}, ${green}, ${blue}, ${easedAlpha.toFixed(3)})`;
+  });
 }

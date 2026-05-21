@@ -487,24 +487,7 @@ export function createStyles(theme: AppTheme) {
       height: 1,
       marginRight: 50,
     },
-    locationFadeSegment1: {
-      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.77)' : 'rgba(45, 36, 22, 0.70)',
-      flex: 1,
-    },
-    locationFadeSegment2: {
-      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.62)' : 'rgba(45, 36, 22, 0.56)',
-      flex: 1,
-    },
-    locationFadeSegment3: {
-      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.44)' : 'rgba(45, 36, 22, 0.40)',
-      flex: 1,
-    },
-    locationFadeSegment4: {
-      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.24)' : 'rgba(45, 36, 22, 0.22)',
-      flex: 1,
-    },
-    locationFadeSegment5: {
-      backgroundColor: theme.name === 'dark' ? 'rgba(34, 38, 29, 0.08)' : 'rgba(45, 36, 22, 0.07)',
+    locationFadeSegment: {
       flex: 1,
     },
     locationPanelBackground: {
@@ -513,7 +496,7 @@ export function createStyles(theme: AppTheme) {
     },
     locationPanelFade: {
       flexDirection: 'row',
-      width: 64,
+      width: 112,
     },
     locationPanelSolid: {
       backgroundColor: mapPanelBackground,

@@ -83,6 +83,7 @@ import { useMapRouteState } from './hooks/useMapRouteState';
 import { useMenuAnimation } from './hooks/useMenuAnimation';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
+import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { getNextMapType } from './mapType';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
@@ -153,6 +154,7 @@ export default function App() {
   );
   const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
+  const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
   const todayDistanceMeters = useMemo(() => {
     const today = toLocalDate(new Date());
@@ -776,6 +778,7 @@ export default function App() {
             distance={distance}
             todayDistance={todayDistanceMeters}
             currentSpeedKmh={currentSpeedKmh}
+            currentAreaLabel={currentAreaLabel}
             recenterButtonOpacity={recenterButtonOpacity}
             onUserLocationChange={handleUserLocationChange}
             onPanDrag={handleMapPanDrag}

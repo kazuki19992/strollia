@@ -4,7 +4,9 @@ import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'reac
 import type { LatLng, MapType } from 'react-native-maps';
 import { useState, type RefObject } from 'react';
 
+import { classifyMovement, MovementMode } from '../../features/location/locationSaveFilter';
 import { MapPhotoCluster } from '../../features/photos/photoClusters';
+import { AreaLabel } from '../areaName';
 import { AppTheme } from '../../theme/theme';
 import { LocationPoint } from '../../types/gps';
 import { AppStyles } from '../appStyles';
@@ -78,6 +80,8 @@ export type MapScreenProps = {
   todayDistance: number;
   /** 現在速度。単位はkm/h。 */
   currentSpeedKmh: number;
+  /** 上部パネルに表示する現在地の地域名。 */
+  currentAreaLabel: AreaLabel;
   /** 現在地ボタンの透明度。 */
   recenterButtonOpacity: Animated.Value;
   /** 現在地更新ハンドラ。 */
@@ -134,6 +138,7 @@ export function MapScreen({
   distance,
   todayDistance,
   currentSpeedKmh,
+  currentAreaLabel,
   recenterButtonOpacity,
   onUserLocationChange,
   onPanDrag,
@@ -154,6 +159,7 @@ export function MapScreen({
   const distanceValue = isTodayDistanceVisible ? todayDistance : distance;
   const distanceParts = formatDistanceKilometers(distanceValue).split('.');
   const distanceLabel = isTodayDistanceVisible ? 'TODAY' : 'ODO';
+  const movementStatus = getMovementStatus(currentSpeedKmh);
 
   return (
     <View style={styles.container}>
@@ -169,7 +175,7 @@ export function MapScreen({
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}
         legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
-        mapPadding={{ bottom: 96, left: 0, right: 0, top: 58 }}
+        mapPadding={{ bottom: 96, left: 0, right: 0, top: 112 }}
       >
         {visibleRouteCoordinates.length > 1 && routeLineStyle.glow && (
           <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width + 8} />
@@ -200,13 +206,26 @@ export function MapScreen({
         )}
 
         <View style={styles.topBar}>
-          <View style={styles.statusPill}>
-            <View style={[styles.statusDot, isRecording && styles.statusDotActive]} />
-            <Text style={styles.statusText}>{isRecording ? '記録中' : '停止中'}</Text>
+          <View style={styles.locationStatusPanel}>
+            <View style={styles.locationTitleRow}>
+              <Text numberOfLines={1} style={styles.locationPrimaryText}>
+                {currentAreaLabel.primary}
+              </Text>
+              {currentAreaLabel.secondary && (
+                <Text numberOfLines={1} style={styles.locationSecondaryText}>
+                  {currentAreaLabel.secondary}
+                </Text>
+              )}
+            </View>
+            <View style={styles.locationDivider} />
+            <Text numberOfLines={1} style={styles.locationMovementText}>
+              {isRecording ? movementStatus : '⏸ 停止中...'}
+            </Text>
           </View>
           <View style={styles.rightControls}>
             <Pressable onPress={onToggleMenu} style={styles.menuButton}>
-              <Entypo name="dots-three-vertical" size={24} color={theme.colors.text} />
+              <Entypo name="dots-three-vertical" size={24} color="#ffffff" />
+              <Text style={styles.menuButtonText}>メニュー</Text>
             </Pressable>
           </View>
         </View>
@@ -355,4 +374,24 @@ function brightenColor(color: string): string {
   const blue = Math.min(parseInt(color.slice(5, 7), 16) + 42, 255);
 
   return `#${[red, green, blue].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** 速度から上部パネルに表示する移動状態文言を作る。 */
+export function getMovementStatus(speedKmh: number): string {
+  const movementMode = classifyMovement(Math.max(0, speedKmh) / 3.6);
+  return getMovementStatusByMode(movementMode);
+}
+
+/** 移動モードから絵文字付き表示文言へ変換する。 */
+export function getMovementStatusByMode(movementMode: MovementMode): string {
+  switch (movementMode) {
+    case 'stationary':
+      return '🧍 停止中...';
+    case 'walk':
+      return '🚶 徒歩で移動中...';
+    case 'vehicle':
+      return '🚗 車両で移動中...';
+    case 'fast':
+      return '🚄 高速移動中...';
+  }
 }

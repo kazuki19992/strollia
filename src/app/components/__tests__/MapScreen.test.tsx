@@ -4,7 +4,7 @@ import { Animated } from 'react-native';
 import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
 import { lightTheme } from '../../../theme/theme';
 import { createStyles } from '../../appStyles';
-import { formatDistanceKilometers, formatSpeedKmh, getSpeedMeterAppearance, MapScreen } from '../MapScreen';
+import { formatDistanceKilometers, formatSpeedKmh, getMovementStatus, getSpeedMeterAppearance, MapScreen } from '../MapScreen';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -63,6 +63,7 @@ function createProps() {
     distance: 1234,
     todayDistance: 456,
     currentSpeedKmh: 7,
+    currentAreaLabel: { primary: '千代田区', secondary: '神田' },
     recenterButtonOpacity: new Animated.Value(0),
     onUserLocationChange: jest.fn(),
     onPanDrag: jest.fn(),
@@ -89,6 +90,20 @@ describe('地図画面 MapScreen', () => {
     jest.restoreAllMocks();
   });
 
+  test('現在地名と移動状態を上部パネルに表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('千代田区');
+    expect(texts).toContain('神田');
+    expect(texts).toContain('🚶 徒歩で移動中...');
+    expect(texts).toContain('メニュー');
+  });
+
   test('記録状態とスピードメーターを表示する', () => {
     let renderer: any;
 
@@ -98,7 +113,6 @@ describe('地図画面 MapScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('記録中');
     expect(texts).toContain('SPEED');
     expect(texts).toContain('ODO');
   });
@@ -140,8 +154,6 @@ describe('地図画面 MapScreen', () => {
     expect(texts).toContain('46');
   });
 
-
-
   test('現在地ボタンはスピードメーターと同じ大きさにする', () => {
     expect(StyleSheet.flatten(styles.recenterButton)?.width).toBe(StyleSheet.flatten(styles.speedometerPanel)?.width);
     expect(StyleSheet.flatten(styles.recenterButton)?.height).toBe(StyleSheet.flatten(styles.speedometerPanel)?.minHeight);
@@ -181,6 +193,13 @@ describe('スピードメーター表示ロジック', () => {
 
   test('距離をkm小数2桁へ変換する', () => {
     expect(formatDistanceKilometers(1234)).toBe('1.23');
+  });
+
+  test('速度から移動状態の表示文言を作る', () => {
+    expect(getMovementStatus(0)).toBe('🧍 停止中...');
+    expect(getMovementStatus(4)).toBe('🚶 徒歩で移動中...');
+    expect(getMovementStatus(50)).toBe('🚗 車両で移動中...');
+    expect(getMovementStatus(120)).toBe('🚄 高速移動中...');
   });
 
   test('速度帯に応じてゲージ色と進捗を変える', () => {

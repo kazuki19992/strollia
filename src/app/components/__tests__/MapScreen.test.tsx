@@ -111,11 +111,14 @@ describe('地図画面 MapScreen', () => {
     });
 
     const distanceText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '1');
-    const decimalText = renderer.root.findAllByType(Text).find((node: any) => Array.isArray(node.props.children) && node.props.children.join('') === '.23');
+    const dotText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '.');
+    const decimalText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '23');
 
     expect(distanceText).toBeDefined();
+    expect(dotText).toBeDefined();
     expect(decimalText).toBeDefined();
     expect(StyleSheet.flatten(distanceText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
+    expect(StyleSheet.flatten(dotText!.props.style)?.fontSize).toBe(StyleSheet.flatten(distanceText!.props.style)?.fontSize);
     expect(StyleSheet.flatten(decimalText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
     expect(StyleSheet.flatten(decimalText!.props.style)?.fontSize).toBeLessThan(StyleSheet.flatten(distanceText!.props.style)?.fontSize ?? 0);
   });
@@ -133,7 +136,15 @@ describe('地図画面 MapScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('TODAY');
     expect(texts).toContain('0');
-    expect(texts.some((text: unknown) => Array.isArray(text) && text.join('') === '.46')).toBe(true);
+    expect(texts).toContain('.');
+    expect(texts).toContain('46');
+  });
+
+
+
+  test('現在地ボタンはスピードメーターと同じ大きさにする', () => {
+    expect(StyleSheet.flatten(styles.recenterButton)?.width).toBe(StyleSheet.flatten(styles.speedometerPanel)?.width);
+    expect(StyleSheet.flatten(styles.recenterButton)?.height).toBe(StyleSheet.flatten(styles.speedometerPanel)?.minHeight);
   });
 
   test('現在地アイコンは常に白で表示する', () => {

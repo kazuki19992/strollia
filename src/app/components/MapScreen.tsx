@@ -297,7 +297,8 @@ export function MapScreen({
               <Text style={styles.speedometerLabel}>{distanceLabel}</Text>
               <View style={styles.speedometerDistanceValueRow}>
                 <Text style={styles.speedometerDistanceValueInteger}>{distanceParts[0]}</Text>
-                <Text style={styles.speedometerDistanceValueDecimal}>.{distanceParts[1]}</Text>
+                <Text style={styles.speedometerDistanceValueDot}>.</Text>
+                <Text style={styles.speedometerDistanceValueDecimal}>{distanceParts[1]}</Text>
                 <Text style={styles.speedometerDistanceUnit}>km</Text>
               </View>
             </View>

@@ -335,15 +335,18 @@ export function formatDistanceKilometers(distanceMeters: number): string {
   return (Math.max(0, distanceMeters) / 1000).toFixed(2);
 }
 
+/** 停止色が背景地図に沈まないようRGB値へ加える明度補正量。 */
+const STOPPED_SPEED_COLOR_BRIGHTNESS_BOOST = 42;
+
 /** 停止状態でもマップ上で読めるよう、テーマカラーを少し明るくする。 */
 function brightenColor(color: string): string {
   if (!color.startsWith('#') || color.length !== 7) {
     return color;
   }
 
-  const red = Math.min(parseInt(color.slice(1, 3), 16) + 42, 255);
-  const green = Math.min(parseInt(color.slice(3, 5), 16) + 42, 255);
-  const blue = Math.min(parseInt(color.slice(5, 7), 16) + 42, 255);
+  const red = Math.min(parseInt(color.slice(1, 3), 16) + STOPPED_SPEED_COLOR_BRIGHTNESS_BOOST, 255);
+  const green = Math.min(parseInt(color.slice(3, 5), 16) + STOPPED_SPEED_COLOR_BRIGHTNESS_BOOST, 255);
+  const blue = Math.min(parseInt(color.slice(5, 7), 16) + STOPPED_SPEED_COLOR_BRIGHTNESS_BOOST, 255);
 
   return `#${[red, green, blue].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }

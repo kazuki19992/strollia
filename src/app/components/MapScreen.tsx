@@ -74,7 +74,7 @@ export type MapScreenProps = {
   todayDistance: number;
   /** 現在速度。単位はkm/h。 */
   currentSpeedKmh: number;
-  /** 上部パネルに表示する現在地の地域名。 */
+  /** 下部ダッシュボードに表示する現在地の地域名。 */
   currentAreaLabel: AreaLabel;
   /** 現在地ボタンの透明度。 */
   recenterButtonOpacity: Animated.Value;

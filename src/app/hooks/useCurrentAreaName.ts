@@ -46,7 +46,7 @@ export function useCurrentAreaName({ userCoordinate, appState }: UseCurrentAreaN
   return currentAreaName;
 }
 
-/** 現在地座標から地図上部パネル用の地域名を取得する。 */
+/** 現在地座標から地図下部ダッシュボード用の地域名を取得する。 */
 export function useCurrentAreaLabel({ userCoordinate, appState }: UseCurrentAreaNameArgs): AreaLabel {
   const [currentAreaLabel, setCurrentAreaLabel] = useState<AreaLabel>({ primary: '現在地を確認中', secondary: null });
 

@@ -29,4 +29,30 @@ describe('現在地パネル地域名 getAreaLabelFromAddress', () => {
       secondary: null,
     });
   });
+
+  it('住所情報がない場合は現在地付近と副表示なしへフォールバックする', () => {
+    expect(getAreaLabelFromAddress(null)).toEqual({ primary: '現在地付近', secondary: null });
+    expect(getAreaLabelFromAddress(undefined)).toEqual({ primary: '現在地付近', secondary: null });
+  });
+
+  it('districtがない場合はnameから副表示を選ぶ', () => {
+    expect(getAreaLabelFromAddress({ city: '千代田区', name: '神田錦町' } as never)).toEqual({
+      primary: '千代田区',
+      secondary: '神田錦町',
+    });
+  });
+
+  it('districtとnameがない場合はstreetから副表示を選ぶ', () => {
+    expect(getAreaLabelFromAddress({ city: '千代田区', street: '一ツ橋' } as never)).toEqual({
+      primary: '千代田区',
+      secondary: '一ツ橋',
+    });
+  });
+
+  it('districtとnameとstreetがない場合はsubregionから副表示を選ぶ', () => {
+    expect(getAreaLabelFromAddress({ city: '千代田区', subregion: '東京都心' } as never)).toEqual({
+      primary: '千代田区',
+      secondary: '東京都心',
+    });
+  });
 });

@@ -31,7 +31,7 @@ const styles = createStyles(lightTheme);
 /** 下部ダッシュボードのテスト用propsを作る。 */
 function createProps() {
   return {
-    styles: styles as never,
+    styles,
     theme: lightTheme,
     mapType: 'standard' as const,
     isFollowingUserLocation: false,

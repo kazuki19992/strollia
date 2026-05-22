@@ -14,7 +14,7 @@ export const LOCATION_MIN_SAVE_DISTANCE_METERS = 5;
 /** バックグラウンドGPS記録でExpo Locationへ渡す監視設定を作る。 */
 export function getLocationTaskOptions(): Location.LocationTaskOptions {
   return {
-    accuracy: Location.Accuracy.Balanced,
+    accuracy: Location.Accuracy.High,
     timeInterval: LOCATION_UPDATE_INTERVAL_MS,
     distanceInterval: LOCATION_UPDATE_DISTANCE_METERS,
     deferredUpdatesInterval: LOCATION_UPDATE_INTERVAL_MS,

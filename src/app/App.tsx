@@ -80,7 +80,6 @@ import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
 import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
-import { useMenuAnimation } from './hooks/useMenuAnimation';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
@@ -96,8 +95,6 @@ const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 const ROUTE_LINE_STYLE_SETTING_KEY = 'routeLineStyle';
 /** 現在地アイコン設定をSQLiteへ保存するキー。 */
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
-/** メニュー開閉が軽く感じる短めのアニメーション時間。 */
-const MENU_ANIMATION_DURATION_MS = 220;
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
 
@@ -121,7 +118,6 @@ export default function App() {
   const wasAchievementEvaluationPausedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
   const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
@@ -152,7 +148,6 @@ export default function App() {
     dailyLogs,
     visibleRegion,
   );
-  const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
@@ -581,25 +576,9 @@ export default function App() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
   }
 
-  /** 右上メニューを開閉する。 */
-  function toggleMenu(): void {
-    triggerSelectionHaptic();
-    setIsMenuOpen((open) => !open);
-  }
-
-  /** 背景タップなどでメニューを閉じる。通常操作では閉じアニメーションを残す。 */
-  function closeMenu(): void {
-    if (isMenuOpen) {
-      triggerSelectionHaptic();
-    }
-
-    setIsMenuOpen(false);
-  }
-
-  /** メニューから別画面へ移動する。背景のちらつきを避けるため即時アンマウントはしない。 */
+  /** 下部ナビゲーションから別画面へ移動する。 */
   function navigateToScreen(nextScreenMode: ScreenMode): void {
     triggerLightImpactHaptic();
-    setIsMenuOpen(false);
     setScreenMode(nextScreenMode);
   }
 
@@ -608,10 +587,9 @@ export default function App() {
     navigateToScreen('dailyLogs');
   }
 
-  /** 地図画面へ戻る。戻る時は残留メニューを確実に掃除する。 */
+  /** 地図画面へ戻る。 */
   function openMap(): void {
     triggerLightImpactHaptic();
-    resetMenuImmediately();
     setScreenMode('map');
   }
 
@@ -640,7 +618,6 @@ export default function App() {
   function toggleMapType(): void {
     triggerSelectionHaptic();
     setMapType(getNextMapType);
-    setIsMenuOpen(false);
   }
 
 
@@ -765,11 +742,8 @@ export default function App() {
             visibleRouteCoordinates={visibleRouteCoordinates}
             routeLineStyle={routeLineStyle}
             showPhotosOnMap={showPhotosOnMap}
+            isUpdatingPhotoSetting={isUpdatingPhotoSetting}
             photoClusters={photoClusters}
-            isMenuVisible={isMenuVisible}
-            isMenuOpen={isMenuOpen}
-            menuProgress={menuProgress}
-            isRecording={isRecording}
             points={points}
             hasRequiredPermission={hasRequiredPermission}
             shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
@@ -784,12 +758,11 @@ export default function App() {
             onPanDrag={handleMapPanDrag}
             onRegionChangeComplete={handleRegionChangeComplete}
             onPhotoClusterPress={handlePhotoClusterPress}
-            onToggleMenu={toggleMenu}
-            onCloseMenu={closeMenu}
             onOpenDailyLogs={openDailyLogs}
             onOpenAchievements={openAchievements}
             onOpenMonthlyReport={openMonthlyReport}
             onToggleMapType={toggleMapType}
+            onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
             onOpenSettings={openSettings}
             onRequestLocationPermission={requestLocationPermission}
             onRecenterOnUserLocation={recenterOnUserLocation}

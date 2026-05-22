@@ -94,4 +94,10 @@ describe('移動モード分類 classifyMovement', () => {
     expect(classifyMovement(8)).toBe('vehicle');
     expect(classifyMovement(20)).toBe('fast');
   });
+
+  it('速度が閾値ちょうどなら次の移動モードへ分類する', () => {
+    expect(classifyMovement(0.5)).toBe('walk');
+    expect(classifyMovement(2.2)).toBe('vehicle');
+    expect(classifyMovement(15)).toBe('fast');
+  });
 });

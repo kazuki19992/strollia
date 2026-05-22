@@ -1,13 +1,15 @@
-import { AntDesign, Entypo, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import type { RefObject } from 'react';
 
 import { MapPhotoCluster } from '../../features/photos/photoClusters';
+import { AreaLabel } from '../areaName';
 import { AppTheme } from '../../theme/theme';
 import { LocationPoint } from '../../types/gps';
 import { AppStyles } from '../appStyles';
+import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
 
 /** ルート線の描画スタイル。 */
@@ -52,16 +54,10 @@ export type MapScreenProps = {
   routeLineStyle: RouteLineStyle;
   /** 写真表示設定。 */
   showPhotosOnMap: boolean;
+  /** 写真表示設定を保存中か。 */
+  isUpdatingPhotoSetting: boolean;
   /** 表示する写真クラスタ。 */
   photoClusters: MapPhotoCluster[];
-  /** メニューが描画対象か。 */
-  isMenuVisible: boolean;
-  /** メニューが開いているか。 */
-  isMenuOpen: boolean;
-  /** メニューアニメーション進捗。 */
-  menuProgress: Animated.Value;
-  /** GPS記録中か。 */
-  isRecording: boolean;
   /** 保存済みGPSポイント。 */
   points: LocationPoint[];
   /** 位置情報権限が揃っているか。 */
@@ -72,10 +68,14 @@ export type MapScreenProps = {
   photoErrorMessage: string | null;
   /** 写真読み込み中か。 */
   isLoadingPhotos: boolean;
-  /** 現在地ピルに表示する地域名。 */
-  currentAreaName: string;
   /** 表示距離。 */
   distance: number;
+  /** 今日の移動距離。 */
+  todayDistance: number;
+  /** 現在速度。単位はkm/h。 */
+  currentSpeedKmh: number;
+  /** 下部ダッシュボードに表示する現在地の地域名。 */
+  currentAreaLabel: AreaLabel;
   /** 現在地ボタンの透明度。 */
   recenterButtonOpacity: Animated.Value;
   /** 現在地更新ハンドラ。 */
@@ -86,10 +86,6 @@ export type MapScreenProps = {
   onRegionChangeComplete: (region: Region) => void;
   /** 写真クラスタ押下ハンドラ。 */
   onPhotoClusterPress: (cluster: MapPhotoCluster) => void;
-  /** メニュー開閉ハンドラ。 */
-  onToggleMenu: () => void;
-  /** メニューを閉じるハンドラ。 */
-  onCloseMenu: () => void;
   /** 日別ログ画面を開くハンドラ。 */
   onOpenDailyLogs: () => void;
   /** 実績画面を開くハンドラ。 */
@@ -98,6 +94,8 @@ export type MapScreenProps = {
   onOpenMonthlyReport: () => void;
   /** 地図種別切り替えハンドラ。 */
   onToggleMapType: () => void;
+  /** 写真表示設定更新ハンドラ。 */
+  onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
   /** 設定画面を開くハンドラ。 */
   onOpenSettings: () => void;
   /** 位置情報権限要求ハンドラ。 */
@@ -119,29 +117,27 @@ export function MapScreen({
   visibleRouteCoordinates,
   routeLineStyle,
   showPhotosOnMap,
+  isUpdatingPhotoSetting,
   photoClusters,
-  isMenuVisible,
-  isMenuOpen,
-  menuProgress,
-  isRecording,
   points,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
   photoErrorMessage,
   isLoadingPhotos,
-  currentAreaName,
   distance,
+  todayDistance,
+  currentSpeedKmh,
+  currentAreaLabel,
   recenterButtonOpacity,
   onUserLocationChange,
   onPanDrag,
   onRegionChangeComplete,
   onPhotoClusterPress,
-  onToggleMenu,
-  onCloseMenu,
   onOpenDailyLogs,
   onOpenAchievements,
   onOpenMonthlyReport,
   onToggleMapType,
+  onUpdateShowPhotosOnMap,
   onOpenSettings,
   onRequestLocationPermission,
   onRecenterOnUserLocation,
@@ -160,7 +156,7 @@ export function MapScreen({
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}
         legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
-        mapPadding={{ bottom: 96, left: 0, right: 0, top: 58 }}
+        mapPadding={{ bottom: 128, left: 0, right: 0, top: 8 }}
       >
         {visibleRouteCoordinates.length > 1 && routeLineStyle.glow && (
           <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width + 8} />
@@ -184,60 +180,6 @@ export function MapScreen({
       </MapView>
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
-        {isMenuVisible && (
-          <Animated.View pointerEvents={isMenuOpen ? 'auto' : 'none'} style={[styles.menuScrim, { opacity: menuProgress }]}>
-            <Pressable onPress={onCloseMenu} style={styles.menuScrimPressable} />
-          </Animated.View>
-        )}
-
-        <View style={styles.topBar}>
-          <View style={styles.statusPill}>
-            <View style={[styles.statusDot, isRecording && styles.statusDotActive]} />
-            <Text style={styles.statusText}>{isRecording ? '記録中' : '停止中'}</Text>
-          </View>
-          <View style={styles.rightControls}>
-            <Pressable onPress={onToggleMenu} style={styles.menuButton}>
-              <Entypo name="dots-three-vertical" size={24} color={theme.colors.text} />
-            </Pressable>
-          </View>
-        </View>
-
-        {isMenuVisible && (
-          <Animated.View
-            style={[
-              styles.menuCard,
-              {
-                opacity: menuProgress,
-                transform: [
-                  { translateY: menuProgress.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) },
-                  { scale: menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) },
-                ],
-              },
-            ]}
-          >
-            <Pressable onPress={onOpenDailyLogs} style={styles.menuItem}>
-              <Feather name="calendar" size={22} color={theme.colors.text} />
-              <Text style={styles.menuItemText}>日ごとの記録</Text>
-            </Pressable>
-            <Pressable onPress={onOpenAchievements} style={styles.menuItem}>
-              <MaterialCommunityIcons name="trophy-outline" size={23} color={theme.colors.text} />
-              <Text style={styles.menuItemText}>実績</Text>
-            </Pressable>
-            <Pressable onPress={onOpenMonthlyReport} style={styles.menuItem}>
-              <MaterialCommunityIcons name="chart-timeline-variant" size={23} color={theme.colors.text} />
-              <Text style={styles.menuItemText}>レポートを見る</Text>
-            </Pressable>
-            <Pressable onPress={onToggleMapType} style={styles.menuItem}>
-              <MaterialCommunityIcons name={mapType === 'standard' ? 'satellite-variant' : 'map-outline'} size={23} color={theme.colors.text} />
-              <Text style={styles.menuItemText}>{mapType === 'standard' ? '航空写真に切替' : '標準地図に切替'}</Text>
-            </Pressable>
-            <Pressable onPress={onOpenSettings} style={styles.menuItem}>
-              <Feather name="settings" size={22} color={theme.colors.text} />
-              <Text style={styles.menuItemText}>設定</Text>
-            </Pressable>
-          </Animated.View>
-        )}
-
         {points.length === 0 && (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>まだ足あとがありません</Text>
@@ -267,22 +209,26 @@ export function MapScreen({
           </View>
         )}
 
-        <View pointerEvents="box-none" style={styles.bottomBar}>
-          <View style={styles.bottomSideSpacer} />
-          <View style={styles.locationPill}>
-            <Text style={styles.locationName}>{currentAreaName}</Text>
-            <View style={styles.locationMetaRow}>
-              <Text style={styles.locationMetaLabel}>ODO</Text>
-              <Text style={styles.locationMetaValue}>{(distance / 1000).toFixed(2)}</Text>
-              <Text style={styles.locationMetaLabel}>km</Text>
-            </View>
-          </View>
-          <Animated.View pointerEvents={isFollowingUserLocation ? 'none' : 'auto'} style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}>
-            <Pressable onPress={onRecenterOnUserLocation} style={styles.recenterButton}>
-              <AntDesign name="aim" size={24} color={theme.colors.primary} />
-            </Pressable>
-          </Animated.View>
-        </View>
+        <MapBottomDashboard
+          styles={styles}
+          theme={theme}
+          mapType={mapType}
+          isFollowingUserLocation={isFollowingUserLocation}
+          recenterButtonOpacity={recenterButtonOpacity}
+          distance={distance}
+          todayDistance={todayDistance}
+          currentSpeedKmh={currentSpeedKmh}
+          currentAreaLabel={currentAreaLabel}
+          showPhotosOnMap={showPhotosOnMap}
+          isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+          onRecenterOnUserLocation={onRecenterOnUserLocation}
+          onOpenDailyLogs={onOpenDailyLogs}
+          onOpenAchievements={onOpenAchievements}
+          onOpenMonthlyReport={onOpenMonthlyReport}
+          onOpenSettings={onOpenSettings}
+          onToggleMapType={onToggleMapType}
+          onUpdateShowPhotosOnMap={onUpdateShowPhotosOnMap}
+        />
       </SafeAreaView>
     </View>
   );

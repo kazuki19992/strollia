@@ -62,6 +62,7 @@ import { getBooleanSetting, getStringSetting, setSetting } from '../features/set
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
+import { toLocalDate } from '../utils/date';
 import type { LatLng, MapType } from 'react-native-maps';
 import { loadAppFonts } from '../theme/fonts';
 import { getAppTheme } from '../theme/theme';
@@ -77,12 +78,11 @@ import { SettingsScreen } from './components/SettingsScreen';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
 import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
 import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
-import { useCurrentAreaName } from './hooks/useCurrentAreaName';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
-import { useMenuAnimation } from './hooks/useMenuAnimation';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
+import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { getNextMapType } from './mapType';
 
@@ -96,8 +96,6 @@ const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 const ROUTE_LINE_STYLE_SETTING_KEY = 'routeLineStyle';
 /** 現在地アイコン設定をSQLiteへ保存するキー。 */
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
-/** メニュー開閉が軽く感じる短めのアニメーション時間。 */
-const MENU_ANIMATION_DURATION_MS = 220;
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
 
@@ -121,7 +119,6 @@ export default function App() {
   const wasAchievementEvaluationPausedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
   const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
@@ -138,6 +135,7 @@ export default function App() {
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
+  const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [mapType, setMapType] = useState<MapType>('standard');
@@ -151,10 +149,13 @@ export default function App() {
     dailyLogs,
     visibleRegion,
   );
-  const { isMenuVisible, menuProgress, resetMenuImmediately } = useMenuAnimation(isMenuOpen, MENU_ANIMATION_DURATION_MS);
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
+  const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
-  const currentAreaName = useCurrentAreaName({ userCoordinate, appState });
+  const todayDistanceMeters = useMemo(() => {
+    const today = toLocalDate(new Date());
+    return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
+  }, [dailyLogs]);
   const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
   const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
   const selectedPhotoClusterPages = useMemo(
@@ -480,6 +481,8 @@ export default function App() {
 
     const nextCoordinate = { latitude: coordinate.latitude, longitude: coordinate.longitude };
     setUserCoordinate(nextCoordinate);
+    const speedMps = (coordinate as typeof coordinate & { speed?: number | null }).speed;
+    setCurrentSpeedKmh(speedMps != null && speedMps > 0 ? speedMps * 3.6 : 0);
 
     if (isFollowingUserLocation) {
       centerOnCoordinate(nextCoordinate, false);
@@ -574,25 +577,9 @@ export default function App() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
   }
 
-  /** 右上メニューを開閉する。 */
-  function toggleMenu(): void {
-    triggerSelectionHaptic();
-    setIsMenuOpen((open) => !open);
-  }
-
-  /** 背景タップなどでメニューを閉じる。通常操作では閉じアニメーションを残す。 */
-  function closeMenu(): void {
-    if (isMenuOpen) {
-      triggerSelectionHaptic();
-    }
-
-    setIsMenuOpen(false);
-  }
-
-  /** メニューから別画面へ移動する。背景のちらつきを避けるため即時アンマウントはしない。 */
+  /** 下部ナビゲーションから別画面へ移動する。 */
   function navigateToScreen(nextScreenMode: ScreenMode): void {
     triggerLightImpactHaptic();
-    setIsMenuOpen(false);
     setScreenMode(nextScreenMode);
   }
 
@@ -601,10 +588,9 @@ export default function App() {
     navigateToScreen('dailyLogs');
   }
 
-  /** 地図画面へ戻る。戻る時は残留メニューを確実に掃除する。 */
+  /** 地図画面へ戻る。 */
   function openMap(): void {
     triggerLightImpactHaptic();
-    resetMenuImmediately();
     setScreenMode('map');
   }
 
@@ -633,7 +619,6 @@ export default function App() {
   function toggleMapType(): void {
     triggerSelectionHaptic();
     setMapType(getNextMapType);
-    setIsMenuOpen(false);
   }
 
 
@@ -758,29 +743,27 @@ export default function App() {
             visibleRouteCoordinates={visibleRouteCoordinates}
             routeLineStyle={routeLineStyle}
             showPhotosOnMap={showPhotosOnMap}
+            isUpdatingPhotoSetting={isUpdatingPhotoSetting}
             photoClusters={photoClusters}
-            isMenuVisible={isMenuVisible}
-            isMenuOpen={isMenuOpen}
-            menuProgress={menuProgress}
-            isRecording={isRecording}
             points={points}
             hasRequiredPermission={hasRequiredPermission}
             shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
             photoErrorMessage={photoErrorMessage}
             isLoadingPhotos={isLoadingPhotos}
-            currentAreaName={currentAreaName}
             distance={distance}
+            todayDistance={todayDistanceMeters}
+            currentSpeedKmh={currentSpeedKmh}
+            currentAreaLabel={currentAreaLabel}
             recenterButtonOpacity={recenterButtonOpacity}
             onUserLocationChange={handleUserLocationChange}
             onPanDrag={handleMapPanDrag}
             onRegionChangeComplete={handleRegionChangeComplete}
             onPhotoClusterPress={handlePhotoClusterPress}
-            onToggleMenu={toggleMenu}
-            onCloseMenu={closeMenu}
             onOpenDailyLogs={openDailyLogs}
             onOpenAchievements={openAchievements}
             onOpenMonthlyReport={openMonthlyReport}
             onToggleMapType={toggleMapType}
+            onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
             onOpenSettings={openSettings}
             onRequestLocationPermission={requestLocationPermission}
             onRecenterOnUserLocation={recenterOnUserLocation}

@@ -1,11 +1,20 @@
 import type { Region } from 'react-native-maps';
 
 import { LocationPoint } from '../../types/gps';
+import { estimateAcceptedSegmentSpeedMps } from '../location/locationSpeed';
 
 /** react-native-mapsのPolylineへ渡す緯度経度座標。 */
 export type RouteCoordinate = {
   latitude: number;
   longitude: number;
+};
+
+/** Polylineを途切れ区間ごとに描くためのルート区間。 */
+export type RouteSegment = {
+  /** React描画で使う安定ID。 */
+  id: string;
+  /** 同じPolylineで結ぶ緯度経度座標。 */
+  coordinates: RouteCoordinate[];
 };
 
 /** Douglas-Peucker計算用にメートル近似の平面座標を付与した点。 */
@@ -24,6 +33,10 @@ const DEFAULT_REGION: Region = {
 
 /** 徒歩ログの形状を保ちつつ描画点を減らすデフォルト許容誤差。 */
 export const DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS = 10;
+/** この区間速度を超える点間は誤線防止のため同一Polylineで結ばない。 */
+const ROUTE_SEGMENT_MAX_SPEED_MPS = 70;
+/** 長時間途切れた点間は同一Polylineで結ばない。 */
+const ROUTE_SEGMENT_MAX_GAP_MS = 10 * 60 * 1000;
 
 /** 保存済みGPSポイントを地図描画用の緯度経度へ変換する。 */
 export function toRouteCoordinates(points: LocationPoint[]): RouteCoordinate[] {
@@ -36,6 +49,25 @@ export function toRenderRouteCoordinates(
   toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS,
 ): RouteCoordinate[] {
   return simplifyRouteCoordinates(toRouteCoordinates(points), toleranceMeters);
+}
+
+/**
+ * 保存済みGPSポイントから異常区間を分割した描画用ルートを作る。
+ *
+ * @param points - 保存済みGPSポイント。
+ * @param toleranceMeters - segment単位の簡略化許容誤差。
+ * @returns 2点以上を持つ描画用ルート区間。
+ */
+export function toRenderRouteSegments(
+  points: LocationPoint[],
+  toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS,
+): RouteSegment[] {
+  return splitRoutePoints(points)
+    .map((segment, index) => ({
+      id: `${segment[0].recordedAt}-${index}`,
+      coordinates: simplifyRouteCoordinates(toRouteCoordinates(segment), toleranceMeters),
+    }))
+    .filter((segment) => segment.coordinates.length > 1);
 }
 
 /** Douglas-Peucker法でルート形状を保ちながら座標数を減らす。 */
@@ -84,6 +116,19 @@ export function filterRouteCoordinatesByRegion(
   });
 }
 
+/**
+ * 表示範囲とその周辺に関係するルート区間だけを残す。
+ *
+ * @param segments - 分割済みルート区間。
+ * @param region - 現在の表示範囲。
+ * @returns 表示範囲に関係する2点以上のルート区間。
+ */
+export function filterRouteSegmentsByRegion(segments: RouteSegment[], region: Region | null): RouteSegment[] {
+  return segments
+    .map((segment) => ({ ...segment, coordinates: filterRouteCoordinatesByRegion(segment.coordinates, region) }))
+    .filter((segment) => segment.coordinates.length > 1);
+}
+
 /** GPSポイント群が収まる初期表示範囲を作る。 */
 export function createInitialRegion(points: LocationPoint[]): Region {
   if (points.length === 0) {
@@ -105,6 +150,26 @@ export function createInitialRegion(points: LocationPoint[]): Region {
     latitudeDelta,
     longitudeDelta,
   };
+}
+
+/** GPSポイントを異常な時間差・速度差の境界で分割する。 */
+function splitRoutePoints(points: LocationPoint[]): LocationPoint[][] {
+  return points.reduce<LocationPoint[][]>((segments, point) => {
+    const currentSegment = segments.at(-1);
+    const previous = currentSegment?.at(-1);
+    const timeGapMs = previous ? Date.parse(point.recordedAt) - Date.parse(previous.recordedAt) : 0;
+    const isAbnormal =
+      previous != null &&
+      (timeGapMs > ROUTE_SEGMENT_MAX_GAP_MS || estimateAcceptedSegmentSpeedMps(previous, point) > ROUTE_SEGMENT_MAX_SPEED_MPS);
+
+    if (!currentSegment || isAbnormal) {
+      segments.push([point]);
+    } else {
+      currentSegment.push(point);
+    }
+
+    return segments;
+  }, []);
 }
 
 /** 緯度経度を距離誤差計算しやすいメートル近似の平面座標へ投影する。 */

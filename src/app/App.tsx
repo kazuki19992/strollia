@@ -144,7 +144,7 @@ export default function App() {
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
-  const { renderRouteCoordinates, visibleRouteCoordinates, initialRegion, distance } = useMapRouteState(
+  const { renderRouteCoordinates, visibleRouteSegments, initialRegion, distance } = useMapRouteState(
     points,
     dailyLogs,
     visibleRegion,
@@ -740,7 +740,7 @@ export default function App() {
             userLocationIcon={userLocationIcon}
             isFollowingUserLocation={isFollowingUserLocation}
             userCoordinate={userCoordinate}
-            visibleRouteCoordinates={visibleRouteCoordinates}
+            visibleRouteSegments={visibleRouteSegments}
             routeLineStyle={routeLineStyle}
             showPhotosOnMap={showPhotosOnMap}
             isUpdatingPhotoSetting={isUpdatingPhotoSetting}

@@ -282,10 +282,13 @@ from-to エクスポートでは `recorded_at` 範囲検索を使う。
 削除対象は以下とする。
 
 - `location_points`
+- `location_point_admin_areas`
 - `daily_logs`
 - `visited_admin_areas`
 - `achievement_unlocks`
 - `achievement_notification_queue`
+
+`location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
 
 アプリ設定を保持する `app_settings` は、画面表示設定や開発フラグ確認状態などを含むため、初期実装では削除対象外とする。
 

@@ -15,6 +15,12 @@ export type SaveFilterOptions = {
   absoluteMaxAccuracyMeters?: number;
 };
 
+/**
+ * 取得時刻を持つ場合がある保存判定用座標。
+ *
+ * `TimedCoordinateLike` は `CoordinateLike` に取得時刻を添えるが、
+ * 上流データや既存レコードには時刻がない場合もあるため `recordedAt` は任意にする。
+ */
 type TimedCoordinateLike = CoordinateLike & {
   recordedAt?: string;
 };

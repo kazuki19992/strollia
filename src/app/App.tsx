@@ -83,6 +83,7 @@ import { useMapRouteState } from './hooks/useMapRouteState';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
+import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { getNextMapType } from './mapType';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
@@ -301,8 +302,8 @@ export default function App() {
         onPress: () => {
           deleteAllUserData()
             .then(async () => {
-              await refreshData();
-              setMessage('保存済みデータをすべて削除しました。');
+              await refreshDeletedUserDataState(refreshData, refreshAchievementState);
+              setMessage(DELETE_ALL_DATA_SUCCESS_MESSAGE);
             })
             .catch((error: unknown) => {
               Alert.alert('削除失敗', error instanceof Error ? error.message : 'データを削除できませんでした。');
@@ -310,7 +311,7 @@ export default function App() {
         },
       },
     ]);
-  }, [refreshData]);
+  }, [refreshAchievementState, refreshData]);
 
   /** 画面ON維持設定をUI状態とSQLiteの両方へ反映する。 */
   const updateKeepScreenAwake = useCallback(async (enabled: boolean): Promise<void> => {

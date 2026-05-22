@@ -2,7 +2,7 @@ import { Animated, Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
 import { createStyles } from '../../appStyles';
-import { MapBottomDashboard, METER_CLUSTER_BACKGROUND_PATH } from '../MapBottomDashboard';
+import { getSpeedMeterAppearance, MapBottomDashboard, METER_CLUSTER_BACKGROUND_PATH } from '../MapBottomDashboard';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -88,5 +88,13 @@ describe('マップ下部ダッシュボード', () => {
     expect(texts).toContain('標準マップ');
     expect(texts).toContain('航空写真');
     expect(texts).toContain('マップ上に写真を表示');
+  });
+});
+
+describe('マップ下部ダッシュボードの速度帯', () => {
+  test('速度帯を30km/hと150km/hで切り替える', () => {
+    expect(getSpeedMeterAppearance(29.9, '#123456').color).toBe('#39d9ff');
+    expect(getSpeedMeterAppearance(30, '#123456').color).toBe('#ffb22e');
+    expect(getSpeedMeterAppearance(150, '#123456').color).toBe('#ff75f6');
   });
 });

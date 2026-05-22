@@ -7,6 +7,7 @@ import { useState, type ReactNode } from 'react';
 import type { AreaLabel } from '../areaName';
 import type { AppStyles } from '../appStyles';
 import type { AppTheme } from '../../theme/theme';
+import { classifyMovementSpeed, FAST_SPEED_MIN_KMH, VEHICLE_SPEED_MIN_KMH } from '../../features/location/locationSpeed';
 
 /** マップ下部ダッシュボードのprops。 */
 export type MapBottomDashboardProps = {
@@ -309,17 +310,18 @@ export function getSpeedMeterArcSegments(progressPercent: number): SpeedMeterArc
 /** スピードメーターの色とゲージ幅を速度から決める。 */
 export function getSpeedMeterAppearance(speedKmh: number, fallbackColor: string): { color: string; progressPercent: number } {
   const normalizedSpeed = Math.max(0, speedKmh);
+  const speedBand = classifyMovementSpeed(normalizedSpeed);
 
-  if (normalizedSpeed >= 55) {
+  if (speedBand === 'fast') {
     return { color: '#ff75f6', progressPercent: Math.min((normalizedSpeed / 400) * 100, 100) };
   }
 
-  if (normalizedSpeed >= 8) {
-    return { color: '#ffb22e', progressPercent: Math.min((normalizedSpeed / 54) * 100, 100) };
+  if (speedBand === 'vehicle') {
+    return { color: '#ffb22e', progressPercent: Math.min((normalizedSpeed / FAST_SPEED_MIN_KMH) * 100, 100) };
   }
 
   if (normalizedSpeed >= 1) {
-    return { color: '#39d9ff', progressPercent: Math.min((normalizedSpeed / 7) * 100, 100) };
+    return { color: '#39d9ff', progressPercent: Math.min((normalizedSpeed / VEHICLE_SPEED_MIN_KMH) * 100, 100) };
   }
 
   return { color: brightenColor(fallbackColor), progressPercent: 0 };

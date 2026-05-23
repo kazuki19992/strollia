@@ -54,12 +54,13 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     await deleteAllUserData();
 
     expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM achievement_notification_queue');
-    expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_unlocks');
-    expect(db.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM visited_admin_areas');
-    expect(db.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM location_point_admin_areas');
-    expect(db.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_points');
-    expect(db.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM daily_logs');
+    expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM visited_cells');
+    expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_notification_queue');
+    expect(db.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');
+    expect(db.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM visited_admin_areas');
+    expect(db.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
+    expect(db.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_points');
+    expect(db.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM daily_logs');
   });
 });
 

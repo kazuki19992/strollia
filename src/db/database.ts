@@ -90,6 +90,19 @@ export async function initializeDatabase(): Promise<void> {
       UNIQUE(achievement_id)
     );
 
+    CREATE TABLE IF NOT EXISTS visited_cells (
+      cell_id TEXT PRIMARY KEY,
+      cell_size_meters INTEGER NOT NULL,
+      x INTEGER NOT NULL,
+      y INTEGER NOT NULL,
+      first_visited_at TEXT NOT NULL,
+      last_visited_at TEXT NOT NULL,
+      visit_count INTEGER NOT NULL DEFAULT 1,
+      source TEXT NOT NULL DEFAULT 'gps',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 
@@ -116,5 +129,11 @@ export async function initializeDatabase(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_achievement_notification_queue_delivered_push
       ON achievement_notification_queue(delivered_push_at);
+
+    CREATE INDEX IF NOT EXISTS idx_visited_cells_xy
+      ON visited_cells(x, y);
+
+    CREATE INDEX IF NOT EXISTS idx_visited_cells_last_visited_at
+      ON visited_cells(last_visited_at);
   `);
 }

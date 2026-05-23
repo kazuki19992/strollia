@@ -98,7 +98,26 @@ GPX / KML エクスポート履歴を保存するテーブル。
 | `point_count` | INTEGER | 出力対象の記録点数 |
 | `created_at` | TEXT | エクスポート日時 |
 
-### 4.5 `import_history`
+### 4.5 `visited_cells`
+
+メインマップの Visited Grid Overlay 表示に使う訪問済みセルを保存するテーブル。
+
+保存粒度は50mセルのみとし、表示時に100m、200m、500m、1km相当へ集約する。
+
+| カラム | 型 | 説明 |
+| --- | --- | --- |
+| `cell_id` | TEXT | 主キー。形式は `50:x:y` |
+| `cell_size_meters` | INTEGER | 保存セルサイズ。当面は50 |
+| `x` | INTEGER | Web Mercatorメートル座標をセルサイズで割ったX番号 |
+| `y` | INTEGER | Web Mercatorメートル座標をセルサイズで割ったY番号 |
+| `first_visited_at` | TEXT | 初回訪問日時 |
+| `last_visited_at` | TEXT | 最終訪問日時 |
+| `visit_count` | INTEGER | 訪問回数 |
+| `source` | TEXT | 取得元。例: `gps` |
+| `created_at` | TEXT | 作成日時 |
+| `updated_at` | TEXT | 更新日時 |
+
+### 4.6 `import_history`
 
 GPX / KML インポート履歴を保存するテーブル。
 
@@ -113,7 +132,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `skipped_point_count` | INTEGER | 重複などでスキップした記録点数 |
 | `created_at` | TEXT | インポート日時 |
 
-### 4.6 `photo_assets`（任意機能）
+### 4.7 `photo_assets`（任意機能）
 
 ジオタグ付き写真の表示に必要なメタデータを保存するテーブル。
 
@@ -132,7 +151,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `created_at` | TEXT | 作成日時 |
 | `updated_at` | TEXT | 更新日時 |
 
-### 4.7 `app_settings`
+### 4.8 `app_settings`
 
 ユーザー設定を保存するテーブル。
 
@@ -142,7 +161,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `value` | TEXT | JSON文字列などで保存する値 |
 | `updated_at` | TEXT | 更新日時 |
 
-### 4.8 `visited_admin_areas`
+### 4.9 `visited_admin_areas`
 
 実績システムで都道府県・市区町村の訪問状態を判定するため、訪問済み行政区域を保存するテーブル。
 
@@ -160,7 +179,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `created_at` | TEXT | 作成日時 |
 | `updated_at` | TEXT | 更新日時 |
 
-### 4.9 `location_point_admin_areas`
+### 4.10 `location_point_admin_areas`
 
 月次レポートや将来の期間指定集計で、都道府県・市区町村ごとのGPSポイント数を集計するための履歴テーブル。
 
@@ -180,7 +199,7 @@ GPX / KML インポート履歴を保存するテーブル。
 
 月次レポートの「よくいた都道府県」「一番よくいた市区町村」は、このテーブルの対象期間内GPSポイント数を集計して算出する。
 
-### 4.10 `achievement_unlocks`
+### 4.11 `achievement_unlocks`
 
 解除済み実績を保存するテーブル。
 
@@ -191,7 +210,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `progress_value` | REAL NULL | 解除時点の進捗値 |
 | `created_at` | TEXT | 作成日時 |
 
-### 4.11 `achievement_notification_queue`
+### 4.12 `achievement_notification_queue`
 
 実績解除通知とフォアグラウンド演出を安全に扱うためのキュー。
 
@@ -217,6 +236,8 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `achievement_notification_queue(achievement_id)`
 - `achievement_notification_queue(shown_in_app_at, queued_at)`
 - `achievement_notification_queue(delivered_push_at)`
+- `visited_cells(x, y)`
+- `visited_cells(last_visited_at)`
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
@@ -244,8 +265,11 @@ from-to エクスポートでは `recorded_at` 範囲検索を使う。
 - 日単位の簡略化ルート
 - ズームレベル別に間引いたルート
 - 表示期間ごとの集約データ
+- Visited Grid Overlay用の50m visited cell
 
 保存前には raw GPS 観測を品質判定へ通し、accepted 点だけを `location_points` と日別距離へ反映する。
+
+Visited Grid Overlayでは、GPS点が存在した50mセルを `visited_cells` へ保存する。低速時は点が存在したセルだけを開放し、150km/h以上の高速移動時のみvisited cell補完用に点間を補間する。
 
 単発ジャンプ、短い誤軌道区間、停止中ドリフトの疑いがある点は provisional として短期保留し、点列として信頼できた場合のみ accepted 点へ昇格する。accuracy が粗すぎる点や復帰判定でドリフトと判断した点は保存しない。
 

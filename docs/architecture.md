@@ -99,6 +99,7 @@ flowchart TD
   C -->|はい| G[現在地監視開始]
   E -->|はい| G
   G --> H[raw GPS観測を取得]
+  H --> N[visited cellをupsert]
   H --> I[軌跡品質を判定]
   I -->|accepted| J[SQLiteへ保存]
   I -->|provisional| H
@@ -119,6 +120,17 @@ flowchart TD
   B --> C[recorded_at順に並べる]
   C --> D[マップ用座標配列に変換]
   D --> E[Polylineとして描画]
+```
+
+メインマップの全履歴表示では、GPSポイントを直接Polylineへつなぐのではなく、`visited_cells` を表示範囲で取得してGrid Overlayとして描画する。
+
+```mermaid
+flowchart TD
+  A[MapView表示範囲] --> B[表示範囲を50mセルboundsへ変換]
+  B --> C[visited_cellsをx/y範囲検索]
+  C --> D[ズームに応じて50mセルを大セルへ集約]
+  D --> E[Fog opacityをlatitudeDeltaから計算]
+  E --> F[PolygonとしてGrid Overlay描画]
 ```
 
 ## 7. 初期実装の判断

@@ -108,6 +108,29 @@ describe('GPS軌跡品質判定 locationQualityFilter', () => {
     expect(third.context.provisionalPoints).toEqual([]);
   });
 
+  it('accuracyが悪いprovisional点列はacceptedへ昇格しない', () => {
+    const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
+    const first = advanceLocationQualityContext(
+      point(35.01, 139, '2026-05-23T00:00:10.000Z', { accuracy: 45 }),
+      createLocationQualityContext(accepted),
+    );
+    const second = advanceLocationQualityContext(point(35.011, 139, '2026-05-23T00:00:20.000Z', { accuracy: 45 }), first.context);
+    const third = advanceLocationQualityContext(point(35.012, 139, '2026-05-23T00:00:30.000Z', { accuracy: 45 }), second.context);
+
+    expect(third.acceptedPoints).toEqual([]);
+    expect(third.context.provisionalPoints).toHaveLength(3);
+  });
+
+  it('区間速度が大きくばらつくprovisional点列はacceptedへ昇格しない', () => {
+    const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
+    const first = advanceLocationQualityContext(point(35.01, 139, '2026-05-23T00:00:10.000Z'), createLocationQualityContext(accepted));
+    const second = advanceLocationQualityContext(point(35.01005, 139, '2026-05-23T00:00:20.000Z'), first.context);
+    const third = advanceLocationQualityContext(point(35.02, 139, '2026-05-23T00:00:30.000Z'), second.context);
+
+    expect(third.acceptedPoints).toEqual([]);
+    expect(third.context.provisionalPoints).toHaveLength(3);
+  });
+
   it('provisional誤軌道から直前accepted近傍へ戻る場合は保留区間を破棄する', () => {
     const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
     const first = advanceLocationQualityContext(point(35.01, 139, '2026-05-23T00:00:10.000Z'), createLocationQualityContext(accepted));

@@ -8,6 +8,8 @@ import {
   MapBottomDashboard,
   METER_CLUSTER_BACKGROUND_PATH,
   SPEED_METER_ARC_CIRCUMFERENCE,
+  SPEED_METER_ARC_RADIUS,
+  SPEED_METER_ARC_STROKE_WIDTH,
 } from '../MapBottomDashboard';
 
 jest.mock('@expo/vector-icons', () => {
@@ -148,5 +150,9 @@ describe('マップ下部ダッシュボードの速度帯', () => {
     expect(getSpeedMeterArcStroke(100).strokeDashoffset).toBe(0);
     expect(getSpeedMeterArcStroke(150).strokeDashoffset).toBe(0);
     expect(getSpeedMeterArcStroke(-20).strokeDashoffset).toBe(SPEED_METER_ARC_CIRCUMFERENCE);
+  });
+
+  test('連続円弧の外径を黒い背景リングに合わせる', () => {
+    expect(SPEED_METER_ARC_RADIUS + SPEED_METER_ARC_STROKE_WIDTH / 2).toBeCloseTo(49.5);
   });
 });

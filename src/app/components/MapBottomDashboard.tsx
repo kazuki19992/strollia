@@ -235,7 +235,7 @@ function SpeedDial({
             strokeDasharray={arcStroke.strokeDasharray}
             strokeDashoffset={arcStroke.strokeDashoffset}
             strokeLinecap="round"
-            strokeWidth="5"
+            strokeWidth={SPEED_METER_ARC_STROKE_WIDTH}
             testID="speed-meter-progress-arc"
           />
         )}
@@ -298,8 +298,11 @@ function MapDisplayTypeButton({
   );
 }
 
-/** スピードメーター円弧の半径。SVG viewBox内の単位。 */
-export const SPEED_METER_ARC_RADIUS = 43;
+/** スピードメーター円弧の線幅。SVG viewBox内の単位。 */
+export const SPEED_METER_ARC_STROKE_WIDTH = 6;
+
+/** スピードメーター円弧の半径。黒い背景リングの外周に合わせる。 */
+export const SPEED_METER_ARC_RADIUS = 46.5;
 
 /** スピードメーター円弧の円周。 */
 export const SPEED_METER_ARC_CIRCUMFERENCE = 2 * Math.PI * SPEED_METER_ARC_RADIUS;

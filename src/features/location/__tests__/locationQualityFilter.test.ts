@@ -63,6 +63,23 @@ describe('GPS軌跡品質判定 locationQualityFilter', () => {
     });
   });
 
+  it('停止中に別位置へ3点だけドリフトしてもacceptedへ昇格しない', () => {
+    const stationary = [
+      point(35, 139, '2026-05-23T00:00:00.000Z'),
+      point(35.00002, 139, '2026-05-23T00:00:20.000Z'),
+      point(35.00001, 139.00001, '2026-05-23T00:00:40.000Z'),
+    ];
+    const first = advanceLocationQualityContext(
+      point(35.00035, 139, '2026-05-23T00:01:00.000Z'),
+      createLocationQualityContext(stationary),
+    );
+    const second = advanceLocationQualityContext(point(35.00036, 139.00001, '2026-05-23T00:01:20.000Z'), first.context);
+    const third = advanceLocationQualityContext(point(35.00035, 139.00002, '2026-05-23T00:01:40.000Z'), second.context);
+
+    expect(third.acceptedPoints).toEqual([]);
+    expect(third.context.provisionalPoints).toHaveLength(3);
+  });
+
   it('自然なprovisional点列はacceptedへ昇格する', () => {
     const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
     const first = advanceLocationQualityContext(point(35.01, 139, '2026-05-23T00:00:10.000Z'), createLocationQualityContext(accepted));

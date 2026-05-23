@@ -36,6 +36,12 @@ const JUMP_SUSPECT_SPEED_MPS = 70;
 const STATIONARY_CLUSTER_RADIUS_METERS = 25;
 /** 停止クラスタからこの距離以内の散りはドリフトとして落とす。 */
 const STATIONARY_DRIFT_ESCAPE_METERS = 20;
+/** 停止クラスタ離脱をacceptedに昇格するまでに必要な保留点数。 */
+const STATIONARY_ESCAPE_CONFIRMATION_COUNT = 4;
+/** 停止クラスタから十分に離脱したとみなす距離。 */
+const STATIONARY_ESCAPE_MIN_ANCHOR_DISTANCE_METERS = 40;
+/** 停止クラスタ離脱として扱うために必要な保留点列の移動量。 */
+const STATIONARY_ESCAPE_MIN_PATH_LENGTH_METERS = 30;
 /** 保留点を新しい軌道として確定するまでに必要な点数。 */
 const PROVISIONAL_CONFIRMATION_COUNT = 3;
 /** 保留軌道から戻ったとみなす直近accepted点との距離。 */
@@ -157,6 +163,15 @@ function confirmProvisionalTrack(
   decision: Exclude<LocationQualityDecision, { type: 'rejected' }>,
 ): LocationQualityAdvance {
   const provisionalPoints = [...context.provisionalPoints, point];
+  const anchor = context.acceptedPoints.at(-1);
+
+  if (anchor && isStationaryCluster(context.acceptedPoints) && !isReliableStationaryEscapeTrack(anchor, provisionalPoints)) {
+    return {
+      decision,
+      acceptedPoints: [],
+      context: createLocationQualityContext(context.acceptedPoints, provisionalPoints),
+    };
+  }
 
   if (provisionalPoints.length < PROVISIONAL_CONFIRMATION_COUNT) {
     return {
@@ -171,6 +186,28 @@ function confirmProvisionalTrack(
     acceptedPoints: provisionalPoints,
     context: createLocationQualityContext([...context.acceptedPoints, ...provisionalPoints]),
   };
+}
+
+/** 保留点列が停止クラスタから十分に離脱した実移動らしいか判定する。 */
+function isReliableStationaryEscapeTrack(anchor: NewLocationPoint, provisionalPoints: NewLocationPoint[]): boolean {
+  const latest = provisionalPoints.at(-1);
+
+  if (!latest || provisionalPoints.length < STATIONARY_ESCAPE_CONFIRMATION_COUNT) {
+    return false;
+  }
+
+  return (
+    distanceMeters(anchor, latest) >= STATIONARY_ESCAPE_MIN_ANCHOR_DISTANCE_METERS &&
+    totalPathDistanceMeters(provisionalPoints) >= STATIONARY_ESCAPE_MIN_PATH_LENGTH_METERS
+  );
+}
+
+/** 点列内の隣接点距離を合計する。 */
+function totalPathDistanceMeters(points: NewLocationPoint[]): number {
+  return points.reduce((total, point, index) => {
+    const previous = points[index - 1];
+    return previous ? total + distanceMeters(previous, point) : total;
+  }, 0);
 }
 
 /** accepted点が狭い範囲へ留まる停止クラスタか判定する。 */

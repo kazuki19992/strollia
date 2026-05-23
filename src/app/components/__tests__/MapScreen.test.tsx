@@ -8,7 +8,8 @@ import {
   formatDistanceKilometers,
   formatSpeedKmh,
   getSpeedMeterAppearance,
-  getSpeedMeterArcSegments,
+  getSpeedMeterArcStroke,
+  SPEED_METER_ARC_CIRCUMFERENCE,
 } from '../MapBottomDashboard';
 import { MapScreen } from '../MapScreen';
 
@@ -245,14 +246,13 @@ describe('スピードメーター表示ロジック', () => {
   test('距離をkm小数2桁へ変換する', () => {
     expect(formatDistanceKilometers(1234)).toBe('1.23');
   });
-  test('速度進捗に応じて円形スピードメーターの区間を点灯する', () => {
-    const zeroSegments = getSpeedMeterArcSegments(0);
-    const halfSegments = getSpeedMeterArcSegments(50);
+  test('速度進捗に応じて連続円弧の表示長を変える', () => {
+    const zeroStroke = getSpeedMeterArcStroke(0);
+    const halfStroke = getSpeedMeterArcStroke(50);
 
-    expect(zeroSegments).toHaveLength(56);
-    expect(zeroSegments.some((segment) => segment.isActive)).toBe(false);
-    expect(halfSegments.filter((segment) => segment.isActive)).toHaveLength(28);
-    expect(halfSegments[0].angle).toBeLessThan(halfSegments.at(-1)?.angle ?? 0);
+    expect(zeroStroke.strokeDashoffset).toBe(SPEED_METER_ARC_CIRCUMFERENCE);
+    expect(halfStroke.strokeDasharray).toBe(SPEED_METER_ARC_CIRCUMFERENCE);
+    expect(halfStroke.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
   });
 
   test('速度帯に応じてゲージ色と進捗を変える', () => {

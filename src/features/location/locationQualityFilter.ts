@@ -36,8 +36,18 @@ const JUMP_SUSPECT_SPEED_MPS = 70;
 const STATIONARY_CLUSTER_RADIUS_METERS = 25;
 /** 停止クラスタからこの距離以内の散りはドリフトとして落とす。 */
 const STATIONARY_DRIFT_ESCAPE_METERS = 20;
+/** 停止クラスタ離脱をacceptedに昇格するまでに必要な保留点数。 */
+const STATIONARY_ESCAPE_CONFIRMATION_COUNT = 4;
+/** 停止クラスタから十分に離脱したとみなす距離。 */
+const STATIONARY_ESCAPE_MIN_ANCHOR_DISTANCE_METERS = 40;
+/** 停止クラスタ離脱として扱うために必要な保留点列の移動量。 */
+const STATIONARY_ESCAPE_MIN_PATH_LENGTH_METERS = 30;
 /** 保留点を新しい軌道として確定するまでに必要な点数。 */
 const PROVISIONAL_CONFIRMATION_COUNT = 3;
+/** provisional点列をacceptedへ昇格する最大平均accuracy。 */
+const PROVISIONAL_MAX_AVERAGE_ACCURACY_METERS = 35;
+/** provisional点列の区間速度ばらつき許容倍率。 */
+const PROVISIONAL_MAX_SPEED_RATIO = 4;
 /** 保留軌道から戻ったとみなす直近accepted点との距離。 */
 const RETURN_TO_ACCEPTED_RADIUS_METERS = 35;
 
@@ -157,8 +167,17 @@ function confirmProvisionalTrack(
   decision: Exclude<LocationQualityDecision, { type: 'rejected' }>,
 ): LocationQualityAdvance {
   const provisionalPoints = [...context.provisionalPoints, point];
+  const anchor = context.acceptedPoints.at(-1);
 
-  if (provisionalPoints.length < PROVISIONAL_CONFIRMATION_COUNT) {
+  if (anchor && isStationaryCluster(context.acceptedPoints) && !isReliableStationaryEscapeTrack(anchor, provisionalPoints)) {
+    return {
+      decision,
+      acceptedPoints: [],
+      context: createLocationQualityContext(context.acceptedPoints, provisionalPoints),
+    };
+  }
+
+  if (provisionalPoints.length < PROVISIONAL_CONFIRMATION_COUNT || !isReliableProvisionalTrack(provisionalPoints)) {
     return {
       decision,
       acceptedPoints: [],
@@ -171,6 +190,58 @@ function confirmProvisionalTrack(
     acceptedPoints: provisionalPoints,
     context: createLocationQualityContext([...context.acceptedPoints, ...provisionalPoints]),
   };
+}
+
+/** 保留点列が停止クラスタから十分に離脱した実移動らしいか判定する。 */
+function isReliableStationaryEscapeTrack(anchor: NewLocationPoint, provisionalPoints: NewLocationPoint[]): boolean {
+  const latest = provisionalPoints.at(-1);
+
+  if (!latest || provisionalPoints.length < STATIONARY_ESCAPE_CONFIRMATION_COUNT) {
+    return false;
+  }
+
+  return (
+    distanceMeters(anchor, latest) >= STATIONARY_ESCAPE_MIN_ANCHOR_DISTANCE_METERS &&
+    totalPathDistanceMeters(provisionalPoints) >= STATIONARY_ESCAPE_MIN_PATH_LENGTH_METERS
+  );
+}
+
+/** 保留点列が通常の新しい軌道として十分信頼できるか判定する。 */
+function isReliableProvisionalTrack(points: NewLocationPoint[]): boolean {
+  return hasGoodAverageAccuracy(points) && hasStableSegmentSpeeds(points);
+}
+
+/** 点列の平均accuracyが保存に十分か判定する。 */
+function hasGoodAverageAccuracy(points: NewLocationPoint[]): boolean {
+  const averageAccuracy =
+    points.reduce((total, point) => total + (point.accuracy ?? ABSOLUTE_MAX_ACCURACY_METERS), 0) / Math.max(points.length, 1);
+
+  return averageAccuracy <= PROVISIONAL_MAX_AVERAGE_ACCURACY_METERS;
+}
+
+/** 点列内の区間速度が極端にばらつかないか判定する。 */
+function hasStableSegmentSpeeds(points: NewLocationPoint[]): boolean {
+  const speeds = points
+    .slice(1)
+    .map((point, index) => estimateAcceptedSegmentSpeedMps(points[index], point))
+    .filter((speed) => speed > 0);
+
+  if (speeds.length < 2) {
+    return true;
+  }
+
+  const minSpeed = Math.min(...speeds);
+  const maxSpeed = Math.max(...speeds);
+
+  return maxSpeed / minSpeed <= PROVISIONAL_MAX_SPEED_RATIO;
+}
+
+/** 点列内の隣接点距離を合計する。 */
+function totalPathDistanceMeters(points: NewLocationPoint[]): number {
+  return points.reduce((total, point, index) => {
+    const previous = points[index - 1];
+    return previous ? total + distanceMeters(previous, point) : total;
+  }, 0);
 }
 
 /** accepted点が狭い範囲へ留まる停止クラスタか判定する。 */

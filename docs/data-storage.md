@@ -257,6 +257,8 @@ from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
 停止状態は速度帯とは別に stationary cluster で扱う。初期実装では水平方向の位置精度が80mを超える観測、5m未満の重複またはジッター、直近 accepted 点列が狭い範囲に留まる停止中のドリフトを保存しない。
 
+停止クラスタから離れた観測は即保存せず、stationary escape として通常より厳しい provisional 判定へ回す。点数だけでは accepted へ昇格せず、anchor からの離脱距離、点列の移動量、accuracy、区間速度の安定性を確認する。
+
 `expo-location` の要求精度は `Location.Accuracy.High` とし、`distanceInterval` は5mに設定して停止中のコールバック頻度を抑える。
 
 描画時は生データを直接Polylineへ渡さず、簡略化した描画用データを使う。

@@ -307,6 +307,35 @@ export function getSpeedMeterArcSegments(progressPercent: number): SpeedMeterArc
   }));
 }
 
+/** スピードメーター円弧の半径。SVG viewBox内の単位。 */
+export const SPEED_METER_ARC_RADIUS = 43;
+
+/** スピードメーター円弧の円周。 */
+export const SPEED_METER_ARC_CIRCUMFERENCE = 2 * Math.PI * SPEED_METER_ARC_RADIUS;
+
+/** 連続円弧の描画に使うdash値。 */
+export type SpeedMeterArcStroke = {
+  /** 表示対象円周長。 */
+  strokeDasharray: number;
+  /** 現在進捗に応じて隠す円周長。 */
+  strokeDashoffset: number;
+};
+
+/**
+ * 速度ゲージ進捗からSVG円弧のdash値を作る。
+ *
+ * @param progressPercent - 速度帯の上限に対する0〜100の進捗。
+ * @returns SVG Circleに渡すdash値。
+ */
+export function getSpeedMeterArcStroke(progressPercent: number): SpeedMeterArcStroke {
+  const clampedProgress = Math.min(Math.max(progressPercent, 0), 100);
+
+  return {
+    strokeDasharray: SPEED_METER_ARC_CIRCUMFERENCE,
+    strokeDashoffset: SPEED_METER_ARC_CIRCUMFERENCE * (1 - clampedProgress / 100),
+  };
+}
+
 /** スピードメーターの色とゲージ幅を速度から決める。 */
 export function getSpeedMeterAppearance(speedKmh: number, fallbackColor: string): { color: string; progressPercent: number } {
   const normalizedSpeed = Math.max(0, speedKmh);

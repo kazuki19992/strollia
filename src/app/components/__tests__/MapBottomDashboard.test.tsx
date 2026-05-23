@@ -2,7 +2,13 @@ import { Animated, Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
 import { createStyles } from '../../appStyles';
-import { getSpeedMeterAppearance, MapBottomDashboard, METER_CLUSTER_BACKGROUND_PATH } from '../MapBottomDashboard';
+import {
+  getSpeedMeterAppearance,
+  getSpeedMeterArcStroke,
+  MapBottomDashboard,
+  METER_CLUSTER_BACKGROUND_PATH,
+  SPEED_METER_ARC_CIRCUMFERENCE,
+} from '../MapBottomDashboard';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -108,5 +114,26 @@ describe('マップ下部ダッシュボードの速度帯', () => {
   test('速度ゲージ進捗を0〜100%に収める', () => {
     expect(getSpeedMeterAppearance(0, '#123456').progressPercent).toBe(0);
     expect(getSpeedMeterAppearance(999, '#123456').progressPercent).toBe(100);
+  });
+
+  test('速度帯ごとの完全円速度で進捗を計算する', () => {
+    expect(getSpeedMeterAppearance(15, '#123456').progressPercent).toBe(50);
+    expect(getSpeedMeterAppearance(29.9, '#123456').progressPercent).toBeCloseTo(99.67);
+    expect(getSpeedMeterAppearance(30, '#123456').progressPercent).toBe(20);
+    expect(getSpeedMeterAppearance(100, '#123456').progressPercent).toBeCloseTo(66.67);
+    expect(getSpeedMeterAppearance(150, '#123456').progressPercent).toBe(37.5);
+    expect(getSpeedMeterAppearance(400, '#123456').progressPercent).toBe(100);
+    expect(getSpeedMeterAppearance(500, '#123456').progressPercent).toBe(100);
+  });
+
+  test('連続円弧のdash値を0〜100%に丸めて計算する', () => {
+    expect(getSpeedMeterArcStroke(0)).toEqual({
+      strokeDasharray: SPEED_METER_ARC_CIRCUMFERENCE,
+      strokeDashoffset: SPEED_METER_ARC_CIRCUMFERENCE,
+    });
+    expect(getSpeedMeterArcStroke(50).strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
+    expect(getSpeedMeterArcStroke(100).strokeDashoffset).toBe(0);
+    expect(getSpeedMeterArcStroke(150).strokeDashoffset).toBe(0);
+    expect(getSpeedMeterArcStroke(-20).strokeDashoffset).toBe(SPEED_METER_ARC_CIRCUMFERENCE);
   });
 });

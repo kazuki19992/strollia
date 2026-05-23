@@ -80,6 +80,24 @@ describe('GPS軌跡品質判定 locationQualityFilter', () => {
     expect(third.context.provisionalPoints).toHaveLength(3);
   });
 
+  it('停止中に一方向へ自然に離脱した点列はacceptedへ昇格する', () => {
+    const stationary = [
+      point(35, 139, '2026-05-23T00:00:00.000Z'),
+      point(35.00002, 139, '2026-05-23T00:00:20.000Z'),
+      point(35.00001, 139.00001, '2026-05-23T00:00:40.000Z'),
+    ];
+    const first = advanceLocationQualityContext(
+      point(35.00028, 139, '2026-05-23T00:01:00.000Z'),
+      createLocationQualityContext(stationary),
+    );
+    const second = advanceLocationQualityContext(point(35.00042, 139, '2026-05-23T00:01:20.000Z'), first.context);
+    const third = advanceLocationQualityContext(point(35.00056, 139, '2026-05-23T00:01:40.000Z'), second.context);
+    const fourth = advanceLocationQualityContext(point(35.0007, 139, '2026-05-23T00:02:00.000Z'), third.context);
+
+    expect(fourth.acceptedPoints).toHaveLength(4);
+    expect(fourth.context.provisionalPoints).toEqual([]);
+  });
+
   it('自然なprovisional点列はacceptedへ昇格する', () => {
     const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
     const first = advanceLocationQualityContext(point(35.01, 139, '2026-05-23T00:00:10.000Z'), createLocationQualityContext(accepted));

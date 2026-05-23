@@ -31,6 +31,7 @@ jest.mock('react-native-maps', () => {
     __esModule: true,
     default: View,
     Marker: View,
+    Polygon: View,
     Polyline: View,
   };
 });
@@ -55,6 +56,8 @@ function createProps() {
     userLocationIcon: { useNativeUserLocation: true, customIconId: null },
     isFollowingUserLocation: true,
     userCoordinate: null,
+    visitedGridCells: [],
+    gridOverlayOpacity: 0.3,
     visibleRouteSegments: [],
     routeLineStyle: { color: lightTheme.colors.mapLine, width: 4, glow: false },
     showPhotosOnMap: false,
@@ -234,6 +237,34 @@ describe('地図画面 MapScreen', () => {
 
     const polylines = renderer.root.findAll((node: any) => Array.isArray(node.props.coordinates));
     expect(new Set(polylines.map((node: any) => node.props.coordinates)).size).toBe(2);
+  });
+
+  test('visited grid overlayをPolygonで描く', () => {
+    const props = {
+      ...createProps(),
+      visitedGridCells: [
+        {
+          id: '50:1:2',
+          coordinates: [
+            { latitude: 35, longitude: 139 },
+            { latitude: 35, longitude: 139.001 },
+            { latitude: 35.001, longitude: 139.001 },
+            { latitude: 35.001, longitude: 139 },
+          ],
+          fillColor: 'rgba(136, 240, 194, 0.3)',
+          strokeColor: 'rgba(136, 240, 194, 0.6)',
+        },
+      ],
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const gridCells = renderer.root.findAll((node: any) => node.props.testID === 'visited-grid-cell' && node.props.fillColor);
+    expect(gridCells.length).toBeGreaterThan(0);
+    expect(gridCells[0].props.fillColor).toBe('rgba(136, 240, 194, 0.3)');
   });
 });
 

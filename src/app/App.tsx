@@ -61,6 +61,11 @@ import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAcce
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
+import { aggregateVisitedCells, getDisplayCellSizeMeters } from '../features/location/grid/gridAggregation';
+import { getGridBoundsForRegion } from '../features/location/grid/gridCell';
+import { getVisitedCellsInBounds } from '../features/location/visitedCellRepository';
+import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '../features/map/gridOverlay';
+import { GRID_OVERLAY_CONFIG } from '../features/map/config/gridOverlayConfig';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import { toLocalDate } from '../utils/date';
 import type { LatLng, MapType } from 'react-native-maps';
@@ -138,6 +143,7 @@ export default function App() {
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
+  const [visitedGridCells, setVisitedGridCells] = useState<VisitedGridOverlayCell[]>([]);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedRouteLineStyleId, setSelectedRouteLineStyleId] = useState<RouteLineStyleId>(DEFAULT_ROUTE_LINE_STYLE_ID);
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
@@ -152,6 +158,8 @@ export default function App() {
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const currentSpeedKmh = useReliableCurrentSpeed(points);
+  const gridOverlayRegion = visibleRegion ?? initialRegion;
+  const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
   const todayDistanceMeters = useMemo(() => {
     const today = toLocalDate(new Date());
@@ -455,6 +463,27 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [appState, isReady, refreshDataAndEvaluateAchievementsIfDialogIdle]);
 
+  /**
+   * 表示範囲に含まれるvisited cellを読み込み、現在のズームに合う表示セルへ集約する。
+   */
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    const bounds = getGridBoundsForRegion(gridOverlayRegion);
+    const displayCellSizeMeters = getDisplayCellSizeMeters(gridOverlayRegion, GRID_OVERLAY_CONFIG);
+
+    getVisitedCellsInBounds(bounds)
+      .then((cells) => {
+        const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
+        setVisitedGridCells(toVisitedGridOverlayCells(aggregatedCells, gridOverlayOpacity, GRID_OVERLAY_CONFIG));
+      })
+      .catch((error: unknown) => {
+        console.warn('Failed to refresh visited grid cells:', error);
+      });
+  }, [gridOverlayOpacity, gridOverlayRegion, isReady, points.length]);
+
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });
   useAchievementDialogEffects({
     activeAchievementNotification,
@@ -739,6 +768,8 @@ export default function App() {
             userLocationIcon={userLocationIcon}
             isFollowingUserLocation={isFollowingUserLocation}
             userCoordinate={userCoordinate}
+            visitedGridCells={visitedGridCells}
+            gridOverlayOpacity={gridOverlayOpacity}
             visibleRouteSegments={visibleRouteSegments}
             routeLineStyle={routeLineStyle}
             showPhotosOnMap={showPhotosOnMap}

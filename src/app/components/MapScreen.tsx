@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Pressable, SafeAreaView, Text, View } from 'react-native';
-import MapView, { Marker, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Marker, Polygon, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import type { RefObject } from 'react';
 
@@ -8,6 +8,7 @@ import { MapPhotoCluster } from '../../features/photos/photoClusters';
 import { AreaLabel } from '../areaName';
 import { AppTheme } from '../../theme/theme';
 import { RouteSegment } from '../../features/map/routeMapper';
+import { VisitedGridOverlayCell } from '../../features/map/gridOverlay';
 import { LocationPoint } from '../../types/gps';
 import { AppStyles } from '../appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
@@ -49,6 +50,10 @@ export type MapScreenProps = {
   isFollowingUserLocation: boolean;
   /** 現在地座標。 */
   userCoordinate: LatLng | null;
+  /** 表示するvisited grid cell。 */
+  visitedGridCells: VisitedGridOverlayCell[];
+  /** Grid Overlay全体のopacity。 */
+  gridOverlayOpacity: number;
   /** 表示対象の分割済みルート区間。 */
   visibleRouteSegments: RouteSegment[];
   /** ルート線スタイル。 */
@@ -115,6 +120,8 @@ export function MapScreen({
   userLocationIcon,
   isFollowingUserLocation,
   userCoordinate,
+  visitedGridCells,
+  gridOverlayOpacity,
   visibleRouteSegments,
   routeLineStyle,
   showPhotosOnMap,
@@ -143,6 +150,8 @@ export function MapScreen({
   onRequestLocationPermission,
   onRecenterOnUserLocation,
 }: MapScreenProps) {
+  const shouldRenderVisitedGrid = gridOverlayOpacity > 0;
+
   return (
     <View style={styles.container}>
       <MapView
@@ -159,6 +168,19 @@ export function MapScreen({
         legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
         mapPadding={{ bottom: 128, left: 0, right: 0, top: 8 }}
       >
+        {shouldRenderVisitedGrid &&
+          visitedGridCells.map((cell) => (
+            <Polygon
+              key={cell.id}
+              coordinates={cell.coordinates}
+              fillColor={cell.fillColor}
+              strokeColor={cell.strokeColor}
+              strokeWidth={1}
+              testID="visited-grid-cell"
+              tappable={false}
+              zIndex={1}
+            />
+          ))}
         {routeLineStyle.glow &&
           visibleRouteSegments.map((segment) => (
             <Polyline
@@ -166,10 +188,11 @@ export function MapScreen({
               coordinates={segment.coordinates}
               strokeColor={routeLineStyle.color}
               strokeWidth={routeLineStyle.width + 8}
+              zIndex={2}
             />
           ))}
         {visibleRouteSegments.map((segment) => (
-          <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} />
+          <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} zIndex={2} />
         ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>

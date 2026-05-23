@@ -93,8 +93,20 @@ describe('マップ下部ダッシュボード', () => {
 
 describe('マップ下部ダッシュボードの速度帯', () => {
   test('速度帯を30km/hと150km/hで切り替える', () => {
-    expect(getSpeedMeterAppearance(29.9, '#123456').color).toBe('#39d9ff');
-    expect(getSpeedMeterAppearance(30, '#123456').color).toBe('#ffb22e');
-    expect(getSpeedMeterAppearance(150, '#123456').color).toBe('#ff75f6');
+    const lowSpeed = getSpeedMeterAppearance(29.9, '#123456');
+    const vehicleSpeed = getSpeedMeterAppearance(30, '#123456');
+    const fastSpeed = getSpeedMeterAppearance(150, '#123456');
+
+    expect(lowSpeed.color).toBe('#39d9ff');
+    expect(lowSpeed.progressPercent).toBeCloseTo(99.67);
+    expect(vehicleSpeed.color).toBe('#ffb22e');
+    expect(vehicleSpeed.progressPercent).toBe(20);
+    expect(fastSpeed.color).toBe('#ff75f6');
+    expect(fastSpeed.progressPercent).toBe(37.5);
+  });
+
+  test('速度ゲージ進捗を0〜100%に収める', () => {
+    expect(getSpeedMeterAppearance(0, '#123456').progressPercent).toBe(0);
+    expect(getSpeedMeterAppearance(999, '#123456').progressPercent).toBe(100);
   });
 });

@@ -76,7 +76,7 @@ describe('最近のGPSポイント取得 getRecentLocationPoints', () => {
 
     const recentPoints = await getRecentLocationPoints(2);
 
-    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('ORDER BY recorded_at DESC'), 2);
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('ORDER BY recorded_at DESC, id DESC'), 2);
     expect(recentPoints.map((item) => item.recordedAt)).toEqual([
       '2026-05-23T00:00:10.000Z',
       '2026-05-23T00:00:20.000Z',

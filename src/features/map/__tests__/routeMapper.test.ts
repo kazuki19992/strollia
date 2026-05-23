@@ -2,6 +2,7 @@ import { LocationPoint } from '../../../types/gps';
 import {
   createInitialRegion,
   filterRouteCoordinatesByRegion,
+  filterRouteSegmentsByRegion,
   simplifyRouteCoordinates,
   toRenderRouteSegments,
   toRenderRouteCoordinates,
@@ -75,13 +76,21 @@ describe('ルート描画変換', () => {
         point(35, 139, '2026-05-23T00:00:00.000Z'),
         point(35.00001, 139.00001, '2026-05-23T00:00:10.000Z'),
         point(35.001, 139.001, '2026-05-23T00:00:20.000Z'),
+        point(36, 140, '2026-05-23T00:15:00.000Z'),
+        point(36.00001, 140.00001, '2026-05-23T00:15:10.000Z'),
+        point(36.001, 140.001, '2026-05-23T00:15:20.000Z'),
       ],
       10,
     );
 
+    expect(segments).toHaveLength(2);
     expect(segments[0].coordinates).toEqual([
       { latitude: 35, longitude: 139 },
       { latitude: 35.001, longitude: 139.001 },
+    ]);
+    expect(segments[1].coordinates).toEqual([
+      { latitude: 36, longitude: 140 },
+      { latitude: 36.001, longitude: 140.001 },
     ]);
   });
 
@@ -101,6 +110,41 @@ describe('ルート描画変換', () => {
     };
 
     expect(filterRouteCoordinatesByRegion(route, region, 0)).toEqual([route[0], route[1], route[2], route[3]]);
+  });
+
+  it('表示範囲に関係するRouteSegmentだけを残す', () => {
+    const segments = [
+      {
+        id: 'inside',
+        coordinates: [
+          { latitude: 35, longitude: 139 },
+          { latitude: 35.005, longitude: 139.005 },
+        ],
+      },
+      {
+        id: 'outside',
+        coordinates: [
+          { latitude: 36, longitude: 140 },
+          { latitude: 36.005, longitude: 140.005 },
+        ],
+      },
+      {
+        id: 'boundary',
+        coordinates: [
+          { latitude: 35.01, longitude: 139.01 },
+          { latitude: 35.02, longitude: 139.02 },
+        ],
+      },
+    ];
+    const region = {
+      latitude: 35,
+      longitude: 139,
+      latitudeDelta: 0.02,
+      longitudeDelta: 0.02,
+    };
+
+    expect(filterRouteSegmentsByRegion(segments, region).map((segment) => segment.id)).toEqual(['inside', 'boundary']);
+    expect(filterRouteSegmentsByRegion([], region)).toEqual([]);
   });
 
   it('すべてのポイントを含む初期表示範囲を作る', () => {

@@ -138,7 +138,7 @@ export async function getRecentLocationPoints(limit: number): Promise<LocationPo
   const points = await db.getAllAsync<LocationPoint>(
     `SELECT ${pointColumns}
      FROM location_points
-     ORDER BY recorded_at DESC
+     ORDER BY recorded_at DESC, id DESC
      LIMIT ?`,
     limit,
   );

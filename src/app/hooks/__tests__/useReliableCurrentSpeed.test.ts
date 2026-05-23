@@ -31,4 +31,8 @@ describe('信頼済み点の現在速度 useReliableCurrentSpeed', () => {
   it('点が足りない場合は停止表示にする', () => {
     expect(calculateReliableCurrentSpeedKmh([])).toBe(0);
   });
+
+  it('点が1件だけの場合も停止表示にする', () => {
+    expect(calculateReliableCurrentSpeedKmh([point(35, 139, '2026-05-23T00:00:00.000Z')])).toBe(0);
+  });
 });

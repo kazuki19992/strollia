@@ -86,7 +86,7 @@ import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
-import { useReliableCurrentSpeed } from './hooks/useReliableCurrentSpeed';
+import { toDisplaySpeedKmh } from './hooks/useRawLocationSpeed';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
@@ -144,6 +144,7 @@ export default function App() {
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [visitedGridCells, setVisitedGridCells] = useState<VisitedGridOverlayCell[]>([]);
+  const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedRouteLineStyleId, setSelectedRouteLineStyleId] = useState<RouteLineStyleId>(DEFAULT_ROUTE_LINE_STYLE_ID);
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
@@ -157,7 +158,6 @@ export default function App() {
   );
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
-  const currentSpeedKmh = useReliableCurrentSpeed(points);
   const gridOverlayRegion = visibleRegion ?? initialRegion;
   const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
@@ -511,6 +511,11 @@ export default function App() {
 
     const nextCoordinate = { latitude: coordinate.latitude, longitude: coordinate.longitude };
     setUserCoordinate(nextCoordinate);
+    const nextSpeedKmh = toDisplaySpeedKmh(coordinate.speed);
+
+    if (nextSpeedKmh != null) {
+      setCurrentSpeedKmh(nextSpeedKmh);
+    }
 
     if (isFollowingUserLocation) {
       centerOnCoordinate(nextCoordinate, false);

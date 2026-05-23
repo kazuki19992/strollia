@@ -1173,17 +1173,10 @@ export function createStyles(theme: AppTheme) {
       zIndex: 1,
       width: 104,
     },
-    speedDashboardArcFrame: {
-      alignItems: 'center',
-      height: 94,
-      justifyContent: 'flex-start',
+    speedDashboardArcSvg: {
+      height: 104,
       position: 'absolute',
-      width: 94,
-    },
-    speedDashboardArcSegment: {
-      borderRadius: 999,
-      height: 8,
-      width: 4,
+      width: 104,
     },
     speedDashboardDialContent: {
       alignItems: 'center',

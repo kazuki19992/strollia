@@ -1,7 +1,7 @@
 import { Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { Alert, Animated, Pressable, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useState, type ReactNode } from 'react';
 
 import type { AreaLabel } from '../areaName';
@@ -72,7 +72,6 @@ export function MapBottomDashboard({
 }: MapBottomDashboardProps) {
   const [isMapDisplayPanelVisible, setIsMapDisplayPanelVisible] = useState(false);
   const speedMeter = getSpeedMeterAppearance(currentSpeedKmh, theme.colors.primary);
-  const speedArcSegments = getSpeedMeterArcSegments(speedMeter.progressPercent);
   const odometerParts = formatDistanceKilometers(distance).split('.');
   const todayDistanceParts = formatDistanceKilometers(todayDistance).split('.');
 
@@ -121,7 +120,7 @@ export function MapBottomDashboard({
             </View>
           </View>
 
-          <SpeedDial arcSegments={speedArcSegments} currentSpeedKmh={currentSpeedKmh} speedColor={speedMeter.color} styles={styles} />
+          <SpeedDial currentSpeedKmh={currentSpeedKmh} progressPercent={speedMeter.progressPercent} speedColor={speedMeter.color} styles={styles} />
         </View>
 
         <View style={styles.dashboardActionsRow}>
@@ -207,24 +206,40 @@ export const METER_CLUSTER_BACKGROUND_PATH =
 
 /** 数字と速度リングを持つ円形スピードメーターを描画する。 */
 function SpeedDial({
-  arcSegments,
   currentSpeedKmh,
+  progressPercent,
   speedColor,
   styles,
 }: {
-  arcSegments: SpeedMeterArcSegment[];
   currentSpeedKmh: number;
+  progressPercent: number;
   speedColor: string;
   styles: AppStyles;
 }) {
+  const arcStroke = getSpeedMeterArcStroke(progressPercent);
+
   return (
     <View style={styles.speedDashboardDial}>
       <View style={styles.speedDashboardRingBase} />
-      {arcSegments.map((segment) => (
-        <View key={segment.angle} style={[styles.speedDashboardArcFrame, { transform: [{ rotate: `${segment.angle}deg` }] }]}>
-          {segment.isActive && <View style={[styles.speedDashboardArcSegment, { backgroundColor: speedColor }]} />}
-        </View>
-      ))}
+      <Svg accessibilityElementsHidden focusable={false} pointerEvents="none" style={styles.speedDashboardArcSvg} viewBox="0 0 104 104">
+        {progressPercent > 0 && (
+          <Circle
+            cx="52"
+            cy="52"
+            fill="none"
+            originX="52"
+            originY="52"
+            r={SPEED_METER_ARC_RADIUS}
+            rotation="-90"
+            stroke={speedColor}
+            strokeDasharray={arcStroke.strokeDasharray}
+            strokeDashoffset={arcStroke.strokeDashoffset}
+            strokeLinecap="round"
+            strokeWidth="5"
+            testID="speed-meter-progress-arc"
+          />
+        )}
+      </Svg>
       <View style={styles.speedDashboardDialContent}>
         <Text style={styles.speedometerLabel}>SPEED</Text>
         <Text style={[styles.speedDashboardSpeedValue, { color: speedColor }]}>{formatSpeedKmh(currentSpeedKmh)}</Text>
@@ -281,30 +296,6 @@ function MapDisplayTypeButton({
       <Text style={styles.mapDisplayTypeLabel}>{label}</Text>
     </Pressable>
   );
-}
-
-/** 速度リングに並べるアナログメーターの区間。 */
-export type SpeedMeterArcSegment = {
-  /** 12時方向からの回転角度。 */
-  angle: number;
-  /** 現在速度の進捗内にある区間か。 */
-  isActive: boolean;
-};
-
-/**
- * 速度ゲージ進捗からスピードメーター円周の区間を作る。
- *
- * @param progressPercent - 速度帯の上限に対する0〜100の進捗。
- * @returns 下側を空けた速度リング区間。
- */
-export function getSpeedMeterArcSegments(progressPercent: number): SpeedMeterArcSegment[] {
-  const segmentCount = 56;
-  const activeCount = Math.ceil((Math.min(Math.max(progressPercent, 0), 100) / 100) * segmentCount);
-
-  return Array.from({ length: segmentCount }, (_, index) => ({
-    angle: -140 + (280 / (segmentCount - 1)) * index,
-    isActive: index < activeCount,
-  }));
 }
 
 /** スピードメーター円弧の半径。SVG viewBox内の単位。 */

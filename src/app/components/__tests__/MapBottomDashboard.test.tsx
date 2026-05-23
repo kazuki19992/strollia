@@ -26,6 +26,7 @@ jest.mock('react-native-svg', () => {
   return {
     __esModule: true,
     default: View,
+    Circle: View,
     Path: View,
   };
 });
@@ -94,6 +95,18 @@ describe('マップ下部ダッシュボード', () => {
     expect(texts).toContain('標準マップ');
     expect(texts).toContain('航空写真');
     expect(texts).toContain('マップ上に写真を表示');
+  });
+
+  test('速度リングを連続円弧で描画する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} currentSpeedKmh={15} />);
+    });
+
+    const arc = renderer.root.find((node: any) => node.props.testID === 'speed-meter-progress-arc');
+    expect(arc.props.stroke).toBe('#39d9ff');
+    expect(arc.props.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
   });
 });
 

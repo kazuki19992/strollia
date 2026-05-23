@@ -7,6 +7,7 @@ import type { RefObject } from 'react';
 import { MapPhotoCluster } from '../../features/photos/photoClusters';
 import { AreaLabel } from '../areaName';
 import { AppTheme } from '../../theme/theme';
+import { RouteSegment } from '../../features/map/routeMapper';
 import { LocationPoint } from '../../types/gps';
 import { AppStyles } from '../appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
@@ -48,8 +49,8 @@ export type MapScreenProps = {
   isFollowingUserLocation: boolean;
   /** 現在地座標。 */
   userCoordinate: LatLng | null;
-  /** 表示対象ルート座標。 */
-  visibleRouteCoordinates: LatLng[];
+  /** 表示対象の分割済みルート区間。 */
+  visibleRouteSegments: RouteSegment[];
   /** ルート線スタイル。 */
   routeLineStyle: RouteLineStyle;
   /** 写真表示設定。 */
@@ -114,7 +115,7 @@ export function MapScreen({
   userLocationIcon,
   isFollowingUserLocation,
   userCoordinate,
-  visibleRouteCoordinates,
+  visibleRouteSegments,
   routeLineStyle,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
@@ -158,12 +159,18 @@ export function MapScreen({
         legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
         mapPadding={{ bottom: 128, left: 0, right: 0, top: 8 }}
       >
-        {visibleRouteCoordinates.length > 1 && routeLineStyle.glow && (
-          <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width + 8} />
-        )}
-        {visibleRouteCoordinates.length > 1 && (
-          <Polyline coordinates={visibleRouteCoordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} />
-        )}
+        {routeLineStyle.glow &&
+          visibleRouteSegments.map((segment) => (
+            <Polyline
+              key={`${segment.id}-glow`}
+              coordinates={segment.coordinates}
+              strokeColor={routeLineStyle.color}
+              strokeWidth={routeLineStyle.width + 8}
+            />
+          ))}
+        {visibleRouteSegments.map((segment) => (
+          <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} />
+        ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
             <View style={styles.customUserLocationMarker}>

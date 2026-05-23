@@ -54,7 +54,7 @@ function createProps() {
     userLocationIcon: { useNativeUserLocation: true, customIconId: null },
     isFollowingUserLocation: true,
     userCoordinate: null,
-    visibleRouteCoordinates: [],
+    visibleRouteSegments: [],
     routeLineStyle: { color: lightTheme.colors.mapLine, width: 4, glow: false },
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
@@ -215,6 +215,24 @@ describe('地図画面 MapScreen', () => {
     act(() => reportButton.props.onPress());
 
     expect(props.onOpenMonthlyReport).toHaveBeenCalledTimes(1);
+  });
+
+  test('分割済みルートを複数Polylineで描く', () => {
+    const props = {
+      ...createProps(),
+      visibleRouteSegments: [
+        { id: 'first', coordinates: [{ latitude: 35, longitude: 139 }, { latitude: 35.001, longitude: 139 }] },
+        { id: 'second', coordinates: [{ latitude: 36, longitude: 140 }, { latitude: 36.001, longitude: 140 }] },
+      ],
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const polylines = renderer.root.findAll((node: any) => Array.isArray(node.props.coordinates));
+    expect(new Set(polylines.map((node: any) => node.props.coordinates)).size).toBe(2);
   });
 });
 

@@ -128,6 +128,24 @@ export async function getLatestLocationPoint(): Promise<LocationPoint | null> {
   return point ?? null;
 }
 
+/**
+ * 保存品質判定を初期化するため直近GPSポイントを古い順に取得する。
+ *
+ * @param limit - 取得する最大点数。
+ * @returns 記録時刻の古い順に並んだ直近GPSポイント。
+ */
+export async function getRecentLocationPoints(limit: number): Promise<LocationPoint[]> {
+  const points = await db.getAllAsync<LocationPoint>(
+    `SELECT ${pointColumns}
+     FROM location_points
+     ORDER BY recorded_at DESC, id DESC
+     LIMIT ?`,
+    limit,
+  );
+
+  return points.reverse();
+}
+
 /** メインマップに表示する全期間のGPSポイントを時系列で取得する。 */
 export async function getAllLocationPoints(): Promise<LocationPoint[]> {
   return db.getAllAsync<LocationPoint>(

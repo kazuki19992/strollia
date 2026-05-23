@@ -81,6 +81,7 @@ import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
+import { useReliableCurrentSpeed } from './hooks/useReliableCurrentSpeed';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
@@ -135,7 +136,6 @@ export default function App() {
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
-  const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [mapType, setMapType] = useState<MapType>('standard');
@@ -144,13 +144,14 @@ export default function App() {
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
-  const { renderRouteCoordinates, visibleRouteCoordinates, initialRegion, distance } = useMapRouteState(
+  const { renderRouteCoordinates, visibleRouteSegments, initialRegion, distance } = useMapRouteState(
     points,
     dailyLogs,
     visibleRegion,
   );
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
+  const currentSpeedKmh = useReliableCurrentSpeed(points);
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
   const todayDistanceMeters = useMemo(() => {
     const today = toLocalDate(new Date());
@@ -481,8 +482,6 @@ export default function App() {
 
     const nextCoordinate = { latitude: coordinate.latitude, longitude: coordinate.longitude };
     setUserCoordinate(nextCoordinate);
-    const speedMps = (coordinate as typeof coordinate & { speed?: number | null }).speed;
-    setCurrentSpeedKmh(speedMps != null && speedMps > 0 ? speedMps * 3.6 : 0);
 
     if (isFollowingUserLocation) {
       centerOnCoordinate(nextCoordinate, false);
@@ -740,7 +739,7 @@ export default function App() {
             userLocationIcon={userLocationIcon}
             isFollowingUserLocation={isFollowingUserLocation}
             userCoordinate={userCoordinate}
-            visibleRouteCoordinates={visibleRouteCoordinates}
+            visibleRouteSegments={visibleRouteSegments}
             routeLineStyle={routeLineStyle}
             showPhotosOnMap={showPhotosOnMap}
             isUpdatingPhotoSetting={isUpdatingPhotoSetting}

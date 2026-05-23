@@ -1,9 +1,10 @@
 import { db } from '../../../db/database';
 import { NewLocationPoint } from '../../../types/gps';
-import { deleteAllUserData, insertLocationPoint } from '../logRepository';
+import { deleteAllUserData, getRecentLocationPoints, insertLocationPoint } from '../logRepository';
 
 jest.mock('../../../db/database', () => ({
   db: {
+    getAllAsync: jest.fn(),
     getFirstAsync: jest.fn(),
     withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
     runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
@@ -59,5 +60,26 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     expect(db.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM location_point_admin_areas');
     expect(db.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_points');
     expect(db.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM daily_logs');
+  });
+});
+
+describe('最近のGPSポイント取得 getRecentLocationPoints', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('品質判定の初期窓として古い順に直近点を返す', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([
+      { ...point(35.0002, 139), id: 3, recordedAt: '2026-05-23T00:00:20.000Z' },
+      { ...point(35.0001, 139), id: 2, recordedAt: '2026-05-23T00:00:10.000Z' },
+    ]);
+
+    const recentPoints = await getRecentLocationPoints(2);
+
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('ORDER BY recorded_at DESC, id DESC'), 2);
+    expect(recentPoints.map((item) => item.recordedAt)).toEqual([
+      '2026-05-23T00:00:10.000Z',
+      '2026-05-23T00:00:20.000Z',
+    ]);
   });
 });

@@ -99,6 +99,7 @@ flowchart TD
   C -->|はい| G[現在地監視開始]
   E -->|はい| G
   G --> H[raw GPS観測を取得]
+  H --> N[visited cellをupsert]
   H --> I[軌跡品質を判定]
   I -->|accepted| J[SQLiteへ保存]
   I -->|provisional| H
@@ -119,6 +120,18 @@ flowchart TD
   B --> C[recorded_at順に並べる]
   C --> D[マップ用座標配列に変換]
   D --> E[Polylineとして描画]
+```
+
+メインマップの全履歴表示では、GPSポイントを直接Polylineへつなぐのではなく、`visited_cells` を表示範囲で取得してGrid Overlayとして描画する。
+
+```mermaid
+flowchart TD
+  A[MapView表示範囲] --> B[表示範囲を100mセルboundsへ変換]
+  B --> C[visited_cellsをx/y範囲検索]
+  C --> D[ズームに応じて100mセルを大セルへ集約]
+  D --> E[隣接セルを矩形マージ]
+  E --> F[Fog opacityをlatitudeDeltaから計算]
+  F --> G[PolygonとしてGrid Overlay描画]
 ```
 
 ## 7. 初期実装の判断
@@ -182,9 +195,9 @@ iOS / Android ともにバックグラウンド位置情報にはOS側の制約�
 
 見た目のカスタマイズは Strollia Plus として RevenueCat で管理する。
 
-課金状態の取得は UI に直接書かず、`src/features/premium/` の境界を通す。ルート線と現在地アイコンの候補は `src/features/customization/` にまとめる。アプリアイコン変更は初期の課金対象から外す。
+課金状態の取得は UI に直接書かず、`src/features/premium/` の境界を通す。現在地アイコンの候補は `src/features/customization/` にまとめる。アプリアイコン変更は初期の課金対象から外す。
 
-無料状態では、ルート線は現在のクラシック表示、現在地アイコンはOS標準表示を使う。Plus有効時にのみ、ルート線は解決済みスタイルを `Polyline` に反映し、現在地アイコンはOS標準表示から独自Markerへ切り替えられる設計とする。
+無料状態では、現在地アイコンはOS標準表示を使う。Plus有効時にのみ、現在地アイコンはOS標準表示から独自Markerへ切り替えられる設計とする。メインマップはVisited Grid Overlayを主表示とするため、ルート線の見た目設定は持たない。
 
 GPSログや写真メタデータはRevenueCatへ送信しない。
 

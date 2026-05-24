@@ -10,10 +10,8 @@ Strollia は基本機能を無料で使えるローカルファーストGPSロ�
 
 初期候補は以下とする。
 
-- ルート線の色変更
-- ルート線の太さ変更
-- ルート線の発光スタイル
 - 現在地アイコン変更
+- visited cell色変更
 - 高度統計
 - 月次レポート / 年次レポート
 - 日別移動リプレイ
@@ -45,11 +43,11 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 
 実際の購入、復元、RevenueCat CustomerInfo 連携は次段階で実装する。カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plusが無効な場合は反映時に無料状態へフォールバックする。
 
-### 4.1 ルート線スタイル
+### 4.1 visited cell色
 
-無料状態では現在のクラシックなルート線を使う。Plus有効時のみ、色、太さ、発光スタイルなどの有料スタイルを選択できる。
+メインマップではルート線ではなくVisited Grid Overlayを主表示とする。visited cell色はテーマのprimaryを既定値とし、将来的にはPlus向けのカスタマイズ候補として差し替えられるようにする。
 
-実装上は `resolveRouteLineStyle` で課金状態と選択スタイルを解決し、未課金で有料スタイルが選ばれている場合はクラシックへフォールバックする。
+初期実装ではUIには出さず、`GRID_OVERLAY_CONFIG.visitedCellColorOverride` によって実装側で調整しやすい構成にする。
 
 ### 4.2 現在地アイコン
 
@@ -65,7 +63,6 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 
 - RevenueCat連携準備中であること
 - 現在のPlus状態
-- ルート線の見た目
 - 現在地アイコン
 
 項目タップ時は、RevenueCat連携後に開放予定であることを説明する。
@@ -79,29 +76,20 @@ RevenueCatへ送る情報は購入状態の管理に必要なアプリユーザ�
 
 ## 7. カスタマイズ実装の編集ポイント
 
-### 7.1 ルート線スタイルを変更する場所
+### 7.1 visited cell色を変更する場所
 
-ルート線の候補は以下で定義する。
+visited cell色は以下で定義する。
 
-- `src/features/customization/customizationOptions.ts`
-- `ROUTE_LINE_STYLE_OPTIONS`
+- `src/features/map/config/gridOverlayConfig.ts`
+- `visitedCellColorOverride`
 
-変更する主な値は以下である。
+`visitedCellColorOverride` が `null` の場合はテーマのprimaryを使う。HEX色を指定すると、テーマに関係なくその色をvisited cellへ使う。
 
-- `id`: 設定保存に使う識別子。既存ユーザーの保存値に影響するため、公開後は安易に変えない
-- `label`: 設定画面に表示する名前
-- `color`: Plusスタイルの線色。`classic` はテーマ色を使うため `null` とする
-- `width`: `Polyline` の線幅
-- `glow`: 発光風の下敷き線を描画するか
-- `premium`: Plus限定なら `true`
+visited cellの実際の反映は以下で行う。
 
-ルート線の実際の反映は以下で行う。
-
-- `src/features/customization/customizationResolver.ts`
-- `resolveRouteLineStyle`
-- `src/app/App.tsx` の `Polyline`
-
-無料状態では `classic` が使われる。Plus無効時に有料スタイルが保存されていても、描画時に `classic` へフォールバックする。
+- `src/features/map/gridOverlay.ts`
+- `resolveVisitedGridCellColor`
+- `src/app/App.tsx` の Grid Overlay生成
 
 ### 7.2 現在地アイコンを変更する場所
 
@@ -134,7 +122,6 @@ RevenueCatへ送る情報は購入状態の管理に必要なアプリユーザ�
 
 現在の保存キーは以下である。
 
-- `routeLineStyle`
 - `userLocationIcon`
 
 保存処理と読み込み処理は `src/app/App.tsx` にある。文字列設定の読み込みは `src/features/settings/settingsRepository.ts` の `getStringSetting` を使う。
@@ -161,7 +148,7 @@ RevenueCat導入後は、このフラグではなくRevenueCatの `CustomerInfo.
 1. 現在地アイコン画像のアセット置き場を作る
 2. `USER_LOCATION_ICON_OPTIONS` に画像情報を持たせる
 3. 独自現在地Markerを画像表示へ差し替える
-4. ルート線スタイルの本命デザインを `ROUTE_LINE_STYLE_OPTIONS` に追加・調整する
+4. visited cell色カスタマイズをUI化するか判断する
 5. 高度統計の集計仕様と画面を実装する
 6. 日別移動リプレイMVPを実装する
 7. RevenueCat SDKを導入し、`isPlusActive` の供給元を差し替える

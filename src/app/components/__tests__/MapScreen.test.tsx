@@ -31,6 +31,7 @@ jest.mock('react-native-maps', () => {
     __esModule: true,
     default: View,
     Marker: View,
+    Polygon: View,
     Polyline: View,
   };
 });
@@ -55,8 +56,8 @@ function createProps() {
     userLocationIcon: { useNativeUserLocation: true, customIconId: null },
     isFollowingUserLocation: true,
     userCoordinate: null,
-    visibleRouteSegments: [],
-    routeLineStyle: { color: lightTheme.colors.mapLine, width: 4, glow: false },
+    visitedGridCells: [],
+    gridOverlayOpacity: 0.3,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
     photoClusters: [],
@@ -218,12 +219,33 @@ describe('地図画面 MapScreen', () => {
     expect(props.onOpenMonthlyReport).toHaveBeenCalledTimes(1);
   });
 
-  test('分割済みルートを複数Polylineで描く', () => {
+  test('メインマップではPolylineを描画しない', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+    });
+
+    const polylines = renderer.root.findAll((node: any) => Array.isArray(node.props.coordinates));
+    expect(polylines).toHaveLength(0);
+  });
+
+  test('visited grid overlayをPolygonで描く', () => {
     const props = {
       ...createProps(),
-      visibleRouteSegments: [
-        { id: 'first', coordinates: [{ latitude: 35, longitude: 139 }, { latitude: 35.001, longitude: 139 }] },
-        { id: 'second', coordinates: [{ latitude: 36, longitude: 140 }, { latitude: 36.001, longitude: 140 }] },
+      visitedGridCells: [
+        {
+          id: '100:1:2:1x1',
+          coordinates: [
+            { latitude: 35, longitude: 139 },
+            { latitude: 35, longitude: 139.001 },
+            { latitude: 35.001, longitude: 139.001 },
+            { latitude: 35.001, longitude: 139 },
+          ],
+          fillColor: 'rgba(0, 150, 136, 0.3)',
+          strokeColor: 'rgba(0, 150, 136, 0)',
+          strokeWidth: 0,
+        },
       ],
     };
     let renderer: any;
@@ -232,8 +254,10 @@ describe('地図画面 MapScreen', () => {
       renderer = ReactTestRenderer.create(<MapScreen {...props} />);
     });
 
-    const polylines = renderer.root.findAll((node: any) => Array.isArray(node.props.coordinates));
-    expect(new Set(polylines.map((node: any) => node.props.coordinates)).size).toBe(2);
+    const gridCells = renderer.root.findAll((node: any) => node.props.testID === 'visited-grid-cell' && node.props.fillColor);
+    expect(gridCells.length).toBeGreaterThan(0);
+    expect(gridCells[0].props.fillColor).toBe('rgba(0, 150, 136, 0.3)');
+    expect(gridCells[0].props.strokeWidth).toBe(0);
   });
 });
 

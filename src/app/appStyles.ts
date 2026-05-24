@@ -1097,22 +1097,6 @@ export function createStyles(theme: AppTheme) {
       flexDirection: 'row',
       gap: 10,
     },
-    routeLinePreview: {
-      borderRadius: 999,
-      width: 56,
-    },
-    routeLinePreviewGlow: {
-      borderRadius: 999,
-      height: 14,
-      opacity: 0.28,
-      position: 'absolute',
-      width: 64,
-    },
-    routeLinePreviewRow: {
-      alignItems: 'center',
-      height: 18,
-      justifyContent: 'center',
-    },
     speedometerDistanceRow: {
       alignItems: 'flex-end',
       flexDirection: 'row',

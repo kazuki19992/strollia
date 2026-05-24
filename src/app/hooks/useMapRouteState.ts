@@ -3,11 +3,8 @@ import type { Region } from 'react-native-maps';
 
 import {
   createInitialRegion,
-  filterRouteSegmentsByRegion,
   RouteCoordinate,
-  RouteSegment,
   toRenderRouteCoordinates,
-  toRenderRouteSegments,
 } from '../../features/map/routeMapper';
 import { DailyLogSummary, LocationPoint } from '../../types/gps';
 import { totalDistanceMeters } from '../../utils/distance';
@@ -15,8 +12,6 @@ import { totalDistanceMeters } from '../../utils/distance';
 export type MapRouteState = {
   /** 全履歴から生成した簡略化済み描画座標。 */
   renderRouteCoordinates: RouteCoordinate[];
-  /** 現在表示範囲に関係するPolyline用ルート区間。 */
-  visibleRouteSegments: RouteSegment[];
   /** GPSログ全体が収まる初期表示範囲。 */
   initialRegion: Region;
   /** 画面に表示する総移動距離。 */
@@ -45,26 +40,18 @@ export function calculateDisplayDistance(dailyLogs: DailyLogSummary[], points: L
  *
  * @param points - 全期間の保存済みGPSポイント。
  * @param dailyLogs - DBから取得した日別サマリー一覧。
- * @param visibleRegion - MapViewの現在表示範囲。未取得の場合はnull。
  * @returns メインマップ描画に必要な派生状態一式。
  */
 export function useMapRouteState(
   points: LocationPoint[],
   dailyLogs: DailyLogSummary[],
-  visibleRegion: Region | null,
 ): MapRouteState {
   const renderRouteCoordinates = useMemo(() => toRenderRouteCoordinates(points), [points]);
-  const renderRouteSegments = useMemo(() => toRenderRouteSegments(points), [points]);
-  const visibleRouteSegments = useMemo(
-    () => filterRouteSegmentsByRegion(renderRouteSegments, visibleRegion),
-    [renderRouteSegments, visibleRegion],
-  );
   const initialRegion = useMemo(() => createInitialRegion(points), [points]);
   const distance = useMemo(() => calculateDisplayDistance(dailyLogs, points), [dailyLogs, points]);
 
   return {
     renderRouteCoordinates,
-    visibleRouteSegments,
     initialRegion,
     distance,
   };

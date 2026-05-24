@@ -3,8 +3,6 @@ import { Alert, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from '
 
 import { getDefaultPremiumAccessState } from '../../features/premium/revenueCatAccess';
 import {
-  ROUTE_LINE_STYLE_OPTIONS,
-  RouteLineStyleId,
   USER_LOCATION_ICON_OPTIONS,
   UserLocationIconId,
 } from '../../features/customization/customizationOptions';
@@ -35,8 +33,6 @@ export type SettingsScreenProps = {
   isUpdatingPhotoSetting: boolean;
   /** Plus権限状態。 */
   premiumAccessState: ReturnType<typeof getDefaultPremiumAccessState>;
-  /** 選択中のルート線スタイルID。 */
-  selectedRouteLineStyleId: RouteLineStyleId;
   /** 選択中の現在地アイコンID。 */
   selectedUserLocationIconId: UserLocationIconId;
   /** 地図画面へ戻る処理。 */
@@ -51,8 +47,6 @@ export type SettingsScreenProps = {
   onUpdateKeepScreenAwake: (enabled: boolean) => Promise<void>;
   /** 写真表示設定の更新処理。 */
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
-  /** ルート線スタイル更新処理。 */
-  onUpdateRouteLineStyle: (styleId: RouteLineStyleId) => void;
   /** 現在地アイコン更新処理。 */
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
   /** データエクスポート処理。 */
@@ -75,7 +69,6 @@ export function SettingsScreen({
   showPhotosOnMap,
   isUpdatingPhotoSetting,
   premiumAccessState,
-  selectedRouteLineStyleId,
   selectedUserLocationIconId,
   onBackToMap,
   onStartRecording,
@@ -83,7 +76,6 @@ export function SettingsScreen({
   onRequestLocationPermission,
   onUpdateKeepScreenAwake,
   onUpdateShowPhotosOnMap,
-  onUpdateRouteLineStyle,
   onUpdateUserLocationIcon,
   onExportAllLogs,
   onShowImportPlaceholder,
@@ -172,7 +164,7 @@ export function SettingsScreen({
             <Text style={styles.premiumBadge}>RevenueCat準備中</Text>
           </View>
           <Text style={styles.settingsDescription}>
-            ルート線の色や発光、現在地アイコン変更をPlus特典として用意します。無料時は現在のルート線とOS標準の現在地アイコンを使います。
+            現在地アイコン変更などをPlus特典として用意します。無料時はOS標準の現在地アイコンを使います。
           </Text>
           <View style={styles.settingsStatusRow}>
             <MaterialCommunityIcons
@@ -184,13 +176,6 @@ export function SettingsScreen({
               {premiumAccessState.isPlusActive ? 'Plus有効' : 'Plus未加入'} / {premiumAccessState.entitlementId}
             </Text>
           </View>
-          <RouteLineStylePicker
-            styles={styles}
-            theme={theme}
-            isPlusActive={premiumAccessState.isPlusActive}
-            selectedRouteLineStyleId={selectedRouteLineStyleId}
-            onUpdateRouteLineStyle={onUpdateRouteLineStyle}
-          />
           <UserLocationIconPicker
             styles={styles}
             theme={theme}
@@ -218,51 +203,6 @@ export function SettingsScreen({
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-type RouteLineStylePickerProps = Pick<SettingsScreenProps, 'styles' | 'theme' | 'selectedRouteLineStyleId' | 'onUpdateRouteLineStyle'> & {
-  /** Plus加入状態。 */
-  isPlusActive: boolean;
-};
-
-/** ルート線スタイルの選択ボタン一覧を描画する。 */
-function RouteLineStylePicker({ styles, theme, selectedRouteLineStyleId, isPlusActive, onUpdateRouteLineStyle }: RouteLineStylePickerProps) {
-  return (
-    <View style={styles.customizationSection}>
-      <Text style={styles.settingsStatusText}>ルート線の見た目</Text>
-      <View style={styles.customizationOptionGrid}>
-        {ROUTE_LINE_STYLE_OPTIONS.map((option) => {
-          const isSelected = selectedRouteLineStyleId === option.id;
-          const isLocked = option.premium && !isPlusActive;
-
-          return (
-            <Pressable
-              key={option.id}
-              onPress={() => onUpdateRouteLineStyle(option.id)}
-              style={[styles.customizationOption, isSelected && styles.customizationOptionSelected]}
-            >
-              <View style={styles.routeLinePreviewRow}>
-                {option.glow && <View style={[styles.routeLinePreviewGlow, { backgroundColor: option.color ?? theme.colors.mapLine }]} />}
-                <View
-                  style={[
-                    styles.routeLinePreview,
-                    {
-                      backgroundColor: option.color ?? theme.colors.mapLine,
-                      height: Math.max(4, option.width),
-                    },
-                  ]}
-                />
-              </View>
-              <View style={styles.settingsActionTitleRow}>
-                <Text style={styles.customizationOptionText}>{option.label}</Text>
-                {isLocked && <MaterialCommunityIcons name="lock-outline" size={14} color={theme.colors.mutedText} />}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 

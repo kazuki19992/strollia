@@ -7,6 +7,8 @@ import { getRecentLocationPoints, insertLocationPoint } from '../logs/logReposit
 import { BACKGROUND_LOCATION_TASK_NAME } from './locationTrackingConfig';
 import { toLocationPoint } from './locationMapper';
 import { advanceLocationQualityContext, createLocationQualityContext } from './locationQualityFilter';
+import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
+import { upsertVisitedCells } from './visitedCellRepository';
 
 /** Expo Locationのバックグラウンドタスクから渡される位置情報ペイロード。 */
 type BackgroundLocationTaskData = {
@@ -35,10 +37,18 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
     // 同一バッチ内でも品質判定コンテキストを進め、accepted点だけを保存する。
     const acceptedSeed = await getRecentLocationPoints(6);
     let qualityContext = createLocationQualityContext(acceptedSeed, pendingProvisionalPoints);
+    let previousVisitedCellPoint: ReturnType<typeof toLocationPoint> | null = acceptedSeed.at(-1) ?? pendingProvisionalPoints.at(-1) ?? null;
     const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
 
     for (const location of locations) {
       const point = toLocationPoint(location);
+      const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, point);
+
+      if (visitedCells.length > 0) {
+        await upsertVisitedCells(visitedCells, point.recordedAt);
+        previousVisitedCellPoint = point;
+      }
+
       const advance = advanceLocationQualityContext(point, qualityContext);
       qualityContext = advance.context;
 

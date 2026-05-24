@@ -8,7 +8,7 @@ export const STROLLIA_PLUS_MONTHLY_PRODUCT_ID = 'strollia_plus_monthly';
 export const STROLLIA_PLUS_YEARLY_PRODUCT_ID = 'strollia_plus_yearly';
 
 /** 課金で開放するカスタマイズカテゴリ。 */
-export type PremiumCustomizationCategory = 'routeLine' | 'userLocationIcon';
+export type PremiumCustomizationCategory = 'userLocationIcon';
 
 /** 設定画面に表示する課金カスタマイズ項目。 */
 export type PremiumCustomizationItem = {
@@ -22,11 +22,6 @@ export type PremiumCustomizationItem = {
 
 /** 設定画面に表示するStrollia Plusのカスタマイズ項目一覧。 */
 export const PREMIUM_CUSTOMIZATION_ITEMS: PremiumCustomizationItem[] = [
-  {
-    id: 'routeLine',
-    title: 'ルート線の見た目',
-    description: '線の色、太さ、発光スタイルなどを変更できるようにします。',
-  },
   {
     id: 'userLocationIcon',
     title: '現在地アイコン',

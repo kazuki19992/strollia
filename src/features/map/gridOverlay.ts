@@ -91,9 +91,18 @@ export function resolveVisitedGridCellColor(themePrimaryColor: string, config: G
 }
 
 function colorWithOpacity(hexColor: string, opacity: number): string {
-  const red = parseInt(hexColor.slice(1, 3), 16);
-  const green = parseInt(hexColor.slice(3, 5), 16);
-  const blue = parseInt(hexColor.slice(5, 7), 16);
+  const clampedOpacity = Math.min(1, Math.max(0, opacity));
+  const match = hexColor.trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
 
-  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+  if (!match) {
+    return `rgba(0, 0, 0, ${clampedOpacity})`;
+  }
+
+  const rawHex = match[1];
+  const hex = rawHex.length === 3 ? rawHex.split('').map((character) => `${character}${character}`).join('') : rawHex;
+  const red = parseInt(hex.slice(0, 2), 16);
+  const green = parseInt(hex.slice(2, 4), 16);
+  const blue = parseInt(hex.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${clampedOpacity})`;
 }

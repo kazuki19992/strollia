@@ -52,7 +52,10 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
           updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, 1, 'gps', ?, ?)
         ON CONFLICT(cell_id) DO UPDATE SET
-          last_visited_at = excluded.last_visited_at,
+          last_visited_at = CASE
+            WHEN excluded.last_visited_at > visited_cells.last_visited_at THEN excluded.last_visited_at
+            ELSE visited_cells.last_visited_at
+          END,
           visit_count = visited_cells.visit_count + 1,
           updated_at = excluded.updated_at`,
         cell.cellId,

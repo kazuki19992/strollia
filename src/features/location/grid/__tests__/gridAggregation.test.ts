@@ -5,9 +5,11 @@ import { coordinateToGridCell } from '../gridCell';
 describe('Visited Grid表示集約 gridAggregation', () => {
   it('ズームに応じて表示セルサイズを選ぶ', () => {
     expect(getDisplayCellSizeMeters({ latitudeDelta: 0.005 }, GRID_OVERLAY_CONFIG)).toBe(100);
-    expect(getDisplayCellSizeMeters({ latitudeDelta: 0.08 }, GRID_OVERLAY_CONFIG)).toBe(500);
-    expect(getDisplayCellSizeMeters({ latitudeDelta: 0.5 }, GRID_OVERLAY_CONFIG)).toBe(2000);
-    expect(getDisplayCellSizeMeters({ latitudeDelta: 2.5 }, GRID_OVERLAY_CONFIG)).toBe(10000);
+    expect(getDisplayCellSizeMeters({ latitudeDelta: 0.03 }, GRID_OVERLAY_CONFIG)).toBe(100);
+    expect(getDisplayCellSizeMeters({ latitudeDelta: 0.08 }, GRID_OVERLAY_CONFIG)).toBe(200);
+    expect(getDisplayCellSizeMeters({ latitudeDelta: 0.5 }, GRID_OVERLAY_CONFIG)).toBe(1000);
+    expect(getDisplayCellSizeMeters({ latitudeDelta: 2.5 }, GRID_OVERLAY_CONFIG)).toBe(5000);
+    expect(getDisplayCellSizeMeters({ latitudeDelta: 4.5 }, GRID_OVERLAY_CONFIG)).toBe(10000);
   });
 
   it('visitedな100mセルが1つでもあれば大セルをvisitedにする', () => {
@@ -17,6 +19,12 @@ describe('Visited Grid表示集約 gridAggregation', () => {
     expect(aggregated).toHaveLength(1);
     expect(aggregated[0].cellSizeMeters).toBe(200);
     expect(aggregated[0].cellId.startsWith('200:')).toBe(true);
+  });
+
+  it('表示セルサイズが基本セルの整数倍でない場合は失敗させる', () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+
+    expect(() => aggregateVisitedCells([cell], 250)).toThrow('displayCellSizeMeters must be a multiple');
   });
 
   it('横に連続するvisited cellを1つの矩形にまとめる', () => {

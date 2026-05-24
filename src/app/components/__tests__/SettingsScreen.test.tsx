@@ -74,6 +74,18 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('データのエクスポート');
   });
 
+  test('Strollia Plusカードは現在地アイコン特典の説明を表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('現在地アイコン変更などをPlus特典として用意します。無料時はOS標準の現在地アイコンを使います。');
+  });
+
   test('ルート線の見た目設定を表示しない', () => {
     let renderer: any;
 

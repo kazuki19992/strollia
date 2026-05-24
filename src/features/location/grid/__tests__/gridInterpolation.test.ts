@@ -48,4 +48,16 @@ describe('Visited Grid高速補間 gridInterpolation', () => {
 
     expect(getVisitedCellsForLocationPoint(null, next)).toEqual([]);
   });
+
+  it('accuracyが100の場合はセルを開放する', () => {
+    const next = point(35, 139, '2026-05-23T00:00:00.000Z', { accuracy: 100 });
+
+    expect(getVisitedCellsForLocationPoint(null, next)).toHaveLength(1);
+  });
+
+  it('accuracyが100.1の場合はセルを開放しない', () => {
+    const next = point(35, 139, '2026-05-23T00:00:00.000Z', { accuracy: 100.1 });
+
+    expect(getVisitedCellsForLocationPoint(null, next)).toEqual([]);
+  });
 });

@@ -35,27 +35,27 @@ export function getDisplayCellSizeMeters(
   const latitudeDelta = Math.abs(region.latitudeDelta);
   const fallbackSize = getLastDisplayCellSize(config);
 
-  if (latitudeDelta < 0.02) {
+  if (latitudeDelta < 0.06) {
     return config.displayCellSizesMeters[0] ?? GRID_OVERLAY_CONFIG.baseCellSizeMeters;
   }
 
-  if (latitudeDelta < 0.06) {
+  if (latitudeDelta < 0.15) {
     return config.displayCellSizesMeters[1] ?? config.displayCellSizesMeters[0] ?? GRID_OVERLAY_CONFIG.baseCellSizeMeters;
   }
 
-  if (latitudeDelta < 0.15) {
+  if (latitudeDelta < 0.35) {
     return config.displayCellSizesMeters[2] ?? fallbackSize;
   }
 
-  if (latitudeDelta < 0.35) {
+  if (latitudeDelta < 0.8) {
     return config.displayCellSizesMeters[3] ?? fallbackSize;
   }
 
-  if (latitudeDelta < 0.8) {
+  if (latitudeDelta < 2) {
     return config.displayCellSizesMeters[4] ?? fallbackSize;
   }
 
-  if (latitudeDelta < 2) {
+  if (latitudeDelta < 4) {
     return config.displayCellSizesMeters[5] ?? fallbackSize;
   }
 
@@ -70,7 +70,13 @@ export function getDisplayCellSizeMeters(
  * @returns 表示用に重複排除したvisited cell。
  */
 export function aggregateVisitedCells(cells: GridCell[], displayCellSizeMeters: number): GridCell[] {
-  const ratio = Math.max(1, Math.round(displayCellSizeMeters / GRID_OVERLAY_CONFIG.baseCellSizeMeters));
+  const baseCellSizeMeters = GRID_OVERLAY_CONFIG.baseCellSizeMeters;
+
+  if (displayCellSizeMeters % baseCellSizeMeters !== 0) {
+    throw new Error(`displayCellSizeMeters must be a multiple of base cell size (${baseCellSizeMeters}).`);
+  }
+
+  const ratio = Math.max(1, displayCellSizeMeters / baseCellSizeMeters);
   const aggregated = new Map<string, GridCell>();
 
   for (const cell of cells) {

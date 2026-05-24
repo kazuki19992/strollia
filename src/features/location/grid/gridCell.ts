@@ -6,6 +6,8 @@ import { GRID_OVERLAY_CONFIG } from '../../map/config/gridOverlayConfig';
 const WEB_MERCATOR_RADIUS_METERS = 6_378_137;
 /** Web Mercator変換で発散しないよう緯度を制限する。 */
 const WEB_MERCATOR_MAX_LATITUDE = 85.05112878;
+/** Web Mercatorの世界半周幅。単位はm。 */
+const WEB_MERCATOR_HALF_WORLD_WIDTH_METERS = WEB_MERCATOR_RADIUS_METERS * Math.PI;
 
 /** Visited Gridのセル。 */
 export type GridCell = {
@@ -124,18 +126,25 @@ export function cellToPolygonCoordinates(cell: GridCellPolygonSource): LatLng[] 
  * @returns SQLite検索に使うセル番号範囲。
  */
 export function getGridBoundsForRegion(region: Region): GridBounds {
+  const northLatitude = region.latitude + region.latitudeDelta / 2;
+  const southLatitude = region.latitude - region.latitudeDelta / 2;
+  const westLongitude = region.longitude - region.longitudeDelta / 2;
+  const eastLongitude = region.longitude + region.longitudeDelta / 2;
   const northWest = coordinateToGridCell({
-    latitude: region.latitude + region.latitudeDelta / 2,
-    longitude: region.longitude - region.longitudeDelta / 2,
+    latitude: northLatitude,
+    longitude: westLongitude,
   });
   const southEast = coordinateToGridCell({
-    latitude: region.latitude - region.latitudeDelta / 2,
-    longitude: region.longitude + region.longitudeDelta / 2,
+    latitude: southLatitude,
+    longitude: eastLongitude,
   });
+  const crossesAntimeridian = westLongitude < -180 || eastLongitude > 180;
+  const worldMinX = Math.floor(-WEB_MERCATOR_HALF_WORLD_WIDTH_METERS / GRID_OVERLAY_CONFIG.baseCellSizeMeters);
+  const worldMaxX = Math.floor(WEB_MERCATOR_HALF_WORLD_WIDTH_METERS / GRID_OVERLAY_CONFIG.baseCellSizeMeters);
 
   return {
-    minX: Math.min(northWest.x, southEast.x),
-    maxX: Math.max(northWest.x, southEast.x),
+    minX: crossesAntimeridian ? worldMinX : Math.min(northWest.x, southEast.x),
+    maxX: crossesAntimeridian ? worldMaxX : Math.max(northWest.x, southEast.x),
     minY: Math.min(northWest.y, southEast.y),
     maxY: Math.max(northWest.y, southEast.y),
   };

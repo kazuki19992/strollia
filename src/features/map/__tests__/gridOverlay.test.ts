@@ -19,6 +19,20 @@ describe('Visited Grid Overlay表示計算 gridOverlay', () => {
     expect(overlayCell.strokeWidth).toBe(0);
   });
 
+  it('visited cell色は3桁HEXでもrgbaへ変換する', () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+    const [overlayCell] = toVisitedGridOverlayCells([cell], 1.2, '#096', GRID_OVERLAY_CONFIG);
+
+    expect(overlayCell.fillColor).toBe('rgba(0, 153, 102, 1)');
+  });
+
+  it('visited cell色が不正な場合は安全なfallback色を使う', () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+    const [overlayCell] = toVisitedGridOverlayCells([cell], -1, 'not-a-color', GRID_OVERLAY_CONFIG);
+
+    expect(overlayCell.fillColor).toBe('rgba(0, 0, 0, 0)');
+  });
+
   it('visited cell色は設定値がなければテーマprimaryを使う', () => {
     expect(resolveVisitedGridCellColor('#009688', GRID_OVERLAY_CONFIG)).toBe('#009688');
     expect(resolveVisitedGridCellColor('#009688', { ...GRID_OVERLAY_CONFIG, visitedCellColorOverride: '#123456' })).toBe('#123456');

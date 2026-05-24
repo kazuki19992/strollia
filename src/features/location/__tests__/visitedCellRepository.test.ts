@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
 import { coordinateToGridCell } from '../grid/gridCell';
-import { getVisitedCellsInBounds, upsertVisitedCells } from '../visitedCellRepository';
+import { deleteAllVisitedCells, getVisitedCellsInBounds, upsertVisitedCells } from '../visitedCellRepository';
 
 jest.mock('../../../db/database', () => ({
   db: {
@@ -42,7 +42,7 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     expect(cells).toHaveLength(1);
     expect(db.runAsync).toHaveBeenCalledTimes(2);
     expect(db.runAsync).toHaveBeenCalledWith(
-      expect.stringContaining('ON CONFLICT(cell_id) DO UPDATE SET'),
+      expect.stringContaining('WHEN excluded.last_visited_at > visited_cells.last_visited_at'),
       expect.anything(),
       expect.anything(),
       expect.anything(),
@@ -63,5 +63,18 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     await getVisitedCellsInBounds({ minX: 1, maxX: 3, minY: 5, maxY: 8 });
 
     expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE x BETWEEN ? AND ?'), 1, 3, 5, 8);
+  });
+
+  it('upsertVisitedCellsは空配列入力時にDBへ書き込まない', async () => {
+    await upsertVisitedCells([], '2026-05-23T00:00:00.000Z');
+
+    expect(db.withTransactionAsync).not.toHaveBeenCalled();
+    expect(db.runAsync).not.toHaveBeenCalled();
+  });
+
+  it('deleteAllVisitedCellsはvisited_cellsを全削除する', async () => {
+    await deleteAllVisitedCells();
+
+    expect(db.runAsync).toHaveBeenCalledWith('DELETE FROM visited_cells');
   });
 });

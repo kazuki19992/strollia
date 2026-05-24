@@ -64,6 +64,8 @@ GPSログの各点は、必要に応じてマップ上にプロットできる�
 
 visited cell は SQLite の `visited_cells` に保存し、MapView上ではPolygonとして描画する。ズームアウト時は100mセルを200m、500m、1km、2km、5km、10km相当の表示セルへ集約する。集約時は、大セル内にvisitedな100mセルが1つでもあれば大セル全体をvisitedとして扱う。
 
+表示セルサイズは `latitudeDelta` が大きくなるほど段階的に上げる。100mセルは `latitudeDelta < 0.06` まで維持し、少し広域にした程度では200m以上へ切り替えない。
+
 隣接する表示セルは、横方向と縦方向に連続する範囲を矩形としてまとめて描画する。セル同士が接する内側罫線は描画せず、集合体として見える塗りを優先する。visited cell色はテーマのprimaryを既定値とし、`GRID_OVERLAY_CONFIG` の設定値で差し替えられるようにする。
 
 Fog opacity は `latitudeDelta` に応じて線形補間し、通常表示では薄く、広域表示では濃くする。opacityやセルサイズ候補は `GRID_OVERLAY_CONFIG` に集約し、実機調整しやすくする。

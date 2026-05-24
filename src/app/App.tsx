@@ -460,9 +460,14 @@ export default function App() {
 
     const bounds = getGridBoundsForRegion(gridOverlayRegion);
     const displayCellSizeMeters = getDisplayCellSizeMeters(gridOverlayRegion, GRID_OVERLAY_CONFIG);
+    let isCancelled = false;
 
     getVisitedCellsInBounds(bounds)
       .then((cells) => {
+        if (isCancelled) {
+          return;
+        }
+
         const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
         const mergedCells = mergeAdjacentGridCells(aggregatedCells);
         setVisitedGridCells(toVisitedGridOverlayCells(mergedCells, gridOverlayOpacity, theme.colors.primary, GRID_OVERLAY_CONFIG));
@@ -470,6 +475,10 @@ export default function App() {
       .catch((error: unknown) => {
         console.warn('Failed to refresh visited grid cells:', error);
       });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [gridOverlayOpacity, gridOverlayRegion, isReady, points.length, theme.colors.primary]);
 
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });

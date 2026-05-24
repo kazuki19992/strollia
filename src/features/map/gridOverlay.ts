@@ -1,6 +1,7 @@
 import type { GridOverlayConfig } from './config/gridOverlayConfig';
 import { GRID_OVERLAY_CONFIG } from './config/gridOverlayConfig';
-import { cellToPolygonCoordinates, GridCell } from '../location/grid/gridCell';
+import { cellToPolygonCoordinates } from '../location/grid/gridCell';
+import type { GridCellPolygonSource } from '../location/grid/gridCell';
 import type { LatLng } from 'react-native-maps';
 
 type RegionOpacityLike = {
@@ -17,6 +18,8 @@ export type VisitedGridOverlayCell = {
   fillColor: string;
   /** 境界線色。 */
   strokeColor: string;
+  /** 境界線幅。内側罫線を出さないため通常は0。 */
+  strokeWidth: number;
 };
 
 /**
@@ -60,16 +63,31 @@ export function getFogOpacity(
  * @returns Polygon描画用データ。
  */
 export function toVisitedGridOverlayCells(
-  cells: GridCell[],
+  cells: GridCellPolygonSource[],
   opacity: number,
+  themePrimaryColor: string,
   config: GridOverlayConfig = GRID_OVERLAY_CONFIG,
 ): VisitedGridOverlayCell[] {
+  const visitedCellColor = resolveVisitedGridCellColor(themePrimaryColor, config);
+
   return cells.map((cell) => ({
     id: cell.cellId,
     coordinates: cellToPolygonCoordinates(cell),
-    fillColor: colorWithOpacity(config.visitedCellColor, opacity),
-    strokeColor: colorWithOpacity(config.visitedCellColor, Math.min(opacity + 0.2, 0.9)),
+    fillColor: colorWithOpacity(visitedCellColor, opacity),
+    strokeColor: colorWithOpacity(visitedCellColor, 0),
+    strokeWidth: 0,
   }));
+}
+
+/**
+ * visited cellの表示色を解決する。
+ *
+ * @param themePrimaryColor - 現在テーマのprimary色。
+ * @param config - Grid Overlay設定。
+ * @returns visited cellとして使うHEX色。
+ */
+export function resolveVisitedGridCellColor(themePrimaryColor: string, config: GridOverlayConfig = GRID_OVERLAY_CONFIG): string {
+  return config.visitedCellColorOverride ?? themePrimaryColor;
 }
 
 function colorWithOpacity(hexColor: string, opacity: number): string {

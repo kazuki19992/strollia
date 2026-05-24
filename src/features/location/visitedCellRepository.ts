@@ -71,7 +71,7 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
 /**
  * 表示範囲に含まれるvisited cellを取得する。
  *
- * @param bounds - 基本50mセル番号範囲。
+ * @param bounds - 基本100mセル番号範囲。
  * @returns 範囲内のvisited cell。
  */
 export async function getVisitedCellsInBounds(bounds: GridBounds): Promise<VisitedCellRow[]> {

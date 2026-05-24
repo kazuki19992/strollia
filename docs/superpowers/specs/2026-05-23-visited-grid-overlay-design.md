@@ -14,15 +14,20 @@ Visited Grid 方式では、GPS点が存在したセルを visited として記�
 
 含めるもの:
 
-- 50mセルを基本単位とする visited cell 生成
+- 100mセルを基本単位とする visited cell 生成
 - `visited_cells` SQLiteテーブル追加
 - GPS受信時の visited cell upsert
 - 表示範囲とズームに応じた visited cell 取得
-- 50mセルから100m、200m、500m、1km相当セルへの表示時集約
+- 100mセルから200m、500m、1km、2km、5km、10km相当セルへの表示時集約
+- 隣接セルの矩形マージによる描画数削減
+- セル同士の内側罫線を出さない表示
 - メインマップ上の Grid Overlay 表示
+- メインマップ上の Polyline 非表示
 - zoom連動 Fog opacity
 - Fog opacity 設定値の定数化
+- visited cell 色の設定化
 - UI速度表示をGPS raw speedベースへ分離
+- 設定画面からルート線の見た目設定を削除
 
 次PRでは含めないもの:
 
@@ -33,7 +38,7 @@ Visited Grid 方式では、GPS点が存在したセルを visited として記�
 - 既存GPS点全量からの visited cell バックフィル
 - 高度な map matching
 
-Polyline は内部データとして保持し、GPX/KML export、将来Replay、デバッグ、既存の日別・月次表示で引き続き使う。メインマップでは Grid Overlay を主役にし、Polyline は表示しない、または開発フラグ経由の補助表示に下げる。
+Polyline は内部データとして保持し、GPX/KML export、将来Replay、デバッグ、既存の日別・月次表示で引き続き使う。メインマップでは Grid Overlay を主役にし、Polyline は描画しない。
 
 ## 表示モデル
 
@@ -51,39 +56,56 @@ React Native Maps では「マスクから穴を抜く」描画が難しいた�
 
 ### 基本セル
 
-保存するセルは50mセルのみとする。
+保存するセルは100mセルのみとする。
 
-セルIDは緯度経度を Web Mercator 系のメートル座標へ変換し、50m単位で整数グリッド化して作る。
+セルIDは緯度経度を Web Mercator 系のメートル座標へ変換し、100m単位で整数グリッド化して作る。
 
 例:
 
-- `x = floor(mercatorX / 50)`
-- `y = floor(mercatorY / 50)`
-- `cellId = "50:{x}:{y}"`
+- `x = floor(mercatorX / 100)`
+- `y = floor(mercatorY / 100)`
+- `cellId = "100:{x}:{y}"`
 
 緯度経度を単純な度数で丸めると緯度によってセルサイズが変わるため、保存IDはメートル座標基準にする。
 
 ### 表示時集約
 
-ズームアウト時は、保存済みの50mセルを表示専用の大セルへ集約する。
+ズームアウト時は、保存済みの100mセルを表示専用の大セルへ集約する。
 
 表示セルサイズ候補:
 
-- 50m
 - 100m
 - 200m
 - 500m
 - 1km
+- 2km
+- 5km
+- 10km
 
 集約ルール:
 
-- 100mセルは50mセル2x2
-- 200mセルは50mセル4x4
-- 500mセルは50mセル10x10
-- 1kmセルは50mセル20x20
-- 内部に visited な50mセルが1つでもあれば、大セル全体を visited として扱う
+- 200mセルは100mセル2x2
+- 500mセルは100mセル5x5
+- 1kmセルは100mセル10x10
+- 2kmセルは100mセル20x20
+- 5kmセルは100mセル50x50
+- 10kmセルは100mセル100x100
+- 内部に visited な100mセルが1つでもあれば、大セル全体を visited として扱う
 
 coverage ratio は計算しない。計算量を抑え、広域表示で軽く見せるためである。
+
+### 隣接セルの矩形マージ
+
+表示セルはそのまま1セル1Polygonで描くのではなく、隣接するセルを矩形単位へまとめる。
+
+方針:
+
+- 同じ行で連続するセルを横長の矩形へまとめる
+- 同じ幅と開始Xを持つ横長矩形が上下に連続する場合は縦方向にもまとめる
+- L字や凹形の集合は複数矩形へ分割する
+- 内側罫線は描画せず、矩形の塗りだけを表示する
+
+これにより、1x3、2x5のようなセル集合を1つのPolygonとして扱える。完全なポリゴン和演算は行わず、矩形マージで軽量化と見た目の改善を両立する。
 
 ## Fog opacity
 
@@ -99,12 +121,13 @@ Fog opacity はズーム率に応じてリニア補間する。
 
 ```ts
 export const GRID_OVERLAY_CONFIG = {
-  baseCellSizeMeters: 50,
-  displayCellSizesMeters: [50, 100, 200, 500, 1000],
+  baseCellSizeMeters: 100,
+  displayCellSizesMeters: [100, 200, 500, 1000, 2000, 5000, 10000],
   minimumFogOpacity: 0.2,
   maximumFogOpacity: 0.6,
   opacityStartLatitudeDelta: 0.01,
   opacityEndLatitudeDelta: 0.2,
+  visitedCellColorOverride: null,
 };
 ```
 
@@ -120,7 +143,7 @@ export const GRID_OVERLAY_CONFIG = {
 
 ### 低速移動
 
-徒歩、自転車、一般低速移動では、GPS点が存在した50mセルのみを visited として保存する。点間補間はしない。
+徒歩、自転車、一般低速移動では、GPS点が存在した100mセルのみを visited として保存する。点間補間はしない。
 
 理由:
 
@@ -187,7 +210,7 @@ CREATE INDEX IF NOT EXISTS idx_visited_cells_last_visited_at
   ON visited_cells(last_visited_at);
 ```
 
-保存する `cell_size_meters` は当面50のみとする。将来、別粒度保存が必要になった場合に備えて列として保持する。
+保存する `cell_size_meters` は当面100のみとする。将来、別粒度保存が必要になった場合に備えて列として保持する。
 
 upsert方針:
 
@@ -202,11 +225,12 @@ upsert方針:
 Gridの純粋関数を置く。
 
 - `gridCell.ts`
-  - lat/lng -> 50m cell
+  - lat/lng -> 100m cell
   - cell -> polygon coordinates
   - cellId生成
 - `gridAggregation.ts`
-  - 50mセル -> 表示セル集約
+  - 100mセル -> 表示セル集約
+  - 隣接セルの矩形マージ
   - regionから表示セルサイズ選択
 - `gridInterpolation.ts`
   - 高速移動時の補間セル生成
@@ -271,7 +295,7 @@ Polylineは削除しない。
 - 将来Replay
 - デバッグ
 
-メインマップでは Grid Overlay を主表示にする。既存の `visibleRouteSegments` は内部算出として残してもよいが、表示は開発フラグまたは将来設定で切り替える。
+メインマップでは Grid Overlay を主表示にし、`visibleRouteSegments` からの Polyline は描画しない。ルート線の見た目設定もユーザー設定画面から削除する。Polylineに必要な座標データは、エクスポートや日別ログなどの内部用途として保持する。
 
 ## テスト方針
 
@@ -279,9 +303,12 @@ Polylineは削除しない。
 
 必須テスト:
 
-- 緯度経度から安定した50m cellIdを生成できる
-- 同じ50mセル内の点が同じcellIdになる
-- 100m/200m/500m/1kmへの集約で、1つでもvisitedな50mセルがあれば大セルがvisitedになる
+- 緯度経度から安定した100m cellIdを生成できる
+- 同じ100mセル内の点が同じcellIdになる
+- 200m/500m/1km/2km/5km/10kmへの集約で、1つでもvisitedな100mセルがあれば大セルがvisitedになる
+- 隣接する表示セルを矩形へマージできる
+- Grid Overlayの内側罫線を描画しない
+- visited cell色をテーマのprimaryまたは設定値から解決できる
 - zoomに応じて表示セルサイズを選べる
 - Fog opacityが設定値に基づいて線形補間される
 - 低速移動では点間補間しない
@@ -296,9 +323,11 @@ Polylineは削除しない。
 2. `visited_cells` DBテーブルとrepository
 3. GPS受信時のvisited cell保存
 4. visible regionに応じたvisited cell取得
-5. Grid Overlay描画
-6. UI速度表示のraw speed分離
-7. ドキュメント更新と検証
+5. 隣接セルの矩形マージ
+6. Grid Overlay描画
+7. UI速度表示のraw speed分離
+8. ルート線の見た目設定削除
+9. ドキュメント更新と検証
 
 この順序にすると、各段階でテスト可能な状態を保ちやすい。
 

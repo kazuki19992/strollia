@@ -1,28 +1,17 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Pressable, SafeAreaView, Text, View } from 'react-native';
-import MapView, { Marker, Polygon, Polyline, Region, UserLocationChangeEvent } from 'react-native-maps';
+import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import type { RefObject } from 'react';
 
 import { MapPhotoCluster } from '../../features/photos/photoClusters';
 import { AreaLabel } from '../areaName';
 import { AppTheme } from '../../theme/theme';
-import { RouteSegment } from '../../features/map/routeMapper';
 import { VisitedGridOverlayCell } from '../../features/map/gridOverlay';
 import { LocationPoint } from '../../types/gps';
 import { AppStyles } from '../appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
-
-/** ルート線の描画スタイル。 */
-type RouteLineStyle = {
-  /** 線色。 */
-  color: string;
-  /** 線幅。 */
-  width: number;
-  /** 発光風の太線を背面に描くか。 */
-  glow: boolean;
-};
 
 /** 現在地アイコンの描画設定。 */
 type UserLocationIcon = {
@@ -54,10 +43,6 @@ export type MapScreenProps = {
   visitedGridCells: VisitedGridOverlayCell[];
   /** Grid Overlay全体のopacity。 */
   gridOverlayOpacity: number;
-  /** 表示対象の分割済みルート区間。 */
-  visibleRouteSegments: RouteSegment[];
-  /** ルート線スタイル。 */
-  routeLineStyle: RouteLineStyle;
   /** 写真表示設定。 */
   showPhotosOnMap: boolean;
   /** 写真表示設定を保存中か。 */
@@ -122,8 +107,6 @@ export function MapScreen({
   userCoordinate,
   visitedGridCells,
   gridOverlayOpacity,
-  visibleRouteSegments,
-  routeLineStyle,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
   photoClusters,
@@ -175,25 +158,12 @@ export function MapScreen({
               coordinates={cell.coordinates}
               fillColor={cell.fillColor}
               strokeColor={cell.strokeColor}
-              strokeWidth={1}
+              strokeWidth={cell.strokeWidth}
               testID="visited-grid-cell"
               tappable={false}
               zIndex={1}
             />
           ))}
-        {routeLineStyle.glow &&
-          visibleRouteSegments.map((segment) => (
-            <Polyline
-              key={`${segment.id}-glow`}
-              coordinates={segment.coordinates}
-              strokeColor={routeLineStyle.color}
-              strokeWidth={routeLineStyle.width + 8}
-              zIndex={2}
-            />
-          ))}
-        {visibleRouteSegments.map((segment) => (
-          <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} zIndex={2} />
-        ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
             <View style={styles.customUserLocationMarker}>

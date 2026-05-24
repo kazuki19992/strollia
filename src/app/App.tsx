@@ -48,20 +48,17 @@ import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../featur
 import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
 import { getPreviousReportMonth } from '../features/reports/monthlyReport';
-import { resolveRouteLineStyle, resolveUserLocationIcon } from '../features/customization/customizationResolver';
+import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
 import {
-  DEFAULT_ROUTE_LINE_STYLE_ID,
   DEFAULT_USER_LOCATION_ICON_ID,
-  getRouteLineStyleOption,
   getUserLocationIconOption,
-  RouteLineStyleId,
   UserLocationIconId,
 } from '../features/customization/customizationOptions';
 import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAccess';
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
-import { aggregateVisitedCells, getDisplayCellSizeMeters } from '../features/location/grid/gridAggregation';
+import { aggregateVisitedCells, getDisplayCellSizeMeters, mergeAdjacentGridCells } from '../features/location/grid/gridAggregation';
 import { getGridBoundsForRegion } from '../features/location/grid/gridCell';
 import { getVisitedCellsInBounds } from '../features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '../features/map/gridOverlay';
@@ -98,8 +95,6 @@ const KEEP_AWAKE_TAG = 'strollia-foreground-map';
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
 /** マップ上の写真表示設定をSQLiteへ保存するキー。 */
 const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
-/** ルート線スタイル設定をSQLiteへ保存するキー。 */
-const ROUTE_LINE_STYLE_SETTING_KEY = 'routeLineStyle';
 /** 現在地アイコン設定をSQLiteへ保存するキー。 */
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
@@ -146,15 +141,13 @@ export default function App() {
   const [visitedGridCells, setVisitedGridCells] = useState<VisitedGridOverlayCell[]>([]);
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
-  const [selectedRouteLineStyleId, setSelectedRouteLineStyleId] = useState<RouteLineStyleId>(DEFAULT_ROUTE_LINE_STYLE_ID);
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
-  const { renderRouteCoordinates, visibleRouteSegments, initialRegion, distance } = useMapRouteState(
+  const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(
     points,
     dailyLogs,
-    visibleRegion,
   );
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
@@ -172,10 +165,6 @@ export default function App() {
     [selectedPhotoCluster],
   );
   const premiumAccessState = useMemo(() => getDefaultPremiumAccessState(), []);
-  const routeLineStyle = useMemo(
-    () => resolveRouteLineStyle(selectedRouteLineStyleId, premiumAccessState.isPlusActive, theme.colors.mapLine),
-    [premiumAccessState.isPlusActive, selectedRouteLineStyleId, theme.colors.mapLine],
-  );
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
     [premiumAccessState.isPlusActive, selectedUserLocationIconId],
@@ -378,15 +367,13 @@ export default function App() {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
-        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedRouteLineStyle, savedUserLocationIcon] = await Promise.all([
+        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
-          getStringSetting(ROUTE_LINE_STYLE_SETTING_KEY, DEFAULT_ROUTE_LINE_STYLE_ID),
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
         setShowPhotosOnMap(savedShowPhotosOnMap);
-        setSelectedRouteLineStyleId(getRouteLineStyleOption(savedRouteLineStyle as RouteLineStyleId).id);
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
@@ -477,12 +464,13 @@ export default function App() {
     getVisitedCellsInBounds(bounds)
       .then((cells) => {
         const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
-        setVisitedGridCells(toVisitedGridOverlayCells(aggregatedCells, gridOverlayOpacity, GRID_OVERLAY_CONFIG));
+        const mergedCells = mergeAdjacentGridCells(aggregatedCells);
+        setVisitedGridCells(toVisitedGridOverlayCells(mergedCells, gridOverlayOpacity, theme.colors.primary, GRID_OVERLAY_CONFIG));
       })
       .catch((error: unknown) => {
         console.warn('Failed to refresh visited grid cells:', error);
       });
-  }, [gridOverlayOpacity, gridOverlayRegion, isReady, points.length]);
+  }, [gridOverlayOpacity, gridOverlayRegion, isReady, points.length, theme.colors.primary]);
 
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });
   useAchievementDialogEffects({
@@ -682,28 +670,6 @@ export default function App() {
     Alert.alert('インポート', 'GPX / KML インポートは今後実装予定です。');
   }
 
-
-  /**
-   * ルート線スタイルを保存して地図へ即時反映する。
-   *
-   * @param styleId - 保存するルート線スタイルID。
-   * @returns なし。
-   */
-  function updateRouteLineStyle(styleId: RouteLineStyleId): void {
-    const option = getRouteLineStyleOption(styleId);
-
-    if (option.premium && !premiumAccessState.isPlusActive) {
-      showPremiumLockedMessage(option.label);
-      return;
-    }
-
-    triggerSelectionHaptic();
-    setSelectedRouteLineStyleId(option.id);
-    setSetting(ROUTE_LINE_STYLE_SETTING_KEY, option.id).catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'ルート線スタイルを保存できませんでした。');
-    });
-  }
-
   /**
    * 現在地アイコンを保存して地図へ即時反映する。
    *
@@ -775,8 +741,6 @@ export default function App() {
             userCoordinate={userCoordinate}
             visitedGridCells={visitedGridCells}
             gridOverlayOpacity={gridOverlayOpacity}
-            visibleRouteSegments={visibleRouteSegments}
-            routeLineStyle={routeLineStyle}
             showPhotosOnMap={showPhotosOnMap}
             isUpdatingPhotoSetting={isUpdatingPhotoSetting}
             photoClusters={photoClusters}
@@ -819,7 +783,6 @@ export default function App() {
             showPhotosOnMap={showPhotosOnMap}
             isUpdatingPhotoSetting={isUpdatingPhotoSetting}
             premiumAccessState={premiumAccessState}
-            selectedRouteLineStyleId={selectedRouteLineStyleId}
             selectedUserLocationIconId={selectedUserLocationIconId}
             onBackToMap={openMap}
             onStartRecording={() => startRecording('manual')}
@@ -827,7 +790,6 @@ export default function App() {
             onRequestLocationPermission={requestLocationPermission}
             onUpdateKeepScreenAwake={updateKeepScreenAwake}
             onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-            onUpdateRouteLineStyle={updateRouteLineStyle}
             onUpdateUserLocationIcon={updateUserLocationIcon}
             onExportAllLogs={exportAllLogs}
             onShowImportPlaceholder={showImportPlaceholder}

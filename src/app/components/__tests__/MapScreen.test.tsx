@@ -58,8 +58,6 @@ function createProps() {
     userCoordinate: null,
     visitedGridCells: [],
     gridOverlayOpacity: 0.3,
-    visibleRouteSegments: [],
-    routeLineStyle: { color: lightTheme.colors.mapLine, width: 4, glow: false },
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
     photoClusters: [],
@@ -221,22 +219,15 @@ describe('地図画面 MapScreen', () => {
     expect(props.onOpenMonthlyReport).toHaveBeenCalledTimes(1);
   });
 
-  test('分割済みルートを複数Polylineで描く', () => {
-    const props = {
-      ...createProps(),
-      visibleRouteSegments: [
-        { id: 'first', coordinates: [{ latitude: 35, longitude: 139 }, { latitude: 35.001, longitude: 139 }] },
-        { id: 'second', coordinates: [{ latitude: 36, longitude: 140 }, { latitude: 36.001, longitude: 140 }] },
-      ],
-    };
+  test('メインマップではPolylineを描画しない', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
     });
 
     const polylines = renderer.root.findAll((node: any) => Array.isArray(node.props.coordinates));
-    expect(new Set(polylines.map((node: any) => node.props.coordinates)).size).toBe(2);
+    expect(polylines).toHaveLength(0);
   });
 
   test('visited grid overlayをPolygonで描く', () => {
@@ -244,15 +235,16 @@ describe('地図画面 MapScreen', () => {
       ...createProps(),
       visitedGridCells: [
         {
-          id: '50:1:2',
+          id: '100:1:2:1x1',
           coordinates: [
             { latitude: 35, longitude: 139 },
             { latitude: 35, longitude: 139.001 },
             { latitude: 35.001, longitude: 139.001 },
             { latitude: 35.001, longitude: 139 },
           ],
-          fillColor: 'rgba(136, 240, 194, 0.3)',
-          strokeColor: 'rgba(136, 240, 194, 0.6)',
+          fillColor: 'rgba(0, 150, 136, 0.3)',
+          strokeColor: 'rgba(0, 150, 136, 0)',
+          strokeWidth: 0,
         },
       ],
     };
@@ -264,7 +256,8 @@ describe('地図画面 MapScreen', () => {
 
     const gridCells = renderer.root.findAll((node: any) => node.props.testID === 'visited-grid-cell' && node.props.fillColor);
     expect(gridCells.length).toBeGreaterThan(0);
-    expect(gridCells[0].props.fillColor).toBe('rgba(136, 240, 194, 0.3)');
+    expect(gridCells[0].props.fillColor).toBe('rgba(0, 150, 136, 0.3)');
+    expect(gridCells[0].props.strokeWidth).toBe(0);
   });
 });
 

@@ -102,12 +102,12 @@ GPX / KML エクスポート履歴を保存するテーブル。
 
 メインマップの Visited Grid Overlay 表示に使う訪問済みセルを保存するテーブル。
 
-保存粒度は50mセルのみとし、表示時に100m、200m、500m、1km相当へ集約する。
+保存粒度は100mセルのみとし、表示時に200m、500m、1km、2km、5km、10km相当へ集約する。
 
 | カラム | 型 | 説明 |
 | --- | --- | --- |
-| `cell_id` | TEXT | 主キー。形式は `50:x:y` |
-| `cell_size_meters` | INTEGER | 保存セルサイズ。当面は50 |
+| `cell_id` | TEXT | 主キー。形式は `100:x:y` |
+| `cell_size_meters` | INTEGER | 保存セルサイズ。当面は100 |
 | `x` | INTEGER | Web Mercatorメートル座標をセルサイズで割ったX番号 |
 | `y` | INTEGER | Web Mercatorメートル座標をセルサイズで割ったY番号 |
 | `first_visited_at` | TEXT | 初回訪問日時 |
@@ -265,11 +265,11 @@ from-to エクスポートでは `recorded_at` 範囲検索を使う。
 - 日単位の簡略化ルート
 - ズームレベル別に間引いたルート
 - 表示期間ごとの集約データ
-- Visited Grid Overlay用の50m visited cell
+- Visited Grid Overlay用の100m visited cell
 
 保存前には raw GPS 観測を品質判定へ通し、accepted 点だけを `location_points` と日別距離へ反映する。
 
-Visited Grid Overlayでは、GPS点が存在した50mセルを `visited_cells` へ保存する。低速時は点が存在したセルだけを開放し、150km/h以上の高速移動時のみvisited cell補完用に点間を補間する。
+Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` へ保存する。低速時は点が存在したセルだけを開放し、150km/h以上の高速移動時のみvisited cell補完用に点間を補間する。
 
 単発ジャンプ、短い誤軌道区間、停止中ドリフトの疑いがある点は provisional として短期保留し、点列として信頼できた場合のみ accepted 点へ昇格する。accuracy が粗すぎる点や復帰判定でドリフトと判断した点は保存しない。
 

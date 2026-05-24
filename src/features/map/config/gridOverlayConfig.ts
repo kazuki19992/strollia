@@ -14,18 +14,18 @@ export type GridOverlayConfig = {
   opacityEndLatitudeDelta: number;
   /** Fogセルの色。 */
   fogColor: string;
-  /** visitedセルの色。 */
-  visitedCellColor: string;
+  /** visitedセル色をテーマprimaryから差し替える場合に使う値。 */
+  visitedCellColorOverride: string | null;
 };
 
 /** Visited Grid Overlayの既定設定。 */
 export const GRID_OVERLAY_CONFIG: GridOverlayConfig = {
-  baseCellSizeMeters: 50,
-  displayCellSizesMeters: [50, 100, 200, 500, 1000],
+  baseCellSizeMeters: 100,
+  displayCellSizesMeters: [100, 200, 500, 1000, 2000, 5000, 10000],
   minimumFogOpacity: 0.2,
   maximumFogOpacity: 0.6,
   opacityStartLatitudeDelta: 0.01,
   opacityEndLatitudeDelta: 0.2,
   fogColor: '#111111',
-  visitedCellColor: '#88f0c2',
+  visitedCellColorOverride: null,
 };

@@ -2,11 +2,35 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a first vertical slice of Visited Grid Overlay so the main map can show visited 50m cells with zoom-aware Fog styling while keeping Polyline data for internal/export uses.
+**Goal:** Add a first vertical slice of Visited Grid Overlay so the main map can show visited 100m cells with zoom-aware Fog styling while keeping Polyline data for internal/export uses.
 
 **Architecture:** Put grid math in pure `src/features/location/grid/*` modules, persistence in `src/features/location/visitedCellRepository.ts`, map presentation shaping in `src/features/map/gridOverlay.ts`, and React rendering in `MapScreen`. GPS task code upserts visited cells independently from accepted Polyline saving, and the speedometer UI uses raw GPS speed from foreground map events instead of accepted-point speed.
 
 **Tech Stack:** React Native, Expo, TypeScript, Jest, expo-sqlite, react-native-maps.
+
+---
+
+## Follow-up Adjustment: Main Map Grid-Only Rendering
+
+User feedback after the first vertical slice:
+
+- Main map Polyline should not be rendered; visited grid is the primary map surface.
+- Route line appearance settings should be removed from the settings screen because the main map no longer draws route lines.
+- Saved base cells should be 100m square.
+- Display cell sizes should be `[100, 200, 500, 1000, 2000, 5000, 10000]` meters.
+- Visited cell color should be customization-ready without exposing a UI yet.
+- Light mode should use a stronger color, preferably the theme primary color.
+- Adjacent cell borders should not appear between cells.
+- Adjacent display cells should be merged into larger rectangles where possible to reduce Polygon count.
+
+Implementation approach:
+
+1. Update docs and tests for the 100m base grid and new display sizes.
+2. Add rectangle merging to `gridAggregation`.
+3. Change `gridOverlay` to resolve cell color from theme primary plus optional config override, and set `strokeWidth` to `0`.
+4. Render merged rectangles as `Polygon`s and remove main-map `Polyline` rendering.
+5. Remove route line appearance controls from `SettingsScreen` and the persisted selection plumbing in `App`.
+6. Keep Polyline data and route mapper utilities for exports, reports, daily logs, and future replay/debug use.
 
 ---
 
@@ -17,7 +41,7 @@
 - Create `src/features/location/grid/gridCell.ts`
   - Converts lat/lng to Web Mercator based grid cells and cell polygons.
 - Create `src/features/location/grid/gridAggregation.ts`
-  - Selects display cell size and aggregates 50m cells into display cells.
+  - Selects display cell size, aggregates 100m cells into display cells, and merges adjacent display cells.
 - Create `src/features/location/grid/gridInterpolation.ts`
   - Produces visited cells from GPS points, interpolating only when speed is 150km/h or higher.
 - Create `src/features/map/gridOverlay.ts`
@@ -61,11 +85,11 @@ Add `src/features/location/grid/__tests__/gridCell.test.ts`:
 import { cellToPolygonCoordinates, coordinateToGridCell } from '../gridCell';
 
 describe('Visited Gridセル変換 gridCell', () => {
-  it('同じ50mセル内の近い座標を同じcellIdにする', () => {
+  it('同じ100mセル内の近い座標を同じcellIdにする', () => {
     const base = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
     const nearby = coordinateToGridCell({ latitude: 35.68125, longitude: 139.76714 });
 
-    expect(base.cellSizeMeters).toBe(50);
+    expect(base.cellSizeMeters).toBe(100);
     expect(nearby.cellId).toBe(base.cellId);
   });
 
@@ -89,12 +113,12 @@ import { coordinateToGridCell } from '../gridCell';
 
 describe('Visited Grid表示集約 gridAggregation', () => {
   it('ズームに応じて表示セルサイズを選ぶ', () => {
-    expect(getDisplayCellSizeMeters({ latitudeDelta: 0.005 }, GRID_OVERLAY_CONFIG)).toBe(50);
+    expect(getDisplayCellSizeMeters({ latitudeDelta: 0.005 }, GRID_OVERLAY_CONFIG)).toBe(100);
     expect(getDisplayCellSizeMeters({ latitudeDelta: 0.08 }, GRID_OVERLAY_CONFIG)).toBe(200);
     expect(getDisplayCellSizeMeters({ latitudeDelta: 0.5 }, GRID_OVERLAY_CONFIG)).toBe(1000);
   });
 
-  it('visitedな50mセルが1つでもあれば大セルをvisitedにする', () => {
+  it('visitedな100mセルが1つでもあれば大セルをvisitedにする', () => {
     const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
     const aggregated = aggregateVisitedCells([cell], 200);
 
@@ -151,20 +175,20 @@ export type GridOverlayConfig = {
   opacityEndLatitudeDelta: number;
   /** Fogセルの色。 */
   fogColor: string;
-  /** visitedセルの色。 */
-  visitedCellColor: string;
+  /** visitedセル色をテーマprimaryから差し替える場合に使う値。 */
+  visitedCellColorOverride: string | null;
 };
 
 /** Visited Grid Overlayの既定設定。 */
 export const GRID_OVERLAY_CONFIG: GridOverlayConfig = {
-  baseCellSizeMeters: 50,
-  displayCellSizesMeters: [50, 100, 200, 500, 1000],
+  baseCellSizeMeters: 100,
+  displayCellSizesMeters: [100, 200, 500, 1000, 2000, 5000, 10000],
   minimumFogOpacity: 0.2,
   maximumFogOpacity: 0.6,
   opacityStartLatitudeDelta: 0.01,
   opacityEndLatitudeDelta: 0.2,
   fogColor: '#111111',
-  visitedCellColor: '#88f0c2',
+  visitedCellColorOverride: null,
 };
 ```
 

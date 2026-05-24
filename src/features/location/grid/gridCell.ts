@@ -19,6 +19,14 @@ export type GridCell = {
   y: number;
 };
 
+/** Polygon化できるセルまたはセル矩形。 */
+export type GridCellPolygonSource = GridCell & {
+  /** 横方向に含むセル数。省略時は1。 */
+  widthCells?: number;
+  /** 縦方向に含むセル数。省略時は1。 */
+  heightCells?: number;
+};
+
 /** Grid取得に使うセル番号範囲。 */
 export type GridBounds = {
   /** 最小X番号。 */
@@ -70,7 +78,7 @@ function fromMercatorMeters(coordinate: MercatorCoordinate): LatLng {
  * 緯度経度をVisited Gridセルへ変換する。
  *
  * @param coordinate - GPS点の緯度経度。
- * @param cellSizeMeters - セルサイズ。省略時は基本50m。
+ * @param cellSizeMeters - セルサイズ。省略時は基本100m。
  * @returns Web Mercator基準のセル。
  */
 export function coordinateToGridCell(
@@ -95,11 +103,11 @@ export function coordinateToGridCell(
  * @param cell - 変換対象セル。
  * @returns 左下から時計回りに並べた緯度経度。
  */
-export function cellToPolygonCoordinates(cell: GridCell): LatLng[] {
+export function cellToPolygonCoordinates(cell: GridCellPolygonSource): LatLng[] {
   const minX = cell.x * cell.cellSizeMeters;
   const minY = cell.y * cell.cellSizeMeters;
-  const maxX = minX + cell.cellSizeMeters;
-  const maxY = minY + cell.cellSizeMeters;
+  const maxX = minX + cell.cellSizeMeters * (cell.widthCells ?? 1);
+  const maxY = minY + cell.cellSizeMeters * (cell.heightCells ?? 1);
 
   return [
     fromMercatorMeters({ x: minX, y: minY }),
@@ -110,7 +118,7 @@ export function cellToPolygonCoordinates(cell: GridCell): LatLng[] {
 }
 
 /**
- * 表示範囲を基本50mセル番号範囲へ変換する。
+ * 表示範囲を基本100mセル番号範囲へ変換する。
  *
  * @param region - MapViewの表示範囲。
  * @returns SQLite検索に使うセル番号範囲。

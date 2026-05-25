@@ -21,14 +21,14 @@ User feedback after the first vertical slice:
 - Visited cell color should be customization-ready without exposing a UI yet.
 - Light mode should use a stronger color, preferably the theme primary color.
 - Adjacent cell borders should not appear between cells.
-- Adjacent display cells should be merged into larger rectangles where possible to reduce Polygon count.
+- Adjacent display cells should remain separate Polygons so cell identity and fade state stay stable during zoom and pan operations.
 
 Implementation approach:
 
 1. Update docs and tests for the 100m base grid and new display sizes.
-2. Add rectangle merging to `gridAggregation`.
+2. Keep display-cell aggregation in `gridAggregation` without adjacent rectangle merging.
 3. Change `gridOverlay` to resolve cell color from theme primary plus optional config override, and set `strokeWidth` to `0`.
-4. Render merged rectangles as `Polygon`s and remove main-map `Polyline` rendering.
+4. Render aggregated cells as one `Polygon` per cell and remove main-map `Polyline` rendering.
 5. Remove route line appearance controls from `SettingsScreen` and the persisted selection plumbing in `App`.
 6. Keep Polyline data and route mapper utilities for exports, reports, daily logs, and future replay/debug use.
 

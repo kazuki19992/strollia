@@ -1,4 +1,5 @@
 import { cellToPolygonCoordinates, coordinateToGridCell, getGridBoundsForRegion } from '../gridCell';
+import type { GridCell } from '../gridCell';
 
 describe('Visited Gridセル変換 gridCell', () => {
   it('同じ100mセル内の近い座標を同じcellIdにする', () => {
@@ -16,6 +17,19 @@ describe('Visited Gridセル変換 gridCell', () => {
     expect(polygon).toHaveLength(4);
     expect(polygon.every((coordinate) => Number.isFinite(coordinate.latitude))).toBe(true);
     expect(polygon.every((coordinate) => Number.isFinite(coordinate.longitude))).toBe(true);
+  });
+
+  it('矩形用の追加フィールドが混ざっても単一セルのPolygonを作る', () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+    const polygon = cellToPolygonCoordinates(cell);
+    const staleRectangleCell = {
+      ...cell,
+      widthCells: 3,
+      heightCells: 2,
+    } as unknown as GridCell;
+    const polygonWithStaleRectangleFields = cellToPolygonCoordinates(staleRectangleCell);
+
+    expect(polygonWithStaleRectangleFields).toEqual(polygon);
   });
 
   it('通常の表示範囲を含むセル番号範囲を返す', () => {

@@ -1,5 +1,5 @@
 import { GRID_OVERLAY_CONFIG } from '../../../map/config/gridOverlayConfig';
-import { aggregateVisitedCells, getDisplayCellSizeMeters, getStableDisplayCellSizeMeters, mergeAdjacentGridCells } from '../gridAggregation';
+import { aggregateVisitedCells, getDisplayCellSizeMeters, getStableDisplayCellSizeMeters } from '../gridAggregation';
 import { coordinateToGridCell } from '../gridCell';
 
 describe('Visited Grid表示集約 gridAggregation', () => {
@@ -61,8 +61,8 @@ describe('Visited Grid表示集約 gridAggregation', () => {
     expect(() => aggregateVisitedCells([cell], 250)).toThrow('displayCellSizeMeters must be a multiple');
   });
 
-  it('横に連続するvisited cellを1つの矩形にまとめる', () => {
-    const rectangles = mergeAdjacentGridCells([
+  it('同じ表示セルサイズの隣接セルを矩形結合せず別々に返す', () => {
+    const cells = aggregateVisitedCells([
       {
         cellId: '100:10:20',
         cellSizeMeters: 100,
@@ -90,82 +90,9 @@ describe('Visited Grid表示集約 gridAggregation', () => {
         lastVisitedAt: '2026-05-24T00:25:00.000Z',
         visitCount: 3,
       },
-    ]);
+    ], 100);
 
-    expect(rectangles).toEqual([
-      expect.objectContaining({
-        cellId: 'rect:100:10:20',
-        x: 10,
-        y: 20,
-        widthCells: 3,
-        heightCells: 1,
-        firstVisitedAt: '2026-05-24T00:00:00.000Z',
-        lastVisitedAt: '2026-05-24T00:30:00.000Z',
-        visitCount: 6,
-      }),
-    ]);
-  });
-
-  it('同じ幅で上下に連続するvisited cellを大きな矩形にまとめる', () => {
-    const rectangles = mergeAdjacentGridCells([
-      {
-        cellId: '100:10:20',
-        cellSizeMeters: 100,
-        x: 10,
-        y: 20,
-        firstVisitedAt: '2026-05-24T00:20:00.000Z',
-        lastVisitedAt: '2026-05-24T00:30:00.000Z',
-        visitCount: 1,
-      },
-      {
-        cellId: '100:11:20',
-        cellSizeMeters: 100,
-        x: 11,
-        y: 20,
-        firstVisitedAt: '2026-05-24T00:10:00.000Z',
-        lastVisitedAt: '2026-05-24T00:40:00.000Z',
-        visitCount: 2,
-      },
-      {
-        cellId: '100:10:21',
-        cellSizeMeters: 100,
-        x: 10,
-        y: 21,
-        firstVisitedAt: '2026-05-24T00:00:00.000Z',
-        lastVisitedAt: '2026-05-24T00:50:00.000Z',
-        visitCount: 3,
-      },
-      {
-        cellId: '100:11:21',
-        cellSizeMeters: 100,
-        x: 11,
-        y: 21,
-        firstVisitedAt: '2026-05-24T00:15:00.000Z',
-        lastVisitedAt: '2026-05-24T00:35:00.000Z',
-        visitCount: 4,
-      },
-    ]);
-
-    expect(rectangles).toHaveLength(1);
-    expect(rectangles[0]).toEqual(expect.objectContaining({
-      cellId: 'rect:100:10:20',
-      x: 10,
-      y: 20,
-      widthCells: 2,
-      heightCells: 2,
-      firstVisitedAt: '2026-05-24T00:00:00.000Z',
-      lastVisitedAt: '2026-05-24T00:50:00.000Z',
-      visitCount: 10,
-    }));
-  });
-
-  it('L字のvisited cell集合は複数矩形として扱う', () => {
-    const rectangles = mergeAdjacentGridCells([
-      { cellId: '100:10:20', cellSizeMeters: 100, x: 10, y: 20 },
-      { cellId: '100:11:20', cellSizeMeters: 100, x: 11, y: 20 },
-      { cellId: '100:10:21', cellSizeMeters: 100, x: 10, y: 21 },
-    ]);
-
-    expect(rectangles.length).toBeGreaterThan(1);
+    expect(cells).toHaveLength(3);
+    expect(cells.map((cell) => cell.cellId)).toEqual(['100:10:20', '100:11:20', '100:12:20']);
   });
 });

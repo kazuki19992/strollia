@@ -11,7 +11,7 @@ const WEB_MERCATOR_HALF_WORLD_WIDTH_METERS = WEB_MERCATOR_RADIUS_METERS * Math.P
 
 /** Visited Gridのセル。 */
 export type GridCell = {
-  /** セルID。単一セルは `${cellSizeMeters}:${x}:${y}`、表示矩形は `rect:${cellSizeMeters}:${x}:${y}`。 */
+  /** セルID。形式は `${cellSizeMeters}:${x}:${y}`。 */
   cellId: string;
   /** セルサイズ。単位はm。 */
   cellSizeMeters: number;
@@ -27,13 +27,8 @@ export type GridCell = {
   visitCount?: number;
 };
 
-/** Polygon化できるセルまたはセル矩形。 */
-export type GridCellPolygonSource = GridCell & {
-  /** 横方向に含むセル数。省略時は1。 */
-  widthCells?: number;
-  /** 縦方向に含むセル数。省略時は1。 */
-  heightCells?: number;
-};
+/** Polygon化できるVisited Gridセル。 */
+export type GridCellPolygonSource = GridCell;
 
 /** Grid取得に使うセル番号範囲。 */
 export type GridBounds = {
@@ -120,8 +115,8 @@ export function coordinateToGridCell(
 export function cellToPolygonCoordinates(cell: GridCellPolygonSource): LatLng[] {
   const minX = cell.x * cell.cellSizeMeters;
   const minY = cell.y * cell.cellSizeMeters;
-  const maxX = minX + cell.cellSizeMeters * (cell.widthCells ?? 1);
-  const maxY = minY + cell.cellSizeMeters * (cell.heightCells ?? 1);
+  const maxX = minX + cell.cellSizeMeters;
+  const maxY = minY + cell.cellSizeMeters;
 
   return [
     fromMercatorMeters({ x: minX, y: minY }),

@@ -128,9 +128,8 @@ flowchart TD
   A[MapView表示範囲] --> B[表示範囲を100mセルboundsへ変換]
   B --> C[visited_cellsをx/y範囲検索]
   C --> D[ズームに応じて100mセルを大セルへ集約]
-  D --> E[隣接セルを矩形マージ]
-  E --> F[Fog opacityをlatitudeDeltaから計算]
-  F --> G[PolygonとしてGrid Overlay描画]
+  D --> E[Fog opacityをlatitudeDeltaから計算]
+  E --> F[1セル1PolygonとしてGrid Overlay描画]
 ```
 
 ## 7. 初期実装の判断

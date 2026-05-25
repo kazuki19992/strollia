@@ -58,7 +58,7 @@ import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAcce
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
-import { aggregateVisitedCells, getStableDisplayCellSizeMeters, mergeAdjacentGridCells } from '../features/location/grid/gridAggregation';
+import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '../features/location/grid/gridAggregation';
 import { getGridBoundsForRegion, GridCellPolygonSource } from '../features/location/grid/gridCell';
 import { getVisitedCellsInBounds } from '../features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '../features/map/gridOverlay';
@@ -142,7 +142,7 @@ export default function App() {
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
-  /** DBから取得して矩形結合したvisited cell。表示用フェードとは分けて保持する。 */
+  /** DBから取得して表示セルサイズへ集約したvisited cell。表示用フェードとは分けて保持する。 */
   const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
   const [visitedGridRefreshVersion, setVisitedGridRefreshVersion] = useState(0);
   /** 新規visited cellの0.5秒フェードを進めるため、50ms間隔で表示セルを再計算する。 */
@@ -163,7 +163,7 @@ export default function App() {
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const gridOverlayRegion = visibleRegion ?? initialRegion;
   const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
-  /** merged source cellsに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
+  /** 集約済みvisited cellに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
   const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
     const now = Date.now();
 
@@ -497,9 +497,8 @@ export default function App() {
         }
 
         const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
-        const mergedCells = mergeAdjacentGridCells(aggregatedCells);
-        syncVisitedGridFadeState(mergedCells);
-        setVisitedGridSourceCells(mergedCells);
+        syncVisitedGridFadeState(aggregatedCells);
+        setVisitedGridSourceCells(aggregatedCells);
       })
       .catch((error: unknown) => {
         console.warn('Failed to refresh visited grid cells:', error);

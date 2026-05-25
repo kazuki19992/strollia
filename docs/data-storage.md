@@ -267,21 +267,19 @@ from-to エクスポートでは `recorded_at` 範囲検索を使う。
 - 表示期間ごとの集約データ
 - Visited Grid Overlay用の100m visited cell
 
-保存前には raw GPS 観測を品質判定へ通し、accepted 点だけを `location_points` と日別距離へ反映する。
+保存前には raw GPS 観測を軽量な保存判定へ通し、`location_points` と日別距離へ反映する。
 
 Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` へ保存する。低速時は点が存在したセルだけを開放し、150km/h以上の高速移動時のみvisited cell補完用に点間を補間する。
 
-単発ジャンプ、短い誤軌道区間、停止中ドリフトの疑いがある点は provisional として短期保留し、点列として信頼できた場合のみ accepted 点へ昇格する。accuracy が粗すぎる点や復帰判定でドリフトと判断した点は保存しない。
+メインマップはPolylineではなくVisited Gridを主表示とするため、`location_points` 側ではprovisional確定待ちを行わない。水平方向精度が80mを超える点、5m未満の細かな揺れ、端末のraw speedが停止相当で20m未満に散る点を落とし、それ以外は速度帯に応じた最小距離を満たせば保存する。
 
-品質判定では直近 accepted 点列と provisional 点列を使い、候補点自身の raw speed だけで保存を緩めない。保存品質判定と速度メーターで共有する速度帯は以下とする。
+保存判定では候補点自身の raw speed だけで速度帯を決めず、直前保存点との距離と時刻差から区間速度を計算する。保存判定と速度メーターで共有する速度帯は以下とする。
 
 - low-speed: `30 km/h` 未満
 - vehicle: `30 km/h` 以上 `150 km/h` 未満
 - fast: `150 km/h` 以上
 
-停止状態は速度帯とは別に stationary cluster で扱う。初期実装では水平方向の位置精度が80mを超える観測、5m未満の重複またはジッター、直近 accepted 点列が狭い範囲に留まる停止中のドリフトを保存しない。
-
-停止クラスタから離れた観測は即保存せず、stationary escape として通常より厳しい provisional 判定へ回す。点数だけでは accepted へ昇格せず、anchor からの離脱距離、点列の移動量、accuracy、区間速度の安定性を確認する。
+停止状態は端末のraw speedが停止相当かつ移動距離が小さい場合だけドリフトとして扱う。徒歩開始や低速移動の取りこぼしを避けるため、停止クラスタやprovisional点列による厳密な確定待ちは行わない。
 
 `expo-location` の要求精度は `Location.Accuracy.High` とし、`distanceInterval` は5mに設定して停止中のコールバック頻度を抑える。
 

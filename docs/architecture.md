@@ -100,10 +100,9 @@ flowchart TD
   E -->|はい| G
   G --> H[raw GPS観測を取得]
   H --> N[visited cellをupsert]
-  H --> I[軌跡品質を判定]
-  I -->|accepted| J[SQLiteへ保存]
-  I -->|provisional| H
-  I -->|rejected| H
+  H --> I[軽量保存判定]
+  I -->|保存対象| J[SQLiteへ保存]
+  I -->|保存しない| H
   J --> K[画面状態を更新]
   K --> H
   K --> L[ユーザーが記録停止]

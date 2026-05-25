@@ -3,20 +3,17 @@ import * as TaskManager from 'expo-task-manager';
 
 import { initializeDatabase } from '../../db/database';
 import { processAchievementsForSavedPoint } from '../achievements/achievementService';
-import { getRecentLocationPoints, insertLocationPoint } from '../logs/logRepository';
+import { getLatestLocationPoint, insertLocationPoint } from '../logs/logRepository';
 import { BACKGROUND_LOCATION_TASK_NAME } from './locationTrackingConfig';
 import { toLocationPoint } from './locationMapper';
-import { advanceLocationQualityContext, createLocationQualityContext } from './locationQualityFilter';
 import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
+import { shouldSaveLocationPoint } from './locationSaveFilter';
 import { upsertVisitedCells } from './visitedCellRepository';
 
 /** Expo Locationのバックグラウンドタスクから渡される位置情報ペイロード。 */
 type BackgroundLocationTaskData = {
   locations?: Location.LocationObject[];
 };
-
-/** バッチ境界をまたいで短い保留軌道を確認するメモリ内窓。 */
-let pendingProvisionalPoints: ReturnType<typeof toLocationPoint>[] = [];
 
 // タスク定義はアプリ起動時にトップレベルで登録しておく必要がある。
 if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
@@ -34,10 +31,10 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
 
     await initializeDatabase();
 
-    // 同一バッチ内でも品質判定コンテキストを進め、accepted点だけを保存する。
-    const acceptedSeed = await getRecentLocationPoints(6);
-    let qualityContext = createLocationQualityContext(acceptedSeed, pendingProvisionalPoints);
-    let previousVisitedCellPoint: ReturnType<typeof toLocationPoint> | null = acceptedSeed.at(-1) ?? pendingProvisionalPoints.at(-1) ?? null;
+    // VisitedCellはraw観測寄り、Polyline/ODO用ログは軽量保存判定で別々に扱う。
+    const latestSavedPoint = await getLatestLocationPoint();
+    let previousSavedPoint: Parameters<typeof shouldSaveLocationPoint>[1] = latestSavedPoint;
+    let previousVisitedCellPoint: ReturnType<typeof toLocationPoint> | null = latestSavedPoint;
     const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
 
     for (const location of locations) {
@@ -49,16 +46,12 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
         previousVisitedCellPoint = point;
       }
 
-      const advance = advanceLocationQualityContext(point, qualityContext);
-      qualityContext = advance.context;
-
-      for (const acceptedPoint of advance.acceptedPoints) {
-        const locationPointId = await insertLocationPoint(acceptedPoint);
-        savedPoints.push({ point: acceptedPoint, locationPointId });
+      if (shouldSaveLocationPoint(point, previousSavedPoint)) {
+        const locationPointId = await insertLocationPoint(point);
+        savedPoints.push({ point, locationPointId });
+        previousSavedPoint = point;
       }
     }
-
-    pendingProvisionalPoints = qualityContext.provisionalPoints;
 
     // GPSポイント保存を先に完了させ、逆ジオコーディングを含む実績処理は後段で行う。
     for (const { point, locationPointId } of savedPoints) {

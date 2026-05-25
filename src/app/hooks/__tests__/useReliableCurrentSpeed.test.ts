@@ -17,8 +17,8 @@ function point(latitude: number, longitude: number, recordedAt: string): Locatio
   };
 }
 
-describe('信頼済み点の現在速度 useReliableCurrentSpeed', () => {
-  it('最後のaccepted区間速度をkm/hで返す', () => {
+describe('保存済み点の現在速度 useReliableCurrentSpeed', () => {
+  it('最後の保存区間速度をkm/hで返す', () => {
     const speed = calculateReliableCurrentSpeedKmh([
       point(35, 139, '2026-05-23T00:00:00.000Z'),
       point(35.001, 139, '2026-05-23T00:01:00.000Z'),

@@ -16,7 +16,7 @@ const STATIONARY_DRIFT_MAX_SPEED_KMH = 5;
 /**
  * 最後に採用された2点から速度メーター表示用の速度を求める。
  *
- * @param points - 品質判定後に保存されたGPSポイント。
+ * @param points - 軽量保存判定を通ったGPSポイント。
  * @returns km/h単位の現在速度。区間を作れない場合は0。
  */
 export function calculateReliableCurrentSpeedKmh(points: LocationPoint[]): number {
@@ -37,10 +37,10 @@ export function calculateReliableCurrentSpeedKmh(points: LocationPoint[]): numbe
 }
 
 /**
- * 直近のaccepted点が狭い範囲で揺れているだけなら停止中のGPSドリフトとみなす。
+ * 直近の保存済み点が狭い範囲で揺れているだけなら停止中のGPSドリフトとみなす。
  *
- * @param points - 品質判定後に保存されたGPSポイント。
- * @param latestSegmentSpeedKmh - 最後のaccepted区間速度。単位はkm/h。
+ * @param points - 軽量保存判定を通ったGPSポイント。
+ * @param latestSegmentSpeedKmh - 最後の保存区間速度。単位はkm/h。
  * @returns 停止表示へ倒すべきドリフトならtrue。
  */
 function isStationaryDrift(points: LocationPoint[], latestSegmentSpeedKmh: number): boolean {
@@ -64,9 +64,9 @@ function isStationaryDrift(points: LocationPoint[], latestSegmentSpeedKmh: numbe
 }
 
 /**
- * 品質判定後の保存済み点に追従する速度メーター用速度を返す。
+ * 保存済み点に追従する速度メーター用速度を返す。
  *
- * @param points - 品質判定後に保存されたGPSポイント。
+ * @param points - 軽量保存判定を通ったGPSポイント。
  * @returns km/h単位の現在速度。
  */
 export function useReliableCurrentSpeed(points: LocationPoint[]): number {

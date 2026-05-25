@@ -163,7 +163,7 @@ export default function App() {
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const gridOverlayRegion = visibleRegion ?? initialRegion;
   const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
-  /** merged source cellsに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
+  /** 集約済みvisited cellに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
   const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
     const now = Date.now();
 

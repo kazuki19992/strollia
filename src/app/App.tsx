@@ -142,8 +142,10 @@ export default function App() {
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
+  /** DBから取得して矩形結合したvisited cell。表示用フェードとは分けて保持する。 */
   const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
   const [visitedGridRefreshVersion, setVisitedGridRefreshVersion] = useState(0);
+  /** 新規visited cellの0.5秒フェードを進めるため、50ms間隔で表示セルを再計算する。 */
   const [visitedGridFadeFrame, setVisitedGridFadeFrame] = useState(0);
   const visitedGridDisplayCellSizeRef = useRef<number | null>(null);
   const visitedGridFadeStartedAtRef = useRef(new Map<string, number>());
@@ -161,6 +163,7 @@ export default function App() {
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const gridOverlayRegion = visibleRegion ?? initialRegion;
   const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
+  /** merged source cellsに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
   const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
     const now = Date.now();
 

@@ -28,7 +28,7 @@ export type VisitedGridOverlayCell = {
   visitCount?: number;
 };
 
-/** 表示セルごとの追加opacityを返す関数。 */
+/** 表示セルごとの追加opacityを返す関数。0から1の値を想定し、範囲外は描画時にclampする。 */
 export type VisitedGridCellOpacityResolver = (cell: GridCellPolygonSource) => number;
 
 /**
@@ -70,7 +70,7 @@ export function getFogOpacity(
  * @param opacity - Fogに合わせた表示opacity。
  * @param themePrimaryColor - 現在テーマのprimary色。
  * @param config - Grid Overlay設定。
- * @param cellOpacityResolver - 新規セルのフェードなど、セルごとの追加opacity。
+ * @param cellOpacityResolver - 新規セルのフェードなど、セルごとの追加opacity。0から1の値を想定し、範囲外はclampする。
  * @returns Polygon描画用データ。
  */
 export function toVisitedGridOverlayCells(

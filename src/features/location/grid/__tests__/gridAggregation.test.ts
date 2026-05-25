@@ -63,9 +63,33 @@ describe('Visited Grid表示集約 gridAggregation', () => {
 
   it('横に連続するvisited cellを1つの矩形にまとめる', () => {
     const rectangles = mergeAdjacentGridCells([
-      { cellId: '100:10:20', cellSizeMeters: 100, x: 10, y: 20 },
-      { cellId: '100:11:20', cellSizeMeters: 100, x: 11, y: 20 },
-      { cellId: '100:12:20', cellSizeMeters: 100, x: 12, y: 20 },
+      {
+        cellId: '100:10:20',
+        cellSizeMeters: 100,
+        x: 10,
+        y: 20,
+        firstVisitedAt: '2026-05-24T00:10:00.000Z',
+        lastVisitedAt: '2026-05-24T00:20:00.000Z',
+        visitCount: 1,
+      },
+      {
+        cellId: '100:11:20',
+        cellSizeMeters: 100,
+        x: 11,
+        y: 20,
+        firstVisitedAt: '2026-05-24T00:00:00.000Z',
+        lastVisitedAt: '2026-05-24T00:30:00.000Z',
+        visitCount: 2,
+      },
+      {
+        cellId: '100:12:20',
+        cellSizeMeters: 100,
+        x: 12,
+        y: 20,
+        firstVisitedAt: '2026-05-24T00:05:00.000Z',
+        lastVisitedAt: '2026-05-24T00:25:00.000Z',
+        visitCount: 3,
+      },
     ]);
 
     expect(rectangles).toEqual([
@@ -75,20 +99,64 @@ describe('Visited Grid表示集約 gridAggregation', () => {
         y: 20,
         widthCells: 3,
         heightCells: 1,
+        firstVisitedAt: '2026-05-24T00:00:00.000Z',
+        lastVisitedAt: '2026-05-24T00:30:00.000Z',
+        visitCount: 6,
       }),
     ]);
   });
 
   it('同じ幅で上下に連続するvisited cellを大きな矩形にまとめる', () => {
     const rectangles = mergeAdjacentGridCells([
-      { cellId: '100:10:20', cellSizeMeters: 100, x: 10, y: 20 },
-      { cellId: '100:11:20', cellSizeMeters: 100, x: 11, y: 20 },
-      { cellId: '100:10:21', cellSizeMeters: 100, x: 10, y: 21 },
-      { cellId: '100:11:21', cellSizeMeters: 100, x: 11, y: 21 },
+      {
+        cellId: '100:10:20',
+        cellSizeMeters: 100,
+        x: 10,
+        y: 20,
+        firstVisitedAt: '2026-05-24T00:20:00.000Z',
+        lastVisitedAt: '2026-05-24T00:30:00.000Z',
+        visitCount: 1,
+      },
+      {
+        cellId: '100:11:20',
+        cellSizeMeters: 100,
+        x: 11,
+        y: 20,
+        firstVisitedAt: '2026-05-24T00:10:00.000Z',
+        lastVisitedAt: '2026-05-24T00:40:00.000Z',
+        visitCount: 2,
+      },
+      {
+        cellId: '100:10:21',
+        cellSizeMeters: 100,
+        x: 10,
+        y: 21,
+        firstVisitedAt: '2026-05-24T00:00:00.000Z',
+        lastVisitedAt: '2026-05-24T00:50:00.000Z',
+        visitCount: 3,
+      },
+      {
+        cellId: '100:11:21',
+        cellSizeMeters: 100,
+        x: 11,
+        y: 21,
+        firstVisitedAt: '2026-05-24T00:15:00.000Z',
+        lastVisitedAt: '2026-05-24T00:35:00.000Z',
+        visitCount: 4,
+      },
     ]);
 
     expect(rectangles).toHaveLength(1);
-    expect(rectangles[0]).toEqual(expect.objectContaining({ cellId: 'rect:100:10:20', x: 10, y: 20, widthCells: 2, heightCells: 2 }));
+    expect(rectangles[0]).toEqual(expect.objectContaining({
+      cellId: 'rect:100:10:20',
+      x: 10,
+      y: 20,
+      widthCells: 2,
+      heightCells: 2,
+      firstVisitedAt: '2026-05-24T00:00:00.000Z',
+      lastVisitedAt: '2026-05-24T00:50:00.000Z',
+      visitCount: 10,
+    }));
   });
 
   it('L字のvisited cell集合は複数矩形として扱う', () => {

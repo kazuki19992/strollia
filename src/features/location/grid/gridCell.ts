@@ -11,7 +11,7 @@ const WEB_MERCATOR_HALF_WORLD_WIDTH_METERS = WEB_MERCATOR_RADIUS_METERS * Math.P
 
 /** Visited Gridのセル。 */
 export type GridCell = {
-  /** セルID。形式は `${cellSizeMeters}:${x}:${y}`。 */
+  /** セルID。単一セルは `${cellSizeMeters}:${x}:${y}`、表示矩形は `rect:${cellSizeMeters}:${x}:${y}`。 */
   cellId: string;
   /** セルサイズ。単位はm。 */
   cellSizeMeters: number;

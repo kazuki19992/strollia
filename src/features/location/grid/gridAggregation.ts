@@ -242,6 +242,12 @@ function getLastDisplayCellSize(config: GridOverlayConfig): number {
   return config.displayCellSizesMeters[config.displayCellSizesMeters.length - 1] ?? GRID_OVERLAY_CONFIG.baseCellSizeMeters;
 }
 
+/**
+ * 表示範囲の緯度差からセルサイズ段階を返す。
+ *
+ * @param region - MapView表示範囲に相当する値。
+ * @returns 0始まりのセルサイズ段階。定義済み範囲より広い場合は最後の次の段階。
+ */
 function getDisplayCellSizeStageIndex(region: RegionZoomLike): number {
   const latitudeDelta = Math.abs(region.latitudeDelta);
   const stageIndex = DISPLAY_CELL_SIZE_STAGES.findIndex((stage) => latitudeDelta < stage.maxLatitudeDelta);
@@ -249,6 +255,13 @@ function getDisplayCellSizeStageIndex(region: RegionZoomLike): number {
   return stageIndex >= 0 ? stageIndex : DISPLAY_CELL_SIZE_STAGES.length;
 }
 
+/**
+ * ISO 8601文字列のうち早い時刻を返す。
+ *
+ * @param previous - 既存のISO 8601日時。未定義ならnextを採用する。
+ * @param next - 比較するISO 8601日時。未定義ならpreviousを採用する。
+ * @returns 文字列の辞書順で早い日時。ISO 8601以外の文字列順は呼び出し側の責務。
+ */
 function getEarlierIsoString(previous: string | undefined, next: string | undefined): string | undefined {
   if (!previous) {
     return next;
@@ -261,6 +274,13 @@ function getEarlierIsoString(previous: string | undefined, next: string | undefi
   return next < previous ? next : previous;
 }
 
+/**
+ * ISO 8601文字列のうち遅い時刻を返す。
+ *
+ * @param previous - 既存のISO 8601日時。未定義ならnextを採用する。
+ * @param next - 比較するISO 8601日時。未定義ならpreviousを採用する。
+ * @returns 文字列の辞書順で遅い日時。ISO 8601以外の文字列順は呼び出し側の責務。
+ */
 function getLaterIsoString(previous: string | undefined, next: string | undefined): string | undefined {
   if (!previous) {
     return next;

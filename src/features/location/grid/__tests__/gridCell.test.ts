@@ -31,6 +31,19 @@ describe('Visited Gridセル変換 gridCell', () => {
     expect(bounds.maxY).toBeGreaterThanOrEqual(northWest.y);
   });
 
+  it('paddingRatioを指定すると表示範囲の外側セルも含める', () => {
+    const region = { latitude: 35.681236, longitude: 139.767125, latitudeDelta: 0.02, longitudeDelta: 0.02 };
+    const outsideNorthWest = coordinateToGridCell({ latitude: 35.696236, longitude: 139.752125 });
+    const outsideSouthEast = coordinateToGridCell({ latitude: 35.666236, longitude: 139.782125 });
+
+    const bounds = getGridBoundsForRegion(region, { paddingRatio: 0.5 });
+
+    expect(bounds.minX).toBeLessThanOrEqual(outsideNorthWest.x);
+    expect(bounds.maxX).toBeGreaterThanOrEqual(outsideSouthEast.x);
+    expect(bounds.minY).toBeLessThanOrEqual(outsideSouthEast.y);
+    expect(bounds.maxY).toBeGreaterThanOrEqual(outsideNorthWest.y);
+  });
+
   it('日付変更線を跨ぐ表示範囲では両側のセルを含む', () => {
     const bounds = getGridBoundsForRegion({ latitude: 0, longitude: 179, latitudeDelta: 1, longitudeDelta: 4 });
     const eastSide = coordinateToGridCell({ latitude: 0, longitude: 179.5 });

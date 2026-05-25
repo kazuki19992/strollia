@@ -66,6 +66,12 @@ visited cell は SQLite の `visited_cells` に保存し、MapView上ではPolyg
 
 表示セルサイズは `latitudeDelta` が大きくなるほど段階的に上げる。100mセルは `latitudeDelta < 0.06` まで維持し、少し広域にした程度では200m以上へ切り替えない。
 
+表示セルサイズの切替境界ではヒステリシスをかける。直前の表示セルサイズを保持し、境界付近でズーム値が小さく揺れた場合に100m/200mなどが短時間で入れ替わらないようにする。隣接セルを矩形へまとめる場合も、矩形の左上/左下アンカーを基準にした安定IDを使い、矩形が伸び縮みしただけで古いPolygonと新しいPolygonが別keyとして一瞬重ならないようにする。
+
+表示範囲内のvisited cell取得では、端セルの出入りによるちらつきを抑えるため、表示範囲の外側にも設定値ぶんの余白を持たせて先読みする。定期的なGPSログ再読み込み時には、`location_points` の件数変化がなくてもvisited cellを再取得し、Visited Gridの表示をSQLiteの `visited_cells` と同期する。
+
+新しく表示されたvisited cellは0.5秒でフェードインする。`visited_cells` には `first_visited_at`、`last_visited_at`、`visit_count` を保持しているため、将来のレポートでは初回訪問日時、再訪日時、訪問回数を集計できる。
+
 隣接する表示セルは、横方向と縦方向に連続する範囲を矩形としてまとめて描画する。セル同士が接する内側罫線は描画せず、集合体として見える塗りを優先する。visited cell色はテーマのprimaryを既定値とし、`GRID_OVERLAY_CONFIG` の設定値で差し替えられるようにする。
 
 Fog opacity は `latitudeDelta` に応じて線形補間し、通常表示では薄く、広域表示では濃くする。opacityやセルサイズ候補は `GRID_OVERLAY_CONFIG` に集約し、実機調整しやすくする。

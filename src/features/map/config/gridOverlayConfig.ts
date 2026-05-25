@@ -16,6 +16,10 @@ export type GridOverlayConfig = {
   fogColor: string;
   /** visitedセル色をテーマprimaryから差し替える場合に使う値。 */
   visitedCellColorOverride: string | null;
+  /** 表示範囲外も先読みする余白比率。 */
+  boundsPaddingRatio: number;
+  /** 表示セルサイズ切替境界に持たせる遊びの比率。 */
+  displayCellSizeHysteresisRatio: number;
 };
 
 /** Visited Grid Overlayの既定設定。 */
@@ -28,4 +32,6 @@ export const GRID_OVERLAY_CONFIG: GridOverlayConfig = {
   opacityEndLatitudeDelta: 0.2,
   fogColor: '#111111',
   visitedCellColorOverride: null,
+  boundsPaddingRatio: 0.5,
+  displayCellSizeHysteresisRatio: 0.2,
 };

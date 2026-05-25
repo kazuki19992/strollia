@@ -58,8 +58,8 @@ import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAcce
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
-import { aggregateVisitedCells, getDisplayCellSizeMeters, mergeAdjacentGridCells } from '../features/location/grid/gridAggregation';
-import { getGridBoundsForRegion } from '../features/location/grid/gridCell';
+import { aggregateVisitedCells, getStableDisplayCellSizeMeters, mergeAdjacentGridCells } from '../features/location/grid/gridAggregation';
+import { getGridBoundsForRegion, GridCellPolygonSource } from '../features/location/grid/gridCell';
 import { getVisitedCellsInBounds } from '../features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '../features/map/gridOverlay';
 import { GRID_OVERLAY_CONFIG } from '../features/map/config/gridOverlayConfig';
@@ -99,6 +99,10 @@ const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
+/** 新規visited cellを塗るときのフェード時間。 */
+const VISITED_GRID_FADE_DURATION_MS = 500;
+/** visited cellフェード中の再描画間隔。 */
+const VISITED_GRID_FADE_FRAME_MS = 50;
 
 /** 権限状態を取得する前にUIが参照する安全な初期値。 */
 const EMPTY_PERMISSION_STATE: LocationPermissionState = {
@@ -138,7 +142,13 @@ export default function App() {
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
-  const [visitedGridCells, setVisitedGridCells] = useState<VisitedGridOverlayCell[]>([]);
+  /** DBから取得して矩形結合したvisited cell。表示用フェードとは分けて保持する。 */
+  const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
+  const [visitedGridRefreshVersion, setVisitedGridRefreshVersion] = useState(0);
+  /** 新規visited cellの0.5秒フェードを進めるため、50ms間隔で表示セルを再計算する。 */
+  const [visitedGridFadeFrame, setVisitedGridFadeFrame] = useState(0);
+  const visitedGridDisplayCellSizeRef = useRef<number | null>(null);
+  const visitedGridFadeStartedAtRef = useRef(new Map<string, number>());
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
@@ -153,6 +163,18 @@ export default function App() {
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const gridOverlayRegion = visibleRegion ?? initialRegion;
   const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
+  /** merged source cellsに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
+  const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
+    const now = Date.now();
+
+    return toVisitedGridOverlayCells(
+      visitedGridSourceCells,
+      gridOverlayOpacity,
+      theme.colors.primary,
+      GRID_OVERLAY_CONFIG,
+      (cell) => getVisitedGridFadeProgress(cell.cellId, now),
+    );
+  }, [gridOverlayOpacity, theme.colors.primary, visitedGridFadeFrame, visitedGridSourceCells]);
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
   const todayDistanceMeters = useMemo(() => {
     const today = toLocalDate(new Date());
@@ -187,6 +209,7 @@ export default function App() {
     setPoints(allPoints);
     setIsRecording(recording);
     setPermissionState(permissions);
+    setVisitedGridRefreshVersion((version) => version + 1);
 
     getMonthlyAreaReport(getPreviousReportMonth())
       .then(setMonthlyAreaReport)
@@ -458,8 +481,13 @@ export default function App() {
       return;
     }
 
-    const bounds = getGridBoundsForRegion(gridOverlayRegion);
-    const displayCellSizeMeters = getDisplayCellSizeMeters(gridOverlayRegion, GRID_OVERLAY_CONFIG);
+    const bounds = getGridBoundsForRegion(gridOverlayRegion, { paddingRatio: GRID_OVERLAY_CONFIG.boundsPaddingRatio });
+    const displayCellSizeMeters = getStableDisplayCellSizeMeters(
+      gridOverlayRegion,
+      visitedGridDisplayCellSizeRef.current,
+      GRID_OVERLAY_CONFIG,
+    );
+    visitedGridDisplayCellSizeRef.current = displayCellSizeMeters;
     let isCancelled = false;
 
     getVisitedCellsInBounds(bounds)
@@ -470,7 +498,8 @@ export default function App() {
 
         const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
         const mergedCells = mergeAdjacentGridCells(aggregatedCells);
-        setVisitedGridCells(toVisitedGridOverlayCells(mergedCells, gridOverlayOpacity, theme.colors.primary, GRID_OVERLAY_CONFIG));
+        syncVisitedGridFadeState(mergedCells);
+        setVisitedGridSourceCells(mergedCells);
       })
       .catch((error: unknown) => {
         console.warn('Failed to refresh visited grid cells:', error);
@@ -479,7 +508,25 @@ export default function App() {
     return () => {
       isCancelled = true;
     };
-  }, [gridOverlayOpacity, gridOverlayRegion, isReady, points.length, theme.colors.primary]);
+  }, [gridOverlayRegion, isReady, visitedGridRefreshVersion]);
+
+  /**
+   * 新規visited cellのフェード中だけ短い間隔で再描画する。
+   */
+  useEffect(() => {
+    const now = Date.now();
+    const hasActiveFade = visitedGridSourceCells.some((cell) => getVisitedGridFadeProgress(cell.cellId, now) < 1);
+
+    if (!hasActiveFade) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setVisitedGridFadeFrame((frame) => frame + 1);
+    }, VISITED_GRID_FADE_FRAME_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [visitedGridFadeFrame, visitedGridSourceCells]);
 
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });
   useAchievementDialogEffects({
@@ -492,6 +539,48 @@ export default function App() {
     setMessage,
   });
   useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
+
+  /**
+   * visited cellの初回描画時刻を同期し、表示から外れたセルのフェード状態を掃除する。
+   *
+   * @param cells - 次に描画するvisited cell。
+   * @returns なし。
+   */
+  function syncVisitedGridFadeState(cells: GridCellPolygonSource[]): void {
+    const now = Date.now();
+    const nextCellIds = new Set(cells.map((cell) => cell.cellId));
+
+    for (const cell of cells) {
+      if (!visitedGridFadeStartedAtRef.current.has(cell.cellId)) {
+        visitedGridFadeStartedAtRef.current.set(cell.cellId, now);
+      }
+    }
+
+    for (const cellId of visitedGridFadeStartedAtRef.current.keys()) {
+      if (!nextCellIds.has(cellId)) {
+        visitedGridFadeStartedAtRef.current.delete(cellId);
+      }
+    }
+
+    setVisitedGridFadeFrame((frame) => frame + 1);
+  }
+
+  /**
+   * 新規visited cellのフェード進捗を返す。
+   *
+   * @param cellId - 表示セルID。
+   * @param now - 現在時刻。単位はms。
+   * @returns 0から1のフェード進捗。
+   */
+  function getVisitedGridFadeProgress(cellId: string, now: number): number {
+    const startedAt = visitedGridFadeStartedAtRef.current.get(cellId);
+
+    if (!startedAt) {
+      return 1;
+    }
+
+    return Math.min(1, Math.max(0, (now - startedAt) / VISITED_GRID_FADE_DURATION_MS));
+  }
 
   /**
    * 現在地更新を受け取り、追従中であれば地図中心も更新する。

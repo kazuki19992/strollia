@@ -20,7 +20,16 @@ export type VisitedGridOverlayCell = {
   strokeColor: string;
   /** 境界線幅。内側罫線を出さないため通常は0。 */
   strokeWidth: number;
+  /** この表示セル範囲に含まれる最古の訪問日時。 */
+  firstVisitedAt?: string;
+  /** この表示セル範囲に含まれる最新の訪問日時。 */
+  lastVisitedAt?: string;
+  /** この表示セル範囲に含まれる訪問回数。 */
+  visitCount?: number;
 };
+
+/** 表示セルごとの追加opacityを返す関数。 */
+export type VisitedGridCellOpacityResolver = (cell: GridCellPolygonSource) => number;
 
 /**
  * 表示範囲に応じてFog opacityを線形補間する。
@@ -59,7 +68,9 @@ export function getFogOpacity(
  *
  * @param cells - 表示対象のvisited cell。
  * @param opacity - Fogに合わせた表示opacity。
+ * @param themePrimaryColor - 現在テーマのprimary色。
  * @param config - Grid Overlay設定。
+ * @param cellOpacityResolver - 新規セルのフェードなど、セルごとの追加opacity。
  * @returns Polygon描画用データ。
  */
 export function toVisitedGridOverlayCells(
@@ -67,16 +78,24 @@ export function toVisitedGridOverlayCells(
   opacity: number,
   themePrimaryColor: string,
   config: GridOverlayConfig = GRID_OVERLAY_CONFIG,
+  cellOpacityResolver: VisitedGridCellOpacityResolver = () => 1,
 ): VisitedGridOverlayCell[] {
   const visitedCellColor = resolveVisitedGridCellColor(themePrimaryColor, config);
 
-  return cells.map((cell) => ({
-    id: cell.cellId,
-    coordinates: cellToPolygonCoordinates(cell),
-    fillColor: colorWithOpacity(visitedCellColor, opacity),
-    strokeColor: colorWithOpacity(visitedCellColor, 0),
-    strokeWidth: 0,
-  }));
+  return cells.map((cell) => {
+    const cellOpacity = Math.min(1, Math.max(0, cellOpacityResolver(cell)));
+
+    return {
+      id: cell.cellId,
+      coordinates: cellToPolygonCoordinates(cell),
+      fillColor: colorWithOpacity(visitedCellColor, opacity * cellOpacity),
+      strokeColor: colorWithOpacity(visitedCellColor, 0),
+      strokeWidth: 0,
+      firstVisitedAt: cell.firstVisitedAt,
+      lastVisitedAt: cell.lastVisitedAt,
+      visitCount: cell.visitCount,
+    };
+  });
 }
 
 /**

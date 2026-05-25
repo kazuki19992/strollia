@@ -19,6 +19,12 @@ export type GridCell = {
   x: number;
   /** Web Mercatorメートル座標をセルサイズで割ったY番号。 */
   y: number;
+  /** このセル範囲に含まれる最古の訪問日時。 */
+  firstVisitedAt?: string;
+  /** このセル範囲に含まれる最新の訪問日時。 */
+  lastVisitedAt?: string;
+  /** このセル範囲に含まれる訪問回数。 */
+  visitCount?: number;
 };
 
 /** Polygon化できるセルまたはセル矩形。 */
@@ -39,6 +45,12 @@ export type GridBounds = {
   minY: number;
   /** 最大Y番号。 */
   maxY: number;
+};
+
+/** 表示範囲からセル検索範囲を作るときのオプション。 */
+export type GridBoundsOptions = {
+  /** 表示範囲の半径に対して外側へ追加する比率。 */
+  paddingRatio?: number;
 };
 
 type MercatorCoordinate = {
@@ -123,13 +135,17 @@ export function cellToPolygonCoordinates(cell: GridCellPolygonSource): LatLng[] 
  * 表示範囲を基本100mセル番号範囲へ変換する。
  *
  * @param region - MapViewの表示範囲。
+ * @param options - 端セルのちらつきを抑えるための検索余白。
  * @returns SQLite検索に使うセル番号範囲。
  */
-export function getGridBoundsForRegion(region: Region): GridBounds {
-  const northLatitude = region.latitude + region.latitudeDelta / 2;
-  const southLatitude = region.latitude - region.latitudeDelta / 2;
-  const westLongitude = region.longitude - region.longitudeDelta / 2;
-  const eastLongitude = region.longitude + region.longitudeDelta / 2;
+export function getGridBoundsForRegion(region: Region, options: GridBoundsOptions = {}): GridBounds {
+  const paddingRatio = Math.max(0, options.paddingRatio ?? 0);
+  const latitudeRadius = (region.latitudeDelta / 2) * (1 + paddingRatio);
+  const longitudeRadius = (region.longitudeDelta / 2) * (1 + paddingRatio);
+  const northLatitude = region.latitude + latitudeRadius;
+  const southLatitude = region.latitude - latitudeRadius;
+  const westLongitude = region.longitude - longitudeRadius;
+  const eastLongitude = region.longitude + longitudeRadius;
   const northWest = coordinateToGridCell({
     latitude: northLatitude,
     longitude: westLongitude,

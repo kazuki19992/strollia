@@ -1,5 +1,5 @@
 import { GRID_OVERLAY_CONFIG } from '../../../map/config/gridOverlayConfig';
-import { aggregateVisitedCells, getDisplayCellSizeMeters, mergeAdjacentGridCells } from '../gridAggregation';
+import { aggregateVisitedCells, getDisplayCellSizeMeters, getStableDisplayCellSizeMeters, mergeAdjacentGridCells } from '../gridAggregation';
 import { coordinateToGridCell } from '../gridCell';
 
 describe('Visited Grid表示集約 gridAggregation', () => {
@@ -12,13 +12,47 @@ describe('Visited Grid表示集約 gridAggregation', () => {
     expect(getDisplayCellSizeMeters({ latitudeDelta: 4.5 }, GRID_OVERLAY_CONFIG)).toBe(10000);
   });
 
+  it('セルサイズ切替境界付近では直前の表示セルサイズを維持する', () => {
+    expect(getStableDisplayCellSizeMeters({ latitudeDelta: 0.061 }, 100, GRID_OVERLAY_CONFIG)).toBe(100);
+    expect(getStableDisplayCellSizeMeters({ latitudeDelta: 0.05 }, 200, GRID_OVERLAY_CONFIG)).toBe(200);
+  });
+
+  it('セルサイズ切替境界から十分離れた場合は次の表示セルサイズへ切り替える', () => {
+    expect(getStableDisplayCellSizeMeters({ latitudeDelta: 0.073 }, 100, GRID_OVERLAY_CONFIG)).toBe(200);
+    expect(getStableDisplayCellSizeMeters({ latitudeDelta: 0.04 }, 200, GRID_OVERLAY_CONFIG)).toBe(100);
+  });
+
   it('visitedな100mセルが1つでもあれば大セルをvisitedにする', () => {
-    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+    const cell = {
+      ...coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 }),
+      firstVisitedAt: '2026-05-24T00:00:00.000Z',
+      lastVisitedAt: '2026-05-24T00:10:00.000Z',
+      visitCount: 2,
+    };
     const aggregated = aggregateVisitedCells([cell], 200);
 
     expect(aggregated).toHaveLength(1);
     expect(aggregated[0].cellSizeMeters).toBe(200);
     expect(aggregated[0].cellId.startsWith('200:')).toBe(true);
+    expect(aggregated[0]).toEqual(expect.objectContaining({
+      firstVisitedAt: '2026-05-24T00:00:00.000Z',
+      lastVisitedAt: '2026-05-24T00:10:00.000Z',
+      visitCount: 2,
+    }));
+  });
+
+  it('集約セルの訪問日時と訪問回数をまとめる', () => {
+    const base = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+    const aggregated = aggregateVisitedCells([
+      { ...base, firstVisitedAt: '2026-05-24T00:10:00.000Z', lastVisitedAt: '2026-05-24T00:20:00.000Z', visitCount: 2 },
+      { ...base, firstVisitedAt: '2026-05-24T00:00:00.000Z', lastVisitedAt: '2026-05-24T00:30:00.000Z', visitCount: 3 },
+    ], 200);
+
+    expect(aggregated[0]).toEqual(expect.objectContaining({
+      firstVisitedAt: '2026-05-24T00:00:00.000Z',
+      lastVisitedAt: '2026-05-24T00:30:00.000Z',
+      visitCount: 5,
+    }));
   });
 
   it('表示セルサイズが基本セルの整数倍でない場合は失敗させる', () => {
@@ -36,7 +70,7 @@ describe('Visited Grid表示集約 gridAggregation', () => {
 
     expect(rectangles).toEqual([
       expect.objectContaining({
-        cellId: '100:10:20:3x1',
+        cellId: 'rect:100:10:20',
         x: 10,
         y: 20,
         widthCells: 3,
@@ -54,7 +88,7 @@ describe('Visited Grid表示集約 gridAggregation', () => {
     ]);
 
     expect(rectangles).toHaveLength(1);
-    expect(rectangles[0]).toEqual(expect.objectContaining({ x: 10, y: 20, widthCells: 2, heightCells: 2 }));
+    expect(rectangles[0]).toEqual(expect.objectContaining({ cellId: 'rect:100:10:20', x: 10, y: 20, widthCells: 2, heightCells: 2 }));
   });
 
   it('L字のvisited cell集合は複数矩形として扱う', () => {

@@ -10,13 +10,30 @@ describe('Visited Grid Overlay表示計算 gridOverlay', () => {
   });
 
   it('visited cellをMapView Polygon用データへ変換する', () => {
-    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+    const cell = {
+      ...coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 }),
+      firstVisitedAt: '2026-05-24T00:00:00.000Z',
+      lastVisitedAt: '2026-05-24T00:10:00.000Z',
+      visitCount: 2,
+    };
     const [overlayCell] = toVisitedGridOverlayCells([cell], 0.4, '#009688', GRID_OVERLAY_CONFIG);
 
     expect(overlayCell.id).toBe(cell.cellId);
     expect(overlayCell.coordinates).toHaveLength(4);
     expect(overlayCell.fillColor).toBe('rgba(0, 150, 136, 0.4)');
     expect(overlayCell.strokeWidth).toBe(0);
+    expect(overlayCell).toEqual(expect.objectContaining({
+      firstVisitedAt: '2026-05-24T00:00:00.000Z',
+      lastVisitedAt: '2026-05-24T00:10:00.000Z',
+      visitCount: 2,
+    }));
+  });
+
+  it('セルごとのopacityで新規セルをフェード表示できる', () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+    const [overlayCell] = toVisitedGridOverlayCells([cell], 0.4, '#009688', GRID_OVERLAY_CONFIG, () => 0.5);
+
+    expect(overlayCell.fillColor).toBe('rgba(0, 150, 136, 0.2)');
   });
 
   it('visited cell色は3桁HEXでもrgbaへ変換する', () => {

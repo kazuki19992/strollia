@@ -6,6 +6,20 @@ type RegionZoomLike = {
   latitudeDelta: number;
 };
 
+type DisplayCellSizeStage = {
+  cellSizeMeters: number;
+  maxLatitudeDelta: number;
+};
+
+const DISPLAY_CELL_SIZE_STAGES: DisplayCellSizeStage[] = [
+  { cellSizeMeters: 100, maxLatitudeDelta: 0.06 },
+  { cellSizeMeters: 200, maxLatitudeDelta: 0.15 },
+  { cellSizeMeters: 500, maxLatitudeDelta: 0.35 },
+  { cellSizeMeters: 1000, maxLatitudeDelta: 0.8 },
+  { cellSizeMeters: 2000, maxLatitudeDelta: 2 },
+  { cellSizeMeters: 5000, maxLatitudeDelta: 4 },
+];
+
 /** 隣接セルをまとめた表示用矩形。 */
 export type GridCellRectangle = GridCell & {
   /** 横方向に含む表示セル数。 */
@@ -19,6 +33,9 @@ type HorizontalRun = {
   x: number;
   y: number;
   widthCells: number;
+  firstVisitedAt?: string;
+  lastVisitedAt?: string;
+  visitCount?: number;
 };
 
 /**
@@ -32,34 +49,59 @@ export function getDisplayCellSizeMeters(
   region: RegionZoomLike,
   config: GridOverlayConfig = GRID_OVERLAY_CONFIG,
 ): number {
+  const stageIndex = getDisplayCellSizeStageIndex(region);
+
+  if (stageIndex < DISPLAY_CELL_SIZE_STAGES.length) {
+    return config.displayCellSizesMeters[stageIndex] ?? getLastDisplayCellSize(config);
+  }
+
+  return getLastDisplayCellSize(config);
+}
+
+/**
+ * 表示セルサイズの切替境界付近で直前サイズを維持し、ズーム操作中のちらつきを抑える。
+ *
+ * @param region - MapView表示範囲に相当する値。
+ * @param previousCellSizeMeters - 直前に使った表示セルサイズ。
+ * @param config - Grid Overlay設定。
+ * @returns ヒステリシスを加味した表示セルサイズ。単位はm。
+ */
+export function getStableDisplayCellSizeMeters(
+  region: RegionZoomLike,
+  previousCellSizeMeters: number | null,
+  config: GridOverlayConfig = GRID_OVERLAY_CONFIG,
+): number {
+  const nextCellSizeMeters = getDisplayCellSizeMeters(region, config);
+
+  if (!previousCellSizeMeters || previousCellSizeMeters === nextCellSizeMeters) {
+    return nextCellSizeMeters;
+  }
+
+  const previousIndex = config.displayCellSizesMeters.indexOf(previousCellSizeMeters);
+  const nextIndex = config.displayCellSizesMeters.indexOf(nextCellSizeMeters);
+
+  if (previousIndex < 0 || nextIndex < 0 || Math.abs(previousIndex - nextIndex) > 1) {
+    return nextCellSizeMeters;
+  }
+
+  const boundary = DISPLAY_CELL_SIZE_STAGES[Math.min(previousIndex, nextIndex)]?.maxLatitudeDelta;
+
+  if (!boundary) {
+    return nextCellSizeMeters;
+  }
+
   const latitudeDelta = Math.abs(region.latitudeDelta);
-  const fallbackSize = getLastDisplayCellSize(config);
+  const hysteresisRatio = Math.max(0, config.displayCellSizeHysteresisRatio);
 
-  if (latitudeDelta < 0.06) {
-    return config.displayCellSizesMeters[0] ?? GRID_OVERLAY_CONFIG.baseCellSizeMeters;
+  if (nextIndex > previousIndex && latitudeDelta < boundary * (1 + hysteresisRatio)) {
+    return previousCellSizeMeters;
   }
 
-  if (latitudeDelta < 0.15) {
-    return config.displayCellSizesMeters[1] ?? config.displayCellSizesMeters[0] ?? GRID_OVERLAY_CONFIG.baseCellSizeMeters;
+  if (nextIndex < previousIndex && latitudeDelta >= boundary * (1 - hysteresisRatio)) {
+    return previousCellSizeMeters;
   }
 
-  if (latitudeDelta < 0.35) {
-    return config.displayCellSizesMeters[2] ?? fallbackSize;
-  }
-
-  if (latitudeDelta < 0.8) {
-    return config.displayCellSizesMeters[3] ?? fallbackSize;
-  }
-
-  if (latitudeDelta < 2) {
-    return config.displayCellSizesMeters[4] ?? fallbackSize;
-  }
-
-  if (latitudeDelta < 4) {
-    return config.displayCellSizesMeters[5] ?? fallbackSize;
-  }
-
-  return config.displayCellSizesMeters[6] ?? fallbackSize;
+  return nextCellSizeMeters;
 }
 
 /**
@@ -90,8 +132,17 @@ export function aggregateVisitedCells(cells: GridCell[], displayCellSizeMeters: 
         cellSizeMeters: displayCellSizeMeters,
         x,
         y,
+        firstVisitedAt: cell.firstVisitedAt,
+        lastVisitedAt: cell.lastVisitedAt,
+        visitCount: cell.visitCount,
       });
+      continue;
     }
+
+    const existing = aggregated.get(cellId)!;
+    existing.firstVisitedAt = getEarlierIsoString(existing.firstVisitedAt, cell.firstVisitedAt);
+    existing.lastVisitedAt = getLaterIsoString(existing.lastVisitedAt, cell.lastVisitedAt);
+    existing.visitCount = (existing.visitCount ?? 0) + (cell.visitCount ?? 0);
   }
 
   return [...aggregated.values()];
@@ -118,6 +169,9 @@ export function mergeAdjacentGridCells(cells: GridCell[]): GridCellRectangle[] {
     if (active && active.y + active.heightCells === run.y) {
       active.heightCells += 1;
       active.cellId = toRectangleCellId(active);
+      active.firstVisitedAt = getEarlierIsoString(active.firstVisitedAt, run.firstVisitedAt);
+      active.lastVisitedAt = getLaterIsoString(active.lastVisitedAt, run.lastVisitedAt);
+      active.visitCount = (active.visitCount ?? 0) + (run.visitCount ?? 0);
       continue;
     }
 
@@ -128,6 +182,9 @@ export function mergeAdjacentGridCells(cells: GridCell[]): GridCellRectangle[] {
       y: run.y,
       widthCells: run.widthCells,
       heightCells: 1,
+      firstVisitedAt: run.firstVisitedAt,
+      lastVisitedAt: run.lastVisitedAt,
+      visitCount: run.visitCount,
     };
     rectangle.cellId = toRectangleCellId(rectangle);
     activeRectangles.set(key, rectangle);
@@ -154,6 +211,9 @@ function createHorizontalRuns(cells: GridCell[]): HorizontalRun[] {
       for (const cell of sortedCells) {
         if (currentRun && currentRun.x + currentRun.widthCells === cell.x) {
           currentRun.widthCells += 1;
+          currentRun.firstVisitedAt = getEarlierIsoString(currentRun.firstVisitedAt, cell.firstVisitedAt);
+          currentRun.lastVisitedAt = getLaterIsoString(currentRun.lastVisitedAt, cell.lastVisitedAt);
+          currentRun.visitCount = (currentRun.visitCount ?? 0) + (cell.visitCount ?? 0);
           continue;
         }
 
@@ -162,6 +222,9 @@ function createHorizontalRuns(cells: GridCell[]): HorizontalRun[] {
           x: cell.x,
           y: cell.y,
           widthCells: 1,
+          firstVisitedAt: cell.firstVisitedAt,
+          lastVisitedAt: cell.lastVisitedAt,
+          visitCount: cell.visitCount,
         };
         runs.push(currentRun);
       }
@@ -172,9 +235,40 @@ function createHorizontalRuns(cells: GridCell[]): HorizontalRun[] {
 }
 
 function toRectangleCellId(rectangle: GridCellRectangle): string {
-  return `${rectangle.cellSizeMeters}:${rectangle.x}:${rectangle.y}:${rectangle.widthCells}x${rectangle.heightCells}`;
+  return `rect:${rectangle.cellSizeMeters}:${rectangle.x}:${rectangle.y}`;
 }
 
 function getLastDisplayCellSize(config: GridOverlayConfig): number {
   return config.displayCellSizesMeters[config.displayCellSizesMeters.length - 1] ?? GRID_OVERLAY_CONFIG.baseCellSizeMeters;
+}
+
+function getDisplayCellSizeStageIndex(region: RegionZoomLike): number {
+  const latitudeDelta = Math.abs(region.latitudeDelta);
+  const stageIndex = DISPLAY_CELL_SIZE_STAGES.findIndex((stage) => latitudeDelta < stage.maxLatitudeDelta);
+
+  return stageIndex >= 0 ? stageIndex : DISPLAY_CELL_SIZE_STAGES.length;
+}
+
+function getEarlierIsoString(previous: string | undefined, next: string | undefined): string | undefined {
+  if (!previous) {
+    return next;
+  }
+
+  if (!next) {
+    return previous;
+  }
+
+  return next < previous ? next : previous;
+}
+
+function getLaterIsoString(previous: string | undefined, next: string | undefined): string | undefined {
+  if (!previous) {
+    return next;
+  }
+
+  if (!next) {
+    return previous;
+  }
+
+  return next > previous ? next : previous;
 }

@@ -127,7 +127,12 @@ export function aggregateVisitedCells(cells: GridCell[], displayCellSizeMeters: 
     existing.visitCount = (existing.visitCount ?? 0) + (cell.visitCount ?? 0);
   }
 
-  return [...aggregated.values()];
+  return [...aggregated.values()].sort((a, b) => (
+    a.cellSizeMeters - b.cellSizeMeters ||
+    a.y - b.y ||
+    a.x - b.x ||
+    a.cellId.localeCompare(b.cellId)
+  ));
 }
 
 function getLastDisplayCellSize(config: GridOverlayConfig): number {

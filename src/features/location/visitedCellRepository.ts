@@ -83,7 +83,7 @@ export async function getVisitedCellsInBounds(bounds: GridBounds): Promise<Visit
      FROM visited_cells
      WHERE x BETWEEN ? AND ?
        AND y BETWEEN ? AND ?
-     ORDER BY last_visited_at ASC`,
+     ORDER BY cell_size_meters ASC, y ASC, x ASC, cell_id ASC`,
     bounds.minX,
     bounds.maxX,
     bounds.minY,

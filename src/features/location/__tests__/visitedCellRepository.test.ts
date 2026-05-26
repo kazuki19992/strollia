@@ -65,6 +65,20 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE x BETWEEN ? AND ?'), 1, 3, 5, 8);
   });
 
+  it('範囲内のvisited cellは再訪問時刻に影響されない安定順で取得する', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+    await getVisitedCellsInBounds({ minX: 1, maxX: 3, minY: 5, maxY: 8 });
+
+    expect(db.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining('ORDER BY cell_size_meters ASC, y ASC, x ASC, cell_id ASC'),
+      1,
+      3,
+      5,
+      8,
+    );
+  });
+
   it('upsertVisitedCellsは空配列入力時にDBへ書き込まない', async () => {
     await upsertVisitedCells([], '2026-05-23T00:00:00.000Z');
 

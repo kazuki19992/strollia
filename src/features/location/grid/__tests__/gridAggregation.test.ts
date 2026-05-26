@@ -95,4 +95,14 @@ describe('Visited Grid表示集約 gridAggregation', () => {
     expect(cells).toHaveLength(3);
     expect(cells.map((cell) => cell.cellId)).toEqual(['100:10:20', '100:11:20', '100:12:20']);
   });
+
+  it('集約結果は入力順に依存しない安定順で返す', () => {
+    const cells = aggregateVisitedCells([
+      { cellId: '100:12:21', cellSizeMeters: 100, x: 12, y: 21 },
+      { cellId: '100:10:20', cellSizeMeters: 100, x: 10, y: 20 },
+      { cellId: '100:11:20', cellSizeMeters: 100, x: 11, y: 20 },
+    ], 100);
+
+    expect(cells.map((cell) => cell.cellId)).toEqual(['100:10:20', '100:11:20', '100:12:21']);
+  });
 });

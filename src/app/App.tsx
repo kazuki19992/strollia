@@ -88,6 +88,7 @@ import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { getNextMapType } from './mapType';
+import { createUserCenteredRegion, shouldRestoreMapRegionOnMapOpen } from './mapRegion';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -122,6 +123,7 @@ export default function App() {
   const isUpdatingPhotoSettingRef = useRef(false);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
+  const shouldRestoreMapRegionOnOpenRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
@@ -540,6 +542,23 @@ export default function App() {
   useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
 
   /**
+   * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
+   */
+  useEffect(() => {
+    if (screenMode !== 'map' || !shouldRestoreMapRegionOnOpenRef.current) {
+      return;
+    }
+
+    shouldRestoreMapRegionOnOpenRef.current = false;
+
+    if (!userCoordinate) {
+      return;
+    }
+
+    centerOnCoordinate(userCoordinate, false);
+  }, [screenMode, userCoordinate]);
+
+  /**
    * visited cellの初回描画時刻を同期し、表示から外れたセルのフェード状態を掃除する。
    *
    * @param cells - 次に描画するvisited cell。
@@ -642,15 +661,10 @@ export default function App() {
    * @returns なし。
    */
   function centerOnCoordinate(coordinate: LatLng, animated = true): void {
-    mapRef.current?.animateToRegion(
-      {
-        latitude: coordinate.latitude,
-        longitude: coordinate.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      },
-      animated ? 500 : 250,
-    );
+    const region = createUserCenteredRegion(coordinate);
+    setVisibleRegion(region);
+    setVisitedGridRefreshVersion((version) => version + 1);
+    mapRef.current?.animateToRegion(region, animated ? 500 : 250);
   }
 
   /**
@@ -709,6 +723,11 @@ export default function App() {
   /** 地図画面へ戻る。 */
   function openMap(): void {
     triggerLightImpactHaptic();
+    if (shouldRestoreMapRegionOnMapOpen({ userCoordinate, isFollowingUserLocation }) && userCoordinate) {
+      shouldRestoreMapRegionOnOpenRef.current = true;
+      setVisibleRegion(createUserCenteredRegion(userCoordinate));
+      setVisitedGridRefreshVersion((version) => version + 1);
+    }
     setScreenMode('map');
   }
 

@@ -4,7 +4,7 @@ import { importLocationPointsFromGpx } from '../importRepository';
 jest.mock('../../../db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
-    runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 101 }),
+    runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 101, changes: 1 }),
     withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
   },
 }));
@@ -36,17 +36,19 @@ describe('GPXインポート保存 importRepository', () => {
   });
 
   it('既存データと同じ時刻・座標の点は既存データを優先してスキップする', async () => {
-    (db.getFirstAsync as jest.Mock).mockResolvedValue({ id: 1 });
+    (db.runAsync as jest.Mock)
+      .mockResolvedValueOnce({ lastInsertRowId: 0, changes: 0 })
+      .mockResolvedValue({ lastInsertRowId: 101, changes: 1 });
 
     const result = await importLocationPointsFromGpx([point], 'walk.gpx');
 
     expect(result).toEqual({ importedPointCount: 0, skippedPointCount: 1 });
-    expect(db.runAsync).not.toHaveBeenCalledWith(expect.stringContaining('INSERT INTO location_points'), expect.anything());
+    expect(
+      (db.runAsync as jest.Mock).mock.calls.some((args) => typeof args[0] === 'string' && args[0].includes('INSERT INTO daily_logs')),
+    ).toBe(false);
   });
 
   it('重複しない点はgpx-importソースで保存し日別ログを更新する', async () => {
-    (db.getFirstAsync as jest.Mock).mockResolvedValue(null);
-
     const result = await importLocationPointsFromGpx([point], 'walk.gpx');
 
     expect(result.importedPointCount).toBe(1);

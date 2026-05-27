@@ -19,12 +19,12 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
 
   await db.withTransactionAsync(async () => {
     for (const point of sortedPoints) {
-      if (await hasExistingPoint(point)) {
+      const wasInserted = await insertImportedLocationPoint(point, previousImportedPoint, now);
+      if (!wasInserted) {
         skippedPointCount += 1;
         continue;
       }
 
-      await insertImportedLocationPoint(point, previousImportedPoint, now);
       const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
       await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt);
       previousImportedPoint = point;
@@ -37,27 +37,11 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   return { importedPointCount, skippedPointCount };
 }
 
-async function hasExistingPoint(point: NewLocationPoint): Promise<boolean> {
-  const existing = await db.getFirstAsync<{ id: number }>(
-    `SELECT id
-     FROM location_points
-     WHERE recorded_at = ?
-       AND latitude = ?
-       AND longitude = ?
-     LIMIT 1`,
-    point.recordedAt,
-    point.latitude,
-    point.longitude,
-  );
-
-  return existing != null;
-}
-
-async function insertImportedLocationPoint(point: NewLocationPoint, previousPoint: NewLocationPoint | null, now: string): Promise<void> {
+async function insertImportedLocationPoint(point: NewLocationPoint, previousPoint: NewLocationPoint | null, now: string): Promise<boolean> {
   const segmentDistanceMeters = previousPoint?.localDate === point.localDate ? distanceMeters(previousPoint, point) : 0;
 
-  await db.runAsync(
-    `INSERT INTO location_points (
+  const insertResult = await db.runAsync(
+    `INSERT OR IGNORE INTO location_points (
       recorded_at,
       local_date,
       latitude,
@@ -81,6 +65,10 @@ async function insertImportedLocationPoint(point: NewLocationPoint, previousPoin
     point.altitudeAccuracy,
     now,
   );
+
+  if ((insertResult.changes ?? 1) === 0) {
+    return false;
+  }
 
   await db.runAsync(
     `INSERT INTO daily_logs (
@@ -113,6 +101,8 @@ async function insertImportedLocationPoint(point: NewLocationPoint, previousPoin
     now,
     now,
   );
+
+  return true;
 }
 
 async function insertImportHistory(

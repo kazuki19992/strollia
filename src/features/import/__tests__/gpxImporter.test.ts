@@ -46,6 +46,18 @@ describe('GPXインポート gpxImporter', () => {
     expect(points[0].latitude).toBe(35.1);
   });
 
+  it('緯度経度の範囲外ケースをスキップする', () => {
+    const points = parseGpxToLocationPoints(`<gpx><trk><trkseg>
+      <trkpt lat="91" lon="139"><time>2026-05-01T00:00:00.000Z</time></trkpt>
+      <trkpt lat="35" lon="181"><time>2026-05-01T00:01:00.000Z</time></trkpt>
+      <trkpt lat="-90" lon="-180"><time>2026-05-01T00:02:00.000Z</time></trkpt>
+    </trkseg></trk></gpx>`);
+
+    expect(points).toHaveLength(1);
+    expect(points[0].latitude).toBe(-90);
+    expect(points[0].longitude).toBe(-180);
+  });
+
   it('名前空間prefix付きGPXもtrkptとして扱う', () => {
     const points = parseGpxToLocationPoints(`<gpx:gpx xmlns:gpx="http://www.topografix.com/GPX/1/1">
       <gpx:trk><gpx:trkseg>

@@ -232,6 +232,7 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `location_points(recorded_at)`
 - `location_points(local_date)`
 - `location_points(local_date, recorded_at)`
+- `location_points(recorded_at, latitude, longitude)` （GPXインポート時の既存データ優先を原子的に保証するためUNIQUE）
 - `visited_admin_areas(area_type, normalized_name)`
 - `location_point_admin_areas(local_date, normalized_prefecture_name)`
 - `location_point_admin_areas(local_date, normalized_municipality_name)`

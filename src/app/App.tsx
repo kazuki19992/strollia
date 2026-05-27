@@ -123,6 +123,7 @@ export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
+  const isImportingGpxRef = useRef(false);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
@@ -138,7 +139,6 @@ export default function App() {
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
-  const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [achievementItems, setAchievementItems] = useState<AchievementListItem[]>([]);
   const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
@@ -770,12 +770,12 @@ export default function App() {
 
   /** GPXファイルを選択し、既存データ優先で端末内DBへ取り込む。 */
   async function importGpx(): Promise<void> {
-    if (isImportingGpx) {
+    if (isImportingGpxRef.current) {
       return;
     }
 
     triggerSelectionHaptic();
-    setIsImportingGpx(true);
+    isImportingGpxRef.current = true;
 
     try {
       const pickedFile = await pickAndReadGpxFile();
@@ -798,7 +798,7 @@ export default function App() {
       console.warn('GPX import failed:', error);
       Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
     } finally {
-      setIsImportingGpx(false);
+      isImportingGpxRef.current = false;
     }
   }
 

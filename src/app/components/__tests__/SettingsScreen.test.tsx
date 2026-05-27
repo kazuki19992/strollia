@@ -98,6 +98,25 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('GPXをインポート');
   });
 
+  test('GPXをインポート押下でonImportGpxを呼び出す', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const importButton = renderer.root.findAll(
+      (node: any) => node.props.onPress === props.onImportGpx,
+    )[0];
+
+    act(() => {
+      importButton.props.onPress();
+    });
+
+    expect(props.onImportGpx).toHaveBeenCalledTimes(1);
+  });
+
   test('ルート線の見た目設定を表示しない', () => {
     let renderer: any;
 

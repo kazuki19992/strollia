@@ -33,6 +33,14 @@ describe('自動GPS記録判定 shouldStartRecordingAutomatically', () => {
     })).toBe(false);
   });
 
+  it('フォアグラウンド権限がない場合は自動開始しない', () => {
+    expect(shouldStartRecordingAutomatically({
+      permissions: { ...grantedPermissions, foregroundGranted: false },
+      isRecording: false,
+      isAutoStartInFlight: false,
+    })).toBe(false);
+  });
+
   it('自動開始処理中なら重複して開始しない', () => {
     expect(shouldStartRecordingAutomatically({
       permissions: grantedPermissions,

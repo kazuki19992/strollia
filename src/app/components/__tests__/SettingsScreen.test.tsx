@@ -127,4 +127,23 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('記録開始');
     expect(texts).not.toContain('停止');
   });
+
+  test('権限不足時は自動開始失敗でも復旧用の記録開始ボタンを表示せず、権限要求を表示する', () => {
+    const props = {
+      ...createProps(),
+      isRecording: false,
+      autoStartStatus: 'failed' as const,
+      hasRequiredPermission: false,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).not.toContain('記録開始');
+    expect(texts).toContain('位置情報の常時許可が必要です');
+  });
 });

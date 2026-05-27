@@ -26,13 +26,18 @@ jest.mock('@expo/vector-icons', () => {
 });
 
 jest.mock('react-native-maps', () => {
-  const { View } = require('react-native');
+  const React = require('react');
+  const MapViewMock = (props: any) => React.createElement('MapView', props, props.children);
+  const MarkerMock = (props: any) => React.createElement('Marker', props, props.children);
+  const PolygonMock = (props: any) => React.createElement('Polygon', props, props.children);
+  const PolylineMock = (props: any) => React.createElement('Polyline', props, props.children);
+
   return {
     __esModule: true,
-    default: View,
-    Marker: View,
-    Polygon: View,
-    Polyline: View,
+    default: MapViewMock,
+    Marker: MarkerMock,
+    Polygon: PolygonMock,
+    Polyline: PolylineMock,
   };
 });
 
@@ -258,6 +263,29 @@ describe('地図画面 MapScreen', () => {
     expect(gridCells.length).toBeGreaterThan(0);
     expect(gridCells[0].props.fillColor).toBe('rgba(0, 150, 136, 0.3)');
     expect(gridCells[0].props.strokeWidth).toBe(0);
+  });
+
+  test('Apple MapsのLegal位置指定とmapPaddingは再描画で同じ参照を使う', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
+    const firstLegalLabelInsets = mapView.props.legalLabelInsets;
+    const firstMapPadding = mapView.props.mapPadding;
+
+    act(() => {
+      renderer.update(<MapScreen {...props} gridOverlayOpacity={0.4} />);
+    });
+
+    const rerenderedMapView = renderer.root.find((node: any) => node.type === 'MapView');
+    expect(firstLegalLabelInsets).toEqual({ bottom: 128, left: 8, right: 8, top: 8 });
+    expect(firstMapPadding).toEqual({ bottom: 128, left: 0, right: 0, top: 8 });
+    expect(rerenderedMapView.props.legalLabelInsets).toBe(firstLegalLabelInsets);
+    expect(rerenderedMapView.props.mapPadding).toBe(firstMapPadding);
   });
 });
 

@@ -11,10 +11,10 @@ export function getAutoRecordNote(status: AutoStartStatus): string {
     case 'checking':
       return '自動記録の状態を確認しています。';
     case 'recording':
-      return '自動記録は有効です。GPSログをバックグラウンドで保存します。';
+      return 'GPSログをバックグラウンドで自動保存しています。';
     case 'needsPermission':
-      return '自動記録は待機中です。位置情報権限を許可すると記録できます。';
+      return '位置情報権限を許可すると自動で記録を開始します。';
     case 'failed':
-      return '自動記録を開始できませんでした。設定から権限と記録状態を確認してください。';
+      return '自動記録を開始できませんでした。記録を始めるには手動で再試行してください。';
   }
 }

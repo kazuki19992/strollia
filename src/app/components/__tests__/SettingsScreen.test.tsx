@@ -37,6 +37,7 @@ function createProps() {
     keepScreenAwake: false,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
+    isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
     selectedUserLocationIconId: DEFAULT_USER_LOCATION_ICON_ID,
     onBackToMap: jest.fn(),
@@ -46,7 +47,7 @@ function createProps() {
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
     onExportAllLogs: jest.fn(),
-    onShowImportPlaceholder: jest.fn(),
+    onImportGpx: jest.fn(),
     onDeleteAllData: jest.fn(),
   };
 }
@@ -83,6 +84,56 @@ describe('設定画面 SettingsScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
     expect(texts).toContain('現在地アイコン変更などをPlus特典として用意します。無料時はOS標準の現在地アイコンを使います。');
+  });
+
+  test('GPXインポートと既存データ優先の説明を表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('GPXファイルを端末内に取り込みます。KMLは未対応です。同じ時刻と座標の点がある場合は既存データを優先します。');
+    expect(texts).toContain('GPXをインポート');
+  });
+
+  test('GPXをインポート押下でonImportGpxを呼び出す', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const importButton = renderer.root.findAll(
+      (node: any) => node.props.onPress === props.onImportGpx,
+    )[0];
+
+    act(() => {
+      importButton.props.onPress();
+    });
+
+    expect(props.onImportGpx).toHaveBeenCalledTimes(1);
+  });
+
+  test('GPXインポート中はインポートボタンを無効化する', () => {
+    const props = {
+      ...createProps(),
+      isImportingGpx: true,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const importButton = renderer.root.findAll(
+      (node: any) => node.props.onPress === props.onImportGpx,
+    )[0];
+
+    expect(importButton.props.disabled).toBe(true);
   });
 
   test('ルート線の見た目設定を表示しない', () => {

@@ -33,6 +33,9 @@ import { canEvaluateAchievementsInForeground } from '../features/achievements/ac
 import { evaluateAchievementsAndNotify } from '../features/achievements/achievementService';
 import { filterDismissedAchievementNotifications } from '../features/achievements/pendingNotifications';
 import { shareGpx } from '../features/export/gpxExporter';
+import { parseGpxToLocationPoints } from '../features/import/gpxImporter';
+import { pickAndReadGpxFile } from '../features/import/gpxImportService';
+import { importLocationPointsFromGpx } from '../features/import/importRepository';
 import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
@@ -120,6 +123,7 @@ export default function App() {
   const mapRef = useRef<MapView | null>(null);
   const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
+  const isImportingGpxRef = useRef(false);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
@@ -135,6 +139,7 @@ export default function App() {
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
+  const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [achievementItems, setAchievementItems] = useState<AchievementListItem[]>([]);
   const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
@@ -764,10 +769,40 @@ export default function App() {
     });
   }
 
-  /** 未実装のインポート導線として予定メッセージを表示する。 */
-  function showImportPlaceholder(): void {
+  /** GPXファイルを選択し、既存データ優先で端末内DBへ取り込む。 */
+  async function importGpx(): Promise<void> {
+    if (isImportingGpxRef.current) {
+      return;
+    }
+
     triggerSelectionHaptic();
-    Alert.alert('インポート', 'GPX / KML インポートは今後実装予定です。');
+    isImportingGpxRef.current = true;
+    setIsImportingGpx(true);
+
+    try {
+      const pickedFile = await pickAndReadGpxFile();
+
+      if (!pickedFile) {
+        return;
+      }
+
+      const pointsToImport = parseGpxToLocationPoints(pickedFile.content);
+
+      if (pointsToImport.length === 0) {
+        Alert.alert('GPXインポート', '取り込めるGPSポイントがありませんでした。');
+        return;
+      }
+
+      const result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
+      await refreshData();
+      Alert.alert('GPXインポート完了', `${result.importedPointCount}件を取り込みました。${result.skippedPointCount}件は既存データを優先してスキップしました。`);
+    } catch (error: unknown) {
+      console.warn('GPX import failed:', error);
+      Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
+    } finally {
+      isImportingGpxRef.current = false;
+      setIsImportingGpx(false);
+    }
   }
 
   /**
@@ -882,6 +917,7 @@ export default function App() {
             keepScreenAwake={keepScreenAwake}
             showPhotosOnMap={showPhotosOnMap}
             isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+            isImportingGpx={isImportingGpx}
             premiumAccessState={premiumAccessState}
             selectedUserLocationIconId={selectedUserLocationIconId}
             onBackToMap={openMap}
@@ -891,7 +927,7 @@ export default function App() {
             onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
             onUpdateUserLocationIcon={updateUserLocationIcon}
             onExportAllLogs={exportAllLogs}
-            onShowImportPlaceholder={showImportPlaceholder}
+            onImportGpx={importGpx}
             onDeleteAllData={deleteAllData}
           />
         )}

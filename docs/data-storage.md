@@ -121,6 +121,8 @@ GPX / KML エクスポート履歴を保存するテーブル。
 
 GPX / KML インポート履歴を保存するテーブル。
 
+初期実装ではGPXのみインポート対象とする。既存の `recorded_at`、`latitude`、`longitude` と一致する点がある場合は既存データを優先し、GPX側の点はスキップする。KMLインポートは後続対応とする。
+
 | カラム | 型 | 説明 |
 | --- | --- | --- |
 | `id` | INTEGER | 主キー |
@@ -230,6 +232,7 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `location_points(recorded_at)`
 - `location_points(local_date)`
 - `location_points(local_date, recorded_at)`
+- `location_points(recorded_at, latitude, longitude)` （GPXインポート時の既存データ優先を原子的に保証するためUNIQUE）
 - `visited_admin_areas(area_type, normalized_name)`
 - `location_point_admin_areas(local_date, normalized_prefecture_name)`
 - `location_point_admin_areas(local_date, normalized_municipality_name)`

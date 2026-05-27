@@ -37,10 +37,8 @@ export type SettingsScreenProps = {
   selectedUserLocationIconId: UserLocationIconId;
   /** 地図画面へ戻る処理。 */
   onBackToMap: () => void;
-  /** GPS記録開始処理。 */
+  /** GPS記録開始処理。自動開始失敗時の復旧操作でだけ使う。 */
   onStartRecording: () => void;
-  /** GPS記録停止処理。 */
-  onStopRecording: () => void;
   /** 位置情報権限要求処理。 */
   onRequestLocationPermission: () => void;
   /** 画面ON維持設定の更新処理。 */
@@ -72,7 +70,6 @@ export function SettingsScreen({
   selectedUserLocationIconId,
   onBackToMap,
   onStartRecording,
-  onStopRecording,
   onRequestLocationPermission,
   onUpdateKeepScreenAwake,
   onUpdateShowPhotosOnMap,
@@ -107,16 +104,13 @@ export function SettingsScreen({
                 <Text style={styles.permissionButtonText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
               </Pressable>
             </View>
-          ) : (
+          ) : autoStartStatus === 'failed' ? (
             <View style={styles.actions}>
               <Pressable disabled={isRecording} onPress={onStartRecording} style={[styles.primaryButton, isRecording && styles.buttonDisabled]}>
                 <Text style={styles.primaryButtonText}>記録開始</Text>
               </Pressable>
-              <Pressable disabled={!isRecording} onPress={onStopRecording} style={[styles.secondaryButton, !isRecording && styles.buttonDisabled]}>
-                <Text style={styles.secondaryButtonText}>停止</Text>
-              </Pressable>
             </View>
-          )}
+          ) : null}
         </View>
 
         <View style={styles.settingsCard}>

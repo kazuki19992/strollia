@@ -41,7 +41,6 @@ function createProps() {
     selectedUserLocationIconId: DEFAULT_USER_LOCATION_ICON_ID,
     onBackToMap: jest.fn(),
     onStartRecording: jest.fn(),
-    onStopRecording: jest.fn(),
     onRequestLocationPermission: jest.fn(),
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
@@ -96,5 +95,36 @@ describe('設定画面 SettingsScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
     expect(texts).not.toContain('ルート線の見た目');
+  });
+
+  test('通常時は記録開始と停止ボタンを表示しない', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).not.toContain('記録開始');
+    expect(texts).not.toContain('停止');
+  });
+
+  test('自動開始失敗時だけ復旧用の記録開始ボタンを表示する', () => {
+    const props = {
+      ...createProps(),
+      isRecording: false,
+      autoStartStatus: 'failed' as const,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('記録開始');
+    expect(texts).not.toContain('停止');
   });
 });

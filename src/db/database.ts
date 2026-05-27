@@ -103,6 +103,17 @@ export async function initializeDatabase(): Promise<void> {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS import_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      format TEXT NOT NULL,
+      file_name TEXT NOT NULL,
+      range_from TEXT NULL,
+      range_to TEXT NULL,
+      imported_point_count INTEGER NOT NULL,
+      skipped_point_count INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 

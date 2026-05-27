@@ -34,41 +34,54 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
     return;
   }
 
+  await db.withTransactionAsync(async () => {
+    await upsertVisitedCellsInCurrentTransaction(cells, visitedAt);
+  });
+}
+
+/**
+ * 呼び出し元のtransaction内でvisited cellを保存する。
+ *
+ * `db.withTransactionAsync` のネストを避けるため、複数テーブル更新をまとめる処理から使う。
+ */
+export async function upsertVisitedCellsInCurrentTransaction(cells: GridCell[], visitedAt: string): Promise<void> {
+  if (cells.length === 0) {
+    return;
+  }
+
   const now = new Date().toISOString();
 
-  await db.withTransactionAsync(async () => {
-    for (const cell of dedupeCells(cells)) {
-      await db.runAsync(
-        `INSERT INTO visited_cells (
-          cell_id,
-          cell_size_meters,
-          x,
-          y,
-          first_visited_at,
-          last_visited_at,
-          visit_count,
-          source,
-          created_at,
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 1, 'gps', ?, ?)
-        ON CONFLICT(cell_id) DO UPDATE SET
-          last_visited_at = CASE
-            WHEN excluded.last_visited_at > visited_cells.last_visited_at THEN excluded.last_visited_at
-            ELSE visited_cells.last_visited_at
-          END,
-          visit_count = visited_cells.visit_count + 1,
-          updated_at = excluded.updated_at`,
-        cell.cellId,
-        cell.cellSizeMeters,
-        cell.x,
-        cell.y,
-        visitedAt,
-        visitedAt,
-        now,
-        now,
-      );
-    }
-  });
+  for (const cell of dedupeCells(cells)) {
+    await db.runAsync(
+      `INSERT INTO visited_cells (
+        cell_id,
+        cell_size_meters,
+        x,
+        y,
+        first_visited_at,
+        last_visited_at,
+        visit_count,
+        source,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, 1, 'gps', ?, ?)
+      ON CONFLICT(cell_id) DO UPDATE SET
+        last_visited_at = CASE
+          WHEN excluded.last_visited_at > visited_cells.last_visited_at THEN excluded.last_visited_at
+          ELSE visited_cells.last_visited_at
+        END,
+        visit_count = visited_cells.visit_count + 1,
+        updated_at = excluded.updated_at`,
+      cell.cellId,
+      cell.cellSizeMeters,
+      cell.x,
+      cell.y,
+      visitedAt,
+      visitedAt,
+      now,
+      now,
+    );
+  }
 }
 
 /**

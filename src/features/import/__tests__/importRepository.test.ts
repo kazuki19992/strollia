@@ -11,6 +11,7 @@ jest.mock('../../../db/database', () => ({
 
 jest.mock('../../location/visitedCellRepository', () => ({
   upsertVisitedCells: jest.fn(),
+  upsertVisitedCellsInCurrentTransaction: jest.fn(),
 }));
 
 jest.mock('../../location/grid/gridInterpolation', () => ({

@@ -2,7 +2,7 @@ import { db } from '../../db/database';
 import { NewLocationPoint } from '../../types/gps';
 import { distanceMeters } from '../../utils/distance';
 import { getVisitedCellsForLocationPoint } from '../location/grid/gridInterpolation';
-import { upsertVisitedCells } from '../location/visitedCellRepository';
+import { upsertVisitedCellsInCurrentTransaction } from '../location/visitedCellRepository';
 
 export type GpxImportResult = {
   importedPointCount: number;
@@ -26,7 +26,7 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
 
       await insertImportedLocationPoint(point, previousImportedPoint, now);
       const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
-      await upsertVisitedCells(visitedCells, point.recordedAt);
+      await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt);
       previousImportedPoint = point;
       importedPointCount += 1;
     }

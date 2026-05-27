@@ -46,7 +46,7 @@ function createProps() {
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
     onExportAllLogs: jest.fn(),
-    onShowImportPlaceholder: jest.fn(),
+    onImportGpx: jest.fn(),
     onDeleteAllData: jest.fn(),
   };
 }
@@ -83,6 +83,19 @@ describe('設定画面 SettingsScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
     expect(texts).toContain('現在地アイコン変更などをPlus特典として用意します。無料時はOS標準の現在地アイコンを使います。');
+  });
+
+  test('GPXインポートと既存データ優先の説明を表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('GPXファイルを端末内に取り込みます。KMLは未対応です。同じ時刻と座標の点がある場合は既存データを優先します。');
+    expect(texts).toContain('GPXをインポート');
   });
 
   test('ルート線の見た目設定を表示しない', () => {

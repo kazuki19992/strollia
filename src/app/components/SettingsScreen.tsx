@@ -49,8 +49,8 @@ export type SettingsScreenProps = {
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
   /** データエクスポート処理。 */
   onExportAllLogs: () => void;
-  /** データインポート処理。 */
-  onShowImportPlaceholder: () => void;
+  /** GPXインポート処理。 */
+  onImportGpx: () => void;
   /** 全データ削除処理。 */
   onDeleteAllData: () => void;
 };
@@ -75,7 +75,7 @@ export function SettingsScreen({
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
   onExportAllLogs,
-  onShowImportPlaceholder,
+  onImportGpx,
   onDeleteAllData,
 }: SettingsScreenProps) {
   return (
@@ -186,9 +186,10 @@ export function SettingsScreen({
             <Feather name="upload" size={18} color={theme.colors.primary} />
             <Text style={styles.settingsActionText}>データのエクスポート</Text>
           </Pressable>
-          <Pressable onPress={onShowImportPlaceholder} style={styles.settingsAction}>
+          <Text style={styles.settingsDescription}>GPXファイルを端末内に取り込みます。KMLは未対応です。同じ時刻と座標の点がある場合は既存データを優先します。</Text>
+          <Pressable onPress={onImportGpx} style={styles.settingsAction}>
             <Feather name="download" size={18} color={theme.colors.primary} />
-            <Text style={styles.settingsActionText}>データのインポート</Text>
+            <Text style={styles.settingsActionText}>GPXをインポート</Text>
           </Pressable>
           <Pressable onPress={onDeleteAllData} style={styles.dangerAction}>
             <MaterialCommunityIcons name="delete-outline" size={20} color={theme.colors.danger} />

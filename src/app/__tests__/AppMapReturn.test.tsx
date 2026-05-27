@@ -1,7 +1,13 @@
 import App from '../App';
 import { createUserCenteredRegion } from '../mapRegion';
+import { AppState } from 'react-native';
 import { getVisitedCellsInBounds } from '../../features/location/visitedCellRepository';
 import { getGridBoundsForRegion } from '../../features/location/grid/gridCell';
+import { getLocationPermissionState } from '../../features/location/locationPermission';
+import {
+  isBackgroundLocationRecording,
+  startBackgroundLocationRecording,
+} from '../../features/location/locationService';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -166,7 +172,7 @@ jest.mock('../../features/location/locationPermission', () => ({
     canAskForeground: true,
     canAskBackground: true,
   }),
-  hasRequiredLocationPermission: jest.fn(() => true),
+  hasRequiredLocationPermission: jest.fn((state) => state.foregroundGranted && state.backgroundGranted),
 }));
 
 jest.mock('../../features/logs/logRepository', () => ({
@@ -246,22 +252,31 @@ const { act } = ReactTestRenderer;
 
 const flushPromises = async () => {
   await act(async () => {
-    await Promise.resolve();
+    for (let index = 0; index < 5; index += 1) {
+      await Promise.resolve();
+    }
   });
 };
 
 describe('App 地図復帰時の表示範囲復元', () => {
+  let renderer: any;
+
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
+    if (renderer) {
+      act(() => {
+        renderer.unmount();
+      });
+      renderer = null;
+    }
     jest.restoreAllMocks();
   });
 
   test('別画面から地図へ戻ると現在地中心へ復元しvisited grid取得範囲も同期する', async () => {
-    let renderer: any;
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
     await act(async () => {
@@ -297,8 +312,56 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
   });
 
+  test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
+    let appStateHandler: ((state: string) => void) | null = null;
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+      appStateHandler = handler;
+      return { remove: jest.fn() } as any;
+    });
+    (getLocationPermissionState as jest.Mock)
+      .mockResolvedValueOnce({
+        foregroundGranted: true,
+        backgroundGranted: false,
+        canAskForeground: true,
+        canAskBackground: true,
+      })
+      .mockResolvedValue({
+        foregroundGranted: true,
+        backgroundGranted: true,
+        canAskForeground: true,
+        canAskBackground: true,
+      });
+    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(false);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(renderer).toBeTruthy();
+    expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+
+    await act(async () => {
+      appStateHandler?.('active');
+    });
+    await flushPromises();
+
+    expect(startBackgroundLocationRecording).toHaveBeenCalledTimes(1);
+  });
+
+  test('すでに記録中なら起動後に記録開始を重複実行しない', async () => {
+    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(renderer).toBeTruthy();
+    expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+  });
+
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {
-    let renderer: any;
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
     await act(async () => {

@@ -36,7 +36,6 @@ import { shareGpx } from '../features/export/gpxExporter';
 import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
-  stopBackgroundLocationRecording,
 } from '../features/location/locationService';
 import {
   canRequestLocationPermissionInApp,
@@ -86,6 +85,7 @@ import { toDisplaySpeedKmh } from './hooks/useRawLocationSpeed';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
+import { shouldStartRecordingAutomatically } from './autoRecording';
 import { getNextMapType } from './mapType';
 import { createUserCenteredRegion, shouldRestoreMapRegionOnMapOpen } from './mapRegion';
 
@@ -118,7 +118,7 @@ export default function App() {
   const theme = useMemo(() => getAppTheme(colorScheme), [colorScheme]);
   const styles = useMemo(() => createStyles(theme), [theme]);
   const mapRef = useRef<MapView | null>(null);
-  const autoStartAttemptedRef = useRef(false);
+  const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
@@ -282,17 +282,28 @@ export default function App() {
     [refreshData],
   );
 
-  /** GPSバックグラウンド記録を停止し、最新状態を再読み込みする。 */
-  const stopRecording = useCallback(async (): Promise<void> => {
-    try {
-      await stopBackgroundLocationRecording();
-      await refreshData();
-      setMessage('GPS記録を停止しました。');
-      setAutoStartStatus('needsPermission');
-    } catch (error: unknown) {
-      setMessage(error instanceof Error ? error.message : 'GPS記録の停止に失敗しました。');
-    }
-  }, [refreshData]);
+  /** 権限許可後に未記録ならGPS記録の自動開始を試みる。 */
+  const maybeStartRecordingAutomatically = useCallback(
+    async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
+      if (!shouldStartRecordingAutomatically({
+        permissions: state.permissions,
+        isRecording: state.recording,
+        isAutoStartInFlight: autoStartInFlightRef.current,
+      })) {
+        setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
+        return;
+      }
+
+      autoStartInFlightRef.current = true;
+
+      try {
+        await startRecording('auto');
+      } finally {
+        autoStartInFlightRef.current = false;
+      }
+    },
+    [startRecording],
+  );
 
   /** 権限状態に応じてアプリ内要求またはOS設定画面への誘導を行う。 */
   const requestLocationPermission = useCallback(async (): Promise<void> => {
@@ -402,7 +413,8 @@ export default function App() {
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
         await requestAchievementNotificationPermissionOnFirstLaunch().catch(() => undefined);
-        await refreshData();
+        const initialState = await refreshData();
+        await maybeStartRecordingAutomatically(initialState);
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         await refreshAchievementState(true);
       })
@@ -410,33 +422,7 @@ export default function App() {
         setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
       })
       .finally(() => setIsReady(true));
-  }, [refreshAchievementState, refreshData]);
-
-  /**
-   * アプリ準備完了後に一度だけバックグラウンドGPS記録の自動開始を試みる。
-   */
-  useEffect(() => {
-    if (!isReady || autoStartAttemptedRef.current) {
-      return;
-    }
-
-    autoStartAttemptedRef.current = true;
-
-    isBackgroundLocationRecording()
-      .then((recording) => {
-        if (!recording) {
-          return startRecording('auto');
-        }
-
-        setIsRecording(true);
-        setAutoStartStatus('recording');
-        setMessage('GPS記録はすでに開始されています。');
-      })
-      .catch((error: unknown) => {
-        setAutoStartStatus('failed');
-        setMessage(error instanceof Error ? error.message : '自動記録の確認に失敗しました。');
-      });
-  }, [isReady, startRecording]);
+  }, [maybeStartRecordingAutomatically, refreshAchievementState, refreshData]);
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。
@@ -445,7 +431,14 @@ export default function App() {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       setAppState(state);
       if (state === 'active') {
-        refreshDataAndEvaluateAchievementsIfDialogIdle()
+        refreshData()
+          .then(maybeStartRecordingAutomatically)
+          .then(evaluateAchievementsIfDialogIdle)
+          .then(async (didEvaluate) => {
+            if (didEvaluate) {
+              await refreshAchievementState(true);
+            }
+          })
           .catch((error: unknown) => {
             setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
           });
@@ -453,7 +446,7 @@ export default function App() {
     });
 
     return () => subscription.remove();
-  }, [refreshDataAndEvaluateAchievementsIfDialogIdle]);
+  }, [evaluateAchievementsIfDialogIdle, maybeStartRecordingAutomatically, refreshAchievementState, refreshData]);
 
 
   /**
@@ -893,7 +886,6 @@ export default function App() {
             selectedUserLocationIconId={selectedUserLocationIconId}
             onBackToMap={openMap}
             onStartRecording={() => startRecording('manual')}
-            onStopRecording={stopRecording}
             onRequestLocationPermission={requestLocationPermission}
             onUpdateKeepScreenAwake={updateKeepScreenAwake}
             onUpdateShowPhotosOnMap={updateShowPhotosOnMap}

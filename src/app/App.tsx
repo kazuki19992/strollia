@@ -45,7 +45,6 @@ import {
   LocationPermissionState,
 } from '../features/location/locationPermission';
 import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
-import { isRegionCenteredOnCoordinate } from '../features/map/followUserLocation';
 import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
 import { getPreviousReportMonth } from '../features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
@@ -636,21 +635,13 @@ export default function App() {
   }
 
   /**
-   * 表示範囲を保存し、中心が現在地付近に戻った場合は追従を再開する。
+   * 表示範囲を保存する。追従再開は現在地ボタン押下に限定し、広域表示中の意図しない引き戻しを防ぐ。
    *
    * @param region - MapViewの現在表示範囲。
    * @returns なし。
    */
   function handleRegionChangeComplete(region: Region): void {
     setVisibleRegion(region);
-
-    if (!userCoordinate) {
-      return;
-    }
-
-    if (isRegionCenteredOnCoordinate(region, userCoordinate)) {
-      setIsFollowingUserLocation(true);
-    }
   }
 
   /**

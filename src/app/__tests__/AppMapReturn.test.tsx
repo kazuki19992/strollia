@@ -58,6 +58,20 @@ jest.mock('../components/MapScreen', () => ({
         })}>
           <Text>現在地更新</Text>
         </Pressable>
+        <Pressable accessibilityLabel="現在地へ戻る" onPress={props.onRecenterOnUserLocation}>
+          <Text>現在地へ戻る</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="現在地中心へ地図移動" onPress={() => props.onRegionChangeComplete({
+          latitude: 35.681236,
+          longitude: 139.767125,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        })}>
+          <Text>現在地中心へ地図移動</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="地図をドラッグ" onPress={props.onPanDrag}>
+          <Text>地図をドラッグ</Text>
+        </Pressable>
         <Pressable accessibilityLabel="日ごとの記録" onPress={props.onOpenDailyLogs}>
           <Text>日ごとの記録</Text>
         </Pressable>
@@ -189,10 +203,6 @@ jest.mock('../../features/export/gpxExporter', () => ({
   shareGpx: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/map/followUserLocation', () => ({
-  isRegionCenteredOnCoordinate: jest.fn(() => true),
-}));
-
 jest.mock('../../features/reports/monthlyAreaReport', () => ({
   getMonthlyAreaReport: jest.fn().mockResolvedValue(null),
 }));
@@ -262,6 +272,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await act(async () => {
       renderer.root.findByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
     });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '現在地へ戻る' }).props.onPress();
+    });
 
     const callsBeforeReturn = mockAnimateToRegion.mock.calls.length;
 
@@ -282,5 +295,33 @@ describe('App 地図復帰時の表示範囲復元', () => {
       minY: Math.round(userRegion.latitudeDelta * 1000),
       maxY: Math.round(userRegion.longitudeDelta * 1000),
     });
+  });
+
+  test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {
+    let renderer: any;
+    const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+    });
+
+    expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '地図をドラッグ' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+    });
+
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
   });
 });

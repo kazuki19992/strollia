@@ -1,8 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 
-const GPX_DOCUMENT_TYPES = ['application/gpx+xml', 'application/xml', 'text/xml'];
-const ALLOWED_GPXML_MIME_TYPES = new Set(GPX_DOCUMENT_TYPES);
+const DOCUMENT_PICKER_TYPE = '*/*';
 
 export type PickedGpxFile = {
   fileName: string;
@@ -12,7 +11,7 @@ export type PickedGpxFile = {
 /** ユーザーにGPXファイルを選んでもらい、内容をUTF-8文字列として読み込む。 */
 export async function pickAndReadGpxFile(): Promise<PickedGpxFile | null> {
   const result = await DocumentPicker.getDocumentAsync({
-    type: GPX_DOCUMENT_TYPES,
+    type: DOCUMENT_PICKER_TYPE,
     copyToCacheDirectory: true,
     multiple: false,
   });
@@ -25,10 +24,6 @@ export async function pickAndReadGpxFile(): Promise<PickedGpxFile | null> {
   const fileName = asset.name ?? 'import.gpx';
 
   if (!isGpxFileName(fileName) && !isGpxFileName(asset.uri)) {
-    throw new Error('GPXファイルを選択してください。');
-  }
-
-  if (asset.mimeType && !ALLOWED_GPXML_MIME_TYPES.has(asset.mimeType)) {
     throw new Error('GPXファイルを選択してください。');
   }
 

@@ -37,6 +37,7 @@ function createProps() {
     keepScreenAwake: false,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
+    isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
     selectedUserLocationIconId: DEFAULT_USER_LOCATION_ICON_ID,
     onBackToMap: jest.fn(),
@@ -115,6 +116,24 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     expect(props.onImportGpx).toHaveBeenCalledTimes(1);
+  });
+
+  test('GPXインポート中はインポートボタンを無効化する', () => {
+    const props = {
+      ...createProps(),
+      isImportingGpx: true,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const importButton = renderer.root.findAll(
+      (node: any) => node.props.onPress === props.onImportGpx,
+    )[0];
+
+    expect(importButton.props.disabled).toBe(true);
   });
 
   test('ルート線の見た目設定を表示しない', () => {

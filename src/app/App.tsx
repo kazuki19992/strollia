@@ -139,6 +139,7 @@ export default function App() {
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
+  const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [achievementItems, setAchievementItems] = useState<AchievementListItem[]>([]);
   const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
@@ -776,6 +777,7 @@ export default function App() {
 
     triggerSelectionHaptic();
     isImportingGpxRef.current = true;
+    setIsImportingGpx(true);
 
     try {
       const pickedFile = await pickAndReadGpxFile();
@@ -799,6 +801,7 @@ export default function App() {
       Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
     } finally {
       isImportingGpxRef.current = false;
+      setIsImportingGpx(false);
     }
   }
 
@@ -914,6 +917,7 @@ export default function App() {
             keepScreenAwake={keepScreenAwake}
             showPhotosOnMap={showPhotosOnMap}
             isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+            isImportingGpx={isImportingGpx}
             premiumAccessState={premiumAccessState}
             selectedUserLocationIconId={selectedUserLocationIconId}
             onBackToMap={openMap}

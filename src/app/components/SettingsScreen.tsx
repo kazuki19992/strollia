@@ -31,6 +31,8 @@ export type SettingsScreenProps = {
   showPhotosOnMap: boolean;
   /** 写真表示設定を保存中か。 */
   isUpdatingPhotoSetting: boolean;
+  /** GPXインポート処理中か。 */
+  isImportingGpx: boolean;
   /** Plus権限状態。 */
   premiumAccessState: ReturnType<typeof getDefaultPremiumAccessState>;
   /** 選択中の現在地アイコンID。 */
@@ -66,6 +68,7 @@ export function SettingsScreen({
   keepScreenAwake,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
+  isImportingGpx,
   premiumAccessState,
   selectedUserLocationIconId,
   onBackToMap,
@@ -187,9 +190,9 @@ export function SettingsScreen({
             <Text style={styles.settingsActionText}>データのエクスポート</Text>
           </Pressable>
           <Text style={styles.settingsDescription}>GPXファイルを端末内に取り込みます。KMLは未対応です。同じ時刻と座標の点がある場合は既存データを優先します。</Text>
-          <Pressable onPress={onImportGpx} style={styles.settingsAction}>
+          <Pressable disabled={isImportingGpx} onPress={onImportGpx} style={[styles.settingsAction, isImportingGpx && styles.buttonDisabled]}>
             <Feather name="download" size={18} color={theme.colors.primary} />
-            <Text style={styles.settingsActionText}>GPXをインポート</Text>
+            <Text style={styles.settingsActionText}>{isImportingGpx ? 'GPXインポート中...' : 'GPXをインポート'}</Text>
           </Pressable>
           <Pressable onPress={onDeleteAllData} style={styles.dangerAction}>
             <MaterialCommunityIcons name="delete-outline" size={20} color={theme.colors.danger} />

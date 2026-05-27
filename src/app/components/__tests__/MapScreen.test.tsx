@@ -282,7 +282,7 @@ describe('地図画面 MapScreen', () => {
     });
 
     const rerenderedMapView = renderer.root.find((node: any) => node.type === 'MapView');
-    expect(firstLegalLabelInsets).toEqual({ bottom: 128, left: 8, right: 8, top: 8 });
+    expect(firstLegalLabelInsets).toEqual({ bottom: 128, left: 8, right: 8, top: 0 });
     expect(firstMapPadding).toEqual({ bottom: 128, left: 0, right: 0, top: 8 });
     expect(rerenderedMapView.props.legalLabelInsets).toBe(firstLegalLabelInsets);
     expect(rerenderedMapView.props.mapPadding).toBe(firstMapPadding);

@@ -66,6 +66,7 @@ export async function notifyAchievementUnlocked(definition: AchievementDefinitio
         ? [{ identifier: definition.id, url: definition.trophyImageUri, type: 'image/png' }]
         : undefined,
       data: { achievementId: definition.id, trophyImageUri: definition.trophyImageUri },
+      sound: true,
       vibrate: [0, 1000],
     } as Notifications.NotificationContentInput & { channelId: string },
     trigger: null,

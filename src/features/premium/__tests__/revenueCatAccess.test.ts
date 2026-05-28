@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
+import RevenueCatUI from 'react-native-purchases-ui';
 
 import { developmentFlags } from '../../../config/developmentFlags';
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from '../premiumCatalog';
@@ -14,6 +15,7 @@ import {
   getDefaultPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
+  presentPremiumPaywall,
   resolvePremiumAccessState,
   resolvePremiumOfferingSummary,
   restorePremiumPurchases,
@@ -27,6 +29,20 @@ jest.mock('react-native-purchases', () => ({
     getCustomerInfo: jest.fn(),
     getOfferings: jest.fn(),
     restorePurchases: jest.fn(),
+  },
+}));
+
+jest.mock('react-native-purchases-ui', () => ({
+  __esModule: true,
+  default: {
+    presentPaywall: jest.fn(),
+  },
+  PAYWALL_RESULT: {
+    PURCHASED: 'PURCHASED',
+    RESTORED: 'RESTORED',
+    CANCELLED: 'CANCELLED',
+    NOT_PRESENTED: 'NOT_PRESENTED',
+    ERROR: 'ERROR',
   },
 }));
 
@@ -277,5 +293,45 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
 
     await expect(restorePremiumPurchases()).resolves.toEqual(getDefaultPremiumAccessState());
     expect(console.warn).toHaveBeenCalledWith('Failed to restore RevenueCat purchases:', expect.any(Error));
+  });
+
+  it('Paywall購入完了をpurchasedとして返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('PURCHASED');
+
+    const client = createRevenueCatClient();
+
+    await expect(client.presentPaywall()).resolves.toBe('purchased');
+  });
+
+  it('Paywall復元完了をrestoredとして返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('RESTORED');
+
+    const client = createRevenueCatClient();
+
+    await expect(client.presentPaywall()).resolves.toBe('restored');
+  });
+
+  it('Paywallキャンセルをcancelledとして返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('CANCELLED');
+
+    const client = createRevenueCatClient();
+
+    await expect(client.presentPaywall()).resolves.toBe('cancelled');
+  });
+
+  it('Paywall表示失敗時はerrorへフォールバックする', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (RevenueCatUI.presentPaywall as jest.Mock).mockRejectedValue(new Error('native module failed'));
+
+    await expect(presentPremiumPaywall()).resolves.toBe('error');
+    expect(console.warn).toHaveBeenCalledWith('Failed to present RevenueCat paywall:', expect.any(Error));
   });
 });

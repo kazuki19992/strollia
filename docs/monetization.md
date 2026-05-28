@@ -137,9 +137,27 @@ APIキーが未設定の場合、SDK初期化は行わず、既存の開発用Pl
 
 - `EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT=true`
 
-Plus状態の判定は `CustomerInfo.entitlements.active.strollia_plus` をもとに実装済みである。実購入、復元、Paywall、商品表示は次段階で実装する。
+Plus状態の判定は `CustomerInfo.entitlements.active.strollia_plus` をもとに実装済みである。
+
+購入導線は `react-native-purchases-ui` のRevenueCat Paywallを使う。設定画面のStrollia PlusカードからPaywallを表示し、購入または復元完了後に `CustomerInfo` を再取得してPlus状態へ反映する。
+
+商品表示は `Purchases.getOfferings()` のcurrent offeringから取得する。Offeringや商品が未設定の場合もGPS記録や設定画面は止めず、商品情報は確認中として表示する。
+
+購入復元は設定画面の「購入を復元」から `Purchases.restorePurchases()` を呼ぶ。復元後に `strollia_plus` entitlementが有効ならPlus有効として扱う。
+
+Strolliaは現時点で独自アカウントを持たないため、RevenueCatの匿名App User IDを使う。Apple IDそのものはアプリから取得できない。将来ログインID連携を行う場合は、Sign in with Appleで返るアプリ/開発チーム向け識別子を `Purchases.logIn()` に渡す。
 
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
+
+### 7.5 RevenueCat / Store実設定チェックリスト
+
+- App Store Connectで `strollia_plus_monthly` と `strollia_plus_yearly` を作成する
+- Google Play Consoleで `strollia_plus_monthly` と `strollia_plus_yearly` を作成する
+- RevenueCatで `strollia_plus` entitlementを作成する
+- RevenueCatでcurrent offeringに月額/年額packageを紐づける
+- RevenueCat Paywallをcurrent offeringへ紐づける
+- iOS/AndroidのPublic SDK API keyを環境変数へ設定する
+- Expo development buildでPaywall表示、購入、復元を確認する
 
 ## 8. Plus機能ロードマップ
 

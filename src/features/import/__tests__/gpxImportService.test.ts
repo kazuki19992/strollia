@@ -32,10 +32,20 @@ describe('GPXファイル選択 gpxImportService', () => {
 
     await expect(pickAndReadGpxFile()).resolves.toEqual({ fileName: 'walk.gpx', content: '<gpx />' });
     expect(DocumentPicker.getDocumentAsync).toHaveBeenCalledWith({
-      type: ['application/gpx+xml', 'application/xml', 'text/xml'],
+      type: '*/*',
       copyToCacheDirectory: true,
       multiple: false,
     });
+  });
+
+  it('GPXファイルが汎用MIMEで返っても内容検証後に受け入れる', async () => {
+    (DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file://walk.gpx', name: 'walk.gpx', mimeType: 'application/octet-stream' }],
+    });
+    (FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('<gpx />');
+
+    await expect(pickAndReadGpxFile()).resolves.toEqual({ fileName: 'walk.gpx', content: '<gpx />' });
   });
 
   it('ファイル名がない場合は既定のGPXファイル名を使う', async () => {

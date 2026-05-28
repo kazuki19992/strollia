@@ -20,8 +20,6 @@ type MapEdgePadding = {
   left: number;
 };
 
-/** Apple MapsのLegal表示を下部ダッシュボードから逃がす固定inset。topが非ゼロだとMapKit側でbottomが無視される。 */
-const MAP_LEGAL_LABEL_INSETS: MapEdgePadding = { bottom: 128, left: 8, right: 8, top: 0 };
 /** MapKitへ渡すpadding。頻繁な再描画で参照が変わらないようmodule scopeで固定する。 */
 const MAP_PADDING: MapEdgePadding = { bottom: 128, left: 0, right: 0, top: 8 };
 
@@ -160,7 +158,6 @@ export function MapScreen({
         onUserLocationChange={onUserLocationChange}
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}
-        legalLabelInsets={MAP_LEGAL_LABEL_INSETS}
         mapPadding={MAP_PADDING}
       >
         {shouldRenderVisitedGrid &&

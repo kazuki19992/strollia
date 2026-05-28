@@ -265,7 +265,7 @@ describe('地図画面 MapScreen', () => {
     expect(gridCells[0].props.strokeWidth).toBe(0);
   });
 
-  test('Apple MapsのLegal位置指定とmapPaddingは再描画で同じ参照を使う', () => {
+  test('Apple MapsのLegal位置指定はデフォルトに任せmapPaddingだけ再描画で同じ参照を使う', () => {
     const props = createProps();
     let renderer: any;
 
@@ -274,7 +274,6 @@ describe('地図画面 MapScreen', () => {
     });
 
     const mapView = renderer.root.find((node: any) => node.type === 'MapView');
-    const firstLegalLabelInsets = mapView.props.legalLabelInsets;
     const firstMapPadding = mapView.props.mapPadding;
 
     act(() => {
@@ -282,9 +281,9 @@ describe('地図画面 MapScreen', () => {
     });
 
     const rerenderedMapView = renderer.root.find((node: any) => node.type === 'MapView');
-    expect(firstLegalLabelInsets).toEqual({ bottom: 128, left: 8, right: 8, top: 0 });
+    expect(mapView.props.legalLabelInsets).toBeUndefined();
     expect(firstMapPadding).toEqual({ bottom: 128, left: 0, right: 0, top: 8 });
-    expect(rerenderedMapView.props.legalLabelInsets).toBe(firstLegalLabelInsets);
+    expect(rerenderedMapView.props.legalLabelInsets).toBeUndefined();
     expect(rerenderedMapView.props.mapPadding).toBe(firstMapPadding);
   });
 });

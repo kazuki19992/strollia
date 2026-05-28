@@ -4,14 +4,29 @@ import Purchases from 'react-native-purchases';
 import { developmentFlags } from '../../../config/developmentFlags';
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from '../premiumCatalog';
 import { getRevenueCatApiKeyForPlatform, getRevenueCatConfigureOptions } from '../revenueCatConfig';
-import { createRevenueCatClient, resetRevenueCatClientForTesting } from '../revenueCatClient';
-import { getDefaultPremiumAccessState, getPremiumAccessState, resolvePremiumAccessState, RevenueCatClient } from '../revenueCatAccess';
+import {
+  createRevenueCatClient,
+  getPremiumOfferingSummaryFromRevenueCat,
+  resetRevenueCatClientForTesting,
+  restorePremiumPurchasesWithRevenueCat,
+} from '../revenueCatClient';
+import {
+  getDefaultPremiumAccessState,
+  getPremiumAccessState,
+  getPremiumOfferingSummary,
+  resolvePremiumAccessState,
+  resolvePremiumOfferingSummary,
+  restorePremiumPurchases,
+  RevenueCatClient,
+} from '../revenueCatAccess';
 
 jest.mock('react-native-purchases', () => ({
   __esModule: true,
   default: {
     configure: jest.fn(),
     getCustomerInfo: jest.fn(),
+    getOfferings: jest.fn(),
+    restorePurchases: jest.fn(),
   },
 }));
 
@@ -51,6 +66,9 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
   it('RevenueCatクライアントからPlus有効状態を解決する', async () => {
     const client: RevenueCatClient = {
       hasActiveEntitlement: jest.fn().mockResolvedValue(true),
+      getCurrentOffering: jest.fn().mockResolvedValue(null),
+      presentPaywall: jest.fn().mockResolvedValue('cancelled'),
+      restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
     };
 
     await expect(resolvePremiumAccessState(client)).resolves.toEqual({
@@ -58,6 +76,52 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
       entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
     });
     expect(client.hasActiveEntitlement).toHaveBeenCalledWith(STROLLIA_PLUS_ENTITLEMENT_ID);
+  });
+
+  it('RevenueCat Offeringを設定画面向けの商品概要へ変換する', async () => {
+    const client: RevenueCatClient = {
+      hasActiveEntitlement: jest.fn().mockResolvedValue(false),
+      getCurrentOffering: jest.fn().mockResolvedValue({
+        offeringId: 'default',
+        packages: [
+          {
+            identifier: '$rc_monthly',
+            packageType: 'MONTHLY',
+            productIdentifier: 'strollia_plus_monthly',
+            title: 'Strollia Plus Monthly',
+            description: 'Monthly plan',
+            priceText: '¥300',
+          },
+        ],
+      }),
+      presentPaywall: jest.fn().mockResolvedValue('cancelled'),
+      restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
+    };
+
+    await expect(resolvePremiumOfferingSummary(client)).resolves.toEqual({
+      offeringId: 'default',
+      packages: [
+        {
+          identifier: '$rc_monthly',
+          packageType: 'MONTHLY',
+          productIdentifier: 'strollia_plus_monthly',
+          title: 'Strollia Plus Monthly',
+          description: 'Monthly plan',
+          priceText: '¥300',
+        },
+      ],
+    });
+  });
+
+  it('RevenueCat Offering未設定時は商品概要をnullにする', async () => {
+    const client: RevenueCatClient = {
+      hasActiveEntitlement: jest.fn().mockResolvedValue(false),
+      getCurrentOffering: jest.fn().mockResolvedValue(null),
+      presentPaywall: jest.fn().mockResolvedValue('cancelled'),
+      restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
+    };
+
+    await expect(resolvePremiumOfferingSummary(client)).resolves.toBeNull();
   });
 
   it('iOSではRevenueCatのiOS APIキーを設定に使う', () => {
@@ -121,6 +185,59 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
     await expect(client.hasActiveEntitlement(STROLLIA_PLUS_ENTITLEMENT_ID)).resolves.toBe(false);
   });
 
+  it('RevenueCatのcurrent Offeringから商品概要を取得する', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (Purchases.getOfferings as jest.Mock).mockResolvedValue({
+      current: {
+        identifier: 'default',
+        availablePackages: [
+          {
+            identifier: '$rc_annual',
+            packageType: 'ANNUAL',
+            product: {
+              identifier: 'strollia_plus_yearly',
+              title: 'Strollia Plus Annual',
+              description: 'Annual plan',
+              priceString: '¥2,900',
+            },
+          },
+        ],
+      },
+    });
+
+    await expect(getPremiumOfferingSummaryFromRevenueCat()).resolves.toEqual({
+      offeringId: 'default',
+      packages: [
+        {
+          identifier: '$rc_annual',
+          packageType: 'ANNUAL',
+          productIdentifier: 'strollia_plus_yearly',
+          title: 'Strollia Plus Annual',
+          description: 'Annual plan',
+          priceText: '¥2,900',
+        },
+      ],
+    });
+  });
+
+  it('RevenueCat復元後にentitlementがあればPlus有効状態を返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (Purchases.restorePurchases as jest.Mock).mockResolvedValue({
+      entitlements: {
+        active: {
+          [STROLLIA_PLUS_ENTITLEMENT_ID]: { identifier: STROLLIA_PLUS_ENTITLEMENT_ID },
+        },
+      },
+    });
+
+    await expect(restorePremiumPurchasesWithRevenueCat()).resolves.toEqual({
+      isPlusActive: true,
+      entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
+    });
+  });
+
   it('RevenueCat未設定時は既定の課金状態へフォールバックする', async () => {
     Platform.OS = 'ios';
     setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', undefined);
@@ -140,5 +257,25 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
 
     await expect(getPremiumAccessState()).resolves.toEqual(getDefaultPremiumAccessState());
     expect(console.warn).toHaveBeenCalledWith('Failed to load RevenueCat premium state:', expect.any(Error));
+  });
+
+  it('RevenueCat Offering取得失敗時はnullへフォールバックする', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (Purchases.getOfferings as jest.Mock).mockRejectedValue(new Error('network failed'));
+
+    await expect(getPremiumOfferingSummary()).resolves.toBeNull();
+    expect(console.warn).toHaveBeenCalledWith('Failed to load RevenueCat offerings:', expect.any(Error));
+  });
+
+  it('RevenueCat復元失敗時は既定の課金状態へフォールバックする', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (Purchases.restorePurchases as jest.Mock).mockRejectedValue(new Error('restore failed'));
+
+    await expect(restorePremiumPurchases()).resolves.toEqual(getDefaultPremiumAccessState());
+    expect(console.warn).toHaveBeenCalledWith('Failed to restore RevenueCat purchases:', expect.any(Error));
   });
 });

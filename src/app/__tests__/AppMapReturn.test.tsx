@@ -1,6 +1,6 @@
 import App from '../App';
 import { createUserCenteredRegion } from '../mapRegion';
-import { AppState } from 'react-native';
+import { Alert, AppState, Pressable, Text } from 'react-native';
 import { getVisitedCellsInBounds } from '../../features/location/visitedCellRepository';
 import { getGridBoundsForRegion } from '../../features/location/grid/gridCell';
 import { getLocationPermissionState } from '../../features/location/locationPermission';
@@ -8,7 +8,7 @@ import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
 } from '../../features/location/locationService';
-import { getPremiumAccessState } from '../../features/premium/revenueCatAccess';
+import { getPremiumAccessState, getPremiumOfferingSummary, presentPremiumPaywall } from '../../features/premium/revenueCatAccess';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -37,6 +37,7 @@ jest.mock('@expo/vector-icons', () => {
 });
 
 const mockAnimateToRegion = jest.fn();
+let mockLatestSettingsScreenProps: any = null;
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -82,6 +83,9 @@ jest.mock('../components/MapScreen', () => ({
         <Pressable accessibilityLabel="日ごとの記録" onPress={props.onOpenDailyLogs}>
           <Text>日ごとの記録</Text>
         </Pressable>
+        <Pressable accessibilityLabel="設定" onPress={props.onOpenSettings}>
+          <Text>設定</Text>
+        </Pressable>
       </>
     );
   },
@@ -116,7 +120,10 @@ jest.mock('../components/reports/MonthlyReportScreen', () => ({
 }));
 
 jest.mock('../components/SettingsScreen', () => ({
-  SettingsScreen: () => null,
+  SettingsScreen: (props: any) => {
+    mockLatestSettingsScreenProps = props;
+    return null;
+  },
 }));
 
 jest.mock('../hooks/useAchievementDialogEffects', () => ({
@@ -225,6 +232,9 @@ jest.mock('../../features/customization/customizationResolver', () => ({
 jest.mock('../../features/premium/revenueCatAccess', () => ({
   getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false, entitlementId: 'strollia_plus' })),
   getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
+  getPremiumOfferingSummary: jest.fn().mockResolvedValue(null),
+  presentPremiumPaywall: jest.fn().mockResolvedValue('purchased'),
+  restorePremiumPurchases: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
 }));
 
 jest.mock('../../features/photos/photoClusters', () => ({
@@ -265,6 +275,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLatestSettingsScreenProps = null;
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -370,6 +381,41 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(getPremiumAccessState).toHaveBeenCalledTimes(1);
+  });
+
+  test('起動後にRevenueCat Offeringを読み込む', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
+  });
+
+  test('Plus未加入時に有料現在地アイコンを選ぶとPaywallを表示してPlus状態を再取得する', async () => {
+    (getPremiumAccessState as jest.Mock)
+      .mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' })
+      .mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    jest.spyOn(Alert, 'alert').mockImplementation((_title: string, _message?: string, buttons?: any[]) => {
+      buttons?.find((button) => button.text === '見る')?.onPress();
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onUpdateUserLocationIcon('walker');
+    });
+    await flushPromises();
+
+    expect(presentPremiumPaywall).toHaveBeenCalledTimes(1);
+    expect(getPremiumAccessState).toHaveBeenCalledTimes(2);
   });
 
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {

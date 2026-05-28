@@ -13,6 +13,17 @@ import { AppStyles } from '../appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
 
+/** MapViewへ渡す余白情報。値はネイティブ地図APIへそのまま渡す非負のedge insetとして扱う。 */
+type MapEdgePadding = {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+};
+
+/** MapKitへ渡すpadding。頻繁な再描画で参照が変わらないようmodule scopeで固定する。 */
+const MAP_PADDING: MapEdgePadding = { bottom: 128, left: 0, right: 0, top: 8 };
+
 /** 現在地アイコンの描画設定。 */
 type UserLocationIcon = {
   /** OS標準の現在地表示を使うか。 */
@@ -148,8 +159,7 @@ export function MapScreen({
         onUserLocationChange={onUserLocationChange}
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}
-        legalLabelInsets={{ bottom: 8, left: 8, right: 8, top: 8 }}
-        mapPadding={{ bottom: 128, left: 0, right: 0, top: 8 }}
+        mapPadding={MAP_PADDING}
       >
         {shouldRenderVisitedGrid &&
           visitedGridCells.map((cell) => (

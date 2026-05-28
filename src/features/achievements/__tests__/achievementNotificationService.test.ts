@@ -75,6 +75,7 @@ describe('実績通知 achievementNotificationService', () => {
           body: 'はじめの一歩を達成しました！',
           attachments: [{ identifier: 'log-days-1', url: 'file:///trophy.png', type: 'image/png' }],
           channelId: ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
+          sound: true,
           vibrate: [0, 1000],
         }),
       }),

@@ -41,7 +41,7 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 - Plusで開放するスタイル候補
 - Plus未加入時にロック表示する設定画面項目
 
-実際の購入、復元、RevenueCat CustomerInfo 連携は次段階で実装する。カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plusが無効な場合は反映時に無料状態へフォールバックする。
+カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plus状態はRevenueCat CustomerInfoで判定し、Plusが無効な場合は反映時に無料状態へフォールバックする。実際の購入、復元、Paywall、商品表示は次段階で実装する。
 
 ### 4.1 visited cell色
 
@@ -61,11 +61,11 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 
 カードには以下を含める。
 
-- RevenueCat連携準備中であること
+- RevenueCat連携済みであること
 - 現在のPlus状態
 - 現在地アイコン
 
-項目タップ時は、RevenueCat連携後に開放予定であることを説明する。
+項目タップ時は、購入・復元フロー実装後に選択できることを説明する。
 
 ## 6. プライバシー
 
@@ -137,7 +137,7 @@ APIキーが未設定の場合、SDK初期化は行わず、既存の開発用Pl
 
 - `EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT=true`
 
-Plus状態は `CustomerInfo.entitlements.active.strollia_plus` をもとに判定する。実購入、復元、Paywall、商品表示は次段階で実装する。
+Plus状態の判定は `CustomerInfo.entitlements.active.strollia_plus` をもとに実装済みである。実購入、復元、Paywall、商品表示は次段階で実装する。
 
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 

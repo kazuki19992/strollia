@@ -1,7 +1,7 @@
 import { Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
-import { getDefaultPremiumAccessState } from '../../../features/premium/revenueCatAccess';
+import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../../features/premium/revenueCatAccess';
 import { DEFAULT_USER_LOCATION_ICON_ID } from '../../../features/customization/customizationOptions';
 
 jest.mock('@expo/vector-icons', () => {
@@ -39,6 +39,10 @@ function createProps() {
     isUpdatingPhotoSetting: false,
     isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
+    premiumOfferingSummary: null as PremiumOfferingSummary | null,
+    isLoadingPremiumOffering: false,
+    isPresentingPremiumPaywall: false,
+    isRestoringPremiumPurchases: false,
     selectedUserLocationIconId: DEFAULT_USER_LOCATION_ICON_ID,
     onBackToMap: jest.fn(),
     onStartRecording: jest.fn(),
@@ -46,6 +50,8 @@ function createProps() {
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
+    onPresentPremiumPaywall: jest.fn(),
+    onRestorePremiumPurchases: jest.fn(),
     onExportAllLogs: jest.fn(),
     onImportGpx: jest.fn(),
     onDeleteAllData: jest.fn(),
@@ -85,6 +91,72 @@ describe('設定画面 SettingsScreen', () => {
 
     expect(texts).toContain('RevenueCat連携済み');
     expect(texts).toContain('RevenueCatでPlus状態を確認します。無料時はOS標準の現在地アイコンを使います。');
+  });
+
+  test('Strollia Plusカードは取得した商品概要を表示する', () => {
+    const props = {
+      ...createProps(),
+      premiumOfferingSummary: {
+        offeringId: 'default',
+        packages: [
+          {
+            identifier: '$rc_monthly',
+            packageType: 'MONTHLY',
+            productIdentifier: 'strollia_plus_monthly',
+            title: 'Strollia Plus Monthly',
+            description: 'Monthly plan',
+            priceText: '¥300',
+          },
+        ],
+      },
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('Strollia Plus Monthly');
+    expect(texts).toContain('¥300');
+    expect(texts).toContain('strollia_plus_monthly');
+  });
+
+  test('Strollia PlusカードはPaywall表示と復元ボタンを呼び出す', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const paywallButton = renderer.root.findAll((node: any) => node.props.onPress === props.onPresentPremiumPaywall)[0];
+    const restoreButton = renderer.root.findAll((node: any) => node.props.onPress === props.onRestorePremiumPurchases)[0];
+
+    act(() => {
+      paywallButton.props.onPress();
+      restoreButton.props.onPress();
+    });
+
+    expect(props.onPresentPremiumPaywall).toHaveBeenCalledTimes(1);
+    expect(props.onRestorePremiumPurchases).toHaveBeenCalledTimes(1);
+  });
+
+  test('Strollia PlusカードはOffering取得中の表示を出す', () => {
+    const props = {
+      ...createProps(),
+      isLoadingPremiumOffering: true,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('商品情報を確認しています...');
   });
 
   test('GPXインポートと既存データ優先の説明を表示する', () => {

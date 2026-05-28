@@ -158,10 +158,10 @@ export function SettingsScreen({
         <View style={styles.settingsCard}>
           <View style={styles.settingsActionTitleRow}>
             <Text style={styles.settingsTitle}>Strollia Plus</Text>
-            <Text style={styles.premiumBadge}>RevenueCat準備中</Text>
+            <Text style={styles.premiumBadge}>RevenueCat連携済み</Text>
           </View>
           <Text style={styles.settingsDescription}>
-            現在地アイコン変更などをPlus特典として用意します。無料時はOS標準の現在地アイコンを使います。
+            RevenueCatでPlus状態を確認します。無料時はOS標準の現在地アイコンを使います。
           </Text>
           <View style={styles.settingsStatusRow}>
             <MaterialCommunityIcons

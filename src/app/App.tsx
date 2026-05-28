@@ -839,7 +839,7 @@ export default function App() {
    */
   function showPremiumLockedMessage(label: string): void {
     triggerSelectionHaptic();
-    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放予定です。RevenueCat連携後に購入状態を確認して選択できるようにします。`);
+    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放予定です。購入・復元フロー実装後に選択できるようにします。`);
   }
 
 

@@ -1,6 +1,5 @@
 import { developmentFlags } from '../../config/developmentFlags';
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from './premiumCatalog';
-import { createRevenueCatClient } from './revenueCatClient';
 
 /** RevenueCatから得る購読/買い切りの利用可否。 */
 export type PremiumAccessState = {
@@ -49,6 +48,7 @@ export async function resolvePremiumAccessState(client: RevenueCatClient): Promi
 /** RevenueCat SDKが使える場合はCustomerInfoから、使えない場合は既定状態からPlus状態を返す。 */
 export async function getPremiumAccessState(): Promise<PremiumAccessState> {
   try {
+    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
     return await resolvePremiumAccessState(createRevenueCatClient());
   } catch (error: unknown) {
     console.warn('Failed to load RevenueCat premium state:', error);

@@ -55,7 +55,7 @@ import {
   getUserLocationIconOption,
   UserLocationIconId,
 } from '../features/customization/customizationOptions';
-import { getDefaultPremiumAccessState } from '../features/premium/revenueCatAccess';
+import { getDefaultPremiumAccessState, getPremiumAccessState } from '../features/premium/revenueCatAccess';
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
@@ -192,7 +192,7 @@ export default function App() {
     () => paginateMapPhotos(selectedPhotoCluster?.photos ?? []),
     [selectedPhotoCluster],
   );
-  const premiumAccessState = useMemo(() => getDefaultPremiumAccessState(), []);
+  const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
     [premiumAccessState.isPlusActive, selectedUserLocationIconId],
@@ -415,6 +415,11 @@ export default function App() {
         setKeepScreenAwake(savedKeepScreenAwake);
         setShowPhotosOnMap(savedShowPhotosOnMap);
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
+        getPremiumAccessState()
+          .then(setPremiumAccessState)
+          .catch((error: unknown) => {
+            console.warn('Failed to refresh premium access state:', error);
+          });
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
         await requestAchievementNotificationPermissionOnFirstLaunch().catch(() => undefined);

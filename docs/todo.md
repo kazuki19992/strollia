@@ -167,9 +167,9 @@ Strollia は、まず小さなMVPを完成させる。
 - [ ] 現在地アイコン画像のアセット置き場を作成する
 - [ ] 現在地アイコン候補を画像アセット参照へ差し替える
 - [ ] ルート線スタイルの本命デザインを定義する
-- [ ] RevenueCat SDKを導入する
+- [x] RevenueCat SDKを導入する
 - [ ] 購入・復元フローを実装する
-- [ ] RevenueCatのCustomerInfoでPlus有効状態を判定する
+- [x] RevenueCatのCustomerInfoでPlus有効状態を判定する
 - [x] Plus機能ロードマップを仕様化する
 - [ ] 高度統計画面を追加する
 - [x] 月次レポートMVPを追加する

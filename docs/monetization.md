@@ -126,14 +126,20 @@ visited cellの実際の反映は以下で行う。
 
 保存処理と読み込み処理は `src/app/App.tsx` にある。文字列設定の読み込みは `src/features/settings/settingsRepository.ts` の `getStringSetting` を使う。
 
-### 7.4 開発中のPlus有効化
+### 7.4 RevenueCat SDK連携
 
-RevenueCat導入前に有料カスタマイズを確認するため、以下のフラグでPlus状態を仮に有効化している。
+RevenueCat SDKは `react-native-purchases` で導入する。アプリ側は以下の環境変数からプラットフォームごとのPublic SDK API keyを読み込む。
 
-- `src/config/developmentFlags.ts`
+- `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`
+- `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`
+
+APIキーが未設定の場合、SDK初期化は行わず、既存の開発用Plusフラグへフォールバックする。
+
 - `EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT=true`
 
-RevenueCat導入後は、このフラグではなくRevenueCatの `CustomerInfo.entitlements.active` をもとに `isPlusActive` を決定する。
+Plus状態は `CustomerInfo.entitlements.active.strollia_plus` をもとに判定する。実購入、復元、Paywall、商品表示は次段階で実装する。
+
+Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 
 ## 8. Plus機能ロードマップ
 
@@ -151,9 +157,9 @@ RevenueCat導入後は、このフラグではなくRevenueCatの `CustomerInfo.
 4. visited cell色カスタマイズをUI化するか判断する
 5. 高度統計の集計仕様と画面を実装する
 6. 日別移動リプレイMVPを実装する
-7. RevenueCat SDKを導入し、`isPlusActive` の供給元を差し替える
-8. 購入・復元UIを設定画面に追加する
+7. 購入・復元UIを設定画面に追加する
 
 実装済み:
 
 - 月次レポートMVP
+- RevenueCat SDK導入とCustomerInfoによるPlus状態判定

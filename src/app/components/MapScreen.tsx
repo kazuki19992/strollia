@@ -13,6 +13,7 @@ import { AppStyles } from '../appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
 
+/** MapViewへ渡す余白情報。値はネイティブ地図APIへそのまま渡す非負のedge insetとして扱う。 */
 type MapEdgePadding = {
   top: number;
   right: number;

@@ -27,10 +27,11 @@ jest.mock('@expo/vector-icons', () => {
 
 jest.mock('react-native-maps', () => {
   const React = require('react');
-  const MapViewMock = (props: any) => React.createElement('MapView', props, props.children);
-  const MarkerMock = (props: any) => React.createElement('Marker', props, props.children);
-  const PolygonMock = (props: any) => React.createElement('Polygon', props, props.children);
-  const PolylineMock = (props: any) => React.createElement('Polyline', props, props.children);
+  type MockMapComponentProps = Record<string, unknown> & { children?: unknown };
+  const MapViewMock = (props: MockMapComponentProps) => React.createElement('MapView', props, props.children);
+  const MarkerMock = (props: MockMapComponentProps) => React.createElement('Marker', props, props.children);
+  const PolygonMock = (props: MockMapComponentProps) => React.createElement('Polygon', props, props.children);
+  const PolylineMock = (props: MockMapComponentProps) => React.createElement('Polyline', props, props.children);
 
   return {
     __esModule: true,

@@ -8,6 +8,7 @@ import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
 } from '../../features/location/locationService';
+import { getPremiumAccessState } from '../../features/premium/revenueCatAccess';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -222,7 +223,8 @@ jest.mock('../../features/customization/customizationResolver', () => ({
 }));
 
 jest.mock('../../features/premium/revenueCatAccess', () => ({
-  getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false })),
+  getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false, entitlementId: 'strollia_plus' })),
+  getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
 }));
 
 jest.mock('../../features/photos/photoClusters', () => ({
@@ -359,6 +361,15 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(renderer).toBeTruthy();
     expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+  });
+
+  test('起動後にRevenueCat由来のPlus状態を読み込む', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(getPremiumAccessState).toHaveBeenCalledTimes(1);
   });
 
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {

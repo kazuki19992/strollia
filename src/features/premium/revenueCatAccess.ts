@@ -44,3 +44,14 @@ export async function resolvePremiumAccessState(client: RevenueCatClient): Promi
     entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
   };
 }
+
+/** RevenueCat SDKが使える場合はCustomerInfoから、使えない場合は既定状態からPlus状態を返す。 */
+export async function getPremiumAccessState(): Promise<PremiumAccessState> {
+  try {
+    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
+    return await resolvePremiumAccessState(createRevenueCatClient());
+  } catch (error: unknown) {
+    console.warn('Failed to load RevenueCat premium state:', error);
+    return getDefaultPremiumAccessState();
+  }
+}

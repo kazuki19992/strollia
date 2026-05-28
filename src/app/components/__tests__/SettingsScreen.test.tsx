@@ -83,7 +83,8 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('現在地アイコン変更などをPlus特典として用意します。無料時はOS標準の現在地アイコンを使います。');
+    expect(texts).toContain('RevenueCat連携済み');
+    expect(texts).toContain('RevenueCatでPlus状態を確認します。無料時はOS標準の現在地アイコンを使います。');
   });
 
   test('GPXインポートと既存データ優先の説明を表示する', () => {

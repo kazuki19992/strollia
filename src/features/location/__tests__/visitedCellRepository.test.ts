@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
 import { coordinateToGridCell } from '../grid/gridCell';
-import { deleteAllVisitedCells, getVisitedCellsInBounds, upsertVisitedCells } from '../visitedCellRepository';
+import { deleteAllVisitedCells, getVisitedCellsByIds, getVisitedCellsInBounds, upsertVisitedCells } from '../visitedCellRepository';
 
 jest.mock('../../../db/database', () => ({
   db: {
@@ -90,5 +90,19 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     await deleteAllVisitedCells();
 
     expect(db.runAsync).toHaveBeenCalledWith('DELETE FROM visited_cells');
+  });
+
+  it('getVisitedCellsByIdsは指定したcellIdのvisited cellを取得する', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+    await getVisitedCellsByIds(['100:1:2', '100:3:4']);
+
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE cell_id IN (?, ?)'), '100:1:2', '100:3:4');
+  });
+
+  it('getVisitedCellsByIdsは空配列ならDBへ問い合わせない', async () => {
+    await expect(getVisitedCellsByIds([])).resolves.toEqual([]);
+
+    expect(db.getAllAsync).not.toHaveBeenCalled();
   });
 });

@@ -122,6 +122,32 @@ export async function getAchievementListItems(): Promise<AchievementListItem[]> 
   }).sort((a, b) => a.definition.sortOrder - b.definition.sortOrder);
 }
 
+/** 日別詳細レポートで使う指定日の解除済み実績を取得する。 */
+export async function getAchievementUnlocksByDate(localDate: string): Promise<AchievementUnlock[]> {
+  const { from, to } = getLocalDateRangeIso(localDate);
+
+  return db.getAllAsync<AchievementUnlock>(
+    `SELECT
+      achievement_id as achievementId,
+      unlocked_at as unlockedAt,
+      progress_value as progressValue
+     FROM achievement_unlocks
+     WHERE unlocked_at >= ?
+       AND unlocked_at < ?
+     ORDER BY unlocked_at ASC, achievement_id ASC`,
+    from,
+    to,
+  );
+}
+
+function getLocalDateRangeIso(localDate: string): { from: string; to: string } {
+  const [year, month, day] = localDate.split('-').map(Number);
+  return {
+    from: new Date(year, month - 1, day).toISOString(),
+    to: new Date(year, month - 1, day + 1).toISOString(),
+  };
+}
+
 /** 実績再評価の挙動オプション。 */
 export type EvaluateAchievementUnlockOptions = {
   /** テストや一括処理で使う評価時刻。 */

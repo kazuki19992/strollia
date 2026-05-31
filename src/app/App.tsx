@@ -984,7 +984,20 @@ export default function App() {
             onRecenterOnUserLocation={recenterOnUserLocation}
           />
         )}
-        {screenMode === 'dailyLogs' && <DailyLogsScreen dailyLogs={dailyLogs} styles={styles} theme={theme} onBackToMap={openMap} />}
+        {screenMode === 'dailyLogs' && (
+          <DailyLogsScreen
+            dailyLogs={dailyLogs}
+            styles={styles}
+            theme={theme}
+            isPlusActive={premiumAccessState.isPlusActive}
+            onPresentPremiumPaywall={() => {
+              openPremiumPaywall().catch((error: unknown) => {
+                console.warn('Failed to open premium paywall:', error);
+              });
+            }}
+            onBackToMap={openMap}
+          />
+        )}
         {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
         {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
         {screenMode === 'settings' && (

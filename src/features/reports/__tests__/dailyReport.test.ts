@@ -57,4 +57,42 @@ describe('日別詳細レポート createDailyDetailReport', () => {
       },
     ]);
   });
+
+  it('GPSポイントとvisited cellが空なら新規エリア数は0にする', () => {
+    const report = createDailyDetailReport({
+      localDate: '2026-05-31',
+      points: [],
+      visitedCells: [],
+      unlockedAchievements: [],
+    });
+
+    expect(report.visitedAreaCount).toBe(0);
+    expect(report.newAreaCount).toBe(0);
+  });
+
+  it('firstVisitedAtがないvisited cellは新規エリアに数えない', () => {
+    const cell = coordinateToGridCell(basePoint);
+    const report = createDailyDetailReport({
+      localDate: '2026-05-31',
+      points: [basePoint],
+      visitedCells: [{ ...cell, firstVisitedAt: null }],
+      unlockedAchievements: [],
+    });
+
+    expect(report.visitedAreaCount).toBe(1);
+    expect(report.newAreaCount).toBe(0);
+  });
+
+  it('firstVisitedAtが対象日以外なら新規エリアに数えない', () => {
+    const cell = coordinateToGridCell(basePoint);
+    const report = createDailyDetailReport({
+      localDate: '2026-05-31',
+      points: [basePoint],
+      visitedCells: [{ ...cell, firstVisitedAt: '2026-05-30T00:00:00.000Z' }],
+      unlockedAchievements: [],
+    });
+
+    expect(report.visitedAreaCount).toBe(1);
+    expect(report.newAreaCount).toBe(0);
+  });
 });

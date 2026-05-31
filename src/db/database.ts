@@ -76,6 +76,7 @@ export async function initializeDatabase(): Promise<void> {
     CREATE TABLE IF NOT EXISTS achievement_unlocks (
       achievement_id TEXT PRIMARY KEY,
       unlocked_at TEXT NOT NULL,
+      unlocked_local_date TEXT NULL,
       progress_value REAL NULL,
       created_at TEXT NOT NULL
     );
@@ -150,4 +151,25 @@ export async function initializeDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_visited_cells_last_visited_at
       ON visited_cells(last_visited_at);
   `);
+
+  await ensureColumn('achievement_unlocks', 'unlocked_local_date', 'TEXT NULL');
+  await db.execAsync(`
+    CREATE INDEX IF NOT EXISTS idx_achievement_unlocks_unlocked_local_date
+      ON achievement_unlocks(unlocked_local_date);
+  `);
+  await db.runAsync(
+    `UPDATE achievement_unlocks
+     SET unlocked_local_date = substr(unlocked_at, 1, 10)
+     WHERE unlocked_local_date IS NULL`,
+  );
+}
+
+/** 既存ユーザーのDBにも新しい列を追加する軽量マイグレーション。 */
+async function ensureColumn(tableName: string, columnName: string, columnDefinition: string): Promise<void> {
+  const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${tableName})`);
+  if (columns.some((column) => column.name === columnName)) {
+    return;
+  }
+
+  await db.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`);
 }

@@ -1,5 +1,7 @@
 import { Text } from 'react-native';
 
+import { getAchievementUnlocksByDate } from '../../../features/achievements/achievementRepository';
+import { getVisitedCellsByIds } from '../../../features/location/visitedCellRepository';
 import { lightTheme } from '../../../theme/theme';
 import { DailyLogCard } from '../DailyLogCard';
 
@@ -36,7 +38,7 @@ jest.mock('../../../features/location/visitedCellRepository', () => ({
 
 jest.mock('../../../features/achievements/achievementRepository', () => ({
   getAchievementUnlocksByDate: jest.fn().mockResolvedValue([
-    { achievementId: 'distance-100', unlockedAt: '2026-05-31T09:00:00.000Z', progressValue: 100000 },
+    { achievementId: 'distance-100', unlockedAt: '2026-05-31T09:00:00.000Z', unlockedLocalDate: '2026-05-31', progressValue: 100000 },
   ]),
 }));
 
@@ -67,6 +69,10 @@ const log = {
 };
 
 describe('日別ログカード DailyLogCard', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('Plus無効時は詳細レポートをロック表示してPaywallを開ける', async () => {
     const onPresentPremiumPaywall = jest.fn();
     let renderer: any;
@@ -86,7 +92,7 @@ describe('日別ログカード DailyLogCard', () => {
     expect(onPresentPremiumPaywall).toHaveBeenCalledTimes(1);
   });
 
-  it('Plus有効時は日別詳細レポートを表示する', async () => {
+  it('Plus有効時はユーザー操作後に日別詳細レポートを表示する', async () => {
     let renderer: any;
 
     await act(async () => {
@@ -95,7 +101,18 @@ describe('日別ログカード DailyLogCard', () => {
       );
     });
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    let texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('詳細レポートを表示');
+    expect(getVisitedCellsByIds).not.toHaveBeenCalled();
+    expect(getAchievementUnlocksByDate).not.toHaveBeenCalled();
+
+    const button = renderer.root.findByProps({ accessibilityLabel: '日別詳細レポートを読み込む' });
+
+    await act(async () => {
+      await button.props.onPress();
+    });
+
+    texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('訪問エリア');
     expect(texts).toContain('新規エリア');
     expect(texts).toContain('解除した実績');

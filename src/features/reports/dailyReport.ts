@@ -20,7 +20,7 @@ export type DailyDetailReportInput = {
   /** 対象日のGPSポイント。 */
   points: LocationPoint[];
   /** 対象日のGPSポイントから導いたエリアの保存状態。 */
-  visitedCells: Array<GridCell & { firstVisitedAt?: string | null }>;
+  visitedCells: Array<Omit<GridCell, 'firstVisitedAt'> & { firstVisitedAt?: string | null }>;
   /** 対象日に解除された実績。 */
   unlockedAchievements: DailyDetailAchievement[];
 };

@@ -100,6 +100,14 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE cell_id IN (?, ?)'), '100:1:2', '100:3:4');
   });
 
+  it('getVisitedCellsByIdsは重複したcellIdを除いて問い合わせる', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+    await getVisitedCellsByIds(['100:1:2', '100:1:2', '100:3:4']);
+
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE cell_id IN (?, ?)'), '100:1:2', '100:3:4');
+  });
+
   it('getVisitedCellsByIdsは空配列ならDBへ問い合わせない', async () => {
     await expect(getVisitedCellsByIds([])).resolves.toEqual([]);
 

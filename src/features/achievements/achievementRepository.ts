@@ -1,5 +1,6 @@
 import { db } from '../../db/database';
 import { LocationPoint } from '../../types/gps';
+import { toLocalDate } from '../../utils/date';
 import { totalDistanceMeters } from '../../utils/distance';
 import { ACHIEVEMENT_DEFINITIONS, AchievementDefinition, getAchievementDefinition } from './achievementDefinitions';
 import { AchievementProgress, evaluateAchievementUnlocks, getProgressValueForCondition } from './achievementEvaluator';
@@ -8,6 +9,7 @@ import { AchievementProgress, evaluateAchievementUnlocks, getProgressValueForCon
 export type AchievementUnlock = {
   achievementId: string;
   unlockedAt: string;
+  unlockedLocalDate: string | null;
   progressValue: number | null;
 };
 
@@ -105,6 +107,7 @@ export async function getAchievementListItems(): Promise<AchievementListItem[]> 
       `SELECT
         achievement_id as achievementId,
         unlocked_at as unlockedAt,
+        unlocked_local_date as unlockedLocalDate,
         progress_value as progressValue
        FROM achievement_unlocks`,
     ),
@@ -124,28 +127,17 @@ export async function getAchievementListItems(): Promise<AchievementListItem[]> 
 
 /** 日別詳細レポートで使う指定日の解除済み実績を取得する。 */
 export async function getAchievementUnlocksByDate(localDate: string): Promise<AchievementUnlock[]> {
-  const { from, to } = getLocalDateRangeIso(localDate);
-
   return db.getAllAsync<AchievementUnlock>(
     `SELECT
       achievement_id as achievementId,
       unlocked_at as unlockedAt,
+      unlocked_local_date as unlockedLocalDate,
       progress_value as progressValue
      FROM achievement_unlocks
-     WHERE unlocked_at >= ?
-       AND unlocked_at < ?
+     WHERE unlocked_local_date = ?
      ORDER BY unlocked_at ASC, achievement_id ASC`,
-    from,
-    to,
+    localDate,
   );
-}
-
-function getLocalDateRangeIso(localDate: string): { from: string; to: string } {
-  const [year, month, day] = localDate.split('-').map(Number);
-  return {
-    from: new Date(year, month - 1, day).toISOString(),
-    to: new Date(year, month - 1, day + 1).toISOString(),
-  };
 }
 
 /** 実績再評価の挙動オプション。 */
@@ -157,6 +149,7 @@ export type EvaluateAchievementUnlockOptions = {
 /** 現在の進捗から新しく解除できる実績を保存し、通知キューに積む。 */
 export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchievementUnlockOptions = {}): Promise<AchievementDefinition[]> {
   const now = options.now ?? new Date().toISOString();
+  const unlockedLocalDate = toLocalDate(new Date(now));
   const [progress, unlockedIds] = await Promise.all([getAchievementProgress(), getUnlockedAchievementIds()]);
   const newlyUnlocked = evaluateAchievementUnlocks(progress, unlockedIds);
 
@@ -169,10 +162,11 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
       const progressValue = getProgressValueForCondition(definition.condition, progress);
 
       const unlockResult = await db.runAsync(
-        `INSERT OR IGNORE INTO achievement_unlocks (achievement_id, unlocked_at, progress_value, created_at)
-         VALUES (?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO achievement_unlocks (achievement_id, unlocked_at, unlocked_local_date, progress_value, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
         definition.id,
         now,
+        unlockedLocalDate,
         progressValue,
         now,
       );

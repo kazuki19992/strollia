@@ -191,11 +191,11 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 3. 独自現在地Markerを画像表示へ差し替える
 4. エリア色カスタマイズをUI化するか判断する
 5. 高度統計の集計仕様と画面を実装する
-6. 日別詳細レポートMVPを実装する
-7. 日別移動リプレイMVPを実装する
+6. 日別移動リプレイMVPを実装する
 
 実装済み:
 
 - 月次レポートMVP
+- 日別詳細レポートMVP
 - RevenueCat SDK導入とCustomerInfoによるPlus状態判定
 - RevenueCat Paywall、購入、復元、Offering表示

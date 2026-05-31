@@ -39,6 +39,7 @@ export type DailyLogCardProps = {
 export function DailyLogCard({ log, styles, theme, isPlusActive, onPresentPremiumPaywall }: DailyLogCardProps) {
   const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
   const [dailyDetailReport, setDailyDetailReport] = useState<DailyDetailReport | null>(null);
+  const [isLoadingDailyDetail, setIsLoadingDailyDetail] = useState(false);
 
   /**
    * 日別カードは一覧描画後に対象日の詳細ポイントを遅延取得する。
@@ -51,14 +52,19 @@ export function DailyLogCard({ log, styles, theme, isPlusActive, onPresentPremiu
   }, [log.localDate]);
 
   useEffect(() => {
-    let isMounted = true;
+    setDailyDetailReport(null);
+    setIsLoadingDailyDetail(false);
+  }, [isPlusActive, log.localDate]);
 
-    async function loadDailyDetailReport(): Promise<void> {
-      if (!isPlusActive || dailyPoints.length === 0) {
-        setDailyDetailReport(null);
-        return;
-      }
+  /** Plus有効時に、ユーザー操作をきっかけに日別詳細レポートを読み込む。 */
+  async function loadDailyDetailReport(): Promise<void> {
+    if (!isPlusActive || isLoadingDailyDetail) {
+      return;
+    }
 
+    setIsLoadingDailyDetail(true);
+
+    try {
       const cellIds = [...new Set(dailyPoints.map((point) => coordinateToGridCell(point).cellId))];
       const [visitedCells, achievementUnlocks] = await Promise.all([
         getVisitedCellsByIds(cellIds),
@@ -69,21 +75,13 @@ export function DailyLogCard({ log, styles, theme, isPlusActive, onPresentPremiu
         return definition ? [{ id: definition.id, title: definition.title, unlockedAt: unlock.unlockedAt }] : [];
       });
 
-      if (isMounted) {
-        setDailyDetailReport(createDailyDetailReport({ localDate: log.localDate, points: dailyPoints, visitedCells, unlockedAchievements }));
-      }
+      setDailyDetailReport(createDailyDetailReport({ localDate: log.localDate, points: dailyPoints, visitedCells, unlockedAchievements }));
+    } catch {
+      setDailyDetailReport(null);
+    } finally {
+      setIsLoadingDailyDetail(false);
     }
-
-    loadDailyDetailReport().catch(() => {
-      if (isMounted) {
-        setDailyDetailReport(null);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [dailyPoints, isPlusActive, log.localDate]);
+  }
 
   const dailyDistance = useMemo(() => log.distanceMeters ?? totalDistanceMeters(dailyPoints), [dailyPoints, log.distanceMeters]);
   const dailyRouteCoordinates = useMemo(() => toRenderRouteCoordinates(dailyPoints), [dailyPoints]);
@@ -102,7 +100,7 @@ export function DailyLogCard({ log, styles, theme, isPlusActive, onPresentPremiu
       </Text>
 
       {isPlusActive ? (
-        dailyDetailReport && (
+        dailyDetailReport ? (
           <View style={styles.dailyDetailPanel}>
             <View style={styles.dailyDetailRow}>
               <Text style={styles.dailyDetailLabel}>訪問エリア</Text>
@@ -117,6 +115,19 @@ export function DailyLogCard({ log, styles, theme, isPlusActive, onPresentPremiu
               <Text style={styles.dailyDetailValue}>{dailyDetailReport.unlockedAchievements.length}</Text>
             </View>
           </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="日別詳細レポートを読み込む"
+            disabled={isLoadingDailyDetail}
+            onPress={() => {
+              loadDailyDetailReport().catch(() => undefined);
+            }}
+            style={styles.dailyDetailLockedPanel}
+          >
+            <Text style={styles.dailyDetailLockedTitle}>{isLoadingDailyDetail ? '詳細レポートを読み込み中' : '詳細レポートを表示'}</Text>
+            <Text style={styles.dailyDetailLockedText}>訪問エリア、新規エリア、その日に解除した実績を確認できます。</Text>
+          </Pressable>
         )
       ) : (
         <Pressable

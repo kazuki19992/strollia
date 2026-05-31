@@ -351,7 +351,7 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '800',
     },
     dailyDetailLockedPanel: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.cardStrong,
       borderColor: colors.border,
       borderRadius: 16,
       borderWidth: 1,

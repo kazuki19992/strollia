@@ -1,7 +1,7 @@
 import { Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
-const mockDailyLogCard = jest.fn(() => null);
+const mockDailyLogCard = jest.fn((_props: unknown) => null);
 
 jest.mock('../DailyLogCard', () => ({
   DailyLogCard: (props: unknown) => mockDailyLogCard(props),
@@ -39,7 +39,16 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<DailyLogsScreen dailyLogs={[]} styles={styles as never} theme={lightTheme} onBackToMap={jest.fn()} />);
+      renderer = ReactTestRenderer.create(
+        <DailyLogsScreen
+          dailyLogs={[]}
+          styles={styles as never}
+          theme={lightTheme}
+          isPlusActive={false}
+          onPresentPremiumPaywall={jest.fn()}
+          onBackToMap={jest.fn()}
+        />,
+      );
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);

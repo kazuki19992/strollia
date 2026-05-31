@@ -32,19 +32,23 @@ jest.mock('react-native-purchases', () => ({
   },
 }));
 
-jest.mock('react-native-purchases-ui', () => ({
-  __esModule: true,
-  default: {
-    presentPaywall: jest.fn(),
-  },
-  PAYWALL_RESULT: {
-    PURCHASED: 'PURCHASED',
-    RESTORED: 'RESTORED',
-    CANCELLED: 'CANCELLED',
-    NOT_PRESENTED: 'NOT_PRESENTED',
-    ERROR: 'ERROR',
-  },
-}));
+jest.mock(
+  'react-native-purchases-ui',
+  () => ({
+    __esModule: true,
+    default: {
+      presentPaywall: jest.fn(),
+    },
+    PAYWALL_RESULT: {
+      PURCHASED: 'PURCHASED',
+      RESTORED: 'RESTORED',
+      CANCELLED: 'CANCELLED',
+      NOT_PRESENTED: 'NOT_PRESENTED',
+      ERROR: 'ERROR',
+    },
+  }),
+  { virtual: true },
+);
 
 const originalPlatformOS = Platform.OS;
 const originalIosKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;

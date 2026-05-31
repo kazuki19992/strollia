@@ -1,7 +1,21 @@
 import Purchases from 'react-native-purchases';
 
-import type { RevenueCatClient } from './revenueCatAccess';
+import { STROLLIA_PLUS_ENTITLEMENT_ID } from './premiumCatalog';
+import type {
+  PremiumAccessState,
+  PremiumOfferingSummary,
+  PremiumPackageSummary,
+  PremiumPaywallResult,
+  RevenueCatClient,
+} from './revenueCatAccess';
 import { getRevenueCatConfigureOptions } from './revenueCatConfig';
+
+type RevenueCatPaywallModule = {
+  default: {
+    presentPaywall(): Promise<unknown>;
+  };
+  PAYWALL_RESULT: Record<string, unknown>;
+};
 
 /** RevenueCat SDKの初期化状態。 */
 let isConfigured = false;
@@ -40,9 +54,106 @@ export async function getPremiumAccessStateFromRevenueCat(entitlementId: string)
   return customerInfo.entitlements.active[entitlementId] != null;
 }
 
+/** RevenueCat CustomerInfoから既存の課金状態型を作る。 */
+function resolveAccessStateFromCustomerInfo(customerInfo: { entitlements: { active: Record<string, unknown> } }): PremiumAccessState {
+  return {
+    isPlusActive: customerInfo.entitlements.active[STROLLIA_PLUS_ENTITLEMENT_ID] != null,
+    entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
+  };
+}
+
+/** RevenueCat Productを設定画面向けの表示値へ変換する。 */
+function mapPackageToSummary(revenueCatPackage: {
+  identifier: string;
+  packageType: string;
+  product: {
+    identifier: string;
+    title: string;
+    description: string;
+    priceString: string;
+  };
+}): PremiumPackageSummary {
+  return {
+    identifier: revenueCatPackage.identifier,
+    packageType: revenueCatPackage.packageType,
+    productIdentifier: revenueCatPackage.product.identifier,
+    title: revenueCatPackage.product.title,
+    description: revenueCatPackage.product.description,
+    priceText: revenueCatPackage.product.priceString,
+  };
+}
+
+/** RevenueCatのcurrent Offeringを設定画面向け概要へ変換する。 */
+export async function getPremiumOfferingSummaryFromRevenueCat(): Promise<PremiumOfferingSummary | null> {
+  const configured = configureRevenueCatIfAvailable();
+
+  if (!configured) {
+    throw new Error('RevenueCat API key is not configured for this platform.');
+  }
+
+  const offerings = await Purchases.getOfferings();
+
+  if (!offerings.current) {
+    return null;
+  }
+
+  return {
+    offeringId: offerings.current.identifier,
+    packages: offerings.current.availablePackages.map(mapPackageToSummary),
+  };
+}
+
+/** RevenueCatで購入を復元し、復元後のPlus状態へ変換する。 */
+export async function restorePremiumPurchasesWithRevenueCat(): Promise<PremiumAccessState> {
+  const configured = configureRevenueCatIfAvailable();
+
+  if (!configured) {
+    throw new Error('RevenueCat API key is not configured for this platform.');
+  }
+
+  return resolveAccessStateFromCustomerInfo(await Purchases.restorePurchases());
+}
+
+/** RevenueCat Paywall UIの戻り値をアプリ内の結果値へ変換する。 */
+function mapPaywallResult(paywallResult: unknown, paywallConstants: Record<string, unknown>): PremiumPaywallResult {
+  if (paywallResult === paywallConstants.PURCHASED) {
+    return 'purchased';
+  }
+
+  if (paywallResult === paywallConstants.RESTORED) {
+    return 'restored';
+  }
+
+  if (paywallResult === paywallConstants.NOT_PRESENTED) {
+    return 'notPresented';
+  }
+
+  if (paywallResult === paywallConstants.ERROR) {
+    return 'error';
+  }
+
+  return 'cancelled';
+}
+
+/** RevenueCat Paywallを表示する。 */
+export async function presentPaywallWithRevenueCat(): Promise<PremiumPaywallResult> {
+  const configured = configureRevenueCatIfAvailable();
+
+  if (!configured) {
+    throw new Error('RevenueCat API key is not configured for this platform.');
+  }
+
+  const paywallModule = require('react-native-purchases-ui') as RevenueCatPaywallModule;
+  const result = await paywallModule.default.presentPaywall();
+  return mapPaywallResult(result, paywallModule.PAYWALL_RESULT);
+}
+
 /** RevenueCat SDKを既存の課金境界へ接続するクライアントを作る。 */
 export function createRevenueCatClient(): RevenueCatClient {
   return {
     hasActiveEntitlement: getPremiumAccessStateFromRevenueCat,
+    getCurrentOffering: getPremiumOfferingSummaryFromRevenueCat,
+    presentPaywall: presentPaywallWithRevenueCat,
+    restorePurchases: restorePremiumPurchasesWithRevenueCat,
   };
 }

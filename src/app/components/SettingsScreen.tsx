@@ -1,7 +1,7 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Alert, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
 
-import { getDefaultPremiumAccessState } from '../../features/premium/revenueCatAccess';
+import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
 import {
   USER_LOCATION_ICON_OPTIONS,
   UserLocationIconId,
@@ -35,6 +35,14 @@ export type SettingsScreenProps = {
   isImportingGpx: boolean;
   /** Plus権限状態。 */
   premiumAccessState: ReturnType<typeof getDefaultPremiumAccessState>;
+  /** RevenueCat Offeringの商品概要。 */
+  premiumOfferingSummary: PremiumOfferingSummary | null;
+  /** 商品情報を読み込み中か。 */
+  isLoadingPremiumOffering: boolean;
+  /** Paywall表示処理中か。 */
+  isPresentingPremiumPaywall: boolean;
+  /** 購入復元処理中か。 */
+  isRestoringPremiumPurchases: boolean;
   /** 選択中の現在地アイコンID。 */
   selectedUserLocationIconId: UserLocationIconId;
   /** 地図画面へ戻る処理。 */
@@ -49,6 +57,10 @@ export type SettingsScreenProps = {
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
   /** 現在地アイコン更新処理。 */
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
+  /** RevenueCat Paywallを表示する処理。 */
+  onPresentPremiumPaywall: () => void;
+  /** 購入復元処理。 */
+  onRestorePremiumPurchases: () => void;
   /** データエクスポート処理。 */
   onExportAllLogs: () => void;
   /** GPXインポート処理。 */
@@ -70,6 +82,10 @@ export function SettingsScreen({
   isUpdatingPhotoSetting,
   isImportingGpx,
   premiumAccessState,
+  premiumOfferingSummary,
+  isLoadingPremiumOffering,
+  isPresentingPremiumPaywall,
+  isRestoringPremiumPurchases,
   selectedUserLocationIconId,
   onBackToMap,
   onStartRecording,
@@ -77,6 +93,8 @@ export function SettingsScreen({
   onUpdateKeepScreenAwake,
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
+  onPresentPremiumPaywall,
+  onRestorePremiumPurchases,
   onExportAllLogs,
   onImportGpx,
   onDeleteAllData,
@@ -173,6 +191,29 @@ export function SettingsScreen({
               {premiumAccessState.isPlusActive ? 'Plus有効' : 'Plus未加入'} / {premiumAccessState.entitlementId}
             </Text>
           </View>
+          <PremiumOfferingSummaryView
+            styles={styles}
+            theme={theme}
+            isLoadingPremiumOffering={isLoadingPremiumOffering}
+            premiumOfferingSummary={premiumOfferingSummary}
+          />
+          <View style={styles.actions}>
+            <Pressable
+              disabled={isPresentingPremiumPaywall}
+              onPress={onPresentPremiumPaywall}
+              style={[styles.primaryButton, isPresentingPremiumPaywall && styles.buttonDisabled]}
+            >
+              <Text style={styles.primaryButtonText}>{isPresentingPremiumPaywall ? '表示中...' : 'Strollia Plusを見る'}</Text>
+            </Pressable>
+            <Pressable
+              disabled={isRestoringPremiumPurchases}
+              onPress={onRestorePremiumPurchases}
+              style={[styles.settingsAction, isRestoringPremiumPurchases && styles.buttonDisabled]}
+            >
+              <MaterialCommunityIcons name="restore" size={18} color={theme.colors.primary} />
+              <Text style={styles.settingsActionText}>{isRestoringPremiumPurchases ? '復元中...' : '購入を復元'}</Text>
+            </Pressable>
+          </View>
           <UserLocationIconPicker
             styles={styles}
             theme={theme}
@@ -201,6 +242,35 @@ export function SettingsScreen({
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+type PremiumOfferingSummaryViewProps = Pick<SettingsScreenProps, 'styles' | 'theme' | 'premiumOfferingSummary' | 'isLoadingPremiumOffering'>;
+
+/** RevenueCat Offeringから取得した商品概要を描画する。 */
+function PremiumOfferingSummaryView({ styles, theme, premiumOfferingSummary, isLoadingPremiumOffering }: PremiumOfferingSummaryViewProps) {
+  if (isLoadingPremiumOffering) {
+    return <Text style={styles.settingsDescription}>商品情報を確認しています...</Text>;
+  }
+
+  if (!premiumOfferingSummary || premiumOfferingSummary.packages.length === 0) {
+    return <Text style={styles.settingsDescription}>商品情報はまだ取得できません。ストア設定を確認中です。</Text>;
+  }
+
+  return (
+    <View style={styles.customizationSection}>
+      {premiumOfferingSummary.packages.map((revenueCatPackage) => (
+        <View key={revenueCatPackage.identifier} style={styles.settingsStatusRow}>
+          <MaterialCommunityIcons name="tag-outline" size={18} color={theme.colors.primary} />
+          <View style={styles.settingsToggleTextColumn}>
+            <Text style={styles.settingsStatusText}>{revenueCatPackage.title}</Text>
+            <Text style={styles.settingsDescription}>{revenueCatPackage.description}</Text>
+            <Text style={styles.settingsStatusText}>{revenueCatPackage.priceText}</Text>
+            <Text style={styles.settingsDescription}>{revenueCatPackage.productIdentifier}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
   );
 }
 

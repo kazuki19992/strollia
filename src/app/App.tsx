@@ -55,7 +55,14 @@ import {
   getUserLocationIconOption,
   UserLocationIconId,
 } from '../features/customization/customizationOptions';
-import { getDefaultPremiumAccessState, getPremiumAccessState } from '../features/premium/revenueCatAccess';
+import {
+  getDefaultPremiumAccessState,
+  getPremiumAccessState,
+  getPremiumOfferingSummary,
+  PremiumOfferingSummary,
+  presentPremiumPaywall,
+  restorePremiumPurchases,
+} from '../features/premium/revenueCatAccess';
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
@@ -193,6 +200,10 @@ export default function App() {
     [selectedPhotoCluster],
   );
   const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
+  const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
+  const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
+  const [isPresentingPremiumPaywall, setIsPresentingPremiumPaywall] = useState(false);
+  const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
     [premiumAccessState.isPlusActive, selectedUserLocationIconId],
@@ -419,6 +430,15 @@ export default function App() {
           .then(setPremiumAccessState)
           .catch((error: unknown) => {
             console.warn('Failed to refresh premium access state:', error);
+          });
+        setIsLoadingPremiumOffering(true);
+        getPremiumOfferingSummary()
+          .then(setPremiumOfferingSummary)
+          .catch((error: unknown) => {
+            console.warn('Failed to refresh premium offering summary:', error);
+          })
+          .finally(() => {
+            setIsLoadingPremiumOffering(false);
           });
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
@@ -831,6 +851,52 @@ export default function App() {
     });
   }
 
+  /** RevenueCatのPlus状態を再取得して画面へ反映する。 */
+  async function refreshPremiumAccessState(): Promise<void> {
+    setPremiumAccessState(await getPremiumAccessState());
+  }
+
+  /** RevenueCat Paywallを表示し、購入または復元後にPlus状態を更新する。 */
+  async function openPremiumPaywall(): Promise<void> {
+    if (isPresentingPremiumPaywall) {
+      return;
+    }
+
+    triggerSelectionHaptic();
+    setIsPresentingPremiumPaywall(true);
+
+    try {
+      const result = await presentPremiumPaywall();
+
+      if (result === 'purchased' || result === 'restored') {
+        await refreshPremiumAccessState();
+        Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
+      } else if (result === 'error' || result === 'notPresented') {
+        Alert.alert('Strollia Plus', 'Paywallを表示できませんでした。RevenueCatとストア設定を確認してください。');
+      }
+    } finally {
+      setIsPresentingPremiumPaywall(false);
+    }
+  }
+
+  /** App StoreまたはGoogle Playの購入をRevenueCat経由で復元する。 */
+  async function restorePurchasesFromSettings(): Promise<void> {
+    if (isRestoringPremiumPurchases) {
+      return;
+    }
+
+    triggerSelectionHaptic();
+    setIsRestoringPremiumPurchases(true);
+
+    try {
+      const restoredState = await restorePremiumPurchases();
+      setPremiumAccessState(restoredState);
+      Alert.alert('購入の復元', restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。');
+    } finally {
+      setIsRestoringPremiumPurchases(false);
+    }
+  }
+
   /**
    * Plus未加入時に有料項目を選んだ場合の案内を表示する。
    *
@@ -839,7 +905,17 @@ export default function App() {
    */
   function showPremiumLockedMessage(label: string): void {
     triggerSelectionHaptic();
-    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放予定です。購入・復元フロー実装後に選択できるようにします。`);
+    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。Paywallを表示しますか？`, [
+      { text: 'キャンセル', style: 'cancel' },
+      {
+        text: '見る',
+        onPress: () => {
+          openPremiumPaywall().catch((error: unknown) => {
+            console.warn('Failed to open premium paywall:', error);
+          });
+        },
+      },
+    ]);
   }
 
 
@@ -924,6 +1000,10 @@ export default function App() {
             isUpdatingPhotoSetting={isUpdatingPhotoSetting}
             isImportingGpx={isImportingGpx}
             premiumAccessState={premiumAccessState}
+            premiumOfferingSummary={premiumOfferingSummary}
+            isLoadingPremiumOffering={isLoadingPremiumOffering}
+            isPresentingPremiumPaywall={isPresentingPremiumPaywall}
+            isRestoringPremiumPurchases={isRestoringPremiumPurchases}
             selectedUserLocationIconId={selectedUserLocationIconId}
             onBackToMap={openMap}
             onStartRecording={() => startRecording('manual')}
@@ -931,6 +1011,16 @@ export default function App() {
             onUpdateKeepScreenAwake={updateKeepScreenAwake}
             onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
             onUpdateUserLocationIcon={updateUserLocationIcon}
+            onPresentPremiumPaywall={() => {
+              openPremiumPaywall().catch((error: unknown) => {
+                console.warn('Failed to open premium paywall:', error);
+              });
+            }}
+            onRestorePremiumPurchases={() => {
+              restorePurchasesFromSettings().catch((error: unknown) => {
+                console.warn('Failed to restore premium purchases:', error);
+              });
+            }}
             onExportAllLogs={exportAllLogs}
             onImportGpx={importGpx}
             onDeleteAllData={deleteAllData}

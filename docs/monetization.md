@@ -149,6 +149,8 @@ Strolliaは現時点で独自アカウントを持たないため、RevenueCat�
 
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 
+Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnative module登録に失敗する可能性があるため、Paywall導入時点では `app.json` の `newArchEnabled` を `false` にする。RevenueCat側でExpo SDK 54 New Architecture対応が確認できたら、development buildで購入・復元を再検証したうえで有効化を検討する。
+
 ### 7.5 RevenueCat / Store実設定チェックリスト
 
 - App Store Connectで `strollia_plus_monthly` と `strollia_plus_yearly` を作成する
@@ -157,6 +159,7 @@ Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購
 - RevenueCatでcurrent offeringに月額/年額packageを紐づける
 - RevenueCat Paywallをcurrent offeringへ紐づける
 - iOS/AndroidのPublic SDK API keyを環境変数へ設定する
+- `app.json` の `newArchEnabled` が `false` であることを確認する
 - Expo development buildでPaywall表示、購入、復元を確認する
 
 ## 8. Plus機能ロードマップ

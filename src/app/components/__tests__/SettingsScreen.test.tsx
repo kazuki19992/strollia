@@ -159,6 +159,55 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('商品情報を確認しています...');
   });
 
+  test('Strollia Plusカードは商品情報未取得時にフォールバックメッセージを表示する', () => {
+    const props = {
+      ...createProps(),
+      premiumOfferingSummary: null,
+      isLoadingPremiumOffering: false,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('商品情報はまだ取得できません。ストア設定を確認中です。');
+  });
+
+  test('Paywall表示中はPaywallボタンを無効化する', () => {
+    const props = {
+      ...createProps(),
+      isPresentingPremiumPaywall: true,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const paywallButton = renderer.root.findAll((node: any) => node.props.onPress === props.onPresentPremiumPaywall)[0];
+
+    expect(paywallButton.props.disabled).toBe(true);
+  });
+
+  test('購入復元中は復元ボタンを無効化する', () => {
+    const props = {
+      ...createProps(),
+      isRestoringPremiumPurchases: true,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const restoreButton = renderer.root.findAll((node: any) => node.props.onPress === props.onRestorePremiumPurchases)[0];
+
+    expect(restoreButton.props.disabled).toBe(true);
+  });
+
   test('GPXインポートと既存データ優先の説明を表示する', () => {
     let renderer: any;
 

@@ -229,6 +229,15 @@ jest.mock('../../features/customization/customizationResolver', () => ({
   resolveUserLocationIcon: jest.fn(() => ({ useNativeUserLocation: true, customIconId: null })),
 }));
 
+jest.mock('../../features/customization/customizationOptions', () => ({
+  DEFAULT_USER_LOCATION_ICON_ID: 'default',
+  getUserLocationIconOption: jest.fn((id: string) => ({
+    id,
+    label: id === 'walker' ? 'さんぽ' : 'OS標準',
+    premium: id === 'walker',
+  })),
+}));
+
 jest.mock('../../features/premium/revenueCatAccess', () => ({
   getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false, entitlementId: 'strollia_plus' })),
   getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),

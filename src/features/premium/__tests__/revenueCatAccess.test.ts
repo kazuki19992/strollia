@@ -237,6 +237,16 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
     });
   });
 
+  it('RevenueCat current Offeringがない場合はnullを返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (Purchases.getOfferings as jest.Mock).mockResolvedValue({
+      current: null,
+    });
+
+    await expect(getPremiumOfferingSummaryFromRevenueCat()).resolves.toBeNull();
+  });
+
   it('RevenueCat復元後にentitlementがあればPlus有効状態を返す', async () => {
     Platform.OS = 'ios';
     setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
@@ -333,5 +343,25 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
 
     await expect(presentPremiumPaywall()).resolves.toBe('error');
     expect(console.warn).toHaveBeenCalledWith('Failed to present RevenueCat paywall:', expect.any(Error));
+  });
+
+  it('Paywall未表示をnotPresentedとして返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('NOT_PRESENTED');
+
+    const client = createRevenueCatClient();
+
+    await expect(client.presentPaywall()).resolves.toBe('notPresented');
+  });
+
+  it('Paywall ERROR定数をerrorとして返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('ERROR');
+
+    const client = createRevenueCatClient();
+
+    await expect(client.presentPaywall()).resolves.toBe('error');
   });
 });

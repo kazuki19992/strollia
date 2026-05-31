@@ -10,8 +10,8 @@ describe('現在地地域名 getAreaNameFromAddress', () => {
     expect(getAreaNameFromAddress({ region: '北海道' } as never)).toBe('北海道');
   });
 
-  it('住所情報が空の場合は現在地付近を返す', () => {
-    expect(getAreaNameFromAddress(null)).toBe('現在地付近');
+  it('住所情報が空の場合はnullを返す', () => {
+    expect(getAreaNameFromAddress(null)).toBeNull();
   });
 });
 
@@ -30,9 +30,9 @@ describe('現在地パネル地域名 getAreaLabelFromAddress', () => {
     });
   });
 
-  it('住所情報がない場合は現在地付近と副表示なしへフォールバックする', () => {
-    expect(getAreaLabelFromAddress(null)).toEqual({ primary: '現在地付近', secondary: null });
-    expect(getAreaLabelFromAddress(undefined)).toEqual({ primary: '現在地付近', secondary: null });
+  it('住所情報がない場合はnullを返す', () => {
+    expect(getAreaLabelFromAddress(null)).toBeNull();
+    expect(getAreaLabelFromAddress(undefined)).toBeNull();
   });
 
   it('districtがない場合はnameから副表示を選ぶ', () => {

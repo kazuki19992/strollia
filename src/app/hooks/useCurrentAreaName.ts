@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppStateStatus } from 'react-native';
 import * as Location from 'expo-location';
 import type { LatLng } from 'react-native-maps';
@@ -16,6 +16,7 @@ export type UseCurrentAreaNameArgs = {
 /** 現在地座標から市区町村表示用の地域名を取得する。 */
 export function useCurrentAreaName({ userCoordinate, appState }: UseCurrentAreaNameArgs): string {
   const [currentAreaName, setCurrentAreaName] = useState('現在地を確認中');
+  const lastKnownNameRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!userCoordinate || appState !== 'active') {
@@ -30,11 +31,17 @@ export function useCurrentAreaName({ userCoordinate, appState }: UseCurrentAreaN
           return;
         }
 
-        setCurrentAreaName(getAreaNameFromAddress(addresses[0]));
+        const name = getAreaNameFromAddress(addresses[0]);
+        if (name !== null) {
+          lastKnownNameRef.current = name;
+          setCurrentAreaName(name);
+        } else {
+          setCurrentAreaName(lastKnownNameRef.current ?? '取得中…');
+        }
       })
       .catch(() => {
         if (!cancelled) {
-          setCurrentAreaName('現在地付近');
+          setCurrentAreaName(lastKnownNameRef.current ?? '取得中…');
         }
       });
 
@@ -49,6 +56,7 @@ export function useCurrentAreaName({ userCoordinate, appState }: UseCurrentAreaN
 /** 現在地座標から地図下部ダッシュボード用の地域名を取得する。 */
 export function useCurrentAreaLabel({ userCoordinate, appState }: UseCurrentAreaNameArgs): AreaLabel {
   const [currentAreaLabel, setCurrentAreaLabel] = useState<AreaLabel>({ primary: '現在地を確認中', secondary: null });
+  const lastKnownLabelRef = useRef<AreaLabel | null>(null);
 
   useEffect(() => {
     if (!userCoordinate || appState !== 'active') {
@@ -63,11 +71,17 @@ export function useCurrentAreaLabel({ userCoordinate, appState }: UseCurrentArea
           return;
         }
 
-        setCurrentAreaLabel(getAreaLabelFromAddress(addresses[0]));
+        const label = getAreaLabelFromAddress(addresses[0]);
+        if (label !== null) {
+          lastKnownLabelRef.current = label;
+          setCurrentAreaLabel(label);
+        } else {
+          setCurrentAreaLabel(lastKnownLabelRef.current ?? { primary: '取得中…', secondary: null });
+        }
       })
       .catch(() => {
         if (!cancelled) {
-          setCurrentAreaLabel({ primary: '現在地付近', secondary: null });
+          setCurrentAreaLabel(lastKnownLabelRef.current ?? { primary: '取得中…', secondary: null });
         }
       });
 

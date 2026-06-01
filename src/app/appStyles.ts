@@ -13,6 +13,17 @@ export function createStyles(theme: AppTheme) {
   const { colors } = theme;
   const mapPanelBackground = 'rgba(51, 51, 51, 0.80)';
   const mapPanelText = '#ffffff';
+  const settingsBackground = theme.name === 'dark' ? '#202020' : '#ffffff';
+  const settingsSurface = theme.name === 'dark' ? '#2d2d2d' : '#ffffff';
+  const settingsSurfaceStrong = theme.name === 'dark' ? '#383838' : '#ffffff';
+  const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
+  const settingsMuted = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#a0a0a0';
+  const settingsBorder = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.24)' : '#d9d9d9';
+  const settingsButton = theme.name === 'dark' ? '#ffffff' : '#333333';
+  const settingsButtonText = theme.name === 'dark' ? '#333333' : '#ffffff';
+  const settingsBackButtonText = theme.name === 'dark' ? '#333333' : settingsText;
+  const settingsDanger = '#c5003b';
+  const settingsWarning = '#e98300';
 
   return StyleSheet.create({
 
@@ -1280,6 +1291,57 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 16,
       paddingVertical: 14,
     },
+    settingsActionPill: {
+      alignItems: 'center',
+      backgroundColor: settingsButton,
+      borderRadius: 999,
+      gap: 6,
+      justifyContent: 'center',
+      minHeight: 70,
+      paddingHorizontal: 18,
+      paddingVertical: 11,
+    },
+    settingsActionPillCompact: {
+      minHeight: 52,
+      paddingVertical: 8,
+    },
+    settingsActionPillContent: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 14,
+      justifyContent: 'center',
+    },
+    settingsActionPillContentLeft: {
+      justifyContent: 'flex-start',
+      width: '100%',
+    },
+    settingsActionPillDanger: {
+      backgroundColor: settingsDanger,
+    },
+    settingsActionPillDangerText: {
+      color: '#ffffff',
+    },
+    settingsActionPillDescription: {
+      color: theme.name === 'dark' ? 'rgba(51, 51, 51, 0.5)' : '#a0a0a0',
+      fontSize: 12,
+      fontWeight: '800',
+      lineHeight: 16,
+      textAlign: 'center',
+    },
+    settingsActionPillDescriptionDanger: {
+      color: 'rgba(255, 255, 255, 0.5)',
+    },
+    settingsActionPillText: {
+      color: settingsButtonText,
+      fontSize: 18,
+      fontWeight: '700',
+      lineHeight: 23,
+      textAlign: 'center',
+    },
+    settingsActionPillLeft: {
+      alignItems: 'stretch',
+      paddingHorizontal: 36,
+    },
     settingsActionText: {
       color: colors.primary,
       fontWeight: '900',
@@ -1294,6 +1356,23 @@ export function createStyles(theme: AppTheme) {
       flexWrap: 'wrap',
       gap: 8,
     },
+    settingsBackRibbon: {
+      alignItems: 'center',
+      backgroundColor: theme.name === 'dark' ? '#ffffff' : '#d9d9d9',
+      borderRadius: 999,
+      flexDirection: 'row',
+      gap: 2,
+      height: 40,
+      justifyContent: 'center',
+      minWidth: 88,
+      paddingLeft: 12,
+      paddingRight: 18,
+    },
+    settingsBackRibbonText: {
+      color: settingsBackButtonText,
+      fontSize: 15,
+      fontWeight: '800',
+    },
     settingsCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
@@ -1306,10 +1385,201 @@ export function createStyles(theme: AppTheme) {
       color: colors.mutedText,
       lineHeight: 20,
     },
+    settingsGpsPanel: {
+      borderRadius: 16,
+      gap: 10,
+      minHeight: 154,
+      paddingHorizontal: 22,
+      paddingVertical: 17,
+    },
+    settingsGpsPanelActive: {
+      backgroundColor: colors.primary,
+    },
+    settingsGpsPanelButton: {
+      alignItems: 'center',
+      backgroundColor: '#ffffff',
+      borderRadius: 999,
+      justifyContent: 'center',
+      marginTop: 8,
+      minHeight: 52,
+      paddingHorizontal: 18,
+      paddingVertical: 11,
+    },
+    settingsGpsPanelButtonDangerText: {
+      color: settingsDanger,
+      fontSize: 18,
+      fontWeight: '700',
+      lineHeight: 24,
+    },
+    settingsGpsPanelButtonWarningText: {
+      color: settingsWarning,
+      fontSize: 18,
+      fontWeight: '700',
+      lineHeight: 24,
+    },
+    settingsGpsPanelDanger: {
+      backgroundColor: settingsDanger,
+    },
+    settingsGpsPanelText: {
+      color: '#ffffff',
+      fontSize: 14,
+      fontWeight: '700',
+      lineHeight: 20,
+    },
+    settingsGpsPanelTitle: {
+      color: '#ffffff',
+      fontSize: 26,
+      fontWeight: '900',
+      lineHeight: 33,
+    },
+    settingsGpsPanelWarning: {
+      backgroundColor: settingsWarning,
+    },
+    settingsHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingBottom: 16,
+      paddingTop: 20,
+    },
+    settingsHeaderSpacer: {
+      minWidth: 88,
+    },
+    settingsHeaderTitle: {
+      color: settingsText,
+      flex: 1,
+      fontSize: 19,
+      fontWeight: '900',
+      lineHeight: 25,
+      textAlign: 'center',
+    },
+    settingsIconTileContent: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 5,
+      justifyContent: 'center',
+      minHeight: 34,
+    },
+    settingsInlineRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 14,
+      justifyContent: 'space-between',
+    },
+    settingsInlineText: {
+      flex: 1,
+      gap: 3,
+      minWidth: 0,
+    },
+    settingsItemDescription: {
+      color: settingsMuted,
+      fontSize: 12,
+      fontWeight: '800',
+      lineHeight: 16,
+    },
+    settingsItemTitle: {
+      color: settingsText,
+      fontSize: 18,
+      fontWeight: '700',
+      lineHeight: 23,
+    },
     settingsList: {
-      gap: 12,
-      padding: 16,
+      gap: 24,
+      paddingBottom: 34,
+      paddingHorizontal: 24,
       paddingTop: 0,
+    },
+    settingsOptionGrid: {
+      flexDirection: 'row',
+      flexWrap: 'nowrap',
+      gap: 10,
+    },
+    settingsOptionGroup: {
+      gap: 12,
+    },
+    settingsOptionHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 10,
+      justifyContent: 'space-between',
+    },
+    settingsOptionNote: {
+      color: settingsMuted,
+      flexShrink: 1,
+      fontSize: 11,
+      fontWeight: '900',
+      lineHeight: 15,
+      textAlign: 'right',
+    },
+    settingsPlusBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 6,
+      color: '#ffffff',
+      fontSize: 14,
+      fontWeight: '900',
+      overflow: 'hidden',
+      paddingHorizontal: 13,
+      paddingVertical: 10,
+    },
+    settingsRestoreButton: {
+      alignItems: 'center',
+      backgroundColor: theme.name === 'dark' ? '#ffffff' : settingsSurfaceStrong,
+      borderColor: settingsBorder,
+      borderRadius: 999,
+      borderWidth: 2,
+      justifyContent: 'center',
+      minHeight: 52,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+    },
+    settingsRestoreButtonText: {
+      color: theme.name === 'dark' ? '#333333' : settingsText,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    settingsScreen: {
+      backgroundColor: settingsBackground,
+      flex: 1,
+    },
+    settingsSection: {
+      gap: 13,
+    },
+    settingsSectionBody: {
+      gap: 18,
+    },
+    settingsSectionTitle: {
+      color: settingsText,
+      fontSize: 20,
+      fontWeight: '900',
+      lineHeight: 25,
+    },
+    settingsSelectionTile: {
+      alignItems: 'center',
+      backgroundColor: settingsSurface,
+      borderColor: settingsBorder,
+      borderWidth: 2,
+      flex: 1,
+      gap: 8,
+      justifyContent: 'center',
+      minHeight: 104,
+      minWidth: 0,
+      paddingHorizontal: 8,
+      paddingVertical: 12,
+    },
+    settingsSelectionTileSelected: {
+      borderColor: settingsText,
+      borderWidth: 6,
+    },
+    settingsSelectionTileText: {
+      color: settingsText,
+      fontSize: 14,
+      fontWeight: '700',
+      lineHeight: 18,
+      textAlign: 'center',
+    },
+    settingsSelectionTileWide: {
+      minWidth: 0,
     },
     settingsStatusRow: {
       alignItems: 'center',
@@ -1322,8 +1592,37 @@ export function createStyles(theme: AppTheme) {
     },
     settingsTitle: {
       color: colors.text,
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: '900',
+    },
+    settingsSubscribeButton: {
+      alignItems: 'center',
+      backgroundColor: theme.name === 'dark' ? '#ffffff' : colors.primary,
+      borderRadius: 999,
+      justifyContent: 'center',
+      minHeight: 52,
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+    },
+    settingsSubscribeButtonText: {
+      color: theme.name === 'dark' ? '#333333' : '#ffffff',
+      fontSize: 16,
+      fontWeight: '700',
+    },
+    settingsSubscriptionActions: {
+      gap: 10,
+    },
+    settingsSubscriptionRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 12,
+      justifyContent: 'space-between',
+    },
+    settingsThemeSwatch: {
+      borderColor: settingsMuted,
+      borderWidth: 2,
+      height: 28,
+      width: 84,
     },
     settingsToggleRow: {
       alignItems: 'center',

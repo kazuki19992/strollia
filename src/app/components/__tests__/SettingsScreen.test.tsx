@@ -35,6 +35,8 @@ function createProps() {
     hasRequiredPermission: true,
     shouldOpenSettingsForPermission: false,
     keepScreenAwake: false,
+    appThemePreference: 'system' as const,
+    mapType: 'standard' as const,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
     isImportingGpx: false,
@@ -48,6 +50,8 @@ function createProps() {
     onStartRecording: jest.fn(),
     onRequestLocationPermission: jest.fn(),
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
+    onUpdateAppThemePreference: jest.fn().mockResolvedValue(undefined),
+    onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
@@ -77,38 +81,16 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('GPS記録');
-    expect(texts).toContain('データのエクスポート');
+    expect(texts).toContain('GPS記録中!');
+    expect(texts).toContain('GPXのエクスポート');
   });
 
-  test('Strollia Plusカードは現在地アイコン特典の説明を表示する', () => {
-    let renderer: any;
-
-    act(() => {
-      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-
-    expect(texts).toContain('RevenueCat連携済み');
-    expect(texts).toContain('RevenueCatでPlus状態を確認します。無料時はOS標準の現在地アイコンを使います。');
-  });
-
-  test('Strollia Plusカードは取得した商品概要を表示する', () => {
+  test('サブスク有効時はPlusユーザー表示と現在地アイコン設定を表示する', () => {
     const props = {
       ...createProps(),
-      premiumOfferingSummary: {
-        offeringId: 'default',
-        packages: [
-          {
-            identifier: '$rc_monthly',
-            packageType: 'MONTHLY',
-            productIdentifier: 'strollia_plus_monthly',
-            title: 'Strollia Plus Monthly',
-            description: 'Monthly plan',
-            priceText: '¥300',
-          },
-        ],
+      premiumAccessState: {
+        ...getDefaultPremiumAccessState(),
+        isPlusActive: true,
       },
     };
     let renderer: any;
@@ -119,12 +101,24 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('Strollia Plus Monthly');
-    expect(texts).toContain('¥300');
-    expect(texts).toContain('strollia_plus_monthly');
+    expect(texts).toContain('Plusユーザー');
+    expect(texts).toContain('現在地アイコン (Strollia Plus)');
   });
 
-  test('Strollia PlusカードはPaywall表示と復元ボタンを呼び出す', () => {
+  test('サブスク未加入時は加入と復元ボタンを表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('加入する');
+    expect(texts).toContain('サブスクを復元する');
+  });
+
+  test('サブスク未加入時は加入と復元ボタンを呼び出す', () => {
     const props = createProps();
     let renderer: any;
 
@@ -144,7 +138,7 @@ describe('設定画面 SettingsScreen', () => {
     expect(props.onRestorePremiumPurchases).toHaveBeenCalledTimes(1);
   });
 
-  test('Strollia PlusカードはOffering取得中の表示を出す', () => {
+  test('サブスク未加入でOffering取得中の表示を出す', () => {
     const props = {
       ...createProps(),
       isLoadingPremiumOffering: true,
@@ -158,23 +152,6 @@ describe('設定画面 SettingsScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
     expect(texts).toContain('商品情報を確認しています...');
-  });
-
-  test('Strollia Plusカードは商品情報未取得時にフォールバックメッセージを表示する', () => {
-    const props = {
-      ...createProps(),
-      premiumOfferingSummary: null,
-      isLoadingPremiumOffering: false,
-    };
-    let renderer: any;
-
-    act(() => {
-      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-
-    expect(texts).toContain('商品情報はまだ取得できません。ストア設定を確認中です。');
   });
 
   test('Paywall表示中はPaywallボタンを無効化する', () => {
@@ -218,8 +195,8 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('GPXファイルを端末内に取り込みます。KMLは未対応です。同じ時刻と座標の点がある場合は既存データを優先します。');
-    expect(texts).toContain('GPXをインポート');
+    expect(texts).toContain('データが競合する場合は既存データを優先します');
+    expect(texts).toContain('GPXのインポート');
   });
 
   test('OSSライセンス画面への導線を表示し、押下で開く', () => {
@@ -235,7 +212,7 @@ describe('設定画面 SettingsScreen', () => {
       (node: any) => node.props.onPress === props.onOpenLicenseScreen,
     )[0];
 
-    expect(texts).toContain('OSSライセンス');
+    expect(texts).toContain('オープンソースライセンス');
 
     act(() => {
       licenseButton.props.onPress();
@@ -302,7 +279,7 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).not.toContain('記録開始');
+    expect(texts).not.toContain('GPSの記録を開始する');
     expect(texts).not.toContain('停止');
   });
 
@@ -320,7 +297,7 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('記録開始');
+    expect(texts).toContain('GPSの記録を開始する');
     expect(texts).not.toContain('停止');
   });
 
@@ -339,7 +316,41 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).not.toContain('記録開始');
-    expect(texts).toContain('位置情報の常時許可が必要です');
+    expect(texts).not.toContain('GPSの記録を開始する');
+    expect(texts).toContain('GPSの権限をください!');
+  });
+
+  test('地図テーマの航空写真ボタンから地図種別を切り替える', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const satelliteButton = renderer.root.findByProps({ accessibilityLabel: '航空写真' });
+
+    act(() => {
+      satelliteButton.props.onPress();
+    });
+
+    expect(props.onToggleMapType).toHaveBeenCalledTimes(1);
+  });
+
+  test('画面テーマの選択ボタンからテーマ設定を保存する', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const darkThemeButton = renderer.root.findByProps({ accessibilityLabel: 'いつもダーク' });
+
+    act(() => {
+      darkThemeButton.props.onPress();
+    });
+
+    expect(props.onUpdateAppThemePreference).toHaveBeenCalledWith('dark');
   });
 });

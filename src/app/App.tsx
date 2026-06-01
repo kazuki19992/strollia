@@ -75,7 +75,7 @@ import { DailyLogSummary, LocationPoint } from '../types/gps';
 import { toLocalDate } from '../utils/date';
 import type { LatLng, MapType } from 'react-native-maps';
 import { loadAppFonts } from '../theme/fonts';
-import { getAppTheme } from '../theme/theme';
+import { AppThemePreference, getAppTheme, isAppThemePreference } from '../theme/theme';
 import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementListScreen } from './components/AchievementListScreen';
@@ -104,12 +104,20 @@ import { createUserCenteredRegion, shouldRestoreMapRegionOnMapOpen } from './map
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
 /** 画面ON維持設定をSQLiteへ保存するキー。 */
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
+/** 画面テーマ設定をSQLiteへ保存するキー。 */
+const APP_THEME_PREFERENCE_SETTING_KEY = 'appThemePreference';
 /** マップ上の写真表示設定をSQLiteへ保存するキー。 */
 const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 /** 現在地アイコン設定をSQLiteへ保存するキー。 */
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
+/** テーマ切り替え時に一度画面をなじませるフェードアウト時間。 */
+const THEME_TRANSITION_FADE_OUT_MS = 110;
+/** テーマ切り替え後に画面を戻すフェードイン時間。 */
+const THEME_TRANSITION_FADE_IN_MS = 170;
+/** テーマ切り替え中に残す画面の不透明度。 */
+const THEME_TRANSITION_DIMMED_OPACITY = 0.52;
 /** 新規visited cellを塗るときのフェード時間。 */
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
@@ -126,9 +134,11 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
 /** Strolliaの画面状態、地図表示、端末API連携を束ねるルートコンポーネント。 */
 export default function App() {
   const colorScheme = useColorScheme();
-  const theme = useMemo(() => getAppTheme(colorScheme), [colorScheme]);
+  const [appThemePreference, setAppThemePreference] = useState<AppThemePreference>('system');
+  const theme = useMemo(() => getAppTheme(colorScheme, appThemePreference), [appThemePreference, colorScheme]);
   const styles = useMemo(() => createStyles(theme), [theme]);
   const mapRef = useRef<MapView | null>(null);
+  const themeTransitionOpacity = useRef(new Animated.Value(1)).current;
   const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
   const isImportingGpxRef = useRef(false);
@@ -369,6 +379,41 @@ export default function App() {
     await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
   }, []);
 
+  /** テーマ切り替えの不透明度を指定値まで動かす。 */
+  const animateThemeTransitionOpacity = useCallback((toValue: number, duration: number): Promise<void> => (
+    new Promise((resolve) => {
+      Animated.timing(themeTransitionOpacity, {
+        toValue,
+        duration,
+        useNativeDriver: true,
+      }).start(() => resolve());
+    })
+  ), [themeTransitionOpacity]);
+
+  /** 画面テーマ設定をUI状態とSQLiteの両方へ反映する。 */
+  const updateAppThemePreference = useCallback(async (preference: AppThemePreference): Promise<void> => {
+    if (preference === appThemePreference) {
+      return;
+    }
+
+    let saveError: unknown = null;
+
+    await animateThemeTransitionOpacity(THEME_TRANSITION_DIMMED_OPACITY, THEME_TRANSITION_FADE_OUT_MS);
+    setAppThemePreference(preference);
+
+    try {
+      await setSetting(APP_THEME_PREFERENCE_SETTING_KEY, preference);
+    } catch (error: unknown) {
+      saveError = error;
+    } finally {
+      await animateThemeTransitionOpacity(1, THEME_TRANSITION_FADE_IN_MS);
+    }
+
+    if (saveError) {
+      throw saveError;
+    }
+  }, [animateThemeTransitionOpacity, appThemePreference]);
+
   /**
    * 写真表示設定を切り替える。初回ON時は写真ライブラリのフルアクセス権限を要求する。
    *
@@ -419,12 +464,14 @@ export default function App() {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
-        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon] = await Promise.all([
+        const [savedKeepScreenAwake, savedAppThemePreference, savedShowPhotosOnMap, savedUserLocationIcon] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
+          getStringSetting(APP_THEME_PREFERENCE_SETTING_KEY, 'system'),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
+        setAppThemePreference(isAppThemePreference(savedAppThemePreference) ? savedAppThemePreference : 'system');
         setShowPhotosOnMap(savedShowPhotosOnMap);
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         getPremiumAccessState()
@@ -942,111 +989,117 @@ export default function App() {
           <Text style={styles.developmentFlagBannerText}>開発フラグ有効</Text>
         </SafeAreaView>
       )}
-      <Animated.View
-        style={[
-          styles.screenTransition,
-          {
-            opacity: screenTransitionOpacity,
-            transform: [{ translateY: screenTransitionOpacity.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
-          },
-        ]}
-      >
-        {screenMode === 'map' && (
-          <MapScreen
-            mapRef={mapRef}
-            styles={styles}
-            theme={theme}
-            initialRegion={initialRegion}
-            mapType={mapType}
-            userLocationIcon={userLocationIcon}
-            isFollowingUserLocation={isFollowingUserLocation}
-            userCoordinate={userCoordinate}
-            visitedGridCells={visitedGridCells}
-            gridOverlayOpacity={gridOverlayOpacity}
-            showPhotosOnMap={showPhotosOnMap}
-            isUpdatingPhotoSetting={isUpdatingPhotoSetting}
-            photoClusters={photoClusters}
-            points={points}
-            hasRequiredPermission={hasRequiredPermission}
-            shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
-            photoErrorMessage={photoErrorMessage}
-            isLoadingPhotos={isLoadingPhotos}
-            distance={distance}
-            todayDistance={todayDistanceMeters}
-            currentSpeedKmh={currentSpeedKmh}
-            currentAreaLabel={currentAreaLabel}
-            recenterButtonOpacity={recenterButtonOpacity}
-            onUserLocationChange={handleUserLocationChange}
-            onPanDrag={handleMapPanDrag}
-            onRegionChangeComplete={handleRegionChangeComplete}
-            onPhotoClusterPress={handlePhotoClusterPress}
-            onOpenDailyLogs={openDailyLogs}
-            onOpenAchievements={openAchievements}
-            onOpenMonthlyReport={openMonthlyReport}
-            onToggleMapType={toggleMapType}
-            onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-            onOpenSettings={openSettings}
-            onRequestLocationPermission={requestLocationPermission}
-            onRecenterOnUserLocation={recenterOnUserLocation}
-          />
-        )}
-        {screenMode === 'dailyLogs' && (
-          <DailyLogsScreen
-            dailyLogs={dailyLogs}
-            styles={styles}
-            theme={theme}
-            isPlusActive={premiumAccessState.isPlusActive}
-            onPresentPremiumPaywall={() => {
-              openPremiumPaywall().catch((error: unknown) => {
-                console.warn('Failed to open premium paywall:', error);
-              });
-            }}
-            onBackToMap={openMap}
-          />
-        )}
-        {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
-        {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
-        {screenMode === 'settings' && (
-          <SettingsScreen
-            styles={styles}
-            theme={theme}
-            isRecording={isRecording}
-            autoStartStatus={autoStartStatus}
-            hasRequiredPermission={hasRequiredPermission}
-            shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
-            keepScreenAwake={keepScreenAwake}
-            showPhotosOnMap={showPhotosOnMap}
-            isUpdatingPhotoSetting={isUpdatingPhotoSetting}
-            isImportingGpx={isImportingGpx}
-            premiumAccessState={premiumAccessState}
-            premiumOfferingSummary={premiumOfferingSummary}
-            isLoadingPremiumOffering={isLoadingPremiumOffering}
-            isPresentingPremiumPaywall={isPresentingPremiumPaywall}
-            isRestoringPremiumPurchases={isRestoringPremiumPurchases}
-            selectedUserLocationIconId={selectedUserLocationIconId}
-            onBackToMap={openMap}
-            onStartRecording={() => startRecording('manual')}
-            onRequestLocationPermission={requestLocationPermission}
-            onUpdateKeepScreenAwake={updateKeepScreenAwake}
-            onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-            onUpdateUserLocationIcon={updateUserLocationIcon}
-            onOpenLicenseScreen={openLicenseScreen}
-            onPresentPremiumPaywall={() => {
-              openPremiumPaywall().catch((error: unknown) => {
-                console.warn('Failed to open premium paywall:', error);
-              });
-            }}
-            onRestorePremiumPurchases={() => {
-              restorePurchasesFromSettings().catch((error: unknown) => {
-                console.warn('Failed to restore premium purchases:', error);
-              });
-            }}
-            onExportAllLogs={exportAllLogs}
-            onImportGpx={importGpx}
-            onDeleteAllData={deleteAllData}
-          />
-        )}
-        {screenMode === 'license' && <LicenseScreen styles={styles} theme={theme} onBackToSettings={openSettings} />}
+      <Animated.View style={[styles.screenTransition, { opacity: themeTransitionOpacity }]}>
+        <Animated.View
+          style={[
+            styles.screenTransition,
+            {
+              opacity: screenTransitionOpacity,
+              transform: [{ translateY: screenTransitionOpacity.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
+            },
+          ]}
+        >
+          {screenMode === 'map' && (
+            <MapScreen
+              mapRef={mapRef}
+              styles={styles}
+              theme={theme}
+              initialRegion={initialRegion}
+              mapType={mapType}
+              userLocationIcon={userLocationIcon}
+              isFollowingUserLocation={isFollowingUserLocation}
+              userCoordinate={userCoordinate}
+              visitedGridCells={visitedGridCells}
+              gridOverlayOpacity={gridOverlayOpacity}
+              showPhotosOnMap={showPhotosOnMap}
+              isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+              photoClusters={photoClusters}
+              points={points}
+              hasRequiredPermission={hasRequiredPermission}
+              shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+              photoErrorMessage={photoErrorMessage}
+              isLoadingPhotos={isLoadingPhotos}
+              distance={distance}
+              todayDistance={todayDistanceMeters}
+              currentSpeedKmh={currentSpeedKmh}
+              currentAreaLabel={currentAreaLabel}
+              recenterButtonOpacity={recenterButtonOpacity}
+              onUserLocationChange={handleUserLocationChange}
+              onPanDrag={handleMapPanDrag}
+              onRegionChangeComplete={handleRegionChangeComplete}
+              onPhotoClusterPress={handlePhotoClusterPress}
+              onOpenDailyLogs={openDailyLogs}
+              onOpenAchievements={openAchievements}
+              onOpenMonthlyReport={openMonthlyReport}
+              onToggleMapType={toggleMapType}
+              onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+              onOpenSettings={openSettings}
+              onRequestLocationPermission={requestLocationPermission}
+              onRecenterOnUserLocation={recenterOnUserLocation}
+            />
+          )}
+          {screenMode === 'dailyLogs' && (
+            <DailyLogsScreen
+              dailyLogs={dailyLogs}
+              styles={styles}
+              theme={theme}
+              isPlusActive={premiumAccessState.isPlusActive}
+              onPresentPremiumPaywall={() => {
+                openPremiumPaywall().catch((error: unknown) => {
+                  console.warn('Failed to open premium paywall:', error);
+                });
+              }}
+              onBackToMap={openMap}
+            />
+          )}
+          {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
+          {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
+          {screenMode === 'settings' && (
+            <SettingsScreen
+              styles={styles}
+              theme={theme}
+              isRecording={isRecording}
+              autoStartStatus={autoStartStatus}
+              hasRequiredPermission={hasRequiredPermission}
+              shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+              keepScreenAwake={keepScreenAwake}
+              appThemePreference={appThemePreference}
+              mapType={mapType}
+              showPhotosOnMap={showPhotosOnMap}
+              isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+              isImportingGpx={isImportingGpx}
+              premiumAccessState={premiumAccessState}
+              premiumOfferingSummary={premiumOfferingSummary}
+              isLoadingPremiumOffering={isLoadingPremiumOffering}
+              isPresentingPremiumPaywall={isPresentingPremiumPaywall}
+              isRestoringPremiumPurchases={isRestoringPremiumPurchases}
+              selectedUserLocationIconId={selectedUserLocationIconId}
+              onBackToMap={openMap}
+              onStartRecording={() => startRecording('manual')}
+              onRequestLocationPermission={requestLocationPermission}
+              onUpdateKeepScreenAwake={updateKeepScreenAwake}
+              onUpdateAppThemePreference={updateAppThemePreference}
+              onToggleMapType={toggleMapType}
+              onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+              onUpdateUserLocationIcon={updateUserLocationIcon}
+              onOpenLicenseScreen={openLicenseScreen}
+              onPresentPremiumPaywall={() => {
+                openPremiumPaywall().catch((error: unknown) => {
+                  console.warn('Failed to open premium paywall:', error);
+                });
+              }}
+              onRestorePremiumPurchases={() => {
+                restorePurchasesFromSettings().catch((error: unknown) => {
+                  console.warn('Failed to restore premium purchases:', error);
+                });
+              }}
+              onExportAllLogs={exportAllLogs}
+              onImportGpx={importGpx}
+              onDeleteAllData={deleteAllData}
+            />
+          )}
+          {screenMode === 'license' && <LicenseScreen styles={styles} theme={theme} onBackToSettings={openSettings} />}
+        </Animated.View>
       </Animated.View>
 
       <AchievementUnlockModal

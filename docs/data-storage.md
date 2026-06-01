@@ -346,3 +346,4 @@ GPSログは端末内に保存し、ユーザーの明示操作なしに外部�
 | キー | 型 | 説明 |
 | --- | --- | --- |
 | `keepScreenAwake` | boolean | アプリがフォアグラウンドの場合に画面ロックを抑止するか |
+| `appThemePreference` | string | 画面テーマ設定。`system` / `light` / `dark` のいずれか |

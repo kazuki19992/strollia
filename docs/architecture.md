@@ -20,6 +20,7 @@ Strollia は Expo + React Native + TypeScript で実装する。
 | バックグラウンドタスク | `expo-task-manager` | バックグラウンドGPS記録 |
 | 画面ON維持 | `expo-keep-awake` | フォアグラウンド時の画面ロック抑止 |
 | 写真 | `expo-media-library` | 将来の写真ジオタグ表示 |
+| OSSライセンス生成 | `license-checker-rseidelsohn` | npm依存のライセンス一覧生成 |
 
 ## 3. ディレクトリ構成案
 
@@ -145,7 +146,15 @@ flowchart TD
 - エクスポートはまずGPXのみ
 - 画面設計はシンプルにし、動く縦切りを優先する
 
-## 8. 将来の拡張余地
+## 8. OSSライセンス表示
+
+設定画面からOSSライセンス画面を開き、アプリで利用しているOSSのライセンスを確認できるようにする。
+
+ライセンス一覧は実行時に `node_modules` やnative projectを探索せず、`npm run generate:licenses` で `src/app/generated/ossLicenses.ts` へ静的生成する。npm依存の収集には `license-checker-rseidelsohn` を使い、ライセンス名、リポジトリ、ライセンス本文、NOTICE本文を保存する。依存関係を追加・更新した場合は、ライセンス一覧も再生成する。
+
+Expo managed checkoutでは `ios/` や `android/` が存在しない場合がある。その場合はnpm依存のみを生成対象にする。`ios/Pods/Target Support Files/**/**-acknowledgements.plist` が存在するprebuild/build環境では、CocoaPodsが生成するAcknowledgements plistも読み込み、iOS native依存のライセンスも同じ画面に統合する。
+
+## 9. 将来の拡張余地
 
 将来的に以下を追加しやすいようにする。
 

@@ -50,6 +50,7 @@ function createProps() {
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
+    onOpenLicenseScreen: jest.fn(),
     onPresentPremiumPaywall: jest.fn(),
     onRestorePremiumPurchases: jest.fn(),
     onExportAllLogs: jest.fn(),
@@ -219,6 +220,28 @@ describe('設定画面 SettingsScreen', () => {
 
     expect(texts).toContain('GPXファイルを端末内に取り込みます。KMLは未対応です。同じ時刻と座標の点がある場合は既存データを優先します。');
     expect(texts).toContain('GPXをインポート');
+  });
+
+  test('OSSライセンス画面への導線を表示し、押下で開く', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const licenseButton = renderer.root.findAll(
+      (node: any) => node.props.onPress === props.onOpenLicenseScreen,
+    )[0];
+
+    expect(texts).toContain('OSSライセンス');
+
+    act(() => {
+      licenseButton.props.onPress();
+    });
+
+    expect(props.onOpenLicenseScreen).toHaveBeenCalledTimes(1);
   });
 
   test('GPXをインポート押下でonImportGpxを呼び出す', () => {

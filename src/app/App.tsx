@@ -81,6 +81,7 @@ import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementListScreen } from './components/AchievementListScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
+import { LicenseScreen } from './components/LicenseScreen';
 import { MapScreen } from './components/MapScreen';
 import { PhotoPreviewModals } from './components/PhotoPreviewModals';
 import { MonthlyReportScreen } from './components/reports/MonthlyReportScreen';
@@ -762,6 +763,11 @@ export default function App() {
     navigateToScreen('settings');
   }
 
+  /** OSSライセンス画面へ移動する。 */
+  function openLicenseScreen(): void {
+    navigateToScreen('license');
+  }
+
   /**
    * 標準地図とラベル付き航空写真を切り替える。
    *
@@ -1024,6 +1030,7 @@ export default function App() {
             onUpdateKeepScreenAwake={updateKeepScreenAwake}
             onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
             onUpdateUserLocationIcon={updateUserLocationIcon}
+            onOpenLicenseScreen={openLicenseScreen}
             onPresentPremiumPaywall={() => {
               openPremiumPaywall().catch((error: unknown) => {
                 console.warn('Failed to open premium paywall:', error);
@@ -1039,6 +1046,7 @@ export default function App() {
             onDeleteAllData={deleteAllData}
           />
         )}
+        {screenMode === 'license' && <LicenseScreen styles={styles} theme={theme} onBackToSettings={openSettings} />}
       </Animated.View>
 
       <AchievementUnlockModal

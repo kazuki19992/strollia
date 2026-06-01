@@ -80,7 +80,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
     expect(names).toContain('渋谷区');
   });
 
-  test('地域ラベル取得に失敗した場合は現在地付近へフォールバックする', async () => {
+  test('起動直後に地域ラベル取得に失敗した場合は取得中…を表示する', async () => {
     const labels: Array<{ primary: string; secondary: string | null }> = [];
     (Location.reverseGeocodeAsync as jest.Mock).mockRejectedValue(new Error('reverse geocode failed'));
 
@@ -91,7 +91,39 @@ describe('現在地地域名hook useCurrentAreaName', () => {
       await Promise.resolve();
     });
 
-    expect(labels).toContainEqual({ primary: '現在地付近', secondary: null });
+    expect(labels).toContainEqual({ primary: '取得中…', secondary: null });
+  });
+
+  test('成功後に地域ラベル取得に失敗した場合は直前の地名を継続表示する', async () => {
+    const labels: Array<{ primary: string; secondary: string | null }> = [];
+    (Location.reverseGeocodeAsync as jest.Mock)
+      .mockResolvedValueOnce([{ city: '千代田区', district: '神田' }])
+      .mockRejectedValueOnce(new Error('reverse geocode failed'));
+
+    let renderer: ReturnType<typeof ReactTestRenderer.create>;
+    const onAreaLabel = (label: { primary: string; secondary: string | null }) => labels.push(label);
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <LabelHookProbe onAreaLabel={onAreaLabel} userCoordinate={{ latitude: 35, longitude: 139 }} />,
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    act(() => {
+      renderer.update(
+        <LabelHookProbe onAreaLabel={onAreaLabel} userCoordinate={{ latitude: 36, longitude: 140 }} />,
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(labels).toContainEqual({ primary: '千代田区', secondary: '神田' });
+    const lastLabel = labels[labels.length - 1];
+    expect(lastLabel).toEqual({ primary: '千代田区', secondary: '神田' });
   });
 
   test('アプリが非アクティブなら地域ラベルの逆ジオコーディングを呼ばない', () => {

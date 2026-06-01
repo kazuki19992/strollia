@@ -11,9 +11,10 @@ Strollia は基本機能を無料で使えるローカルファーストGPSロ�
 初期候補は以下とする。
 
 - 現在地アイコン変更
-- visited cell色変更
+- エリア色変更
 - 高度統計
 - 月次レポート / 年次レポート
+- 日別詳細レポート
 - 日別移動リプレイ
 
 GPS記録、ローカル保存、日別ログ、GPXエクスポートなどの基本機能は無料のままとする。
@@ -29,6 +30,13 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 - `strollia_plus_monthly`
 - `strollia_plus_yearly`
 
+初期価格は以下とする。
+
+- 月額: 300円
+- 年額: 3,300円
+
+アプリ内表示ではRevenueCat Offering / Productから取得したストア表示を優先し、価格を固定文字列として埋め込まない。
+
 アプリ側は RevenueCat SDK を直接UIへ結合せず、`src/features/premium/` の境界を通して課金状態を取得する。
 
 ## 4. カスタマイズ方針
@@ -43,9 +51,11 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 
 カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plus状態はRevenueCat CustomerInfoで判定し、Plusが無効な場合は反映時に無料状態へフォールバックする。実際の購入、復元、Paywall、商品表示は次段階で実装する。
 
-### 4.1 visited cell色
+### 4.1 エリア / visited cell色
 
-メインマップではルート線ではなくVisited Grid Overlayを主表示とする。visited cell色はテーマのprimaryを既定値とし、将来的にはPlus向けのカスタマイズ候補として差し替えられるようにする。
+メインマップではルート線ではなくVisited Grid Overlayを主表示とする。VisitedCellはユーザー向けには「エリア」と呼ぶ。Strolliaは移動記録アプリであると同時に、地図を塗りつぶしていくゲーム的な体験を持つため、画面文言やPlus特典説明では「エリア」を優先する。
+
+visited cell色はテーマのprimaryを既定値とし、将来的にはPlus向けのエリア色カスタマイズ候補として差し替えられるようにする。
 
 初期実装ではUIには出さず、`GRID_OVERLAY_CONFIG.visitedCellColorOverride` によって実装側で調整しやすい構成にする。
 
@@ -147,6 +157,10 @@ Plus状態の判定は `CustomerInfo.entitlements.active.strollia_plus` をも�
 
 Strolliaは現時点で独自アカウントを持たないため、RevenueCatの匿名App User IDを使う。Apple IDそのものはアプリから取得できない。将来ログインID連携を行う場合は、Sign in with Appleで返るアプリ/開発チーム向け識別子を `Purchases.logIn()` に渡す。
 
+同一ストアアカウントであれば、端末移行後に設定画面の「購入を復元」からサブスクを復元できる想定である。RevenueCat DashboardのRestore Behaviorは、アカウントなしアプリで復元しやすい `Transfer to new App User ID` を初期方針とする。
+
+iOSからAndroidのようにストアをまたぐ復元は、匿名App User IDだけでは自動的にはつながらない。将来クロスプラットフォーム復元を扱う場合は、Sign in with AppleなどのログインID連携を別途設計する。
+
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 
 Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnative module登録に失敗する可能性があるため、Paywall導入時点では `app.json` の `newArchEnabled` を `false` にする。RevenueCat側でExpo SDK 54 New Architecture対応が確認できたら、development buildで購入・復元を再検証したうえで有効化を検討する。
@@ -166,7 +180,7 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 
 課金機能の詳細な優先順位と仕様は `docs/plus-features.md` にまとめる。
 
-現時点では、実績演出強化よりも、蓄積ログの価値を高める月次レポート、高度統計、日別移動リプレイを優先する。月次レポートは期間指定集計として設計し、年次レポートへ拡張する。
+現時点では、実績演出強化よりも、蓄積ログの価値を高める月次レポート、高度統計、日別詳細レポート、日別移動リプレイを優先する。月次レポートは期間指定集計として設計し、年次レポートへ拡張する。
 
 ## 9. 次に実装すること
 
@@ -175,12 +189,13 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 1. 現在地アイコン画像のアセット置き場を作る
 2. `USER_LOCATION_ICON_OPTIONS` に画像情報を持たせる
 3. 独自現在地Markerを画像表示へ差し替える
-4. visited cell色カスタマイズをUI化するか判断する
+4. エリア色カスタマイズをUI化するか判断する
 5. 高度統計の集計仕様と画面を実装する
 6. 日別移動リプレイMVPを実装する
-7. 購入・復元UIを設定画面に追加する
 
 実装済み:
 
 - 月次レポートMVP
+- 日別詳細レポートMVP
 - RevenueCat SDK導入とCustomerInfoによるPlus状態判定
+- RevenueCat Paywall、購入、復元、Offering表示

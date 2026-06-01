@@ -345,6 +345,45 @@ export function createStyles(theme: AppTheme) {
       fontSize: 22,
       fontWeight: '900',
     },
+    dailyDetailLabel: {
+      color: colors.mutedText,
+      fontSize: 13,
+      fontWeight: '800',
+    },
+    dailyDetailLockedPanel: {
+      backgroundColor: colors.cardStrong,
+      borderColor: colors.border,
+      borderRadius: 16,
+      borderWidth: 1,
+      gap: 4,
+      padding: 12,
+    },
+    dailyDetailLockedText: {
+      color: colors.mutedText,
+      fontSize: 12,
+      fontWeight: '700',
+    },
+    dailyDetailLockedTitle: {
+      color: colors.text,
+      fontWeight: '900',
+    },
+    dailyDetailPanel: {
+      borderColor: colors.border,
+      borderRadius: 16,
+      borderWidth: 1,
+      gap: 8,
+      padding: 12,
+    },
+    dailyDetailRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    dailyDetailValue: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '900',
+    },
     dailyEmptyCard: {
       backgroundColor: colors.card,
       borderRadius: 24,

@@ -104,6 +104,24 @@ export async function getVisitedCellsInBounds(bounds: GridBounds): Promise<Visit
   );
 }
 
+/** 指定したcellIdのvisited cellを取得する。 */
+export async function getVisitedCellsByIds(cellIds: string[]): Promise<VisitedCellRow[]> {
+  if (cellIds.length === 0) {
+    return [];
+  }
+
+  const uniqueCellIds = [...new Set(cellIds)];
+  const placeholders = uniqueCellIds.map(() => '?').join(', ');
+
+  return db.getAllAsync<VisitedCellRow>(
+    `SELECT ${visitedCellColumns}
+     FROM visited_cells
+     WHERE cell_id IN (${placeholders})
+     ORDER BY cell_id ASC`,
+    ...uniqueCellIds,
+  );
+}
+
 /** すべてのvisited cellを削除する。 */
 export async function deleteAllVisitedCells(): Promise<void> {
   await db.runAsync('DELETE FROM visited_cells');

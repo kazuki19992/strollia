@@ -1,5 +1,5 @@
 import { db } from '../../../db/database';
-import { evaluateAndStoreAchievementUnlocks, getAchievementProgress } from '../achievementRepository';
+import { evaluateAndStoreAchievementUnlocks, getAchievementProgress, getAchievementUnlocksByDate } from '../achievementRepository';
 
 jest.mock('../../../db/database', () => ({
   db: {
@@ -93,8 +93,25 @@ describe('実績リポジトリ achievementRepository', () => {
       expect.stringContaining('INSERT OR IGNORE INTO achievement_unlocks'),
       'distance-100',
       '2026-05-07T00:00:00.000Z',
+      '2026-05-07',
       100000,
       '2026-05-07T00:00:00.000Z',
     );
+  });
+
+  it('指定日の解除済み実績を解除時刻順で取得する', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValueOnce([
+      { achievementId: 'distance-100', unlockedAt: '2026-05-31T09:00:00.000Z', unlockedLocalDate: '2026-05-31', progressValue: 100000 },
+    ]);
+
+    const unlocks = await getAchievementUnlocksByDate('2026-05-31');
+
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE unlocked_local_date = ?'), '2026-05-31');
+    expect(unlocks).toEqual([
+      expect.objectContaining({
+        achievementId: 'distance-100',
+        unlockedAt: '2026-05-31T09:00:00.000Z',
+      }),
+    ]);
   });
 });

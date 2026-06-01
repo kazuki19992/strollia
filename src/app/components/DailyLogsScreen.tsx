@@ -13,12 +13,16 @@ export type DailyLogsScreenProps = {
   styles: AppStyles;
   /** 現在テーマ。 */
   theme: AppTheme;
+  /** Plusが有効かどうか。 */
+  isPlusActive: boolean;
+  /** Plus未加入時にPaywallを表示する処理。 */
+  onPresentPremiumPaywall: () => void;
   /** 地図画面へ戻る処理。 */
   onBackToMap: () => void;
 };
 
 /** 日別ログ一覧画面を描画する。 */
-export function DailyLogsScreen({ dailyLogs, styles, theme, onBackToMap }: DailyLogsScreenProps) {
+export function DailyLogsScreen({ dailyLogs, styles, theme, isPlusActive, onPresentPremiumPaywall, onBackToMap }: DailyLogsScreenProps) {
   return (
     <SafeAreaView style={styles.dailyContainer}>
       <View style={styles.dailyHeader}>
@@ -37,7 +41,14 @@ export function DailyLogsScreen({ dailyLogs, styles, theme, onBackToMap }: Daily
       ) : (
         <ScrollView contentContainerStyle={styles.dailyList}>
           {dailyLogs.map((log) => (
-            <DailyLogCard key={log.localDate} log={log} styles={styles} theme={theme} />
+            <DailyLogCard
+              key={log.localDate}
+              log={log}
+              styles={styles}
+              theme={theme}
+              isPlusActive={isPlusActive}
+              onPresentPremiumPaywall={onPresentPremiumPaywall}
+            />
           ))}
         </ScrollView>
       )}

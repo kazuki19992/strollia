@@ -57,6 +57,8 @@ export type SettingsScreenProps = {
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
   /** 現在地アイコン更新処理。 */
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
+  /** OSSライセンス画面を開く処理。 */
+  onOpenLicenseScreen: () => void;
   /** RevenueCat Paywallを表示する処理。 */
   onPresentPremiumPaywall: () => void;
   /** 購入復元処理。 */
@@ -93,6 +95,7 @@ export function SettingsScreen({
   onUpdateKeepScreenAwake,
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
+  onOpenLicenseScreen,
   onPresentPremiumPaywall,
   onRestorePremiumPurchases,
   onExportAllLogs,
@@ -238,6 +241,14 @@ export function SettingsScreen({
           <Pressable onPress={onDeleteAllData} style={styles.dangerAction}>
             <MaterialCommunityIcons name="delete-outline" size={20} color={theme.colors.danger} />
             <Text style={styles.dangerActionText}>すべてのデータを削除</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.settingsCard}>
+          <Text style={styles.settingsTitle}>情報</Text>
+          <Pressable onPress={onOpenLicenseScreen} style={styles.settingsAction}>
+            <Feather name="file-text" size={18} color={theme.colors.primary} />
+            <Text style={styles.settingsActionText}>OSSライセンス</Text>
           </Pressable>
         </View>
       </ScrollView>

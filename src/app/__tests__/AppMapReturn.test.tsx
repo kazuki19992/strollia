@@ -122,7 +122,25 @@ jest.mock('../components/reports/MonthlyReportScreen', () => ({
 jest.mock('../components/SettingsScreen', () => ({
   SettingsScreen: (props: any) => {
     mockLatestSettingsScreenProps = props;
-    return null;
+    const { Pressable, Text } = require('react-native');
+
+    return (
+      <Pressable accessibilityLabel="OSSライセンス" onPress={props.onOpenLicenseScreen}>
+        <Text>OSSライセンス</Text>
+      </Pressable>
+    );
+  },
+}));
+
+jest.mock('../components/LicenseScreen', () => ({
+  LicenseScreen: ({ onBackToSettings }: { onBackToSettings: () => void }) => {
+    const { Pressable, Text } = require('react-native');
+
+    return (
+      <Pressable accessibilityLabel="ライセンス画面を閉じる" onPress={onBackToSettings}>
+        <Text>戻る</Text>
+      </Pressable>
+    );
   },
 }));
 
@@ -399,6 +417,29 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
+  });
+
+  test('設定画面からOSSライセンス画面を開き、戻ると設定画面へ戻る', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    expect(mockLatestSettingsScreenProps).toBeTruthy();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'OSSライセンス' }).props.onPress();
+    });
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'ライセンス画面を閉じる' }).props.onPress();
+    });
+
+    expect(mockLatestSettingsScreenProps).toBeTruthy();
   });
 
   test('Plus未加入時に有料現在地アイコンを選ぶとPaywallを表示してPlus状態を再取得する', async () => {

@@ -1,14 +1,15 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { Alert, Image, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
+import { PlusAdImage } from './PlusAdImage';
 
 import {
   USER_LOCATION_ICON_OPTIONS,
   UserLocationIconId,
 } from '../../features/customization/customizationOptions';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
-import { AppTheme, AppThemePreference } from '../../theme/theme';
+import { AppTheme } from '../../theme/theme';
 import { AutoStartStatus } from '../appTypes';
 import { AppStyles } from '../appStyles';
 import {
@@ -36,8 +37,6 @@ export type SettingsScreenProps = {
   shouldOpenSettingsForPermission: boolean;
   /** 画面ON維持設定。 */
   keepScreenAwake: boolean;
-  /** 選択中の画面テーマ設定。 */
-  appThemePreference: AppThemePreference;
   /** 表示中の地図種別。 */
   mapType: MapType;
   /** 写真表示設定。 */
@@ -66,8 +65,6 @@ export type SettingsScreenProps = {
   onRequestLocationPermission: () => void;
   /** 画面ON維持設定の更新処理。 */
   onUpdateKeepScreenAwake: (enabled: boolean) => Promise<void>;
-  /** 画面テーマ設定の更新処理。 */
-  onUpdateAppThemePreference: (preference: AppThemePreference) => Promise<void>;
   /** 地図種別の切り替え処理。 */
   onToggleMapType: () => void;
   /** 写真表示設定の更新処理。 */
@@ -104,7 +101,6 @@ export function SettingsScreen({
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
   keepScreenAwake,
-  appThemePreference,
   mapType,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
@@ -118,7 +114,6 @@ export function SettingsScreen({
   onStartRecording,
   onRequestLocationPermission,
   onUpdateKeepScreenAwake,
-  onUpdateAppThemePreference,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
@@ -165,40 +160,6 @@ export function SettingsScreen({
             />
           </View>
 
-          <SettingsOptionGroup styles={styles} title="画面のテーマ">
-            <SettingsSelectionTile
-              isSelected={appThemePreference === 'system'}
-              label={'スマホの設定に\n合わせる'}
-              styles={styles}
-              onPress={() => {
-                onUpdateAppThemePreference('system').catch((error: unknown) => {
-                  Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'テーマ設定を保存できませんでした。');
-                });
-              }}
-            />
-            <SettingsSelectionTile
-              isSelected={appThemePreference === 'light'}
-              label="いつもライト"
-              styles={styles}
-              swatchColor="#ffffff"
-              onPress={() => {
-                onUpdateAppThemePreference('light').catch((error: unknown) => {
-                  Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'テーマ設定を保存できませんでした。');
-                });
-              }}
-            />
-            <SettingsSelectionTile
-              isSelected={appThemePreference === 'dark'}
-              label="いつもダーク"
-              styles={styles}
-              swatchColor="#333333"
-              onPress={() => {
-                onUpdateAppThemePreference('dark').catch((error: unknown) => {
-                  Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'テーマ設定を保存できませんでした。');
-                });
-              }}
-            />
-          </SettingsOptionGroup>
         </SettingsSection>
 
         <SettingsSection styles={styles} title="地図画面設定">
@@ -273,11 +234,9 @@ export function SettingsScreen({
                 styles={styles}
                 title="Strollia Plus(有料サブスクリプション)のごあんない"
               />
-              <Image
+              <PlusAdImage
                 accessibilityLabel="Strollia Plusの機能比較広告"
-                resizeMode="contain"
-                source={require('../../../assets/ad/plus-ad.png')}
-                style={styles.settingsPlusAdImage}
+                width="100%"
               />
               <SettingsActionPill
                 alignLeft

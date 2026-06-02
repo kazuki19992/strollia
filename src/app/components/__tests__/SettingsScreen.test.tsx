@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { darkTheme, lightTheme } from '../../../theme/theme';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../../features/premium/revenueCatAccess';
@@ -13,6 +13,17 @@ jest.mock('@expo/vector-icons', () => {
     MaterialCommunityIcons: Text,
   };
 });
+
+jest.mock('react-native-svg', () => {
+  const { View } = require('react-native');
+
+  return {
+    __esModule: true,
+    default: View,
+    SvgXml: View,
+  };
+});
+
 
 import { SettingsScreen, getSubscriptionStoreName } from '../SettingsScreen';
 
@@ -41,7 +52,6 @@ function createProps() {
     hasRequiredPermission: true,
     shouldOpenSettingsForPermission: false,
     keepScreenAwake: false,
-    appThemePreference: 'system' as const,
     mapType: 'standard' as const,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
@@ -56,7 +66,6 @@ function createProps() {
     onStartRecording: jest.fn(),
     onRequestLocationPermission: jest.fn(),
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
-    onUpdateAppThemePreference: jest.fn().mockResolvedValue(undefined),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
@@ -199,7 +208,9 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    const adImage = renderer.root.findByType(Image);
+    const adSvg = renderer.root.findAll(
+      (node: any) => node.props.accessibilityLabel === 'Strollia Plusの機能比較広告',
+    )[0];
 
     expect(texts).toContain('一般ユーザー');
     expect(texts).not.toContain('退会する場合は${ストア名}のサブスク設定から行ってください。');
@@ -209,10 +220,8 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('月払い(300円)ではじめる！');
     expect(texts).toContain('年払い(3300円)ではじめる！');
     expect(texts).toContain('Strollia Plusの購入を復元する');
-    expect(adImage.props.accessibilityLabel).toBe('Strollia Plusの機能比較広告');
-    expect(adImage.props.resizeMode).toBe('contain');
-    expect(flattenStyle(adImage.props.style).aspectRatio).toBe(1044 / 1233);
-    expect(flattenStyle(adImage.props.style).maxWidth).toBe('100%');
+    expect(adSvg).toBeTruthy();
+    expect(adSvg.props.width).toBe('100%');
   });
 
   test('サブスク未加入時は加入と復元ボタンを呼び出す', () => {
@@ -522,20 +531,4 @@ describe('設定画面 SettingsScreen', () => {
     expect(props.onToggleMapType).toHaveBeenCalledTimes(1);
   });
 
-  test('画面テーマの選択ボタンからテーマ設定を保存する', () => {
-    const props = createProps();
-    let renderer: any;
-
-    act(() => {
-      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
-    });
-
-    const darkThemeButton = renderer.root.findByProps({ accessibilityLabel: 'いつもダーク' });
-
-    act(() => {
-      darkThemeButton.props.onPress();
-    });
-
-    expect(props.onUpdateAppThemePreference).toHaveBeenCalledWith('dark');
-  });
 });

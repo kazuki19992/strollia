@@ -1,9 +1,11 @@
 import { Feather } from '@expo/vector-icons';
-import { FlatList, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { FlatList, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
-import { OSS_LICENSES, OSS_LICENSES_GENERATED_AT } from '../generated/ossLicenses';
+import { OSS_LICENSES } from '../generated/ossLicenses';
+import type { OssLicenseEntry } from '../generated/ossLicenses';
 import { AppStyles } from '../appStyles';
 import { AppTheme } from '../../theme/theme';
+import { SettingsScreenHeader } from './SettingsControls';
 
 /** ライセンス画面のprops。 */
 export type LicenseScreenProps = {
@@ -13,47 +15,87 @@ export type LicenseScreenProps = {
   theme: AppTheme;
   /** 設定画面へ戻る処理。 */
   onBackToSettings: () => void;
+  /** ライセンス詳細画面へ移動する処理。 */
+  onOpenLicenseDetail: (license: OssLicenseEntry) => void;
 };
 
 /** 生成済みOSSライセンス一覧を表示する画面を描画する。 */
-export function LicenseScreen({ styles, theme, onBackToSettings }: LicenseScreenProps) {
+export function LicenseScreen({ styles, theme, onBackToSettings, onOpenLicenseDetail }: LicenseScreenProps) {
   return (
-    <SafeAreaView style={styles.dailyContainer}>
-      <View style={styles.dailyHeader}>
-        <Pressable accessibilityLabel="ライセンス画面を閉じる" accessibilityRole="button" onPress={onBackToSettings} style={styles.backButton}>
-          <Text style={styles.backButtonText}>戻る</Text>
-        </Pressable>
-        <Text style={styles.dailyTitle}>ライセンス</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <SafeAreaView style={styles.settingsScreen}>
+      <SettingsScreenHeader backLabel="設定" styles={styles} theme={theme} title="ライセンス" onBack={onBackToSettings} />
 
       <FlatList
         data={OSS_LICENSES}
         keyExtractor={(license) => license.id}
-        contentContainerStyle={styles.settingsList}
-        ListHeaderComponent={(
-          <View style={styles.settingsCard}>
-            <Text style={styles.settingsTitle}>OSSライセンス</Text>
-            <Text style={styles.settingsDescription}>
-              Strolliaで利用しているオープンソースソフトウェアのライセンスです。
-            </Text>
-            <Text style={styles.settingsDescription}>生成日時: {OSS_LICENSES_GENERATED_AT}</Text>
-          </View>
-        )}
+        contentContainerStyle={styles.licenseList}
         renderItem={({ item: license }) => (
-          <View key={license.id} style={styles.settingsCard}>
-            <View style={styles.settingsActionTitleRow}>
-              <Feather name={license.source === 'ios' ? 'smartphone' : 'package'} size={18} color={theme.colors.primary} />
-              <Text style={styles.settingsTitle}>{license.name}</Text>
-            </View>
-            {license.version ? <Text style={styles.settingsStatusText}>{license.version}</Text> : null}
-            <Text style={styles.settingsStatusText}>{license.licenses}</Text>
-            {license.repository ? <Text style={styles.settingsDescription}>{license.repository}</Text> : null}
-            {license.licenseText ? <Text style={styles.settingsDescription}>{license.licenseText}</Text> : null}
-            {license.noticeText ? <Text style={styles.settingsDescription}>{license.noticeText}</Text> : null}
-          </View>
+          <Pressable
+            accessibilityLabel={`${license.name} のライセンス詳細を開く`}
+            accessibilityRole="button"
+            onPress={() => onOpenLicenseDetail(license)}
+            style={styles.licenseListItem}
+          >
+            <Text style={styles.licenseListItemText}>{license.name}</Text>
+            <Feather name="chevron-right" size={19} color={theme.colors.mutedText} />
+          </Pressable>
         )}
       />
     </SafeAreaView>
+  );
+}
+
+/** ライセンス詳細画面のprops。 */
+export type LicenseDetailScreenProps = {
+  /** 表示するライセンス。 */
+  license: OssLicenseEntry;
+  /** 画面共通スタイル。 */
+  styles: AppStyles;
+  /** 現在テーマ。 */
+  theme: AppTheme;
+  /** 一覧へ戻る処理。 */
+  onBackToLicenseList: () => void;
+};
+
+/**
+ * ライセンス詳細画面を描画する。
+ *
+ * @param props - {@link LicenseDetailScreenProps} を参照。
+ */
+export function LicenseDetailScreen({ license, styles, theme, onBackToLicenseList }: LicenseDetailScreenProps) {
+  return (
+    <SafeAreaView style={styles.settingsScreen}>
+      <SettingsScreenHeader backLabel="ライセンス" styles={styles} theme={theme} title="詳細" onBack={onBackToLicenseList} />
+
+      <ScrollView contentContainerStyle={styles.licenseDetail}>
+        <Text style={styles.licenseDetailTitle}>{license.name}</Text>
+        <View style={styles.licenseMetaList}>
+          {license.version ? <LicenseMetaRow label="バージョン" value={license.version} styles={styles} /> : null}
+          <LicenseMetaRow label="ライセンス" value={license.licenses} styles={styles} />
+          {license.repository ? <LicenseMetaRow label="リポジトリ" value={license.repository} styles={styles} /> : null}
+        </View>
+        {license.licenseText ? <Text style={styles.licenseBodyText}>{license.licenseText}</Text> : null}
+        {license.noticeText ? <Text style={styles.licenseBodyText}>{license.noticeText}</Text> : null}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+type LicenseMetaRowProps = {
+  /** 項目名。 */
+  label: string;
+  /** 値。 */
+  value: string;
+  /** 画面共通スタイル。 */
+  styles: AppStyles;
+};
+
+/** ライセンス詳細のメタ情報行を描画する。 */
+function LicenseMetaRow({ label, value, styles }: LicenseMetaRowProps) {
+  return (
+    <View style={styles.licenseMetaRow}>
+      <Text style={styles.licenseMetaLabel}>{label}</Text>
+      <Text style={styles.licenseMetaValue}>{value}</Text>
+    </View>
   );
 }

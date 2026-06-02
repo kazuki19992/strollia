@@ -45,6 +45,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withFmtCxx17",
       "expo-sqlite",
       [
         "expo-notifications",

@@ -1,5 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
+import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -81,7 +83,8 @@ import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementListScreen } from './components/AchievementListScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
-import { LicenseScreen } from './components/LicenseScreen';
+import { LicenseDetailScreen, LicenseScreen } from './components/LicenseScreen';
+import type { OssLicenseEntry } from './generated/ossLicenses';
 import { MapScreen } from './components/MapScreen';
 import { PhotoPreviewModals } from './components/PhotoPreviewModals';
 import { MonthlyReportScreen } from './components/reports/MonthlyReportScreen';
@@ -110,6 +113,14 @@ const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
+
+type SettingsStackParamList = {
+  SettingsHome: undefined;
+  LicenseList: undefined;
+  LicenseDetail: { license: OssLicenseEntry };
+};
+
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 /** 新規visited cellを塗るときのフェード時間。 */
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
@@ -763,11 +774,6 @@ export default function App() {
     navigateToScreen('settings');
   }
 
-  /** OSSライセンス画面へ移動する。 */
-  function openLicenseScreen(): void {
-    navigateToScreen('license');
-  }
-
   /**
    * 標準地図とラベル付き航空写真を切り替える。
    *
@@ -951,102 +957,140 @@ export default function App() {
           },
         ]}
       >
-        {screenMode === 'map' && (
-          <MapScreen
-            mapRef={mapRef}
-            styles={styles}
-            theme={theme}
-            initialRegion={initialRegion}
-            mapType={mapType}
-            userLocationIcon={userLocationIcon}
-            isFollowingUserLocation={isFollowingUserLocation}
-            userCoordinate={userCoordinate}
-            visitedGridCells={visitedGridCells}
-            gridOverlayOpacity={gridOverlayOpacity}
-            showPhotosOnMap={showPhotosOnMap}
-            isUpdatingPhotoSetting={isUpdatingPhotoSetting}
-            photoClusters={photoClusters}
-            points={points}
-            hasRequiredPermission={hasRequiredPermission}
-            shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
-            photoErrorMessage={photoErrorMessage}
-            isLoadingPhotos={isLoadingPhotos}
-            distance={distance}
-            todayDistance={todayDistanceMeters}
-            currentSpeedKmh={currentSpeedKmh}
-            currentAreaLabel={currentAreaLabel}
-            recenterButtonOpacity={recenterButtonOpacity}
-            onUserLocationChange={handleUserLocationChange}
-            onPanDrag={handleMapPanDrag}
-            onRegionChangeComplete={handleRegionChangeComplete}
-            onPhotoClusterPress={handlePhotoClusterPress}
-            onOpenDailyLogs={openDailyLogs}
-            onOpenAchievements={openAchievements}
-            onOpenMonthlyReport={openMonthlyReport}
-            onToggleMapType={toggleMapType}
-            onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-            onOpenSettings={openSettings}
-            onRequestLocationPermission={requestLocationPermission}
-            onRecenterOnUserLocation={recenterOnUserLocation}
-          />
-        )}
-        {screenMode === 'dailyLogs' && (
-          <DailyLogsScreen
-            dailyLogs={dailyLogs}
-            styles={styles}
-            theme={theme}
-            isPlusActive={premiumAccessState.isPlusActive}
-            onPresentPremiumPaywall={() => {
-              openPremiumPaywall().catch((error: unknown) => {
-                console.warn('Failed to open premium paywall:', error);
-              });
-            }}
-            onBackToMap={openMap}
-          />
-        )}
-        {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
-        {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
-        {screenMode === 'settings' && (
-          <SettingsScreen
-            styles={styles}
-            theme={theme}
-            isRecording={isRecording}
-            autoStartStatus={autoStartStatus}
-            hasRequiredPermission={hasRequiredPermission}
-            shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
-            keepScreenAwake={keepScreenAwake}
-            showPhotosOnMap={showPhotosOnMap}
-            isUpdatingPhotoSetting={isUpdatingPhotoSetting}
-            isImportingGpx={isImportingGpx}
-            premiumAccessState={premiumAccessState}
-            premiumOfferingSummary={premiumOfferingSummary}
-            isLoadingPremiumOffering={isLoadingPremiumOffering}
-            isPresentingPremiumPaywall={isPresentingPremiumPaywall}
-            isRestoringPremiumPurchases={isRestoringPremiumPurchases}
-            selectedUserLocationIconId={selectedUserLocationIconId}
-            onBackToMap={openMap}
-            onStartRecording={() => startRecording('manual')}
-            onRequestLocationPermission={requestLocationPermission}
-            onUpdateKeepScreenAwake={updateKeepScreenAwake}
-            onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-            onUpdateUserLocationIcon={updateUserLocationIcon}
-            onOpenLicenseScreen={openLicenseScreen}
-            onPresentPremiumPaywall={() => {
-              openPremiumPaywall().catch((error: unknown) => {
-                console.warn('Failed to open premium paywall:', error);
-              });
-            }}
-            onRestorePremiumPurchases={() => {
-              restorePurchasesFromSettings().catch((error: unknown) => {
-                console.warn('Failed to restore premium purchases:', error);
-              });
-            }}
-            onExportAllLogs={exportAllLogs}
-            onImportGpx={importGpx}
-            onDeleteAllData={deleteAllData}
-          />
-        )}
-        {screenMode === 'license' && <LicenseScreen styles={styles} theme={theme} onBackToSettings={openSettings} />}
+          {screenMode === 'map' && (
+            <MapScreen
+              mapRef={mapRef}
+              styles={styles}
+              theme={theme}
+              initialRegion={initialRegion}
+              mapType={mapType}
+              userLocationIcon={userLocationIcon}
+              isFollowingUserLocation={isFollowingUserLocation}
+              userCoordinate={userCoordinate}
+              visitedGridCells={visitedGridCells}
+              gridOverlayOpacity={gridOverlayOpacity}
+              showPhotosOnMap={showPhotosOnMap}
+              isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+              photoClusters={photoClusters}
+              points={points}
+              hasRequiredPermission={hasRequiredPermission}
+              shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+              photoErrorMessage={photoErrorMessage}
+              isLoadingPhotos={isLoadingPhotos}
+              distance={distance}
+              todayDistance={todayDistanceMeters}
+              currentSpeedKmh={currentSpeedKmh}
+              currentAreaLabel={currentAreaLabel}
+              recenterButtonOpacity={recenterButtonOpacity}
+              onUserLocationChange={handleUserLocationChange}
+              onPanDrag={handleMapPanDrag}
+              onRegionChangeComplete={handleRegionChangeComplete}
+              onPhotoClusterPress={handlePhotoClusterPress}
+              onOpenDailyLogs={openDailyLogs}
+              onOpenAchievements={openAchievements}
+              onOpenMonthlyReport={openMonthlyReport}
+              onToggleMapType={toggleMapType}
+              onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+              onOpenSettings={openSettings}
+              onRequestLocationPermission={requestLocationPermission}
+              onRecenterOnUserLocation={recenterOnUserLocation}
+            />
+          )}
+          {screenMode === 'dailyLogs' && (
+            <DailyLogsScreen
+              dailyLogs={dailyLogs}
+              styles={styles}
+              theme={theme}
+              isPlusActive={premiumAccessState.isPlusActive}
+              onPresentPremiumPaywall={() => {
+                openPremiumPaywall().catch((error: unknown) => {
+                  console.warn('Failed to open premium paywall:', error);
+                });
+              }}
+              onBackToMap={openMap}
+            />
+          )}
+          {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
+          {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} theme={theme} onBackToMap={openMap} />}
+          {screenMode === 'settings' && (
+            <NavigationIndependentTree>
+              <NavigationContainer>
+                <SettingsStack.Navigator
+                  initialRouteName="SettingsHome"
+                  screenOptions={{
+                    animation: 'slide_from_right',
+                    gestureEnabled: true,
+                    headerShown: false,
+                  }}
+                >
+                  <SettingsStack.Screen name="SettingsHome">
+                    {({ navigation }) => (
+                      <SettingsScreen
+                        styles={styles}
+                        theme={theme}
+                        isRecording={isRecording}
+                        autoStartStatus={autoStartStatus}
+                        hasRequiredPermission={hasRequiredPermission}
+                        shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+                        keepScreenAwake={keepScreenAwake}
+                        mapType={mapType}
+                        showPhotosOnMap={showPhotosOnMap}
+                        isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+                        isImportingGpx={isImportingGpx}
+                        premiumAccessState={premiumAccessState}
+                        premiumOfferingSummary={premiumOfferingSummary}
+                        isLoadingPremiumOffering={isLoadingPremiumOffering}
+                        isPresentingPremiumPaywall={isPresentingPremiumPaywall}
+                        isRestoringPremiumPurchases={isRestoringPremiumPurchases}
+                        selectedUserLocationIconId={selectedUserLocationIconId}
+                        onBackToMap={openMap}
+                        onStartRecording={() => startRecording('manual')}
+                        onRequestLocationPermission={requestLocationPermission}
+                        onUpdateKeepScreenAwake={updateKeepScreenAwake}
+                        onToggleMapType={toggleMapType}
+                        onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+                        onUpdateUserLocationIcon={updateUserLocationIcon}
+                        onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
+                        onPresentPremiumPaywall={() => {
+                          openPremiumPaywall().catch((error: unknown) => {
+                            console.warn('Failed to open premium paywall:', error);
+                          });
+                        }}
+                        onRestorePremiumPurchases={() => {
+                          restorePurchasesFromSettings().catch((error: unknown) => {
+                            console.warn('Failed to restore premium purchases:', error);
+                          });
+                        }}
+                        onExportAllLogs={exportAllLogs}
+                        onImportGpx={importGpx}
+                        onDeleteAllData={deleteAllData}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                  <SettingsStack.Screen name="LicenseList">
+                    {({ navigation }) => (
+                      <LicenseScreen
+                        styles={styles}
+                        theme={theme}
+                        onBackToSettings={() => navigation.goBack()}
+                        onOpenLicenseDetail={(license) => navigation.navigate('LicenseDetail', { license })}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                  <SettingsStack.Screen name="LicenseDetail">
+                    {({ navigation, route }) => (
+                      <LicenseDetailScreen
+                        license={route.params.license}
+                        styles={styles}
+                        theme={theme}
+                        onBackToLicenseList={() => navigation.goBack()}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                </SettingsStack.Navigator>
+              </NavigationContainer>
+            </NavigationIndependentTree>
+          )}
       </Animated.View>
 
       <AchievementUnlockModal

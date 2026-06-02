@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { Alert, Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { captureRef } from 'react-native-view-shot';
 
@@ -10,7 +10,7 @@ import { MonthlyAreaReport } from '../../../features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, MonthlyReport } from '../../../features/reports/monthlyReport';
 import { createInitialRegion, toRenderRouteCoordinates } from '../../../features/map/routeMapper';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
-import { darkTheme, lightTheme } from '../../../theme/theme';
+import type { AppTheme } from '../../../theme/theme';
 import { MonthlyReportAnimatedCard } from './MonthlyReportAnimatedCard';
 import { MonthlyReportMetricValue } from './MonthlyReportMetricValue';
 import { MonthlyReportScrollIndicator } from './MonthlyReportScrollIndicator';
@@ -27,6 +27,8 @@ export type MonthlyReportScreenProps = {
   achievements: AchievementListItem[];
   /** 月次行政区域サマリー。 */
   monthlyAreaReport: MonthlyAreaReport | null;
+  /** アプリ全体で解決済みのテーマ。 */
+  theme: AppTheme;
   /** 地図画面へ戻る処理。 */
   onBackToMap: () => void;
 };
@@ -82,9 +84,7 @@ function waitForNextFrame(): Promise<void> {
 }
 
 /** スクロール型の月次レポート画面。 */
-export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAreaReport, onBackToMap }: MonthlyReportScreenProps) {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAreaReport, theme, onBackToMap }: MonthlyReportScreenProps) {
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
   const reportCaptureRef = useRef<View | null>(null);

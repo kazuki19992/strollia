@@ -3,6 +3,16 @@ import { StyleSheet } from 'react-native';
 import { NUMERIC_DISPLAY_FONT } from '../theme/fonts';
 import { AppTheme } from '../theme/theme';
 
+/** #rrggbbの色をrgba表記へ変換する。 */
+function hexToRgba(hex: string, alpha: number): string {
+  const normalizedHex = hex.replace('#', '');
+  const red = Number.parseInt(normalizedHex.slice(0, 2), 16);
+  const green = Number.parseInt(normalizedHex.slice(2, 4), 16);
+  const blue = Number.parseInt(normalizedHex.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha.toFixed(2)})`;
+}
+
 /**
  * 現在のテーマから画面全体のStyleSheetを生成する。
  *
@@ -13,6 +23,17 @@ export function createStyles(theme: AppTheme) {
   const { colors } = theme;
   const mapPanelBackground = 'rgba(51, 51, 51, 0.80)';
   const mapPanelText = '#ffffff';
+  const settingsBackground = theme.name === 'dark' ? '#202020' : '#ffffff';
+  const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
+  const settingsMuted = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#767676';
+  const settingsBorder = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.28)' : 'rgba(51, 51, 51, 0.20)';
+  const settingsBackButtonText = theme.name === 'dark' ? '#333333' : settingsText;
+  const settingsSelectionSurface = hexToRgba(colors.primary, 0.1);
+  const settingsDanger = theme.name === 'dark' ? colors.danger : '#b0002f';
+  const settingsDangerSurface = theme.name === 'dark' ? 'rgba(255, 136, 153, 0.12)' : 'rgba(176, 0, 47, 0.05)';
+  const settingsGpsActive = '#00b035';
+  const settingsGpsDanger = '#b0002f';
+  const settingsWarning = '#a36100';
 
   return StyleSheet.create({
 
@@ -818,6 +839,74 @@ export function createStyles(theme: AppTheme) {
       fontSize: 14,
       fontWeight: '900',
     },
+    licenseBodyText: {
+      color: settingsText,
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 18,
+    },
+    licenseDetail: {
+      gap: 20,
+      paddingBottom: 34,
+      paddingHorizontal: 24,
+      paddingTop: 2,
+    },
+    licenseDetailTitle: {
+      color: settingsText,
+      fontSize: 22,
+      fontWeight: '900',
+      lineHeight: 28,
+    },
+    licenseList: {
+      paddingBottom: 34,
+      paddingHorizontal: 24,
+      paddingTop: 0,
+    },
+    licenseListItem: {
+      alignItems: 'center',
+      borderBottomColor: settingsBorder,
+      borderBottomWidth: 1,
+      flexDirection: 'row',
+      gap: 12,
+      justifyContent: 'space-between',
+      minHeight: 56,
+      paddingVertical: 13,
+    },
+    licenseListItemText: {
+      color: settingsText,
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '400',
+      lineHeight: 20,
+    },
+    licenseMetaLabel: {
+      color: settingsMuted,
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 16,
+      width: 92,
+    },
+    licenseMetaList: {
+      borderBottomColor: settingsBorder,
+      borderBottomWidth: 1,
+      borderTopColor: settingsBorder,
+      borderTopWidth: 1,
+    },
+    licenseMetaRow: {
+      alignItems: 'flex-start',
+      borderBottomColor: settingsBorder,
+      borderBottomWidth: 1,
+      flexDirection: 'row',
+      gap: 12,
+      paddingVertical: 12,
+    },
+    licenseMetaValue: {
+      color: settingsText,
+      flex: 1,
+      fontSize: 13,
+      fontWeight: '400',
+      lineHeight: 18,
+    },
 
     menuCard: {
       backgroundColor: colors.cardStrong,
@@ -1280,6 +1369,45 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 16,
       paddingVertical: 14,
     },
+    settingsActionPill: {
+      alignItems: 'center',
+      backgroundColor: 'transparent',
+      borderColor: settingsText,
+      borderWidth: 1,
+      borderRadius: 999,
+      justifyContent: 'center',
+      minHeight: 40,
+      paddingHorizontal: 22,
+      paddingVertical: 10,
+    },
+    settingsActionPillContent: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 10,
+      justifyContent: 'center',
+    },
+    settingsActionPillContentLeft: {
+      justifyContent: 'flex-start',
+      width: '100%',
+    },
+    settingsActionPillDanger: {
+      backgroundColor: settingsDangerSurface,
+      borderColor: settingsDanger,
+    },
+    settingsActionPillDangerText: {
+      color: settingsDanger,
+    },
+    settingsActionPillText: {
+      color: settingsText,
+      fontSize: 14,
+      fontWeight: '400',
+      lineHeight: 18,
+      textAlign: 'center',
+    },
+    settingsActionPillLeft: {
+      alignItems: 'stretch',
+      paddingHorizontal: 22,
+    },
     settingsActionText: {
       color: colors.primary,
       fontWeight: '900',
@@ -1294,6 +1422,24 @@ export function createStyles(theme: AppTheme) {
       flexWrap: 'wrap',
       gap: 8,
     },
+    settingsBackRibbon: {
+      alignItems: 'center',
+      backgroundColor: theme.name === 'dark' ? '#ffffff' : '#d9d9d9',
+      borderRadius: 999,
+      flexDirection: 'row',
+      gap: 2,
+      height: 34,
+      justifyContent: 'center',
+      minWidth: 81,
+      paddingLeft: 12,
+      paddingRight: 18,
+      zIndex: 1,
+    },
+    settingsBackRibbonText: {
+      color: settingsBackButtonText,
+      fontSize: 13,
+      fontWeight: '400',
+    },
     settingsCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,
@@ -1306,10 +1452,196 @@ export function createStyles(theme: AppTheme) {
       color: colors.mutedText,
       lineHeight: 20,
     },
+    settingsGpsPanel: {
+      borderRadius: 10,
+      gap: 28,
+      minHeight: 96,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+    },
+    settingsGpsPanelActive: {
+      backgroundColor: settingsGpsActive,
+    },
+    settingsGpsPanelButton: {
+      alignItems: 'center',
+      backgroundColor: '#ffffff',
+      borderRadius: 999,
+      justifyContent: 'center',
+      marginTop: 8,
+      minHeight: 34,
+      paddingHorizontal: 18,
+      paddingVertical: 8,
+    },
+    settingsGpsPanelButtonDangerText: {
+      color: settingsGpsDanger,
+      fontSize: 14,
+      fontWeight: '400',
+      lineHeight: 18,
+    },
+    settingsGpsPanelButtonWarningText: {
+      color: settingsWarning,
+      fontSize: 14,
+      fontWeight: '400',
+      lineHeight: 18,
+    },
+    settingsGpsPanelDanger: {
+      backgroundColor: settingsGpsDanger,
+    },
+    settingsGpsPanelText: {
+      color: '#ffffff',
+      fontSize: 11,
+      fontWeight: '400',
+      lineHeight: 14,
+    },
+    settingsGpsPanelTitle: {
+      color: '#ffffff',
+      fontSize: 18,
+      fontWeight: '900',
+      lineHeight: 23,
+    },
+    settingsGpsPanelWarning: {
+      backgroundColor: settingsWarning,
+    },
+    settingsGpsPanelWithAction: {
+      gap: 4,
+    },
+    settingsFreeBadge: {
+      backgroundColor: settingsGpsDanger,
+    },
+    settingsHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingBottom: 16,
+      paddingTop: 18,
+      position: 'relative',
+    },
+    settingsHeaderTitle: {
+      color: settingsText,
+      fontSize: 14,
+      fontWeight: '900',
+      left: 0,
+      lineHeight: 18,
+      position: 'absolute',
+      right: 0,
+      textAlign: 'center',
+      top: 26,
+    },
+    settingsIconTileContent: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 5,
+      justifyContent: 'center',
+      minHeight: 34,
+    },
+    settingsInfoBlock: {
+      gap: 4,
+    },
+    settingsInlineRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 14,
+      justifyContent: 'space-between',
+    },
+    settingsInlineText: {
+      flex: 1,
+      gap: 3,
+      minWidth: 0,
+    },
+    settingsItemDescription: {
+      color: settingsMuted,
+      fontSize: 11,
+      fontWeight: '400',
+      lineHeight: 14,
+    },
+    settingsItemTitle: {
+      color: settingsText,
+      fontSize: 14,
+      fontWeight: '400',
+      lineHeight: 18,
+    },
     settingsList: {
-      gap: 12,
-      padding: 16,
+      gap: 16,
+      paddingBottom: 34,
+      paddingHorizontal: 24,
       paddingTop: 0,
+    },
+    settingsOptionGrid: {
+      flexDirection: 'row',
+      flexWrap: 'nowrap',
+      gap: 10,
+    },
+    settingsOptionGroup: {
+      gap: 8,
+    },
+    settingsOptionHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 10,
+      justifyContent: 'space-between',
+    },
+    settingsOptionNote: {
+      color: settingsMuted,
+      flexShrink: 1,
+      fontSize: 9,
+      fontWeight: '400',
+      lineHeight: 12,
+      textAlign: 'right',
+    },
+    settingsPlusBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 6,
+      color: '#ffffff',
+      fontSize: 11,
+      fontWeight: '400',
+      overflow: 'hidden',
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+    },
+    settingsScreen: {
+      backgroundColor: settingsBackground,
+      flex: 1,
+    },
+    settingsSection: {
+      gap: 10,
+    },
+    settingsSectionBody: {
+      gap: 14,
+    },
+    settingsSectionTitle: {
+      color: settingsText,
+      fontSize: 16,
+      fontWeight: '900',
+      lineHeight: 20,
+    },
+    settingsSelectionTile: {
+      alignItems: 'center',
+      backgroundColor: 'transparent',
+      borderColor: settingsBorder,
+      borderWidth: 1,
+      flex: 1,
+      gap: 8,
+      justifyContent: 'center',
+      minHeight: 66,
+      minWidth: 0,
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+    },
+    settingsSelectionTileSelected: {
+      backgroundColor: settingsSelectionSurface,
+      borderColor: colors.primary,
+      borderWidth: 4,
+    },
+    settingsSelectionTileText: {
+      color: settingsText,
+      fontSize: 13,
+      fontWeight: '400',
+      lineHeight: 17,
+      textAlign: 'center',
+    },
+    settingsSelectionTileWide: {
+      minWidth: 0,
     },
     settingsStatusRow: {
       alignItems: 'center',
@@ -1322,8 +1654,23 @@ export function createStyles(theme: AppTheme) {
     },
     settingsTitle: {
       color: colors.text,
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: '900',
+    },
+    settingsSubscriptionActions: {
+      gap: 16,
+    },
+    settingsSubscriptionRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 12,
+      justifyContent: 'space-between',
+    },
+    settingsThemeSwatch: {
+      borderColor: settingsMuted,
+      borderWidth: 2,
+      height: 28,
+      width: 84,
     },
     settingsToggleRow: {
       alignItems: 'center',

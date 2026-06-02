@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
 import { MonthlyReportScreen } from '../MonthlyReportScreen';
+import { darkTheme, lightTheme } from '../../../../theme/theme';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -60,6 +61,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+          theme={lightTheme}
           onBackToMap={jest.fn()}
         />,
       );
@@ -80,7 +82,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} onBackToMap={onBackToMap} />,
+        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} theme={lightTheme} onBackToMap={onBackToMap} />,
       );
     });
 
@@ -98,6 +100,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+          theme={lightTheme}
           onBackToMap={jest.fn()}
         />,
       );
@@ -118,7 +121,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} onBackToMap={jest.fn()} />,
+        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} theme={lightTheme} onBackToMap={jest.fn()} />,
       );
     });
 
@@ -129,5 +132,17 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     expect(captureRef).not.toHaveBeenCalled();
     expect(Alert.alert).toHaveBeenCalledWith('共有できません', 'この環境では共有シートを利用できません。');
+  });
+
+  it('OS設定ではなくAppから渡されたテーマで表示色を決める', () => {
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} theme={darkTheme} onBackToMap={jest.fn()} />,
+      );
+    });
+
+    const container = renderer!.root.findAll((node: any) => Array.isArray(node.props.style) && node.props.style.some((style: any) => style?.backgroundColor === '#111111'))[0];
+
+    expect(container).toBeTruthy();
   });
 });

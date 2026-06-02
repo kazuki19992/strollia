@@ -25,7 +25,7 @@ export function createStyles(theme: AppTheme) {
   const mapPanelText = '#ffffff';
   const settingsBackground = theme.name === 'dark' ? '#202020' : '#ffffff';
   const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
-  const settingsMuted = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#a0a0a0';
+  const settingsMuted = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#767676';
   const settingsBorder = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.28)' : 'rgba(51, 51, 51, 0.20)';
   const settingsBackButtonText = theme.name === 'dark' ? '#333333' : settingsText;
   const settingsSelectionSurface = hexToRgba(colors.primary, 0.1);
@@ -33,7 +33,7 @@ export function createStyles(theme: AppTheme) {
   const settingsDangerSurface = theme.name === 'dark' ? 'rgba(255, 136, 153, 0.12)' : 'rgba(176, 0, 47, 0.05)';
   const settingsGpsActive = '#00b035';
   const settingsGpsDanger = '#b0002f';
-  const settingsWarning = '#e98300';
+  const settingsWarning = '#a36100';
 
   return StyleSheet.create({
 

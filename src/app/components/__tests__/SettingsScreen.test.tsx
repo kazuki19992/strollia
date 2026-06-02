@@ -124,8 +124,8 @@ describe('設定画面 SettingsScreen', () => {
     expect(flattenStyle(darkStyles.settingsGpsPanelActive).backgroundColor).toBe('#00b035');
     expect(flattenStyle(lightStyles.settingsGpsPanelDanger).backgroundColor).toBe('#b0002f');
     expect(flattenStyle(darkStyles.settingsGpsPanelDanger).backgroundColor).toBe('#b0002f');
-    expect(flattenStyle(lightStyles.settingsGpsPanelWarning).backgroundColor).toBe('#e98300');
-    expect(flattenStyle(darkStyles.settingsGpsPanelWarning).backgroundColor).toBe('#e98300');
+    expect(flattenStyle(lightStyles.settingsGpsPanelWarning).backgroundColor).toBe('#a36100');
+    expect(flattenStyle(darkStyles.settingsGpsPanelWarning).backgroundColor).toBe('#a36100');
   });
 
   test('ダークモードでもGPS操作ボタンはライトモードと同じ白背景で表示する', () => {
@@ -158,7 +158,7 @@ describe('設定画面 SettingsScreen', () => {
     expect(flattenStyle(permissionButton.props.style).backgroundColor).toBe('#ffffff');
     expect(flattenStyle(failedButton.props.style).backgroundColor).toBe('#ffffff');
     expect(flattenStyle(permissionText?.props.style).color).toBe('#b0002f');
-    expect(flattenStyle(failedText?.props.style).color).toBe('#e98300');
+    expect(flattenStyle(failedText?.props.style).color).toBe('#a36100');
   });
 
   test('選択項目の設定中ラベルは表示しない', () => {

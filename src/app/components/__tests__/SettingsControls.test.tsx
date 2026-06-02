@@ -133,7 +133,7 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
     const description = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '説明文');
 
     expect(flattenStyle(title?.props.style).fontWeight).toBe('400');
-    expect(flattenStyle(description?.props.style).color).toBe('#a0a0a0');
+    expect(flattenStyle(description?.props.style).color).toBe('#767676');
   });
 
   test('画面ヘッダーのタイトルは戻るボタン幅に影響されない中央配置にする', () => {

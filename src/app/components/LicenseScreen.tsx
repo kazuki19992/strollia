@@ -1,7 +1,9 @@
 import { Feather } from '@expo/vector-icons';
-import { FlatList, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Modal, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
-import { OSS_LICENSES, OSS_LICENSES_GENERATED_AT } from '../generated/ossLicenses';
+import { OSS_LICENSES } from '../generated/ossLicenses';
+import type { OssLicenseEntry } from '../generated/ossLicenses';
 import { AppStyles } from '../appStyles';
 import { AppTheme } from '../../theme/theme';
 
@@ -17,43 +19,103 @@ export type LicenseScreenProps = {
 
 /** 生成済みOSSライセンス一覧を表示する画面を描画する。 */
 export function LicenseScreen({ styles, theme, onBackToSettings }: LicenseScreenProps) {
+  const [selectedLicense, setSelectedLicense] = useState<OssLicenseEntry | null>(null);
+
   return (
-    <SafeAreaView style={styles.dailyContainer}>
-      <View style={styles.dailyHeader}>
-        <Pressable accessibilityLabel="ライセンス画面を閉じる" accessibilityRole="button" onPress={onBackToSettings} style={styles.backButton}>
-          <Text style={styles.backButtonText}>戻る</Text>
+    <SafeAreaView style={styles.settingsScreen}>
+      <View style={styles.settingsHeader}>
+        <Pressable accessibilityLabel="設定画面へ戻る" accessibilityRole="button" onPress={onBackToSettings} style={styles.settingsBackRibbon}>
+          <Feather name="chevron-left" size={22} color={theme.name === 'dark' ? '#333333' : theme.colors.text} />
+          <Text style={styles.settingsBackRibbonText}>設定</Text>
         </Pressable>
-        <Text style={styles.dailyTitle}>ライセンス</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={styles.settingsHeaderTitle}>ライセンス</Text>
+        <View style={styles.settingsHeaderSpacer} />
       </View>
 
       <FlatList
         data={OSS_LICENSES}
         keyExtractor={(license) => license.id}
-        contentContainerStyle={styles.settingsList}
-        ListHeaderComponent={(
-          <View style={styles.settingsCard}>
-            <Text style={styles.settingsTitle}>OSSライセンス</Text>
-            <Text style={styles.settingsDescription}>
-              Strolliaで利用しているオープンソースソフトウェアのライセンスです。
-            </Text>
-            <Text style={styles.settingsDescription}>生成日時: {OSS_LICENSES_GENERATED_AT}</Text>
-          </View>
-        )}
+        contentContainerStyle={styles.licenseList}
         renderItem={({ item: license }) => (
-          <View key={license.id} style={styles.settingsCard}>
-            <View style={styles.settingsActionTitleRow}>
-              <Feather name={license.source === 'ios' ? 'smartphone' : 'package'} size={18} color={theme.colors.primary} />
-              <Text style={styles.settingsTitle}>{license.name}</Text>
-            </View>
-            {license.version ? <Text style={styles.settingsStatusText}>{license.version}</Text> : null}
-            <Text style={styles.settingsStatusText}>{license.licenses}</Text>
-            {license.repository ? <Text style={styles.settingsDescription}>{license.repository}</Text> : null}
-            {license.licenseText ? <Text style={styles.settingsDescription}>{license.licenseText}</Text> : null}
-            {license.noticeText ? <Text style={styles.settingsDescription}>{license.noticeText}</Text> : null}
-          </View>
+          <Pressable
+            accessibilityLabel={`${license.name} のライセンス詳細を開く`}
+            accessibilityRole="button"
+            onPress={() => setSelectedLicense(license)}
+            style={styles.licenseListItem}
+          >
+            <Text style={styles.licenseListItemText}>{license.name}</Text>
+            <Feather name="chevron-right" size={19} color={theme.colors.mutedText} />
+          </Pressable>
         )}
       />
+
+      <LicenseDetailDialog
+        license={selectedLicense}
+        styles={styles}
+        theme={theme}
+        onClose={() => setSelectedLicense(null)}
+      />
     </SafeAreaView>
+  );
+}
+
+type LicenseDetailDialogProps = {
+  /** 表示するライセンス。 */
+  license: OssLicenseEntry | null;
+  /** 画面共通スタイル。 */
+  styles: AppStyles;
+  /** 現在テーマ。 */
+  theme: AppTheme;
+  /** 一覧へ戻る処理。 */
+  onClose: () => void;
+};
+
+/** ライセンス詳細を全画面ダイアログとして描画する。 */
+function LicenseDetailDialog({ license, styles, theme, onClose }: LicenseDetailDialogProps) {
+  return (
+    <Modal animationType="slide" presentationStyle="fullScreen" visible={license !== null} onRequestClose={onClose}>
+      <SafeAreaView style={styles.settingsScreen}>
+        <View style={styles.settingsHeader}>
+          <Pressable accessibilityLabel="ライセンス詳細を閉じる" accessibilityRole="button" onPress={onClose} style={styles.settingsBackRibbon}>
+            <Feather name="chevron-left" size={22} color={theme.name === 'dark' ? '#333333' : theme.colors.text} />
+            <Text style={styles.settingsBackRibbonText}>閉じる</Text>
+          </Pressable>
+          <Text style={styles.settingsHeaderTitle}>詳細</Text>
+          <View style={styles.settingsHeaderSpacer} />
+        </View>
+
+        {license ? (
+          <ScrollView contentContainerStyle={styles.licenseDetail}>
+            <Text style={styles.licenseDetailTitle}>{license.name}</Text>
+            <View style={styles.licenseMetaList}>
+              {license.version ? <LicenseMetaRow label="バージョン" value={license.version} styles={styles} /> : null}
+              <LicenseMetaRow label="ライセンス" value={license.licenses} styles={styles} />
+              {license.repository ? <LicenseMetaRow label="リポジトリ" value={license.repository} styles={styles} /> : null}
+            </View>
+            {license.licenseText ? <Text style={styles.licenseBodyText}>{license.licenseText}</Text> : null}
+            {license.noticeText ? <Text style={styles.licenseBodyText}>{license.noticeText}</Text> : null}
+          </ScrollView>
+        ) : null}
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+type LicenseMetaRowProps = {
+  /** 項目名。 */
+  label: string;
+  /** 値。 */
+  value: string;
+  /** 画面共通スタイル。 */
+  styles: AppStyles;
+};
+
+/** ライセンス詳細のメタ情報行を描画する。 */
+function LicenseMetaRow({ label, value, styles }: LicenseMetaRowProps) {
+  return (
+    <View style={styles.licenseMetaRow}>
+      <Text style={styles.licenseMetaLabel}>{label}</Text>
+      <Text style={styles.licenseMetaValue}>{value}</Text>
+    </View>
   );
 }

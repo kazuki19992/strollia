@@ -45,6 +45,7 @@ export function LicenseScreen({ styles, theme, onBackToSettings, onOpenLicenseDe
   );
 }
 
+/** ライセンス詳細画面のprops。 */
 export type LicenseDetailScreenProps = {
   /** 表示するライセンス。 */
   license: OssLicenseEntry;

@@ -15,7 +15,7 @@ export type OssLicenseEntry = {
   noticeText: string | null;
 };
 
-export const OSS_LICENSES_GENERATED_AT = "2026-06-01T04:49:44.099Z";
+export const OSS_LICENSES_GENERATED_AT = "2026-06-02T02:41:20.772Z";
 
 export const OSS_LICENSES: OssLicenseEntry[] = [
   {
@@ -49,9 +49,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/compat-data@7.29.3",
+    "id": "npm:@babel/code-frame@7.29.7",
+    "name": "@babel/code-frame",
+    "version": "7.29.7",
+    "licenses": "MIT",
+    "repository": "https://github.com/babel/babel",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@babel/compat-data@7.29.7",
     "name": "@babel/compat-data",
-    "version": "7.29.3",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -69,9 +79,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/generator@7.29.1",
+    "id": "npm:@babel/generator@7.29.7",
     "name": "@babel/generator",
-    "version": "7.29.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -79,9 +89,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-annotate-as-pure@7.27.3",
+    "id": "npm:@babel/helper-annotate-as-pure@7.29.7",
     "name": "@babel/helper-annotate-as-pure",
-    "version": "7.27.3",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -89,9 +99,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-compilation-targets@7.28.6",
+    "id": "npm:@babel/helper-compilation-targets@7.29.7",
     "name": "@babel/helper-compilation-targets",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -99,9 +109,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-create-class-features-plugin@7.29.3",
+    "id": "npm:@babel/helper-create-class-features-plugin@7.29.7",
     "name": "@babel/helper-create-class-features-plugin",
-    "version": "7.29.3",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -109,9 +119,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-create-regexp-features-plugin@7.28.5",
+    "id": "npm:@babel/helper-create-regexp-features-plugin@7.29.7",
     "name": "@babel/helper-create-regexp-features-plugin",
-    "version": "7.28.5",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -129,9 +139,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-globals@7.28.0",
+    "id": "npm:@babel/helper-globals@7.29.7",
     "name": "@babel/helper-globals",
-    "version": "7.28.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -139,9 +149,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-member-expression-to-functions@7.28.5",
+    "id": "npm:@babel/helper-member-expression-to-functions@7.29.7",
     "name": "@babel/helper-member-expression-to-functions",
-    "version": "7.28.5",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -149,9 +159,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-module-imports@7.28.6",
+    "id": "npm:@babel/helper-module-imports@7.29.7",
     "name": "@babel/helper-module-imports",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -159,9 +169,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-module-transforms@7.28.6",
+    "id": "npm:@babel/helper-module-transforms@7.29.7",
     "name": "@babel/helper-module-transforms",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -169,9 +179,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-optimise-call-expression@7.27.1",
+    "id": "npm:@babel/helper-optimise-call-expression@7.29.7",
     "name": "@babel/helper-optimise-call-expression",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -179,9 +189,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-plugin-utils@7.28.6",
+    "id": "npm:@babel/helper-plugin-utils@7.29.7",
     "name": "@babel/helper-plugin-utils",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -189,9 +199,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-remap-async-to-generator@7.27.1",
+    "id": "npm:@babel/helper-remap-async-to-generator@7.29.7",
     "name": "@babel/helper-remap-async-to-generator",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -199,9 +209,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-replace-supers@7.28.6",
+    "id": "npm:@babel/helper-replace-supers@7.29.7",
     "name": "@babel/helper-replace-supers",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -209,9 +219,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-skip-transparent-expression-wrappers@7.27.1",
+    "id": "npm:@babel/helper-skip-transparent-expression-wrappers@7.29.7",
     "name": "@babel/helper-skip-transparent-expression-wrappers",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -219,9 +229,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-string-parser@7.27.1",
+    "id": "npm:@babel/helper-string-parser@7.29.7",
     "name": "@babel/helper-string-parser",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -229,9 +239,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-validator-identifier@7.28.5",
+    "id": "npm:@babel/helper-validator-identifier@7.29.7",
     "name": "@babel/helper-validator-identifier",
-    "version": "7.28.5",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -239,9 +249,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-validator-option@7.27.1",
+    "id": "npm:@babel/helper-validator-option@7.29.7",
     "name": "@babel/helper-validator-option",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -249,9 +259,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helper-wrap-function@7.28.6",
+    "id": "npm:@babel/helper-wrap-function@7.29.7",
     "name": "@babel/helper-wrap-function",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -279,9 +289,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/parser@7.29.3",
+    "id": "npm:@babel/parser@7.29.7",
     "name": "@babel/parser",
-    "version": "7.29.3",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -289,9 +299,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-proposal-decorators@7.29.0",
+    "id": "npm:@babel/plugin-proposal-decorators@7.29.7",
     "name": "@babel/plugin-proposal-decorators",
-    "version": "7.29.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -299,9 +309,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-proposal-export-default-from@7.27.1",
+    "id": "npm:@babel/plugin-proposal-export-default-from@7.29.7",
     "name": "@babel/plugin-proposal-export-default-from",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -349,9 +359,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-syntax-decorators@7.28.6",
+    "id": "npm:@babel/plugin-syntax-decorators@7.29.7",
     "name": "@babel/plugin-syntax-decorators",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -369,9 +379,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-syntax-export-default-from@7.28.6",
+    "id": "npm:@babel/plugin-syntax-export-default-from@7.29.7",
     "name": "@babel/plugin-syntax-export-default-from",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -379,9 +389,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-syntax-flow@7.28.6",
+    "id": "npm:@babel/plugin-syntax-flow@7.29.7",
     "name": "@babel/plugin-syntax-flow",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -419,9 +429,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-syntax-jsx@7.28.6",
+    "id": "npm:@babel/plugin-syntax-jsx@7.29.7",
     "name": "@babel/plugin-syntax-jsx",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -509,9 +519,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-syntax-typescript@7.28.6",
+    "id": "npm:@babel/plugin-syntax-typescript@7.29.7",
     "name": "@babel/plugin-syntax-typescript",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -519,9 +529,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-arrow-functions@7.27.1",
+    "id": "npm:@babel/plugin-transform-arrow-functions@7.29.7",
     "name": "@babel/plugin-transform-arrow-functions",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -529,9 +539,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-async-generator-functions@7.29.0",
+    "id": "npm:@babel/plugin-transform-async-generator-functions@7.29.7",
     "name": "@babel/plugin-transform-async-generator-functions",
-    "version": "7.29.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -539,9 +549,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-async-to-generator@7.28.6",
+    "id": "npm:@babel/plugin-transform-async-to-generator@7.29.7",
     "name": "@babel/plugin-transform-async-to-generator",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -549,9 +559,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-block-scoping@7.28.6",
+    "id": "npm:@babel/plugin-transform-block-scoping@7.29.7",
     "name": "@babel/plugin-transform-block-scoping",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -559,9 +569,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-class-properties@7.28.6",
+    "id": "npm:@babel/plugin-transform-class-properties@7.29.7",
     "name": "@babel/plugin-transform-class-properties",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -569,9 +579,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-class-static-block@7.28.6",
+    "id": "npm:@babel/plugin-transform-class-static-block@7.29.7",
     "name": "@babel/plugin-transform-class-static-block",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -579,9 +589,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-classes@7.28.6",
+    "id": "npm:@babel/plugin-transform-classes@7.29.7",
     "name": "@babel/plugin-transform-classes",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -589,9 +599,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-computed-properties@7.28.6",
+    "id": "npm:@babel/plugin-transform-computed-properties@7.29.7",
     "name": "@babel/plugin-transform-computed-properties",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -599,9 +609,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-destructuring@7.28.5",
+    "id": "npm:@babel/plugin-transform-destructuring@7.29.7",
     "name": "@babel/plugin-transform-destructuring",
-    "version": "7.28.5",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -609,9 +619,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-export-namespace-from@7.27.1",
+    "id": "npm:@babel/plugin-transform-export-namespace-from@7.29.7",
     "name": "@babel/plugin-transform-export-namespace-from",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -619,9 +629,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-flow-strip-types@7.27.1",
+    "id": "npm:@babel/plugin-transform-flow-strip-types@7.29.7",
     "name": "@babel/plugin-transform-flow-strip-types",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -629,9 +639,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-for-of@7.27.1",
+    "id": "npm:@babel/plugin-transform-for-of@7.29.7",
     "name": "@babel/plugin-transform-for-of",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -639,9 +649,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-function-name@7.27.1",
+    "id": "npm:@babel/plugin-transform-function-name@7.29.7",
     "name": "@babel/plugin-transform-function-name",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -649,9 +659,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-literals@7.27.1",
+    "id": "npm:@babel/plugin-transform-literals@7.29.7",
     "name": "@babel/plugin-transform-literals",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -659,9 +669,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-logical-assignment-operators@7.28.6",
+    "id": "npm:@babel/plugin-transform-logical-assignment-operators@7.29.7",
     "name": "@babel/plugin-transform-logical-assignment-operators",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -669,9 +679,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-modules-commonjs@7.28.6",
+    "id": "npm:@babel/plugin-transform-modules-commonjs@7.29.7",
     "name": "@babel/plugin-transform-modules-commonjs",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -679,9 +689,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-named-capturing-groups-regex@7.29.0",
+    "id": "npm:@babel/plugin-transform-named-capturing-groups-regex@7.29.7",
     "name": "@babel/plugin-transform-named-capturing-groups-regex",
-    "version": "7.29.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -689,9 +699,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-nullish-coalescing-operator@7.28.6",
+    "id": "npm:@babel/plugin-transform-nullish-coalescing-operator@7.29.7",
     "name": "@babel/plugin-transform-nullish-coalescing-operator",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -699,9 +709,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-numeric-separator@7.28.6",
+    "id": "npm:@babel/plugin-transform-numeric-separator@7.29.7",
     "name": "@babel/plugin-transform-numeric-separator",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -709,9 +719,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-object-rest-spread@7.28.6",
+    "id": "npm:@babel/plugin-transform-object-rest-spread@7.29.7",
     "name": "@babel/plugin-transform-object-rest-spread",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -719,9 +729,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-optional-catch-binding@7.28.6",
+    "id": "npm:@babel/plugin-transform-optional-catch-binding@7.29.7",
     "name": "@babel/plugin-transform-optional-catch-binding",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -729,9 +739,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-optional-chaining@7.28.6",
+    "id": "npm:@babel/plugin-transform-optional-chaining@7.29.7",
     "name": "@babel/plugin-transform-optional-chaining",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -739,9 +749,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-parameters@7.27.7",
+    "id": "npm:@babel/plugin-transform-parameters@7.29.7",
     "name": "@babel/plugin-transform-parameters",
-    "version": "7.27.7",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -749,9 +759,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-private-methods@7.28.6",
+    "id": "npm:@babel/plugin-transform-private-methods@7.29.7",
     "name": "@babel/plugin-transform-private-methods",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -759,9 +769,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-private-property-in-object@7.28.6",
+    "id": "npm:@babel/plugin-transform-private-property-in-object@7.29.7",
     "name": "@babel/plugin-transform-private-property-in-object",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -769,9 +779,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-react-display-name@7.28.0",
+    "id": "npm:@babel/plugin-transform-react-display-name@7.29.7",
     "name": "@babel/plugin-transform-react-display-name",
-    "version": "7.28.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -779,9 +789,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-react-jsx@7.28.6",
+    "id": "npm:@babel/plugin-transform-react-jsx@7.29.7",
     "name": "@babel/plugin-transform-react-jsx",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -789,9 +799,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-react-jsx-development@7.27.1",
+    "id": "npm:@babel/plugin-transform-react-jsx-development@7.29.7",
     "name": "@babel/plugin-transform-react-jsx-development",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -799,9 +809,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-react-jsx-self@7.27.1",
+    "id": "npm:@babel/plugin-transform-react-jsx-self@7.29.7",
     "name": "@babel/plugin-transform-react-jsx-self",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -809,9 +819,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-react-jsx-source@7.27.1",
+    "id": "npm:@babel/plugin-transform-react-jsx-source@7.29.7",
     "name": "@babel/plugin-transform-react-jsx-source",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -819,9 +829,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-react-pure-annotations@7.27.1",
+    "id": "npm:@babel/plugin-transform-react-pure-annotations@7.29.7",
     "name": "@babel/plugin-transform-react-pure-annotations",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -829,9 +839,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-regenerator@7.29.0",
+    "id": "npm:@babel/plugin-transform-regenerator@7.29.7",
     "name": "@babel/plugin-transform-regenerator",
-    "version": "7.29.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -839,9 +849,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-runtime@7.29.0",
+    "id": "npm:@babel/plugin-transform-runtime@7.29.7",
     "name": "@babel/plugin-transform-runtime",
-    "version": "7.29.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -849,9 +859,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-shorthand-properties@7.27.1",
+    "id": "npm:@babel/plugin-transform-shorthand-properties@7.29.7",
     "name": "@babel/plugin-transform-shorthand-properties",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -859,9 +869,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-spread@7.28.6",
+    "id": "npm:@babel/plugin-transform-spread@7.29.7",
     "name": "@babel/plugin-transform-spread",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -869,9 +879,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-sticky-regex@7.27.1",
+    "id": "npm:@babel/plugin-transform-sticky-regex@7.29.7",
     "name": "@babel/plugin-transform-sticky-regex",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -879,9 +889,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-typescript@7.28.6",
+    "id": "npm:@babel/plugin-transform-typescript@7.29.7",
     "name": "@babel/plugin-transform-typescript",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -889,9 +899,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-unicode-regex@7.27.1",
+    "id": "npm:@babel/plugin-transform-unicode-regex@7.29.7",
     "name": "@babel/plugin-transform-unicode-regex",
-    "version": "7.27.1",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -899,9 +909,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/preset-react@7.28.5",
+    "id": "npm:@babel/preset-react@7.29.7",
     "name": "@babel/preset-react",
-    "version": "7.28.5",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -909,9 +919,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/preset-typescript@7.28.5",
+    "id": "npm:@babel/preset-typescript@7.29.7",
     "name": "@babel/preset-typescript",
-    "version": "7.28.5",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -929,9 +939,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/template@7.28.6",
+    "id": "npm:@babel/template@7.29.7",
     "name": "@babel/template",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -949,9 +959,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/types@7.29.0",
-    "name": "@babel/types",
-    "version": "7.29.0",
+    "id": "npm:@babel/traverse@7.29.7",
+    "name": "@babel/traverse",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -959,9 +969,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/cli@54.0.24",
+    "id": "npm:@babel/types@7.29.7",
+    "name": "@babel/types",
+    "version": "7.29.7",
+    "licenses": "MIT",
+    "repository": "https://github.com/babel/babel",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/cli@54.0.25",
     "name": "@expo/cli",
-    "version": "54.0.24",
+    "version": "54.0.25",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1069,6 +1089,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:@expo/json-file@10.0.16",
+    "name": "@expo/json-file",
+    "version": "10.0.16",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/json-file@10.2.0",
+    "name": "@expo/json-file",
+    "version": "10.2.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:@expo/metro@54.2.0",
     "name": "@expo/metro",
     "version": "54.2.0",
@@ -1079,9 +1119,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/metro-config@54.0.15",
+    "id": "npm:@expo/metro-config@54.0.16",
     "name": "@expo/metro-config",
-    "version": "54.0.15",
+    "version": "54.0.16",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1089,9 +1129,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/osascript@2.4.2",
+    "id": "npm:@expo/osascript@2.6.0",
     "name": "@expo/osascript",
-    "version": "2.4.2",
+    "version": "2.6.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1099,9 +1139,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/package-manager@1.10.4",
+    "id": "npm:@expo/package-manager@1.12.1",
     "name": "@expo/package-manager",
-    "version": "1.10.4",
+    "version": "1.12.1",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1109,9 +1149,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/plist@0.4.8",
+    "id": "npm:@expo/plist@0.4.9",
     "name": "@expo/plist",
-    "version": "0.4.8",
+    "version": "0.4.9",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1159,9 +1199,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/spawn-async@1.7.2",
+    "id": "npm:@expo/spawn-async@1.8.0",
     "name": "@expo/spawn-async",
-    "version": "1.7.2",
+    "version": "1.8.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/spawn-async",
     "source": "npm",
@@ -1199,9 +1239,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/xcpretty@4.4.3",
+    "id": "npm:@expo/xcpretty@4.4.4",
     "name": "@expo/xcpretty",
-    "version": "4.4.3",
+    "version": "4.4.4",
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/expo/expo-cli",
     "source": "npm",
@@ -2079,9 +2119,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:babel-preset-expo@54.0.10",
+    "id": "npm:babel-preset-expo@54.0.11",
     "name": "babel-preset-expo",
-    "version": "54.0.10",
+    "version": "54.0.11",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -2219,9 +2259,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:brace-expansion@2.1.0",
+    "id": "npm:brace-expansion@2.1.1",
     "name": "brace-expansion",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "licenses": "MIT",
     "repository": "https://github.com/juliangruber/brace-expansion",
     "source": "npm",
@@ -3049,9 +3089,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:expo@54.0.34",
+    "id": "npm:expo@54.0.35",
     "name": "expo",
-    "version": "54.0.34",
+    "version": "54.0.35",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -3139,9 +3179,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:expo-file-system@19.0.22",
+    "id": "npm:expo-file-system@19.0.23",
     "name": "expo-file-system",
-    "version": "19.0.22",
+    "version": "19.0.23",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -3149,9 +3189,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:expo-font@14.0.11",
+    "id": "npm:expo-font@14.0.12",
     "name": "expo-font",
-    "version": "14.0.11",
+    "version": "14.0.12",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -3219,9 +3259,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:expo-modules-autolinking@3.0.25",
+    "id": "npm:expo-modules-autolinking@3.0.26",
     "name": "expo-modules-autolinking",
-    "version": "3.0.25",
+    "version": "3.0.26",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -3249,9 +3289,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:expo-server@1.0.6",
+    "id": "npm:expo-server@1.0.7",
     "name": "expo-server",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -4089,9 +4129,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:js-yaml@4.1.1",
+    "id": "npm:js-yaml@4.2.0",
     "name": "js-yaml",
-    "version": "4.1.1",
+    "version": "4.2.0",
     "licenses": "MIT",
     "repository": "https://github.com/nodeca/js-yaml",
     "source": "npm",
@@ -5879,9 +5919,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:tar@7.5.13",
+    "id": "npm:tar@7.5.16",
     "name": "tar",
-    "version": "7.5.13",
+    "version": "7.5.16",
     "licenses": "BlueOak-1.0.0",
     "repository": "https://github.com/isaacs/node-tar",
     "source": "npm",
@@ -6049,9 +6089,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:undici@6.25.0",
+    "id": "npm:undici@6.26.0",
     "name": "undici",
-    "version": "6.25.0",
+    "version": "6.26.0",
     "licenses": "MIT",
     "repository": "https://github.com/nodejs/undici",
     "source": "npm",
@@ -6349,9 +6389,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:ws@8.20.0",
+    "id": "npm:ws@8.21.0",
     "name": "ws",
-    "version": "8.20.0",
+    "version": "8.21.0",
     "licenses": "MIT",
     "repository": "https://github.com/websockets/ws",
     "source": "npm",

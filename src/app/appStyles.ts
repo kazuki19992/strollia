@@ -1599,13 +1599,6 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 8,
       paddingVertical: 7,
     },
-    settingsPlusAdImage: {
-      alignSelf: 'stretch',
-      aspectRatio: 1044 / 1233,
-      flexShrink: 1,
-      maxWidth: '100%',
-      width: '100%',
-    },
     settingsScreen: {
       backgroundColor: settingsBackground,
       flex: 1,

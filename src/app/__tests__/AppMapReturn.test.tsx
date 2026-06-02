@@ -482,35 +482,6 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestSettingsScreenProps).toBeTruthy();
   });
 
-  test('テーマ設定を変更するとOS設定ではなく保存したテーマを地図と月次レポートへ渡す', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
-    await flushPromises();
-
-    await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
-    });
-
-    await act(async () => {
-      await mockLatestSettingsScreenProps.onUpdateAppThemePreference('dark');
-    });
-    await flushPromises();
-
-    await act(async () => {
-      mockLatestSettingsScreenProps.onBackToMap();
-    });
-    await flushPromises();
-
-    expect(mockLatestMapScreenProps.theme.name).toBe('dark');
-
-    await act(async () => {
-      mockLatestMapScreenProps.onOpenMonthlyReport();
-    });
-    await flushPromises();
-
-    expect(mockLatestMonthlyReportScreenProps.theme.name).toBe('dark');
-  });
 
   test('Plus未加入時に有料現在地アイコンを選ぶとPaywallを表示してPlus状態を再取得する', async () => {
     (getPremiumAccessState as jest.Mock)

@@ -358,6 +358,15 @@ function GpsStatusPanel({
     );
   }
 
+  if (!isRecording) {
+    return (
+      <View style={styles.settingsGpsPanel}>
+        <Text style={styles.settingsGpsPanelTitle}>準備中...</Text>
+        <Text style={styles.settingsGpsPanelText}>GPS記録の準備をしています</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelActive]}>
       <Text style={styles.settingsGpsPanelTitle}>GPS記録中!</Text>
@@ -392,7 +401,7 @@ function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isP
             isSelected={isSelected}
             label={option.label}
             styles={styles}
-            onPress={() => onUpdateUserLocationIcon(option.id)}
+            onPress={isLocked ? undefined : () => onUpdateUserLocationIcon(option.id)}
           />
         );
       })}

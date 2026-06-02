@@ -514,6 +514,26 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('GPSの権限をください!');
   });
 
+  test('記録中でない待機状態のときはGPSパネルに準備中メッセージを表示する', () => {
+    const props = {
+      ...createProps(),
+      isRecording: false,
+      autoStartStatus: 'checking' as const,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+
+    expect(texts).toContain('準備中...');
+    expect(texts).not.toContain('GPS記録中!');
+    expect(texts).not.toContain('GPSの記録を開始する');
+  });
+
+
   test('地図テーマの航空写真ボタンから地図種別を切り替える', () => {
     const props = createProps();
     let renderer: any;

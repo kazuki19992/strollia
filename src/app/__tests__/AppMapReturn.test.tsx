@@ -38,6 +38,8 @@ jest.mock('@expo/vector-icons', () => {
 
 const mockAnimateToRegion = jest.fn();
 let mockLatestSettingsScreenProps: any = null;
+let mockLatestMapScreenProps: any = null;
+let mockLatestMonthlyReportScreenProps: any = null;
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -55,6 +57,7 @@ jest.mock('../components/MapScreen', () => ({
   MapScreen: (props: any) => {
     const { Pressable, Text } = require('react-native');
 
+    mockLatestMapScreenProps = props;
     props.mapRef.current = { animateToRegion: mockAnimateToRegion };
 
     return (
@@ -116,7 +119,10 @@ jest.mock('../components/PhotoPreviewModals', () => ({
 }));
 
 jest.mock('../components/reports/MonthlyReportScreen', () => ({
-  MonthlyReportScreen: () => null,
+  MonthlyReportScreen: (props: any) => {
+    mockLatestMonthlyReportScreenProps = props;
+    return null;
+  },
 }));
 
 jest.mock('../components/SettingsScreen', () => ({
@@ -133,12 +139,32 @@ jest.mock('../components/SettingsScreen', () => ({
 }));
 
 jest.mock('../components/LicenseScreen', () => ({
-  LicenseScreen: ({ onBackToSettings }: { onBackToSettings: () => void }) => {
+  LicenseScreen: ({
+    onBackToSettings,
+    onOpenLicenseDetail,
+  }: {
+    onBackToSettings: () => void;
+    onOpenLicenseDetail: (license: { id: string; name: string }) => void;
+  }) => {
     const { Pressable, Text } = require('react-native');
 
     return (
-      <Pressable accessibilityLabel="ライセンス画面を閉じる" onPress={onBackToSettings}>
-        <Text>戻る</Text>
+      <>
+        <Pressable accessibilityLabel="設定画面へ戻る" onPress={onBackToSettings}>
+          <Text>設定</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="react のライセンス詳細を開く" onPress={() => onOpenLicenseDetail({ id: 'react@19.1.0', name: 'react' })}>
+          <Text>react</Text>
+        </Pressable>
+      </>
+    );
+  },
+  LicenseDetailScreen: ({ onBackToLicenseList }: { onBackToLicenseList: () => void }) => {
+    const { Pressable, Text } = require('react-native');
+
+    return (
+      <Pressable accessibilityLabel="ライセンス一覧へ戻る" onPress={onBackToLicenseList}>
+        <Text>ライセンス</Text>
       </Pressable>
     );
   },
@@ -303,6 +329,8 @@ describe('App 地図復帰時の表示範囲復元', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockLatestSettingsScreenProps = null;
+    mockLatestMapScreenProps = null;
+    mockLatestMonthlyReportScreenProps = null;
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -419,7 +447,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
   });
 
-  test('設定画面からOSSライセンス画面を開き、戻ると設定画面へ戻る', async () => {
+  test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);
     });
@@ -435,11 +463,53 @@ describe('App 地図復帰時の表示範囲復元', () => {
       renderer.root.findByProps({ accessibilityLabel: 'OSSライセンス' }).props.onPress();
     });
 
+    expect(renderer.root.findByProps({ accessibilityLabel: 'OSSライセンス' })).toBeTruthy();
+
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'ライセンス画面を閉じる' }).props.onPress();
+      renderer.root.findByProps({ accessibilityLabel: 'react のライセンス詳細を開く' }).props.onPress();
+    });
+
+    expect(renderer.root.findByProps({ accessibilityLabel: 'react のライセンス詳細を開く' })).toBeTruthy();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'ライセンス一覧へ戻る' }).props.onPress();
+    });
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定画面へ戻る' }).props.onPress();
     });
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
+  });
+
+  test('テーマ設定を変更するとOS設定ではなく保存したテーマを地図と月次レポートへ渡す', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      await mockLatestSettingsScreenProps.onUpdateAppThemePreference('dark');
+    });
+    await flushPromises();
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onBackToMap();
+    });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.theme.name).toBe('dark');
+
+    await act(async () => {
+      mockLatestMapScreenProps.onOpenMonthlyReport();
+    });
+    await flushPromises();
+
+    expect(mockLatestMonthlyReportScreenProps.theme.name).toBe('dark');
   });
 
   test('Plus未加入時に有料現在地アイコンを選ぶとPaywallを表示してPlus状態を再取得する', async () => {

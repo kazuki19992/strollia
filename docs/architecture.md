@@ -20,6 +20,7 @@ Strollia は Expo + React Native + TypeScript で実装する。
 | バックグラウンドタスク | `expo-task-manager` | バックグラウンドGPS記録 |
 | 画面ON維持 | `expo-keep-awake` | フォアグラウンド時の画面ロック抑止 |
 | 写真 | `expo-media-library` | 将来の写真ジオタグ表示 |
+| 子ページ遷移 | `@react-navigation/native-stack` | iOS風の横スライド遷移と戻りジェスチャ |
 | OSSライセンス生成 | `license-checker-rseidelsohn` | npm依存のライセンス一覧生成 |
 
 ## 3. ディレクトリ構成案
@@ -150,14 +151,22 @@ flowchart TD
 
 設定画面からOSSライセンス画面を開き、アプリで利用しているOSSのライセンスを確認できるようにする。
 ライセンス画面は設定画面と同じ戻るボタンのテイストを使い、設定画面へ戻る導線は「設定」と表示する。
-一覧はカード型ではなくライブラリ名だけを並べるリスト型UIにし、項目をタップすると全画面ダイアログでライセンス詳細を表示する。
-詳細画面の閉じるボタンはライブラリ一覧へ戻る。
+一覧はカード型ではなくライブラリ名だけを並べるリスト型UIにし、項目をタップすると通常の画面遷移でライセンス詳細を表示する。
+詳細画面は通常の画面遷移として扱い、戻るボタンのラベルを「ライセンス」にしてライブラリ一覧へ戻る。
 
 ライセンス一覧は実行時に `node_modules` やnative projectを探索せず、`npm run generate:licenses` で `src/app/generated/ossLicenses.ts` へ静的生成する。npm依存の収集には `license-checker-rseidelsohn` を使い、ライセンス名、リポジトリ、ライセンス本文、NOTICE本文を保存する。依存関係を追加・更新した場合は、ライセンス一覧も再生成する。
 
 Expo managed checkoutでは `ios/` や `android/` が存在しない場合がある。その場合はnpm依存のみを生成対象にする。`ios/Pods/Target Support Files/**/**-acknowledgements.plist` が存在するprebuild/build環境では、CocoaPodsが生成するAcknowledgements plistも読み込み、iOS native依存のライセンスも同じ画面に統合する。
 
-## 9. 将来の拡張余地
+## 9. 子ページ遷移
+
+地図画面と各トップ画面の行き来を除き、アプリ内の子ページ遷移は共通の横スライドにする。
+親ページから子ページへ進む場合は右端から子ページが重なるように表示し、戻る場合は上に乗っている子ページを避けるようにして親ページへ戻る。
+子ページではiOS風の左端スワイプ戻りをサポートし、スワイプ中の画面は指の動きに追従する。
+
+この挙動は独自のジェスチャ実装ではなく、React Navigationのnative stackを使って実現する。
+
+## 10. 将来の拡張余地
 
 将来的に以下を追加しやすいようにする。
 
@@ -168,7 +177,7 @@ Expo managed checkoutでは `ios/` や `android/` が存在しない場合があ
 - 写真ジオタグ表示
 - 独自バックアップ形式
 
-## 9. バックグラウンド記録方針
+## 11. バックグラウンド記録方針
 
 バックグラウンド記録は `expo-location` の `startLocationUpdatesAsync` と `expo-task-manager` の `defineTask` を使用する。
 

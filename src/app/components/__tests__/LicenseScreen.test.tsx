@@ -1,7 +1,8 @@
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
-import { LicenseScreen } from '../LicenseScreen';
+import { LicenseDetailScreen, LicenseScreen } from '../LicenseScreen';
+import { OSS_LICENSES } from '../../generated/ossLicenses';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -45,6 +46,11 @@ const styles = new Proxy(
   },
 );
 
+/** テスト用にstyle配列を単一オブジェクトへ畳み込む。 */
+function flattenStyle(style: unknown): Record<string, unknown> {
+  return (StyleSheet.flatten(style as never) ?? {}) as Record<string, unknown>;
+}
+
 describe('ライセンス画面 LicenseScreen', () => {
   let renderer: any;
 
@@ -64,7 +70,7 @@ describe('ライセンス画面 LicenseScreen', () => {
 
   test('生成済みOSSライセンスをライブラリ名だけのリストで表示する', () => {
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} />);
+      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
@@ -77,14 +83,27 @@ describe('ライセンス画面 LicenseScreen', () => {
     expect(texts).not.toContain('MIT License text');
   });
 
+  test('画面タイトルは中央配置の共通ヘッダーで表示する', () => {
+    const realStyles = require('../../appStyles').createStyles(lightTheme);
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
+    });
+
+    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'ライセンス');
+
+    expect(flattenStyle(title?.props.style).position).toBe('absolute');
+    expect(flattenStyle(title?.props.style).textAlign).toBe('center');
+  });
+
   test('設定ボタンで設定画面に戻る', () => {
     const onBackToSettings = jest.fn();
 
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={onBackToSettings} />);
+      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />);
     });
 
-    const backButton = renderer.root.findByProps({ accessibilityLabel: '設定画面へ戻る' });
+    const backButton = renderer.root.findByProps({ accessibilityLabel: '設定へ戻る' });
 
     act(() => {
       backButton.props.onPress();
@@ -93,9 +112,11 @@ describe('ライセンス画面 LicenseScreen', () => {
     expect(onBackToSettings).toHaveBeenCalledTimes(1);
   });
 
-  test('リスト項目をタップすると全画面詳細を開き、閉じると一覧に戻る', () => {
+  test('リスト項目をタップすると選択したライセンス詳細へ遷移する', () => {
+    const onOpenLicenseDetail = jest.fn();
+
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} />);
+      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={onOpenLicenseDetail} />);
     });
 
     const reactRow = renderer.root.findByProps({ accessibilityLabel: 'react のライセンス詳細を開く' });
@@ -104,23 +125,29 @@ describe('ライセンス画面 LicenseScreen', () => {
       reactRow.props.onPress();
     });
 
-    let texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(onOpenLicenseDetail).toHaveBeenCalledWith(OSS_LICENSES[0]);
+  });
 
+  test('ライセンス詳細からライセンス一覧へ戻れる', () => {
+    const onBackToLicenseList = jest.fn();
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<LicenseDetailScreen license={OSS_LICENSES[0]} styles={styles as never} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('react');
     expect(texts).toContain('19.1.0');
     expect(texts).toContain('MIT');
     expect(texts).toContain('https://github.com/facebook/react');
     expect(texts).toContain('MIT License text');
 
-    const closeButton = renderer.root.findByProps({ accessibilityLabel: 'ライセンス詳細を閉じる' });
+    const backButton = renderer.root.findByProps({ accessibilityLabel: 'ライセンスへ戻る' });
 
     act(() => {
-      closeButton.props.onPress();
+      backButton.props.onPress();
     });
 
-    texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-
-    expect(texts).toContain('react');
-    expect(texts).not.toContain('MIT License text');
+    expect(onBackToLicenseList).toHaveBeenCalledTimes(1);
   });
 });

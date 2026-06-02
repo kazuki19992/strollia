@@ -1,5 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
+import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -81,7 +83,8 @@ import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementListScreen } from './components/AchievementListScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
-import { LicenseScreen } from './components/LicenseScreen';
+import { LicenseDetailScreen, LicenseScreen } from './components/LicenseScreen';
+import type { OssLicenseEntry } from './generated/ossLicenses';
 import { MapScreen } from './components/MapScreen';
 import { PhotoPreviewModals } from './components/PhotoPreviewModals';
 import { MonthlyReportScreen } from './components/reports/MonthlyReportScreen';
@@ -118,6 +121,14 @@ const THEME_TRANSITION_FADE_OUT_MS = 110;
 const THEME_TRANSITION_FADE_IN_MS = 170;
 /** テーマ切り替え中に残す画面の不透明度。 */
 const THEME_TRANSITION_DIMMED_OPACITY = 0.52;
+
+type SettingsStackParamList = {
+  SettingsHome: undefined;
+  LicenseList: undefined;
+  LicenseDetail: { license: OssLicenseEntry };
+};
+
+const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 /** 新規visited cellを塗るときのフェード時間。 */
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
@@ -810,11 +821,6 @@ export default function App() {
     navigateToScreen('settings');
   }
 
-  /** OSSライセンス画面へ移動する。 */
-  function openLicenseScreen(): void {
-    navigateToScreen('license');
-  }
-
   /**
    * 標準地図とラベル付き航空写真を切り替える。
    *
@@ -1053,52 +1059,88 @@ export default function App() {
             />
           )}
           {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
-          {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} onBackToMap={openMap} />}
+          {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} theme={theme} onBackToMap={openMap} />}
           {screenMode === 'settings' && (
-            <SettingsScreen
-              styles={styles}
-              theme={theme}
-              isRecording={isRecording}
-              autoStartStatus={autoStartStatus}
-              hasRequiredPermission={hasRequiredPermission}
-              shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
-              keepScreenAwake={keepScreenAwake}
-              appThemePreference={appThemePreference}
-              mapType={mapType}
-              showPhotosOnMap={showPhotosOnMap}
-              isUpdatingPhotoSetting={isUpdatingPhotoSetting}
-              isImportingGpx={isImportingGpx}
-              premiumAccessState={premiumAccessState}
-              premiumOfferingSummary={premiumOfferingSummary}
-              isLoadingPremiumOffering={isLoadingPremiumOffering}
-              isPresentingPremiumPaywall={isPresentingPremiumPaywall}
-              isRestoringPremiumPurchases={isRestoringPremiumPurchases}
-              selectedUserLocationIconId={selectedUserLocationIconId}
-              onBackToMap={openMap}
-              onStartRecording={() => startRecording('manual')}
-              onRequestLocationPermission={requestLocationPermission}
-              onUpdateKeepScreenAwake={updateKeepScreenAwake}
-              onUpdateAppThemePreference={updateAppThemePreference}
-              onToggleMapType={toggleMapType}
-              onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-              onUpdateUserLocationIcon={updateUserLocationIcon}
-              onOpenLicenseScreen={openLicenseScreen}
-              onPresentPremiumPaywall={() => {
-                openPremiumPaywall().catch((error: unknown) => {
-                  console.warn('Failed to open premium paywall:', error);
-                });
-              }}
-              onRestorePremiumPurchases={() => {
-                restorePurchasesFromSettings().catch((error: unknown) => {
-                  console.warn('Failed to restore premium purchases:', error);
-                });
-              }}
-              onExportAllLogs={exportAllLogs}
-              onImportGpx={importGpx}
-              onDeleteAllData={deleteAllData}
-            />
+            <NavigationIndependentTree>
+              <NavigationContainer>
+                <SettingsStack.Navigator
+                  initialRouteName="SettingsHome"
+                  screenOptions={{
+                    animation: 'slide_from_right',
+                    gestureEnabled: true,
+                    headerShown: false,
+                  }}
+                >
+                  <SettingsStack.Screen name="SettingsHome">
+                    {({ navigation }) => (
+                      <SettingsScreen
+                        styles={styles}
+                        theme={theme}
+                        isRecording={isRecording}
+                        autoStartStatus={autoStartStatus}
+                        hasRequiredPermission={hasRequiredPermission}
+                        shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+                        keepScreenAwake={keepScreenAwake}
+                        appThemePreference={appThemePreference}
+                        mapType={mapType}
+                        showPhotosOnMap={showPhotosOnMap}
+                        isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+                        isImportingGpx={isImportingGpx}
+                        premiumAccessState={premiumAccessState}
+                        premiumOfferingSummary={premiumOfferingSummary}
+                        isLoadingPremiumOffering={isLoadingPremiumOffering}
+                        isPresentingPremiumPaywall={isPresentingPremiumPaywall}
+                        isRestoringPremiumPurchases={isRestoringPremiumPurchases}
+                        selectedUserLocationIconId={selectedUserLocationIconId}
+                        onBackToMap={openMap}
+                        onStartRecording={() => startRecording('manual')}
+                        onRequestLocationPermission={requestLocationPermission}
+                        onUpdateKeepScreenAwake={updateKeepScreenAwake}
+                        onUpdateAppThemePreference={updateAppThemePreference}
+                        onToggleMapType={toggleMapType}
+                        onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+                        onUpdateUserLocationIcon={updateUserLocationIcon}
+                        onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
+                        onPresentPremiumPaywall={() => {
+                          openPremiumPaywall().catch((error: unknown) => {
+                            console.warn('Failed to open premium paywall:', error);
+                          });
+                        }}
+                        onRestorePremiumPurchases={() => {
+                          restorePurchasesFromSettings().catch((error: unknown) => {
+                            console.warn('Failed to restore premium purchases:', error);
+                          });
+                        }}
+                        onExportAllLogs={exportAllLogs}
+                        onImportGpx={importGpx}
+                        onDeleteAllData={deleteAllData}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                  <SettingsStack.Screen name="LicenseList">
+                    {({ navigation }) => (
+                      <LicenseScreen
+                        styles={styles}
+                        theme={theme}
+                        onBackToSettings={() => navigation.goBack()}
+                        onOpenLicenseDetail={(license) => navigation.navigate('LicenseDetail', { license })}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                  <SettingsStack.Screen name="LicenseDetail">
+                    {({ navigation, route }) => (
+                      <LicenseDetailScreen
+                        license={route.params.license}
+                        styles={styles}
+                        theme={theme}
+                        onBackToLicenseList={() => navigation.goBack()}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                </SettingsStack.Navigator>
+              </NavigationContainer>
+            </NavigationIndependentTree>
           )}
-          {screenMode === 'license' && <LicenseScreen styles={styles} theme={theme} onBackToSettings={openSettings} />}
         </Animated.View>
       </Animated.View>
 

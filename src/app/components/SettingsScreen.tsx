@@ -1,6 +1,6 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import type { ComponentProps, ReactNode } from 'react';
-import { Alert, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
+import type { ComponentProps } from 'react';
+import { Alert, Image, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
 
 import {
@@ -11,6 +11,14 @@ import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../feat
 import { AppTheme, AppThemePreference } from '../../theme/theme';
 import { AutoStartStatus } from '../appTypes';
 import { AppStyles } from '../appStyles';
+import {
+  SettingsActionPill,
+  SettingsInfoBlock,
+  SettingsOptionGroup,
+  SettingsSection,
+  SettingsScreenHeader,
+  SettingsSelectionTile,
+} from './SettingsControls';
 
 /** 設定画面のprops。 */
 export type SettingsScreenProps = {
@@ -82,6 +90,11 @@ export type SettingsScreenProps = {
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
+/** OSに合わせたサブスク管理先のストア名を返す。 */
+export function getSubscriptionStoreName(platformOS: typeof Platform.OS): string {
+  return platformOS === 'android' ? 'Playストア' : 'App Store';
+}
+
 /** 設定画面をデザイン案の大きなパネルと選択タイルで描画する。 */
 export function SettingsScreen({
   styles,
@@ -117,17 +130,11 @@ export function SettingsScreen({
   onDeleteAllData,
 }: SettingsScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
+  const subscriptionDescription = isPlusActive ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。` : undefined;
 
   return (
     <SafeAreaView style={styles.settingsScreen}>
-      <View style={styles.settingsHeader}>
-        <Pressable accessibilityRole="button" onPress={onBackToMap} style={styles.settingsBackRibbon}>
-          <Feather name="chevron-left" size={22} color={theme.name === 'dark' ? '#333333' : theme.colors.text} />
-          <Text style={styles.settingsBackRibbonText}>地図</Text>
-        </Pressable>
-        <Text style={styles.settingsHeaderTitle}>設定</Text>
-        <View style={styles.settingsHeaderSpacer} />
-      </View>
+      <SettingsScreenHeader backLabel="地図" styles={styles} theme={theme} title="設定" onBack={onBackToMap} />
 
       <ScrollView contentContainerStyle={styles.settingsList}>
         <GpsStatusPanel
@@ -144,7 +151,7 @@ export function SettingsScreen({
           <View style={styles.settingsInlineRow}>
             <View style={styles.settingsInlineText}>
               <Text style={styles.settingsItemTitle}>常に画面をONにする</Text>
-              <Text style={styles.settingsItemDescription}>アプリが前面にある場合は画面をロックしません。記録の精度があがる可能性がありますが、消費電力が増えます。</Text>
+              <Text style={styles.settingsItemDescription}>{'アプリが前面にある場合は画面をロックしません。\n記録の精度があがる可能性がありますが、消費電力が増えます。'}</Text>
             </View>
             <Switch
               value={keepScreenAwake}
@@ -158,10 +165,10 @@ export function SettingsScreen({
             />
           </View>
 
-          <OptionGroup note={`設定中: ${getAppThemePreferenceLabel(appThemePreference)}`} styles={styles} title="画面のテーマ">
-            <SelectionTile
+          <SettingsOptionGroup styles={styles} title="画面のテーマ">
+            <SettingsSelectionTile
               isSelected={appThemePreference === 'system'}
-              label="スマホの設定に合わせる"
+              label={'スマホの設定に\n合わせる'}
               styles={styles}
               onPress={() => {
                 onUpdateAppThemePreference('system').catch((error: unknown) => {
@@ -169,7 +176,7 @@ export function SettingsScreen({
                 });
               }}
             />
-            <SelectionTile
+            <SettingsSelectionTile
               isSelected={appThemePreference === 'light'}
               label="いつもライト"
               styles={styles}
@@ -180,7 +187,7 @@ export function SettingsScreen({
                 });
               }}
             />
-            <SelectionTile
+            <SettingsSelectionTile
               isSelected={appThemePreference === 'dark'}
               label="いつもダーク"
               styles={styles}
@@ -191,14 +198,14 @@ export function SettingsScreen({
                 });
               }}
             />
-          </OptionGroup>
+          </SettingsOptionGroup>
         </SettingsSection>
 
         <SettingsSection styles={styles} title="地図画面設定">
           <View style={styles.settingsInlineRow}>
             <View style={styles.settingsInlineText}>
               <Text style={styles.settingsItemTitle}>マップ上に写真を表示する</Text>
-              <Text style={styles.settingsItemDescription}>位置情報が記録されている写真をマップ上に表示します。初回ON時に写真ライブラリのフルアクセスを要求します。</Text>
+              <Text style={styles.settingsItemDescription}>{'位置情報が記録されている写真をマップ上に表示します。\n初回ON時に写真ライブラリのフルアクセスを要求します。'}</Text>
             </View>
             <Switch
               value={showPhotosOnMap}
@@ -213,8 +220,8 @@ export function SettingsScreen({
             />
           </View>
 
-          <OptionGroup note={mapType === 'standard' ? '設定中: 標準マップ' : '設定中: 航空写真'} styles={styles} title="マップのテーマ">
-            <SelectionTile
+          <SettingsOptionGroup styles={styles} title="マップのテーマ">
+            <SettingsSelectionTile
               icon={<MaterialCommunityIcons name="map-outline" size={42} color={theme.colors.text} />}
               isSelected={mapType === 'standard'}
               label="標準マップ"
@@ -226,7 +233,7 @@ export function SettingsScreen({
               styles={styles}
               wide
             />
-            <SelectionTile
+            <SettingsSelectionTile
               icon={<MaterialCommunityIcons name="satellite-variant" size={42} color={theme.colors.text} />}
               isSelected={mapType !== 'standard'}
               label="航空写真"
@@ -238,64 +245,111 @@ export function SettingsScreen({
               styles={styles}
               wide
             />
-          </OptionGroup>
+          </SettingsOptionGroup>
 
-          <UserLocationIconPicker
-            isPlusActive={isPlusActive}
-            selectedUserLocationIconId={selectedUserLocationIconId}
-            styles={styles}
-            theme={theme}
-            onUpdateUserLocationIcon={onUpdateUserLocationIcon}
-          />
+          {isPlusActive ? (
+            <UserLocationIconPicker
+              isPlusActive={isPlusActive}
+              selectedUserLocationIconId={selectedUserLocationIconId}
+              styles={styles}
+              theme={theme}
+              onUpdateUserLocationIcon={onUpdateUserLocationIcon}
+            />
+          ) : null}
         </SettingsSection>
 
         <SettingsSection styles={styles} title="サブスク情報">
           <View style={styles.settingsSubscriptionRow}>
             <View style={styles.settingsInlineText}>
               <Text style={styles.settingsItemTitle}>ステータス</Text>
-              <Text style={styles.settingsItemDescription}>
-                {isPlusActive ? '退会する場合はストア名のサブスク設定から行ってください。' : 'Strollia Plusで現在地アイコンとレポート機能を開放できます。'}
-              </Text>
+              {subscriptionDescription ? <Text style={styles.settingsItemDescription}>{subscriptionDescription}</Text> : null}
             </View>
-            {isPlusActive ? <Text style={styles.settingsPlusBadge}>Plusユーザー</Text> : null}
+            <Text style={[styles.settingsPlusBadge, !isPlusActive && styles.settingsFreeBadge]}>{isPlusActive ? 'Plusユーザー' : '一般ユーザー'}</Text>
           </View>
           {!isPlusActive && (
             <View style={styles.settingsSubscriptionActions}>
-              <Pressable
+              <SettingsInfoBlock
+                description="月額300円の有料サービスです。年払いにすると1か月分オトクです!"
+                styles={styles}
+                title="Strollia Plus(有料サブスクリプション)のごあんない"
+              />
+              <Image
+                accessibilityLabel="Strollia Plusの機能比較広告"
+                resizeMode="contain"
+                source={require('../../../assets/ad/plus-ad.png')}
+                style={styles.settingsPlusAdImage}
+              />
+              <SettingsActionPill
+                alignLeft
+                backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
+                borderColor={theme.colors.primary}
                 disabled={isPresentingPremiumPaywall}
+                icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
+                label={isPresentingPremiumPaywall ? '表示中...' : '月払い(300円)ではじめる！'}
+                styles={styles}
+                textColor={theme.colors.primary}
                 onPress={onPresentPremiumPaywall}
-                style={[styles.settingsSubscribeButton, isPresentingPremiumPaywall && styles.buttonDisabled]}
-              >
-                <Text style={styles.settingsSubscribeButtonText}>{isPresentingPremiumPaywall ? '表示中...' : '加入する'}</Text>
-              </Pressable>
-              <Pressable
+              />
+              <SettingsActionPill
+                alignLeft
+                backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
+                borderColor={theme.colors.primary}
+                disabled={isPresentingPremiumPaywall}
+                icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
+                label={isPresentingPremiumPaywall ? '表示中...' : '年払い(3300円)ではじめる！'}
+                styles={styles}
+                textColor={theme.colors.primary}
+                onPress={onPresentPremiumPaywall}
+              />
+              <SettingsActionPill
+                alignLeft
                 disabled={isRestoringPremiumPurchases}
+                icon={<MaterialCommunityIcons name="restore" size={24} color={theme.colors.text} />}
+                label={isRestoringPremiumPurchases ? '復元中...' : 'Strollia Plusの購入を復元する'}
+                styles={styles}
                 onPress={onRestorePremiumPurchases}
-                style={[styles.settingsRestoreButton, isRestoringPremiumPurchases && styles.buttonDisabled]}
-              >
-                <Text style={styles.settingsRestoreButtonText}>{isRestoringPremiumPurchases ? '復元中...' : 'サブスクを復元する'}</Text>
-              </Pressable>
+              />
               {isLoadingPremiumOffering && <Text style={styles.settingsItemDescription}>商品情報を確認しています...</Text>}
             </View>
           )}
         </SettingsSection>
 
         <SettingsSection styles={styles} title="データ管理">
-          <ActionPill description="GPSログのバックアップや他アプリ連携に使います" label="GPXのエクスポート" styles={styles} onPress={onExportAllLogs} />
-          <ActionPill
-            description="データが競合する場合は既存データを優先します"
+          <SettingsInfoBlock
+            description={'GPSログファイルの一般的な規格のGPXファイルでエクスポート/インポートが可能です。\nインポート時にデータが競合する場合は既存データを優先します。'}
+            styles={styles}
+            title="GPXファイル"
+          />
+          <SettingsActionPill
+            alignLeft
+            icon={<Feather name="upload" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="GPXファイルのエクスポート"
+            styles={styles}
+            onPress={onExportAllLogs}
+          />
+          <SettingsActionPill
+            alignLeft
             disabled={isImportingGpx}
-            label={isImportingGpx ? 'GPXインポート中...' : 'GPXのインポート'}
+            icon={<Feather name="download" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label={isImportingGpx ? 'GPXインポート中...' : 'GPXファイルのインポート'}
             styles={styles}
             onPress={onImportGpx}
           />
-          <ActionPill danger description="GPS記録や実績などのすべてのデータを削除します" label="すべてのデータの削除" styles={styles} onPress={onDeleteAllData} />
+          <SettingsInfoBlock description="GPS記録や実績を含むすべてのデータを削除します。" styles={styles} title="データの削除" />
+          <SettingsActionPill
+            alignLeft
+            danger
+            icon={<Feather name="trash-2" size={16} color={theme.name === 'dark' ? theme.colors.danger : '#b0002f'} />}
+            label="すべてのデータの削除"
+            styles={styles}
+            onPress={onDeleteAllData}
+          />
         </SettingsSection>
 
         <SettingsSection styles={styles} title="アプリ情報">
-          <ActionPill
+          <SettingsActionPill
             alignLeft
-            icon={<Feather name="file-text" size={24} color={theme.name === 'dark' ? '#333333' : '#ffffff'} />}
+            icon={<Feather name="file-text" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
             label="オープンソースライセンス"
             styles={styles}
             onPress={onOpenLicenseScreen}
@@ -311,18 +365,6 @@ type GpsStatusPanelProps = Pick<
   'styles' | 'isRecording' | 'autoStartStatus' | 'hasRequiredPermission' | 'shouldOpenSettingsForPermission' | 'onRequestLocationPermission' | 'onStartRecording'
 >;
 
-/** テーマ設定IDを設定画面の表示名へ変換する。 */
-function getAppThemePreferenceLabel(preference: AppThemePreference): string {
-  switch (preference) {
-    case 'system':
-      return 'スマホの設定に合わせる';
-    case 'light':
-      return 'いつもライト';
-    case 'dark':
-      return 'いつもダーク';
-  }
-}
-
 /** GPS権限と自動記録状態を、3種類の目立つパネルへ変換する。 */
 function GpsStatusPanel({
   styles,
@@ -335,7 +377,7 @@ function GpsStatusPanel({
 }: GpsStatusPanelProps) {
   if (!hasRequiredPermission) {
     return (
-      <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelDanger]}>
+      <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelDanger]}>
         <Text style={styles.settingsGpsPanelTitle}>GPSの権限をください!</Text>
         <Text style={styles.settingsGpsPanelText}>GPS権限がありません! 記録を始めるにはボタンをタップ!</Text>
         <Pressable accessibilityRole="button" onPress={onRequestLocationPermission} style={styles.settingsGpsPanelButton}>
@@ -347,7 +389,7 @@ function GpsStatusPanel({
 
   if (!isRecording && autoStartStatus === 'failed') {
     return (
-      <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWarning]}>
+      <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelWarning]}>
         <Text style={styles.settingsGpsPanelTitle}>冒険をはじめましょう!</Text>
         <Text style={styles.settingsGpsPanelText}>ボタンを押して記録をはじめましょう!</Text>
         <Pressable accessibilityRole="button" onPress={onStartRecording} style={styles.settingsGpsPanelButton}>
@@ -360,84 +402,8 @@ function GpsStatusPanel({
   return (
     <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelActive]}>
       <Text style={styles.settingsGpsPanelTitle}>GPS記録中!</Text>
-      <Text style={styles.settingsGpsPanelText}>あなたの位置情報はすとろりあがしっかりと記録しています! 冒険にでかけましょう!</Text>
+      <Text style={styles.settingsGpsPanelText}>{'あなたの位置情報はすとろりあがしっかりと記録しています！\n冒険にでかけましょう！'}</Text>
     </View>
-  );
-}
-
-type SettingsSectionProps = {
-  /** 子要素。 */
-  children: ReactNode;
-  /** 画面共通スタイル。 */
-  styles: AppStyles;
-  /** セクション見出し。 */
-  title: string;
-};
-
-/** 設定画面の見出しと中身をまとめる。 */
-function SettingsSection({ children, styles, title }: SettingsSectionProps) {
-  return (
-    <View style={styles.settingsSection}>
-      <Text style={styles.settingsSectionTitle}>{title}</Text>
-      <View style={styles.settingsSectionBody}>{children}</View>
-    </View>
-  );
-}
-
-type OptionGroupProps = {
-  /** 子要素。 */
-  children: ReactNode;
-  /** 現在設定メモ。 */
-  note?: string;
-  /** 画面共通スタイル。 */
-  styles: AppStyles;
-  /** グループ見出し。 */
-  title: string;
-};
-
-/** 選択タイルの見出しと注釈を描画する。 */
-function OptionGroup({ children, note, styles, title }: OptionGroupProps) {
-  return (
-    <View style={styles.settingsOptionGroup}>
-      <View style={styles.settingsOptionHeader}>
-        <Text style={styles.settingsItemTitle}>{title}</Text>
-        {note ? <Text style={styles.settingsOptionNote}>{note}</Text> : null}
-      </View>
-      <View style={styles.settingsOptionGrid}>{children}</View>
-    </View>
-  );
-}
-
-type SelectionTileProps = {
-  /** アイコン表示。 */
-  icon?: ReactNode;
-  /** 選択中かどうか。 */
-  isSelected?: boolean;
-  /** 表示名。 */
-  label: string;
-  /** 押下処理。 */
-  onPress?: () => void;
-  /** 画面共通スタイル。 */
-  styles: AppStyles;
-  /** 色見本。 */
-  swatchColor?: string;
-  /** 2列幅にするか。 */
-  wide?: boolean;
-};
-
-/** デザイン案の枠線付き選択ボタン。 */
-function SelectionTile({ icon, isSelected = false, label, onPress, styles, swatchColor, wide = false }: SelectionTileProps) {
-  return (
-    <Pressable
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      disabled={!onPress}
-      onPress={onPress}
-      style={[styles.settingsSelectionTile, wide && styles.settingsSelectionTileWide, isSelected && styles.settingsSelectionTileSelected]}
-    >
-      {swatchColor ? <View style={[styles.settingsThemeSwatch, { backgroundColor: swatchColor }]} /> : icon}
-      <Text style={styles.settingsSelectionTileText}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -449,14 +415,14 @@ type UserLocationIconPickerProps = Pick<SettingsScreenProps, 'styles' | 'theme' 
 /** 現在地アイコンの選択ボタン一覧を描画する。 */
 function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isPlusActive, onUpdateUserLocationIcon }: UserLocationIconPickerProps) {
   return (
-    <OptionGroup note={`設定中: ${USER_LOCATION_ICON_OPTIONS.find((option) => option.id === selectedUserLocationIconId)?.label ?? 'OS標準'}`} styles={styles} title="現在地アイコン (Strollia Plus)">
+    <SettingsOptionGroup styles={styles} title="現在地アイコン (Strollia Plus)">
       {USER_LOCATION_ICON_OPTIONS.map((option) => {
         const isSelected = selectedUserLocationIconId === option.id;
         const isLocked = option.premium && !isPlusActive;
         const iconName: MaterialIconName = option.id === 'compass' ? 'compass-outline' : option.id === 'walker' ? 'walk' : 'crosshairs-gps';
 
         return (
-          <SelectionTile
+          <SettingsSelectionTile
             key={option.id}
             icon={
               <View style={styles.settingsIconTileContent}>
@@ -471,48 +437,6 @@ function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isP
           />
         );
       })}
-    </OptionGroup>
-  );
-}
-
-type ActionPillProps = {
-  /** 内容を左寄せするか。 */
-  alignLeft?: boolean;
-  /** 危険操作かどうか。 */
-  danger?: boolean;
-  /** 補足説明。 */
-  description?: string;
-  /** 無効化するか。 */
-  disabled?: boolean;
-  /** 左側アイコン。 */
-  icon?: ReactNode;
-  /** 表示名。 */
-  label: string;
-  /** 画面共通スタイル。 */
-  styles: AppStyles;
-  /** 押下処理。 */
-  onPress: () => void;
-};
-
-/** データ管理とアプリ情報で使う横長ピルボタン。 */
-function ActionPill({ alignLeft = false, danger = false, description, disabled = false, icon, label, styles, onPress }: ActionPillProps) {
-  return (
-    <Pressable
-      disabled={disabled}
-      onPress={onPress}
-      style={[
-        styles.settingsActionPill,
-        !description && styles.settingsActionPillCompact,
-        danger && styles.settingsActionPillDanger,
-        alignLeft && styles.settingsActionPillLeft,
-        disabled && styles.buttonDisabled,
-      ]}
-    >
-      <View style={[styles.settingsActionPillContent, alignLeft && styles.settingsActionPillContentLeft]}>
-        {icon}
-        <Text style={[styles.settingsActionPillText, danger && styles.settingsActionPillDangerText]}>{label}</Text>
-      </View>
-      {description ? <Text style={[styles.settingsActionPillDescription, danger && styles.settingsActionPillDescriptionDanger]}>{description}</Text> : null}
-    </Pressable>
+    </SettingsOptionGroup>
   );
 }

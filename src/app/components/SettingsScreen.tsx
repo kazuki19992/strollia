@@ -87,7 +87,12 @@ export type SettingsScreenProps = {
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
-/** OSに合わせたサブスク管理先のストア名を返す。 */
+/**
+ * OSに合わせたサブスク管理先のストア名を返す。
+ *
+ * @param platformOS - Platform.OSの値。
+ * @returns Androidは'Playストア'、その他は'App Store'。
+ */
 export function getSubscriptionStoreName(platformOS: typeof Platform.OS): string {
   return platformOS === 'android' ? 'Playストア' : 'App Store';
 }

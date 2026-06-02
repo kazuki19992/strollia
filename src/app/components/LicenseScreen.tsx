@@ -57,7 +57,11 @@ export type LicenseDetailScreenProps = {
   onBackToLicenseList: () => void;
 };
 
-/** ライセンス詳細画面を描画する。 */
+/**
+ * ライセンス詳細画面を描画する。
+ *
+ * @param props - {@link LicenseDetailScreenProps} を参照。
+ */
 export function LicenseDetailScreen({ license, styles, theme, onBackToLicenseList }: LicenseDetailScreenProps) {
   return (
     <SafeAreaView style={styles.settingsScreen}>

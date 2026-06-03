@@ -142,6 +142,7 @@ describe('ライセンス画面 LicenseScreen', () => {
     });
 
     const container = renderer.root.findByType(SafeAreaView);
+    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '詳細');
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('react');
     expect(texts).toContain('19.1.0');
@@ -156,6 +157,7 @@ describe('ライセンス画面 LicenseScreen', () => {
     });
 
     expect(container.props.style).toBe(realStyles.appScreen);
+    expect(flattenStyle(title?.props.style).position).toBe('absolute');
     expect(onBackToLicenseList).toHaveBeenCalledTimes(1);
   });
 });

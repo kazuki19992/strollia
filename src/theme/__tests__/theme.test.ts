@@ -1,6 +1,11 @@
 import { darkTheme, getAppTheme, isAppThemePreference, lightTheme } from '../theme';
 
 describe('テーマ選択 getAppTheme', () => {
+  it('画面のデフォルト背景は設定画面と同じニュートラルな背景色にする', () => {
+    expect(lightTheme.colors.background).toBe('#ffffff');
+    expect(darkTheme.colors.background).toBe('#202020');
+  });
+
   it('OSがダークモードでない場合はライトテーマを返す', () => {
     expect(getAppTheme('light')).toBe(lightTheme);
     expect(getAppTheme(null)).toBe(lightTheme);

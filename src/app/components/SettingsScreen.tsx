@@ -12,14 +12,12 @@ import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../feat
 import { AppTheme } from '../../theme/theme';
 import { AutoStartStatus } from '../appTypes';
 import { AppStyles } from '../appStyles';
-import {
-  SettingsActionPill,
-  SettingsInfoBlock,
-  SettingsOptionGroup,
-  SettingsSection,
-  SettingsScreenHeader,
-  SettingsSelectionTile,
-} from './SettingsControls';
+import { ActionPill } from './ActionPill';
+import { AppScreenHeader } from './AppScreenHeader';
+import { InfoBlock } from './InfoBlock';
+import { OptionGroup } from './OptionGroup';
+import { ScreenSection } from './ScreenSection';
+import { SelectionTile } from './SelectionTile';
 
 /** 設定画面のprops。 */
 export type SettingsScreenProps = {
@@ -133,10 +131,10 @@ export function SettingsScreen({
   const subscriptionDescription = isPlusActive ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。` : undefined;
 
   return (
-    <SafeAreaView style={styles.settingsScreen}>
-      <SettingsScreenHeader backLabel="地図" styles={styles} theme={theme} title="設定" onBack={onBackToMap} />
+    <SafeAreaView style={styles.appScreen}>
+      <AppScreenHeader backLabel="地図" styles={styles} theme={theme} title="設定" onBack={onBackToMap} />
 
-      <ScrollView contentContainerStyle={styles.settingsList}>
+      <ScrollView contentContainerStyle={styles.screenList}>
         <GpsStatusPanel
           autoStartStatus={autoStartStatus}
           hasRequiredPermission={hasRequiredPermission}
@@ -147,11 +145,11 @@ export function SettingsScreen({
           onStartRecording={onStartRecording}
         />
 
-        <SettingsSection styles={styles} title="一般">
+        <ScreenSection styles={styles} title="一般">
           <View style={styles.settingsInlineRow}>
             <View style={styles.settingsInlineText}>
-              <Text style={styles.settingsItemTitle}>常に画面をONにする</Text>
-              <Text style={styles.settingsItemDescription}>{'アプリが前面にある場合は画面をロックしません。\n記録の精度があがる可能性がありますが、消費電力が増えます。'}</Text>
+              <Text style={styles.formItemTitle}>常に画面をONにする</Text>
+              <Text style={styles.formItemDescription}>{'アプリが前面にある場合は画面をロックしません。\n記録の精度があがる可能性がありますが、消費電力が増えます。'}</Text>
             </View>
             <Switch
               value={keepScreenAwake}
@@ -165,13 +163,13 @@ export function SettingsScreen({
             />
           </View>
 
-        </SettingsSection>
+        </ScreenSection>
 
-        <SettingsSection styles={styles} title="地図画面設定">
+        <ScreenSection styles={styles} title="地図画面設定">
           <View style={styles.settingsInlineRow}>
             <View style={styles.settingsInlineText}>
-              <Text style={styles.settingsItemTitle}>マップ上に写真を表示する</Text>
-              <Text style={styles.settingsItemDescription}>{'位置情報が記録されている写真をマップ上に表示します。\n初回ON時に写真ライブラリのフルアクセスを要求します。'}</Text>
+              <Text style={styles.formItemTitle}>マップ上に写真を表示する</Text>
+              <Text style={styles.formItemDescription}>{'位置情報が記録されている写真をマップ上に表示します。\n初回ON時に写真ライブラリのフルアクセスを要求します。'}</Text>
             </View>
             <Switch
               value={showPhotosOnMap}
@@ -186,8 +184,8 @@ export function SettingsScreen({
             />
           </View>
 
-          <SettingsOptionGroup styles={styles} title="マップのテーマ">
-            <SettingsSelectionTile
+          <OptionGroup styles={styles} title="マップのテーマ">
+            <SelectionTile
               icon={<MaterialCommunityIcons name="map-outline" size={42} color={theme.colors.text} />}
               isSelected={mapType === 'standard'}
               label="標準マップ"
@@ -199,7 +197,7 @@ export function SettingsScreen({
               styles={styles}
               wide
             />
-            <SettingsSelectionTile
+            <SelectionTile
               icon={<MaterialCommunityIcons name="satellite-variant" size={42} color={theme.colors.text} />}
               isSelected={mapType !== 'standard'}
               label="航空写真"
@@ -211,7 +209,7 @@ export function SettingsScreen({
               styles={styles}
               wide
             />
-          </SettingsOptionGroup>
+          </OptionGroup>
 
           {isPlusActive ? (
             <UserLocationIconPicker
@@ -222,19 +220,19 @@ export function SettingsScreen({
               onUpdateUserLocationIcon={onUpdateUserLocationIcon}
             />
           ) : null}
-        </SettingsSection>
+        </ScreenSection>
 
-        <SettingsSection styles={styles} title="サブスク情報">
+        <ScreenSection styles={styles} title="サブスク情報">
           <View style={styles.settingsSubscriptionRow}>
             <View style={styles.settingsInlineText}>
-              <Text style={styles.settingsItemTitle}>ステータス</Text>
-              {subscriptionDescription ? <Text style={styles.settingsItemDescription}>{subscriptionDescription}</Text> : null}
+              <Text style={styles.formItemTitle}>ステータス</Text>
+              {subscriptionDescription ? <Text style={styles.formItemDescription}>{subscriptionDescription}</Text> : null}
             </View>
             <Text style={[styles.settingsPlusBadge, !isPlusActive && styles.settingsFreeBadge]}>{isPlusActive ? 'Plusユーザー' : '一般ユーザー'}</Text>
           </View>
           {!isPlusActive && (
             <View style={styles.settingsSubscriptionActions}>
-              <SettingsInfoBlock
+              <InfoBlock
                 description="月額300円の有料サービスです。年払いにすると1か月分オトクです!"
                 styles={styles}
                 title="Strollia Plus(有料サブスクリプション)のごあんない"
@@ -243,7 +241,7 @@ export function SettingsScreen({
                 accessibilityLabel="Strollia Plusの機能比較広告"
                 width="100%"
               />
-              <SettingsActionPill
+              <ActionPill
                 alignLeft
                 backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
                 borderColor={theme.colors.primary}
@@ -254,7 +252,7 @@ export function SettingsScreen({
                 textColor={theme.colors.primary}
                 onPress={onPresentPremiumPaywall}
               />
-              <SettingsActionPill
+              <ActionPill
                 alignLeft
                 backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
                 borderColor={theme.colors.primary}
@@ -265,7 +263,7 @@ export function SettingsScreen({
                 textColor={theme.colors.primary}
                 onPress={onPresentPremiumPaywall}
               />
-              <SettingsActionPill
+              <ActionPill
                 alignLeft
                 disabled={isRestoringPremiumPurchases}
                 icon={<MaterialCommunityIcons name="restore" size={24} color={theme.colors.text} />}
@@ -273,25 +271,25 @@ export function SettingsScreen({
                 styles={styles}
                 onPress={onRestorePremiumPurchases}
               />
-              {isLoadingPremiumOffering && <Text style={styles.settingsItemDescription}>商品情報を確認しています...</Text>}
+              {isLoadingPremiumOffering && <Text style={styles.formItemDescription}>商品情報を確認しています...</Text>}
             </View>
           )}
-        </SettingsSection>
+        </ScreenSection>
 
-        <SettingsSection styles={styles} title="データ管理">
-          <SettingsInfoBlock
+        <ScreenSection styles={styles} title="データ管理">
+          <InfoBlock
             description={'GPSログファイルの一般的な規格のGPXファイルでエクスポート/インポートが可能です。\nインポート時にデータが競合する場合は既存データを優先します。'}
             styles={styles}
             title="GPXファイル"
           />
-          <SettingsActionPill
+          <ActionPill
             alignLeft
             icon={<Feather name="upload" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
             label="GPXファイルのエクスポート"
             styles={styles}
             onPress={onExportAllLogs}
           />
-          <SettingsActionPill
+          <ActionPill
             alignLeft
             disabled={isImportingGpx}
             icon={<Feather name="download" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
@@ -299,8 +297,8 @@ export function SettingsScreen({
             styles={styles}
             onPress={onImportGpx}
           />
-          <SettingsInfoBlock description="GPS記録や実績を含むすべてのデータを削除します。" styles={styles} title="データの削除" />
-          <SettingsActionPill
+          <InfoBlock description="GPS記録や実績を含むすべてのデータを削除します。" styles={styles} title="データの削除" />
+          <ActionPill
             alignLeft
             danger
             icon={<Feather name="trash-2" size={16} color={theme.name === 'dark' ? theme.colors.danger : '#b0002f'} />}
@@ -308,17 +306,17 @@ export function SettingsScreen({
             styles={styles}
             onPress={onDeleteAllData}
           />
-        </SettingsSection>
+        </ScreenSection>
 
-        <SettingsSection styles={styles} title="アプリ情報">
-          <SettingsActionPill
+        <ScreenSection styles={styles} title="アプリ情報">
+          <ActionPill
             alignLeft
             icon={<Feather name="file-text" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
             label="オープンソースライセンス"
             styles={styles}
             onPress={onOpenLicenseScreen}
           />
-        </SettingsSection>
+        </ScreenSection>
       </ScrollView>
     </SafeAreaView>
   );
@@ -388,14 +386,14 @@ type UserLocationIconPickerProps = Pick<SettingsScreenProps, 'styles' | 'theme' 
 /** 現在地アイコンの選択ボタン一覧を描画する。 */
 function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isPlusActive, onUpdateUserLocationIcon }: UserLocationIconPickerProps) {
   return (
-    <SettingsOptionGroup styles={styles} title="現在地アイコン (Strollia Plus)">
+    <OptionGroup styles={styles} title="現在地アイコン (Strollia Plus)">
       {USER_LOCATION_ICON_OPTIONS.map((option) => {
         const isSelected = selectedUserLocationIconId === option.id;
         const isLocked = option.premium && !isPlusActive;
         const iconName: MaterialIconName = option.id === 'compass' ? 'compass-outline' : option.id === 'walker' ? 'walk' : 'crosshairs-gps';
 
         return (
-          <SettingsSelectionTile
+          <SelectionTile
             key={option.id}
             icon={
               <View style={styles.settingsIconTileContent}>
@@ -410,6 +408,6 @@ function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isP
           />
         );
       })}
-    </SettingsOptionGroup>
+    </OptionGroup>
   );
 }

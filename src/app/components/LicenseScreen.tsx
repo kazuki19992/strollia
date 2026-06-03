@@ -5,7 +5,7 @@ import { OSS_LICENSES } from '../generated/ossLicenses';
 import type { OssLicenseEntry } from '../generated/ossLicenses';
 import { AppStyles } from '../appStyles';
 import { AppTheme } from '../../theme/theme';
-import { SettingsScreenHeader } from './SettingsControls';
+import { AppScreenHeader } from './AppScreenHeader';
 
 /** ライセンス画面のprops。 */
 export type LicenseScreenProps = {
@@ -22,8 +22,8 @@ export type LicenseScreenProps = {
 /** 生成済みOSSライセンス一覧を表示する画面を描画する。 */
 export function LicenseScreen({ styles, theme, onBackToSettings, onOpenLicenseDetail }: LicenseScreenProps) {
   return (
-    <SafeAreaView style={styles.settingsScreen}>
-      <SettingsScreenHeader backLabel="設定" styles={styles} theme={theme} title="ライセンス" onBack={onBackToSettings} />
+    <SafeAreaView style={styles.appScreen}>
+      <AppScreenHeader backLabel="設定" styles={styles} theme={theme} title="ライセンス" onBack={onBackToSettings} />
 
       <FlatList
         data={OSS_LICENSES}
@@ -64,8 +64,8 @@ export type LicenseDetailScreenProps = {
  */
 export function LicenseDetailScreen({ license, styles, theme, onBackToLicenseList }: LicenseDetailScreenProps) {
   return (
-    <SafeAreaView style={styles.settingsScreen}>
-      <SettingsScreenHeader backLabel="ライセンス" styles={styles} theme={theme} title="詳細" onBack={onBackToLicenseList} />
+    <SafeAreaView style={styles.appScreen}>
+      <AppScreenHeader backLabel="ライセンス" styles={styles} theme={theme} title="詳細" onBack={onBackToLicenseList} />
 
       <ScrollView contentContainerStyle={styles.licenseDetail}>
         <Text style={styles.licenseDetailTitle}>{license.name}</Text>

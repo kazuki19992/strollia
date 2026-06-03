@@ -1,9 +1,10 @@
-import { Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { AppTheme } from '../../theme/theme';
 import { DailyLogSummary } from '../../types/gps';
 import { AppStyles } from '../appStyles';
 import { DailyLogCard } from './DailyLogCard';
+import { AppScreenHeader } from './AppScreenHeader';
 
 /** 日別ログ一覧画面のprops。 */
 export type DailyLogsScreenProps = {
@@ -24,14 +25,8 @@ export type DailyLogsScreenProps = {
 /** 日別ログ一覧画面を描画する。 */
 export function DailyLogsScreen({ dailyLogs, styles, theme, isPlusActive, onPresentPremiumPaywall, onBackToMap }: DailyLogsScreenProps) {
   return (
-    <SafeAreaView style={styles.dailyContainer}>
-      <View style={styles.dailyHeader}>
-        <Pressable onPress={onBackToMap} style={styles.backButton}>
-          <Text style={styles.backButtonText}>地図へ</Text>
-        </Pressable>
-        <Text style={styles.dailyTitle}>日ごとの記録</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <SafeAreaView style={styles.appScreen}>
+      <AppScreenHeader backLabel="地図" styles={styles} theme={theme} title="日ごとの記録" onBack={onBackToMap} />
 
       {dailyLogs.length === 0 ? (
         <View style={styles.dailyEmptyCard}>

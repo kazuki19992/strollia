@@ -1,10 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Image, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { AchievementCategory, formatAchievementDistance } from '../../features/achievements/achievementDefinitions';
 import { AchievementListItem } from '../../features/achievements/achievementRepository';
 import { AppTheme } from '../../theme/theme';
 import { AppStyles } from '../appStyles';
+import { AppScreenHeader } from './AppScreenHeader';
 
 /** 実績一覧画面のprops。 */
 export type AchievementListScreenProps = {
@@ -29,22 +30,16 @@ const categorySections: { category: AchievementCategory; title: string }[] = [
 /** 実績画面を描画する。 */
 export function AchievementListScreen({ items, styles, theme, onBackToMap }: AchievementListScreenProps) {
   return (
-    <SafeAreaView style={styles.dailyContainer}>
-      <View style={styles.dailyHeader}>
-        <Pressable onPress={onBackToMap} style={styles.backButton}>
-          <Text style={styles.backButtonText}>地図へ</Text>
-        </Pressable>
-        <Text style={styles.dailyTitle}>実績</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <SafeAreaView style={styles.appScreen}>
+      <AppScreenHeader backLabel="地図" styles={styles} theme={theme} title="実績" onBack={onBackToMap} />
 
-      <ScrollView contentContainerStyle={styles.settingsList}>
+      <ScrollView contentContainerStyle={styles.screenList}>
         {categorySections.map((section) => {
           const sectionItems = items.filter((item) => item.definition.category === section.category);
 
           return (
             <View key={section.category} style={styles.achievementSection}>
-              <Text style={styles.settingsTitle}>{section.title}</Text>
+              <Text style={styles.screenSectionHeading}>{section.title}</Text>
               <View style={styles.achievementGrid}>
                 {sectionItems.map((item) => {
                   const unlocked = item.unlockedAt != null;

@@ -1,4 +1,3 @@
-import { Feather } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, Share, Text, View } from 'react-native';
 
@@ -22,11 +21,11 @@ import { formatDailyLogDetailTitle, formatDistanceKm, formatRouteEndpoints } fro
 import { totalDistanceMeters } from '../../utils/distance';
 import type { AppStyles } from '../appStyles';
 import { AchievementScroller } from './AchievementScroller';
-import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DataSummaryRow } from './DataSummaryRow';
 import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
+import { ShareButton } from './ShareButton';
 import { StepSlider } from './StepSlider';
 
 export type DailyLogDetailScreenProps = {
@@ -146,13 +145,13 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
           <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
         </View>
 
-        <ActionPill
-          backgroundColor={theme.name === 'dark' ? '#3f3f3f' : '#333333'}
-          borderColor="transparent"
-          icon={<Feather name="share-2" size={24} color="#aaaaaa" />}
+        <ShareButton
+          accessibilityLabel="この日の記録を共有"
+          iconColor="#aaaaaa"
+          iconSize={24}
           label="共有"
-          styles={styles}
-          textColor="#ffffff"
+          style={[styles.shareButton, { backgroundColor: theme.name === 'dark' ? '#3f3f3f' : '#333333' }]}
+          textStyle={styles.shareButtonText}
           onPress={() => {
             shareDailyLog().catch(() => undefined);
           }}

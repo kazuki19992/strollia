@@ -116,6 +116,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', '共有']));
     expect(texts).not.toContain('開始');
     expect(texts).not.toContain('最新');
+    expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' })).toBeTruthy();
     expect(getLocationPointsByDate).toHaveBeenCalledWith('2026-05-31');
     expect(getVisitedCellsByIds).toHaveBeenCalledTimes(1);
     expect(getAchievementUnlocksByDate).toHaveBeenCalledWith('2026-05-31');

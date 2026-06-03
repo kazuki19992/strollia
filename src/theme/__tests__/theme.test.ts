@@ -6,6 +6,17 @@ describe('テーマ選択 getAppTheme', () => {
     expect(darkTheme.colors.background).toBe('#202020');
   });
 
+  it('日別ルートと共有ボタンの色はテーマトークンとして持つ', () => {
+    expect(lightTheme.colors.routeMapEmptyBackground).toBe('#172b63');
+    expect(darkTheme.colors.routeMapEmptyBackground).toBe('#142d5c');
+    expect(lightTheme.colors.routeMapEmptyText).toBe('#ffffff');
+    expect(darkTheme.colors.routeMapEmptyText).toBe('#ffffff');
+    expect(lightTheme.colors.shareButtonBackground).toBe('#333333');
+    expect(darkTheme.colors.shareButtonBackground).toBe('#f7f2ea');
+    expect(lightTheme.colors.shareButtonText).toBe('#ffffff');
+    expect(darkTheme.colors.shareButtonText).toBe('#111111');
+  });
+
   it('OSがダークモードでない場合はライトテーマを返す', () => {
     expect(getAppTheme('light')).toBe(lightTheme);
     expect(getAppTheme(null)).toBe(lightTheme);

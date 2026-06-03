@@ -425,7 +425,7 @@ export function createStyles(theme: AppTheme) {
     },
     routeMapEmptyPanel: {
       alignItems: 'center',
-      backgroundColor: theme.name === 'dark' ? '#142d5c' : '#172b63',
+      backgroundColor: colors.routeMapEmptyBackground,
       borderRadius: 8,
       height: 332,
       justifyContent: 'center',
@@ -433,7 +433,7 @@ export function createStyles(theme: AppTheme) {
       width: '100%',
     },
     routeMapEmptyText: {
-      color: '#ffffff',
+      color: colors.routeMapEmptyText,
       fontSize: 28,
       fontWeight: '900',
       lineHeight: 34,
@@ -444,6 +444,12 @@ export function createStyles(theme: AppTheme) {
       height: 332,
       overflow: 'hidden',
       width: '100%',
+    },
+    shareButtonWide: {
+      backgroundColor: colors.shareButtonBackground,
+    },
+    shareButtonWideText: {
+      color: colors.shareButtonText,
     },
     routeTimeline: {
       gap: 18,

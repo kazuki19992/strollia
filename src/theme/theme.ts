@@ -19,6 +19,10 @@ export type AppTheme = {
     danger: string;
     dangerSurface: string;
     mapLine: string;
+    routeMapEmptyBackground: string;
+    routeMapEmptyText: string;
+    shareButtonBackground: string;
+    shareButtonText: string;
     surfaceOverlay: string;
     scrim: string;
     shadow: string;
@@ -40,6 +44,10 @@ export const lightTheme: AppTheme = {
     danger: '#b33f52',
     dangerSurface: '#fff1f3',
     mapLine: '#1f7a5c',
+    routeMapEmptyBackground: '#172b63',
+    routeMapEmptyText: '#ffffff',
+    shareButtonBackground: '#333333',
+    shareButtonText: '#ffffff',
     surfaceOverlay: 'rgba(255, 253, 248, 0.94)',
     scrim: 'rgba(45, 36, 22, 0.08)',
     shadow: '#2d2416',
@@ -61,6 +69,10 @@ export const darkTheme: AppTheme = {
     danger: '#ff8899',
     dangerSurface: '#3a2028',
     mapLine: '#73c7a2',
+    routeMapEmptyBackground: '#142d5c',
+    routeMapEmptyText: '#ffffff',
+    shareButtonBackground: '#f7f2ea',
+    shareButtonText: '#111111',
     surfaceOverlay: 'rgba(34, 38, 29, 0.94)',
     scrim: 'rgba(0, 0, 0, 0.28)',
     shadow: '#000000',

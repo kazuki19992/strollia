@@ -21,7 +21,13 @@ export function AchievementScroller({ achievements, styles }: AchievementScrolle
       {achievements.map((achievement) => (
         <View key={`${achievement.id}-${achievement.unlockedAt}`} style={styles.achievementScrollerItem}>
           {achievement.trophyImage ? (
-            <Image source={achievement.trophyImage} style={styles.achievementScrollerImage} resizeMode="contain" />
+            <Image
+              accessibilityLabel={`${achievement.title}の実績画像`}
+              accessibilityRole="image"
+              source={achievement.trophyImage}
+              style={styles.achievementScrollerImage}
+              resizeMode="contain"
+            />
           ) : null}
         </View>
       ))}

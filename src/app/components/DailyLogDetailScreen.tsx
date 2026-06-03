@@ -101,7 +101,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
     return () => {
       isCancelled = true;
     };
-  }, [log.localDate]);
+  }, [log]);
 
   async function shareDailyLog(): Promise<void> {
     try {
@@ -153,8 +153,8 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
           iconColor="#aaaaaa"
           iconSize={24}
           label="共有"
-          style={{ backgroundColor: theme.name === 'dark' ? '#f7f2ea' : '#333333' }}
-          textStyle={{ color: theme.name === 'dark' ? '#111111' : '#ffffff' }}
+          style={styles.shareButtonWide}
+          textStyle={styles.shareButtonWideText}
           variant="wide"
           onPress={() => {
             shareDailyLog().catch(() => undefined);

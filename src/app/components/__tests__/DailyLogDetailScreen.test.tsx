@@ -6,6 +6,7 @@ import { getVisitedCellsByIds } from '../../../features/location/visitedCellRepo
 import { getLocationPointsByDate } from '../../../features/logs/logRepository';
 import { lightTheme } from '../../../theme/theme';
 import { DailyLogDetailScreen } from '../DailyLogDetailScreen';
+import { ShareButton } from '../ShareButton';
 import { StepSlider } from '../StepSlider';
 
 jest.mock('@expo/vector-icons', () => ({
@@ -117,6 +118,9 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(texts).not.toContain('開始');
     expect(texts).not.toContain('最新');
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' })).toBeTruthy();
+    const shareButton = renderer.root.findByType(ShareButton);
+    expect(shareButton.props.style).toBe('shareButtonWide');
+    expect(shareButton.props.textStyle).toBe('shareButtonWideText');
     expect(getLocationPointsByDate).toHaveBeenCalledWith('2026-05-31');
     expect(getVisitedCellsByIds).toHaveBeenCalledTimes(1);
     expect(getAchievementUnlocksByDate).toHaveBeenCalledWith('2026-05-31');
@@ -157,5 +161,31 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toEqual(expect.arrayContaining(['0時', '24時']));
     expect(texts).not.toContain('移動地図を表示できません');
+  });
+
+  test('同じ日付でlogオブジェクトが変わった場合も詳細データを再読み込みする', async () => {
+    let renderer: any;
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(getLocationPointsByDate).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      renderer.update(
+        <DailyLogDetailScreen
+          log={{ ...log, distanceMeters: 147000, endLocationPointId: 3 }}
+          styles={styles as never}
+          theme={lightTheme}
+          onBackToDailyLogs={jest.fn()}
+        />,
+      );
+    });
+
+    expect(getLocationPointsByDate).toHaveBeenCalledTimes(2);
+    expect(getLocationPointsByDate).toHaveBeenLastCalledWith('2026-05-31');
   });
 });

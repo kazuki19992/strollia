@@ -1,6 +1,6 @@
 import { db } from '../../../db/database';
 import { NewLocationPoint } from '../../../types/gps';
-import { deleteAllUserData, insertLocationPoint } from '../logRepository';
+import { deleteAllUserData, getDailyLogs, insertLocationPoint } from '../logRepository';
 
 jest.mock('../../../db/database', () => ({
   db: {
@@ -42,6 +42,36 @@ describe('GPSポイント保存 insertLocationPoint', () => {
     const dailySummaryArgs = (db.runAsync as jest.Mock).mock.calls[1];
     expect(dailySummaryArgs[4]).toBeGreaterThan(100);
     expect(dailySummaryArgs[4]).toBeLessThan(120);
+  });
+});
+
+describe('日別ログ一覧 getDailyLogs', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('開始地点と終了地点のGPSポイントIDを含めて取得する', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([
+      {
+        localDate: '2026-05-31',
+        pointCount: 2,
+        startedAt: '2026-05-31T00:00:00.000Z',
+        endedAt: '2026-05-31T00:30:00.000Z',
+        distanceMeters: 100,
+        startLocationPointId: 10,
+        endLocationPointId: 20,
+      },
+    ]);
+
+    await expect(getDailyLogs()).resolves.toEqual([
+      expect.objectContaining({
+        localDate: '2026-05-31',
+        startLocationPointId: 10,
+        endLocationPointId: 20,
+      }),
+    ]);
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('startLocationPointId'));
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('endLocationPointId'));
   });
 });
 

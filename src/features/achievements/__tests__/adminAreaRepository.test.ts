@@ -1,5 +1,5 @@
 import { db } from '../../../db/database';
-import { upsertLocationPointAdminArea, upsertVisitedAdminArea } from '../adminAreaRepository';
+import { getLocationPointAdminAreaName, getLocationPointAdminAreaNames, upsertLocationPointAdminArea, upsertVisitedAdminArea } from '../adminAreaRepository';
 
 type VisitedAdminAreaRow = {
   area_type: string;
@@ -99,11 +99,31 @@ jest.mock('../../../db/database', () => ({
     ),
     getFirstAsync: jest.fn(async (sql: string, ...params: (string | number)[]) => {
       if (sql.includes('location_point_admin_areas')) {
-        return mockLocationPointAdminAreas.get(params[0] as number) ?? null;
+        const row = mockLocationPointAdminAreas.get(params[0] as number) ?? null;
+        if (row && sql.includes('locationPointId')) {
+          return {
+            locationPointId: row.location_point_id,
+            prefectureName: row.prefecture_name,
+            municipalityName: row.municipality_name,
+          };
+        }
+        return row;
       }
 
       return mockVisitedAdminAreas.get(`${params[0]}:${params[1]}`) ?? null;
     }),
+    getAllAsync: jest.fn(async (_sql: string, ...params: number[]) =>
+      params.flatMap((locationPointId) => {
+        const row = mockLocationPointAdminAreas.get(locationPointId);
+        return row
+          ? [{
+              locationPointId: row.location_point_id,
+              prefectureName: row.prefecture_name,
+              municipalityName: row.municipality_name,
+            }]
+          : [];
+      }),
+    ),
   },
 }));
 
@@ -280,5 +300,66 @@ describe('GPSポイント行政区域履歴 upsertLocationPointAdminArea', () =>
 
     expect(row?.municipality_name).toBeNull();
     expect(row?.normalized_municipality_name).toBeNull();
+  });
+
+  it('GPSポイントに紐づく表示用エリア名を取得する', async () => {
+    await upsertLocationPointAdminArea({
+      locationPointId: 789,
+      recordedAt: '2026-05-08T00:00:00.000Z',
+      localDate: '2026-05-08',
+      prefectureName: '千葉県',
+      municipalityName: '船橋市',
+      normalizedPrefectureName: '千葉県',
+      normalizedMunicipalityName: '千葉県:船橋市',
+    });
+
+    await expect(getLocationPointAdminAreaName(789)).resolves.toEqual({
+      locationPointId: 789,
+      areaName: '船橋市',
+    });
+  });
+
+  it('市区町村がない場合は都道府県名を表示用エリア名にする', async () => {
+    await upsertLocationPointAdminArea({
+      locationPointId: 987,
+      recordedAt: '2026-05-08T00:00:00.000Z',
+      localDate: '2026-05-08',
+      prefectureName: '千葉県',
+      municipalityName: null,
+      normalizedPrefectureName: '千葉県',
+      normalizedMunicipalityName: null,
+    });
+
+    await expect(getLocationPointAdminAreaName(987)).resolves.toEqual({
+      locationPointId: 987,
+      areaName: '千葉県',
+    });
+  });
+
+  it('複数GPSポイントに紐づく表示用エリア名をまとめて取得する', async () => {
+    await upsertLocationPointAdminArea({
+      locationPointId: 111,
+      recordedAt: '2026-05-08T00:00:00.000Z',
+      localDate: '2026-05-08',
+      prefectureName: '千葉県',
+      municipalityName: '船橋市',
+      normalizedPrefectureName: '千葉県',
+      normalizedMunicipalityName: '千葉県:船橋市',
+    });
+    await upsertLocationPointAdminArea({
+      locationPointId: 222,
+      recordedAt: '2026-05-08T01:00:00.000Z',
+      localDate: '2026-05-08',
+      prefectureName: '東京都',
+      municipalityName: '千代田区',
+      normalizedPrefectureName: '東京都',
+      normalizedMunicipalityName: '東京都:千代田区',
+    });
+
+    await expect(getLocationPointAdminAreaNames([111, 222, 111])).resolves.toEqual(new Map([
+      [111, '船橋市'],
+      [222, '千代田区'],
+    ]));
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('location_point_id IN (?, ?)'), 111, 222);
   });
 });

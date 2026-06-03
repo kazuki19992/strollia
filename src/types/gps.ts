@@ -22,4 +22,6 @@ export type DailyLogSummary = {
   startedAt: string | null;
   endedAt: string | null;
   distanceMeters: number | null;
+  startLocationPointId: number | null;
+  endLocationPointId: number | null;
 };

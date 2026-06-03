@@ -25,6 +25,14 @@ export type LocationPointAdminAreaInput = {
   normalizedMunicipalityName: string | null;
 };
 
+/** GPSポイントに紐づく表示用行政区域名。 */
+export type LocationPointAdminAreaName = {
+  /** GPSポイントID。 */
+  locationPointId: number;
+  /** 市区町村があれば市区町村、なければ都道府県名。 */
+  areaName: string;
+};
+
 /** 訪問済み行政区域をUPSERTで保存する。 */
 export async function upsertVisitedAdminArea(area: VisitedAdminAreaInput): Promise<void> {
   const now = new Date().toISOString();
@@ -93,4 +101,55 @@ export async function upsertLocationPointAdminArea(area: LocationPointAdminAreaI
     area.normalizedMunicipalityName,
     now,
   );
+}
+
+/** GPSポイントIDに紐づく表示用行政区域名を取得する。 */
+export async function getLocationPointAdminAreaName(locationPointId: number): Promise<LocationPointAdminAreaName | null> {
+  const row = await db.getFirstAsync<{
+    locationPointId: number;
+    prefectureName: string;
+    municipalityName: string | null;
+  }>(
+    `SELECT
+       location_point_id as locationPointId,
+       prefecture_name as prefectureName,
+       municipality_name as municipalityName
+     FROM location_point_admin_areas
+     WHERE location_point_id = ?`,
+    locationPointId,
+  );
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    locationPointId: row.locationPointId,
+    areaName: row.municipalityName ?? row.prefectureName,
+  };
+}
+
+/** 複数のGPSポイントIDに紐づく表示用行政区域名をまとめて取得する。 */
+export async function getLocationPointAdminAreaNames(locationPointIds: number[]): Promise<Map<number, string>> {
+  const uniqueIds = [...new Set(locationPointIds)];
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  const placeholders = uniqueIds.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<{
+    locationPointId: number;
+    prefectureName: string;
+    municipalityName: string | null;
+  }>(
+    `SELECT
+       location_point_id as locationPointId,
+       prefecture_name as prefectureName,
+       municipality_name as municipalityName
+     FROM location_point_admin_areas
+     WHERE location_point_id IN (${placeholders})`,
+    ...uniqueIds,
+  );
+
+  return new Map(rows.map((row) => [row.locationPointId, row.municipalityName ?? row.prefectureName]));
 }

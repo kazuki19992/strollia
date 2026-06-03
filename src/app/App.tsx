@@ -81,6 +81,7 @@ import { getAppTheme } from '../theme/theme';
 import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementListScreen } from './components/AchievementListScreen';
+import { DailyLogDetailScreen } from './components/DailyLogDetailScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { LicenseDetailScreen, LicenseScreen } from './components/LicenseScreen';
@@ -120,7 +121,13 @@ type SettingsStackParamList = {
   LicenseDetail: { license: OssLicenseEntry };
 };
 
+type DailyLogStackParamList = {
+  DailyLogList: undefined;
+  DailyLogDetail: { log: DailyLogSummary };
+};
+
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const DailyLogStack = createNativeStackNavigator<DailyLogStackParamList>();
 /** 新規visited cellを塗るときのフェード時間。 */
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
@@ -997,18 +1004,40 @@ export default function App() {
             />
           )}
           {screenMode === 'dailyLogs' && (
-            <DailyLogsScreen
-              dailyLogs={dailyLogs}
-              styles={styles}
-              theme={theme}
-              isPlusActive={premiumAccessState.isPlusActive}
-              onPresentPremiumPaywall={() => {
-                openPremiumPaywall().catch((error: unknown) => {
-                  console.warn('Failed to open premium paywall:', error);
-                });
-              }}
-              onBackToMap={openMap}
-            />
+            <NavigationIndependentTree>
+              <NavigationContainer>
+                <DailyLogStack.Navigator
+                  initialRouteName="DailyLogList"
+                  screenOptions={{
+                    animation: 'slide_from_right',
+                    gestureEnabled: true,
+                    headerShown: false,
+                  }}
+                >
+                  <DailyLogStack.Screen name="DailyLogList">
+                    {({ navigation }) => (
+                      <DailyLogsScreen
+                        dailyLogs={dailyLogs}
+                        styles={styles}
+                        theme={theme}
+                        onBackToMap={openMap}
+                        onOpenDailyLogDetail={(log) => navigation.navigate('DailyLogDetail', { log })}
+                      />
+                    )}
+                  </DailyLogStack.Screen>
+                  <DailyLogStack.Screen name="DailyLogDetail">
+                    {({ navigation, route }) => (
+                      <DailyLogDetailScreen
+                        log={route.params.log}
+                        styles={styles}
+                        theme={theme}
+                        onBackToDailyLogs={() => navigation.goBack()}
+                      />
+                    )}
+                  </DailyLogStack.Screen>
+                </DailyLogStack.Navigator>
+              </NavigationContainer>
+            </NavigationIndependentTree>
           )}
           {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
           {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} theme={theme} onBackToMap={openMap} />}

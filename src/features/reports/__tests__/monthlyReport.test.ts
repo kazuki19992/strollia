@@ -9,7 +9,7 @@ import { DailyLogSummary, LocationPoint } from '../../../types/gps';
  * @returns 固定pointCountとnull時刻を持つ日別ログサマリー。
  */
 function log(localDate: string, distanceMeters: number | null): DailyLogSummary {
-  return { localDate, distanceMeters, pointCount: 2, startedAt: null, endedAt: null };
+  return { localDate, distanceMeters, pointCount: 2, startedAt: null, endedAt: null, startLocationPointId: null, endLocationPointId: null };
 }
 
 /**

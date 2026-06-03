@@ -1,11 +1,11 @@
-import { Feather } from '@expo/vector-icons';
-import { FlatList, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { FlatList, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { OSS_LICENSES } from '../generated/ossLicenses';
 import type { OssLicenseEntry } from '../generated/ossLicenses';
 import { AppStyles } from '../appStyles';
 import { AppTheme } from '../../theme/theme';
 import { AppScreenHeader } from './AppScreenHeader';
+import { AppListItem } from './AppListItem';
 
 /** ライセンス画面のprops。 */
 export type LicenseScreenProps = {
@@ -30,15 +30,13 @@ export function LicenseScreen({ styles, theme, onBackToSettings, onOpenLicenseDe
         keyExtractor={(license) => license.id}
         contentContainerStyle={styles.licenseList}
         renderItem={({ item: license }) => (
-          <Pressable
+          <AppListItem
             accessibilityLabel={`${license.name} のライセンス詳細を開く`}
-            accessibilityRole="button"
+            styles={styles}
+            theme={theme}
+            title={license.name}
             onPress={() => onOpenLicenseDetail(license)}
-            style={styles.licenseListItem}
-          >
-            <Text style={styles.licenseListItemText}>{license.name}</Text>
-            <Feather name="chevron-right" size={19} color={theme.colors.mutedText} />
-          </Pressable>
+          />
         )}
       />
     </SafeAreaView>

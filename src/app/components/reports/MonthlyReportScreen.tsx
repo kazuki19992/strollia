@@ -15,6 +15,7 @@ import { MonthlyReportAnimatedCard } from './MonthlyReportAnimatedCard';
 import { MonthlyReportMetricValue } from './MonthlyReportMetricValue';
 import { MonthlyReportScrollIndicator } from './MonthlyReportScrollIndicator';
 import { NewRecordPill } from './NewRecordPill';
+import { ShareButton } from '../ShareButton';
 import { reportStyles } from './reportStyles';
 
 /** 月次レポート画面のprops。 */
@@ -255,16 +256,17 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
         </MonthlyReportAnimatedCard>
         <View style={reportStyles.monthlyReportEndSpacer} />
         </View>
-        <Pressable
+        <ShareButton
           accessibilityLabel="レポートを共有"
-          accessibilityRole="button"
           disabled={isSharingReport}
-          onPress={shareReportImage}
+          iconColor={shareButtonTextColor}
+          iconSize={24}
+          label="レポートを共有"
           style={[reportStyles.monthlyInlineShareButton, { backgroundColor: shareButtonBackgroundColor, opacity: isSharingReport ? 0.64 : 1 }]}
-        >
-          <Feather name="share-2" size={24} color={shareButtonTextColor} />
-          <Text style={[reportStyles.monthlyInlineShareText, { color: shareButtonTextColor }]}>レポートを共有</Text>
-        </Pressable>
+          textStyle={[reportStyles.monthlyInlineShareText, { color: shareButtonTextColor }]}
+          variant="wide"
+          onPress={shareReportImage}
+        />
         <SafeAreaView style={reportStyles.monthlyBottomSafeArea}>
           <View style={reportStyles.monthlyBottomSpacer} />
         </SafeAreaView>

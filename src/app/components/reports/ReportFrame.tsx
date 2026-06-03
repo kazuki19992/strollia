@@ -1,7 +1,7 @@
-import { Feather } from '@expo/vector-icons';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
 
+import { ShareButton } from '../ShareButton';
 import { reportStyles } from './reportStyles';
 
 /** レポート各ページの共通枠。 */
@@ -41,9 +41,7 @@ export function ReportFrame({ title, label, pageCount, pageIndex, children, onSh
         </View>
       </View>
       {children}
-      <Pressable accessibilityLabel="レポートを共有" accessibilityRole="button" onPress={onShare} style={reportStyles.shareButton}>
-        <Feather name="share-2" size={28} color="#777777" />
-      </Pressable>
+      <ShareButton accessibilityLabel="レポートを共有" iconColor="#777777" iconSize={28} style={reportStyles.shareButton} onPress={onShare} />
     </View>
   );
 }

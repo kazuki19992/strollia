@@ -1,4 +1,4 @@
-import { StyleSheet, Text } from 'react-native';
+import { SafeAreaView, StyleSheet, Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
 import { LicenseDetailScreen, LicenseScreen } from '../LicenseScreen';
@@ -98,17 +98,22 @@ describe('ライセンス画面 LicenseScreen', () => {
 
   test('設定ボタンで設定画面に戻る', () => {
     const onBackToSettings = jest.fn();
+    const realStyles = require('../../appStyles').createStyles(lightTheme);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />);
+      renderer = ReactTestRenderer.create(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />);
     });
 
+    const container = renderer.root.findByType(SafeAreaView);
     const backButton = renderer.root.findByProps({ accessibilityLabel: '設定へ戻る' });
+    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'ライセンス');
 
     act(() => {
       backButton.props.onPress();
     });
 
+    expect(container.props.style).toBe(realStyles.appScreen);
+    expect(flattenStyle(title?.props.style).position).toBe('absolute');
     expect(onBackToSettings).toHaveBeenCalledTimes(1);
   });
 
@@ -130,11 +135,13 @@ describe('ライセンス画面 LicenseScreen', () => {
 
   test('ライセンス詳細からライセンス一覧へ戻れる', () => {
     const onBackToLicenseList = jest.fn();
+    const realStyles = require('../../appStyles').createStyles(lightTheme);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseDetailScreen license={OSS_LICENSES[0]} styles={styles as never} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />);
+      renderer = ReactTestRenderer.create(<LicenseDetailScreen license={OSS_LICENSES[0]} styles={realStyles} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />);
     });
 
+    const container = renderer.root.findByType(SafeAreaView);
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('react');
     expect(texts).toContain('19.1.0');
@@ -148,6 +155,7 @@ describe('ライセンス画面 LicenseScreen', () => {
       backButton.props.onPress();
     });
 
+    expect(container.props.style).toBe(realStyles.appScreen);
     expect(onBackToLicenseList).toHaveBeenCalledTimes(1);
   });
 });

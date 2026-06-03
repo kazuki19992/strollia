@@ -1,5 +1,6 @@
 import { SafeAreaView, Text } from 'react-native';
 
+import { createStyles } from '../../appStyles';
 import { lightTheme } from '../../../theme/theme';
 import { AchievementListScreen } from '../AchievementListScreen';
 
@@ -11,26 +12,7 @@ jest.mock('@expo/vector-icons', () => ({
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
 
-const styles = {
-  appScreen: { backgroundColor: 'app-background' },
-  appHeader: {},
-  appHeaderBackButton: {},
-  appHeaderBackButtonText: {},
-  appHeaderTitle: {},
-  screenList: {},
-  achievementSection: {},
-  screenSectionHeading: {},
-  achievementGrid: {},
-  achievementCard: {},
-  achievementCardLocked: {},
-  achievementImageFrame: {},
-  achievementImage: {},
-  achievementImageLocked: {},
-  achievementLockBadge: {},
-  achievementTitle: {},
-  achievementDescription: {},
-  achievementProgress: {},
-};
+const styles = createStyles(lightTheme);
 
 describe('実績画面 AchievementListScreen の画面共通UI', () => {
   beforeEach(() => {
@@ -45,7 +27,7 @@ describe('実績画面 AchievementListScreen の画面共通UI', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<AchievementListScreen items={[]} styles={styles as never} theme={lightTheme} onBackToMap={jest.fn()} />);
+      renderer = ReactTestRenderer.create(<AchievementListScreen items={[]} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} />);
     });
 
     const container = renderer.root.findByType(SafeAreaView);

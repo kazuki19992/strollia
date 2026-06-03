@@ -19,7 +19,7 @@ export type AppBackButtonProps = {
 export function AppBackButton({ label, styles, theme, onPress }: AppBackButtonProps) {
   return (
     <Pressable accessibilityLabel={`${label}へ戻る`} accessibilityRole="button" onPress={onPress} style={styles.appHeaderBackButton}>
-      <Feather name="chevron-left" size={22} color={theme.name === 'dark' ? '#333333' : theme.colors.text} />
+      <Feather name="chevron-left" size={22} color={theme.name === 'dark' ? theme.colors.primaryText : theme.colors.text} />
       <Text style={styles.appHeaderBackButtonText}>{label}</Text>
     </Pressable>
   );

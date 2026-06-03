@@ -22,10 +22,13 @@ export type SelectionTileProps = {
 
 /** primary枠と10%塗りで選択状態を表すアウトライン選択ボタン。 */
 export function SelectionTile({ icon, isSelected = false, label, onPress, styles, swatchColor, wide = false }: SelectionTileProps) {
+  const accessibilityLabel = label.replace(/\n+/g, ' ').trim();
+
   return (
     <Pressable
-      accessibilityLabel={label.replace(/\n/g, '')}
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
+      accessibilityState={{ disabled: !onPress, selected: isSelected }}
       disabled={!onPress}
       onPress={onPress}
       style={[styles.selectionTile, wide && styles.selectionTileWide, isSelected && styles.selectionTileSelected]}

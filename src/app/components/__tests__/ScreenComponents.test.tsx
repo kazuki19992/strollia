@@ -38,6 +38,8 @@ describe('画面共通コンポーネント', () => {
     const text = renderer.root.findByType(Text);
     const tileStyle = flattenStyle(tile.props.style);
 
+    expect(tile.props.accessibilityLabel).toBe('スマホの設定に 合わせる');
+    expect(tile.props.accessibilityState).toEqual({ disabled: true, selected: true });
     expect(tileStyle.borderColor).toBe(lightTheme.colors.primary);
     expect(tileStyle.backgroundColor).toBe('rgba(31, 122, 92, 0.10)');
     expect(tileStyle.borderWidth).toBe(4);
@@ -55,6 +57,7 @@ describe('画面共通コンポーネント', () => {
     const tile = renderer.root.findByProps({ accessibilityRole: 'button' });
     const tileStyle = flattenStyle(tile.props.style);
 
+    expect(tile.props.accessibilityState).toEqual({ disabled: true, selected: false });
     expect(tileStyle.backgroundColor).toBe('transparent');
     expect(tileStyle.borderColor).toBe('rgba(255, 255, 255, 0.28)');
     expect(tileStyle.borderWidth).toBe(1);
@@ -169,8 +172,13 @@ describe('画面共通コンポーネント', () => {
     const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });
     const label = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '地図');
 
+    act(() => {
+      backButton.props.onPress();
+    });
+
     expect(flattenStyle(backButton.props.style).backgroundColor).toBe('#d9d9d9');
     expect(flattenStyle(label?.props.style).color).toBe('#333333');
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 
   test('全画面共通ヘッダーは設定画面と同じ戻るリボンと中央タイトルを使える', () => {
@@ -185,7 +193,12 @@ describe('画面共通コンポーネント', () => {
     const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });
     const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '実績');
 
+    act(() => {
+      backButton.props.onPress();
+    });
+
     expect(flattenStyle(backButton.props.style).backgroundColor).toBe('#d9d9d9');
     expect(flattenStyle(title?.props.style).textAlign).toBe('center');
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

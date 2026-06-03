@@ -1,30 +1,35 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { PanResponder, Text, View } from 'react-native';
+import Slider from '@react-native-community/slider';
+import { Text, View } from 'react-native';
 
+import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
 
 export type StepSliderProps = {
   /** スライダーのアクセシビリティラベル。 */
   accessibilityLabel: string;
-  /** 左端の表示ラベル。 */
+  /** 右端の表示ラベル。 */
   endLabel: string;
   /** 最大値。 */
   maxValue: number;
   /** 最小値。 */
   minValue: number;
-  /** 右端の表示ラベル。 */
+  /** 左端の表示ラベル。 */
   startLabel: string;
   /** 画面共通スタイル。 */
   styles: AppStyles;
   /** 1ステップの幅。 */
   stepValue: number;
+  /** 現在テーマ。 */
+  theme: AppTheme;
   /** 現在値。 */
   value: number;
+  /** 現在値の表示ラベル。 */
+  valueLabel: string;
   /** 値が変わったときの処理。 */
   onValueChange: (value: number) => void;
 };
 
-/** 指定ステップ単位で値を選択できる汎用スライダー。 */
+/** 指定ステップ単位で値を選択できるネイティブスライダー。 */
 export function StepSlider({
   accessibilityLabel,
   endLabel,
@@ -33,82 +38,39 @@ export function StepSlider({
   startLabel,
   styles,
   stepValue,
+  theme,
   value,
+  valueLabel,
   onValueChange,
 }: StepSliderProps) {
-  const [trackWidth, setTrackWidth] = useState(1);
-  const [dragDisplayValue, setDragDisplayValue] = useState<number | null>(null);
-  const lastEmittedValueRef = useRef(value);
   const normalizedValue = normalizeValue(value, minValue, maxValue, stepValue);
-  const displayValue = dragDisplayValue ?? normalizedValue;
-  const progress = (displayValue - minValue) / Math.max(maxValue - minValue, 1);
-  const tickPositions = useMemo(() => [0.25, 0.5, 0.75], []);
 
-  useEffect(() => {
-    lastEmittedValueRef.current = normalizedValue;
-  }, [normalizedValue]);
-
-  function updateFromLocation(locationX: number, emitOnlyChangedValue: boolean): void {
-    const rawValue = valueFromLocation(locationX, trackWidth, minValue, maxValue, 1);
-    const nextValue = normalizeValue(rawValue, minValue, maxValue, stepValue);
-    setDragDisplayValue(rawValue);
-
-    if (!emitOnlyChangedValue || nextValue !== lastEmittedValueRef.current) {
-      lastEmittedValueRef.current = nextValue;
-      onValueChange(nextValue);
+  function handleValueChange(nextValue: number): void {
+    const normalizedNextValue = normalizeValue(nextValue, minValue, maxValue, stepValue);
+    if (normalizedNextValue !== normalizedValue) {
+      onValueChange(normalizedNextValue);
     }
   }
-
-  function endDragAtLocation(locationX: number): void {
-    const nextValue = valueFromLocation(locationX, trackWidth, minValue, maxValue, stepValue);
-    setDragDisplayValue(null);
-
-    if (nextValue !== lastEmittedValueRef.current) {
-      lastEmittedValueRef.current = nextValue;
-      onValueChange(nextValue);
-    }
-  }
-
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (event) => {
-          updateFromLocation(event.nativeEvent.locationX, false);
-        },
-        onPanResponderMove: (event, gestureState) => {
-          updateFromLocation(event.nativeEvent.locationX + gestureState.dx, true);
-        },
-        onPanResponderRelease: (event, gestureState) => {
-          endDragAtLocation(event.nativeEvent.locationX + gestureState.dx);
-        },
-        onPanResponderTerminate: (event, gestureState) => {
-          endDragAtLocation(event.nativeEvent.locationX + gestureState.dx);
-        },
-      }),
-    [maxValue, minValue, onValueChange, stepValue, trackWidth],
-  );
 
   return (
-    <View accessibilityLabel={accessibilityLabel} accessibilityRole="adjustable" style={styles.stepSlider}>
-      <Text style={styles.stepSliderEdgeLabel}>{startLabel}</Text>
-      <View style={styles.stepSliderTrackWrap}>
-        <View
-          {...panResponder.panHandlers}
-          onLayout={(event) => setTrackWidth(Math.max(event.nativeEvent.layout.width, 1))}
-          style={styles.stepSliderTrackTouchArea}
-        >
-          <View style={styles.stepSliderTrack}>
-            <View style={[styles.stepSliderProgress, { width: `${progress * 100}%` }]} />
-          </View>
-          {tickPositions.map((position) => (
-            <View key={position} style={[styles.stepSliderTick, { left: `${position * 100}%` }]} />
-          ))}
-          <View style={[styles.stepSliderThumb, { left: `${progress * 100}%` }]} />
-        </View>
+    <View accessibilityLabel={accessibilityLabel} style={styles.stepSlider}>
+      <View style={styles.stepSliderRow}>
+        <Text style={styles.stepSliderEdgeLabel}>{startLabel}</Text>
+        <Slider
+          accessibilityLabel={accessibilityLabel}
+          minimumValue={minValue}
+          maximumValue={maxValue}
+          step={stepValue}
+          value={normalizedValue}
+          minimumTrackTintColor={theme.name === 'dark' ? '#f2f2f2' : '#172b63'}
+          maximumTrackTintColor={theme.name === 'dark' ? '#4b4b4b' : '#e0e0e0'}
+          thumbTintColor={theme.name === 'dark' ? '#f2f2f2' : '#ffffff'}
+          style={styles.stepSliderNative}
+          onValueChange={handleValueChange}
+        />
+        <Text style={styles.stepSliderEdgeLabel}>{endLabel}</Text>
       </View>
-      <Text style={styles.stepSliderEdgeLabel}>{endLabel}</Text>
+      <Text style={styles.stepSliderValueLabel}>{valueLabel}</Text>
     </View>
   );
 }
@@ -118,10 +80,4 @@ export function normalizeValue(value: number, minValue: number, maxValue: number
   const clampedValue = Math.min(maxValue, Math.max(minValue, value));
   const stepCount = Math.round((clampedValue - minValue) / stepValue);
   return Math.min(maxValue, Math.max(minValue, minValue + stepCount * stepValue));
-}
-
-/** トラック上のX座標からステップ値を求める。 */
-export function valueFromLocation(locationX: number, trackWidth: number, minValue: number, maxValue: number, stepValue: number): number {
-  const ratio = Math.min(1, Math.max(0, locationX / Math.max(trackWidth, 1)));
-  return normalizeValue(minValue + (maxValue - minValue) * ratio, minValue, maxValue, stepValue);
 }

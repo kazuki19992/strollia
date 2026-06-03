@@ -4,6 +4,7 @@ import {
   DAILY_ROUTE_TIME_STEP_MINUTES,
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
+  formatTimelineTimeLabel,
 } from '../dailyRouteTimeline';
 
 const points = [
@@ -26,5 +27,9 @@ describe('日別ルートタイムライン', () => {
   it('端の時刻を画面表示用ラベルに変換する', () => {
     expect(formatTimelineHourLabel(0)).toBe('0時');
     expect(formatTimelineHourLabel(1440)).toBe('24時');
+  });
+
+  it('選択中の時刻を分まで表示する', () => {
+    expect(formatTimelineTimeLabel(750)).toBe('12時30分');
   });
 });

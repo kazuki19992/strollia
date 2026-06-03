@@ -264,6 +264,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
           label="レポートを共有"
           style={[reportStyles.monthlyInlineShareButton, { backgroundColor: shareButtonBackgroundColor, opacity: isSharingReport ? 0.64 : 1 }]}
           textStyle={[reportStyles.monthlyInlineShareText, { color: shareButtonTextColor }]}
+          variant="wide"
           onPress={shareReportImage}
         />
         <SafeAreaView style={reportStyles.monthlyBottomSafeArea}>

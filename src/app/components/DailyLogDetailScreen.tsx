@@ -16,6 +16,7 @@ import {
   DAILY_ROUTE_TIME_STEP_MINUTES,
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
+  formatTimelineTimeLabel,
 } from '../dailyRouteTimeline';
 import { formatDailyLogDetailTitle, formatDistanceKm, formatRouteEndpoints } from '../dailyLogDisplay';
 import { totalDistanceMeters } from '../../utils/distance';
@@ -124,7 +125,9 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
             startLabel={formatTimelineHourLabel(DAILY_ROUTE_START_MINUTES)}
             endLabel={formatTimelineHourLabel(DAILY_ROUTE_END_MINUTES)}
             value={routeEndMinutes}
+            valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
             styles={styles}
+            theme={theme}
             onValueChange={setRouteEndMinutes}
           />
         </View>
@@ -150,8 +153,9 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
           iconColor="#aaaaaa"
           iconSize={24}
           label="共有"
-          style={[styles.shareButton, { backgroundColor: theme.name === 'dark' ? '#3f3f3f' : '#333333' }]}
-          textStyle={styles.shareButtonText}
+          style={{ backgroundColor: theme.name === 'dark' ? '#f7f2ea' : '#333333' }}
+          textStyle={{ color: theme.name === 'dark' ? '#111111' : '#ffffff' }}
+          variant="wide"
           onPress={() => {
             shareDailyLog().catch(() => undefined);
           }}

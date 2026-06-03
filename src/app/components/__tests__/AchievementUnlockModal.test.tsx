@@ -1,4 +1,6 @@
 import { AchievementDefinition } from '../../../features/achievements/achievementDefinitions';
+import { createStyles } from '../../appStyles';
+import { darkTheme, lightTheme } from '../../../theme/theme';
 import { AchievementUnlockModal } from '../AchievementUnlockModal';
 
 jest.mock('@expo/vector-icons', () => {
@@ -85,5 +87,21 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
     });
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test('モーダル本体の背景色は画面背景色を参照する', () => {
+    const lightStyles = createStyles(lightTheme);
+    const darkStyles = createStyles(darkTheme);
+
+    expect(lightStyles.achievementModalCard.backgroundColor).toBe(lightTheme.colors.background);
+    expect(darkStyles.achievementModalCard.backgroundColor).toBe(darkTheme.colors.background);
+  });
+
+  test('モーダル背面の色は画面背景色を半透明化して使う', () => {
+    const lightStyles = createStyles(lightTheme);
+    const darkStyles = createStyles(darkTheme);
+
+    expect(lightStyles.achievementModalBackdrop.backgroundColor).toBe('rgba(255, 255, 255, 0.92)');
+    expect(darkStyles.achievementModalBackdrop.backgroundColor).toBe('rgba(32, 32, 32, 0.92)');
   });
 });

@@ -130,14 +130,14 @@ export function createStyles(theme: AppTheme) {
     },
     achievementModalBackdrop: {
       alignItems: 'center',
-      backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.72)' : 'rgba(45, 36, 22, 0.38)',
+      backgroundColor: hexToRgba(colors.background, 0.92),
       flex: 1,
       justifyContent: 'center',
       padding: 24,
     },
     achievementModalCard: {
       alignItems: 'center',
-      backgroundColor: colors.cardStrong,
+      backgroundColor: colors.background,
       borderColor: colors.border,
       borderRadius: 30,
       borderWidth: 1,

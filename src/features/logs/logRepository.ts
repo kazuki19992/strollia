@@ -95,7 +95,21 @@ export async function getDailyLogs(): Promise<DailyLogSummary[]> {
       point_count as pointCount,
       started_at as startedAt,
       ended_at as endedAt,
-      distance_meters as distanceMeters
+      distance_meters as distanceMeters,
+      (
+        SELECT id
+        FROM location_points
+        WHERE location_points.local_date = daily_logs.local_date
+        ORDER BY recorded_at ASC
+        LIMIT 1
+      ) as startLocationPointId,
+      (
+        SELECT id
+        FROM location_points
+        WHERE location_points.local_date = daily_logs.local_date
+        ORDER BY recorded_at DESC
+        LIMIT 1
+      ) as endLocationPointId
     FROM daily_logs
     ORDER BY local_date DESC`,
   );

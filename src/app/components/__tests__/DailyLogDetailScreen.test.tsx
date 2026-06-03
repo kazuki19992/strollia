@@ -89,6 +89,8 @@ const log = {
   startedAt: '2026-05-31T00:00:00.000Z',
   endedAt: '2026-05-31T00:10:00.000Z',
   distanceMeters: 146200,
+  startLocationPointId: 1,
+  endLocationPointId: 2,
 };
 
 describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
@@ -112,6 +114,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', '共有']));
+    expect(texts).not.toContain('開始');
+    expect(texts).not.toContain('最新');
     expect(getLocationPointsByDate).toHaveBeenCalledWith('2026-05-31');
     expect(getVisitedCellsByIds).toHaveBeenCalledTimes(1);
     expect(getAchievementUnlocksByDate).toHaveBeenCalledWith('2026-05-31');
@@ -151,5 +155,6 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(renderer.root.findAll((node: any) => node.props.strokeWidth === 5 && node.props.coordinates?.length === 2)).toHaveLength(0);
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toEqual(expect.arrayContaining(['0時', '24時']));
+    expect(texts).not.toContain('移動地図を表示できません');
   });
 });

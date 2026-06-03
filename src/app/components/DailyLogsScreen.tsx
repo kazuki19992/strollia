@@ -1,6 +1,8 @@
 import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import { groupDailyLogsByMonth } from '../dailyLogDisplay';
+import { getLocationPointAdminAreaNames } from '../../features/achievements/adminAreaRepository';
 import { AppTheme } from '../../theme/theme';
 import { DailyLogSummary } from '../../types/gps';
 import { AppStyles } from '../appStyles';
@@ -25,6 +27,28 @@ export type DailyLogsScreenProps = {
 /** 日別ログ一覧画面を描画する。 */
 export function DailyLogsScreen({ dailyLogs, styles, theme, onBackToMap, onOpenDailyLogDetail }: DailyLogsScreenProps) {
   const monthGroups = groupDailyLogsByMonth(dailyLogs);
+  const [areaNameByPointId, setAreaNameByPointId] = useState(new Map<number, string>());
+
+  useEffect(() => {
+    const locationPointIds = dailyLogs.flatMap((log) => [log.startLocationPointId, log.endLocationPointId]).filter((id): id is number => id !== null);
+    let isCancelled = false;
+
+    getLocationPointAdminAreaNames(locationPointIds)
+      .then((nextAreaNameByPointId) => {
+        if (!isCancelled) {
+          setAreaNameByPointId(nextAreaNameByPointId);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setAreaNameByPointId(new Map());
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [dailyLogs]);
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -42,7 +66,15 @@ export function DailyLogsScreen({ dailyLogs, styles, theme, onBackToMap, onOpenD
               <SectionTitle styles={styles}>{group.label}</SectionTitle>
               <View style={styles.dailyLogListGroup}>
                 {group.logs.map((log) => (
-                  <DailyLogListItem key={log.localDate} log={log} styles={styles} theme={theme} onPress={onOpenDailyLogDetail} />
+                  <DailyLogListItem
+                    key={log.localDate}
+                    log={log}
+                    styles={styles}
+                    theme={theme}
+                    startAreaName={log.startLocationPointId ? areaNameByPointId.get(log.startLocationPointId) : undefined}
+                    endAreaName={log.endLocationPointId ? areaNameByPointId.get(log.endLocationPointId) : undefined}
+                    onPress={onOpenDailyLogDetail}
+                  />
                 ))}
               </View>
             </View>

@@ -57,7 +57,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <MonthlyReportScreen
-          dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234 }]}
+          dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234, startLocationPointId: null, endLocationPointId: null }]}
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
@@ -96,7 +96,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <MonthlyReportScreen
-          dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234 }]}
+          dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234, startLocationPointId: null, endLocationPointId: null }]}
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}

@@ -23,6 +23,8 @@ function dailyLog(distanceMeters: number | null): DailyLogSummary {
     startedAt: null,
     endedAt: null,
     distanceMeters,
+    startLocationPointId: null,
+    endLocationPointId: null,
   };
 }
 

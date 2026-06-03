@@ -1,7 +1,6 @@
 import { Text, View } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Polyline } from 'react-native-maps';
 
-import { getEndpointMarkers } from '../../features/map/endpointMarkers';
 import { createInitialRegion, toRenderRouteCoordinates } from '../../features/map/routeMapper';
 import type { AppTheme } from '../../theme/theme';
 import type { LocationPoint } from '../../types/gps';
@@ -12,6 +11,8 @@ export type RouteMapPanelProps = {
   emptyLabel: string;
   /** GPSポイント。 */
   points: LocationPoint[];
+  /** 表示範囲の基準にするGPSポイント。未指定ならpointsを使う。 */
+  regionPoints?: LocationPoint[];
   /** 画面共通スタイル。 */
   styles: AppStyles;
   /** ルート線の色などに使う現在テーマ。 */
@@ -19,11 +20,10 @@ export type RouteMapPanelProps = {
 };
 
 /** 保存済みルートを、ユーザーがスクロール・ズームできるMapViewで表示する。 */
-export function RouteMapPanel({ emptyLabel, points, styles, theme }: RouteMapPanelProps) {
+export function RouteMapPanel({ emptyLabel, points, regionPoints = points, styles, theme }: RouteMapPanelProps) {
   const routeCoordinates = toRenderRouteCoordinates(points);
-  const endpointMarkers = getEndpointMarkers(points);
 
-  if (points.length === 0) {
+  if (regionPoints.length === 0) {
     return (
       <View style={styles.routeMapEmptyPanel}>
         <Text style={styles.routeMapEmptyText}>{emptyLabel}</Text>
@@ -35,7 +35,7 @@ export function RouteMapPanel({ emptyLabel, points, styles, theme }: RouteMapPan
     <View style={styles.routeMapFrame}>
       <MapView
         style={styles.routeMap}
-        initialRegion={createInitialRegion(points)}
+        initialRegion={createInitialRegion(regionPoints)}
         scrollEnabled
         zoomEnabled
         rotateEnabled
@@ -44,19 +44,6 @@ export function RouteMapPanel({ emptyLabel, points, styles, theme }: RouteMapPan
         {routeCoordinates.length > 1 ? (
           <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
         ) : null}
-        {endpointMarkers.map((marker) => (
-          <Marker
-            key={marker.id}
-            coordinate={{ latitude: marker.point.latitude, longitude: marker.point.longitude }}
-            anchor={{ x: 0.5, y: 1 }}
-            title={marker.label}
-            description={marker.point.recordedAt}
-          >
-            <View style={[styles.endpointMarker, { backgroundColor: marker.color }]}>
-              <Text style={styles.endpointMarkerText}>{marker.label}</Text>
-            </View>
-          </Marker>
-        ))}
       </MapView>
     </View>
   );

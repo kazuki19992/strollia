@@ -128,3 +128,28 @@ export async function getLocationPointAdminAreaName(locationPointId: number): Pr
     areaName: row.municipalityName ?? row.prefectureName,
   };
 }
+
+/** 複数のGPSポイントIDに紐づく表示用行政区域名をまとめて取得する。 */
+export async function getLocationPointAdminAreaNames(locationPointIds: number[]): Promise<Map<number, string>> {
+  const uniqueIds = [...new Set(locationPointIds)];
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  const placeholders = uniqueIds.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<{
+    locationPointId: number;
+    prefectureName: string;
+    municipalityName: string | null;
+  }>(
+    `SELECT
+       location_point_id as locationPointId,
+       prefecture_name as prefectureName,
+       municipality_name as municipalityName
+     FROM location_point_admin_areas
+     WHERE location_point_id IN (${placeholders})`,
+    ...uniqueIds,
+  );
+
+  return new Map(rows.map((row) => [row.locationPointId, row.municipalityName ?? row.prefectureName]));
+}

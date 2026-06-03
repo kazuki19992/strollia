@@ -1,10 +1,8 @@
-import { Feather } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
-
 import { formatDailyLogListDateLabel, formatDistanceKm, formatRouteSummary, resolveDailyLogDistance } from '../dailyLogDisplay';
 import type { DailyLogSummary } from '../../types/gps';
 import type { AppStyles } from '../appStyles';
 import type { AppTheme } from '../../theme/theme';
+import { AppListItem } from './AppListItem';
 
 export type DailyLogListItemProps = {
   /** 表示対象の日別サマリー。 */
@@ -15,20 +13,26 @@ export type DailyLogListItemProps = {
   theme: AppTheme;
   /** 行を開く処理。 */
   onPress: (log: DailyLogSummary) => void;
+  /** 開始地点名。 */
+  startAreaName?: string;
+  /** 終了地点名。 */
+  endAreaName?: string;
 };
 
 /** 日ごとの記録一覧で使う、軽量なリスト行。 */
-export function DailyLogListItem({ log, styles, theme, onPress }: DailyLogListItemProps) {
+export function DailyLogListItem({ log, styles, theme, startAreaName, endAreaName, onPress }: DailyLogListItemProps) {
+  const title = formatDailyLogListDateLabel(log.localDate);
+
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${formatDailyLogListDateLabel(log.localDate)}の記録を開く`} onPress={() => onPress(log)}>
-      <View style={styles.dailyLogListItem}>
-        <View style={styles.dailyLogListTextColumn}>
-          <Text style={styles.dailyLogListDate}>{formatDailyLogListDateLabel(log.localDate)}</Text>
-          <Text style={styles.dailyLogListMeta}>{formatRouteSummary()}</Text>
-          <Text style={styles.dailyLogListDistance}>{formatDistanceKm(resolveDailyLogDistance(log))}</Text>
-        </View>
-        <Feather name="chevron-right" size={36} color={theme.colors.mutedText} />
-      </View>
-    </Pressable>
+    <AppListItem
+      accessibilityLabel={`${title}の記録を開く`}
+      detail={formatDistanceKm(resolveDailyLogDistance(log))}
+      styles={styles}
+      subtitle={formatRouteSummary(startAreaName, endAreaName)}
+      theme={theme}
+      title={title}
+      prominent
+      onPress={() => onPress(log)}
+    />
   );
 }

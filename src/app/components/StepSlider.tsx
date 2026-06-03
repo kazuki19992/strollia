@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { GestureResponderEvent, PanResponder, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { PanResponder, Text, View } from 'react-native';
 
 import type { AppStyles } from '../appStyles';
 
@@ -37,27 +37,58 @@ export function StepSlider({
   onValueChange,
 }: StepSliderProps) {
   const [trackWidth, setTrackWidth] = useState(1);
+  const [dragDisplayValue, setDragDisplayValue] = useState<number | null>(null);
+  const lastEmittedValueRef = useRef(value);
   const normalizedValue = normalizeValue(value, minValue, maxValue, stepValue);
-  const progress = (normalizedValue - minValue) / Math.max(maxValue - minValue, 1);
+  const displayValue = dragDisplayValue ?? normalizedValue;
+  const progress = (displayValue - minValue) / Math.max(maxValue - minValue, 1);
   const tickPositions = useMemo(() => [0.25, 0.5, 0.75], []);
+
+  useEffect(() => {
+    lastEmittedValueRef.current = normalizedValue;
+  }, [normalizedValue]);
+
+  function updateFromLocation(locationX: number, emitOnlyChangedValue: boolean): void {
+    const rawValue = valueFromLocation(locationX, trackWidth, minValue, maxValue, 1);
+    const nextValue = normalizeValue(rawValue, minValue, maxValue, stepValue);
+    setDragDisplayValue(rawValue);
+
+    if (!emitOnlyChangedValue || nextValue !== lastEmittedValueRef.current) {
+      lastEmittedValueRef.current = nextValue;
+      onValueChange(nextValue);
+    }
+  }
+
+  function endDragAtLocation(locationX: number): void {
+    const nextValue = valueFromLocation(locationX, trackWidth, minValue, maxValue, stepValue);
+    setDragDisplayValue(null);
+
+    if (nextValue !== lastEmittedValueRef.current) {
+      lastEmittedValueRef.current = nextValue;
+      onValueChange(nextValue);
+    }
+  }
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
         onPanResponderGrant: (event) => {
-          onValueChange(valueFromLocation(event.nativeEvent.locationX, trackWidth, minValue, maxValue, stepValue));
+          updateFromLocation(event.nativeEvent.locationX, false);
         },
         onPanResponderMove: (event, gestureState) => {
-          onValueChange(valueFromLocation(event.nativeEvent.locationX + gestureState.dx, trackWidth, minValue, maxValue, stepValue));
+          updateFromLocation(event.nativeEvent.locationX + gestureState.dx, true);
+        },
+        onPanResponderRelease: (event, gestureState) => {
+          endDragAtLocation(event.nativeEvent.locationX + gestureState.dx);
+        },
+        onPanResponderTerminate: (event, gestureState) => {
+          endDragAtLocation(event.nativeEvent.locationX + gestureState.dx);
         },
       }),
     [maxValue, minValue, onValueChange, stepValue, trackWidth],
   );
-
-  function handlePress(event: GestureResponderEvent): void {
-    onValueChange(valueFromLocation(event.nativeEvent.locationX, trackWidth, minValue, maxValue, stepValue));
-  }
 
   return (
     <View accessibilityLabel={accessibilityLabel} accessibilityRole="adjustable" style={styles.stepSlider}>
@@ -66,8 +97,6 @@ export function StepSlider({
         <View
           {...panResponder.panHandlers}
           onLayout={(event) => setTrackWidth(Math.max(event.nativeEvent.layout.width, 1))}
-          onStartShouldSetResponder={() => true}
-          onResponderRelease={handlePress}
           style={styles.stepSliderTrackTouchArea}
         >
           <View style={styles.stepSliderTrack}>

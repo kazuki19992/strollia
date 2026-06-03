@@ -3,6 +3,15 @@ import { SafeAreaView, Text } from 'react-native';
 import { lightTheme } from '../../../theme/theme';
 import { DailyLogsScreen } from '../DailyLogsScreen';
 
+jest.mock('../../../features/achievements/adminAreaRepository', () => ({
+  getLocationPointAdminAreaNames: jest.fn().mockResolvedValue(new Map([
+    [10, '船橋市'],
+    [20, '船橋市'],
+    [30, '千代田区'],
+    [40, '渋谷区'],
+  ])),
+}));
+
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
 }));
@@ -21,10 +30,10 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     jest.restoreAllMocks();
   });
 
-  test('日別ログがない場合は空状態を表示する', () => {
+  test('日別ログがない場合は空状態を表示する', async () => {
     let renderer: any;
 
-    act(() => {
+    await act(async () => {
       renderer = ReactTestRenderer.create(
         <DailyLogsScreen
           dailyLogs={[]}
@@ -34,6 +43,7 @@ describe('日別ログ画面 DailyLogsScreen', () => {
           onOpenDailyLogDetail={jest.fn()}
         />,
       );
+      await Promise.resolve();
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
@@ -41,10 +51,10 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     expect(texts).toContain('日別ログはまだありません');
   });
 
-  test('設定画面と同じ背景と共通ヘッダーで表示する', () => {
+  test('設定画面と同じ背景と共通ヘッダーで表示する', async () => {
     let renderer: any;
 
-    act(() => {
+    await act(async () => {
       renderer = ReactTestRenderer.create(
         <DailyLogsScreen
           dailyLogs={[]}
@@ -54,6 +64,7 @@ describe('日別ログ画面 DailyLogsScreen', () => {
           onOpenDailyLogDetail={jest.fn()}
         />,
       );
+      await Promise.resolve();
     });
 
     const container = renderer.root.findByType(SafeAreaView);
@@ -65,7 +76,7 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     expect(backButton.props.style).toBe('appHeaderBackButton');
   });
 
-  test('月見出しごとのリスト行を表示し、行タップで詳細を開く', () => {
+  test('月見出しごとのリスト行と開始終了地点を表示し、行タップで詳細を開く', async () => {
     const onOpenDailyLogDetail = jest.fn();
     const log = {
       localDate: '2026-05-31',
@@ -73,10 +84,12 @@ describe('日別ログ画面 DailyLogsScreen', () => {
       startedAt: '2026-05-31T00:00:00.000Z',
       endedAt: '2026-05-31T00:01:00.000Z',
       distanceMeters: 146200,
+      startLocationPointId: 10,
+      endLocationPointId: 20,
     };
     let renderer: any;
 
-    act(() => {
+    await act(async () => {
       renderer = ReactTestRenderer.create(
         <DailyLogsScreen
           dailyLogs={[
@@ -86,6 +99,8 @@ describe('日別ログ画面 DailyLogsScreen', () => {
               startedAt: '2026-06-03T00:00:00.000Z',
               endedAt: '2026-06-03T00:01:00.000Z',
               distanceMeters: 300,
+              startLocationPointId: 30,
+              endLocationPointId: 40,
             },
             log,
           ]}
@@ -95,10 +110,11 @@ describe('日別ログ画面 DailyLogsScreen', () => {
           onOpenDailyLogDetail={onOpenDailyLogDetail}
         />,
       );
+      await Promise.resolve();
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['2026年6月', '6月3日（水）', '0.30km', '2026年5月', '5月31日（日）', '146.20km']));
+    expect(texts).toEqual(expect.arrayContaining(['2026年6月', '6月3日（水）', '開始地点: 千代田区、終了地点: 渋谷区', '0.30km', '2026年5月', '5月31日（日）', '開始地点: 船橋市、終了地点: 船橋市', '146.20km']));
 
     const button = renderer.root.findByProps({ accessibilityLabel: '5月31日（日）の記録を開く' });
     act(() => {

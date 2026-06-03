@@ -121,7 +121,13 @@ type SettingsStackParamList = {
   LicenseDetail: { license: OssLicenseEntry };
 };
 
+type DailyLogStackParamList = {
+  DailyLogList: undefined;
+  DailyLogDetail: { log: DailyLogSummary };
+};
+
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const DailyLogStack = createNativeStackNavigator<DailyLogStackParamList>();
 /** 新規visited cellを塗るときのフェード時間。 */
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
@@ -151,7 +157,6 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
-  const [selectedDailyLogDate, setSelectedDailyLogDate] = useState<string | null>(null);
   const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
   const [points, setPoints] = useState<LocationPoint[]>([]);
   const [message, setMessage] = useState('起動後に自動でGPS記録を開始します。');
@@ -207,10 +212,6 @@ export default function App() {
     const today = toLocalDate(new Date());
     return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
   }, [dailyLogs]);
-  const selectedDailyLog = useMemo(
-    () => dailyLogs.find((log) => log.localDate === selectedDailyLogDate) ?? null,
-    [dailyLogs, selectedDailyLogDate],
-  );
   const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
   const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
   const selectedPhotoClusterPages = useMemo(
@@ -749,20 +750,7 @@ export default function App() {
 
   /** 日ごとの記録画面へ移動する。 */
   function openDailyLogs(): void {
-    setSelectedDailyLogDate(null);
     navigateToScreen('dailyLogs');
-  }
-
-  /** 日ごとの記録詳細画面へ移動する。 */
-  function openDailyLogDetail(log: DailyLogSummary): void {
-    setSelectedDailyLogDate(log.localDate);
-    navigateToScreen('dailyLogDetail');
-  }
-
-  /** 日ごとの記録一覧へ戻る。 */
-  function backToDailyLogs(): void {
-    triggerLightImpactHaptic();
-    setScreenMode('dailyLogs');
   }
 
   /** 地図画面へ戻る。 */
@@ -773,7 +761,6 @@ export default function App() {
       setVisibleRegion(createUserCenteredRegion(userCoordinate));
       setVisitedGridRefreshVersion((version) => version + 1);
     }
-    setSelectedDailyLogDate(null);
     setScreenMode('map');
   }
 
@@ -1017,21 +1004,40 @@ export default function App() {
             />
           )}
           {screenMode === 'dailyLogs' && (
-            <DailyLogsScreen
-              dailyLogs={dailyLogs}
-              styles={styles}
-              theme={theme}
-              onBackToMap={openMap}
-              onOpenDailyLogDetail={openDailyLogDetail}
-            />
-          )}
-          {screenMode === 'dailyLogDetail' && selectedDailyLog && (
-            <DailyLogDetailScreen
-              log={selectedDailyLog}
-              styles={styles}
-              theme={theme}
-              onBackToDailyLogs={backToDailyLogs}
-            />
+            <NavigationIndependentTree>
+              <NavigationContainer>
+                <DailyLogStack.Navigator
+                  initialRouteName="DailyLogList"
+                  screenOptions={{
+                    animation: 'slide_from_right',
+                    gestureEnabled: true,
+                    headerShown: false,
+                  }}
+                >
+                  <DailyLogStack.Screen name="DailyLogList">
+                    {({ navigation }) => (
+                      <DailyLogsScreen
+                        dailyLogs={dailyLogs}
+                        styles={styles}
+                        theme={theme}
+                        onBackToMap={openMap}
+                        onOpenDailyLogDetail={(log) => navigation.navigate('DailyLogDetail', { log })}
+                      />
+                    )}
+                  </DailyLogStack.Screen>
+                  <DailyLogStack.Screen name="DailyLogDetail">
+                    {({ navigation, route }) => (
+                      <DailyLogDetailScreen
+                        log={route.params.log}
+                        styles={styles}
+                        theme={theme}
+                        onBackToDailyLogs={() => navigation.goBack()}
+                      />
+                    )}
+                  </DailyLogStack.Screen>
+                </DailyLogStack.Navigator>
+              </NavigationContainer>
+            </NavigationIndependentTree>
           )}
           {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
           {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} theme={theme} onBackToMap={openMap} />}

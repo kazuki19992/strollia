@@ -116,7 +116,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
       <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
       <ScrollView contentContainerStyle={styles.dailyLogDetailContent}>
         <View style={styles.routeTimeline}>
-          <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} styles={styles} theme={theme} />
+          <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
           <StepSlider
             accessibilityLabel="移動地図の表示時刻"
             minValue={DAILY_ROUTE_START_MINUTES}

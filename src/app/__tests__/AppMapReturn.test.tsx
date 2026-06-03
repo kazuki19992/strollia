@@ -508,6 +508,8 @@ describe('App 地図復帰時の表示範囲復元', () => {
         startedAt: '2026-05-31T00:00:00.000Z',
         endedAt: '2026-05-31T00:01:00.000Z',
         distanceMeters: 146200,
+        startLocationPointId: 1,
+        endLocationPointId: 2,
       },
     ]);
 

@@ -1,5 +1,6 @@
 import type { GridCell } from '../location/grid/gridCell';
 import { coordinateToGridCell } from '../location/grid/gridCell';
+import type { ImageSourcePropType } from 'react-native';
 import type { LocationPoint } from '../../types/gps';
 import { toLocalDate } from '../../utils/date';
 
@@ -11,6 +12,8 @@ export type DailyDetailAchievement = {
   title: string;
   /** 解除日時。 */
   unlockedAt: string;
+  /** 表示に使うトロフィー画像。 */
+  trophyImage?: ImageSourcePropType;
 };
 
 /** 日別詳細レポートの集計入力。 */

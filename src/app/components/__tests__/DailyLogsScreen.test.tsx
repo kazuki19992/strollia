@@ -1,37 +1,19 @@
 import { SafeAreaView, Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
-const mockDailyLogCard = jest.fn((_props: unknown) => null);
+import { DailyLogsScreen } from '../DailyLogsScreen';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
 }));
 
-jest.mock('../DailyLogCard', () => ({
-  DailyLogCard: (props: unknown) => mockDailyLogCard(props),
-}));
-
-import { DailyLogsScreen } from '../DailyLogsScreen';
-
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
 
-const styles = {
-  appScreen: { backgroundColor: 'app-background' },
-  appHeader: {},
-  appHeaderBackButton: {},
-  appHeaderBackButtonText: {},
-  appHeaderTitle: {},
-  screenList: {},
-  dailyEmptyCard: {},
-  emptyTitle: {},
-  emptyText: {},
-  dailyList: {},
-};
+const styles = new Proxy({}, { get: (_target, prop) => prop });
 
 describe('日別ログ画面 DailyLogsScreen', () => {
   beforeEach(() => {
-    mockDailyLogCard.mockClear();
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -48,9 +30,8 @@ describe('日別ログ画面 DailyLogsScreen', () => {
           dailyLogs={[]}
           styles={styles as never}
           theme={lightTheme}
-          isPlusActive={false}
-          onPresentPremiumPaywall={jest.fn()}
           onBackToMap={jest.fn()}
+          onOpenDailyLogDetail={jest.fn()}
         />,
       );
     });
@@ -69,9 +50,8 @@ describe('日別ログ画面 DailyLogsScreen', () => {
           dailyLogs={[]}
           styles={styles as never}
           theme={lightTheme}
-          isPlusActive={false}
-          onPresentPremiumPaywall={jest.fn()}
           onBackToMap={jest.fn()}
+          onOpenDailyLogDetail={jest.fn()}
         />,
       );
     });
@@ -80,40 +60,51 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });
 
-    expect(container.props.style).toBe(styles.appScreen);
+    expect(container.props.style).toBe('appScreen');
     expect(texts).toContain('日ごとの記録');
-    expect(backButton.props.style).toBe(styles.appHeaderBackButton);
+    expect(backButton.props.style).toBe('appHeaderBackButton');
   });
 
-  test('Plus状態とPaywall導線を日別カードへ渡す', () => {
-    const onPresentPremiumPaywall = jest.fn();
+  test('月見出しごとのリスト行を表示し、行タップで詳細を開く', () => {
+    const onOpenDailyLogDetail = jest.fn();
+    const log = {
+      localDate: '2026-05-31',
+      pointCount: 1,
+      startedAt: '2026-05-31T00:00:00.000Z',
+      endedAt: '2026-05-31T00:01:00.000Z',
+      distanceMeters: 146200,
+    };
+    let renderer: any;
 
     act(() => {
-      ReactTestRenderer.create(
+      renderer = ReactTestRenderer.create(
         <DailyLogsScreen
           dailyLogs={[
             {
-              localDate: '2026-05-31',
+              localDate: '2026-06-03',
               pointCount: 1,
-              startedAt: '2026-05-31T00:00:00.000Z',
-              endedAt: '2026-05-31T00:01:00.000Z',
-              distanceMeters: 12,
+              startedAt: '2026-06-03T00:00:00.000Z',
+              endedAt: '2026-06-03T00:01:00.000Z',
+              distanceMeters: 300,
             },
+            log,
           ]}
           styles={styles as never}
           theme={lightTheme}
-          isPlusActive={true}
-          onPresentPremiumPaywall={onPresentPremiumPaywall}
           onBackToMap={jest.fn()}
+          onOpenDailyLogDetail={onOpenDailyLogDetail}
         />,
       );
     });
 
-    expect(mockDailyLogCard).toHaveBeenCalledWith(
-      expect.objectContaining({
-        isPlusActive: true,
-        onPresentPremiumPaywall,
-      }),
-    );
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toEqual(expect.arrayContaining(['2026年6月', '6月3日（水）', '0.30km', '2026年5月', '5月31日（日）', '146.20km']));
+
+    const button = renderer.root.findByProps({ accessibilityLabel: '5月31日（日）の記録を開く' });
+    act(() => {
+      button.props.onPress();
+    });
+
+    expect(onOpenDailyLogDetail).toHaveBeenCalledWith(log);
   });
 });

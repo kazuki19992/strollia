@@ -8,6 +8,7 @@ import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
 } from '../../features/location/locationService';
+import { getDailyLogs } from '../../features/logs/logRepository';
 import { getPremiumAccessState, getPremiumOfferingSummary, presentPremiumPaywall } from '../../features/premium/revenueCatAccess';
 
 jest.mock('expo-haptics', () => ({
@@ -95,12 +96,29 @@ jest.mock('../components/MapScreen', () => ({
 }));
 
 jest.mock('../components/DailyLogsScreen', () => ({
-  DailyLogsScreen: ({ onBackToMap }: { onBackToMap: () => void }) => {
+  DailyLogsScreen: (props: any) => {
     const { Pressable, Text } = require('react-native');
 
     return (
-      <Pressable accessibilityLabel="地図へ" onPress={onBackToMap}>
-        <Text>地図へ</Text>
+      <>
+        <Pressable accessibilityLabel="地図へ" onPress={props.onBackToMap}>
+          <Text>地図へ</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="日別詳細を開く" onPress={() => props.onOpenDailyLogDetail(props.dailyLogs[0])}>
+          <Text>詳細を開く</Text>
+        </Pressable>
+      </>
+    );
+  },
+}));
+
+jest.mock('../components/DailyLogDetailScreen', () => ({
+  DailyLogDetailScreen: ({ onBackToDailyLogs }: { onBackToDailyLogs: () => void }) => {
+    const { Pressable, Text } = require('react-native');
+
+    return (
+      <Pressable accessibilityLabel="日別詳細から一覧へ戻る" onPress={onBackToDailyLogs}>
+        <Text>日ごとの記録</Text>
       </Pressable>
     );
   },
@@ -480,6 +498,38 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
+  });
+
+  test('日ごとの記録一覧から日別詳細へ進み、一覧へ戻れる', async () => {
+    (getDailyLogs as jest.Mock).mockResolvedValueOnce([
+      {
+        localDate: '2026-05-31',
+        pointCount: 1,
+        startedAt: '2026-05-31T00:00:00.000Z',
+        endedAt: '2026-05-31T00:01:00.000Z',
+        distanceMeters: 146200,
+      },
+    ]);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '日別詳細を開く' }).props.onPress();
+    });
+
+    expect(renderer.root.findByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' })).toBeTruthy();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' }).props.onPress();
+    });
+
+    expect(renderer.root.findByProps({ accessibilityLabel: '日別詳細を開く' })).toBeTruthy();
   });
 
 

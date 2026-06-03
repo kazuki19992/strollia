@@ -1,10 +1,12 @@
 import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 
+import { groupDailyLogsByMonth } from '../dailyLogDisplay';
 import { AppTheme } from '../../theme/theme';
 import { DailyLogSummary } from '../../types/gps';
 import { AppStyles } from '../appStyles';
-import { DailyLogCard } from './DailyLogCard';
+import { DailyLogListItem } from './DailyLogListItem';
 import { AppScreenHeader } from './AppScreenHeader';
+import { SectionTitle } from './SectionTitle';
 
 /** 日別ログ一覧画面のprops。 */
 export type DailyLogsScreenProps = {
@@ -14,16 +16,16 @@ export type DailyLogsScreenProps = {
   styles: AppStyles;
   /** 現在テーマ。 */
   theme: AppTheme;
-  /** Plusが有効かどうか。 */
-  isPlusActive: boolean;
-  /** Plus未加入時にPaywallを表示する処理。 */
-  onPresentPremiumPaywall: () => void;
   /** 地図画面へ戻る処理。 */
   onBackToMap: () => void;
+  /** 対象日の詳細画面を開く処理。 */
+  onOpenDailyLogDetail: (log: DailyLogSummary) => void;
 };
 
 /** 日別ログ一覧画面を描画する。 */
-export function DailyLogsScreen({ dailyLogs, styles, theme, isPlusActive, onPresentPremiumPaywall, onBackToMap }: DailyLogsScreenProps) {
+export function DailyLogsScreen({ dailyLogs, styles, theme, onBackToMap, onOpenDailyLogDetail }: DailyLogsScreenProps) {
+  const monthGroups = groupDailyLogsByMonth(dailyLogs);
+
   return (
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader backLabel="地図" styles={styles} theme={theme} title="日ごとの記録" onBack={onBackToMap} />
@@ -34,16 +36,16 @@ export function DailyLogsScreen({ dailyLogs, styles, theme, isPlusActive, onPres
           <Text style={styles.emptyText}>GPSログが保存されると、この画面に日ごとの記録が並びます。</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.dailyList}>
-          {dailyLogs.map((log) => (
-            <DailyLogCard
-              key={log.localDate}
-              log={log}
-              styles={styles}
-              theme={theme}
-              isPlusActive={isPlusActive}
-              onPresentPremiumPaywall={onPresentPremiumPaywall}
-            />
+        <ScrollView contentContainerStyle={styles.dailyLogList}>
+          {monthGroups.map((group) => (
+            <View key={group.monthKey} style={styles.dailyLogMonthSection}>
+              <SectionTitle styles={styles}>{group.label}</SectionTitle>
+              <View style={styles.dailyLogListGroup}>
+                {group.logs.map((log) => (
+                  <DailyLogListItem key={log.localDate} log={log} styles={styles} theme={theme} onPress={onOpenDailyLogDetail} />
+                ))}
+              </View>
+            </View>
           ))}
         </ScrollView>
       )}

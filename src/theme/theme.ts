@@ -29,7 +29,7 @@ export type AppTheme = {
 export const lightTheme: AppTheme = {
   name: 'light',
   colors: {
-    background: '#f4ead8',
+    background: '#ffffff',
     card: '#fffdf8',
     cardStrong: '#fffdf8',
     text: '#2d2416',
@@ -50,7 +50,7 @@ export const lightTheme: AppTheme = {
 export const darkTheme: AppTheme = {
   name: 'dark',
   colors: {
-    background: '#151811',
+    background: '#202020',
     card: '#22261d',
     cardStrong: '#2b3025',
     text: '#f3eadb',

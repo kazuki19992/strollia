@@ -3,7 +3,11 @@ import { StyleSheet } from 'react-native';
 
 import { createStyles } from '../../appStyles';
 import { darkTheme, lightTheme } from '../../../theme/theme';
-import { SettingsActionPill, SettingsInfoBlock, SettingsScreenHeader, SettingsSelectionTile } from '../SettingsControls';
+import { ActionPill } from '../ActionPill';
+import { AppBackButton } from '../AppBackButton';
+import { AppScreenHeader } from '../AppScreenHeader';
+import { InfoBlock } from '../InfoBlock';
+import { SelectionTile } from '../SelectionTile';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -21,19 +25,21 @@ function flattenStyle(style: unknown): Record<string, unknown> {
   return (StyleSheet.flatten(style as never) ?? {}) as Record<string, unknown>;
 }
 
-describe('設定UI共通コンポーネント SettingsControls', () => {
+describe('画面共通コンポーネント', () => {
   test('選択中タイルはプライマリー枠と10%塗りで表示する', () => {
     const styles = createStyles(lightTheme);
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsSelectionTile isSelected label={'スマホの設定に\n合わせる'} styles={styles} />);
+      renderer = ReactTestRenderer.create(<SelectionTile isSelected label={'スマホの設定に\n合わせる'} styles={styles} />);
     });
 
     const tile = renderer.root.findByProps({ accessibilityRole: 'button' });
     const text = renderer.root.findByType(Text);
     const tileStyle = flattenStyle(tile.props.style);
 
+    expect(tile.props.accessibilityLabel).toBe('スマホの設定に 合わせる');
+    expect(tile.props.accessibilityState).toEqual({ disabled: true, selected: true });
     expect(tileStyle.borderColor).toBe(lightTheme.colors.primary);
     expect(tileStyle.backgroundColor).toBe('rgba(31, 122, 92, 0.10)');
     expect(tileStyle.borderWidth).toBe(4);
@@ -45,12 +51,13 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsSelectionTile label="いつもダーク" styles={styles} />);
+      renderer = ReactTestRenderer.create(<SelectionTile label="いつもダーク" styles={styles} />);
     });
 
     const tile = renderer.root.findByProps({ accessibilityRole: 'button' });
     const tileStyle = flattenStyle(tile.props.style);
 
+    expect(tile.props.accessibilityState).toEqual({ disabled: true, selected: false });
     expect(tileStyle.backgroundColor).toBe('transparent');
     expect(tileStyle.borderColor).toBe('rgba(255, 255, 255, 0.28)');
     expect(tileStyle.borderWidth).toBe(1);
@@ -61,7 +68,7 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsActionPill alignLeft label="オープンソースライセンス" styles={styles} onPress={jest.fn()} />);
+      renderer = ReactTestRenderer.create(<ActionPill alignLeft label="オープンソースライセンス" styles={styles} onPress={jest.fn()} />);
     });
 
     const pill = renderer.root.findByProps({ accessibilityRole: 'button' });
@@ -80,7 +87,7 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsActionPill danger label="すべてのデータの削除" styles={styles} onPress={jest.fn()} />);
+      renderer = ReactTestRenderer.create(<ActionPill danger label="すべてのデータの削除" styles={styles} onPress={jest.fn()} />);
     });
 
     const pill = renderer.root.findByProps({ accessibilityRole: 'button' });
@@ -99,7 +106,7 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <SettingsActionPill
+        <ActionPill
           alignLeft
           backgroundColor="rgba(31, 122, 92, 0.08)"
           borderColor={lightTheme.colors.primary}
@@ -126,7 +133,7 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsInfoBlock description="説明文" styles={styles} title="項目名" />);
+      renderer = ReactTestRenderer.create(<InfoBlock description="説明文" styles={styles} title="項目名" />);
     });
 
     const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '項目名');
@@ -141,7 +148,7 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsScreenHeader backLabel="長い戻り先" styles={styles} theme={lightTheme} title="設定" onBack={jest.fn()} />);
+      renderer = ReactTestRenderer.create(<AppScreenHeader backLabel="長い戻り先" styles={styles} theme={lightTheme} title="設定" onBack={jest.fn()} />);
     });
 
     const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '設定');
@@ -151,5 +158,47 @@ describe('設定UI共通コンポーネント SettingsControls', () => {
     expect(titleStyle.left).toBe(0);
     expect(titleStyle.right).toBe(0);
     expect(titleStyle.textAlign).toBe('center');
+  });
+
+  test('戻るボタンは単体の共通コンポーネントとして使える', () => {
+    const styles = createStyles(lightTheme);
+    const onBack = jest.fn();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<AppBackButton label="地図" styles={styles} theme={lightTheme} onPress={onBack} />);
+    });
+
+    const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });
+    const label = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '地図');
+
+    act(() => {
+      backButton.props.onPress();
+    });
+
+    expect(flattenStyle(backButton.props.style).backgroundColor).toBe('#d9d9d9');
+    expect(flattenStyle(label?.props.style).color).toBe('#333333');
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  test('全画面共通ヘッダーは設定画面と同じ戻るリボンと中央タイトルを使える', () => {
+    const styles = createStyles(lightTheme);
+    const onBack = jest.fn();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<AppScreenHeader backLabel="地図" styles={styles} theme={lightTheme} title="実績" onBack={onBack} />);
+    });
+
+    const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });
+    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '実績');
+
+    act(() => {
+      backButton.props.onPress();
+    });
+
+    expect(flattenStyle(backButton.props.style).backgroundColor).toBe('#d9d9d9');
+    expect(flattenStyle(title?.props.style).textAlign).toBe('center');
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

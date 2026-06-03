@@ -23,12 +23,11 @@ export function createStyles(theme: AppTheme) {
   const { colors } = theme;
   const mapPanelBackground = 'rgba(51, 51, 51, 0.80)';
   const mapPanelText = '#ffffff';
-  const settingsBackground = theme.name === 'dark' ? '#202020' : '#ffffff';
   const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
   const settingsMuted = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#767676';
   const settingsBorder = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.28)' : 'rgba(51, 51, 51, 0.20)';
   const settingsBackButtonText = theme.name === 'dark' ? '#333333' : settingsText;
-  const settingsSelectionSurface = hexToRgba(colors.primary, 0.1);
+  const selectionSurface = hexToRgba(colors.primary, 0.1);
   const settingsDanger = theme.name === 'dark' ? colors.danger : '#b0002f';
   const settingsDangerSurface = theme.name === 'dark' ? 'rgba(255, 136, 153, 0.12)' : 'rgba(176, 0, 47, 0.05)';
   const settingsGpsActive = '#00b035';
@@ -131,14 +130,14 @@ export function createStyles(theme: AppTheme) {
     },
     achievementModalBackdrop: {
       alignItems: 'center',
-      backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.72)' : 'rgba(45, 36, 22, 0.38)',
+      backgroundColor: hexToRgba(colors.background, 0.92),
       flex: 1,
       justifyContent: 'center',
       padding: 24,
     },
     achievementModalCard: {
       alignItems: 'center',
-      backgroundColor: colors.cardStrong,
+      backgroundColor: colors.background,
       borderColor: colors.border,
       borderRadius: 30,
       borderWidth: 1,
@@ -223,18 +222,6 @@ export function createStyles(theme: AppTheme) {
       fontSize: 13,
       fontWeight: '700',
       lineHeight: 18,
-    },
-    backButton: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 999,
-      borderWidth: 1,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
-    backButtonText: {
-      color: colors.primary,
-      fontWeight: '900',
     },
     bottomBar: {
       alignItems: 'center',
@@ -357,10 +344,6 @@ export function createStyles(theme: AppTheme) {
       gap: 10,
       padding: 16,
     },
-    dailyContainer: {
-      backgroundColor: colors.background,
-      flex: 1,
-    },
     dailyDate: {
       color: colors.text,
       fontSize: 22,
@@ -412,13 +395,6 @@ export function createStyles(theme: AppTheme) {
       margin: 16,
       padding: 18,
     },
-    dailyHeader: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: 12,
-      justifyContent: 'space-between',
-      padding: 16,
-    },
     dailyList: {
       gap: 12,
       padding: 16,
@@ -444,13 +420,6 @@ export function createStyles(theme: AppTheme) {
     dailyTime: {
       color: colors.mutedText,
       fontWeight: '700',
-    },
-    dailyTitle: {
-      color: colors.text,
-      flex: 1,
-      fontSize: 20,
-      fontWeight: '900',
-      textAlign: 'center',
     },
     endpointMarker: {
       borderColor: colors.card,
@@ -626,9 +595,6 @@ export function createStyles(theme: AppTheme) {
     iconButtonText: {
       color: colors.text,
       fontWeight: '800',
-    },
-    headerSpacer: {
-      width: 70,
     },
     locationMetaLabel: {
       color: colors.mutedText,
@@ -1369,7 +1335,7 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 16,
       paddingVertical: 14,
     },
-    settingsActionPill: {
+    actionPill: {
       alignItems: 'center',
       backgroundColor: 'transparent',
       borderColor: settingsText,
@@ -1380,31 +1346,31 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 22,
       paddingVertical: 10,
     },
-    settingsActionPillContent: {
+    actionPillContent: {
       alignItems: 'center',
       flexDirection: 'row',
       gap: 10,
       justifyContent: 'center',
     },
-    settingsActionPillContentLeft: {
+    actionPillContentLeft: {
       justifyContent: 'flex-start',
       width: '100%',
     },
-    settingsActionPillDanger: {
+    actionPillDanger: {
       backgroundColor: settingsDangerSurface,
       borderColor: settingsDanger,
     },
-    settingsActionPillDangerText: {
+    actionPillDangerText: {
       color: settingsDanger,
     },
-    settingsActionPillText: {
+    actionPillText: {
       color: settingsText,
       fontSize: 14,
       fontWeight: '400',
       lineHeight: 18,
       textAlign: 'center',
     },
-    settingsActionPillLeft: {
+    actionPillLeft: {
       alignItems: 'stretch',
       paddingHorizontal: 22,
     },
@@ -1422,7 +1388,7 @@ export function createStyles(theme: AppTheme) {
       flexWrap: 'wrap',
       gap: 8,
     },
-    settingsBackRibbon: {
+    appHeaderBackButton: {
       alignItems: 'center',
       backgroundColor: theme.name === 'dark' ? '#ffffff' : '#d9d9d9',
       borderRadius: 999,
@@ -1435,7 +1401,7 @@ export function createStyles(theme: AppTheme) {
       paddingRight: 18,
       zIndex: 1,
     },
-    settingsBackRibbonText: {
+    appHeaderBackButtonText: {
       color: settingsBackButtonText,
       fontSize: 13,
       fontWeight: '400',
@@ -1508,7 +1474,7 @@ export function createStyles(theme: AppTheme) {
     settingsFreeBadge: {
       backgroundColor: settingsGpsDanger,
     },
-    settingsHeader: {
+    appHeader: {
       alignItems: 'center',
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -1517,7 +1483,7 @@ export function createStyles(theme: AppTheme) {
       paddingTop: 18,
       position: 'relative',
     },
-    settingsHeaderTitle: {
+    appHeaderTitle: {
       color: settingsText,
       fontSize: 14,
       fontWeight: '900',
@@ -1535,7 +1501,7 @@ export function createStyles(theme: AppTheme) {
       justifyContent: 'center',
       minHeight: 34,
     },
-    settingsInfoBlock: {
+    infoBlock: {
       gap: 4,
     },
     settingsInlineRow: {
@@ -1549,39 +1515,39 @@ export function createStyles(theme: AppTheme) {
       gap: 3,
       minWidth: 0,
     },
-    settingsItemDescription: {
+    formItemDescription: {
       color: settingsMuted,
       fontSize: 11,
       fontWeight: '400',
       lineHeight: 14,
     },
-    settingsItemTitle: {
+    formItemTitle: {
       color: settingsText,
       fontSize: 14,
       fontWeight: '400',
       lineHeight: 18,
     },
-    settingsList: {
+    screenList: {
       gap: 16,
       paddingBottom: 34,
       paddingHorizontal: 24,
       paddingTop: 0,
     },
-    settingsOptionGrid: {
+    optionGroupGrid: {
       flexDirection: 'row',
       flexWrap: 'nowrap',
       gap: 10,
     },
-    settingsOptionGroup: {
+    optionGroup: {
       gap: 8,
     },
-    settingsOptionHeader: {
+    optionGroupHeader: {
       alignItems: 'center',
       flexDirection: 'row',
       gap: 10,
       justifyContent: 'space-between',
     },
-    settingsOptionNote: {
+    optionGroupNote: {
       color: settingsMuted,
       flexShrink: 1,
       fontSize: 9,
@@ -1599,23 +1565,23 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 8,
       paddingVertical: 7,
     },
-    settingsScreen: {
-      backgroundColor: settingsBackground,
+    appScreen: {
+      backgroundColor: colors.background,
       flex: 1,
     },
-    settingsSection: {
+    screenSection: {
       gap: 10,
     },
-    settingsSectionBody: {
+    screenSectionBody: {
       gap: 14,
     },
-    settingsSectionTitle: {
+    screenSectionTitle: {
       color: settingsText,
       fontSize: 16,
       fontWeight: '900',
       lineHeight: 20,
     },
-    settingsSelectionTile: {
+    selectionTile: {
       alignItems: 'center',
       backgroundColor: 'transparent',
       borderColor: settingsBorder,
@@ -1628,19 +1594,19 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 8,
       paddingVertical: 7,
     },
-    settingsSelectionTileSelected: {
-      backgroundColor: settingsSelectionSurface,
+    selectionTileSelected: {
+      backgroundColor: selectionSurface,
       borderColor: colors.primary,
       borderWidth: 4,
     },
-    settingsSelectionTileText: {
+    selectionTileText: {
       color: settingsText,
       fontSize: 13,
       fontWeight: '400',
       lineHeight: 17,
       textAlign: 'center',
     },
-    settingsSelectionTileWide: {
+    selectionTileWide: {
       minWidth: 0,
     },
     settingsStatusRow: {
@@ -1652,7 +1618,7 @@ export function createStyles(theme: AppTheme) {
       color: colors.text,
       fontWeight: '900',
     },
-    settingsTitle: {
+    screenSectionHeading: {
       color: colors.text,
       fontSize: 18,
       fontWeight: '900',
@@ -1666,7 +1632,7 @@ export function createStyles(theme: AppTheme) {
       gap: 12,
       justifyContent: 'space-between',
     },
-    settingsThemeSwatch: {
+    selectionTileSwatch: {
       borderColor: settingsMuted,
       borderWidth: 2,
       height: 28,

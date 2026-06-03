@@ -114,7 +114,7 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['2026年6月', '6月3日（水）', '開始地点: 千代田区、終了地点: 渋谷区', '0.30km', '2026年5月', '5月31日（日）', '開始地点: 船橋市、終了地点: 船橋市', '146.20km']));
+    expect(texts).toEqual(expect.arrayContaining(['2026年6月', '6月3日（水）', '千代田区 ▶ 渋谷区', '0.30km', '2026年5月', '5月31日（日）', '船橋市 ▶ 船橋市', '146.20km']));
 
     const button = renderer.root.findByProps({ accessibilityLabel: '5月31日（日）の記録を開く' });
     act(() => {

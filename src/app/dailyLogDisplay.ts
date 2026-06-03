@@ -70,7 +70,7 @@ export function resolveDailyLogDistance(log: DailyLogSummary): number {
 
 /** 一覧で使う開始・終了地点の概要文を作る。 */
 export function formatRouteSummary(startAreaName = '--', endAreaName = '--'): string {
-  return `開始地点: ${startAreaName}、終了地点: ${endAreaName}`;
+  return `${startAreaName} ▶ ${endAreaName}`;
 }
 
 /** 詳細で使う開始・終了地点の値を作る。 */

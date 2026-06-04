@@ -1,5 +1,5 @@
-import Slider from '@react-native-community/slider';
-import { Text, View } from 'react-native';
+import { PanResponder, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
 
 import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
@@ -19,7 +19,7 @@ export type StepSliderProps = {
   styles: AppStyles;
   /** 1ステップの幅。 */
   stepValue: number;
-  /** 現在テーマ。 */
+  /** 現在テーマ（API 互換のため保持、色は appStyles で管理）。 */
   theme: AppTheme;
   /** 現在値。 */
   value: number;
@@ -29,7 +29,9 @@ export type StepSliderProps = {
   onValueChange: (value: number) => void;
 };
 
-/** 指定ステップ単位で値を選択できるネイティブスライダー。 */
+const THUMB_HALF_WIDTH = 13;
+
+/** 指定ステップ単位で値を選択できる純粋 JS スライダー。 */
 export function StepSlider({
   accessibilityLabel,
   endLabel,
@@ -38,36 +40,64 @@ export function StepSlider({
   startLabel,
   styles,
   stepValue,
-  theme,
   value,
   valueLabel,
   onValueChange,
 }: StepSliderProps) {
+  const [trackWidth, setTrackWidth] = useState(1);
   const normalizedValue = normalizeValue(value, minValue, maxValue, stepValue);
+  const normalizedValueRef = useRef(normalizedValue);
+  normalizedValueRef.current = normalizedValue;
+  const dragStartXRef = useRef(0);
+  const dragStartValueRef = useRef(normalizedValue);
+  const progress = (normalizedValue - minValue) / Math.max(maxValue - minValue, 1);
+  const thumbX = progress * trackWidth - THUMB_HALF_WIDTH;
 
-  function handleValueChange(nextValue: number): void {
-    const normalizedNextValue = normalizeValue(nextValue, minValue, maxValue, stepValue);
-    if (normalizedNextValue !== normalizedValue) {
-      onValueChange(normalizedNextValue);
-    }
-  }
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (event) => {
+          const rawX = Math.min(trackWidth, Math.max(0, event.nativeEvent.locationX));
+          const nextValue = normalizeValue(
+            minValue + (rawX / trackWidth) * (maxValue - minValue),
+            minValue,
+            maxValue,
+            stepValue,
+          );
+          dragStartXRef.current = rawX;
+          dragStartValueRef.current = nextValue;
+          if (nextValue !== normalizedValueRef.current) {
+            onValueChange(nextValue);
+          }
+        },
+        onPanResponderMove: (_event, gestureState) => {
+          const rawRatio = (dragStartXRef.current + gestureState.dx) / trackWidth;
+          const rawValue = minValue + Math.min(1, Math.max(0, rawRatio)) * (maxValue - minValue);
+          const nextValue = normalizeValue(rawValue, minValue, maxValue, stepValue);
+          if (nextValue !== normalizedValueRef.current) {
+            onValueChange(nextValue);
+          }
+        },
+      }),
+    [trackWidth, minValue, maxValue, stepValue, onValueChange],
+  );
 
   return (
-    <View accessibilityLabel={accessibilityLabel} style={styles.stepSlider}>
+    <View accessibilityLabel={accessibilityLabel} accessibilityRole="adjustable" style={styles.stepSlider}>
       <View style={styles.stepSliderRow}>
         <Text style={styles.stepSliderEdgeLabel}>{startLabel}</Text>
-        <Slider
-          accessibilityLabel={accessibilityLabel}
-          minimumValue={minValue}
-          maximumValue={maxValue}
-          step={stepValue}
-          value={normalizedValue}
-          minimumTrackTintColor={theme.name === 'dark' ? '#f2f2f2' : '#172b63'}
-          maximumTrackTintColor={theme.name === 'dark' ? '#4b4b4b' : '#e0e0e0'}
-          thumbTintColor={theme.name === 'dark' ? '#f2f2f2' : '#ffffff'}
-          style={styles.stepSliderNative}
-          onValueChange={handleValueChange}
-        />
+        <View
+          {...panResponder.panHandlers}
+          style={styles.stepSliderTouchArea}
+          onLayout={(e) => setTrackWidth(Math.max(e.nativeEvent.layout.width, 1))}
+        >
+          <View style={styles.stepSliderTrack}>
+            <View style={[styles.stepSliderFill, { width: `${progress * 100}%` as unknown as number }]} />
+          </View>
+          <View style={[styles.stepSliderThumb, { transform: [{ translateX: thumbX }] }]} />
+        </View>
         <Text style={styles.stepSliderEdgeLabel}>{endLabel}</Text>
       </View>
       <Text style={styles.stepSliderValueLabel}>{valueLabel}</Text>

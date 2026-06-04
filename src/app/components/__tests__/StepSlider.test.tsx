@@ -1,15 +1,7 @@
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
 import { normalizeValue, StepSlider } from '../StepSlider';
-
-jest.mock('@react-native-community/slider', () => {
-  const { View } = require('react-native');
-  return {
-    __esModule: true,
-    default: View,
-  };
-});
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
@@ -24,8 +16,7 @@ describe('ステップスライダー StepSlider', () => {
     expect(normalizeValue(1460, 0, 1440, 30)).toBe(1440);
   });
 
-  it('ネイティブSliderへ30分刻みと現在時刻ラベルを渡す', () => {
-    const onValueChange = jest.fn();
+  it('端ラベルと現在値ラベルを表示する', () => {
     let renderer: any;
 
     act(() => {
@@ -38,23 +29,42 @@ describe('ステップスライダー StepSlider', () => {
           startLabel="0時"
           endLabel="24時"
           value={720}
-          valueLabel="12時"
+          valueLabel="12:00"
           styles={styles as never}
           theme={lightTheme}
-          onValueChange={onValueChange}
+          onValueChange={jest.fn()}
         />,
       );
     });
 
-    const nativeSlider = renderer.root.findByProps({ minimumValue: 0, maximumValue: 1440 });
-    expect(nativeSlider.props.step).toBe(30);
-    expect(nativeSlider.props.value).toBe(720);
-    expect(renderer.root.findAllByType(Text).map((node: any) => node.props.children)).toEqual(expect.arrayContaining(['0時', '12時', '24時']));
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toEqual(expect.arrayContaining(['0時', '24時', '12:00']));
+  });
+
+  it('onLayout を持つタッチエリアを純粋 JS 実装として描画する', () => {
+    let renderer: any;
 
     act(() => {
-      nativeSlider.props.onValueChange(751);
+      renderer = ReactTestRenderer.create(
+        <StepSlider
+          accessibilityLabel="移動地図の表示時刻"
+          minValue={0}
+          maxValue={1440}
+          stepValue={30}
+          startLabel="0時"
+          endLabel="24時"
+          value={720}
+          valueLabel="12:00"
+          styles={styles as never}
+          theme={lightTheme}
+          onValueChange={jest.fn()}
+        />,
+      );
     });
 
-    expect(onValueChange).toHaveBeenCalledWith(750);
+    const touchArea = renderer.root.findAll(
+      (node: any) => node.type === View && typeof node.props.onLayout === 'function',
+    )[0];
+    expect(touchArea).toBeTruthy();
   });
 });

@@ -156,7 +156,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
       <ScrollView contentContainerStyle={styles.dailyLogDetailContent}>
-        <View ref={captureViewRef} collapsable={false} style={styles.dailyLogDetailCapture}>
+        <View ref={captureViewRef} collapsable={false} style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
             <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
             {showSlider && (

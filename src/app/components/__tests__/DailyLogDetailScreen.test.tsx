@@ -13,6 +13,15 @@ jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
 }));
 
+jest.mock('react-native-view-shot', () => ({
+  captureRef: jest.fn().mockResolvedValue('/tmp/daily-log-detail.png'),
+}));
+
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(true),
+  shareAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('../../../features/achievements/adminAreaRepository', () => ({
   getLocationPointAdminAreaName: jest.fn().mockResolvedValue({ locationPointId: 1, areaName: '船橋市' }),
 }));
@@ -114,7 +123,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', '共有']));
+    expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', 'この日の記録を共有']));
     expect(texts).not.toContain('開始');
     expect(texts).not.toContain('最新');
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' })).toBeTruthy();
@@ -187,5 +196,62 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     expect(getLocationPointsByDate).toHaveBeenCalledTimes(2);
     expect(getLocationPointsByDate).toHaveBeenLastCalledWith('2026-05-31');
+  });
+
+  test('共有ボタンを押すと詳細コンテンツを画像キャプチャして共有する', async () => {
+    const { captureRef } = require('react-native-view-shot');
+    const Sharing = require('expo-sharing');
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    const shareButton = renderer.root.findByType(ShareButton);
+    await act(async () => {
+      shareButton.props.onPress();
+    });
+
+    expect(captureRef).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ format: 'png', quality: 1, result: 'tmpfile' }),
+    );
+    expect(Sharing.shareAsync).toHaveBeenCalledWith(
+      '/tmp/daily-log-detail.png',
+      expect.objectContaining({ mimeType: 'image/png' }),
+    );
+  });
+
+  test('共有処理中は共有ボタンを無効化する', async () => {
+    let captureResolve: () => void;
+    const { captureRef } = require('react-native-view-shot');
+    captureRef.mockReturnValueOnce(
+      new Promise<string>((resolve) => {
+        captureResolve = () => resolve('/tmp/daily-log-detail.png');
+      }),
+    );
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findByType(ShareButton).props.disabled).toBeFalsy();
+
+    act(() => {
+      renderer.root.findByType(ShareButton).props.onPress();
+    });
+
+    expect(renderer.root.findByType(ShareButton).props.disabled).toBe(true);
+
+    await act(async () => {
+      captureResolve!();
+    });
+
+    expect(renderer.root.findByType(ShareButton).props.disabled).toBeFalsy();
   });
 });

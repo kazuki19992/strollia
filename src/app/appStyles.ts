@@ -362,6 +362,9 @@ export function createStyles(theme: AppTheme) {
       margin: 16,
       padding: 18,
     },
+    dailyLogDetailCapture: {
+      gap: 28,
+    },
     dailyLogDetailContent: {
       gap: 28,
       paddingBottom: 34,

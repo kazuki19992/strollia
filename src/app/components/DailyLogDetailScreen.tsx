@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, Share, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 
 import { getLocationPointAdminAreaName } from '../../features/achievements/adminAreaRepository';
 import { getAchievementDefinition } from '../../features/achievements/achievementDefinitions';
@@ -47,10 +49,11 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [routeEndpointsLabel, setRouteEndpointsLabel] = useState(formatRouteEndpoints());
   const [routeEndMinutes, setRouteEndMinutes] = useState(DAILY_ROUTE_END_MINUTES);
+  const [isSharingDetail, setIsSharingDetail] = useState(false);
+  const captureViewRef = useRef<View>(null);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
   const visibleRoutePoints = useMemo(() => filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes), [dailyPoints, routeEndMinutes]);
-  const shareMessage = useMemo(() => `Strolliaで${title.subtitle}${title.title}に${distanceLabel}移動しました。`, [distanceLabel, title.subtitle, title.title]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -103,11 +106,36 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
     };
   }, [log]);
 
-  async function shareDailyLog(): Promise<void> {
+  async function shareDailyLogImage(): Promise<void> {
+    if (!captureViewRef.current || isSharingDetail) {
+      return;
+    }
+
+    setIsSharingDetail(true);
+
     try {
-      await Share.share({ message: shareMessage });
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
+        return;
+      }
+
+      const uri = await captureRef(captureViewRef.current, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+      });
+
+      await Sharing.shareAsync(uri, {
+        dialogTitle: `すとろりあ 日別記録 ${title.subtitle}${title.title}`,
+        mimeType: 'image/png',
+        UTI: 'public.png',
+      });
     } catch (error: unknown) {
       Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
+    } finally {
+      setIsSharingDetail(false);
     }
   }
 
@@ -115,49 +143,52 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
       <ScrollView contentContainerStyle={styles.dailyLogDetailContent}>
-        <View style={styles.routeTimeline}>
-          <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
-          <StepSlider
-            accessibilityLabel="移動地図の表示時刻"
-            minValue={DAILY_ROUTE_START_MINUTES}
-            maxValue={DAILY_ROUTE_END_MINUTES}
-            stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
-            startLabel={formatTimelineHourLabel(DAILY_ROUTE_START_MINUTES)}
-            endLabel={formatTimelineHourLabel(DAILY_ROUTE_END_MINUTES)}
-            value={routeEndMinutes}
-            valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
-            styles={styles}
-            theme={theme}
-            onValueChange={setRouteEndMinutes}
-          />
-        </View>
-
-        <View style={styles.dailyLogDetailSection}>
-          <SectionTitle styles={styles}>移動のデータ</SectionTitle>
-          <View style={styles.dataSummaryList}>
-            <DataSummaryRow label="移動距離" value={distanceLabel} styles={styles} />
-            <DataSummaryRow label="開始地点と終了地点" value={routeEndpointsLabel} styles={styles} />
-            <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
-            <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
+        <View ref={captureViewRef} collapsable={false} style={styles.dailyLogDetailCapture}>
+          <View style={styles.routeTimeline}>
+            <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
+            <StepSlider
+              accessibilityLabel="移動地図の表示時刻"
+              minValue={DAILY_ROUTE_START_MINUTES}
+              maxValue={DAILY_ROUTE_END_MINUTES}
+              stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
+              startLabel={formatTimelineHourLabel(DAILY_ROUTE_START_MINUTES)}
+              endLabel={formatTimelineHourLabel(DAILY_ROUTE_END_MINUTES)}
+              value={routeEndMinutes}
+              valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
+              styles={styles}
+              theme={theme}
+              onValueChange={setRouteEndMinutes}
+            />
           </View>
-        </View>
 
-        <View style={styles.dailyLogDetailSection}>
-          <SectionTitle styles={styles}>おもいで</SectionTitle>
-          <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
-          <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
+          <View style={styles.dailyLogDetailSection}>
+            <SectionTitle styles={styles}>移動のデータ</SectionTitle>
+            <View style={styles.dataSummaryList}>
+              <DataSummaryRow label="移動距離" value={distanceLabel} styles={styles} />
+              <DataSummaryRow label="開始地点と終了地点" value={routeEndpointsLabel} styles={styles} />
+              <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
+              <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
+            </View>
+          </View>
+
+          <View style={styles.dailyLogDetailSection}>
+            <SectionTitle styles={styles}>おもいで</SectionTitle>
+            <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
+            <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
+          </View>
         </View>
 
         <ShareButton
           accessibilityLabel="この日の記録を共有"
+          disabled={isSharingDetail}
           iconColor="#aaaaaa"
           iconSize={24}
-          label="共有"
+          label="この日の記録を共有"
           style={styles.shareButtonWide}
           textStyle={styles.shareButtonWideText}
           variant="wide"
           onPress={() => {
-            shareDailyLog().catch(() => undefined);
+            shareDailyLogImage().catch(() => undefined);
           }}
         />
       </ScrollView>

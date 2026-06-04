@@ -58,6 +58,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
     computeRouteMaxEndMinutes(log.localDate, getTodayLocalDate(), getCurrentMinutesOfDay()),
   );
   const [isSharingDetail, setIsSharingDetail] = useState(false);
+  const [isSliderDragging, setIsSliderDragging] = useState(false);
   const captureViewRef = useRef<View>(null);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
@@ -156,7 +157,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
   return (
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
-      <ScrollView contentContainerStyle={styles.dailyLogDetailContent}>
+      <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
         <View ref={captureViewRef} collapsable={false} style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
             <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
@@ -172,6 +173,8 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
                 valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
                 styles={styles}
                 theme={theme}
+                onDragStart={() => setIsSliderDragging(true)}
+                onDragEnd={() => setIsSliderDragging(false)}
                 onValueChange={setRouteEndMinutes}
               />
             )}

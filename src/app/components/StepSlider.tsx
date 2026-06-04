@@ -25,6 +25,10 @@ export type StepSliderProps = {
   value: number;
   /** 現在値の表示ラベル。 */
   valueLabel: string;
+  /** ドラッグ開始時の処理（任意）。 */
+  onDragStart?: () => void;
+  /** ドラッグ終了時の処理（任意）。 */
+  onDragEnd?: () => void;
   /** 値が変わったときの処理。 */
   onValueChange: (value: number) => void;
 };
@@ -42,6 +46,8 @@ export function StepSlider({
   stepValue,
   value,
   valueLabel,
+  onDragStart,
+  onDragEnd,
   onValueChange,
 }: StepSliderProps) {
   const [trackWidth, setTrackWidth] = useState(1);
@@ -58,19 +64,13 @@ export function StepSlider({
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (event) => {
-          const rawX = Math.min(trackWidth, Math.max(0, event.nativeEvent.locationX));
-          const nextValue = normalizeValue(
-            minValue + (rawX / trackWidth) * (maxValue - minValue),
-            minValue,
-            maxValue,
-            stepValue,
-          );
-          dragStartXRef.current = rawX;
-          dragStartValueRef.current = nextValue;
-          if (nextValue !== normalizedValueRef.current) {
-            onValueChange(nextValue);
-          }
+        onPanResponderGrant: () => {
+          // locationX はサムなど子 View 相対になるため使わず、
+          // 現在のサム位置（ピクセル）を起点にしてドラッグ差分で動かす
+          const currentProgress = (normalizedValueRef.current - minValue) / Math.max(maxValue - minValue, 1);
+          dragStartXRef.current = currentProgress * trackWidth;
+          dragStartValueRef.current = normalizedValueRef.current;
+          onDragStart?.();
         },
         onPanResponderMove: (_event, gestureState) => {
           const rawRatio = (dragStartXRef.current + gestureState.dx) / trackWidth;
@@ -80,8 +80,14 @@ export function StepSlider({
             onValueChange(nextValue);
           }
         },
+        onPanResponderRelease: () => {
+          onDragEnd?.();
+        },
+        onPanResponderTerminate: () => {
+          onDragEnd?.();
+        },
       }),
-    [trackWidth, minValue, maxValue, stepValue, onValueChange],
+    [trackWidth, minValue, maxValue, stepValue, onValueChange, onDragStart, onDragEnd],
   );
 
   return (

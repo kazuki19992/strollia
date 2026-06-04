@@ -207,6 +207,32 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(getLocationPointsByDate).toHaveBeenLastCalledWith('2026-05-31');
   });
 
+  test('スライダーのドラッグ中は ScrollView のスクロールを無効化する', async () => {
+    const { ScrollView } = require('react-native');
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    const scrollView = renderer.root.findByType(ScrollView);
+    expect(scrollView.props.scrollEnabled).not.toBe(false);
+
+    await act(async () => {
+      renderer.root.findByType(StepSlider).props.onDragStart?.();
+    });
+
+    expect(scrollView.props.scrollEnabled).toBe(false);
+
+    await act(async () => {
+      renderer.root.findByType(StepSlider).props.onDragEnd?.();
+    });
+
+    expect(scrollView.props.scrollEnabled).not.toBe(false);
+  });
+
   test('共有ボタンを押すと詳細コンテンツを画像キャプチャして共有する', async () => {
     const { captureRef } = require('react-native-view-shot');
     const Sharing = require('expo-sharing');

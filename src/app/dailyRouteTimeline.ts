@@ -12,11 +12,11 @@ export function formatTimelineHourLabel(minutes: number): string {
   return `${Math.floor(minutes / 60)}時`;
 }
 
-/** 1日の経過分を現在選択時刻の表示へ変換する。 */
+/** 1日の経過分を「H:MM」形式の現在選択時刻の表示へ変換する。 */
 export function formatTimelineTimeLabel(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  return remainingMinutes === 0 ? `${hours}時` : `${hours}時${String(remainingMinutes).padStart(2, '0')}分`;
+  return `${hours}:${String(remainingMinutes).padStart(2, '0')}`;
 }
 
 /** GPSポイントの記録時刻を、その日の0時からの経過分へ変換する。 */

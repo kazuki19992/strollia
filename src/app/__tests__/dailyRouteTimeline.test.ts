@@ -29,7 +29,10 @@ describe('日別ルートタイムライン', () => {
     expect(formatTimelineHourLabel(1440)).toBe('24時');
   });
 
-  it('選択中の時刻を分まで表示する', () => {
-    expect(formatTimelineTimeLabel(750)).toBe('12時30分');
+  it('選択中の時刻を HH:MM 形式で表示する', () => {
+    expect(formatTimelineTimeLabel(0)).toBe('0:00');
+    expect(formatTimelineTimeLabel(30)).toBe('0:30');
+    expect(formatTimelineTimeLabel(750)).toBe('12:30');
+    expect(formatTimelineTimeLabel(1440)).toBe('24:00');
   });
 });

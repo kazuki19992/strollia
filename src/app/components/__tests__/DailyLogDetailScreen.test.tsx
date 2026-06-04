@@ -132,7 +132,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', 'この日の記録を共有']));
+    expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', 'この日の記録を共有', '移動距離はGPSのブレにより本来の距離より多く記録される場合があります。']));
     expect(texts).not.toContain('開始');
     expect(texts).not.toContain('最新');
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' })).toBeTruthy();

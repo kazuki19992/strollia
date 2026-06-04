@@ -28,6 +28,7 @@ import type { AppStyles } from '../appStyles';
 import { AchievementScroller } from './AchievementScroller';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DataSummaryRow } from './DataSummaryRow';
+import { DescriptionText } from './DescriptionText';
 import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { ShareButton } from './ShareButton';
@@ -184,6 +185,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
               <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
               <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
             </View>
+            <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
           </View>
 
           <View style={styles.dailyLogDetailSection}>

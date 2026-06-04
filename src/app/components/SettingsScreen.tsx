@@ -14,6 +14,7 @@ import { AutoStartStatus } from '../appTypes';
 import { AppStyles } from '../appStyles';
 import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
+import { DescriptionText } from './DescriptionText';
 import { InfoBlock } from './InfoBlock';
 import { OptionGroup } from './OptionGroup';
 import { ScreenSection } from './ScreenSection';
@@ -226,7 +227,7 @@ export function SettingsScreen({
           <View style={styles.settingsSubscriptionRow}>
             <View style={styles.settingsInlineText}>
               <Text style={styles.formItemTitle}>ステータス</Text>
-              {subscriptionDescription ? <Text style={styles.formItemDescription}>{subscriptionDescription}</Text> : null}
+              {subscriptionDescription ? <DescriptionText styles={styles}>{subscriptionDescription}</DescriptionText> : null}
             </View>
             <Text style={[styles.settingsPlusBadge, !isPlusActive && styles.settingsFreeBadge]}>{isPlusActive ? 'Plusユーザー' : '一般ユーザー'}</Text>
           </View>
@@ -271,7 +272,7 @@ export function SettingsScreen({
                 styles={styles}
                 onPress={onRestorePremiumPurchases}
               />
-              {isLoadingPremiumOffering && <Text style={styles.formItemDescription}>商品情報を確認しています...</Text>}
+              {isLoadingPremiumOffering && <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>}
             </View>
           )}
         </ScreenSection>

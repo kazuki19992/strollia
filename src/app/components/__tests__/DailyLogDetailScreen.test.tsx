@@ -79,6 +79,12 @@ jest.mock('../../../features/achievements/achievementDefinitions', () => ({
   getAchievementDefinition: jest.fn(() => ({ id: 'distance-100', title: '100km移動した', trophyImage: { uri: 'badge.png' } })),
 }));
 
+jest.mock('../../dailyRouteTimeline', () => ({
+  ...jest.requireActual('../../dailyRouteTimeline'),
+  getTodayLocalDate: jest.fn(),
+  getCurrentMinutesOfDay: jest.fn(),
+}));
+
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
   return {
@@ -107,6 +113,9 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
+    getTodayLocalDate.mockReturnValue('2026-06-04'); // デフォルト: ログ日付と異なる過去日
+    getCurrentMinutesOfDay.mockReturnValue(750);
   });
 
   afterEach(() => {
@@ -222,6 +231,47 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       '/tmp/daily-log-detail.png',
       expect.objectContaining({ mimeType: 'image/png' }),
     );
+  });
+
+  test('今日以外の日付はスライダーの最大値が 24:00 になる', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findByType(StepSlider).props.maxValue).toBe(1440);
+  });
+
+  test('今日の日付はスライダーの最大値が現在時刻（30 分単位）までになる', async () => {
+    const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
+    getTodayLocalDate.mockReturnValue('2026-05-31');
+    getCurrentMinutesOfDay.mockReturnValue(750);
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findByType(StepSlider).props.maxValue).toBe(750);
+  });
+
+  test('今日の 0:00〜0:30 の間はスライダーを非表示にする', async () => {
+    const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
+    getTodayLocalDate.mockReturnValue('2026-05-31');
+    getCurrentMinutesOfDay.mockReturnValue(15);
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findAllByType(StepSlider)).toHaveLength(0);
   });
 
   test('共有処理中は共有ボタンを無効化する', async () => {

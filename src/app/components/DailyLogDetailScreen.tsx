@@ -13,12 +13,14 @@ import { createDailyDetailReport, DailyDetailReport } from '../../features/repor
 import type { AppTheme } from '../../theme/theme';
 import type { DailyLogSummary, LocationPoint } from '../../types/gps';
 import {
-  DAILY_ROUTE_END_MINUTES,
+  computeRouteMaxEndMinutes,
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
   formatTimelineTimeLabel,
+  getCurrentMinutesOfDay,
+  getTodayLocalDate,
 } from '../dailyRouteTimeline';
 import { formatDailyLogDetailTitle, formatDistanceKm, formatRouteEndpoints } from '../dailyLogDisplay';
 import { totalDistanceMeters } from '../../utils/distance';
@@ -48,19 +50,30 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
   const [dailyDetailReport, setDailyDetailReport] = useState<DailyDetailReport | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [routeEndpointsLabel, setRouteEndpointsLabel] = useState(formatRouteEndpoints());
-  const [routeEndMinutes, setRouteEndMinutes] = useState(DAILY_ROUTE_END_MINUTES);
+  const [routeMaxMinutes, setRouteMaxMinutes] = useState(() =>
+    computeRouteMaxEndMinutes(log.localDate, getTodayLocalDate(), getCurrentMinutesOfDay()),
+  );
+  const [routeEndMinutes, setRouteEndMinutes] = useState(() =>
+    computeRouteMaxEndMinutes(log.localDate, getTodayLocalDate(), getCurrentMinutesOfDay()),
+  );
   const [isSharingDetail, setIsSharingDetail] = useState(false);
   const captureViewRef = useRef<View>(null);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
-  const visibleRoutePoints = useMemo(() => filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes), [dailyPoints, routeEndMinutes]);
+  const showSlider = routeMaxMinutes >= DAILY_ROUTE_TIME_STEP_MINUTES;
+  const visibleRoutePoints = useMemo(
+    () => (showSlider ? filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes) : dailyPoints),
+    [dailyPoints, routeEndMinutes, showSlider],
+  );
 
   useEffect(() => {
     let isCancelled = false;
+    const maxMinutes = computeRouteMaxEndMinutes(log.localDate, getTodayLocalDate(), getCurrentMinutesOfDay());
+    setRouteMaxMinutes(maxMinutes);
 
     async function loadDetail(): Promise<void> {
       setIsLoadingDetail(true);
-      setRouteEndMinutes(DAILY_ROUTE_END_MINUTES);
+      setRouteEndMinutes(maxMinutes);
 
       try {
         const points = await getLocationPointsByDate(log.localDate);
@@ -146,19 +159,21 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
         <View ref={captureViewRef} collapsable={false} style={styles.dailyLogDetailCapture}>
           <View style={styles.routeTimeline}>
             <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
-            <StepSlider
-              accessibilityLabel="移動地図の表示時刻"
-              minValue={DAILY_ROUTE_START_MINUTES}
-              maxValue={DAILY_ROUTE_END_MINUTES}
-              stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
-              startLabel={formatTimelineHourLabel(DAILY_ROUTE_START_MINUTES)}
-              endLabel={formatTimelineHourLabel(DAILY_ROUTE_END_MINUTES)}
-              value={routeEndMinutes}
-              valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
-              styles={styles}
-              theme={theme}
-              onValueChange={setRouteEndMinutes}
-            />
+            {showSlider && (
+              <StepSlider
+                accessibilityLabel="移動地図の表示時刻"
+                minValue={DAILY_ROUTE_START_MINUTES}
+                maxValue={routeMaxMinutes}
+                stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
+                startLabel={formatTimelineHourLabel(DAILY_ROUTE_START_MINUTES)}
+                endLabel={formatTimelineHourLabel(routeMaxMinutes)}
+                value={routeEndMinutes}
+                valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
+                styles={styles}
+                theme={theme}
+                onValueChange={setRouteEndMinutes}
+              />
+            )}
           </View>
 
           <View style={styles.dailyLogDetailSection}>

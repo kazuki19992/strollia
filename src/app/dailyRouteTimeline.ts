@@ -19,6 +19,27 @@ export function formatTimelineTimeLabel(minutes: number): string {
   return `${hours}:${String(remainingMinutes).padStart(2, '0')}`;
 }
 
+/** 今日の日付を 'YYYY-MM-DD' 形式で返す。テストでモック可能にするため独立関数として公開。 */
+export function getTodayLocalDate(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/** 現在時刻の1日の経過分（0〜1439）を返す。テストでモック可能にするため独立関数として公開。 */
+export function getCurrentMinutesOfDay(): number {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+/**
+ * ルート表示の最大終了時刻（分）を計算する純粋関数。
+ * 今日の日付は現在時刻を DAILY_ROUTE_TIME_STEP_MINUTES 単位に切り捨て、過去日は DAILY_ROUTE_END_MINUTES。
+ */
+export function computeRouteMaxEndMinutes(localDate: string, todayLocalDate: string, currentMinutes: number): number {
+  if (localDate !== todayLocalDate) return DAILY_ROUTE_END_MINUTES;
+  return Math.floor(currentMinutes / DAILY_ROUTE_TIME_STEP_MINUTES) * DAILY_ROUTE_TIME_STEP_MINUTES;
+}
+
 /** GPSポイントの記録時刻を、その日の0時からの経過分へ変換する。 */
 export function getPointMinutesOfDay(point: LocationPoint): number {
   const recordedAt = new Date(point.recordedAt);

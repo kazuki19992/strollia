@@ -1,5 +1,5 @@
 import { PanResponder, Text, View } from 'react-native';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
@@ -52,43 +52,62 @@ export function StepSlider({
 }: StepSliderProps) {
   const [trackWidth, setTrackWidth] = useState(1);
   const normalizedValue = normalizeValue(value, minValue, maxValue, stepValue);
-  const normalizedValueRef = useRef(normalizedValue);
-  normalizedValueRef.current = normalizedValue;
-  const dragStartXRef = useRef(0);
-  const dragStartValueRef = useRef(normalizedValue);
   const progress = (normalizedValue - minValue) / Math.max(maxValue - minValue, 1);
   const thumbX = progress * trackWidth - THUMB_HALF_WIDTH;
 
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: () => {
-          // locationX はサムなど子 View 相対になるため使わず、
-          // 現在のサム位置（ピクセル）を起点にしてドラッグ差分で動かす
-          const currentProgress = (normalizedValueRef.current - minValue) / Math.max(maxValue - minValue, 1);
-          dragStartXRef.current = currentProgress * trackWidth;
-          dragStartValueRef.current = normalizedValueRef.current;
-          onDragStart?.();
-        },
-        onPanResponderMove: (_event, gestureState) => {
-          const rawRatio = (dragStartXRef.current + gestureState.dx) / trackWidth;
-          const rawValue = minValue + Math.min(1, Math.max(0, rawRatio)) * (maxValue - minValue);
-          const nextValue = normalizeValue(rawValue, minValue, maxValue, stepValue);
-          if (nextValue !== normalizedValueRef.current) {
-            onValueChange(nextValue);
-          }
-        },
-        onPanResponderRelease: () => {
-          onDragEnd?.();
-        },
-        onPanResponderTerminate: () => {
-          onDragEnd?.();
-        },
-      }),
-    [trackWidth, minValue, maxValue, stepValue, onValueChange, onDragStart, onDragEnd],
-  );
+  // すべての動的な値を ref で保持し、PanResponder の再生成を防ぐ。
+  // useMemo に prop を含めると onValueChange 呼び出し後の再レンダリングごとに
+  // PanResponder が再生成されてジェスチャーが壊れる。
+  const trackWidthRef = useRef(trackWidth);
+  const normalizedValueRef = useRef(normalizedValue);
+  normalizedValueRef.current = normalizedValue;
+  const minValueRef = useRef(minValue);
+  minValueRef.current = minValue;
+  const maxValueRef = useRef(maxValue);
+  maxValueRef.current = maxValue;
+  const stepValueRef = useRef(stepValue);
+  stepValueRef.current = stepValue;
+  const onValueChangeRef = useRef(onValueChange);
+  onValueChangeRef.current = onValueChange;
+  const onDragStartRef = useRef(onDragStart);
+  onDragStartRef.current = onDragStart;
+  const onDragEndRef = useRef(onDragEnd);
+  onDragEndRef.current = onDragEnd;
+  const dragStartXRef = useRef(0);
+
+  // PanResponder を一度だけ生成する。すべての値は ref 経由で参照する。
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        const min = minValueRef.current;
+        const max = maxValueRef.current;
+        const norm = normalizedValueRef.current;
+        const currentProgress = (norm - min) / Math.max(max - min, 1);
+        dragStartXRef.current = currentProgress * trackWidthRef.current;
+        onDragStartRef.current?.();
+      },
+      onPanResponderMove: (_event, gestureState) => {
+        const w = trackWidthRef.current;
+        const min = minValueRef.current;
+        const max = maxValueRef.current;
+        const step = stepValueRef.current;
+        const rawRatio = (dragStartXRef.current + gestureState.dx) / w;
+        const rawValue = min + Math.min(1, Math.max(0, rawRatio)) * (max - min);
+        const nextValue = normalizeValue(rawValue, min, max, step);
+        if (nextValue !== normalizedValueRef.current) {
+          onValueChangeRef.current(nextValue);
+        }
+      },
+      onPanResponderRelease: () => {
+        onDragEndRef.current?.();
+      },
+      onPanResponderTerminate: () => {
+        onDragEndRef.current?.();
+      },
+    }),
+  ).current;
 
   return (
     <View accessibilityLabel={accessibilityLabel} accessibilityRole="adjustable" style={styles.stepSlider}>
@@ -97,7 +116,11 @@ export function StepSlider({
         <View
           {...panResponder.panHandlers}
           style={styles.stepSliderTouchArea}
-          onLayout={(e) => setTrackWidth(Math.max(e.nativeEvent.layout.width, 1))}
+          onLayout={(e) => {
+            const w = Math.max(e.nativeEvent.layout.width, 1);
+            trackWidthRef.current = w;
+            setTrackWidth(w);
+          }}
         >
           <View style={styles.stepSliderTrack}>
             <View style={[styles.stepSliderFill, { width: `${progress * 100}%` as unknown as number }]} />

@@ -168,7 +168,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
                 maxValue={routeMaxMinutes}
                 stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
                 startLabel={formatTimelineHourLabel(DAILY_ROUTE_START_MINUTES)}
-                endLabel={formatTimelineHourLabel(routeMaxMinutes)}
+                endLabel={routeMaxMinutes % 60 === 0 ? formatTimelineHourLabel(routeMaxMinutes) : formatTimelineTimeLabel(routeMaxMinutes)}
                 value={routeEndMinutes}
                 valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
                 styles={styles}

@@ -110,10 +110,27 @@ export function StepSlider({
   ).current;
 
   return (
-    <View accessibilityLabel={accessibilityLabel} accessibilityRole="adjustable" style={styles.stepSlider}>
+    <View style={styles.stepSlider}>
       <View style={styles.stepSliderRow}>
         <Text style={styles.stepSliderEdgeLabel}>{startLabel}</Text>
         <View
+          accessible
+          accessibilityLabel={accessibilityLabel}
+          accessibilityRole="adjustable"
+          accessibilityValue={{ min: minValue, max: maxValue, now: normalizedValue, text: valueLabel }}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onAccessibilityAction={(e) => {
+            const dir = e.nativeEvent.actionName === 'increment' ? 1 : -1;
+            const next = normalizeValue(
+              normalizedValueRef.current + dir * stepValueRef.current,
+              minValueRef.current,
+              maxValueRef.current,
+              stepValueRef.current,
+            );
+            if (next !== normalizedValueRef.current) {
+              onValueChangeRef.current(next);
+            }
+          }}
           {...panResponder.panHandlers}
           style={styles.stepSliderTouchArea}
           onLayout={(e) => {

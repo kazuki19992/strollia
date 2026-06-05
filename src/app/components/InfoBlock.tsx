@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 
 import type { AppStyles } from '../appStyles';
+import { DescriptionText } from './DescriptionText';
 
 export type InfoBlockProps = {
   /** 補足本文。改行を含めてよい。 */
@@ -16,7 +17,7 @@ export function InfoBlock({ description, styles, title }: InfoBlockProps) {
   return (
     <View style={styles.infoBlock}>
       <Text style={styles.formItemTitle}>{title}</Text>
-      {description ? <Text style={styles.formItemDescription}>{description}</Text> : null}
+      {description ? <DescriptionText styles={styles}>{description}</DescriptionText> : null}
     </View>
   );
 }

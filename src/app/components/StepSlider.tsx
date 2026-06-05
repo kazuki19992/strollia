@@ -1,5 +1,5 @@
-import Slider from '@react-native-community/slider';
-import { Text, View } from 'react-native';
+import { PanResponder, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
 
 import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
@@ -19,17 +19,23 @@ export type StepSliderProps = {
   styles: AppStyles;
   /** 1ステップの幅。 */
   stepValue: number;
-  /** 現在テーマ。 */
+  /** 現在テーマ（API 互換のため保持、色は appStyles で管理）。 */
   theme: AppTheme;
   /** 現在値。 */
   value: number;
   /** 現在値の表示ラベル。 */
   valueLabel: string;
+  /** ドラッグ開始時の処理（任意）。 */
+  onDragStart?: () => void;
+  /** ドラッグ終了時の処理（任意）。 */
+  onDragEnd?: () => void;
   /** 値が変わったときの処理。 */
   onValueChange: (value: number) => void;
 };
 
-/** 指定ステップ単位で値を選択できるネイティブスライダー。 */
+const THUMB_HALF_WIDTH = 13;
+
+/** 指定ステップ単位で値を選択できる純粋 JS スライダー。 */
 export function StepSlider({
   accessibilityLabel,
   endLabel,
@@ -38,36 +44,106 @@ export function StepSlider({
   startLabel,
   styles,
   stepValue,
-  theme,
   value,
   valueLabel,
+  onDragStart,
+  onDragEnd,
   onValueChange,
 }: StepSliderProps) {
+  const [trackWidth, setTrackWidth] = useState(1);
   const normalizedValue = normalizeValue(value, minValue, maxValue, stepValue);
+  const progress = (normalizedValue - minValue) / Math.max(maxValue - minValue, 1);
+  const thumbX = progress * trackWidth - THUMB_HALF_WIDTH;
 
-  function handleValueChange(nextValue: number): void {
-    const normalizedNextValue = normalizeValue(nextValue, minValue, maxValue, stepValue);
-    if (normalizedNextValue !== normalizedValue) {
-      onValueChange(normalizedNextValue);
-    }
-  }
+  // すべての動的な値を ref で保持し、PanResponder の再生成を防ぐ。
+  // useMemo に prop を含めると onValueChange 呼び出し後の再レンダリングごとに
+  // PanResponder が再生成されてジェスチャーが壊れる。
+  const trackWidthRef = useRef(trackWidth);
+  const normalizedValueRef = useRef(normalizedValue);
+  normalizedValueRef.current = normalizedValue;
+  const minValueRef = useRef(minValue);
+  minValueRef.current = minValue;
+  const maxValueRef = useRef(maxValue);
+  maxValueRef.current = maxValue;
+  const stepValueRef = useRef(stepValue);
+  stepValueRef.current = stepValue;
+  const onValueChangeRef = useRef(onValueChange);
+  onValueChangeRef.current = onValueChange;
+  const onDragStartRef = useRef(onDragStart);
+  onDragStartRef.current = onDragStart;
+  const onDragEndRef = useRef(onDragEnd);
+  onDragEndRef.current = onDragEnd;
+  const dragStartXRef = useRef(0);
+
+  // PanResponder を一度だけ生成する。すべての値は ref 経由で参照する。
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        const min = minValueRef.current;
+        const max = maxValueRef.current;
+        const norm = normalizedValueRef.current;
+        const currentProgress = (norm - min) / Math.max(max - min, 1);
+        dragStartXRef.current = currentProgress * trackWidthRef.current;
+        onDragStartRef.current?.();
+      },
+      onPanResponderMove: (_event, gestureState) => {
+        const w = trackWidthRef.current;
+        const min = minValueRef.current;
+        const max = maxValueRef.current;
+        const step = stepValueRef.current;
+        const rawRatio = (dragStartXRef.current + gestureState.dx) / w;
+        const rawValue = min + Math.min(1, Math.max(0, rawRatio)) * (max - min);
+        const nextValue = normalizeValue(rawValue, min, max, step);
+        if (nextValue !== normalizedValueRef.current) {
+          onValueChangeRef.current(nextValue);
+        }
+      },
+      onPanResponderRelease: () => {
+        onDragEndRef.current?.();
+      },
+      onPanResponderTerminate: () => {
+        onDragEndRef.current?.();
+      },
+    }),
+  ).current;
 
   return (
-    <View accessibilityLabel={accessibilityLabel} style={styles.stepSlider}>
+    <View style={styles.stepSlider}>
       <View style={styles.stepSliderRow}>
         <Text style={styles.stepSliderEdgeLabel}>{startLabel}</Text>
-        <Slider
+        <View
+          accessible
           accessibilityLabel={accessibilityLabel}
-          minimumValue={minValue}
-          maximumValue={maxValue}
-          step={stepValue}
-          value={normalizedValue}
-          minimumTrackTintColor={theme.name === 'dark' ? '#f2f2f2' : '#172b63'}
-          maximumTrackTintColor={theme.name === 'dark' ? '#4b4b4b' : '#e0e0e0'}
-          thumbTintColor={theme.name === 'dark' ? '#f2f2f2' : '#ffffff'}
-          style={styles.stepSliderNative}
-          onValueChange={handleValueChange}
-        />
+          accessibilityRole="adjustable"
+          accessibilityValue={{ min: minValue, max: maxValue, now: normalizedValue, text: valueLabel }}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onAccessibilityAction={(e) => {
+            const dir = e.nativeEvent.actionName === 'increment' ? 1 : -1;
+            const next = normalizeValue(
+              normalizedValueRef.current + dir * stepValueRef.current,
+              minValueRef.current,
+              maxValueRef.current,
+              stepValueRef.current,
+            );
+            if (next !== normalizedValueRef.current) {
+              onValueChangeRef.current(next);
+            }
+          }}
+          {...panResponder.panHandlers}
+          style={styles.stepSliderTouchArea}
+          onLayout={(e) => {
+            const w = Math.max(e.nativeEvent.layout.width, 1);
+            trackWidthRef.current = w;
+            setTrackWidth(w);
+          }}
+        >
+          <View style={styles.stepSliderTrack}>
+            <View style={[styles.stepSliderFill, { width: `${progress * 100}%` as unknown as number }]} />
+          </View>
+          <View style={[styles.stepSliderThumb, { transform: [{ translateX: thumbX }] }]} />
+        </View>
         <Text style={styles.stepSliderEdgeLabel}>{endLabel}</Text>
       </View>
       <Text style={styles.stepSliderValueLabel}>{valueLabel}</Text>

@@ -1,4 +1,5 @@
 import {
+  computeRouteMaxEndMinutes,
   DAILY_ROUTE_END_MINUTES,
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
@@ -29,7 +30,26 @@ describe('日別ルートタイムライン', () => {
     expect(formatTimelineHourLabel(1440)).toBe('24時');
   });
 
-  it('選択中の時刻を分まで表示する', () => {
-    expect(formatTimelineTimeLabel(750)).toBe('12時30分');
+  it('選択中の時刻を HH:MM 形式で表示する', () => {
+    expect(formatTimelineTimeLabel(0)).toBe('0:00');
+    expect(formatTimelineTimeLabel(30)).toBe('0:30');
+    expect(formatTimelineTimeLabel(750)).toBe('12:30');
+    expect(formatTimelineTimeLabel(1440)).toBe('24:00');
+  });
+
+  it('過去日のルート最大時刻は 24:00 になる', () => {
+    expect(computeRouteMaxEndMinutes('2026-05-31', '2026-06-04', 750)).toBe(DAILY_ROUTE_END_MINUTES);
+  });
+
+  it('今日のルート最大時刻は現在時刻を 30 分単位に切り捨てた値になる', () => {
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 750)).toBe(750);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 765)).toBe(750);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 780)).toBe(780);
+  });
+
+  it('今日の 0:30 未満はルート最大時刻が 0 になる（スライダー非表示の条件）', () => {
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 0)).toBe(0);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 29)).toBe(0);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 30)).toBe(30);
   });
 });

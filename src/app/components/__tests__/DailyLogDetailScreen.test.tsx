@@ -13,6 +13,15 @@ jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
 }));
 
+jest.mock('react-native-view-shot', () => ({
+  captureRef: jest.fn().mockResolvedValue('/tmp/daily-log-detail.png'),
+}));
+
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(true),
+  shareAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('../../../features/achievements/adminAreaRepository', () => ({
   getLocationPointAdminAreaName: jest.fn().mockResolvedValue({ locationPointId: 1, areaName: '船橋市' }),
 }));
@@ -70,6 +79,12 @@ jest.mock('../../../features/achievements/achievementDefinitions', () => ({
   getAchievementDefinition: jest.fn(() => ({ id: 'distance-100', title: '100km移動した', trophyImage: { uri: 'badge.png' } })),
 }));
 
+jest.mock('../../dailyRouteTimeline', () => ({
+  ...jest.requireActual('../../dailyRouteTimeline'),
+  getTodayLocalDate: jest.fn(),
+  getCurrentMinutesOfDay: jest.fn(),
+}));
+
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
   return {
@@ -98,6 +113,9 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
+    getTodayLocalDate.mockReturnValue('2026-06-04'); // デフォルト: ログ日付と異なる過去日
+    getCurrentMinutesOfDay.mockReturnValue(750);
   });
 
   afterEach(() => {
@@ -114,7 +132,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', '共有']));
+    expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', 'この日の記録を共有', '移動距離はGPSのブレにより本来の距離より多く記録される場合があります。']));
     expect(texts).not.toContain('開始');
     expect(texts).not.toContain('最新');
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' })).toBeTruthy();
@@ -187,5 +205,129 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     expect(getLocationPointsByDate).toHaveBeenCalledTimes(2);
     expect(getLocationPointsByDate).toHaveBeenLastCalledWith('2026-05-31');
+  });
+
+  test('スライダーのドラッグ中は ScrollView のスクロールを無効化する', async () => {
+    const { ScrollView } = require('react-native');
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    const scrollView = renderer.root.findByType(ScrollView);
+    expect(scrollView.props.scrollEnabled).not.toBe(false);
+
+    await act(async () => {
+      renderer.root.findByType(StepSlider).props.onDragStart?.();
+    });
+
+    expect(scrollView.props.scrollEnabled).toBe(false);
+
+    await act(async () => {
+      renderer.root.findByType(StepSlider).props.onDragEnd?.();
+    });
+
+    expect(scrollView.props.scrollEnabled).not.toBe(false);
+  });
+
+  test('共有ボタンを押すと詳細コンテンツを画像キャプチャして共有する', async () => {
+    const { captureRef } = require('react-native-view-shot');
+    const Sharing = require('expo-sharing');
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    const shareButton = renderer.root.findByType(ShareButton);
+    await act(async () => {
+      shareButton.props.onPress();
+    });
+
+    expect(captureRef).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ format: 'png', quality: 1, result: 'tmpfile' }),
+    );
+    expect(Sharing.shareAsync).toHaveBeenCalledWith(
+      '/tmp/daily-log-detail.png',
+      expect.objectContaining({ mimeType: 'image/png' }),
+    );
+  });
+
+  test('今日以外の日付はスライダーの最大値が 24:00 になる', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findByType(StepSlider).props.maxValue).toBe(1440);
+  });
+
+  test('今日の日付はスライダーの最大値が現在時刻（30 分単位）までになる', async () => {
+    const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
+    getTodayLocalDate.mockReturnValue('2026-05-31');
+    getCurrentMinutesOfDay.mockReturnValue(750);
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findByType(StepSlider).props.maxValue).toBe(750);
+  });
+
+  test('今日の 0:00〜0:30 の間はスライダーを非表示にする', async () => {
+    const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
+    getTodayLocalDate.mockReturnValue('2026-05-31');
+    getCurrentMinutesOfDay.mockReturnValue(15);
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findAllByType(StepSlider)).toHaveLength(0);
+  });
+
+  test('共有処理中は共有ボタンを無効化する', async () => {
+    let captureResolve: () => void;
+    const { captureRef } = require('react-native-view-shot');
+    captureRef.mockReturnValueOnce(
+      new Promise<string>((resolve) => {
+        captureResolve = () => resolve('/tmp/daily-log-detail.png');
+      }),
+    );
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+      );
+    });
+
+    expect(renderer.root.findByType(ShareButton).props.disabled).toBeFalsy();
+
+    act(() => {
+      renderer.root.findByType(ShareButton).props.onPress();
+    });
+
+    expect(renderer.root.findByType(ShareButton).props.disabled).toBe(true);
+
+    await act(async () => {
+      captureResolve!();
+    });
+
+    expect(renderer.root.findByType(ShareButton).props.disabled).toBeFalsy();
   });
 });

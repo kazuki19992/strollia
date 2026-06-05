@@ -362,11 +362,15 @@ export function createStyles(theme: AppTheme) {
       margin: 16,
       padding: 18,
     },
+    dailyLogDetailCapture: {
+      gap: 28,
+      paddingBottom: 24,
+      paddingHorizontal: 24,
+      paddingTop: 24,
+    },
     dailyLogDetailContent: {
       gap: 28,
       paddingBottom: 34,
-      paddingHorizontal: 24,
-      paddingTop: 24,
     },
     dailyLogDetailSection: {
       gap: 18,
@@ -447,6 +451,7 @@ export function createStyles(theme: AppTheme) {
     },
     shareButtonWide: {
       backgroundColor: colors.shareButtonBackground,
+      marginHorizontal: 24,
     },
     shareButtonWideText: {
       color: colors.shareButtonText,
@@ -1752,9 +1757,35 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '400',
       lineHeight: 18,
     },
-    stepSliderNative: {
+    stepSliderFill: {
+      backgroundColor: theme.name === 'dark' ? '#f2f2f2' : '#172b63',
+      borderRadius: 999,
+      height: '100%' as unknown as number,
+    },
+    stepSliderThumb: {
+      backgroundColor: theme.name === 'dark' ? '#f2f2f2' : '#ffffff',
+      borderRadius: 999,
+      elevation: 2,
+      height: 26,
+      left: 0,
+      position: 'absolute',
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      top: 9,
+      width: 26,
+    },
+    stepSliderTouchArea: {
       flex: 1,
-      height: 32,
+      height: 44,
+      justifyContent: 'center',
+    },
+    stepSliderTrack: {
+      backgroundColor: theme.name === 'dark' ? '#4b4b4b' : '#e0e0e0',
+      borderRadius: 999,
+      height: 4,
+      overflow: 'hidden',
     },
     stepSliderRow: {
       alignItems: 'center',

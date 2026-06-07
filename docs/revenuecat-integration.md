@@ -8,7 +8,7 @@ Strollia uses RevenueCat from the React Native app through the app-level premium
 npm install --save react-native-purchases react-native-purchases-ui
 ```
 
-The current dependency versions are kept in `package.json`. RevenueCat Paywalls require `react-native-purchases` 8.11.3 or later; this project currently uses 10.2.0.
+The current dependency versions are kept in `package.json`. `react-native-purchases` handles direct subscription purchases. `react-native-purchases-ui` is kept for Customer Center only; Strollia does not require RevenueCat Paywalls.
 
 ## 2. Configure Local API Keys
 
@@ -29,7 +29,6 @@ Create the following objects in RevenueCat and the stores:
 - Monthly product: `strollia_plus_monthly`
 - Yearly product: `strollia_plus_yearly`
 - Offering: mark the offering containing monthly and yearly packages as current
-- Paywall: attach a RevenueCat Paywall to the current offering
 - Customer Center: enable it after the RevenueCat plan and dashboard configuration support it
 
 Use localized store prices from RevenueCat offerings in the app. Avoid hard-coding prices as the source of truth.
@@ -106,24 +105,30 @@ export function subscribePremiumAccessStateUpdates(onUpdate: (isPlusActive: bool
 }
 ```
 
-## 7. Paywall Presentation
+## 7. Direct Purchase
 
-Use RevenueCat Paywalls instead of a fully custom purchase flow. `presentPaywallIfNeeded` avoids showing the paywall when `strollia_plus` is already active.
+Strollia does not use RevenueCat Paywalls. Settings gets the current offering and calls `purchasePackage` for the selected monthly or yearly package.
 
 ```ts
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import Purchases from 'react-native-purchases';
 
-export async function presentStrolliaPlusPaywall(): Promise<boolean> {
-  const result = await RevenueCatUI.presentPaywallIfNeeded({
-    requiredEntitlementIdentifier: 'strollia_plus',
-    displayCloseButton: true,
-  });
+type StrolliaPlusPlan = 'monthly' | 'yearly';
 
-  return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED;
+export async function purchaseStrolliaPlus(plan: StrolliaPlusPlan): Promise<boolean> {
+  const offerings = await Purchases.getOfferings();
+  const packageType = plan === 'monthly' ? 'MONTHLY' : 'ANNUAL';
+  const packageToPurchase = offerings.current?.availablePackages.find((pkg) => pkg.packageType === packageType);
+
+  if (!packageToPurchase) {
+    throw new Error(`${packageType} package is not configured.`);
+  }
+
+  const result = await Purchases.purchasePackage(packageToPurchase);
+  return result.customerInfo.entitlements.active.strollia_plus != null;
 }
 ```
 
-In Strollia, `presentPremiumPaywall()` maps RevenueCat results into app result values: `purchased`, `restored`, `cancelled`, `notPresented`, and `error`.
+In Strollia, `purchasePremiumPackage('monthly' | 'yearly')` maps SDK success, cancellation, and errors into app result values: `purchased`, `cancelled`, and `error`.
 
 ## 8. Offering and Product Display
 
@@ -182,8 +187,8 @@ Strollia shows this action for Plus users in Settings. Keep the existing restore
 - API key missing: do not configure RevenueCat; fall back to the development premium state.
 - CustomerInfo fetch failure: warn in console and keep the current/default state.
 - Offering missing: keep Settings usable and do not block GPS logging.
-- Paywall cancelled: leave state unchanged.
-- Paywall not presented or error: show a short setup/retry message.
+- Purchase cancelled: leave state unchanged and do not show an error.
+- Purchase error: show a short setup/retry message.
 - Restore completed without entitlement: tell the user no Strollia Plus purchase was found.
 - Customer Center error: keep Settings usable and show a short setup/retry message.
 
@@ -198,4 +203,4 @@ npm test -- src/app/components/__tests__/SettingsScreen.test.tsx --runInBand
 npm test -- src/app/__tests__/AppMapReturn.test.tsx --runInBand
 ```
 
-Real Paywall, purchase, restore, and Customer Center behavior must be verified in an Expo development build with App Store Connect or Google Play products connected to RevenueCat.
+Real purchase, restore, and Customer Center behavior must be verified in an Expo development build with App Store Connect or Google Play products connected to RevenueCat.

@@ -59,7 +59,7 @@ function createProps() {
     premiumAccessState: getDefaultPremiumAccessState(),
     premiumOfferingSummary: null as PremiumOfferingSummary | null,
     isLoadingPremiumOffering: false,
-    isPresentingPremiumPaywall: false,
+    isPurchasingPremiumPackage: false,
     isPresentingPremiumCustomerCenter: false,
     isRestoringPremiumPurchases: false,
     selectedUserLocationIconId: DEFAULT_USER_LOCATION_ICON_ID,
@@ -71,7 +71,8 @@ function createProps() {
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
-    onPresentPremiumPaywall: jest.fn(),
+    onPurchaseMonthlyPremiumPackage: jest.fn(),
+    onPurchaseYearlyPremiumPackage: jest.fn(),
     onPresentPremiumCustomerCenter: jest.fn(),
     onRestorePremiumPurchases: jest.fn(),
     onExportAllLogs: jest.fn(),
@@ -243,6 +244,7 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).not.toContain('退会する場合はApp Storeのサブスク設定から行ってください。');
     expect(texts).toContain('Strollia Plus(有料サブスクリプション)のごあんない');
     expect(texts).toContain('月額300円の有料サービスです。年払いにすると1か月分オトクです!');
+    expect(texts).toContain('いつでも解約できます。');
     expect(texts).toContain('月払い(300円)ではじめる！');
     expect(texts).toContain('年払い(3300円)ではじめる！');
     expect(texts).toContain('Strollia Plusの購入を復元する');
@@ -295,15 +297,18 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const paywallButton = renderer.root.findAll((node: any) => node.props.onPress === props.onPresentPremiumPaywall)[0];
+    const monthlyButton = renderer.root.findAll((node: any) => node.props.onPress === props.onPurchaseMonthlyPremiumPackage)[0];
+    const yearlyButton = renderer.root.findAll((node: any) => node.props.onPress === props.onPurchaseYearlyPremiumPackage)[0];
     const restoreButton = renderer.root.findAll((node: any) => node.props.onPress === props.onRestorePremiumPurchases)[0];
 
     act(() => {
-      paywallButton.props.onPress();
+      monthlyButton.props.onPress();
+      yearlyButton.props.onPress();
       restoreButton.props.onPress();
     });
 
-    expect(props.onPresentPremiumPaywall).toHaveBeenCalledTimes(1);
+    expect(props.onPurchaseMonthlyPremiumPackage).toHaveBeenCalledTimes(1);
+    expect(props.onPurchaseYearlyPremiumPackage).toHaveBeenCalledTimes(1);
     expect(props.onRestorePremiumPurchases).toHaveBeenCalledTimes(1);
   });
 
@@ -335,10 +340,10 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('商品情報を確認しています...');
   });
 
-  test('Paywall表示中はPaywallボタンを無効化する', () => {
+  test('購入処理中は月払いと年払いボタンを無効化する', () => {
     const props = {
       ...createProps(),
-      isPresentingPremiumPaywall: true,
+      isPurchasingPremiumPackage: true,
     };
     let renderer: any;
 
@@ -346,9 +351,14 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const paywallButton = renderer.root.findAll((node: any) => node.props.onPress === props.onPresentPremiumPaywall)[0];
+    const purchaseButtons = [
+      renderer.root.findAll((node: any) => node.props.onPress === props.onPurchaseMonthlyPremiumPackage)[0],
+      renderer.root.findAll((node: any) => node.props.onPress === props.onPurchaseYearlyPremiumPackage)[0],
+    ];
 
-    expect(paywallButton.props.disabled).toBe(true);
+    expect(purchaseButtons).toHaveLength(2);
+    expect(purchaseButtons[0].props.disabled).toBe(true);
+    expect(purchaseButtons[1].props.disabled).toBe(true);
   });
 
   test('購入復元中は復元ボタンを無効化する', () => {
@@ -422,7 +432,7 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const buttons = [props.onPresentPremiumPaywall, props.onRestorePremiumPurchases].flatMap((handler) =>
+    const buttons = [props.onPurchaseMonthlyPremiumPackage, props.onPurchaseYearlyPremiumPackage, props.onRestorePremiumPurchases].flatMap((handler) =>
       renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === handler),
     );
 
@@ -446,10 +456,13 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const paywallButtons = renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === props.onPresentPremiumPaywall);
+    const purchaseButtons = [
+      ...renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === props.onPurchaseMonthlyPremiumPackage),
+      ...renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === props.onPurchaseYearlyPremiumPackage),
+    ];
 
-    expect(paywallButtons).toHaveLength(2);
-    for (const button of paywallButtons) {
+    expect(purchaseButtons).toHaveLength(2);
+    for (const button of purchaseButtons) {
       const icon = button.findAllByType(Text).find((node: any) => node.props.name);
 
       expect(icon?.props.name).toBe('currency-usd');

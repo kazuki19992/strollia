@@ -5,17 +5,15 @@ import type {
   PremiumAccessState,
   PremiumOfferingSummary,
   PremiumPackageSummary,
-  PremiumPaywallResult,
+  PremiumPackagePlan,
   RevenueCatClient,
 } from './revenueCatAccess';
 import { getRevenueCatConfigureOptions } from './revenueCatConfig';
 
-type RevenueCatPaywallModule = {
+type RevenueCatCustomerCenterModule = {
   default: {
-    presentPaywallIfNeeded(options: { requiredEntitlementIdentifier: string; displayCloseButton: boolean }): Promise<unknown>;
     presentCustomerCenter(): Promise<void>;
   };
-  PAYWALL_RESULT: Record<string, unknown>;
 };
 
 /** RevenueCat SDKの初期化状態。 */
@@ -84,6 +82,11 @@ function mapPackageToSummary(revenueCatPackage: {
   };
 }
 
+/** 設定画面のプラン種別に対応するRevenueCat packageType。 */
+function getPackageTypeForPlan(plan: PremiumPackagePlan): string {
+  return plan === 'monthly' ? 'MONTHLY' : 'ANNUAL';
+}
+
 /** RevenueCatのcurrent Offeringを設定画面向け概要へ変換する。 */
 export async function getPremiumOfferingSummaryFromRevenueCat(): Promise<PremiumOfferingSummary | null> {
   const configured = configureRevenueCatIfAvailable();
@@ -115,6 +118,26 @@ export async function restorePremiumPurchasesWithRevenueCat(): Promise<PremiumAc
   return resolveAccessStateFromCustomerInfo(await Purchases.restorePurchases());
 }
 
+/** RevenueCat Offering内の指定プランPackageを直接購入する。 */
+export async function purchasePremiumPackageWithRevenueCat(plan: PremiumPackagePlan): Promise<PremiumAccessState> {
+  const configured = configureRevenueCatIfAvailable();
+
+  if (!configured) {
+    throw new Error('RevenueCat API key is not configured for this platform.');
+  }
+
+  const offerings = await Purchases.getOfferings();
+  const packageType = getPackageTypeForPlan(plan);
+  const packageToPurchase = offerings.current?.availablePackages.find((candidate) => candidate.packageType === packageType);
+
+  if (!packageToPurchase) {
+    throw new Error(`RevenueCat ${packageType} package is not configured.`);
+  }
+
+  const purchaseResult = await Purchases.purchasePackage(packageToPurchase);
+  return resolveAccessStateFromCustomerInfo(purchaseResult.customerInfo);
+}
+
 /** RevenueCat CustomerInfo更新を購読し、Plus状態へ変換して通知する。 */
 export function subscribePremiumAccessStateUpdatesWithRevenueCat(onUpdate: (state: PremiumAccessState) => void): () => void {
   const configured = configureRevenueCatIfAvailable();
@@ -134,43 +157,6 @@ export function subscribePremiumAccessStateUpdatesWithRevenueCat(onUpdate: (stat
   };
 }
 
-/** RevenueCat Paywall UIの戻り値をアプリ内の結果値へ変換する。 */
-function mapPaywallResult(paywallResult: unknown, paywallConstants: Record<string, unknown>): PremiumPaywallResult {
-  if (paywallResult === paywallConstants.PURCHASED) {
-    return 'purchased';
-  }
-
-  if (paywallResult === paywallConstants.RESTORED) {
-    return 'restored';
-  }
-
-  if (paywallResult === paywallConstants.NOT_PRESENTED) {
-    return 'notPresented';
-  }
-
-  if (paywallResult === paywallConstants.ERROR) {
-    return 'error';
-  }
-
-  return 'cancelled';
-}
-
-/** RevenueCat Paywallを表示する。 */
-export async function presentPaywallWithRevenueCat(): Promise<PremiumPaywallResult> {
-  const configured = configureRevenueCatIfAvailable();
-
-  if (!configured) {
-    throw new Error('RevenueCat API key is not configured for this platform.');
-  }
-
-  const paywallModule = require('react-native-purchases-ui') as RevenueCatPaywallModule;
-  const result = await paywallModule.default.presentPaywallIfNeeded({
-    requiredEntitlementIdentifier: STROLLIA_PLUS_ENTITLEMENT_ID,
-    displayCloseButton: true,
-  });
-  return mapPaywallResult(result, paywallModule.PAYWALL_RESULT);
-}
-
 /** RevenueCat Customer Centerを表示する。 */
 export async function presentCustomerCenterWithRevenueCat(): Promise<void> {
   const configured = configureRevenueCatIfAvailable();
@@ -179,8 +165,8 @@ export async function presentCustomerCenterWithRevenueCat(): Promise<void> {
     throw new Error('RevenueCat API key is not configured for this platform.');
   }
 
-  const paywallModule = require('react-native-purchases-ui') as RevenueCatPaywallModule;
-  await paywallModule.default.presentCustomerCenter();
+  const customerCenterModule = require('react-native-purchases-ui') as RevenueCatCustomerCenterModule;
+  await customerCenterModule.default.presentCustomerCenter();
 }
 
 /** RevenueCat SDKを既存の課金境界へ接続するクライアントを作る。 */
@@ -188,7 +174,7 @@ export function createRevenueCatClient(): RevenueCatClient {
   return {
     hasActiveEntitlement: getPremiumAccessStateFromRevenueCat,
     getCurrentOffering: getPremiumOfferingSummaryFromRevenueCat,
-    presentPaywall: presentPaywallWithRevenueCat,
+    purchasePackage: purchasePremiumPackageWithRevenueCat,
     presentCustomerCenter: presentCustomerCenterWithRevenueCat,
     restorePurchases: restorePremiumPurchasesWithRevenueCat,
     subscribeToCustomerInfoUpdates: subscribePremiumAccessStateUpdatesWithRevenueCat,

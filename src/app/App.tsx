@@ -62,8 +62,9 @@ import {
   getPremiumAccessState,
   getPremiumOfferingSummary,
   PremiumOfferingSummary,
+  PremiumPackagePlan,
   presentPremiumCustomerCenter,
-  presentPremiumPaywall,
+  purchasePremiumPackage,
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
 } from '../features/premium/revenueCatAccess';
@@ -223,7 +224,7 @@ export default function App() {
   const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
   const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
   const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
-  const [isPresentingPremiumPaywall, setIsPresentingPremiumPaywall] = useState(false);
+  const [isPurchasingPremiumPackage, setIsPurchasingPremiumPackage] = useState(false);
   const [isPresentingPremiumCustomerCenter, setIsPresentingPremiumCustomerCenter] = useState(false);
   const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
   const userLocationIcon = useMemo(
@@ -876,31 +877,26 @@ export default function App() {
     });
   }
 
-  /** RevenueCatのPlus状態を再取得して画面へ反映する。 */
-  async function refreshPremiumAccessState(): Promise<void> {
-    setPremiumAccessState(await getPremiumAccessState());
-  }
-
-  /** RevenueCat Paywallを表示し、購入または復元後にPlus状態を更新する。 */
-  async function openPremiumPaywall(): Promise<void> {
-    if (isPresentingPremiumPaywall) {
+  /** 設定画面からRevenueCat Packageを直接購入し、Plus状態を更新する。 */
+  async function purchasePremiumPackageFromSettings(plan: PremiumPackagePlan): Promise<void> {
+    if (isPurchasingPremiumPackage) {
       return;
     }
 
     triggerSelectionHaptic();
-    setIsPresentingPremiumPaywall(true);
+    setIsPurchasingPremiumPackage(true);
 
     try {
-      const result = await presentPremiumPaywall();
+      const result = await purchasePremiumPackage(plan);
+      setPremiumAccessState(result.accessState);
 
-      if (result === 'purchased' || result === 'restored') {
-        await refreshPremiumAccessState();
+      if (result.status === 'purchased' && result.accessState.isPlusActive) {
         Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
-      } else if (result === 'error' || result === 'notPresented') {
-        Alert.alert('Strollia Plus', 'Paywallを表示できませんでした。RevenueCatとストア設定を確認してください。');
+      } else if (result.status === 'error') {
+        Alert.alert('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
       }
     } finally {
-      setIsPresentingPremiumPaywall(false);
+      setIsPurchasingPremiumPackage(false);
     }
   }
 
@@ -950,17 +946,7 @@ export default function App() {
    */
   function showPremiumLockedMessage(label: string): void {
     triggerSelectionHaptic();
-    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。Paywallを表示しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '見る',
-        onPress: () => {
-          openPremiumPaywall().catch((error: unknown) => {
-            console.warn('Failed to open premium paywall:', error);
-          });
-        },
-      },
-    ]);
+    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。設定画面の月払いまたは年払いから加入してください。`);
   }
 
 
@@ -1095,7 +1081,7 @@ export default function App() {
                         premiumAccessState={premiumAccessState}
                         premiumOfferingSummary={premiumOfferingSummary}
                         isLoadingPremiumOffering={isLoadingPremiumOffering}
-                        isPresentingPremiumPaywall={isPresentingPremiumPaywall}
+                        isPurchasingPremiumPackage={isPurchasingPremiumPackage}
                         isPresentingPremiumCustomerCenter={isPresentingPremiumCustomerCenter}
                         isRestoringPremiumPurchases={isRestoringPremiumPurchases}
                         selectedUserLocationIconId={selectedUserLocationIconId}
@@ -1107,9 +1093,14 @@ export default function App() {
                         onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
                         onUpdateUserLocationIcon={updateUserLocationIcon}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
-                        onPresentPremiumPaywall={() => {
-                          openPremiumPaywall().catch((error: unknown) => {
-                            console.warn('Failed to open premium paywall:', error);
+                        onPurchaseMonthlyPremiumPackage={() => {
+                          purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
+                            console.warn('Failed to purchase monthly premium package:', error);
+                          });
+                        }}
+                        onPurchaseYearlyPremiumPackage={() => {
+                          purchasePremiumPackageFromSettings('yearly').catch((error: unknown) => {
+                            console.warn('Failed to purchase yearly premium package:', error);
                           });
                         }}
                         onPresentPremiumCustomerCenter={() => {

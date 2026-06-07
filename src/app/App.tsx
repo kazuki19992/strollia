@@ -62,8 +62,10 @@ import {
   getPremiumAccessState,
   getPremiumOfferingSummary,
   PremiumOfferingSummary,
+  presentPremiumCustomerCenter,
   presentPremiumPaywall,
   restorePremiumPurchases,
+  subscribePremiumAccessStateUpdates,
 } from '../features/premium/revenueCatAccess';
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
@@ -222,6 +224,7 @@ export default function App() {
   const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
   const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
   const [isPresentingPremiumPaywall, setIsPresentingPremiumPaywall] = useState(false);
+  const [isPresentingPremiumCustomerCenter, setIsPresentingPremiumCustomerCenter] = useState(false);
   const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
@@ -472,6 +475,9 @@ export default function App() {
       })
       .finally(() => setIsReady(true));
   }, [maybeStartRecordingAutomatically, refreshAchievementState, refreshData]);
+
+  /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */
+  useEffect(() => subscribePremiumAccessStateUpdates(setPremiumAccessState), []);
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。
@@ -916,6 +922,26 @@ export default function App() {
     }
   }
 
+  /** RevenueCat Customer Centerを表示する。 */
+  async function openPremiumCustomerCenter(): Promise<void> {
+    if (isPresentingPremiumCustomerCenter) {
+      return;
+    }
+
+    triggerSelectionHaptic();
+    setIsPresentingPremiumCustomerCenter(true);
+
+    try {
+      const didPresent = await presentPremiumCustomerCenter();
+
+      if (!didPresent) {
+        Alert.alert('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
+      }
+    } finally {
+      setIsPresentingPremiumCustomerCenter(false);
+    }
+  }
+
   /**
    * Plus未加入時に有料項目を選んだ場合の案内を表示する。
    *
@@ -1070,6 +1096,7 @@ export default function App() {
                         premiumOfferingSummary={premiumOfferingSummary}
                         isLoadingPremiumOffering={isLoadingPremiumOffering}
                         isPresentingPremiumPaywall={isPresentingPremiumPaywall}
+                        isPresentingPremiumCustomerCenter={isPresentingPremiumCustomerCenter}
                         isRestoringPremiumPurchases={isRestoringPremiumPurchases}
                         selectedUserLocationIconId={selectedUserLocationIconId}
                         onBackToMap={openMap}
@@ -1083,6 +1110,11 @@ export default function App() {
                         onPresentPremiumPaywall={() => {
                           openPremiumPaywall().catch((error: unknown) => {
                             console.warn('Failed to open premium paywall:', error);
+                          });
+                        }}
+                        onPresentPremiumCustomerCenter={() => {
+                          openPremiumCustomerCenter().catch((error: unknown) => {
+                            console.warn('Failed to open premium customer center:', error);
                           });
                         }}
                         onRestorePremiumPurchases={() => {

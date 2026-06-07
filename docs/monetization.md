@@ -49,7 +49,7 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 - Plusで開放するスタイル候補
 - Plus未加入時にロック表示する設定画面項目
 
-カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plus状態はRevenueCat CustomerInfoで判定し、Plusが無効な場合は反映時に無料状態へフォールバックする。実際の購入、復元、Paywall、商品表示は次段階で実装する。
+カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plus状態はRevenueCat CustomerInfoで判定し、Plusが無効な場合は反映時に無料状態へフォールバックする。購入、復元、Paywall、商品表示は `src/features/premium/` の境界を通して実装する。
 
 ### 4.1 エリア / visited cell色
 
@@ -73,6 +73,7 @@ visited cell色はテーマのprimaryを既定値とし、将来的にはPlus向
 
 - ステータス
 - `Plusユーザー` バッジ
+- `サブスクを管理する` ボタン
 - 退会はストア側のサブスク設定から行う案内
 
 未加入時は以下を表示する。
@@ -158,11 +159,15 @@ APIキーが未設定の場合、SDK初期化は行わず、既存の開発用Pl
 
 Plus状態の判定は `CustomerInfo.entitlements.active.strollia_plus` をもとに実装済みである。
 
-購入導線は `react-native-purchases-ui` のRevenueCat Paywallを使う。設定画面のStrollia PlusカードからPaywallを表示し、購入または復元完了後に `CustomerInfo` を再取得してPlus状態へ反映する。
+購入導線は `react-native-purchases-ui` のRevenueCat Paywallを使う。設定画面のStrollia PlusカードからPaywallを表示し、購入または復元完了後に `CustomerInfo` を再取得してPlus状態へ反映する。Paywall表示は `presentPaywallIfNeeded` を使い、`strollia_plus` entitlementがすでに有効な場合は不要なPaywall表示を避ける。
 
 商品表示は `Purchases.getOfferings()` のcurrent offeringから取得する。Offeringや商品が未設定の場合もGPS記録や設定画面は止めず、商品情報は確認中として表示する。
 
 購入復元は設定画面の「購入を復元」から `Purchases.restorePurchases()` を呼ぶ。復元後に `strollia_plus` entitlementが有効ならPlus有効として扱う。
+
+アプリ起動中は `Purchases.addCustomerInfoUpdateListener()` でCustomerInfo更新を購読し、RevenueCat側で購入・復元・更新が反映された場合にStrollia Plus状態も追従する。
+
+サブスク有効時はRevenueCat Customer Centerを設定画面から表示できるようにする。Customer CenterはRevenueCat Dashboard側で設定し、ユーザーがサブスク管理、購入復元、サポート導線をセルフサービスで扱える状態にする。
 
 Strolliaは現時点で独自アカウントを持たないため、RevenueCatの匿名App User IDを使う。Apple IDそのものはアプリから取得できない。将来ログインID連携を行う場合は、Sign in with Appleで返るアプリ/開発チーム向け識別子を `Purchases.logIn()` に渡す。
 
@@ -181,9 +186,10 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 - RevenueCatで `strollia_plus` entitlementを作成する
 - RevenueCatでcurrent offeringに月額/年額packageを紐づける
 - RevenueCat Paywallをcurrent offeringへ紐づける
+- RevenueCat Customer Centerを必要なサポート導線に合わせて設定する
 - iOS/AndroidのPublic SDK API keyを環境変数へ設定する
 - `app.json` の `newArchEnabled` が `false` であることを確認する
-- Expo development buildでPaywall表示、購入、復元を確認する
+- Expo development buildでPaywall表示、購入、復元、Customer Center表示を確認する
 
 ## 8. Plus機能ロードマップ
 

@@ -49,8 +49,17 @@ export type RevenueCatClient = {
   getCurrentOffering(): Promise<PremiumOfferingSummary | null>;
   /** RevenueCat Paywallを表示する。 */
   presentPaywall(): Promise<PremiumPaywallResult>;
+  /** RevenueCat Customer Centerを表示する。 */
+  presentCustomerCenter(): Promise<void>;
   /** 購入復元後のPlus状態を返す。 */
   restorePurchases(): Promise<PremiumAccessState>;
+  /**
+   * RevenueCat CustomerInfo更新を購読する。
+   *
+   * @param onUpdate - 更新されたPlus状態を受け取る処理。
+   * @returns 購読解除関数。
+   */
+  subscribeToCustomerInfoUpdates(onUpdate: (state: PremiumAccessState) => void): () => void;
 };
 
 /**
@@ -121,6 +130,18 @@ export async function presentPremiumPaywall(): Promise<PremiumPaywallResult> {
   }
 }
 
+/** RevenueCat Customer Centerを表示できたかどうかを返す。 */
+export async function presentPremiumCustomerCenter(): Promise<boolean> {
+  try {
+    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
+    await createRevenueCatClient().presentCustomerCenter();
+    return true;
+  } catch (error: unknown) {
+    console.warn('Failed to present RevenueCat Customer Center:', error);
+    return false;
+  }
+}
+
 /** RevenueCatで購入を復元し、復元後のPlus状態を返す。 */
 export async function restorePremiumPurchases(): Promise<PremiumAccessState> {
   try {
@@ -129,5 +150,16 @@ export async function restorePremiumPurchases(): Promise<PremiumAccessState> {
   } catch (error: unknown) {
     console.warn('Failed to restore RevenueCat purchases:', error);
     return getDefaultPremiumAccessState();
+  }
+}
+
+/** RevenueCat CustomerInfo更新を購読し、SDK未設定時は何もしない解除関数を返す。 */
+export function subscribePremiumAccessStateUpdates(onUpdate: (state: PremiumAccessState) => void): () => void {
+  try {
+    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
+    return createRevenueCatClient().subscribeToCustomerInfoUpdates(onUpdate);
+  } catch (error: unknown) {
+    console.warn('Failed to subscribe RevenueCat customer info updates:', error);
+    return () => undefined;
   }
 }

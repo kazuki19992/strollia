@@ -1,4 +1,4 @@
-import Purchases from 'react-native-purchases';
+import Purchases, { CustomerInfoUpdateListener } from 'react-native-purchases';
 
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from './premiumCatalog';
 import type {
@@ -12,7 +12,8 @@ import { getRevenueCatConfigureOptions } from './revenueCatConfig';
 
 type RevenueCatPaywallModule = {
   default: {
-    presentPaywall(): Promise<unknown>;
+    presentPaywallIfNeeded(options: { requiredEntitlementIdentifier: string; displayCloseButton: boolean }): Promise<unknown>;
+    presentCustomerCenter(): Promise<void>;
   };
   PAYWALL_RESULT: Record<string, unknown>;
 };
@@ -114,6 +115,25 @@ export async function restorePremiumPurchasesWithRevenueCat(): Promise<PremiumAc
   return resolveAccessStateFromCustomerInfo(await Purchases.restorePurchases());
 }
 
+/** RevenueCat CustomerInfo更新を購読し、Plus状態へ変換して通知する。 */
+export function subscribePremiumAccessStateUpdatesWithRevenueCat(onUpdate: (state: PremiumAccessState) => void): () => void {
+  const configured = configureRevenueCatIfAvailable();
+
+  if (!configured) {
+    return () => undefined;
+  }
+
+  const listener: CustomerInfoUpdateListener = (customerInfo) => {
+    onUpdate(resolveAccessStateFromCustomerInfo(customerInfo));
+  };
+
+  Purchases.addCustomerInfoUpdateListener(listener);
+
+  return () => {
+    Purchases.removeCustomerInfoUpdateListener(listener);
+  };
+}
+
 /** RevenueCat Paywall UIの戻り値をアプリ内の結果値へ変換する。 */
 function mapPaywallResult(paywallResult: unknown, paywallConstants: Record<string, unknown>): PremiumPaywallResult {
   if (paywallResult === paywallConstants.PURCHASED) {
@@ -144,8 +164,23 @@ export async function presentPaywallWithRevenueCat(): Promise<PremiumPaywallResu
   }
 
   const paywallModule = require('react-native-purchases-ui') as RevenueCatPaywallModule;
-  const result = await paywallModule.default.presentPaywall();
+  const result = await paywallModule.default.presentPaywallIfNeeded({
+    requiredEntitlementIdentifier: STROLLIA_PLUS_ENTITLEMENT_ID,
+    displayCloseButton: true,
+  });
   return mapPaywallResult(result, paywallModule.PAYWALL_RESULT);
+}
+
+/** RevenueCat Customer Centerを表示する。 */
+export async function presentCustomerCenterWithRevenueCat(): Promise<void> {
+  const configured = configureRevenueCatIfAvailable();
+
+  if (!configured) {
+    throw new Error('RevenueCat API key is not configured for this platform.');
+  }
+
+  const paywallModule = require('react-native-purchases-ui') as RevenueCatPaywallModule;
+  await paywallModule.default.presentCustomerCenter();
 }
 
 /** RevenueCat SDKを既存の課金境界へ接続するクライアントを作る。 */
@@ -154,6 +189,8 @@ export function createRevenueCatClient(): RevenueCatClient {
     hasActiveEntitlement: getPremiumAccessStateFromRevenueCat,
     getCurrentOffering: getPremiumOfferingSummaryFromRevenueCat,
     presentPaywall: presentPaywallWithRevenueCat,
+    presentCustomerCenter: presentCustomerCenterWithRevenueCat,
     restorePurchases: restorePremiumPurchasesWithRevenueCat,
+    subscribeToCustomerInfoUpdates: subscribePremiumAccessStateUpdatesWithRevenueCat,
   };
 }

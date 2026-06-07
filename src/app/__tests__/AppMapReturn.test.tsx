@@ -9,7 +9,13 @@ import {
   startBackgroundLocationRecording,
 } from '../../features/location/locationService';
 import { getDailyLogs } from '../../features/logs/logRepository';
-import { getPremiumAccessState, getPremiumOfferingSummary, presentPremiumPaywall } from '../../features/premium/revenueCatAccess';
+import {
+  getPremiumAccessState,
+  getPremiumOfferingSummary,
+  presentPremiumCustomerCenter,
+  presentPremiumPaywall,
+  subscribePremiumAccessStateUpdates,
+} from '../../features/premium/revenueCatAccess';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -41,6 +47,8 @@ const mockAnimateToRegion = jest.fn();
 let mockLatestSettingsScreenProps: any = null;
 let mockLatestMapScreenProps: any = null;
 let mockLatestMonthlyReportScreenProps: any = null;
+let mockPremiumCustomerInfoUpdate: ((state: { isPlusActive: boolean; entitlementId: string }) => void) | null = null;
+const mockPremiumUnsubscribe = jest.fn();
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -304,8 +312,13 @@ jest.mock('../../features/premium/revenueCatAccess', () => ({
   getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false, entitlementId: 'strollia_plus' })),
   getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
   getPremiumOfferingSummary: jest.fn().mockResolvedValue(null),
+  presentPremiumCustomerCenter: jest.fn().mockResolvedValue(true),
   presentPremiumPaywall: jest.fn().mockResolvedValue('purchased'),
   restorePremiumPurchases: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
+  subscribePremiumAccessStateUpdates: jest.fn((onUpdate) => {
+    mockPremiumCustomerInfoUpdate = onUpdate;
+    return mockPremiumUnsubscribe;
+  }),
 }));
 
 jest.mock('../../features/photos/photoClusters', () => ({
@@ -349,6 +362,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     mockLatestSettingsScreenProps = null;
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
+    mockPremiumCustomerInfoUpdate = null;
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -465,6 +479,40 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
   });
 
+  test('起動時にRevenueCat CustomerInfo更新を購読しアンマウント時に解除する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(subscribePremiumAccessStateUpdates).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      renderer.unmount();
+    });
+    renderer = null;
+
+    expect(mockPremiumUnsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  test('RevenueCat CustomerInfo更新でPlus状態を画面へ反映する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(true);
+
+    act(() => {
+      mockPremiumCustomerInfoUpdate?.({ isPlusActive: false, entitlementId: 'strollia_plus' });
+    });
+
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
+  });
+
   test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);
@@ -559,6 +607,24 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(presentPremiumPaywall).toHaveBeenCalledTimes(1);
     expect(getPremiumAccessState).toHaveBeenCalledTimes(2);
+  });
+
+  test('設定画面からRevenueCat Customer Centerを表示する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPresentPremiumCustomerCenter();
+    });
+    await flushPromises();
+
+    expect(presentPremiumCustomerCenter).toHaveBeenCalledTimes(1);
   });
 
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {

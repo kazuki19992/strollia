@@ -1,5 +1,5 @@
 /** RevenueCat上で管理するStrollia Plusの権利ID。 */
-export const STROLLIA_PLUS_ENTITLEMENT_ID = 'strollia_plus';
+export const STROLLIA_PLUS_ENTITLEMENT_ID = 'Strollia Plus';
 
 /** RevenueCat上で管理する月額商品の識別子候補。 */
 export const STROLLIA_PLUS_MONTHLY_PRODUCT_ID = 'strollia_plus_monthly';

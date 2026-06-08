@@ -672,6 +672,54 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(presentPremiumCustomerCenter).toHaveBeenCalledTimes(1);
   });
 
+  test('設定画面から購入が失敗した場合にエラーアラートを表示しPlus状態を変更しない', async () => {
+    (purchasePremiumPackage as jest.Mock).mockResolvedValueOnce({
+      status: 'error',
+      accessState: { isPlusActive: false, entitlementId: 'strollia_plus' },
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPurchaseMonthlyPremiumPackage();
+    });
+    await flushPromises();
+
+    expect(purchasePremiumPackage).toHaveBeenCalledWith('monthly');
+    expect(alertSpy).toHaveBeenCalledWith('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
+  });
+
+  test('設定画面からCustomer Centerの表示が失敗した場合にエラーアラートを表示する', async () => {
+    (presentPremiumCustomerCenter as jest.Mock).mockResolvedValueOnce(false);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPresentPremiumCustomerCenter();
+    });
+    await flushPromises();
+
+    expect(presentPremiumCustomerCenter).toHaveBeenCalledTimes(1);
+    expect(alertSpy).toHaveBeenCalledWith('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
+  });
+
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 

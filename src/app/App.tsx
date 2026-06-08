@@ -225,7 +225,9 @@ export default function App() {
   const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
   const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
   const [isPurchasingPremiumPackage, setIsPurchasingPremiumPackage] = useState(false);
+  const isPurchasingPremiumPackageRef = useRef(false);
   const [isPresentingPremiumCustomerCenter, setIsPresentingPremiumCustomerCenter] = useState(false);
+  const isPresentingPremiumCustomerCenterRef = useRef(false);
   const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
@@ -879,10 +881,11 @@ export default function App() {
 
   /** 設定画面からRevenueCat Packageを直接購入し、Plus状態を更新する。 */
   async function purchasePremiumPackageFromSettings(plan: PremiumPackagePlan): Promise<void> {
-    if (isPurchasingPremiumPackage) {
+    if (isPurchasingPremiumPackageRef.current) {
       return;
     }
 
+    isPurchasingPremiumPackageRef.current = true;
     triggerSelectionHaptic();
     setIsPurchasingPremiumPackage(true);
 
@@ -896,6 +899,7 @@ export default function App() {
         Alert.alert('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
       }
     } finally {
+      isPurchasingPremiumPackageRef.current = false;
       setIsPurchasingPremiumPackage(false);
     }
   }
@@ -920,10 +924,11 @@ export default function App() {
 
   /** RevenueCat Customer Centerを表示する。 */
   async function openPremiumCustomerCenter(): Promise<void> {
-    if (isPresentingPremiumCustomerCenter) {
+    if (isPresentingPremiumCustomerCenterRef.current) {
       return;
     }
 
+    isPresentingPremiumCustomerCenterRef.current = true;
     triggerSelectionHaptic();
     setIsPresentingPremiumCustomerCenter(true);
 
@@ -934,6 +939,7 @@ export default function App() {
         Alert.alert('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
       }
     } finally {
+      isPresentingPremiumCustomerCenterRef.current = false;
       setIsPresentingPremiumCustomerCenter(false);
     }
   }

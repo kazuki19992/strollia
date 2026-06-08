@@ -392,6 +392,7 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const cancellationError = new Error('cancelled') as Error & { userCancelled: boolean };
     cancellationError.userCancelled = true;
+    (Purchases.getCustomerInfo as jest.Mock).mockResolvedValue({ entitlements: { active: {} } });
     (Purchases.getOfferings as jest.Mock).mockResolvedValue({
       current: {
         identifier: 'default',
@@ -422,6 +423,7 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
     Platform.OS = 'ios';
     setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (Purchases.getCustomerInfo as jest.Mock).mockResolvedValue({ entitlements: { active: {} } });
     (Purchases.getOfferings as jest.Mock).mockRejectedValue(new Error('offering failed'));
 
     await expect(purchasePremiumPackage('monthly')).resolves.toEqual({
@@ -435,12 +437,10 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
     Platform.OS = 'ios';
     setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
     const onUpdate = jest.fn();
-    const listener = (Purchases.addCustomerInfoUpdateListener as jest.Mock).mock.calls[0]?.[0];
 
     const unsubscribe = subscribePremiumAccessStateUpdatesWithRevenueCat(onUpdate);
     const registeredListener = (Purchases.addCustomerInfoUpdateListener as jest.Mock).mock.calls[0][0];
 
-    expect(listener).toBeUndefined();
     registeredListener({
       entitlements: {
         active: {

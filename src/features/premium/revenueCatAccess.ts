@@ -141,17 +141,18 @@ export async function purchasePremiumPackage(plan: PremiumPackagePlan): Promise<
       accessState,
     };
   } catch (error: unknown) {
+    const currentAccessState = await getPremiumAccessState().catch(() => getDefaultPremiumAccessState());
     if (isRevenueCatPurchaseCancelled(error)) {
       return {
         status: 'cancelled',
-        accessState: getDefaultPremiumAccessState(),
+        accessState: currentAccessState,
       };
     }
 
     console.warn('Failed to purchase RevenueCat package:', error);
     return {
       status: 'error',
-      accessState: getDefaultPremiumAccessState(),
+      accessState: currentAccessState,
     };
   }
 }

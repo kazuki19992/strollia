@@ -120,6 +120,10 @@ jest.mock('../components/DailyLogsScreen', () => ({
   },
 }));
 
+jest.mock('../components/PremiumPaywallModal', () => ({
+  PremiumPaywallModal: () => null,
+}));
+
 jest.mock('../components/DailyLogDetailScreen', () => ({
   DailyLogDetailScreen: ({ onBackToDailyLogs }: { onBackToDailyLogs: () => void }) => {
     const { Pressable, Text } = require('react-native');

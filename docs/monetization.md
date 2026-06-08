@@ -49,7 +49,7 @@ RevenueCat 側では `strollia_plus` entitlement を用意する。
 - Plusで開放するスタイル候補
 - Plus未加入時にロック表示する設定画面項目
 
-カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plus状態はRevenueCat CustomerInfoで判定し、Plusが無効な場合は反映時に無料状態へフォールバックする。実際の購入、復元、Paywall、商品表示は次段階で実装する。
+カスタマイズ選択値はSQLiteへ保存し、RevenueCat導入後も保存値自体は保持する。Plus状態はRevenueCat CustomerInfoで判定し、Plusが無効な場合は反映時に無料状態へフォールバックする。購入、復元、商品表示は `src/features/premium/` の境界を通して実装する。
 
 ### 4.1 エリア / visited cell色
 
@@ -73,6 +73,7 @@ visited cell色はテーマのprimaryを既定値とし、将来的にはPlus向
 
 - ステータス
 - `Plusユーザー` バッジ
+- `サブスクを管理する` ボタン
 - 退会はストア側のサブスク設定から行う案内
 
 未加入時は以下を表示する。
@@ -81,7 +82,7 @@ visited cell色はテーマのprimaryを既定値とし、将来的にはPlus向
 - `サブスクを復元する` ボタン
 - Offering取得中は商品情報確認中の文言
 
-現在地アイコン設定は、地図画面設定の中にアイコン付き選択ボタンとして表示する。Plus未加入時も候補は見せるが、有料候補にはロックを表示し、選択時はPaywall導線へつなぐ。
+現在地アイコン設定は、地図画面設定の中にアイコン付き選択ボタンとして表示する。Plus未加入時も候補は見せるが、有料候補にはロックを表示し、選択時は設定画面の月払い/年払いから加入できることを案内する。
 
 GPS記録状態は設定画面冒頭の大きなパネルで表示する。権限があり記録中のときはprimary色のパネル、権限が不足しているときは赤色パネルと権限付与ボタン、自動記録開始に失敗したときはオレンジ色パネルと復旧用の記録開始ボタンを表示する。
 
@@ -158,11 +159,15 @@ APIキーが未設定の場合、SDK初期化は行わず、既存の開発用Pl
 
 Plus状態の判定は `CustomerInfo.entitlements.active.strollia_plus` をもとに実装済みである。
 
-購入導線は `react-native-purchases-ui` のRevenueCat Paywallを使う。設定画面のStrollia PlusカードからPaywallを表示し、購入または復元完了後に `CustomerInfo` を再取得してPlus状態へ反映する。
+購入導線はRevenueCat Paywallを使わず、設定画面の月払い/年払いボタンから `Purchases.purchasePackage()` を直接呼び出す。購入または復元完了後は `CustomerInfo` をもとにPlus状態へ反映する。
 
 商品表示は `Purchases.getOfferings()` のcurrent offeringから取得する。Offeringや商品が未設定の場合もGPS記録や設定画面は止めず、商品情報は確認中として表示する。
 
 購入復元は設定画面の「購入を復元」から `Purchases.restorePurchases()` を呼ぶ。復元後に `strollia_plus` entitlementが有効ならPlus有効として扱う。
+
+アプリ起動中は `Purchases.addCustomerInfoUpdateListener()` でCustomerInfo更新を購読し、RevenueCat側で購入・復元・更新が反映された場合にStrollia Plus状態も追従する。
+
+サブスク有効時はRevenueCat Customer Centerを設定画面から表示できるようにする。Customer CenterはRevenueCat Dashboard側で設定し、ユーザーがサブスク管理、購入復元、サポート導線をセルフサービスで扱える状態にする。
 
 Strolliaは現時点で独自アカウントを持たないため、RevenueCatの匿名App User IDを使う。Apple IDそのものはアプリから取得できない。将来ログインID連携を行う場合は、Sign in with Appleで返るアプリ/開発チーム向け識別子を `Purchases.logIn()` に渡す。
 
@@ -172,7 +177,7 @@ iOSからAndroidのようにストアをまたぐ復元は、匿名App User ID�
 
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 
-Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnative module登録に失敗する可能性があるため、Paywall導入時点では `app.json` の `newArchEnabled` を `false` にする。RevenueCat側でExpo SDK 54 New Architecture対応が確認できたら、development buildで購入・復元を再検証したうえで有効化を検討する。
+Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnative module登録に失敗する可能性があるため、課金導入時点では `app.json` の `newArchEnabled` を `false` にする。RevenueCat側でExpo SDK 54 New Architecture対応が確認できたら、development buildで購入・復元を再検証したうえで有効化を検討する。
 
 ### 7.5 RevenueCat / Store実設定チェックリスト
 
@@ -180,10 +185,10 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 - Google Play Consoleで `strollia_plus_monthly` と `strollia_plus_yearly` を作成する
 - RevenueCatで `strollia_plus` entitlementを作成する
 - RevenueCatでcurrent offeringに月額/年額packageを紐づける
-- RevenueCat Paywallをcurrent offeringへ紐づける
+- RevenueCat Customer Centerを必要なサポート導線に合わせて設定する
 - iOS/AndroidのPublic SDK API keyを環境変数へ設定する
 - `app.json` の `newArchEnabled` が `false` であることを確認する
-- Expo development buildでPaywall表示、購入、復元を確認する
+- Expo development buildで月払い購入、年払い購入、復元、Customer Center表示を確認する
 
 ## 8. Plus機能ロードマップ
 
@@ -207,4 +212,4 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 - 月次レポートMVP
 - 日別詳細レポートMVP
 - RevenueCat SDK導入とCustomerInfoによるPlus状態判定
-- RevenueCat Paywall、購入、復元、Offering表示
+- RevenueCat直接購入、復元、Offering表示、Customer Center表示

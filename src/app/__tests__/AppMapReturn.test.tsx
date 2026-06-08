@@ -9,7 +9,13 @@ import {
   startBackgroundLocationRecording,
 } from '../../features/location/locationService';
 import { getDailyLogs } from '../../features/logs/logRepository';
-import { getPremiumAccessState, getPremiumOfferingSummary, presentPremiumPaywall } from '../../features/premium/revenueCatAccess';
+import {
+  getPremiumAccessState,
+  getPremiumOfferingSummary,
+  presentPremiumCustomerCenter,
+  purchasePremiumPackage,
+  subscribePremiumAccessStateUpdates,
+} from '../../features/premium/revenueCatAccess';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -41,6 +47,8 @@ const mockAnimateToRegion = jest.fn();
 let mockLatestSettingsScreenProps: any = null;
 let mockLatestMapScreenProps: any = null;
 let mockLatestMonthlyReportScreenProps: any = null;
+let mockPremiumCustomerInfoUpdate: ((state: { isPlusActive: boolean; entitlementId: string }) => void) | null = null;
+const mockPremiumUnsubscribe = jest.fn();
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -304,8 +312,13 @@ jest.mock('../../features/premium/revenueCatAccess', () => ({
   getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false, entitlementId: 'strollia_plus' })),
   getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
   getPremiumOfferingSummary: jest.fn().mockResolvedValue(null),
-  presentPremiumPaywall: jest.fn().mockResolvedValue('purchased'),
+  presentPremiumCustomerCenter: jest.fn().mockResolvedValue(true),
+  purchasePremiumPackage: jest.fn().mockResolvedValue({ status: 'purchased', accessState: { isPlusActive: true, entitlementId: 'strollia_plus' } }),
   restorePremiumPurchases: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
+  subscribePremiumAccessStateUpdates: jest.fn((onUpdate) => {
+    mockPremiumCustomerInfoUpdate = onUpdate;
+    return mockPremiumUnsubscribe;
+  }),
 }));
 
 jest.mock('../../features/photos/photoClusters', () => ({
@@ -349,6 +362,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     mockLatestSettingsScreenProps = null;
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
+    mockPremiumCustomerInfoUpdate = null;
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -465,6 +479,40 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
   });
 
+  test('起動時にRevenueCat CustomerInfo更新を購読しアンマウント時に解除する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(subscribePremiumAccessStateUpdates).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      renderer.unmount();
+    });
+    renderer = null;
+
+    expect(mockPremiumUnsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  test('RevenueCat CustomerInfo更新でPlus状態を画面へ反映する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(true);
+
+    act(() => {
+      mockPremiumCustomerInfoUpdate?.({ isPlusActive: false, entitlementId: 'strollia_plus' });
+    });
+
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
+  });
+
   test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);
@@ -535,13 +583,58 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
 
-  test('Plus未加入時に有料現在地アイコンを選ぶとPaywallを表示してPlus状態を再取得する', async () => {
-    (getPremiumAccessState as jest.Mock)
-      .mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' })
-      .mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
-    jest.spyOn(Alert, 'alert').mockImplementation((_title: string, _message?: string, buttons?: any[]) => {
-      buttons?.find((button) => button.text === '見る')?.onPress();
+  test('設定画面から月払いPackageを直接購入してPlus状態を反映する', async () => {
+    (purchasePremiumPackage as jest.Mock).mockResolvedValueOnce({
+      status: 'purchased',
+      accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
     });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPurchaseMonthlyPremiumPackage();
+    });
+    await flushPromises();
+
+    expect(purchasePremiumPackage).toHaveBeenCalledWith('monthly');
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(true);
+  });
+
+  test('設定画面から年払いPackageを直接購入してPlus状態を反映する', async () => {
+    (purchasePremiumPackage as jest.Mock).mockResolvedValueOnce({
+      status: 'purchased',
+      accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPurchaseYearlyPremiumPackage();
+    });
+    await flushPromises();
+
+    expect(purchasePremiumPackage).toHaveBeenCalledWith('yearly');
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(true);
+  });
+
+  test('Plus未加入時に有料現在地アイコンを選ぶと設定画面で加入する案内を表示する', async () => {
+    (getPremiumAccessState as jest.Mock)
+      .mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);
@@ -557,8 +650,74 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     await flushPromises();
 
-    expect(presentPremiumPaywall).toHaveBeenCalledTimes(1);
-    expect(getPremiumAccessState).toHaveBeenCalledTimes(2);
+    expect(purchasePremiumPackage).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith('Strollia Plus限定', 'さんぽはStrollia Plusで開放できます。設定画面の月払いまたは年払いから加入してください。');
+  });
+
+  test('設定画面からRevenueCat Customer Centerを表示する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPresentPremiumCustomerCenter();
+    });
+    await flushPromises();
+
+    expect(presentPremiumCustomerCenter).toHaveBeenCalledTimes(1);
+  });
+
+  test('設定画面から購入が失敗した場合にエラーアラートを表示しPlus状態を変更しない', async () => {
+    (purchasePremiumPackage as jest.Mock).mockResolvedValueOnce({
+      status: 'error',
+      accessState: { isPlusActive: false, entitlementId: 'strollia_plus' },
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPurchaseMonthlyPremiumPackage();
+    });
+    await flushPromises();
+
+    expect(purchasePremiumPackage).toHaveBeenCalledWith('monthly');
+    expect(alertSpy).toHaveBeenCalledWith('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
+  });
+
+  test('設定画面からCustomer Centerの表示が失敗した場合にエラーアラートを表示する', async () => {
+    (presentPremiumCustomerCenter as jest.Mock).mockResolvedValueOnce(false);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onPresentPremiumCustomerCenter();
+    });
+    await flushPromises();
+
+    expect(presentPremiumCustomerCenter).toHaveBeenCalledTimes(1);
+    expect(alertSpy).toHaveBeenCalledWith('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
   });
 
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {

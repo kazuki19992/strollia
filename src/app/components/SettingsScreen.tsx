@@ -50,8 +50,10 @@ export type SettingsScreenProps = {
   premiumOfferingSummary: PremiumOfferingSummary | null;
   /** 商品情報を読み込み中か。 */
   isLoadingPremiumOffering: boolean;
-  /** Paywall表示処理中か。 */
-  isPresentingPremiumPaywall: boolean;
+  /** サブスク購入処理中か。 */
+  isPurchasingPremiumPackage: boolean;
+  /** Customer Center表示処理中か。 */
+  isPresentingPremiumCustomerCenter: boolean;
   /** 購入復元処理中か。 */
   isRestoringPremiumPurchases: boolean;
   /** 選択中の現在地アイコンID。 */
@@ -72,8 +74,12 @@ export type SettingsScreenProps = {
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
   /** OSSライセンス画面を開く処理。 */
   onOpenLicenseScreen: () => void;
-  /** RevenueCat Paywallを表示する処理。 */
-  onPresentPremiumPaywall: () => void;
+  /** RevenueCat月払いPackageを購入する処理。 */
+  onPurchaseMonthlyPremiumPackage: () => void;
+  /** RevenueCat年払いPackageを購入する処理。 */
+  onPurchaseYearlyPremiumPackage: () => void;
+  /** RevenueCat Customer Centerを表示する処理。 */
+  onPresentPremiumCustomerCenter: () => void;
   /** 購入復元処理。 */
   onRestorePremiumPurchases: () => void;
   /** データエクスポート処理。 */
@@ -110,8 +116,10 @@ export function SettingsScreen({
   isUpdatingPhotoSetting,
   isImportingGpx,
   premiumAccessState,
+  premiumOfferingSummary,
   isLoadingPremiumOffering,
-  isPresentingPremiumPaywall,
+  isPurchasingPremiumPackage,
+  isPresentingPremiumCustomerCenter,
   isRestoringPremiumPurchases,
   selectedUserLocationIconId,
   onBackToMap,
@@ -122,7 +130,9 @@ export function SettingsScreen({
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
   onOpenLicenseScreen,
-  onPresentPremiumPaywall,
+  onPurchaseMonthlyPremiumPackage,
+  onPurchaseYearlyPremiumPackage,
+  onPresentPremiumCustomerCenter,
   onRestorePremiumPurchases,
   onExportAllLogs,
   onImportGpx,
@@ -130,6 +140,8 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
   const subscriptionDescription = isPlusActive ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。` : undefined;
+  const monthlyPriceText = premiumOfferingSummary?.packages.find((candidate) => candidate.packageType === 'MONTHLY')?.priceText ?? '300円';
+  const yearlyPriceText = premiumOfferingSummary?.packages.find((candidate) => candidate.packageType === 'ANNUAL')?.priceText ?? '3300円';
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -231,6 +243,18 @@ export function SettingsScreen({
             </View>
             <Text style={[styles.settingsPlusBadge, !isPlusActive && styles.settingsFreeBadge]}>{isPlusActive ? 'Plusユーザー' : '一般ユーザー'}</Text>
           </View>
+          {isPlusActive && (
+            <View style={styles.settingsSubscriptionActions}>
+              <ActionPill
+                alignLeft
+                disabled={isPresentingPremiumCustomerCenter}
+                icon={<MaterialCommunityIcons name="account-cog" size={22} color={theme.colors.text} />}
+                label={isPresentingPremiumCustomerCenter ? '表示中...' : 'サブスクを管理する'}
+                styles={styles}
+                onPress={onPresentPremiumCustomerCenter}
+              />
+            </View>
+          )}
           {!isPlusActive && (
             <View style={styles.settingsSubscriptionActions}>
               <InfoBlock
@@ -242,27 +266,28 @@ export function SettingsScreen({
                 accessibilityLabel="Strollia Plusの機能比較広告"
                 width="100%"
               />
+              <DescriptionText styles={styles}>いつでも解約できます。</DescriptionText>
               <ActionPill
                 alignLeft
                 backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
                 borderColor={theme.colors.primary}
-                disabled={isPresentingPremiumPaywall}
+                disabled={isPurchasingPremiumPackage}
                 icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPresentingPremiumPaywall ? '表示中...' : '月払い(300円)ではじめる！'}
+                label={isPurchasingPremiumPackage ? '購入処理中...' : `月払い(${monthlyPriceText})ではじめる！`}
                 styles={styles}
                 textColor={theme.colors.primary}
-                onPress={onPresentPremiumPaywall}
+                onPress={onPurchaseMonthlyPremiumPackage}
               />
               <ActionPill
                 alignLeft
                 backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
                 borderColor={theme.colors.primary}
-                disabled={isPresentingPremiumPaywall}
+                disabled={isPurchasingPremiumPackage}
                 icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPresentingPremiumPaywall ? '表示中...' : '年払い(3300円)ではじめる！'}
+                label={isPurchasingPremiumPackage ? '購入処理中...' : `年払い(${yearlyPriceText})ではじめる！`}
                 styles={styles}
                 textColor={theme.colors.primary}
-                onPress={onPresentPremiumPaywall}
+                onPress={onPurchaseYearlyPremiumPackage}
               />
               <ActionPill
                 alignLeft

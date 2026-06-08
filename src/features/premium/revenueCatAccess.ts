@@ -33,8 +33,16 @@ export type PremiumPackageSummary = {
   priceText: string;
 };
 
-/** RevenueCat Paywall表示結果をアプリ側で扱いやすくした値。 */
-export type PremiumPaywallResult = 'purchased' | 'restored' | 'cancelled' | 'notPresented' | 'error';
+/** 設定画面から直接購入できるStrollia Plusプラン。 */
+export type PremiumPackagePlan = 'monthly' | 'yearly';
+
+/** RevenueCat購入結果をアプリ側で扱いやすくした値。 */
+export type PremiumPurchaseResult = {
+  /** 購入処理の結果。 */
+  status: 'purchased' | 'cancelled' | 'error';
+  /** 購入後またはフォールバック後のPlus状態。 */
+  accessState: PremiumAccessState;
+};
 
 /** RevenueCat SDK導入後に差し替える課金クライアント境界。 */
 export type RevenueCatClient = {
@@ -47,10 +55,19 @@ export type RevenueCatClient = {
   hasActiveEntitlement(entitlementId: string): Promise<boolean>;
   /** 現在のRevenueCat Offering概要を返す。 */
   getCurrentOffering(): Promise<PremiumOfferingSummary | null>;
-  /** RevenueCat Paywallを表示する。 */
-  presentPaywall(): Promise<PremiumPaywallResult>;
+  /** 指定プランのRevenueCat Packageを直接購入する。 */
+  purchasePackage(plan: PremiumPackagePlan): Promise<PremiumAccessState>;
+  /** RevenueCat Customer Centerを表示する。 */
+  presentCustomerCenter(): Promise<void>;
   /** 購入復元後のPlus状態を返す。 */
   restorePurchases(): Promise<PremiumAccessState>;
+  /**
+   * RevenueCat CustomerInfo更新を購読する。
+   *
+   * @param onUpdate - 更新されたPlus状態を受け取る処理。
+   * @returns 購読解除関数。
+   */
+  subscribeToCustomerInfoUpdates(onUpdate: (state: PremiumAccessState) => void): () => void;
 };
 
 /**
@@ -110,14 +127,45 @@ export async function getPremiumOfferingSummary(): Promise<PremiumOfferingSummar
   }
 }
 
-/** RevenueCat Paywallを表示する。 */
-export async function presentPremiumPaywall(): Promise<PremiumPaywallResult> {
+function isRevenueCatPurchaseCancelled(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'userCancelled' in error && (error as { userCancelled?: unknown }).userCancelled === true;
+}
+
+/** RevenueCat Packageを設定画面から直接購入する。 */
+export async function purchasePremiumPackage(plan: PremiumPackagePlan): Promise<PremiumPurchaseResult> {
   try {
     const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
-    return await createRevenueCatClient().presentPaywall();
+    const accessState = await createRevenueCatClient().purchasePackage(plan);
+    return {
+      status: accessState.isPlusActive ? 'purchased' : 'error',
+      accessState,
+    };
   } catch (error: unknown) {
-    console.warn('Failed to present RevenueCat paywall:', error);
-    return 'error';
+    const currentAccessState = await getPremiumAccessState().catch(() => getDefaultPremiumAccessState());
+    if (isRevenueCatPurchaseCancelled(error)) {
+      return {
+        status: 'cancelled',
+        accessState: currentAccessState,
+      };
+    }
+
+    console.warn('Failed to purchase RevenueCat package:', error);
+    return {
+      status: 'error',
+      accessState: currentAccessState,
+    };
+  }
+}
+
+/** RevenueCat Customer Centerを表示できたかどうかを返す。 */
+export async function presentPremiumCustomerCenter(): Promise<boolean> {
+  try {
+    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
+    await createRevenueCatClient().presentCustomerCenter();
+    return true;
+  } catch (error: unknown) {
+    console.warn('Failed to present RevenueCat Customer Center:', error);
+    return false;
   }
 }
 
@@ -129,5 +177,16 @@ export async function restorePremiumPurchases(): Promise<PremiumAccessState> {
   } catch (error: unknown) {
     console.warn('Failed to restore RevenueCat purchases:', error);
     return getDefaultPremiumAccessState();
+  }
+}
+
+/** RevenueCat CustomerInfo更新を購読し、SDK未設定時は何もしない解除関数を返す。 */
+export function subscribePremiumAccessStateUpdates(onUpdate: (state: PremiumAccessState) => void): () => void {
+  try {
+    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
+    return createRevenueCatClient().subscribeToCustomerInfoUpdates(onUpdate);
+  } catch (error: unknown) {
+    console.warn('Failed to subscribe RevenueCat customer info updates:', error);
+    return () => undefined;
   }
 }

@@ -171,6 +171,8 @@ Strollia は、まず小さなMVPを完成させる。
 - [x] RevenueCat SDKを導入する
 - [x] 購入・復元フローを実装する
 - [x] RevenueCatのCustomerInfoでPlus有効状態を判定する
+- [x] RevenueCat CustomerInfo更新を購読してPlus状態を追従する
+- [x] RevenueCat Customer Center導線を追加する
 - [ ] Sign in with Apple識別子を使ったRevenueCatログインID連携を検討する
 - [x] Plus機能ロードマップを仕様化する
 - [ ] 高度統計画面を追加する

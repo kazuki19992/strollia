@@ -62,8 +62,11 @@ import {
   getPremiumAccessState,
   getPremiumOfferingSummary,
   PremiumOfferingSummary,
-  presentPremiumPaywall,
+  PremiumPackagePlan,
+  presentPremiumCustomerCenter,
+  purchasePremiumPackage,
   restorePremiumPurchases,
+  subscribePremiumAccessStateUpdates,
 } from '../features/premium/revenueCatAccess';
 import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
@@ -221,7 +224,10 @@ export default function App() {
   const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
   const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
   const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
-  const [isPresentingPremiumPaywall, setIsPresentingPremiumPaywall] = useState(false);
+  const [isPurchasingPremiumPackage, setIsPurchasingPremiumPackage] = useState(false);
+  const isPurchasingPremiumPackageRef = useRef(false);
+  const [isPresentingPremiumCustomerCenter, setIsPresentingPremiumCustomerCenter] = useState(false);
+  const isPresentingPremiumCustomerCenterRef = useRef(false);
   const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
@@ -472,6 +478,9 @@ export default function App() {
       })
       .finally(() => setIsReady(true));
   }, [maybeStartRecordingAutomatically, refreshAchievementState, refreshData]);
+
+  /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */
+  useEffect(() => subscribePremiumAccessStateUpdates(setPremiumAccessState), []);
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。
@@ -870,31 +879,28 @@ export default function App() {
     });
   }
 
-  /** RevenueCatのPlus状態を再取得して画面へ反映する。 */
-  async function refreshPremiumAccessState(): Promise<void> {
-    setPremiumAccessState(await getPremiumAccessState());
-  }
-
-  /** RevenueCat Paywallを表示し、購入または復元後にPlus状態を更新する。 */
-  async function openPremiumPaywall(): Promise<void> {
-    if (isPresentingPremiumPaywall) {
+  /** 設定画面からRevenueCat Packageを直接購入し、Plus状態を更新する。 */
+  async function purchasePremiumPackageFromSettings(plan: PremiumPackagePlan): Promise<void> {
+    if (isPurchasingPremiumPackageRef.current) {
       return;
     }
 
+    isPurchasingPremiumPackageRef.current = true;
     triggerSelectionHaptic();
-    setIsPresentingPremiumPaywall(true);
+    setIsPurchasingPremiumPackage(true);
 
     try {
-      const result = await presentPremiumPaywall();
+      const result = await purchasePremiumPackage(plan);
+      setPremiumAccessState(result.accessState);
 
-      if (result === 'purchased' || result === 'restored') {
-        await refreshPremiumAccessState();
+      if (result.status === 'purchased' && result.accessState.isPlusActive) {
         Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
-      } else if (result === 'error' || result === 'notPresented') {
-        Alert.alert('Strollia Plus', 'Paywallを表示できませんでした。RevenueCatとストア設定を確認してください。');
+      } else if (result.status === 'error') {
+        Alert.alert('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
       }
     } finally {
-      setIsPresentingPremiumPaywall(false);
+      isPurchasingPremiumPackageRef.current = false;
+      setIsPurchasingPremiumPackage(false);
     }
   }
 
@@ -916,6 +922,28 @@ export default function App() {
     }
   }
 
+  /** RevenueCat Customer Centerを表示する。 */
+  async function openPremiumCustomerCenter(): Promise<void> {
+    if (isPresentingPremiumCustomerCenterRef.current) {
+      return;
+    }
+
+    isPresentingPremiumCustomerCenterRef.current = true;
+    triggerSelectionHaptic();
+    setIsPresentingPremiumCustomerCenter(true);
+
+    try {
+      const didPresent = await presentPremiumCustomerCenter();
+
+      if (!didPresent) {
+        Alert.alert('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
+      }
+    } finally {
+      isPresentingPremiumCustomerCenterRef.current = false;
+      setIsPresentingPremiumCustomerCenter(false);
+    }
+  }
+
   /**
    * Plus未加入時に有料項目を選んだ場合の案内を表示する。
    *
@@ -924,17 +952,7 @@ export default function App() {
    */
   function showPremiumLockedMessage(label: string): void {
     triggerSelectionHaptic();
-    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。Paywallを表示しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '見る',
-        onPress: () => {
-          openPremiumPaywall().catch((error: unknown) => {
-            console.warn('Failed to open premium paywall:', error);
-          });
-        },
-      },
-    ]);
+    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。設定画面の月払いまたは年払いから加入してください。`);
   }
 
 
@@ -1069,7 +1087,8 @@ export default function App() {
                         premiumAccessState={premiumAccessState}
                         premiumOfferingSummary={premiumOfferingSummary}
                         isLoadingPremiumOffering={isLoadingPremiumOffering}
-                        isPresentingPremiumPaywall={isPresentingPremiumPaywall}
+                        isPurchasingPremiumPackage={isPurchasingPremiumPackage}
+                        isPresentingPremiumCustomerCenter={isPresentingPremiumCustomerCenter}
                         isRestoringPremiumPurchases={isRestoringPremiumPurchases}
                         selectedUserLocationIconId={selectedUserLocationIconId}
                         onBackToMap={openMap}
@@ -1080,9 +1099,19 @@ export default function App() {
                         onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
                         onUpdateUserLocationIcon={updateUserLocationIcon}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
-                        onPresentPremiumPaywall={() => {
-                          openPremiumPaywall().catch((error: unknown) => {
-                            console.warn('Failed to open premium paywall:', error);
+                        onPurchaseMonthlyPremiumPackage={() => {
+                          purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
+                            console.warn('Failed to purchase monthly premium package:', error);
+                          });
+                        }}
+                        onPurchaseYearlyPremiumPackage={() => {
+                          purchasePremiumPackageFromSettings('yearly').catch((error: unknown) => {
+                            console.warn('Failed to purchase yearly premium package:', error);
+                          });
+                        }}
+                        onPresentPremiumCustomerCenter={() => {
+                          openPremiumCustomerCenter().catch((error: unknown) => {
+                            console.warn('Failed to open premium customer center:', error);
                           });
                         }}
                         onRestorePremiumPurchases={() => {

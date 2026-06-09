@@ -1,4 +1,4 @@
-import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Grayscale } from 'react-native-color-matrix-image-filters';
 
 import { AchievementCategory, formatAchievementDistance } from '../../features/achievements/achievementDefinitions';
@@ -33,6 +33,11 @@ const categorySections: { category: AchievementCategory; title: string }[] = [
 /** 実績画面を2列グリッドで描画する。 */
 export function AchievementListScreen({ items, styles, theme, onBackToMap, onSelectAchievement }: AchievementListScreenProps) {
   const displayStates = resolveAchievementDisplayStates(items);
+  const { width: windowWidth } = useWindowDimensions();
+  // Grayscale ネイティブフィルタは数値サイズが必要なため、画面幅からタイル画像サイズを算出する。
+  // 余白は screenList.paddingHorizontal=24・achievementGrid.gap=10・3列に対応する。
+  const tileWidth = (windowWidth - 24 * 2 - 10 * 2) / 3;
+  const grayscaleImageSize = Math.max(0, Math.floor(tileWidth * 0.86));
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -64,7 +69,13 @@ export function AchievementListScreen({ items, styles, theme, onBackToMap, onSel
                   const tile = (
                     <>
                       <View style={styles.achievementTileImageWrap}>
-                        {state === 'next' ? <Grayscale>{image}</Grayscale> : image}
+                        {state === 'next' ? (
+                          <Grayscale style={styles.achievementTileImageNext}>
+                            <Image source={item.definition.trophyImage} style={{ width: grayscaleImageSize, height: grayscaleImageSize }} />
+                          </Grayscale>
+                        ) : (
+                          image
+                        )}
                       </View>
                       <Text style={styles.achievementTileTitle}>{title}</Text>
                       <Text style={styles.achievementTileProgress}>{progress}</Text>

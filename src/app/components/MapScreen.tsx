@@ -106,6 +106,8 @@ export type MapScreenProps = {
   onRequestLocationPermission: () => void;
   /** 現在地へ戻るハンドラ。 */
   onRecenterOnUserLocation: () => void;
+  /** カスタムアイコン画像の読み込みに失敗したときの処理。 */
+  onCustomIconError?: () => void;
 };
 
 /** 全履歴ルートを表示するメイン地図画面を描画する。 */
@@ -145,6 +147,7 @@ export function MapScreen({
   onOpenSettings,
   onRequestLocationPermission,
   onRecenterOnUserLocation,
+  onCustomIconError,
 }: MapScreenProps) {
   const shouldRenderVisitedGrid = gridOverlayOpacity > 0;
 
@@ -183,7 +186,7 @@ export function MapScreen({
                 source={{ uri: userLocationIcon.customImageUri }}
                 style={styles.customUserLocationMarkerImage}
                 onError={() => {
-                  // URI読み込み失敗時はApp.tsx側でフォールバック処理を行う
+                  onCustomIconError?.();
                 }}
               />
             ) : (

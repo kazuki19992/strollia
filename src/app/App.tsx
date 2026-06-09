@@ -959,6 +959,23 @@ export default function App() {
   }
 
   /**
+   * カスタムアイコン画像をクリアしてOS標準へ戻す。
+   * 画像URIが無効になった場合（フォトライブラリから削除など）に呼ばれる。
+   *
+   * @returns なし。
+   */
+  function clearCustomIcon(): void {
+    setCustomIconImageUri(null);
+    setSelectedUserLocationIconId(DEFAULT_USER_LOCATION_ICON_ID);
+    setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, '').catch((error: unknown) => {
+      console.warn('Failed to clear custom icon URI:', error);
+    });
+    setSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID).catch((error: unknown) => {
+      console.warn('Failed to reset icon setting:', error);
+    });
+  }
+
+  /**
    * 現在地アイコンを保存して地図へ即時反映する。
    *
    * @param iconId - 保存する現在地アイコンID。
@@ -1114,6 +1131,7 @@ export default function App() {
               initialRegion={initialRegion}
               mapType={mapType}
               userLocationIcon={userLocationIcon}
+              onCustomIconError={clearCustomIcon}
               isFollowingUserLocation={isFollowingUserLocation}
               userCoordinate={userCoordinate}
               visitedGridCells={visitedGridCells}

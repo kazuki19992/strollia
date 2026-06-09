@@ -91,6 +91,7 @@ import { LicenseDetailScreen, LicenseScreen } from './components/LicenseScreen';
 import type { OssLicenseEntry } from './generated/ossLicenses';
 import { MapScreen } from './components/MapScreen';
 import { PhotoPreviewModals } from './components/PhotoPreviewModals';
+import { PremiumPaywallModal } from './components/PremiumPaywallModal';
 import { MonthlyReportScreen } from './components/reports/MonthlyReportScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
@@ -229,6 +230,8 @@ export default function App() {
   const [isPresentingPremiumCustomerCenter, setIsPresentingPremiumCustomerCenter] = useState(false);
   const isPresentingPremiumCustomerCenterRef = useRef(false);
   const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
+  const [isPremiumPaywallVisible, setIsPremiumPaywallVisible] = useState(false);
+  const isPremiumPaywallVisibleRef = useRef(false);
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
     [premiumAccessState.isPlusActive, selectedUserLocationIconId],
@@ -944,6 +947,19 @@ export default function App() {
     }
   }
 
+  function openPremiumPaywall(): void {
+    if (isPremiumPaywallVisibleRef.current) {
+      return;
+    }
+    isPremiumPaywallVisibleRef.current = true;
+    setIsPremiumPaywallVisible(true);
+  }
+
+  function closePremiumPaywall(): void {
+    isPremiumPaywallVisibleRef.current = false;
+    setIsPremiumPaywallVisible(false);
+  }
+
   /**
    * Plus未加入時に有料項目を選んだ場合の案内を表示する。
    *
@@ -1049,7 +1065,9 @@ export default function App() {
                         log={route.params.log}
                         styles={styles}
                         theme={theme}
+                        premiumAccessState={premiumAccessState}
                         onBackToDailyLogs={() => navigation.goBack()}
+                        onOpenPremiumPaywall={openPremiumPaywall}
                       />
                     )}
                   </DailyLogStack.Screen>
@@ -1157,6 +1175,32 @@ export default function App() {
         styles={styles}
         onShareToX={shareAchievementToX}
         onClose={closeAchievementUnlockModal}
+      />
+
+      <PremiumPaywallModal
+        visible={isPremiumPaywallVisible}
+        styles={styles}
+        theme={theme}
+        premiumOfferingSummary={premiumOfferingSummary}
+        isLoadingPremiumOffering={isLoadingPremiumOffering}
+        isPurchasingPremiumPackage={isPurchasingPremiumPackage}
+        isRestoringPremiumPurchases={isRestoringPremiumPurchases}
+        onClose={closePremiumPaywall}
+        onPurchaseMonthlyPremiumPackage={() => {
+          purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
+            console.warn('purchasePremiumPackageFromSettings (monthly) failed:', error);
+          });
+        }}
+        onPurchaseYearlyPremiumPackage={() => {
+          purchasePremiumPackageFromSettings('yearly').catch((error: unknown) => {
+            console.warn('purchasePremiumPackageFromSettings (yearly) failed:', error);
+          });
+        }}
+        onRestorePremiumPurchases={() => {
+          restorePurchasesFromSettings().catch((error: unknown) => {
+            console.warn('restorePurchasesFromSettings failed:', error);
+          });
+        }}
       />
 
       <PhotoPreviewModals

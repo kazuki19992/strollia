@@ -1,5 +1,7 @@
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
@@ -10,6 +12,7 @@ import { coordinateToGridCell } from '../../features/location/grid/gridCell';
 import { getVisitedCellsByIds } from '../../features/location/visitedCellRepository';
 import { getLocationPointsByDate } from '../../features/logs/logRepository';
 import { createDailyDetailReport, DailyDetailReport } from '../../features/reports/dailyReport';
+import type { PremiumAccessState } from '../../features/premium/revenueCatAccess';
 import type { AppTheme } from '../../theme/theme';
 import type { DailyLogSummary, LocationPoint } from '../../types/gps';
 import {
@@ -26,12 +29,12 @@ import { formatDailyLogDetailTitle, formatDistanceKm, formatRouteEndpoints } fro
 import { totalDistanceMeters } from '../../utils/distance';
 import type { AppStyles } from '../appStyles';
 import { AchievementScroller } from './AchievementScroller';
+import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DataSummaryRow } from './DataSummaryRow';
 import { DescriptionText } from './DescriptionText';
 import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
-import { ShareButton } from './ShareButton';
 import { StepSlider } from './StepSlider';
 
 export type DailyLogDetailScreenProps = {
@@ -41,12 +44,17 @@ export type DailyLogDetailScreenProps = {
   styles: AppStyles;
   /** 現在テーマ。 */
   theme: AppTheme;
+  /** Plus課金状態。 */
+  premiumAccessState: PremiumAccessState;
   /** 日別ログ一覧へ戻る処理。 */
   onBackToDailyLogs: () => void;
+  /** ペイウォールモーダルを開く処理。 */
+  onOpenPremiumPaywall: () => void;
 };
 
 /** 日ごとの記録の詳細画面を描画する。 */
-export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: DailyLogDetailScreenProps) {
+export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, onBackToDailyLogs, onOpenPremiumPaywall }: DailyLogDetailScreenProps) {
+  const isPlusActive = premiumAccessState.isPlusActive;
   const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
   const [dailyDetailReport, setDailyDetailReport] = useState<DailyDetailReport | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
@@ -62,7 +70,7 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
   const captureViewRef = useRef<View>(null);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
-  const showSlider = routeMaxMinutes >= DAILY_ROUTE_TIME_STEP_MINUTES;
+  const showSlider = isPlusActive && routeMaxMinutes >= DAILY_ROUTE_TIME_STEP_MINUTES;
   const visibleRoutePoints = useMemo(
     () => (showSlider ? filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes) : dailyPoints),
     [dailyPoints, routeEndMinutes, showSlider],
@@ -158,6 +166,8 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
       <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
+
+        {/* キャプチャ範囲 */}
         <View ref={captureViewRef} collapsable={false} style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
             <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
@@ -182,36 +192,81 @@ export function DailyLogDetailScreen({ log, styles, theme, onBackToDailyLogs }: 
 
           <View style={styles.dailyLogDetailSection}>
             <SectionTitle styles={styles}>移動のデータ</SectionTitle>
+            {!isPlusActive && (
+              <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
+            )}
             <View style={styles.dataSummaryList}>
               <DataSummaryRow label="移動距離" value={distanceLabel} styles={styles} />
               <DataSummaryRow label="開始地点と終了地点" value={routeEndpointsLabel} styles={styles} />
-              <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
-              <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
+              {isPlusActive && (
+                <>
+                  <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
+                  <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
+                </>
+              )}
             </View>
-            <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
+            {isPlusActive && (
+              <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
+            )}
           </View>
 
-          <View style={styles.dailyLogDetailSection}>
+          {isPlusActive && (
+            <View style={styles.dailyLogDetailSection}>
+              <SectionTitle styles={styles}>おもいで</SectionTitle>
+              <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
+              <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
+            </View>
+          )}
+        </View>
+
+        {/* ブラーセクション（一般ユーザーのみ・キャプチャ範囲外） */}
+        {!isPlusActive && (
+          <View style={[styles.dailyLogDetailSection, styles.dailyLogDetailPlusSection]}>
             <SectionTitle styles={styles}>おもいで</SectionTitle>
             <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
             <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
+            <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, lockedOverlayStyles.overlay]}>
+              <Text style={styles.dailyLogDetailPlusLabel}>Plusでくわしく！</Text>
+            </View>
           </View>
+        )}
+
+        {/* アクションボタン群（キャプチャ範囲外） */}
+        <View style={styles.dailyLogDetailActions}>
+          <ActionPill
+            disabled={isSharingDetail}
+            icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
+            label="この日の記録を共有"
+            styles={styles}
+            onPress={() => {
+              shareDailyLogImage().catch(() => undefined);
+            }}
+          />
+          {!isPlusActive && (
+            <>
+              <ActionPill
+                backgroundColor={theme.colors.plusCtaBackground}
+                borderColor={theme.colors.primary}
+                icon={<MaterialCommunityIcons name="chevron-right" size={21} color={theme.colors.primary} />}
+                label="Plusでもっと詳しく！"
+                styles={styles}
+                textColor={theme.colors.primary}
+                onPress={onOpenPremiumPaywall}
+              />
+              <DescriptionText styles={styles}>移動軌跡を時系列でふりかえられたり、獲得した実績、エリア数などもみることができます！</DescriptionText>
+            </>
+          )}
         </View>
 
-        <ShareButton
-          accessibilityLabel="この日の記録を共有"
-          disabled={isSharingDetail}
-          iconColor="#aaaaaa"
-          iconSize={24}
-          label="この日の記録を共有"
-          style={styles.shareButtonWide}
-          textStyle={styles.shareButtonWideText}
-          variant="wide"
-          onPress={() => {
-            shareDailyLogImage().catch(() => undefined);
-          }}
-        />
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const lockedOverlayStyles = StyleSheet.create({
+  overlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

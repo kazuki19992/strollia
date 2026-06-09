@@ -6,11 +6,15 @@ import { getVisitedCellsByIds } from '../../../features/location/visitedCellRepo
 import { getLocationPointsByDate } from '../../../features/logs/logRepository';
 import { lightTheme } from '../../../theme/theme';
 import { DailyLogDetailScreen } from '../DailyLogDetailScreen';
-import { ShareButton } from '../ShareButton';
 import { StepSlider } from '../StepSlider';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
+  MaterialCommunityIcons: require('react-native').Text,
+}));
+
+jest.mock('expo-blur', () => ({
+  BlurView: require('react-native').View,
 }));
 
 jest.mock('react-native-view-shot', () => ({
@@ -109,6 +113,10 @@ const log = {
   endLocationPointId: 2,
 };
 
+const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
+const freeAccessState = { isPlusActive: false, entitlementId: 'Strollia Plus' };
+const onOpenPremiumPaywall = jest.fn();
+
 describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -127,7 +135,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -136,9 +144,6 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(texts).not.toContain('開始');
     expect(texts).not.toContain('最新');
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' })).toBeTruthy();
-    const shareButton = renderer.root.findByType(ShareButton);
-    expect(shareButton.props.style).toBe('shareButtonWide');
-    expect(shareButton.props.textStyle).toBe('shareButtonWideText');
     expect(getLocationPointsByDate).toHaveBeenCalledWith('2026-05-31');
     expect(getVisitedCellsByIds).toHaveBeenCalledTimes(1);
     expect(getAchievementUnlocksByDate).toHaveBeenCalledWith('2026-05-31');
@@ -151,7 +156,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -165,7 +170,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -186,7 +191,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -198,7 +203,9 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
           log={{ ...log, distanceMeters: 147000, endLocationPointId: 3 }}
           styles={styles as never}
           theme={lightTheme}
+          premiumAccessState={plusAccessState}
           onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
         />,
       );
     });
@@ -213,7 +220,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -240,11 +247,11 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
-    const shareButton = renderer.root.findByType(ShareButton);
+    const shareButton = renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' });
     await act(async () => {
       shareButton.props.onPress();
     });
@@ -263,7 +270,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -278,7 +285,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -293,7 +300,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
@@ -312,22 +319,116 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} onBackToDailyLogs={jest.fn()} />,
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
       );
     });
 
-    expect(renderer.root.findByType(ShareButton).props.disabled).toBeFalsy();
+    expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.disabled).toBeFalsy();
 
     act(() => {
-      renderer.root.findByType(ShareButton).props.onPress();
+      renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.onPress();
     });
 
-    expect(renderer.root.findByType(ShareButton).props.disabled).toBe(true);
+    expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.disabled).toBe(true);
 
     await act(async () => {
       captureResolve!();
     });
 
-    expect(renderer.root.findByType(ShareButton).props.disabled).toBeFalsy();
+    expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.disabled).toBeFalsy();
+  });
+
+  test('Plusユーザーの場合はスライダー・訪問エリア・おもいでが表示される', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={jest.fn()}
+        />,
+      );
+    });
+
+    await act(async () => {});
+
+    const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+    expect(texts).toEqual(expect.arrayContaining(['おもいで', '訪問したエリア数', '新しく訪問したエリア数']));
+    expect(renderer.root.findAllByType(StepSlider).length).toBeGreaterThan(0);
+    expect(texts).not.toContain('Plusでもっと詳しく！');
+  });
+
+  test('一般ユーザーの場合はスライダー・訪問エリアが非表示でおもいでがブラーされる', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={freeAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={jest.fn()}
+        />,
+      );
+    });
+
+    await act(async () => {});
+
+    const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+    expect(renderer.root.findAllByType(StepSlider)).toHaveLength(0);
+    expect(texts).not.toContain('訪問したエリア数');
+    expect(texts).not.toContain('新しく訪問したエリア数');
+    expect(texts).toEqual(expect.arrayContaining(['Plusでくわしく！']));
+    expect(texts).toEqual(expect.arrayContaining(['Plusでもっと詳しく！']));
+  });
+
+  test('一般ユーザーの場合「移動距離は〜」テキストが「移動のデータ」タイトル直下に表示される', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={freeAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={jest.fn()}
+        />,
+      );
+    });
+
+    await act(async () => {});
+
+    const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+    expect(texts).toEqual(expect.arrayContaining(['移動距離はGPSのブレにより本来の距離より多く記録される場合があります。']));
+  });
+
+  test('一般ユーザーの場合「Plusでもっと詳しく！」ボタンを押すと onOpenPremiumPaywall が呼ばれる', async () => {
+    const onOpen = jest.fn();
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={freeAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpen}
+        />,
+      );
+    });
+
+    await act(async () => {});
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'Plusでもっと詳しく！' }).props.onPress();
+    });
+
+    expect(onOpen).toHaveBeenCalledTimes(1);
   });
 });

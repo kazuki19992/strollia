@@ -381,6 +381,20 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '400',
       lineHeight: 20,
     },
+    dailyLogDetailActions: {
+      gap: 12,
+      paddingHorizontal: 24,
+    },
+    dailyLogDetailPlusSection: {
+      borderRadius: 12,
+      marginHorizontal: 24,
+      overflow: 'hidden',
+    },
+    dailyLogDetailPlusLabel: {
+      color: theme.colors.routeMapEmptyText,
+      fontSize: 16,
+      fontWeight: '700',
+    },
     dailyLogList: {
       gap: 34,
       paddingBottom: 34,

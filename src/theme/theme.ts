@@ -23,6 +23,7 @@ export type AppTheme = {
     routeMapEmptyText: string;
     shareButtonBackground: string;
     shareButtonText: string;
+    plusCtaBackground: string;
     surfaceOverlay: string;
     scrim: string;
     shadow: string;
@@ -48,6 +49,7 @@ export const lightTheme: AppTheme = {
     routeMapEmptyText: '#ffffff',
     shareButtonBackground: '#333333',
     shareButtonText: '#ffffff',
+    plusCtaBackground: 'rgba(31, 122, 92, 0.08)',
     surfaceOverlay: 'rgba(255, 253, 248, 0.94)',
     scrim: 'rgba(45, 36, 22, 0.08)',
     shadow: '#2d2416',
@@ -73,6 +75,7 @@ export const darkTheme: AppTheme = {
     routeMapEmptyText: '#ffffff',
     shareButtonBackground: '#f7f2ea',
     shareButtonText: '#111111',
+    plusCtaBackground: 'rgba(115, 199, 162, 0.08)',
     surfaceOverlay: 'rgba(34, 38, 29, 0.94)',
     scrim: 'rgba(0, 0, 0, 0.28)',
     shadow: '#000000',

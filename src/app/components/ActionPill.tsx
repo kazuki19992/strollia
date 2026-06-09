@@ -4,6 +4,8 @@ import { Pressable, Text, View } from 'react-native';
 import type { AppStyles } from '../appStyles';
 
 export type ActionPillProps = {
+  /** アクセシビリティ用ラベル。未指定の場合は label を使用。 */
+  accessibilityLabel?: string;
   /** 内容を左寄せするか。 */
   alignLeft?: boolean;
   /** 背景色を上書きする場合の色。 */
@@ -28,6 +30,7 @@ export type ActionPillProps = {
 
 /** アウトラインのピル型アクションボタン。 */
 export function ActionPill({
+  accessibilityLabel,
   alignLeft = false,
   backgroundColor,
   borderColor,
@@ -41,6 +44,7 @@ export function ActionPill({
 }: ActionPillProps) {
   return (
     <Pressable
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}

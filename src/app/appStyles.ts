@@ -60,7 +60,7 @@ export function createStyles(theme: AppTheme) {
       gap: 10,
     },
     achievementGridTile: {
-      flexBasis: '48%',
+      flexBasis: '30%',
       gap: 6,
     },
     achievementTileImageWrap: {
@@ -74,7 +74,6 @@ export function createStyles(theme: AppTheme) {
       width: '86%',
     },
     achievementTileImageNext: {
-      filter: [{ grayscale: 1 }],
       opacity: 0.45,
     },
     achievementTileTitle: {

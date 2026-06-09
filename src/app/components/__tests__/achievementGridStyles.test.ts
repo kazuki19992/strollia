@@ -23,10 +23,9 @@ describe('実績グリッドのスタイル', () => {
     expect(styles.achievementTileImageWrap.borderWidth).toBeUndefined();
   });
 
-  test('次の実績スタイルはグレースケールフィルタと薄い不透明度を持つ', () => {
+  test('次の実績スタイルは薄い不透明度を持つ（脱色は Grayscale ラッパーで行う）', () => {
     const styles = createStyles(lightTheme);
 
-    expect(styles.achievementTileImageNext.filter).toEqual([{ grayscale: 1 }]);
     expect(styles.achievementTileImageNext.opacity).toBeLessThan(1);
   });
 });

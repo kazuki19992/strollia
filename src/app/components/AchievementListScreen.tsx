@@ -1,4 +1,5 @@
 import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Grayscale } from 'react-native-color-matrix-image-filters';
 
 import { AchievementCategory, formatAchievementDistance } from '../../features/achievements/achievementDefinitions';
 import { AchievementListItem } from '../../features/achievements/achievementRepository';
@@ -52,14 +53,18 @@ export function AchievementListScreen({ items, styles, theme, onBackToMap, onSel
                   const title = isHidden ? '？？？' : item.definition.title;
                   const progress = isHidden ? '？？？' : getAchievementProgressLabel(item);
 
+                  const image = (
+                    <Image
+                      source={item.definition.trophyImage}
+                      style={[styles.achievementTileImage, state === 'next' && styles.achievementTileImageNext]}
+                      {...(isHidden ? { tintColor: theme.colors.border } : {})}
+                    />
+                  );
+
                   const tile = (
                     <>
                       <View style={styles.achievementTileImageWrap}>
-                        <Image
-                          source={item.definition.trophyImage}
-                          style={[styles.achievementTileImage, state === 'next' && styles.achievementTileImageNext]}
-                          {...(isHidden ? { tintColor: theme.colors.border } : {})}
-                        />
+                        {state === 'next' ? <Grayscale>{image}</Grayscale> : image}
                       </View>
                       <Text style={styles.achievementTileTitle}>{title}</Text>
                       <Text style={styles.achievementTileProgress}>{progress}</Text>

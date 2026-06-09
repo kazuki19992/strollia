@@ -3,6 +3,11 @@ import { importLocationPointsFromGpx } from '../importRepository';
 
 let mockActiveTransactionDepth = 0;
 
+export const mockTxn = {
+  runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 101 }),
+  getFirstAsync: jest.fn(),
+};
+
 jest.mock('../../../db/database', () => {
   const mockDb = {
     getFirstAsync: jest.fn(),
@@ -20,11 +25,11 @@ jest.mock('../../../db/database', () => {
         mockActiveTransactionDepth -= 1;
       }
     }),
-    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockDb) => Promise<void>) => {
+    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => {
       mockActiveTransactionDepth += 1;
 
       try {
-        await callback(mockDb);
+        await callback(mockTxn);
       } finally {
         mockActiveTransactionDepth -= 1;
       }
@@ -65,5 +70,12 @@ describe('GPXインポート保存 transaction境界', () => {
 
     expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
     expect(db.withTransactionAsync).not.toHaveBeenCalled();
+  });
+
+  it('トランザクション内の書き込みはすべて txn 経由で行う', async () => {
+    await importLocationPointsFromGpx([point], 'strollia-all.gpx');
+
+    expect(mockTxn.runAsync).toHaveBeenCalled();
+    expect(db.runAsync).not.toHaveBeenCalled();
   });
 });

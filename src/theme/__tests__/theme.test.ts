@@ -1,4 +1,5 @@
-import { darkTheme, getAppTheme, isAppThemePreference, lightTheme } from '../theme';
+import { applyColorPreset, darkTheme, getAppTheme, isAppThemePreference, lightTheme } from '../theme';
+import { getAppColorPreset } from '../../features/customization/colorPresets';
 
 describe('テーマ選択 getAppTheme', () => {
   it('画面のデフォルト背景は設定画面と同じニュートラルな背景色にする', () => {
@@ -59,5 +60,33 @@ describe('テーマ設定判定 isAppThemePreference', () => {
     expect(isAppThemePreference('light')).toBe(true);
     expect(isAppThemePreference('dark')).toBe(true);
     expect(isAppThemePreference('broken')).toBe(false);
+  });
+});
+
+describe('テーマへのプリセット適用 applyColorPreset', () => {
+  it('lightThemeにまっちゃ以外のプリセットを適用するとprimaryが変わる', () => {
+    const preset = getAppColorPreset('tomato');
+    const applied = applyColorPreset(lightTheme, preset);
+    expect(applied.colors.primary).toBe('#b02020');
+    expect(applied.colors.primaryText).toBe('#ffffff');
+    expect(applied.colors.mapLine).toBe('#b02020');
+  });
+
+  it('darkThemeにプリセットを適用するとdark色が使われる', () => {
+    const preset = getAppColorPreset('tomato');
+    const applied = applyColorPreset(darkTheme, preset);
+    expect(applied.colors.primary).toBe('#f06060');
+  });
+
+  it('applyColorPresetは元のテーマを変更しない', () => {
+    const preset = getAppColorPreset('umi');
+    applyColorPreset(lightTheme, preset);
+    expect(lightTheme.colors.primary).toBe('#1f7a5c');
+  });
+
+  it('まっちゃを適用するとデフォルトのprimary色になる', () => {
+    const preset = getAppColorPreset('matcha');
+    const applied = applyColorPreset(lightTheme, preset);
+    expect(applied.colors.primary).toBe('#1f7a5c');
   });
 });

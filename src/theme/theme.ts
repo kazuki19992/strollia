@@ -1,3 +1,5 @@
+import type { AppColorPreset } from '../features/customization/colorPresets';
+
 /** OSカラースキームに対応するアプリテーマ名。 */
 export type AppThemeName = 'light' | 'dark';
 
@@ -98,4 +100,20 @@ export function getAppTheme(colorScheme: 'light' | 'dark' | null | undefined, pr
   }
 
   return colorScheme === 'dark' ? darkTheme : lightTheme;
+}
+
+/**
+ * テーマにカラープリセットのprimary系色を上書きした新しいテーマを返す。
+ * 元のテーマオブジェクトは変更しない。
+ *
+ * @param theme - ベースとなるテーマ。
+ * @param preset - 適用するカラープリセット。
+ * @returns primary/primaryText/mapLineを上書きした新しいテーマ。
+ */
+export function applyColorPreset(theme: AppTheme, preset: AppColorPreset): AppTheme {
+  const colors = theme.name === 'dark' ? preset.dark : preset.light;
+  return {
+    ...theme,
+    colors: { ...theme.colors, ...colors },
+  };
 }

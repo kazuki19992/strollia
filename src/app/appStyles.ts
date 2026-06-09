@@ -33,7 +33,6 @@ export function createStyles(theme: AppTheme) {
   const settingsGpsActive = '#00b035';
   const settingsGpsDanger = '#b0002f';
   const settingsWarning = '#a36100';
-  const grayscaleOverlayColor = theme.name === 'dark' ? 'rgba(0, 0, 0, 0.55)' : 'rgba(255, 255, 255, 0.55)';
 
   return StyleSheet.create({
 
@@ -68,24 +67,15 @@ export function createStyles(theme: AppTheme) {
       alignItems: 'center',
       alignSelf: 'stretch',
       aspectRatio: 1,
-      backgroundColor: colors.cardStrong,
-      borderColor: colors.border,
-      borderRadius: 20,
-      borderWidth: 1,
       justifyContent: 'center',
-      overflow: 'hidden',
     },
     achievementTileImage: {
-      height: '78%',
-      width: '78%',
+      height: '86%',
+      width: '86%',
     },
-    achievementTileGrayscaleOverlay: {
-      backgroundColor: grayscaleOverlayColor,
-      bottom: 0,
-      left: 0,
-      position: 'absolute',
-      right: 0,
-      top: 0,
+    achievementTileImageNext: {
+      filter: [{ grayscale: 1 }],
+      opacity: 0.45,
     },
     achievementTileTitle: {
       color: colors.text,

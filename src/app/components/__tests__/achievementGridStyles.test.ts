@@ -1,14 +1,14 @@
 import { createStyles } from '../../appStyles';
-import { darkTheme, lightTheme } from '../../../theme/theme';
+import { lightTheme } from '../../../theme/theme';
 
 describe('実績グリッドのスタイル', () => {
-  test('グリッドタイルとシルエット/グレースケール用スタイルを持つ', () => {
+  test('グリッドタイルとグレースケール用スタイルを持つ', () => {
     const styles = createStyles(lightTheme);
 
     expect(styles.achievementGridTile).toBeDefined();
     expect(styles.achievementTileImageWrap).toBeDefined();
     expect(styles.achievementTileImage).toBeDefined();
-    expect(styles.achievementTileGrayscaleOverlay).toBeDefined();
+    expect(styles.achievementTileImageNext).toBeDefined();
     expect(styles.achievementTileTitle).toBeDefined();
     expect(styles.achievementTileProgress).toBeDefined();
     expect(styles.achievementDialogDate).toBeDefined();
@@ -16,11 +16,17 @@ describe('実績グリッドのスタイル', () => {
     expect(styles.achievementDialogShareButtonText).toBeDefined();
   });
 
-  test('グレースケールオーバーレイはライト/ダークで色が異なる', () => {
-    const light = createStyles(lightTheme);
-    const dark = createStyles(darkTheme);
+  test('画像の枠はカード背景・境界線を持たない', () => {
+    const styles = createStyles(lightTheme);
 
-    expect(light.achievementTileGrayscaleOverlay.backgroundColor).toBe('rgba(255, 255, 255, 0.55)');
-    expect(dark.achievementTileGrayscaleOverlay.backgroundColor).toBe('rgba(0, 0, 0, 0.55)');
+    expect(styles.achievementTileImageWrap.backgroundColor).toBeUndefined();
+    expect(styles.achievementTileImageWrap.borderWidth).toBeUndefined();
+  });
+
+  test('次の実績スタイルはグレースケールフィルタと薄い不透明度を持つ', () => {
+    const styles = createStyles(lightTheme);
+
+    expect(styles.achievementTileImageNext.filter).toEqual([{ grayscale: 1 }]);
+    expect(styles.achievementTileImageNext.opacity).toBeLessThan(1);
   });
 });

@@ -169,10 +169,12 @@ function resolveAchievementDisplayStates(items: AchievementListItem[]): Map<stri
 ```
 カテゴリごとに sortOrder 昇順で走査し、最初のロック済みを `next`、以降のロック済みを `hidden`、解除済みを `unlocked` とする。
 
+**画像の枠（共通）:**
+- カード（背景色・境界線）は敷かない。`Image` を透明な正方形枠の中央に配置するだけにする
+
 **グレースケール表現（次の実績）:**
-- 通常 `Image` の上に絶対配置の半透明オーバーレイ
-- ライトモード: `rgba(255, 255, 255, 0.55)`
-- ダークモード: `rgba(0, 0, 0, 0.55)`
+- `Image` に `filter: [{ grayscale: 1 }]` を適用して実際に脱色する（RN 0.81 / New Architecture）
+- あわせて `opacity: 0.45` で薄く表示する
 
 **シルエット表現（それ以降）:**
 - `Image` に `tintColor` を適用し単色塗りつぶし

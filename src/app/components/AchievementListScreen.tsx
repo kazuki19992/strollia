@@ -57,10 +57,9 @@ export function AchievementListScreen({ items, styles, theme, onBackToMap, onSel
                       <View style={styles.achievementTileImageWrap}>
                         <Image
                           source={item.definition.trophyImage}
-                          style={styles.achievementTileImage}
+                          style={[styles.achievementTileImage, state === 'next' && styles.achievementTileImageNext]}
                           {...(isHidden ? { tintColor: theme.colors.border } : {})}
                         />
-                        {state === 'next' && <View style={styles.achievementTileGrayscaleOverlay} />}
                       </View>
                       <Text style={styles.achievementTileTitle}>{title}</Text>
                       <Text style={styles.achievementTileProgress}>{progress}</Text>

@@ -1187,13 +1187,19 @@ export default function App() {
         isRestoringPremiumPurchases={isRestoringPremiumPurchases}
         onClose={closePremiumPaywall}
         onPurchaseMonthlyPremiumPackage={() => {
-          purchasePremiumPackageFromSettings('monthly').catch(() => undefined);
+          purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
+            console.warn('purchasePremiumPackageFromSettings (monthly) failed:', error);
+          });
         }}
         onPurchaseYearlyPremiumPackage={() => {
-          purchasePremiumPackageFromSettings('yearly').catch(() => undefined);
+          purchasePremiumPackageFromSettings('yearly').catch((error: unknown) => {
+            console.warn('purchasePremiumPackageFromSettings (yearly) failed:', error);
+          });
         }}
         onRestorePremiumPurchases={() => {
-          restorePurchasesFromSettings().catch(() => undefined);
+          restorePurchasesFromSettings().catch((error: unknown) => {
+            console.warn('restorePurchasesFromSettings failed:', error);
+          });
         }}
       />
 

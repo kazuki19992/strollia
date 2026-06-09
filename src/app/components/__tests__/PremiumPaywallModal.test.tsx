@@ -136,4 +136,27 @@ describe('PremiumPaywallModal', () => {
     const buyPills = pills.filter((p: any) => p.props.label?.includes('購入処理中'));
     expect(buyPills.length).toBeGreaterThanOrEqual(2);
   });
+
+  test('isLoadingPremiumOffering=true のとき商品情報読み込み中テキストを表示する', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <PremiumPaywallModal {...baseProps} isLoadingPremiumOffering={true} />,
+      );
+    });
+    const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+    expect(texts).toContain('商品情報を確認しています...');
+  });
+
+  test('isRestoringPremiumPurchases=true のとき購入復元ボタンが無効化される', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <PremiumPaywallModal {...baseProps} isRestoringPremiumPurchases={true} />,
+      );
+    });
+    const pills = renderer.root.findAllByType(ActionPill);
+    const restorePill = pills.find((p: any) => p.props.label?.includes('復元'));
+    expect(restorePill.props.disabled).toBe(true);
+  });
 });

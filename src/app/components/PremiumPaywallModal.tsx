@@ -48,6 +48,7 @@ export function PremiumPaywallModal({
   onPurchaseYearlyPremiumPackage,
   onRestorePremiumPurchases,
 }: PremiumPaywallModalProps) {
+  /** フォールバック価格は本番の定価と一致しており、Offering 未取得時に表示される暫定値。 */
   const monthlyPriceText =
     premiumOfferingSummary?.packages.find((p) => p.packageType === 'MONTHLY')?.priceText ?? '300円';
   const yearlyPriceText =
@@ -80,7 +81,7 @@ export function PremiumPaywallModal({
           <DescriptionText styles={styles}>いつでも解約できます。</DescriptionText>
           <ActionPill
             alignLeft
-            backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
+            backgroundColor={theme.colors.plusCtaBackground}
             borderColor={theme.colors.primary}
             disabled={isPurchasingPremiumPackage}
             icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
@@ -91,7 +92,7 @@ export function PremiumPaywallModal({
           />
           <ActionPill
             alignLeft
-            backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
+            backgroundColor={theme.colors.plusCtaBackground}
             borderColor={theme.colors.primary}
             disabled={isPurchasingPremiumPackage}
             icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}

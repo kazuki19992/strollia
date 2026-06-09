@@ -391,9 +391,9 @@ export function createStyles(theme: AppTheme) {
       overflow: 'hidden',
     },
     dailyLogDetailPlusLabel: {
-      color: '#ffffff',
+      color: theme.colors.routeMapEmptyText,
       fontSize: 16,
-      fontWeight: '700' as const,
+      fontWeight: '700',
     },
     dailyLogList: {
       gap: 34,

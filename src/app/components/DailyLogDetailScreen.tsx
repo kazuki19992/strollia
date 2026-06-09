@@ -246,7 +246,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           {!isPlusActive && (
             <>
               <ActionPill
-                backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
+                backgroundColor={theme.colors.plusCtaBackground}
                 borderColor={theme.colors.primary}
                 icon={<MaterialCommunityIcons name="chevron-right" size={21} color={theme.colors.primary} />}
                 label="Plusでもっと詳しく！"

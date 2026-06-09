@@ -14,6 +14,7 @@ import {
   getPremiumOfferingSummary,
   presentPremiumCustomerCenter,
   purchasePremiumPackage,
+  restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
 } from '../../features/premium/revenueCatAccess';
 
@@ -124,7 +125,22 @@ jest.mock('../components/DailyLogsScreen', () => ({
 }));
 
 jest.mock('../components/PremiumPaywallModal', () => ({
-  PremiumPaywallModal: () => null,
+  PremiumPaywallModal: (props: any) => {
+    const { Pressable, Text } = require('react-native');
+
+    if (!props.visible) return null;
+
+    return (
+      <>
+        <Pressable accessibilityLabel="月払いで購入" onPress={props.onPurchaseMonthlyPremiumPackage}>
+          <Text>月払いで購入</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="購入を復元" onPress={props.onRestorePremiumPurchases}>
+          <Text>購入を復元</Text>
+        </Pressable>
+      </>
+    );
+  },
 }));
 
 jest.mock('../components/DailyLogDetailScreen', () => ({
@@ -725,6 +741,55 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(presentPremiumCustomerCenter).toHaveBeenCalledTimes(1);
     expect(alertSpy).toHaveBeenCalledWith('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
+  });
+
+  test('ペイウォールで購入が成功するとダイアログが閉じる', async () => {
+    (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' });
+    (purchasePremiumPackage as jest.Mock).mockResolvedValueOnce({ status: 'purchased', accessState: { isPlusActive: true, entitlementId: 'strollia_plus' } });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+    });
+
+    // ペイウォールが開いていることを確認
+    expect(renderer.root.findByProps({ accessibilityLabel: '月払いで購入' })).toBeTruthy();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '月払いで購入' }).props.onPress();
+    });
+    await flushPromises();
+
+    // 購入成功後にペイウォールが閉じる
+    expect(renderer.root.findAllByProps({ accessibilityLabel: '月払いで購入' })).toHaveLength(0);
+  });
+
+  test('ペイウォールで復元が成功するとダイアログが閉じる', async () => {
+    (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' });
+    (restorePremiumPurchases as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+    });
+
+    expect(renderer.root.findByProps({ accessibilityLabel: '購入を復元' })).toBeTruthy();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '購入を復元' }).props.onPress();
+    });
+    await flushPromises();
+
+    // 復元成功後にペイウォールが閉じる
+    expect(renderer.root.findAllByProps({ accessibilityLabel: '購入を復元' })).toHaveLength(0);
   });
 
   test('月次レポートボタンは無料ユーザーにペイウォールを表示する', async () => {

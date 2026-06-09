@@ -904,6 +904,7 @@ export default function App() {
 
       if (result.status === 'purchased' && result.accessState.isPlusActive) {
         Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
+        closePremiumPaywall();
       } else if (result.status === 'error') {
         Alert.alert('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
       }
@@ -926,6 +927,9 @@ export default function App() {
       const restoredState = await restorePremiumPurchases();
       setPremiumAccessState(restoredState);
       Alert.alert('購入の復元', restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。');
+      if (restoredState.isPlusActive) {
+        closePremiumPaywall();
+      }
     } finally {
       setIsRestoringPremiumPurchases(false);
     }

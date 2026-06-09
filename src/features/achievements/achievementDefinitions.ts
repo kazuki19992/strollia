@@ -175,9 +175,14 @@ export function getTrophyImageUri(source: ImageSourcePropType): string | null {
   return Image.resolveAssetSource(source)?.uri ?? null;
 }
 
-/** 初期実装で有効にする全実績定義。 */
-export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
-  ...distanceSteps.map((kilometers, index): AchievementDefinition => ({
+/**
+ * 距離実績（通常の総距離 + 地球n周）をしきい値の昇順で並べ、表示順を振り直す。
+ *
+ * 地球n周実績は通常の総距離実績と同じ `distance` カテゴリのため、
+ * しきい値（m）で連続的に並ぶよう sortOrder を採番する。
+ */
+const distanceDefinitions: AchievementDefinition[] = [
+  ...distanceSteps.map((kilometers): AchievementDefinition => ({
     id: `distance-${kilometers}`,
     title: `${formatAchievementDistance(kilometers)}移動した`,
     description: `総移動距離が${formatAchievementDistance(kilometers)}に到達する`,
@@ -186,7 +191,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     trophyImage: distanceTrophyImages[kilometers],
     trophyImageUri: getTrophyImageUri(distanceTrophyImages[kilometers]),
     shareText: createAchievementShareText(`${formatAchievementDistance(kilometers)}移動した`),
-    sortOrder: 1000 + index,
+    sortOrder: 0,
     enabled: true,
   })),
   ...earthDistanceSteps.map((kilometers, index): AchievementDefinition => {
@@ -202,10 +207,17 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
       trophyImage: earthDistanceTrophyImages[kilometers],
       trophyImageUri: getTrophyImageUri(earthDistanceTrophyImages[kilometers]),
       shareText: createAchievementShareText(title),
-      sortOrder: 2000 + index,
+      sortOrder: 0,
       enabled: true,
     };
   }),
+]
+  .sort((a, b) => a.condition.threshold - b.condition.threshold)
+  .map((definition, index): AchievementDefinition => ({ ...definition, sortOrder: 1000 + index }));
+
+/** 初期実装で有効にする全実績定義。 */
+export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
+  ...distanceDefinitions,
   ...logDaySteps.map((days, index): AchievementDefinition => ({
     id: `log-days-${days}`,
     title: days === 1 ? 'はじめの一歩' : `${days}日記録`,

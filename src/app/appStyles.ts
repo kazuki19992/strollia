@@ -59,6 +59,57 @@ export function createStyles(theme: AppTheme) {
       flexWrap: 'wrap',
       gap: 10,
     },
+    achievementGridTile: {
+      flexBasis: '30%',
+      gap: 6,
+    },
+    achievementTileImageWrap: {
+      alignItems: 'center',
+      alignSelf: 'stretch',
+      aspectRatio: 1,
+      justifyContent: 'center',
+    },
+    achievementTileImage: {
+      height: '86%',
+      width: '86%',
+    },
+    achievementTileImageNext: {
+      opacity: 0.45,
+    },
+    achievementTileTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '900',
+      lineHeight: 17,
+      textAlign: 'center',
+    },
+    achievementTileProgress: {
+      color: colors.mutedText,
+      fontSize: 11,
+      fontWeight: '800',
+      textAlign: 'center',
+    },
+    achievementDialogDate: {
+      color: colors.mutedText,
+      fontSize: 13,
+      fontWeight: '800',
+      textAlign: 'center',
+    },
+    achievementDialogShareButton: {
+      alignItems: 'center',
+      backgroundColor: colors.shareButtonBackground,
+      borderRadius: 999,
+      flexDirection: 'row',
+      gap: 8,
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+    },
+    achievementDialogShareButtonText: {
+      color: colors.shareButtonText,
+      fontSize: 15,
+      fontWeight: '900',
+    },
     achievementCloseButton: {
       alignItems: 'center',
       backgroundColor: colors.card,
@@ -220,7 +271,7 @@ export function createStyles(theme: AppTheme) {
     achievementSection: {
       gap: 12,
     },
-    achievementSwipeHint: {
+    dialogSwipeHint: {
       color: colors.mutedText,
       fontSize: 12,
       fontWeight: '900',

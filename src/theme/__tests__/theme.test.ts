@@ -12,9 +12,27 @@ describe('テーマ選択 getAppTheme', () => {
     expect(lightTheme.colors.routeMapEmptyText).toBe('#ffffff');
     expect(darkTheme.colors.routeMapEmptyText).toBe('#ffffff');
     expect(lightTheme.colors.shareButtonBackground).toBe('#333333');
-    expect(darkTheme.colors.shareButtonBackground).toBe('#f7f2ea');
+    expect(darkTheme.colors.shareButtonBackground).toBe('#f0f0f0');
     expect(lightTheme.colors.shareButtonText).toBe('#ffffff');
     expect(darkTheme.colors.shareButtonText).toBe('#111111');
+  });
+
+  it('カード・境界・文字色は無彩色トークンを使う', () => {
+    expect(lightTheme.colors.card).toBe('#f8f8f8');
+    expect(lightTheme.colors.cardStrong).toBe('#f0f0f0');
+    expect(lightTheme.colors.text).toBe('#1a1a1a');
+    expect(lightTheme.colors.mutedText).toBe('#666666');
+    expect(lightTheme.colors.border).toBe('#e0e0e0');
+    expect(lightTheme.colors.surfaceOverlay).toBe('rgba(248, 248, 248, 0.94)');
+    expect(lightTheme.colors.scrim).toBe('rgba(0, 0, 0, 0.08)');
+    expect(lightTheme.colors.shadow).toBe('#000000');
+
+    expect(darkTheme.colors.card).toBe('#252525');
+    expect(darkTheme.colors.cardStrong).toBe('#2e2e2e');
+    expect(darkTheme.colors.text).toBe('#f0f0f0');
+    expect(darkTheme.colors.mutedText).toBe('#999999');
+    expect(darkTheme.colors.border).toBe('#3a3a3a');
+    expect(darkTheme.colors.surfaceOverlay).toBe('rgba(37, 37, 37, 0.94)');
   });
 
   it('OSがダークモードでない場合はライトテーマを返す', () => {

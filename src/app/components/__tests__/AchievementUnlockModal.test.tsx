@@ -14,7 +14,7 @@ jest.mock('@expo/vector-icons', () => {
 
 const { act, create } = require('react-test-renderer') as {
   act: (callback: () => void) => void;
-  create: (element: React.ReactElement) => { unmount: () => void };
+  create: (element: React.ReactElement) => { root: any; unmount: () => void };
 };
 
 jest.mock('../ConfettiOverlay', () => ({
@@ -34,24 +34,9 @@ const achievement = {
   enabled: true,
 } satisfies AchievementDefinition;
 
-const styles = {
-  achievementModalBackdrop: {},
-  achievementModalCard: {},
-  achievementCloseButton: {},
-  achievementCloseButtonIcon: { color: '#111111' },
-  achievementAutoCloseTrack: {},
-  achievementAutoCloseProgress: {},
-  achievementModalEyebrow: {},
-  achievementModalImage: {},
-  achievementModalTitle: {},
-  achievementModalDescription: {},
-  achievementModalActions: {},
-  achievementPrimaryButton: {},
-  primaryButtonText: { color: '#ffffff' },
-  achievementSwipeHint: {},
-};
+const styles = createStyles(lightTheme);
 
-let renderer: { unmount: () => void } | null = null;
+let renderer: { root: any; unmount: () => void } | null = null;
 
 describe('実績解除ダイアログ AchievementUnlockModal', () => {
   beforeEach(() => {
@@ -73,7 +58,7 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
         <AchievementUnlockModal
           achievement={achievement}
           animationKey="1:odo-1"
-          styles={styles as never}
+          styles={styles}
           onShareToX={jest.fn()}
           onClose={onClose}
         />,
@@ -87,6 +72,34 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
     });
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test('共有ボタンを押すと onShareToX を呼び自動クローズが止まる', () => {
+    const onShareToX = jest.fn();
+    const onClose = jest.fn();
+    act(() => {
+      renderer = create(
+        <AchievementUnlockModal
+          achievement={achievement}
+          animationKey="1:odo-1"
+          styles={styles}
+          onShareToX={onShareToX}
+          onClose={onClose}
+        />,
+      );
+    });
+
+    const shareButton = renderer!.root.findByProps({ accessibilityLabel: 'ともだちに自慢する' });
+    act(() => {
+      shareButton.props.onPress();
+    });
+
+    expect(onShareToX).toHaveBeenCalledWith(achievement);
+
+    act(() => {
+      jest.advanceTimersByTime(10_000);
+    });
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   test('モーダル本体の背景色は画面背景色を参照する', () => {

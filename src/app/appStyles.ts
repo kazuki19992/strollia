@@ -33,6 +33,7 @@ export function createStyles(theme: AppTheme) {
   const settingsGpsActive = '#00b035';
   const settingsGpsDanger = '#b0002f';
   const settingsWarning = '#a36100';
+  const grayscaleOverlayColor = theme.name === 'dark' ? 'rgba(0, 0, 0, 0.55)' : 'rgba(255, 255, 255, 0.55)';
 
   return StyleSheet.create({
 
@@ -58,6 +59,67 @@ export function createStyles(theme: AppTheme) {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 10,
+    },
+    achievementGridTile: {
+      flexBasis: '48%',
+      gap: 6,
+    },
+    achievementTileImageWrap: {
+      alignItems: 'center',
+      alignSelf: 'stretch',
+      aspectRatio: 1,
+      backgroundColor: colors.cardStrong,
+      borderColor: colors.border,
+      borderRadius: 20,
+      borderWidth: 1,
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    achievementTileImage: {
+      height: '78%',
+      width: '78%',
+    },
+    achievementTileGrayscaleOverlay: {
+      backgroundColor: grayscaleOverlayColor,
+      bottom: 0,
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+    },
+    achievementTileTitle: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '900',
+      lineHeight: 17,
+      textAlign: 'center',
+    },
+    achievementTileProgress: {
+      color: colors.mutedText,
+      fontSize: 11,
+      fontWeight: '800',
+      textAlign: 'center',
+    },
+    achievementDialogDate: {
+      color: colors.mutedText,
+      fontSize: 13,
+      fontWeight: '800',
+      textAlign: 'center',
+    },
+    achievementDialogShareButton: {
+      alignItems: 'center',
+      backgroundColor: colors.shareButtonBackground,
+      borderRadius: 999,
+      flexDirection: 'row',
+      gap: 8,
+      justifyContent: 'center',
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+    },
+    achievementDialogShareButtonText: {
+      color: colors.shareButtonText,
+      fontSize: 15,
+      fontWeight: '900',
     },
     achievementCloseButton: {
       alignItems: 'center',

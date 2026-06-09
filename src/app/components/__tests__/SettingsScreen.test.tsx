@@ -1,4 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
+import { AppColorPresetId } from '../../../features/customization/colorPresets';
 
 import { darkTheme, lightTheme } from '../../../theme/theme';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../../features/premium/revenueCatAccess';
@@ -70,6 +71,8 @@ function createProps() {
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
+    selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+    onUpdateAppColorPreset: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
     onPurchaseMonthlyPremiumPackage: jest.fn(),
     onPurchaseYearlyPremiumPackage: jest.fn(),
@@ -609,6 +612,38 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).not.toContain('GPSの記録を開始する');
   });
 
+
+  describe('Plus会員向けカスタマイズ', () => {
+    test('Plus会員はアプリカラーセクションを表示する', async () => {
+      const plusProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...plusProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).toContain('アプリカラー (Strollia Plus)');
+    });
+
+    test('非Plus会員はアプリカラーセクションを表示しない', async () => {
+      const freeProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: false, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...freeProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).not.toContain('アプリカラー (Strollia Plus)');
+    });
+  });
 
   test('地図テーマの航空写真ボタンから地図種別を切り替える', () => {
     const props = createProps();

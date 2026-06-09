@@ -59,7 +59,7 @@ function createProps() {
     theme: lightTheme,
     initialRegion: { latitude: 35, longitude: 139, latitudeDelta: 0.01, longitudeDelta: 0.01 },
     mapType: 'standard' as const,
-    userLocationIcon: { useNativeUserLocation: true, customIconId: null },
+    userLocationIcon: { useNativeUserLocation: true, customIconId: null, customImageUri: null },
     isFollowingUserLocation: true,
     userCoordinate: null,
     visitedGridCells: [],

@@ -30,6 +30,8 @@ type UserLocationIcon = {
   useNativeUserLocation: boolean;
   /** カスタム現在地アイコンID。 */
   customIconId: string | null;
+  /** カスタム画像URI。 */
+  customImageUri: string | null;
 };
 
 /** メイン地図画面のprops。 */

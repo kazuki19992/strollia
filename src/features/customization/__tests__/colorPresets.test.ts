@@ -2,6 +2,7 @@ import {
   APP_COLOR_PRESETS,
   DEFAULT_APP_COLOR_PRESET_ID,
   getAppColorPreset,
+  isAppColorPresetId,
 } from '../colorPresets';
 
 describe('アプリカラープリセット colorPresets', () => {
@@ -20,7 +21,7 @@ describe('アプリカラープリセット colorPresets', () => {
   });
 
   it('未知IDはまっちゃへフォールバックする', () => {
-    expect(getAppColorPreset('unknown' as never).id).toBe('matcha');
+    expect(getAppColorPreset('unknown' as never)).toEqual(expect.objectContaining({ id: 'matcha' }));
   });
 
   it('全プリセットがlight・dark両方の色を持つ', () => {
@@ -32,5 +33,22 @@ describe('アプリカラープリセット colorPresets', () => {
       expect(preset.dark.primaryText).toMatch(/^#[0-9a-f]{6}$/i);
       expect(preset.dark.mapLine).toMatch(/^#[0-9a-f]{6}$/i);
     }
+  });
+
+  it('isAppColorPresetIdは有効なIDでtrueを返す', () => {
+    expect(isAppColorPresetId('matcha')).toBe(true);
+    expect(isAppColorPresetId('tomato')).toBe(true);
+  });
+
+  it('isAppColorPresetIdは無効な文字列でfalseを返す', () => {
+    expect(isAppColorPresetId('unknown')).toBe(false);
+    expect(isAppColorPresetId('')).toBe(false);
+  });
+
+  it('有効なIDを渡すと対応するプリセット全体を返す', () => {
+    expect(getAppColorPreset('tomato')).toEqual(expect.objectContaining({
+      id: 'tomato',
+      label: 'トマト',
+    }));
   });
 });

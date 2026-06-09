@@ -784,10 +784,29 @@ export default function App() {
     navigateToScreen('achievements');
   }
 
-  /** 月次レポート画面へ移動する。 */
+  /** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
   function openMonthlyReport(): void {
-    refreshAchievementState().catch(() => undefined);
-    navigateToScreen('monthlyReport');
+    // 起動直後は premiumAccessState がデフォルト値（未確定）のままの可能性があるため、
+    // ボタン押下時に最新状態を取得してから判定する。
+    getPremiumAccessState()
+      .then((latestState) => {
+        setPremiumAccessState(latestState);
+        if (!latestState.isPlusActive) {
+          openPremiumPaywall();
+          return;
+        }
+        refreshAchievementState().catch(() => undefined);
+        navigateToScreen('monthlyReport');
+      })
+      .catch((error: unknown) => {
+        console.warn('Failed to check premium access state:', error);
+        if (!premiumAccessState.isPlusActive) {
+          openPremiumPaywall();
+          return;
+        }
+        refreshAchievementState().catch(() => undefined);
+        navigateToScreen('monthlyReport');
+      });
   }
 
   /** 設定画面へ移動する。 */
@@ -900,6 +919,7 @@ export default function App() {
 
       if (result.status === 'purchased' && result.accessState.isPlusActive) {
         Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
+        closePremiumPaywall();
       } else if (result.status === 'error') {
         Alert.alert('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
       }
@@ -922,6 +942,9 @@ export default function App() {
       const restoredState = await restorePremiumPurchases();
       setPremiumAccessState(restoredState);
       Alert.alert('購入の復元', restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。');
+      if (restoredState.isPlusActive) {
+        closePremiumPaywall();
+      }
     } finally {
       setIsRestoringPremiumPurchases(false);
     }

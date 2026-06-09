@@ -271,7 +271,7 @@ export function createStyles(theme: AppTheme) {
     achievementSection: {
       gap: 12,
     },
-    achievementSwipeHint: {
+    dialogSwipeHint: {
       color: colors.mutedText,
       fontSize: 12,
       fontWeight: '900',

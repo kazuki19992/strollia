@@ -43,7 +43,6 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, onSh
                 <Feather name="share-2" size={18} color={styles.primaryButtonText.color} />
                 <Text style={styles.primaryButtonText}>ともだちに自慢する</Text>
               </Pressable>
-              <Text style={styles.achievementSwipeHint}>スワイプで閉じる</Text>
             </View>
           </>
         )

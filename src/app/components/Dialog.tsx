@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Modal, PanResponder, Pressable, View } from 'react-native';
+import { Animated, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
 import { AppStyles } from '../appStyles';
 import { shouldDismissAchievementModalSwipe, shouldDismissAchievementModalTerminate } from './achievementUnlockModalLogic';
@@ -25,6 +25,8 @@ export type DialogProps = {
   showConfetti?: boolean;
   /** 一定時間で自動的に閉じるか。 */
   autoClose?: boolean;
+  /** スワイプで閉じられるようにするか。trueのときヒント文言も表示する。 */
+  swipeToClose?: boolean;
   /** 紙吹雪の再生キー。 */
   animationKey?: string | null;
   /** 画面共通スタイル。 */
@@ -34,7 +36,7 @@ export type DialogProps = {
 };
 
 /** スワイプ/紙吹雪/自動クローズを備えた汎用ダイアログ。 */
-export function Dialog({ visible, children, showConfetti = false, autoClose = false, animationKey = null, styles, onClose }: DialogProps) {
+export function Dialog({ visible, children, showConfetti = false, autoClose = false, swipeToClose = true, animationKey = null, styles, onClose }: DialogProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
   const autoCloseProgress = useRef(new Animated.Value(0)).current;
   const dragX = useRef(new Animated.Value(0)).current;
@@ -42,6 +44,7 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   const isClosingRef = useRef(false);
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCloseRef = useRef(onClose);
+  const lastContentRef = useRef<ReactNode>(null);
   const [isAutoClosePaused, setIsAutoClosePaused] = useState(false);
   const [isRendered, setIsRendered] = useState(visible);
 
@@ -152,21 +155,21 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
           dragY.setValue(gestureState.dy);
         },
         onPanResponderRelease: (_, gestureState) => {
-          if (shouldDismissAchievementModalSwipe(gestureState)) {
+          if (swipeToClose && shouldDismissAchievementModalSwipe(gestureState)) {
             animateOut(true);
             return;
           }
           resetDragPosition();
         },
         onPanResponderTerminate: (_, gestureState) => {
-          if (shouldDismissAchievementModalTerminate(gestureState)) {
+          if (swipeToClose && shouldDismissAchievementModalTerminate(gestureState)) {
             animateOut(true);
             return;
           }
           resetDragPosition();
         },
       }),
-    [animateOut, dragX, dragY, resetDragPosition],
+    [animateOut, dragX, dragY, resetDragPosition, swipeToClose],
   );
 
   const distanceOpacity = Animated.add(dragX, dragY).interpolate({
@@ -176,6 +179,11 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   });
 
   const content = typeof children === 'function' ? children({ pauseAutoClose }) : children;
+  // 閉じる際に親が中身を空にしても、退場アニメーション中はカードが縮まないよう直前の中身を保持する。
+  if (content) {
+    lastContentRef.current = content;
+  }
+  const displayedContent = content || lastContentRef.current;
 
   return (
     <Modal visible={isRendered} transparent animationType="none" onRequestClose={() => animateOut(true)}>
@@ -209,7 +217,8 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
                 />
               </View>
             )}
-            {content}
+            {displayedContent}
+            {swipeToClose && <Text style={styles.dialogSwipeHint}>スワイプで閉じる</Text>}
           </Animated.View>
         )}
       </View>

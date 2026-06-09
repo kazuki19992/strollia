@@ -53,6 +53,8 @@ export type DialogProps = {
   showConfetti?: boolean;
   /** 一定時間で自動的に閉じるか。 */
   autoClose?: boolean;
+  /** スワイプで閉じられるようにするか。trueのとき「スワイプで閉じる」ヒントも表示する（既定true）。 */
+  swipeToClose?: boolean;
   /** 紙吹雪の再生キー（showConfetti=true時）。 */
   animationKey?: string | null;
   /** 画面共通スタイル。 */
@@ -65,7 +67,9 @@ export type DialogProps = {
 **振る舞い:**
 - `showConfetti=false` のときは `ConfettiOverlay` をレンダリングしない
 - `autoClose=false` のときは自動クローズタイマーと進捗バー（`achievementAutoCloseTrack`）を描画しない
-- 閉じるボタンとスワイプは常に有効
+- `swipeToClose=true`（既定）のときスワイプ閉じを有効化し、本文下に「スワイプで閉じる」ヒント（`dialogSwipeHint`）を表示する
+- 閉じる際は親が中身を空にしても直前の中身を保持し、退場アニメーション中にカードが縮まないようにする
+- 「スワイプで閉じる」ヒントは `Dialog` が持ち、`AchievementUnlockModal` 側には置かない
 - `AUTO_CLOSE_DELAY_MS` は autoClose=true のときのみ使用
 
 ---
@@ -153,7 +157,10 @@ export type AchievementDialogProps = {
 
 **ファイル:** `src/app/components/AchievementListScreen.tsx`
 
-カテゴリごとに2列グリッド。各カテゴリ内で実績は `sortOrder` 昇順。3状態で表示を分岐:
+カテゴリごとに3列グリッド。各カテゴリ内で実績は `sortOrder` 昇順。3状態で表示を分岐:
+
+なお `distance` カテゴリには通常の総距離実績と「地球n周」実績（40,000kmごと）が混在するため、`achievementDefinitions` 側で両者をしきい値（m）昇順に並べ替えて `sortOrder` を連番採番する。これにより地球n周実績が総距離の正しい位置に挿入される。
+
 
 | 状態 | 判定 | 画像 | 実績名 | 進捗 | タップ |
 |------|------|------|--------|------|--------|

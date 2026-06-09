@@ -104,6 +104,34 @@ describe('汎用ダイアログ Dialog', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  test('swipeToClose 既定時はスワイプヒントを表示する', () => {
+    const onClose = jest.fn();
+    act(() => {
+      renderer = create(
+        <Dialog visible styles={styles} onClose={onClose}>
+          <Text>本文</Text>
+        </Dialog>,
+      );
+    });
+
+    const texts = renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('スワイプで閉じる');
+  });
+
+  test('swipeToClose=false のときヒントを表示しない', () => {
+    const onClose = jest.fn();
+    act(() => {
+      renderer = create(
+        <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
+          <Text>本文</Text>
+        </Dialog>,
+      );
+    });
+
+    const texts = renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).not.toContain('スワイプで閉じる');
+  });
+
   test('render-prop の pauseAutoClose を呼ぶと自動クローズが止まる', () => {
     const onClose = jest.fn();
     act(() => {

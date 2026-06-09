@@ -53,4 +53,19 @@ describe('実績定義 achievementDefinitions', () => {
   it('存在しない400万km実績を含まない', () => {
     expect(ACHIEVEMENT_DEFINITIONS.some((definition) => definition.id === 'distance-4000000')).toBe(false);
   });
+
+  it('地球n周の距離実績を通常の総距離としきい値順に並べる', () => {
+    const distanceItems = ACHIEVEMENT_DEFINITIONS.filter((definition) => definition.category === 'distance').sort(
+      (a, b) => a.sortOrder - b.sortOrder,
+    );
+    const thresholds = distanceItems.map((definition) => definition.condition.threshold);
+
+    for (let index = 1; index < thresholds.length; index += 1) {
+      expect(thresholds[index]).toBeGreaterThanOrEqual(thresholds[index - 1]);
+    }
+
+    const ids = distanceItems.map((definition) => definition.id);
+    expect(ids.indexOf('distance-earth-40000')).toBeGreaterThan(ids.indexOf('distance-30000'));
+    expect(ids.indexOf('distance-earth-40000')).toBeLessThan(ids.indexOf('distance-50000'));
+  });
 });

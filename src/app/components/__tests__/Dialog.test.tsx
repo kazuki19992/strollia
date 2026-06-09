@@ -45,7 +45,7 @@ describe('汎用ダイアログ Dialog', () => {
     const onClose = jest.fn();
     act(() => {
       renderer = create(
-        <Dialog visible autoClose animationKey="k1" styles={styles} theme={lightTheme} onClose={onClose}>
+        <Dialog visible autoClose animationKey="k1" styles={styles} onClose={onClose}>
           <Text>本文</Text>
         </Dialog>,
       );
@@ -62,7 +62,7 @@ describe('汎用ダイアログ Dialog', () => {
     const onClose = jest.fn();
     act(() => {
       renderer = create(
-        <Dialog visible styles={styles} theme={lightTheme} onClose={onClose}>
+        <Dialog visible styles={styles} onClose={onClose}>
           <Text>本文</Text>
         </Dialog>,
       );
@@ -78,7 +78,7 @@ describe('汎用ダイアログ Dialog', () => {
     const onClose = jest.fn();
     act(() => {
       renderer = create(
-        <Dialog visible styles={styles} theme={lightTheme} onClose={onClose}>
+        <Dialog visible styles={styles} onClose={onClose}>
           <Text>本文</Text>
         </Dialog>,
       );
@@ -91,7 +91,7 @@ describe('汎用ダイアログ Dialog', () => {
     const onClose = jest.fn();
     act(() => {
       renderer = create(
-        <Dialog visible styles={styles} theme={lightTheme} onClose={onClose}>
+        <Dialog visible styles={styles} onClose={onClose}>
           <Text>本文</Text>
         </Dialog>,
       );
@@ -108,7 +108,7 @@ describe('汎用ダイアログ Dialog', () => {
     const onClose = jest.fn();
     act(() => {
       renderer = create(
-        <Dialog visible autoClose styles={styles} theme={lightTheme} onClose={onClose}>
+        <Dialog visible autoClose styles={styles} onClose={onClose}>
           {({ pauseAutoClose }) => (
             <Text accessibilityLabel="pause" onPress={pauseAutoClose}>
               共有

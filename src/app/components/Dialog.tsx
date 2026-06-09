@@ -2,7 +2,6 @@ import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Modal, PanResponder, Pressable, View } from 'react-native';
 
-import { AppTheme } from '../../theme/theme';
 import { AppStyles } from '../appStyles';
 import { shouldDismissAchievementModalSwipe, shouldDismissAchievementModalTerminate } from './achievementUnlockModalLogic';
 import { ConfettiOverlay } from './ConfettiOverlay';
@@ -30,15 +29,12 @@ export type DialogProps = {
   animationKey?: string | null;
   /** 画面共通スタイル。 */
   styles: AppStyles;
-  /** 現在テーマ。 */
-  theme: AppTheme;
   /** 閉じる処理。 */
   onClose: () => void;
 };
 
 /** スワイプ/紙吹雪/自動クローズを備えた汎用ダイアログ。 */
-export function Dialog({ visible, children, showConfetti = false, autoClose = false, animationKey = null, styles, theme, onClose }: DialogProps) {
-  void theme;
+export function Dialog({ visible, children, showConfetti = false, autoClose = false, animationKey = null, styles, onClose }: DialogProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
   const autoCloseProgress = useRef(new Animated.Value(0)).current;
   const dragX = useRef(new Animated.Value(0)).current;

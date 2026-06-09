@@ -8,7 +8,7 @@
 
 ## コンポーネント構造
 
-```
+```text
 Dialog（汎用・新規）
   - children: ReactNode を表示する
   - props: visible, showConfetti, autoClose, onClose, styles, theme, animationKey?
@@ -47,8 +47,8 @@ AchievementListScreen（グリッド・改修）
 export type DialogProps = {
   /** 表示状態。 */
   visible: boolean;
-  /** 子要素（ダイアログ本文）。 */
-  children: ReactNode;
+  /** 子要素（本文）。render-prop を渡すと pauseAutoClose を受け取れる。 */
+  children: ReactNode | ((helpers: { pauseAutoClose: () => void }) => ReactNode);
   /** 紙吹雪を背景に表示するか。 */
   showConfetti?: boolean;
   /** 一定時間で自動的に閉じるか。 */
@@ -57,8 +57,6 @@ export type DialogProps = {
   animationKey?: string | null;
   /** 画面共通スタイル。 */
   styles: AppStyles;
-  /** 現在テーマ。 */
-  theme: AppTheme;
   /** 閉じる処理。 */
   onClose: () => void;
 };

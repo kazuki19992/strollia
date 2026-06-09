@@ -59,7 +59,6 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
           achievement={achievement}
           animationKey="1:odo-1"
           styles={styles}
-          theme={lightTheme}
           onShareToX={jest.fn()}
           onClose={onClose}
         />,
@@ -84,7 +83,6 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
           achievement={achievement}
           animationKey="1:odo-1"
           styles={styles}
-          theme={lightTheme}
           onShareToX={onShareToX}
           onClose={onClose}
         />,

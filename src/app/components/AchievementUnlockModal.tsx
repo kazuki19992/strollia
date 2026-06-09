@@ -2,7 +2,6 @@ import { Feather } from '@expo/vector-icons';
 import { Image, Pressable, Text, View } from 'react-native';
 
 import { AchievementDefinition } from '../../features/achievements/achievementDefinitions';
-import { AppTheme } from '../../theme/theme';
 import { AppStyles } from '../appStyles';
 import { Dialog } from './Dialog';
 
@@ -14,8 +13,6 @@ export type AchievementUnlockModalProps = {
   animationKey: string | null;
   /** 画面共通スタイル。 */
   styles: AppStyles;
-  /** 現在テーマ。 */
-  theme: AppTheme;
   /** X投稿画面を開く処理。 */
   onShareToX: (achievement: AchievementDefinition) => void;
   /** 閉じる処理。 */
@@ -23,9 +20,9 @@ export type AchievementUnlockModalProps = {
 };
 
 /** 実績解除時の紙吹雪付きモーダル。汎用 Dialog を解除通知向けに使う。 */
-export function AchievementUnlockModal({ achievement, animationKey, styles, theme, onShareToX, onClose }: AchievementUnlockModalProps) {
+export function AchievementUnlockModal({ achievement, animationKey, styles, onShareToX, onClose }: AchievementUnlockModalProps) {
   return (
-    <Dialog visible={achievement != null} showConfetti autoClose animationKey={animationKey} styles={styles} theme={theme} onClose={onClose}>
+    <Dialog visible={achievement != null} showConfetti autoClose animationKey={animationKey} styles={styles} onClose={onClose}>
       {({ pauseAutoClose }) =>
         achievement && (
           <>

@@ -26,6 +26,14 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
   const captureViewRef = useRef<View>(null);
   const [isSharing, setIsSharing] = useState(false);
 
+  /**
+   * 実績画像をシステム共有シートで共有する。
+   *
+   * `captureViewRef` が指すビューをPNGにキャプチャしてOSの共有シートを開く。
+   * 共有不可な環境・キャプチャ/共有失敗時はアラートで通知し、Promiseは正常終了する。
+   *
+   * @returns 共有処理の完了を表す Promise。
+   */
   async function shareAchievementImage(): Promise<void> {
     if (!captureViewRef.current || isSharing) {
       return;
@@ -34,6 +42,7 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
     setIsSharing(true);
 
     try {
+      // キャプチャ前にレイアウトの反映を1フレーム待ち、描画が安定した状態で撮影する。
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
       if (!(await Sharing.isAvailableAsync())) {
@@ -56,7 +65,7 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
   }
 
   return (
-    <Dialog visible={item != null} styles={styles} theme={theme} onClose={onClose}>
+    <Dialog visible={item != null} styles={styles} onClose={onClose}>
       {item && (
         <>
           <View ref={captureViewRef} collapsable={false} style={[styles.achievementModalActions, { alignItems: 'center', backgroundColor: theme.colors.background }]}>

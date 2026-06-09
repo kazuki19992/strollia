@@ -1183,7 +1183,6 @@ export default function App() {
         achievement={activeAchievementNotification?.definition ?? null}
         animationKey={activeAchievementNotification ? `${activeAchievementNotification.queueId}:${activeAchievementNotification.definition.id}` : null}
         styles={styles}
-        theme={theme}
         onShareToX={shareAchievementToX}
         onClose={closeAchievementUnlockModal}
       />

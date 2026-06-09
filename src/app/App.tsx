@@ -784,8 +784,12 @@ export default function App() {
     navigateToScreen('achievements');
   }
 
-  /** 月次レポート画面へ移動する。 */
+  /** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
   function openMonthlyReport(): void {
+    if (!premiumAccessState.isPlusActive) {
+      openPremiumPaywall();
+      return;
+    }
     refreshAchievementState().catch(() => undefined);
     navigateToScreen('monthlyReport');
   }

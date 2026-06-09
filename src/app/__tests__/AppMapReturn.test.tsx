@@ -98,6 +98,9 @@ jest.mock('../components/MapScreen', () => ({
         <Pressable accessibilityLabel="設定" onPress={props.onOpenSettings}>
           <Text>設定</Text>
         </Pressable>
+        <Pressable accessibilityLabel="月次レポート" onPress={props.onOpenMonthlyReport}>
+          <Text>月次レポート</Text>
+        </Pressable>
       </>
     );
   },
@@ -722,6 +725,44 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(presentPremiumCustomerCenter).toHaveBeenCalledTimes(1);
     expect(alertSpy).toHaveBeenCalledWith('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
+  });
+
+  test('月次レポートボタンは無料ユーザーにペイウォールを表示する', async () => {
+    (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    // 初期状態は isPlusActive=false（getDefaultPremiumAccessState のモックが false を返す）
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+    });
+
+    // ペイウォールが表示され、月次レポート画面へは遷移しない
+    expect(mockLatestMonthlyReportScreenProps).toBeNull();
+  });
+
+  test('月次レポートボタンはPlus会員を月次レポート画面へ遷移させる', async () => {
+    (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    // isPlusActive が true になるまで CustomerInfo 更新を待つ
+    await act(async () => {
+      mockPremiumCustomerInfoUpdate?.({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+    });
+
+    expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
   });
 
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {

@@ -1,3 +1,5 @@
+import * as SQLite from 'expo-sqlite';
+
 import { db } from '../../db/database';
 import { NewLocationPoint } from '../../types/gps';
 import { distanceMeters } from '../../utils/distance';
@@ -17,30 +19,30 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   let skippedPointCount = 0;
   let previousImportedPoint: NewLocationPoint | null = null;
 
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async (txn) => {
     for (const point of sortedPoints) {
-      const wasInserted = await insertImportedLocationPoint(point, previousImportedPoint, now);
+      const wasInserted = await insertImportedLocationPoint(point, previousImportedPoint, now, txn);
       if (!wasInserted) {
         skippedPointCount += 1;
         continue;
       }
 
       const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
-      await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt);
+      await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
       previousImportedPoint = point;
       importedPointCount += 1;
     }
 
-    await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now);
+    await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
   });
 
   return { importedPointCount, skippedPointCount };
 }
 
-async function insertImportedLocationPoint(point: NewLocationPoint, previousPoint: NewLocationPoint | null, now: string): Promise<boolean> {
+async function insertImportedLocationPoint(point: NewLocationPoint, previousPoint: NewLocationPoint | null, now: string, txn: SQLite.SQLiteDatabase): Promise<boolean> {
   const segmentDistanceMeters = previousPoint?.localDate === point.localDate ? distanceMeters(previousPoint, point) : 0;
 
-  const insertResult = await db.runAsync(
+  const insertResult = await txn.runAsync(
     `INSERT OR IGNORE INTO location_points (
       recorded_at,
       local_date,
@@ -70,7 +72,7 @@ async function insertImportedLocationPoint(point: NewLocationPoint, previousPoin
     return false;
   }
 
-  await db.runAsync(
+  await txn.runAsync(
     `INSERT INTO daily_logs (
       local_date,
       started_at,
@@ -111,11 +113,12 @@ async function insertImportHistory(
   importedPointCount: number,
   skippedPointCount: number,
   now: string,
+  txn: SQLite.SQLiteDatabase,
 ): Promise<void> {
   const rangeFrom = points[0]?.recordedAt ?? null;
   const rangeTo = points.at(-1)?.recordedAt ?? null;
 
-  await db.runAsync(
+  await txn.runAsync(
     `INSERT INTO import_history (
       format,
       file_name,

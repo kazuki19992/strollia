@@ -1,3 +1,5 @@
+import * as SQLite from 'expo-sqlite';
+
 import { db } from '../../db/database';
 import type { GridBounds, GridCell } from './grid/gridCell';
 
@@ -43,8 +45,9 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
  * 呼び出し元のtransaction内でvisited cellを保存する。
  *
  * `db.withTransactionAsync` のネストを避けるため、複数テーブル更新をまとめる処理から使う。
+ * `withExclusiveTransactionAsync` 内から呼ぶ場合は `runner` に `txn` を渡すこと。
  */
-export async function upsertVisitedCellsInCurrentTransaction(cells: GridCell[], visitedAt: string): Promise<void> {
+export async function upsertVisitedCellsInCurrentTransaction(cells: GridCell[], visitedAt: string, runner: SQLite.SQLiteDatabase = db): Promise<void> {
   if (cells.length === 0) {
     return;
   }
@@ -52,7 +55,7 @@ export async function upsertVisitedCellsInCurrentTransaction(cells: GridCell[], 
   const now = new Date().toISOString();
 
   for (const cell of dedupeCells(cells)) {
-    await db.runAsync(
+    await runner.runAsync(
       `INSERT INTO visited_cells (
         cell_id,
         cell_size_meters,

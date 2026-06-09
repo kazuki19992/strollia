@@ -786,12 +786,27 @@ export default function App() {
 
   /** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
   function openMonthlyReport(): void {
-    if (!premiumAccessState.isPlusActive) {
-      openPremiumPaywall();
-      return;
-    }
-    refreshAchievementState().catch(() => undefined);
-    navigateToScreen('monthlyReport');
+    // 起動直後は premiumAccessState がデフォルト値（未確定）のままの可能性があるため、
+    // ボタン押下時に最新状態を取得してから判定する。
+    getPremiumAccessState()
+      .then((latestState) => {
+        setPremiumAccessState(latestState);
+        if (!latestState.isPlusActive) {
+          openPremiumPaywall();
+          return;
+        }
+        refreshAchievementState().catch(() => undefined);
+        navigateToScreen('monthlyReport');
+      })
+      .catch((error: unknown) => {
+        console.warn('Failed to check premium access state:', error);
+        if (!premiumAccessState.isPlusActive) {
+          openPremiumPaywall();
+          return;
+        }
+        refreshAchievementState().catch(() => undefined);
+        navigateToScreen('monthlyReport');
+      });
   }
 
   /** 設定画面へ移動する。 */

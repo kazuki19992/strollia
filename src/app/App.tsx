@@ -83,6 +83,7 @@ import { loadAppFonts } from '../theme/fonts';
 import { getAppTheme } from '../theme/theme';
 import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
+import { AchievementDialog } from './components/AchievementDialog';
 import { AchievementListScreen } from './components/AchievementListScreen';
 import { DailyLogDetailScreen } from './components/DailyLogDetailScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
@@ -160,6 +161,7 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
+  const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
   const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
   const [points, setPoints] = useState<LocationPoint[]>([]);
@@ -1075,7 +1077,15 @@ export default function App() {
               </NavigationContainer>
             </NavigationIndependentTree>
           )}
-          {screenMode === 'achievements' && <AchievementListScreen items={achievementItems} styles={styles} theme={theme} onBackToMap={openMap} />}
+          {screenMode === 'achievements' && (
+            <AchievementListScreen
+              items={achievementItems}
+              styles={styles}
+              theme={theme}
+              onBackToMap={openMap}
+              onSelectAchievement={setSelectedAchievement}
+            />
+          )}
           {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} theme={theme} onBackToMap={openMap} />}
           {screenMode === 'settings' && (
             <NavigationIndependentTree>
@@ -1177,6 +1187,8 @@ export default function App() {
         onShareToX={shareAchievementToX}
         onClose={closeAchievementUnlockModal}
       />
+
+      <AchievementDialog item={selectedAchievement} styles={styles} theme={theme} onClose={() => setSelectedAchievement(null)} />
 
       <PremiumPaywallModal
         visible={isPremiumPaywallVisible}

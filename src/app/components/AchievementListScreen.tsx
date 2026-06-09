@@ -1,10 +1,10 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { AchievementCategory, formatAchievementDistance } from '../../features/achievements/achievementDefinitions';
 import { AchievementListItem } from '../../features/achievements/achievementRepository';
 import { AppTheme } from '../../theme/theme';
 import { AppStyles } from '../appStyles';
+import { resolveAchievementDisplayStates } from './achievementDisplayState';
 import { AppScreenHeader } from './AppScreenHeader';
 
 /** 実績一覧画面のprops。 */
@@ -17,6 +17,8 @@ export type AchievementListScreenProps = {
   theme: AppTheme;
   /** 地図画面へ戻る処理。 */
   onBackToMap: () => void;
+  /** 解除済み実績をタップしたときの処理。 */
+  onSelectAchievement: (item: AchievementListItem) => void;
 };
 
 /** 実績カテゴリの表示順と見出し。 */
@@ -27,8 +29,10 @@ const categorySections: { category: AchievementCategory; title: string }[] = [
   { category: 'municipality', title: '市区町村' },
 ];
 
-/** 実績画面を描画する。 */
-export function AchievementListScreen({ items, styles, theme, onBackToMap }: AchievementListScreenProps) {
+/** 実績画面を2列グリッドで描画する。 */
+export function AchievementListScreen({ items, styles, theme, onBackToMap, onSelectAchievement }: AchievementListScreenProps) {
+  const displayStates = resolveAchievementDisplayStates(items);
+
   return (
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader backLabel="地図" styles={styles} theme={theme} title="実績" onBack={onBackToMap} />
@@ -42,21 +46,44 @@ export function AchievementListScreen({ items, styles, theme, onBackToMap }: Ach
               <Text style={styles.screenSectionHeading}>{section.title}</Text>
               <View style={styles.achievementGrid}>
                 {sectionItems.map((item) => {
-                  const unlocked = item.unlockedAt != null;
+                  const state = displayStates.get(item.definition.id) ?? 'hidden';
+                  const isUnlocked = state === 'unlocked';
+                  const isHidden = state === 'hidden';
+                  const title = isHidden ? '？？？' : item.definition.title;
+                  const progress = isHidden ? '？？？' : getAchievementProgressLabel(item);
+
+                  const tile = (
+                    <>
+                      <View style={styles.achievementTileImageWrap}>
+                        <Image
+                          source={item.definition.trophyImage}
+                          style={styles.achievementTileImage}
+                          {...(isHidden ? { tintColor: theme.colors.border } : {})}
+                        />
+                        {state === 'next' && <View style={styles.achievementTileGrayscaleOverlay} />}
+                      </View>
+                      <Text style={styles.achievementTileTitle}>{title}</Text>
+                      <Text style={styles.achievementTileProgress}>{progress}</Text>
+                    </>
+                  );
+
+                  if (isUnlocked) {
+                    return (
+                      <Pressable
+                        key={item.definition.id}
+                        style={styles.achievementGridTile}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${item.definition.title} の詳細を見る`}
+                        onPress={() => onSelectAchievement(item)}
+                      >
+                        {tile}
+                      </Pressable>
+                    );
+                  }
 
                   return (
-                    <View key={item.definition.id} style={[styles.achievementCard, !unlocked && styles.achievementCardLocked]}>
-                      <View style={styles.achievementImageFrame}>
-                        <Image source={item.definition.trophyImage} style={[styles.achievementImage, !unlocked && styles.achievementImageLocked]} />
-                        {!unlocked && (
-                          <View style={styles.achievementLockBadge}>
-                            <MaterialCommunityIcons name="lock-outline" size={16} color={theme.colors.primaryText} />
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.achievementTitle}>{item.definition.title}</Text>
-                      <Text style={styles.achievementDescription}>{item.definition.description}</Text>
-                      <Text style={styles.achievementProgress}>{getAchievementProgressLabel(item)}</Text>
+                    <View key={item.definition.id} style={styles.achievementGridTile}>
+                      {tile}
                     </View>
                   );
                 })}

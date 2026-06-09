@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -51,7 +52,6 @@ import {
 import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
 import { getPreviousReportMonth } from '../features/reports/monthlyReport';
-import * as ImagePicker from 'expo-image-picker';
 import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
 import {
   DEFAULT_USER_LOCATION_ICON_ID,
@@ -909,6 +909,7 @@ export default function App() {
    * アプリカラープリセットを保存して即時反映する。
    *
    * @param presetId - 保存するプリセットID。
+   * @returns なし。
    */
   function updateAppColorPreset(presetId: AppColorPresetId): void {
     triggerSelectionHaptic();
@@ -923,34 +924,38 @@ export default function App() {
    * システムの正方形クロップUIを使用する。
    */
   async function pickCustomIcon(): Promise<void> {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permissionResult.granted) {
-      Alert.alert('権限が必要です', 'カスタムアイコンを設定するには写真へのアクセス権限が必要です。');
-      return;
+      if (!permissionResult.granted) {
+        Alert.alert('権限が必要です', 'カスタムアイコンを設定するには写真へのアクセス権限が必要です。');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      setCustomIconImageUri(uri);
+      setSelectedUserLocationIconId('custom');
+      setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, uri).catch((error: unknown) => {
+        Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。');
+      });
+      setSetting(USER_LOCATION_ICON_SETTING_KEY, 'custom').catch((error: unknown) => {
+        Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
+      });
+      Alert.alert('カスタムアイコン', '写真をアルバムから削除するとOS標準に戻ります。');
+    } catch (error: unknown) {
+      Alert.alert('エラー', error instanceof Error ? error.message : 'カスタムアイコンを設定できませんでした。');
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (result.canceled) {
-      return;
-    }
-
-    const uri = result.assets[0].uri;
-    setCustomIconImageUri(uri);
-    setSelectedUserLocationIconId('custom');
-    setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, uri).catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。');
-    });
-    setSetting(USER_LOCATION_ICON_SETTING_KEY, 'custom').catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
-    });
-    Alert.alert('カスタムアイコン', '写真をアルバムから削除するとOS標準に戻ります。');
   }
 
   /**

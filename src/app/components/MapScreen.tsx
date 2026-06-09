@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Animated, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import type { RefObject } from 'react';
@@ -176,13 +176,23 @@ export function MapScreen({
           ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
-            <View style={styles.customUserLocationMarker}>
-              <MaterialCommunityIcons
-                name={userLocationIcon.customIconId === 'compass' ? 'compass' : 'walk'}
-                size={22}
-                color={theme.colors.primaryText}
+            {userLocationIcon.customImageUri ? (
+              <Image
+                source={{ uri: userLocationIcon.customImageUri }}
+                style={styles.customUserLocationMarkerImage}
+                onError={() => {
+                  // URI読み込み失敗時はApp.tsx側でフォールバック処理を行う
+                }}
               />
-            </View>
+            ) : (
+              <View style={styles.customUserLocationMarker}>
+                <MaterialCommunityIcons
+                  name={userLocationIcon.customIconId === 'compass' ? 'compass' : 'walk'}
+                  size={22}
+                  color={theme.colors.primaryText}
+                />
+              </View>
+            )}
           </Marker>
         )}
         {showPhotosOnMap &&

@@ -346,6 +346,13 @@ export function createStyles(theme: AppTheme) {
       shadowRadius: 14,
       width: 42,
     },
+    customUserLocationMarkerImage: {
+      borderColor: colors.card,
+      borderRadius: 999,
+      borderWidth: 3,
+      height: 42,
+      width: 42,
+    },
     customizationOption: {
       backgroundColor: colors.cardStrong,
       borderColor: colors.border,

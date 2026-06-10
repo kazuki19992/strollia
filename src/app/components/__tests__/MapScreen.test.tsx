@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { Animated } from 'react-native';
 
 import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
@@ -89,6 +89,7 @@ function createProps() {
     onOpenSettings: jest.fn(),
     onRequestLocationPermission: jest.fn(),
     onRecenterOnUserLocation: jest.fn(),
+    onCustomIconError: jest.fn(),
   };
 }
 
@@ -286,6 +287,44 @@ describe('地図画面 MapScreen', () => {
     expect(firstMapPadding).toEqual({ bottom: 128, left: 0, right: 0, top: 8 });
     expect(rerenderedMapView.props.legalLabelInsets).toBeUndefined();
     expect(rerenderedMapView.props.mapPadding).toBe(firstMapPadding);
+  });
+
+  test('customImageUri があるとき Image コンポーネントで円表示する', () => {
+    const props = {
+      ...createProps(),
+      userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
+      userCoordinate: { latitude: 35, longitude: 139 },
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const image = renderer.root.findByType(Image);
+    expect(image.props.source).toEqual({ uri: 'file:///tmp/icon.png' });
+  });
+
+  test('カスタム画像エラー時に onCustomIconError を呼ぶ', () => {
+    const onCustomIconError = jest.fn();
+    const props = {
+      ...createProps(),
+      userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
+      userCoordinate: { latitude: 35, longitude: 139 },
+      onCustomIconError,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const image = renderer.root.findByType(Image);
+    act(() => {
+      image.props.onError();
+    });
+
+    expect(onCustomIconError).toHaveBeenCalledTimes(1);
   });
 });
 

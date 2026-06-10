@@ -101,7 +101,8 @@ export const APP_COLOR_PRESETS: AppColorPreset[] = [
  * IDからプリセットを取得する。未知IDはまっちゃへフォールバック。
  */
 export function getAppColorPreset(id: AppColorPresetId): AppColorPreset {
-  return APP_COLOR_PRESETS.find((preset) => preset.id === id) ?? APP_COLOR_PRESETS[0];
+  const defaultPreset = APP_COLOR_PRESETS.find((preset) => preset.id === DEFAULT_APP_COLOR_PRESET_ID) ?? APP_COLOR_PRESETS[0];
+  return APP_COLOR_PRESETS.find((preset) => preset.id === id) ?? defaultPreset;
 }
 
 /**

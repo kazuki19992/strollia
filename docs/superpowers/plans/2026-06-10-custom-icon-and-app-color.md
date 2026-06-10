@@ -703,13 +703,33 @@ Marker 描画ブロック（`!userLocationIcon.useNativeUserLocation && userCoor
         )}
 ```
 
-- [ ] **Step 2: 全テスト実行（回帰確認）**
+- [ ] **Step 2: MapScreen テストに customImageUri・onError のテストを追加**
+
+`src/app/components/__tests__/MapScreen.test.tsx` に以下を追加（既存テストを確認してパターンに合わせること）:
+
+```typescript
+// customImageUri が設定されているときカスタム画像を描画する
+test('customImageUri があるとき Image コンポーネントで描画する', () => {
+  // userLocationIcon.customImageUri を設定して render し、
+  // Image コンポーネントが source={{ uri: ... }} で描画されることを確認
+});
+
+// onError ハンドラが存在することを確認する
+test('カスタム画像エラー時に onCustomIconError を呼ぶ', () => {
+  // onCustomIconError prop を渡し、Image の onError を呼んだとき
+  // onCustomIconError が呼ばれることを確認
+});
+```
+
+Run: `npx jest src/app/components/__tests__/MapScreen.test.tsx`
+
+- [ ] **Step 3: 全テスト実行（回帰確認）**
 
 ```bash
 npx jest
 ```
 
-Expected: PASS（既存テストに回帰なし。MapScreen はモック済みのため直接テストなし）
+Expected: PASS（全テスト）
 
 - [ ] **Step 3: Commit**
 

@@ -33,6 +33,7 @@
     "expo-sharing": "~14.0.8",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
+    "expo-store-review": "~9.0.9",
     "expo-task-manager": "~14.0.9",
     "fast-xml-parser": "^5.8.0",
     "react": "19.1.0",

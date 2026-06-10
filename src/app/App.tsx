@@ -92,6 +92,7 @@ import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementDialog } from './components/AchievementDialog';
 import { AchievementListScreen } from './components/AchievementListScreen';
+import { AboutAppScreen } from './components/AboutAppScreen';
 import { DailyLogDetailScreen } from './components/DailyLogDetailScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
@@ -134,6 +135,7 @@ const SCREEN_TRANSITION_DURATION_MS = 180;
 
 type SettingsStackParamList = {
   SettingsHome: undefined;
+  AboutApp: undefined;
   LicenseList: undefined;
   LicenseDetail: { license: OssLicenseEntry };
 };
@@ -1286,6 +1288,7 @@ export default function App() {
                         selectedAppColorPresetId={selectedAppColorPresetId}
                         onUpdateAppColorPreset={updateAppColorPreset}
                         onUpdateUserLocationIcon={updateUserLocationIcon}
+                        onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
                         onPurchaseMonthlyPremiumPackage={() => {
                           purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
@@ -1310,6 +1313,15 @@ export default function App() {
                         onExportAllLogs={exportAllLogs}
                         onImportGpx={importGpx}
                         onDeleteAllData={deleteAllData}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                  <SettingsStack.Screen name="AboutApp">
+                    {({ navigation }) => (
+                      <AboutAppScreen
+                        styles={styles}
+                        theme={theme}
+                        onBackToSettings={() => navigation.goBack()}
                       />
                     )}
                   </SettingsStack.Screen>

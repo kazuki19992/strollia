@@ -73,6 +73,7 @@ function createProps() {
     onUpdateUserLocationIcon: jest.fn(),
     selectedAppColorPresetId: 'matcha' as AppColorPresetId,
     onUpdateAppColorPreset: jest.fn(),
+    onOpenAboutAppScreen: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
     onPurchaseMonthlyPremiumPackage: jest.fn(),
     onPurchaseYearlyPremiumPackage: jest.fn(),
@@ -105,6 +106,31 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('GPS記録中!');
     expect(texts).toContain('あなたの位置情報はすとろりあがしっかりと記録しています！\n冒険にでかけましょう！');
     expect(texts).toContain('GPXファイルのエクスポート');
+  });
+
+  test('このアプリについてをライセンスより上に表示して開ける', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const aboutIndex = texts.indexOf('このアプリについて');
+    const licenseIndex = texts.indexOf('オープンソースライセンス');
+
+    expect(aboutIndex).toBeGreaterThanOrEqual(0);
+    expect(licenseIndex).toBeGreaterThanOrEqual(0);
+    expect(aboutIndex).toBeLessThan(licenseIndex);
+
+    const aboutButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenAboutAppScreen)[0];
+
+    act(() => {
+      aboutButton.props.onPress();
+    });
+
+    expect(props.onOpenAboutAppScreen).toHaveBeenCalledTimes(1);
   });
 
   test('ダークモードでもGPS正常パネルはライトモードと同じ白文字で表示する', () => {

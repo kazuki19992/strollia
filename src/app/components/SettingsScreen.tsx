@@ -82,6 +82,8 @@ export type SettingsScreenProps = {
   selectedAppColorPresetId: AppColorPresetId;
   /** アプリカラープリセット更新処理。 */
   onUpdateAppColorPreset: (presetId: AppColorPresetId) => void;
+  /** このアプリについて画面を開く処理。 */
+  onOpenAboutAppScreen: () => void;
   /** OSSライセンス画面を開く処理。 */
   onOpenLicenseScreen: () => void;
   /** RevenueCat月払いPackageを購入する処理。 */
@@ -141,6 +143,7 @@ export function SettingsScreen({
   onToggleMapType,
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
+  onOpenAboutAppScreen,
   onOpenLicenseScreen,
   onPurchaseMonthlyPremiumPackage,
   onPurchaseYearlyPremiumPackage,
@@ -353,6 +356,13 @@ export function SettingsScreen({
         </ScreenSection>
 
         <ScreenSection styles={styles} title="アプリ情報">
+          <ActionPill
+            alignLeft
+            icon={<Feather name="info" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="このアプリについて"
+            styles={styles}
+            onPress={onOpenAboutAppScreen}
+          />
           <ActionPill
             alignLeft
             icon={<Feather name="file-text" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}

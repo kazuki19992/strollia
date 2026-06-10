@@ -248,48 +248,24 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('Strollia Plus(有料サブスクリプション)のごあんない');
     expect(texts).toContain('月額300円の有料サービスです。年払いにすると1か月分オトクです!');
     expect(texts).toContain('いつでも解約できます。');
-    expect(texts).toContain('月払い(300円)ではじめる！');
-    expect(texts).toContain('年払い(3300円)ではじめる！');
+    expect(texts).toContain('月額300円ではじめる！');
+    expect(texts).toContain('年額3300円ではじめる！');
     expect(texts).toContain('Strollia Plusの購入を復元する');
     expect(adSvg).toBeTruthy();
     expect(adSvg.props.width).toBe('100%');
   });
 
-  test('RevenueCat Offeringの商品価格を月払いと年払いボタンに表示する', () => {
-    const props = {
-      ...createProps(),
-      premiumOfferingSummary: {
-        offeringId: 'current',
-        packages: [
-          {
-            identifier: '$rc_monthly',
-            packageType: 'MONTHLY',
-            productIdentifier: 'strollia_plus_monthly',
-            title: 'Strollia Plus Monthly',
-            description: 'Monthly plan',
-            priceText: '¥280',
-          },
-          {
-            identifier: '$rc_annual',
-            packageType: 'ANNUAL',
-            productIdentifier: 'strollia_plus_yearly',
-            title: 'Strollia Plus Annual',
-            description: 'Annual plan',
-            priceText: '¥2,800',
-          },
-        ],
-      },
-    };
+  test('購入ボタンは固定の月額300円・年額3300円を表示する', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('月払い(¥280)ではじめる！');
-    expect(texts).toContain('年払い(¥2,800)ではじめる！');
+    expect(texts).toContain('月額300円ではじめる！');
+    expect(texts).toContain('年額3300円ではじめる！');
   });
 
   test('サブスク未加入時は加入と復元ボタンを呼び出す', () => {

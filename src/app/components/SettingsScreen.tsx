@@ -152,8 +152,6 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
   const subscriptionDescription = isPlusActive ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。` : undefined;
-  const monthlyPriceText = premiumOfferingSummary?.packages.find((candidate) => candidate.packageType === 'MONTHLY')?.priceText ?? '300円';
-  const yearlyPriceText = premiumOfferingSummary?.packages.find((candidate) => candidate.packageType === 'ANNUAL')?.priceText ?? '3300円';
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -293,7 +291,7 @@ export function SettingsScreen({
                 borderColor={theme.colors.primary}
                 disabled={isPurchasingPremiumPackage}
                 icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPurchasingPremiumPackage ? '購入処理中...' : `月払い(${monthlyPriceText})ではじめる！`}
+                label={isPurchasingPremiumPackage ? '購入処理中...' : '月額300円ではじめる！'}
                 styles={styles}
                 textColor={theme.colors.primary}
                 onPress={onPurchaseMonthlyPremiumPackage}
@@ -304,7 +302,7 @@ export function SettingsScreen({
                 borderColor={theme.colors.primary}
                 disabled={isPurchasingPremiumPackage}
                 icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPurchasingPremiumPackage ? '購入処理中...' : `年払い(${yearlyPriceText})ではじめる！`}
+                label={isPurchasingPremiumPackage ? '購入処理中...' : '年額3300円ではじめる！'}
                 styles={styles}
                 textColor={theme.colors.primary}
                 onPress={onPurchaseYearlyPremiumPackage}

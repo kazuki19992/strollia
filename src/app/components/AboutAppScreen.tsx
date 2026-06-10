@@ -23,7 +23,11 @@ const ABOUT_APP_SECTIONS = [
   },
   {
     title: 'ローカルファースト',
-    body: 'GPSログは端末内に保存します。ユーザーの明示操作なしに、GPSログや写真メタデータを外部へ送信しません。',
+    body: 'GPSログや移動履歴は端末内に保存します。ユーザーの明示操作なしに、移動履歴や写真メタデータを外部へ送信しません。',
+  },
+  {
+    title: '現在地を使う機能について',
+    body: '現在地を利用する機能を追加する場合があります。その場合も、機能を明示的に有効にしたときだけ、必要な現在地情報を外部サービスへ送信する設計にします。移動履歴をサーバーに保存することはありません。',
   },
   {
     title: 'Plusについて',
@@ -55,4 +59,3 @@ export function AboutAppScreen({ styles, theme, onBackToSettings }: AboutAppScre
     </SafeAreaView>
   );
 }
-

@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
+import { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
 
 import { MapPhotoCluster } from '../../features/photos/photoClusters';
@@ -150,6 +151,13 @@ export function MapScreen({
   onCustomIconError,
 }: MapScreenProps) {
   const shouldRenderVisitedGrid = gridOverlayOpacity > 0;
+  // カスタム画像マーカーは画像ロード完了までネイティブスナップショットを更新し続ける。
+  // ロード後はパフォーマンスのため更新を止める。
+  const [isCustomMarkerRendered, setIsCustomMarkerRendered] = useState(false);
+
+  useEffect(() => {
+    setIsCustomMarkerRendered(false);
+  }, [userLocationIcon.customImageUri]);
 
   return (
     <View style={styles.container}>
@@ -180,11 +188,18 @@ export function MapScreen({
             />
           ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
-          <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
+          <Marker
+            coordinate={userCoordinate}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={userLocationIcon.customImageUri ? !isCustomMarkerRendered : undefined}
+          >
             {userLocationIcon.customImageUri ? (
               <Image
                 source={{ uri: userLocationIcon.customImageUri }}
                 style={styles.customUserLocationMarkerImage}
+                onLoad={() => {
+                  setIsCustomMarkerRendered(true);
+                }}
                 onError={() => {
                   onCustomIconError?.();
                 }}

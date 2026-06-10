@@ -474,7 +474,7 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
   const dotColor = theme.name === 'dark' ? selectedPreset.dark.primary : selectedPreset.light.primary;
 
   return (
-    <OptionGroup styles={styles} title="アプリカラー (Strollia Plus)">
+    <OptionGroup styles={styles} title="アプリカラー (Strollia Plus)" note="現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。">
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="アプリカラーを選択"

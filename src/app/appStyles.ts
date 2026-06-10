@@ -381,11 +381,11 @@ export function createStyles(theme: AppTheme) {
     },
     colorPresetDropdownButton: {
       alignItems: 'center',
-      alignSelf: 'stretch',
       backgroundColor: colors.card,
       borderColor: colors.border,
       borderRadius: 12,
       borderWidth: 1,
+      flex: 1,
       flexDirection: 'row',
       gap: 10,
       paddingHorizontal: 14,

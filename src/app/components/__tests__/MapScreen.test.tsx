@@ -326,6 +326,30 @@ describe('地図画面 MapScreen', () => {
 
     expect(onCustomIconError).toHaveBeenCalledTimes(1);
   });
+
+  test('カスタム画像マーカーは初回tracksViewChangesがtrueで画像ロード後にfalseになる', () => {
+    const props = {
+      ...createProps(),
+      userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
+      userCoordinate: { latitude: 35, longitude: 139 },
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const marker = renderer.root.find((node: any) => node.type === 'Marker');
+    expect(marker.props.tracksViewChanges).toBe(true);
+
+    const image = renderer.root.findByType(Image);
+    act(() => {
+      image.props.onLoad();
+    });
+
+    const updatedMarker = renderer.root.find((node: any) => node.type === 'Marker');
+    expect(updatedMarker.props.tracksViewChanges).toBe(false);
+  });
 });
 
 describe('スピードメーター表示ロジック', () => {

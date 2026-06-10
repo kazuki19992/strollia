@@ -605,6 +605,36 @@ describe('設定画面 SettingsScreen', () => {
       expect(texts).toContain('アプリカラー (Strollia Plus)');
     });
 
+    test('アプリカラーセクションにカラー変更の説明を表示する', async () => {
+      const plusProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...plusProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).toContain('現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。');
+    });
+
+    test('アプリカラーの選択中プリセット名をドロップダウンに表示する', async () => {
+      const plusProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'sakura' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...plusProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).toContain('さくら');
+    });
+
     test('非Plus会員はアプリカラーセクションを表示しない', async () => {
       const freeProps = {
         ...createProps(),

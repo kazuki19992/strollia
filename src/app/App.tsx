@@ -227,6 +227,7 @@ export default function App() {
   const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
+  const hasRequestedAchievementNotificationPermissionRef = useRef(false);
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
@@ -523,7 +524,9 @@ export default function App() {
           });
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
-        await requestAchievementNotificationPermissionOnFirstLaunch().catch(() => undefined);
+        if (savedFirstLaunchTutorialCompleted) {
+          await requestAchievementNotificationPermissionIfNeeded();
+        }
         const initialState = await refreshData();
         await maybeStartRecordingAutomatically(initialState);
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
@@ -1193,6 +1196,19 @@ export default function App() {
     setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
       console.warn('Failed to persist first launch tutorial flag:', error);
     });
+    requestAchievementNotificationPermissionIfNeeded().catch((error: unknown) => {
+      console.warn('Failed to request achievement notification permission:', error);
+    });
+  }
+
+  /** 実績通知権限要求を同一セッションで重複実行しないよう呼び出す。 */
+  async function requestAchievementNotificationPermissionIfNeeded(): Promise<void> {
+    if (hasRequestedAchievementNotificationPermissionRef.current) {
+      return;
+    }
+
+    hasRequestedAchievementNotificationPermissionRef.current = true;
+    await requestAchievementNotificationPermissionOnFirstLaunch();
   }
 
 

@@ -314,9 +314,7 @@ jest.mock('../../features/reports/monthlyAreaReport', () => ({
   getMonthlyAreaReport: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock('../../features/reports/monthlyReport', () => ({
-  getPreviousReportMonth: jest.fn(() => '2026-05'),
-}));
+jest.mock('../../features/reports/monthlyReport', () => jest.requireActual('../../features/reports/monthlyReport'));
 
 jest.mock('../../features/customization/customizationResolver', () => ({
   resolveUserLocationIcon: jest.fn(() => ({ useNativeUserLocation: true, customIconId: null })),
@@ -811,7 +809,25 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMonthlyReportScreenProps).toBeNull();
   });
 
+  /** 先月の日別ログ（記録あり）を1件返す。月次レポート遷移テスト用。 */
+  function previousMonthDailyLog() {
+    const previousMonth = new Date();
+    previousMonth.setDate(1);
+    previousMonth.setMonth(previousMonth.getMonth() - 1);
+    const localDate = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}-15`;
+    return {
+      localDate,
+      pointCount: 5,
+      startedAt: `${localDate}T00:00:00.000Z`,
+      endedAt: `${localDate}T01:00:00.000Z`,
+      distanceMeters: 1500,
+      startLocationPointId: null,
+      endLocationPointId: null,
+    };
+  }
+
   test('起動直後（premium状態未確定）でもPlus会員なら月次レポートへ遷移する', async () => {
+    (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
     // 初期取得は遅延するが、ボタン押下時の再取得では isPlusActive=true を返す
     (getPremiumAccessState as jest.Mock)
       .mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' }) // 起動時
@@ -830,7 +846,8 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
   });
 
-  test('月次レポートボタンはPlus会員を月次レポート画面へ遷移させる', async () => {
+  test('月次レポートボタンはPlus会員かつ先月データありで月次レポート画面へ遷移させる', async () => {
+    (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
     await act(async () => {
@@ -844,6 +861,25 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
+  });
+
+  test('Plus会員でも先月データがない場合は集計中アラートを出し遷移しない', async () => {
+    (getDailyLogs as jest.Mock).mockResolvedValue([]);
+    (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+    });
+    await flushPromises();
+
+    expect(alertSpy).toHaveBeenCalledWith('現在集計中です！', '来月になったらもう一度来てください！');
+    expect(mockLatestMonthlyReportScreenProps).toBeNull();
   });
 
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {

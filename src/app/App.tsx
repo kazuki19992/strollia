@@ -56,7 +56,7 @@ import {
 } from '../features/location/locationPermission';
 import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
 import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
-import { getPreviousReportMonth } from '../features/reports/monthlyReport';
+import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '../features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
 import {
   DEFAULT_USER_LOCATION_ICON_ID,
@@ -861,22 +861,34 @@ export default function App() {
     getPremiumAccessState()
       .then((latestState) => {
         setPremiumAccessState(latestState);
-        if (!latestState.isPlusActive) {
-          openPremiumPaywall();
-          return;
-        }
-        refreshAchievementState().catch(() => undefined);
-        navigateToScreen('monthlyReport');
+        enterMonthlyReportOrPrompt(latestState.isPlusActive);
       })
       .catch((error: unknown) => {
         console.warn('Failed to check premium access state:', error);
-        if (!premiumAccessState.isPlusActive) {
-          openPremiumPaywall();
-          return;
-        }
-        refreshAchievementState().catch(() => undefined);
-        navigateToScreen('monthlyReport');
+        enterMonthlyReportOrPrompt(premiumAccessState.isPlusActive);
       });
+  }
+
+  /**
+   * Plus状態と先月データの有無に応じて、月次レポート遷移・ペイウォール・集計中案内を出し分ける。
+   *
+   * @param isPlusActive - Strollia Plusが有効かどうか。
+   * @returns なし。
+   */
+  function enterMonthlyReportOrPrompt(isPlusActive: boolean): void {
+    if (!isPlusActive) {
+      openPremiumPaywall();
+      return;
+    }
+
+    const previousMonthReport = createMonthlyReport(dailyLogs, points, getPreviousReportMonth());
+    if (!hasMonthlyReportData(previousMonthReport)) {
+      Alert.alert('現在集計中です！', '来月になったらもう一度来てください！');
+      return;
+    }
+
+    refreshAchievementState().catch(() => undefined);
+    navigateToScreen('monthlyReport');
   }
 
   /** 設定画面へ移動する。 */

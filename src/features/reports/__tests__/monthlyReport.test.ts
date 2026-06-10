@@ -1,4 +1,4 @@
-import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, getReportMonth, isInReportMonth } from '../monthlyReport';
+import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, getReportMonth, hasMonthlyReportData, isInReportMonth } from '../monthlyReport';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 
 /**
@@ -86,5 +86,25 @@ describe('月次レポート集計 monthlyReport', () => {
 
     expect(report.totalDistanceMeters).toBeGreaterThan(200);
     expect(report.totalDistanceMeters).toBeLessThan(230);
+  });
+});
+
+describe('月次レポートのデータ有無判定 hasMonthlyReportData', () => {
+  it('対象月に記録がある場合はtrueを返す', () => {
+    const report = createMonthlyReport([log('2026-04-01', 1000)], [], { year: 2026, month: 4 });
+
+    expect(hasMonthlyReportData(report)).toBe(true);
+  });
+
+  it('対象月に記録が一切ない場合はfalseを返す', () => {
+    const report = createMonthlyReport([], [], { year: 2026, month: 4 });
+
+    expect(hasMonthlyReportData(report)).toBe(false);
+  });
+
+  it('別の月の記録しかない場合はfalseを返す', () => {
+    const report = createMonthlyReport([log('2026-05-01', 1000)], [], { year: 2026, month: 4 });
+
+    expect(hasMonthlyReportData(report)).toBe(false);
   });
 });

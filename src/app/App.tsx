@@ -188,7 +188,6 @@ export default function App() {
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
-  const hasCenteredOnCustomLocationRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
@@ -636,20 +635,18 @@ export default function App() {
   // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
   useForegroundUserLocation(!userLocationIcon.useNativeUserLocation, applyUserLocation);
 
-  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、初回の現在地取得後に
-  // 一度だけ現在地へセンタリングする（前景ウォッチの初回更新がMapViewマウント前に届き、
-  // applyUserLocation内のanimateToRegionが空振りするケースを補う）。
+  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、追従中は現在地更新の
+  // たびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
+  // effectはマウント後に走るためmapRefが揃っており、起動直後のワイド表示固定も解消できる。
   useEffect(() => {
     if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
-      hasCenteredOnCustomLocationRef.current = false;
       return;
     }
 
-    if (!isFollowingUserLocation || !userCoordinate || hasCenteredOnCustomLocationRef.current) {
+    if (!isFollowingUserLocation || !userCoordinate) {
       return;
     }
 
-    hasCenteredOnCustomLocationRef.current = true;
     centerOnCoordinate(userCoordinate, false);
   }, [screenMode, userLocationIcon.useNativeUserLocation, isFollowingUserLocation, userCoordinate]);
 

@@ -83,6 +83,8 @@ import { getGridBoundsForRegion, GridCellPolygonSource } from '../features/locat
 import { getVisitedCellsInBounds } from '../features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '../features/map/gridOverlay';
 import { GRID_OVERLAY_CONFIG } from '../features/map/config/gridOverlayConfig';
+import { shouldRequestReviewAfterAchievement } from '../features/review/reviewPromptLogic';
+import { requestStoreReview } from '../features/review/storeReview';
 import { DailyLogSummary, LocationPoint } from '../types/gps';
 import { toLocalDate } from '../utils/date';
 import type { LatLng, MapType } from 'react-native-maps';
@@ -129,6 +131,7 @@ const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 const APP_COLOR_PRESET_SETTING_KEY = 'appColorPresetId';
 /** カスタムアイコン画像URIをSQLiteへ保存するキー。 */
 const CUSTOM_ICON_IMAGE_URI_SETTING_KEY = 'customIconImageUri';
+const REVIEW_PROMPTED_SETTING_KEY = 'reviewPrompted';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
 
@@ -212,6 +215,7 @@ export default function App() {
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
   const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
+  const [hasPromptedReview, setHasPromptedReview] = useState(false);
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
@@ -469,18 +473,20 @@ export default function App() {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
-        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon, savedAppColorPresetId, savedCustomIconImageUri] = await Promise.all([
+        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon, savedAppColorPresetId, savedCustomIconImageUri, savedReviewPrompted] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
           getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
+          getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
         setShowPhotosOnMap(savedShowPhotosOnMap);
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
         setCustomIconImageUri(savedCustomIconImageUri || null);
+        setHasPromptedReview(savedReviewPrompted);
         getPremiumAccessState()
           .then(setPremiumAccessState)
           .catch((error: unknown) => {
@@ -890,9 +896,30 @@ export default function App() {
       return;
     }
 
+    const hasPendingAfterClose = pendingAchievementNotifications.length > 1;
+
     dismissedAchievementQueueIdsRef.current.add(current.queueId);
     markAchievementShownInApp(current.queueId).catch(() => undefined);
     setPendingAchievementNotifications((notifications) => notifications.slice(1));
+
+    if (
+      shouldRequestReviewAfterAchievement({
+        dismissedAchievementId: current.definition.id,
+        hasPendingNotifications: hasPendingAfterClose,
+        hasAlreadyPrompted: hasPromptedReview,
+      })
+    ) {
+      setHasPromptedReview(true);
+      setSetting(REVIEW_PROMPTED_SETTING_KEY, true).catch((error: unknown) => {
+        console.warn('Failed to persist review prompted flag:', error);
+      });
+      // ダイアログ退場アニメーション（約500ms）と被らないよう少し遅らせて要求する。
+      setTimeout(() => {
+        requestStoreReview().catch((error: unknown) => {
+          console.warn('Failed to request store review:', error);
+        });
+      }, 700);
+    }
   }
 
   /** OS標準共有シートへ実績共有文言を渡す。 */

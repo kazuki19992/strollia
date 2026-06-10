@@ -212,6 +212,9 @@ export default function App() {
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
+  // ネイティブ地図の初期化完了フラグ。onMapReady前のanimateToRegionはネイティブ側で
+  // 無視されるため、カスタムアイコンの初回センタリングは準備完了を待ってから実行する。
+  const [isMapReady, setIsMapReady] = useState(false);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   /** DBから取得して表示セルサイズへ集約したvisited cell。表示用フェードとは分けて保持する。 */
   const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
@@ -658,20 +661,30 @@ export default function App() {
   // オーナーとして追従センタリングを担う（applyUserLocation側はOS標準時のみセンタリングする）。
   // 追従中は現在地更新のたびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
   //
-  // applyUserLocationがカスタム時にanimateToRegionを呼ばなくなったため、「現在地がMapViewマウント前に
-  // 届いてセンタリングが空振りする」事象は発生しない。effectはコミット後に走り、かつscreenMode==='map'
-  // （=MapView描画済み）でしか進まないため、ここに来る時点でmapRefは必ず揃っている。
+  // 起動直後は前景ウォッチの初回更新（getLastKnownPositionAsync）がネイティブ地図の初期化完了より
+  // 先に届くことがあり、その時点のanimateToRegionはネイティブ側で無視される。さらに静止中は
+  // watchPositionAsyncが再発火しないため再センタリングの機会がなく、広域initialRegionで固定されてしまう。
+  // これを防ぐためisMapReady（onMapReady）を待ってからセンタリングする。現在地が先に届いていれば
+  // 準備完了時に、準備完了が先なら現在地到着時に、いずれの順序でも確実にセンタリングが走る。
   useEffect(() => {
     if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
       return;
     }
 
-    if (!isFollowingUserLocation || !userCoordinate) {
+    if (!isMapReady || !isFollowingUserLocation || !userCoordinate) {
       return;
     }
 
     centerOnCoordinate(userCoordinate, false);
-  }, [screenMode, userLocationIcon.useNativeUserLocation, isFollowingUserLocation, userCoordinate]);
+  }, [screenMode, userLocationIcon.useNativeUserLocation, isMapReady, isFollowingUserLocation, userCoordinate]);
+
+  // MapViewは地図画面でのみマウントされる。地図から離れたら準備完了フラグを倒し、再表示時の
+  // 新しいネイティブ地図がonMapReadyを発火するまでカスタムセンタリングを待たせる。
+  useEffect(() => {
+    if (screenMode !== 'map') {
+      setIsMapReady(false);
+    }
+  }, [screenMode]);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
@@ -794,6 +807,15 @@ export default function App() {
    */
   function handleRegionChangeComplete(region: Region): void {
     setVisibleRegion(region);
+  }
+
+  /**
+   * ネイティブ地図の初期化完了を受けて、カスタムアイコンの初回センタリングを解禁する。
+   *
+   * @returns なし。
+   */
+  function handleMapReady(): void {
+    setIsMapReady(true);
   }
 
   /**
@@ -1287,6 +1309,7 @@ export default function App() {
               currentSpeedKmh={currentSpeedKmh}
               currentAreaLabel={currentAreaLabel}
               recenterButtonOpacity={recenterButtonOpacity}
+              onMapReady={handleMapReady}
               onUserLocationChange={handleUserLocationChange}
               onPanDrag={handleMapPanDrag}
               onRegionChangeComplete={handleRegionChangeComplete}

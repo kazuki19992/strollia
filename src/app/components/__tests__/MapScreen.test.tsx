@@ -77,6 +77,7 @@ function createProps() {
     currentSpeedKmh: 7,
     currentAreaLabel: { primary: '千代田区', secondary: '神田' },
     recenterButtonOpacity: new Animated.Value(0),
+    onMapReady: jest.fn(),
     onUserLocationChange: jest.fn(),
     onPanDrag: jest.fn(),
     onRegionChangeComplete: jest.fn(),

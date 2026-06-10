@@ -105,6 +105,7 @@ import { SettingsScreen } from './components/SettingsScreen';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
 import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
 import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
+import { useForegroundUserLocation } from './hooks/useForegroundUserLocation';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
@@ -618,6 +619,8 @@ export default function App() {
     setMessage,
   });
   useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
+  // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
+  useForegroundUserLocation(!userLocationIcon.useNativeUserLocation, applyUserLocation);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
@@ -691,9 +694,22 @@ export default function App() {
       return;
     }
 
-    const nextCoordinate = { latitude: coordinate.latitude, longitude: coordinate.longitude };
+    applyUserLocation(coordinate.latitude, coordinate.longitude, coordinate.speed);
+  }
+
+  /**
+   * 緯度経度と速度から現在地・速度表示・追従を更新する。
+   * OS標準の位置イベントと前景ウォッチの両方から呼ばれる。
+   *
+   * @param latitude - 緯度。
+   * @param longitude - 経度。
+   * @param speed - m/s単位の速度。取得できない場合はnull/undefined。
+   * @returns なし。
+   */
+  function applyUserLocation(latitude: number, longitude: number, speed: number | null | undefined): void {
+    const nextCoordinate = { latitude, longitude };
     setUserCoordinate(nextCoordinate);
-    const nextSpeedKmh = toDisplaySpeedKmh(coordinate.speed);
+    const nextSpeedKmh = toDisplaySpeedKmh(speed ?? null);
 
     if (nextSpeedKmh != null) {
       setCurrentSpeedKmh(nextSpeedKmh);

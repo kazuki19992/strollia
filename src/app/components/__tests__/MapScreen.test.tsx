@@ -289,11 +289,26 @@ describe('地図画面 MapScreen', () => {
     expect(rerenderedMapView.props.mapPadding).toBe(firstMapPadding);
   });
 
-  test('カスタムアイコン時もOS標準の現在地表示を常に有効にする', () => {
+  test('カスタムアイコン時はOS標準の現在地ドットを隠す', () => {
     const props = {
       ...createProps(),
       userLocationIcon: { useNativeUserLocation: false, customIconId: 'walker' as const, customImageUri: null },
       userCoordinate: { latitude: 35, longitude: 139 },
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+    });
+
+    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
+    expect(mapView.props.showsUserLocation).toBe(false);
+  });
+
+  test('OS標準アイコン時はOS標準の現在地ドットを表示する', () => {
+    const props = {
+      ...createProps(),
+      userLocationIcon: { useNativeUserLocation: true, customIconId: null, customImageUri: null },
     };
     let renderer: any;
 

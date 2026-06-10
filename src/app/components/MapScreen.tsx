@@ -167,8 +167,8 @@ export function MapScreen({
         initialRegion={initialRegion}
         mapType={mapType}
         showsCompass
-        showsUserLocation={userLocationIcon.useNativeUserLocation}
-        followsUserLocation={isFollowingUserLocation && userLocationIcon.useNativeUserLocation}
+        showsUserLocation
+        followsUserLocation={isFollowingUserLocation}
         onUserLocationChange={onUserLocationChange}
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}

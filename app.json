@@ -19,7 +19,21 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
         "NSLocationAlwaysUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
-        "NSPhotoLibraryUsageDescription": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。"
+        "NSPhotoLibraryUsageDescription": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。",
+        "CFBundleSpotlightKeywords": [
+          "すとろりあ",
+          "Strollia",
+          "strollia",
+          "おさんぽ",
+          "散歩",
+          "さんぽ",
+          "GPSログ",
+          "移動ログ",
+          "ライフログ",
+          "地図",
+          "旅行",
+          "徒歩"
+        ]
       },
       "bundleIdentifier": "com.kazuki19992.strollia",
       "icon": "./assets/app.icon"

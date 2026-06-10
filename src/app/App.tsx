@@ -24,6 +24,11 @@ import MapView, { Region, UserLocationChangeEvent } from 'react-native-maps';
 import { initializeDatabase } from '../db/database';
 import { AchievementDefinition } from '../features/achievements/achievementDefinitions';
 import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '../config/developmentFlags';
+import {
+  PRIVACY_POLICY_URL,
+  SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL,
+  TERMS_OF_SERVICE_URL,
+} from '../config/legalLinks';
 import { initializeAchievementNotificationHandler, requestAchievementNotificationPermissionOnFirstLaunch, setupAchievementNotificationChannel } from '../features/achievements/achievementNotificationService';
 import {
   AchievementListItem,
@@ -873,6 +878,13 @@ export default function App() {
     navigateToScreen('settings');
   }
 
+  /** 設定画面から法務ページを端末のブラウザで開く。 */
+  function openLegalLink(url: string): void {
+    Linking.openURL(url).catch((error: unknown) => {
+      console.warn('Failed to open legal link:', error);
+    });
+  }
+
   /**
    * 標準地図とラベル付き航空写真を切り替える。
    *
@@ -1290,6 +1302,9 @@ export default function App() {
                         onUpdateUserLocationIcon={updateUserLocationIcon}
                         onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
+                        onOpenTermsOfService={() => openLegalLink(TERMS_OF_SERVICE_URL)}
+                        onOpenPrivacyPolicy={() => openLegalLink(PRIVACY_POLICY_URL)}
+                        onOpenSpecifiedCommercialTransactionAct={() => openLegalLink(SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL)}
                         onPurchaseMonthlyPremiumPackage={() => {
                           purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
                             console.warn('Failed to purchase monthly premium package:', error);

@@ -186,6 +186,14 @@ export function SettingsScreen({
             />
           </View>
 
+          {isPlusActive ? (
+            <AppColorPicker
+              styles={styles}
+              theme={theme}
+              selectedPresetId={selectedAppColorPresetId}
+              onUpdatePreset={onUpdateAppColorPreset}
+            />
+          ) : null}
         </ScreenSection>
 
         <ScreenSection styles={styles} title="地図画面設定">
@@ -235,21 +243,13 @@ export function SettingsScreen({
           </OptionGroup>
 
           {isPlusActive ? (
-            <>
-              <UserLocationIconPicker
-                isPlusActive={isPlusActive}
-                selectedUserLocationIconId={selectedUserLocationIconId}
-                styles={styles}
-                theme={theme}
-                onUpdateUserLocationIcon={onUpdateUserLocationIcon}
-              />
-              <AppColorPicker
-                styles={styles}
-                theme={theme}
-                selectedPresetId={selectedAppColorPresetId}
-                onUpdatePreset={onUpdateAppColorPreset}
-              />
-            </>
+            <UserLocationIconPicker
+              isPlusActive={isPlusActive}
+              selectedUserLocationIconId={selectedUserLocationIconId}
+              styles={styles}
+              theme={theme}
+              onUpdateUserLocationIcon={onUpdateUserLocationIcon}
+            />
           ) : null}
         </ScreenSection>
 

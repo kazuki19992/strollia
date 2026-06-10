@@ -965,6 +965,29 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '400',
       lineHeight: 18,
     },
+    aboutAppBodyText: {
+      color: settingsText,
+      fontSize: 14,
+      fontWeight: '400',
+      lineHeight: 22,
+    },
+    aboutAppContent: {
+      gap: 22,
+      paddingBottom: 34,
+      paddingHorizontal: 24,
+      paddingTop: 2,
+    },
+    aboutAppIcon: {
+      borderRadius: 24,
+      height: 112,
+      width: 112,
+    },
+    aboutAppIconWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingBottom: 6,
+      paddingTop: 4,
+    },
     licenseDetail: {
       gap: 20,
       paddingBottom: 34,

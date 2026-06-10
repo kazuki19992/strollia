@@ -73,7 +73,11 @@ function createProps() {
     onUpdateUserLocationIcon: jest.fn(),
     selectedAppColorPresetId: 'matcha' as AppColorPresetId,
     onUpdateAppColorPreset: jest.fn(),
+    onOpenAboutAppScreen: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
+    onOpenTermsOfService: jest.fn(),
+    onOpenPrivacyPolicy: jest.fn(),
+    onOpenSpecifiedCommercialTransactionAct: jest.fn(),
     onPurchaseMonthlyPremiumPackage: jest.fn(),
     onPurchaseYearlyPremiumPackage: jest.fn(),
     onPresentPremiumCustomerCenter: jest.fn(),
@@ -105,6 +109,31 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('GPS記録中!');
     expect(texts).toContain('あなたの位置情報はすとろりあがしっかりと記録しています！\n冒険にでかけましょう！');
     expect(texts).toContain('GPXファイルのエクスポート');
+  });
+
+  test('このアプリについてをライセンスより上に表示して開ける', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const aboutIndex = texts.indexOf('このアプリについて');
+    const licenseIndex = texts.indexOf('オープンソースライセンス');
+
+    expect(aboutIndex).toBeGreaterThanOrEqual(0);
+    expect(licenseIndex).toBeGreaterThanOrEqual(0);
+    expect(aboutIndex).toBeLessThan(licenseIndex);
+
+    const aboutButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenAboutAppScreen)[0];
+
+    act(() => {
+      aboutButton.props.onPress();
+    });
+
+    expect(props.onOpenAboutAppScreen).toHaveBeenCalledTimes(1);
   });
 
   test('ダークモードでもGPS正常パネルはライトモードと同じ白文字で表示する', () => {
@@ -468,6 +497,42 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     expect(props.onOpenLicenseScreen).toHaveBeenCalledTimes(1);
+  });
+
+  test('ライセンスの下に法務リンクを順番に表示して開ける', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const licenseIndex = texts.indexOf('オープンソースライセンス');
+    const termsIndex = texts.indexOf('利用規約');
+    const privacyIndex = texts.indexOf('プライバシーポリシー');
+    const commercialIndex = texts.indexOf('特商法に基づく表記');
+
+    expect(licenseIndex).toBeGreaterThanOrEqual(0);
+    expect(termsIndex).toBeGreaterThan(licenseIndex);
+    expect(privacyIndex).toBeGreaterThan(termsIndex);
+    expect(commercialIndex).toBeGreaterThan(privacyIndex);
+
+    const termsButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenTermsOfService)[0];
+    const privacyButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenPrivacyPolicy)[0];
+    const commercialButton = renderer.root.findAll(
+      (node: any) => node.props.onPress === props.onOpenSpecifiedCommercialTransactionAct,
+    )[0];
+
+    act(() => {
+      termsButton.props.onPress();
+      privacyButton.props.onPress();
+      commercialButton.props.onPress();
+    });
+
+    expect(props.onOpenTermsOfService).toHaveBeenCalledTimes(1);
+    expect(props.onOpenPrivacyPolicy).toHaveBeenCalledTimes(1);
+    expect(props.onOpenSpecifiedCommercialTransactionAct).toHaveBeenCalledTimes(1);
   });
 
   test('GPXをインポート押下でonImportGpxを呼び出す', () => {

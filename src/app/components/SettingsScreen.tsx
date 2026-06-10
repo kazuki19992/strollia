@@ -82,8 +82,16 @@ export type SettingsScreenProps = {
   selectedAppColorPresetId: AppColorPresetId;
   /** アプリカラープリセット更新処理。 */
   onUpdateAppColorPreset: (presetId: AppColorPresetId) => void;
+  /** このアプリについて画面を開く処理。 */
+  onOpenAboutAppScreen: () => void;
   /** OSSライセンス画面を開く処理。 */
   onOpenLicenseScreen: () => void;
+  /** 利用規約を開く処理。 */
+  onOpenTermsOfService: () => void;
+  /** プライバシーポリシーを開く処理。 */
+  onOpenPrivacyPolicy: () => void;
+  /** 特商法に基づく表記を開く処理。 */
+  onOpenSpecifiedCommercialTransactionAct: () => void;
   /** RevenueCat月払いPackageを購入する処理。 */
   onPurchaseMonthlyPremiumPackage: () => void;
   /** RevenueCat年払いPackageを購入する処理。 */
@@ -141,7 +149,11 @@ export function SettingsScreen({
   onToggleMapType,
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
+  onOpenAboutAppScreen,
   onOpenLicenseScreen,
+  onOpenTermsOfService,
+  onOpenPrivacyPolicy,
+  onOpenSpecifiedCommercialTransactionAct,
   onPurchaseMonthlyPremiumPackage,
   onPurchaseYearlyPremiumPackage,
   onPresentPremiumCustomerCenter,
@@ -355,10 +367,38 @@ export function SettingsScreen({
         <ScreenSection styles={styles} title="アプリ情報">
           <ActionPill
             alignLeft
+            icon={<Feather name="info" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="このアプリについて"
+            styles={styles}
+            onPress={onOpenAboutAppScreen}
+          />
+          <ActionPill
+            alignLeft
             icon={<Feather name="file-text" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
             label="オープンソースライセンス"
             styles={styles}
             onPress={onOpenLicenseScreen}
+          />
+          <ActionPill
+            alignLeft
+            icon={<Feather name="external-link" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="利用規約"
+            styles={styles}
+            onPress={onOpenTermsOfService}
+          />
+          <ActionPill
+            alignLeft
+            icon={<Feather name="external-link" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="プライバシーポリシー"
+            styles={styles}
+            onPress={onOpenPrivacyPolicy}
+          />
+          <ActionPill
+            alignLeft
+            icon={<Feather name="external-link" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="特商法に基づく表記"
+            styles={styles}
+            onPress={onOpenSpecifiedCommercialTransactionAct}
           />
         </ScreenSection>
       </ScrollView>

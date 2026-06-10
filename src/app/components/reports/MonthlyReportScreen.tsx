@@ -7,7 +7,7 @@ import { captureRef } from 'react-native-view-shot';
 
 import { AchievementListItem } from '../../../features/achievements/achievementRepository';
 import { MonthlyAreaReport } from '../../../features/reports/monthlyAreaReport';
-import { createMonthlyReport, getPreviousReportMonth, MonthlyReport } from '../../../features/reports/monthlyReport';
+import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData, MonthlyReport } from '../../../features/reports/monthlyReport';
 import { createInitialRegion, toRenderRouteCoordinates } from '../../../features/map/routeMapper';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 import type { AppTheme } from '../../../theme/theme';
@@ -95,7 +95,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
   const reportRouteCoordinates = useMemo(() => toRenderRouteCoordinates(report.routePoints), [report.routePoints]);
   const reportMapRegion = useMemo(() => createInitialRegion(report.routePoints), [report.routePoints]);
   const monthlyAchievements = achievements.filter((item) => item.unlockedAt?.startsWith(report.label)).slice(0, 6);
-  const hasReportData = report.activeDays > 0 || report.routePoints.length > 0 || report.totalDistanceMeters > 0;
+  const hasReportData = hasMonthlyReportData(report);
   const prefectureRanking = rankingLabels.map((rank, index) => ({
     rank,
     item: monthlyAreaReport?.prefectureRanking[index] ?? null,

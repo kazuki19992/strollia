@@ -43,6 +43,18 @@ export function isInReportMonth(localDate: string, month: ReportMonth): boolean 
   return localDate.startsWith(formatReportMonth(month));
 }
 
+/**
+ * 月次レポートに表示できる記録があるか判定する。
+ *
+ * 記録日数・GPSポイント・総移動距離のいずれかがあれば表示可能とみなす。
+ *
+ * @param report - 判定対象の月次レポート。
+ * @returns 表示できる記録があればtrue。
+ */
+export function hasMonthlyReportData(report: MonthlyReport): boolean {
+  return report.activeDays > 0 || report.routePoints.length > 0 || report.totalDistanceMeters > 0;
+}
+
 /** 月次レポートを生成する。 */
 export function createMonthlyReport(dailyLogs: DailyLogSummary[], points: LocationPoint[], month = getReportMonth()): MonthlyReport {
   const monthlyLogs = dailyLogs.filter((log) => isInReportMonth(log.localDate, month));

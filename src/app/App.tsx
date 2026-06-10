@@ -654,8 +654,9 @@ export default function App() {
   // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
   useForegroundUserLocation(!userLocationIcon.useNativeUserLocation, applyUserLocation);
 
-  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、追従中は現在地更新の
-  // たびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
+  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、このeffectが唯一の
+  // オーナーとして追従センタリングを担う（applyUserLocation側はOS標準時のみセンタリングする）。
+  // 追従中は現在地更新のたびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
   // effectはマウント後に走るためmapRefが揃っており、起動直後のワイド表示固定も解消できる。
   useEffect(() => {
     if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
@@ -766,7 +767,9 @@ export default function App() {
       setCurrentSpeedKmh(nextSpeedKmh);
     }
 
-    if (isFollowingUserLocation) {
+    // OS標準アイコン時のみここでセンタリングする。カスタムアイコン時は専用effectが
+    // 唯一のオーナーとして追従するため、ここで重複してanimateToRegionを呼ばない。
+    if (isFollowingUserLocation && userLocationIcon.useNativeUserLocation) {
       centerOnCoordinate(nextCoordinate, false);
     }
   }

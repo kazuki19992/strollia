@@ -17,6 +17,7 @@ import {
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
 } from '../../features/premium/revenueCatAccess';
+import { getBooleanSetting, setSetting } from '../../features/settings/settingsRepository';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -161,6 +162,20 @@ jest.mock('../components/AchievementListScreen', () => ({
 
 jest.mock('../components/AchievementUnlockModal', () => ({
   AchievementUnlockModal: () => null,
+}));
+
+jest.mock('../components/FirstLaunchTutorialDialog', () => ({
+  FirstLaunchTutorialDialog: (props: any) => {
+    const { Pressable, Text } = require('react-native');
+
+    if (!props.visible) return null;
+
+    return (
+      <Pressable accessibilityLabel="初回チュートリアルを完了" onPress={props.onComplete}>
+        <Text>初回チュートリアル</Text>
+      </Pressable>
+    );
+  },
 }));
 
 jest.mock('../components/PhotoPreviewModals', () => ({
@@ -386,6 +401,14 @@ describe('App 地図復帰時の表示範囲復元', () => {
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
     mockPremiumCustomerInfoUpdate = null;
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(false);
+      }
+
+      return Promise.resolve(fallback);
+    });
+    (setSetting as jest.Mock).mockResolvedValue(undefined);
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -500,6 +523,45 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
+  });
+
+  test('初回チュートリアル未完了の場合は初回チュートリアルを表示する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+  });
+
+  test('初回チュートリアル完了時に表示済み設定を保存する', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+    });
+
+    expect(setSetting).toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
+  });
+
+  test('初回チュートリアル完了済みの場合は表示しない', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(true);
+      }
+
+      return Promise.resolve(fallback);
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(renderer.root.findAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
   });
 
   test('起動時にRevenueCat CustomerInfo更新を購読しアンマウント時に解除する', async () => {

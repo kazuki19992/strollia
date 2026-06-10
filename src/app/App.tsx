@@ -103,6 +103,7 @@ import { AboutAppScreen } from './components/AboutAppScreen';
 import { DailyLogDetailScreen } from './components/DailyLogDetailScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
+import { FirstLaunchTutorialDialog } from './components/FirstLaunchTutorialDialog';
 import { LicenseDetailScreen, LicenseScreen } from './components/LicenseScreen';
 import type { OssLicenseEntry } from './generated/ossLicenses';
 import { MapScreen } from './components/MapScreen';
@@ -137,6 +138,8 @@ const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 const APP_COLOR_PRESET_SETTING_KEY = 'appColorPresetId';
 /** カスタムアイコン画像URIをSQLiteへ保存するキー。 */
 const CUSTOM_ICON_IMAGE_URI_SETTING_KEY = 'customIconImageUri';
+/** 初回起動チュートリアル完了状態をSQLiteへ保存するキー。 */
+const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialCompleted';
 const REVIEW_PROMPTED_SETTING_KEY = 'reviewPrompted';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
@@ -223,6 +226,7 @@ export default function App() {
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
   const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
+  const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
@@ -480,13 +484,22 @@ export default function App() {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
-        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon, savedAppColorPresetId, savedCustomIconImageUri, savedReviewPrompted] = await Promise.all([
+        const [
+          savedKeepScreenAwake,
+          savedShowPhotosOnMap,
+          savedUserLocationIcon,
+          savedAppColorPresetId,
+          savedCustomIconImageUri,
+          savedReviewPrompted,
+          savedFirstLaunchTutorialCompleted,
+        ] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
           getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
           getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
+          getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
         setShowPhotosOnMap(savedShowPhotosOnMap);
@@ -515,6 +528,9 @@ export default function App() {
         await maybeStartRecordingAutomatically(initialState);
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         await refreshAchievementState(true);
+        if (!savedFirstLaunchTutorialCompleted) {
+          setIsFirstLaunchTutorialVisible(true);
+        }
       })
       .catch((error: unknown) => {
         setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
@@ -1171,6 +1187,14 @@ export default function App() {
     Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。設定画面の月払いまたは年払いから加入してください。`);
   }
 
+  /** 初回チュートリアルを閉じ、次回以降は表示しないよう保存する。 */
+  function completeFirstLaunchTutorial(): void {
+    setIsFirstLaunchTutorialVisible(false);
+    setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
+      console.warn('Failed to persist first launch tutorial flag:', error);
+    });
+  }
+
 
   if (!isReady) {
     return (
@@ -1427,6 +1451,12 @@ export default function App() {
             console.warn('restorePurchasesFromSettings failed:', error);
           });
         }}
+      />
+
+      <FirstLaunchTutorialDialog
+        visible={isFirstLaunchTutorialVisible}
+        styles={styles}
+        onComplete={completeFirstLaunchTutorial}
       />
 
       <PhotoPreviewModals

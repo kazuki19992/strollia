@@ -178,6 +178,7 @@ export default function App() {
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
+  const hasCenteredOnCustomLocationRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
@@ -621,6 +622,23 @@ export default function App() {
   useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
   // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
   useForegroundUserLocation(!userLocationIcon.useNativeUserLocation, applyUserLocation);
+
+  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、初回の現在地取得後に
+  // 一度だけ現在地へセンタリングする（前景ウォッチの初回更新がMapViewマウント前に届き、
+  // applyUserLocation内のanimateToRegionが空振りするケースを補う）。
+  useEffect(() => {
+    if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
+      hasCenteredOnCustomLocationRef.current = false;
+      return;
+    }
+
+    if (!isFollowingUserLocation || !userCoordinate || hasCenteredOnCustomLocationRef.current) {
+      return;
+    }
+
+    hasCenteredOnCustomLocationRef.current = true;
+    centerOnCoordinate(userCoordinate, false);
+  }, [screenMode, userLocationIcon.useNativeUserLocation, isFollowingUserLocation, userCoordinate]);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。

@@ -657,7 +657,10 @@ export default function App() {
   // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、このeffectが唯一の
   // オーナーとして追従センタリングを担う（applyUserLocation側はOS標準時のみセンタリングする）。
   // 追従中は現在地更新のたびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
-  // effectはマウント後に走るためmapRefが揃っており、起動直後のワイド表示固定も解消できる。
+  //
+  // applyUserLocationがカスタム時にanimateToRegionを呼ばなくなったため、「現在地がMapViewマウント前に
+  // 届いてセンタリングが空振りする」事象は発生しない。effectはコミット後に走り、かつscreenMode==='map'
+  // （=MapView描画済み）でしか進まないため、ここに来る時点でmapRefは必ず揃っている。
   useEffect(() => {
     if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
       return;

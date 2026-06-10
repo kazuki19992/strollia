@@ -1736,14 +1736,6 @@ export function createStyles(theme: AppTheme) {
       gap: 10,
       justifyContent: 'space-between',
     },
-    optionGroupNote: {
-      color: settingsMuted,
-      flexShrink: 1,
-      fontSize: 9,
-      fontWeight: '400',
-      lineHeight: 12,
-      textAlign: 'right',
-    },
     settingsPlusBadge: {
       backgroundColor: colors.primary,
       borderRadius: 6,

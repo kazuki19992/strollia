@@ -49,10 +49,7 @@ export function PremiumPaywallModal({
   onRestorePremiumPurchases,
 }: PremiumPaywallModalProps) {
   /** フォールバック価格は本番の定価と一致しており、Offering 未取得時に表示される暫定値。 */
-  const monthlyPriceText =
-    premiumOfferingSummary?.packages.find((p) => p.packageType === 'MONTHLY')?.priceText ?? '300円';
-  const yearlyPriceText =
-    premiumOfferingSummary?.packages.find((p) => p.packageType === 'ANNUAL')?.priceText ?? '3300円';
+
 
   return (
     <Modal
@@ -85,7 +82,7 @@ export function PremiumPaywallModal({
             borderColor={theme.colors.primary}
             disabled={isPurchasingPremiumPackage}
             icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-            label={isPurchasingPremiumPackage ? '購入処理中...' : `月払い(${monthlyPriceText})ではじめる！`}
+            label={isPurchasingPremiumPackage ? '購入処理中...' : '月額300円ではじめる！'}
             styles={styles}
             textColor={theme.colors.primary}
             onPress={onPurchaseMonthlyPremiumPackage}
@@ -96,7 +93,7 @@ export function PremiumPaywallModal({
             borderColor={theme.colors.primary}
             disabled={isPurchasingPremiumPackage}
             icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-            label={isPurchasingPremiumPackage ? '購入処理中...' : `年払い(${yearlyPriceText})ではじめる！`}
+            label={isPurchasingPremiumPackage ? '購入処理中...' : '年額3300円ではじめる！'}
             styles={styles}
             textColor={theme.colors.primary}
             onPress={onPurchaseYearlyPremiumPackage}

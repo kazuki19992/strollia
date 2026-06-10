@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 
+import { getAppColorPreset } from '../features/customization/colorPresets';
 import { NUMERIC_DISPLAY_FONT } from '../theme/fonts';
 import { AppTheme } from '../theme/theme';
 
@@ -21,6 +22,12 @@ function hexToRgba(hex: string, alpha: number): string {
  */
 export function createStyles(theme: AppTheme) {
   const { colors } = theme;
+  // Plusバッジはアプリカラープリセットに関わらず常に「まっちゃ」色を使う。
+  // 文字色もまっちゃプリセットのprimaryTextを使い、両モードでコントラストを保つ。
+  const matchaPreset = getAppColorPreset('matcha');
+  const matchaColors = theme.name === 'dark' ? matchaPreset.dark : matchaPreset.light;
+  const plusBadgeColor = matchaColors.primary;
+  const plusBadgeTextColor = matchaColors.primaryText;
   const mapPanelBackground = 'rgba(51, 51, 51, 0.80)';
   const mapPanelText = '#ffffff';
   const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
@@ -346,6 +353,13 @@ export function createStyles(theme: AppTheme) {
       shadowRadius: 14,
       width: 42,
     },
+    customUserLocationMarkerImage: {
+      borderColor: colors.card,
+      borderRadius: 999,
+      borderWidth: 3,
+      height: 42,
+      width: 42,
+    },
     customizationOption: {
       backgroundColor: colors.cardStrong,
       borderColor: colors.border,
@@ -371,6 +385,53 @@ export function createStyles(theme: AppTheme) {
     },
     customizationSection: {
       gap: 10,
+    },
+    colorPresetDropdownButton: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 12,
+      borderWidth: 1,
+      flex: 1,
+      flexDirection: 'row',
+      gap: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    colorPresetDot: {
+      borderRadius: 999,
+      height: 16,
+      width: 16,
+    },
+    colorPresetLabel: {
+      color: colors.text,
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    colorPresetModalBackdrop: {
+      backgroundColor: 'rgba(0, 0, 0, 0.45)',
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    colorPresetModalSheet: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingBottom: 34,
+      paddingTop: 8,
+    },
+    colorPresetRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+    },
+    colorPresetRowLabel: {
+      color: colors.text,
+      flex: 1,
+      fontSize: 16,
     },
     dangerAction: {
       alignItems: 'center',
@@ -1682,18 +1743,10 @@ export function createStyles(theme: AppTheme) {
       gap: 10,
       justifyContent: 'space-between',
     },
-    optionGroupNote: {
-      color: settingsMuted,
-      flexShrink: 1,
-      fontSize: 9,
-      fontWeight: '400',
-      lineHeight: 12,
-      textAlign: 'right',
-    },
     settingsPlusBadge: {
-      backgroundColor: colors.primary,
+      backgroundColor: plusBadgeColor,
       borderRadius: 6,
-      color: '#ffffff',
+      color: plusBadgeTextColor,
       fontSize: 11,
       fontWeight: '400',
       overflow: 'hidden',

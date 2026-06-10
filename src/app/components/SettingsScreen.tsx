@@ -1,6 +1,7 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
-import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
 
@@ -8,6 +9,11 @@ import {
   USER_LOCATION_ICON_OPTIONS,
   UserLocationIconId,
 } from '../../features/customization/customizationOptions';
+import {
+  APP_COLOR_PRESETS,
+  AppColorPresetId,
+  getAppColorPreset,
+} from '../../features/customization/colorPresets';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
 import { AppTheme } from '../../theme/theme';
 import { AutoStartStatus } from '../appTypes';
@@ -72,6 +78,10 @@ export type SettingsScreenProps = {
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
   /** 現在地アイコン更新処理。 */
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
+  /** 選択中のアプリカラープリセットID。 */
+  selectedAppColorPresetId: AppColorPresetId;
+  /** アプリカラープリセット更新処理。 */
+  onUpdateAppColorPreset: (presetId: AppColorPresetId) => void;
   /** OSSライセンス画面を開く処理。 */
   onOpenLicenseScreen: () => void;
   /** RevenueCat月払いPackageを購入する処理。 */
@@ -122,6 +132,8 @@ export function SettingsScreen({
   isPresentingPremiumCustomerCenter,
   isRestoringPremiumPurchases,
   selectedUserLocationIconId,
+  selectedAppColorPresetId,
+  onUpdateAppColorPreset,
   onBackToMap,
   onStartRecording,
   onRequestLocationPermission,
@@ -140,8 +152,6 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
   const subscriptionDescription = isPlusActive ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。` : undefined;
-  const monthlyPriceText = premiumOfferingSummary?.packages.find((candidate) => candidate.packageType === 'MONTHLY')?.priceText ?? '300円';
-  const yearlyPriceText = premiumOfferingSummary?.packages.find((candidate) => candidate.packageType === 'ANNUAL')?.priceText ?? '3300円';
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -176,6 +186,14 @@ export function SettingsScreen({
             />
           </View>
 
+          {isPlusActive ? (
+            <AppColorPicker
+              styles={styles}
+              theme={theme}
+              selectedPresetId={selectedAppColorPresetId}
+              onUpdatePreset={onUpdateAppColorPreset}
+            />
+          ) : null}
         </ScreenSection>
 
         <ScreenSection styles={styles} title="地図画面設定">
@@ -273,7 +291,7 @@ export function SettingsScreen({
                 borderColor={theme.colors.primary}
                 disabled={isPurchasingPremiumPackage}
                 icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPurchasingPremiumPackage ? '購入処理中...' : `月払い(${monthlyPriceText})ではじめる！`}
+                label={isPurchasingPremiumPackage ? '購入処理中...' : '月額300円ではじめる！'}
                 styles={styles}
                 textColor={theme.colors.primary}
                 onPress={onPurchaseMonthlyPremiumPackage}
@@ -284,7 +302,7 @@ export function SettingsScreen({
                 borderColor={theme.colors.primary}
                 disabled={isPurchasingPremiumPackage}
                 icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPurchasingPremiumPackage ? '購入処理中...' : `年払い(${yearlyPriceText})ではじめる！`}
+                label={isPurchasingPremiumPackage ? '購入処理中...' : '年額3300円ではじめる！'}
                 styles={styles}
                 textColor={theme.colors.primary}
                 onPress={onPurchaseYearlyPremiumPackage}
@@ -416,7 +434,11 @@ function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isP
       {USER_LOCATION_ICON_OPTIONS.map((option) => {
         const isSelected = selectedUserLocationIconId === option.id;
         const isLocked = option.premium && !isPlusActive;
-        const iconName: MaterialIconName = option.id === 'compass' ? 'compass-outline' : option.id === 'walker' ? 'walk' : 'crosshairs-gps';
+        const iconName: MaterialIconName =
+          option.id === 'compass' ? 'compass-outline'
+          : option.id === 'walker' ? 'walk'
+          : option.id === 'custom' ? 'image-outline'
+          : 'crosshairs-gps';
 
         return (
           <SelectionTile
@@ -434,6 +456,66 @@ function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isP
           />
         );
       })}
+    </OptionGroup>
+  );
+}
+
+type AppColorPickerProps = {
+  styles: AppStyles;
+  theme: AppTheme;
+  selectedPresetId: AppColorPresetId;
+  onUpdatePreset: (presetId: AppColorPresetId) => void;
+};
+
+/** アプリカラープリセット選択ドロップダウン。 */
+function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: AppColorPickerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedPreset = getAppColorPreset(selectedPresetId);
+  const dotColor = theme.name === 'dark' ? selectedPreset.dark.primary : selectedPreset.light.primary;
+
+  return (
+    <OptionGroup styles={styles} title="アプリカラー (Strollia Plus)" note="現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="アプリカラーを選択"
+        onPress={() => setIsOpen(true)}
+        style={styles.colorPresetDropdownButton}
+      >
+        <View style={[styles.colorPresetDot, { backgroundColor: dotColor }]} />
+        <Text style={styles.colorPresetLabel}>{selectedPreset.label}</Text>
+        <MaterialCommunityIcons name="chevron-down" size={18} color={theme.colors.mutedText} />
+      </Pressable>
+
+      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
+        <Pressable style={styles.colorPresetModalBackdrop} onPress={() => setIsOpen(false)}>
+          <View style={styles.colorPresetModalSheet}>
+            {APP_COLOR_PRESETS.map((preset) => {
+              const presetDotColor = theme.name === 'dark' ? preset.dark.primary : preset.light.primary;
+              const isSelected = preset.id === selectedPresetId;
+
+              return (
+                <Pressable
+                  key={preset.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={preset.label}
+                  accessibilityState={{ selected: isSelected }}
+                  onPress={() => {
+                    onUpdatePreset(preset.id);
+                    setIsOpen(false);
+                  }}
+                  style={styles.colorPresetRow}
+                >
+                  <View style={[styles.colorPresetDot, { backgroundColor: presetDotColor }]} />
+                  <Text style={styles.colorPresetRowLabel}>{preset.label}</Text>
+                  {isSelected && (
+                    <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
     </OptionGroup>
   );
 }

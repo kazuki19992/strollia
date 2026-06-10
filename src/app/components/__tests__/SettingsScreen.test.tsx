@@ -1,4 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
+import { AppColorPresetId } from '../../../features/customization/colorPresets';
 
 import { darkTheme, lightTheme } from '../../../theme/theme';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../../features/premium/revenueCatAccess';
@@ -70,6 +71,8 @@ function createProps() {
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
+    selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+    onUpdateAppColorPreset: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
     onPurchaseMonthlyPremiumPackage: jest.fn(),
     onPurchaseYearlyPremiumPackage: jest.fn(),
@@ -245,48 +248,24 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('Strollia Plus(有料サブスクリプション)のごあんない');
     expect(texts).toContain('月額300円の有料サービスです。年払いにすると1か月分オトクです!');
     expect(texts).toContain('いつでも解約できます。');
-    expect(texts).toContain('月払い(300円)ではじめる！');
-    expect(texts).toContain('年払い(3300円)ではじめる！');
+    expect(texts).toContain('月額300円ではじめる！');
+    expect(texts).toContain('年額3300円ではじめる！');
     expect(texts).toContain('Strollia Plusの購入を復元する');
     expect(adSvg).toBeTruthy();
     expect(adSvg.props.width).toBe('100%');
   });
 
-  test('RevenueCat Offeringの商品価格を月払いと年払いボタンに表示する', () => {
-    const props = {
-      ...createProps(),
-      premiumOfferingSummary: {
-        offeringId: 'current',
-        packages: [
-          {
-            identifier: '$rc_monthly',
-            packageType: 'MONTHLY',
-            productIdentifier: 'strollia_plus_monthly',
-            title: 'Strollia Plus Monthly',
-            description: 'Monthly plan',
-            priceText: '¥280',
-          },
-          {
-            identifier: '$rc_annual',
-            packageType: 'ANNUAL',
-            productIdentifier: 'strollia_plus_yearly',
-            title: 'Strollia Plus Annual',
-            description: 'Annual plan',
-            priceText: '¥2,800',
-          },
-        ],
-      },
-    };
+  test('購入ボタンは固定の月額300円・年額3300円を表示する', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+      renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('月払い(¥280)ではじめる！');
-    expect(texts).toContain('年払い(¥2,800)ではじめる！');
+    expect(texts).toContain('月額300円ではじめる！');
+    expect(texts).toContain('年額3300円ではじめる！');
   });
 
   test('サブスク未加入時は加入と復元ボタンを呼び出す', () => {
@@ -609,6 +588,68 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).not.toContain('GPSの記録を開始する');
   });
 
+
+  describe('Plus会員向けカスタマイズ', () => {
+    test('Plus会員はアプリカラーセクションを表示する', async () => {
+      const plusProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...plusProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).toContain('アプリカラー (Strollia Plus)');
+    });
+
+    test('アプリカラーセクションにカラー変更の説明を表示する', async () => {
+      const plusProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...plusProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).toContain('現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。');
+    });
+
+    test('アプリカラーの選択中プリセット名をドロップダウンに表示する', async () => {
+      const plusProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'sakura' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...plusProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).toContain('さくら');
+    });
+
+    test('非Plus会員はアプリカラーセクションを表示しない', async () => {
+      const freeProps = {
+        ...createProps(),
+        premiumAccessState: { isPlusActive: false, entitlementId: 'strollia_plus' },
+        selectedAppColorPresetId: 'matcha' as AppColorPresetId,
+        onUpdateAppColorPreset: jest.fn(),
+      };
+      let renderer: any;
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<SettingsScreen {...freeProps} />);
+      });
+      const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+      expect(texts).not.toContain('アプリカラー (Strollia Plus)');
+    });
+  });
 
   test('地図テーマの航空写真ボタンから地図種別を切り替える', () => {
     const props = createProps();

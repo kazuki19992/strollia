@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -58,6 +59,12 @@ import {
   UserLocationIconId,
 } from '../features/customization/customizationOptions';
 import {
+  AppColorPresetId,
+  DEFAULT_APP_COLOR_PRESET_ID,
+  getAppColorPreset,
+  isAppColorPresetId,
+} from '../features/customization/colorPresets';
+import {
   getDefaultPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
@@ -80,7 +87,7 @@ import { DailyLogSummary, LocationPoint } from '../types/gps';
 import { toLocalDate } from '../utils/date';
 import type { LatLng, MapType } from 'react-native-maps';
 import { loadAppFonts } from '../theme/fonts';
-import { getAppTheme } from '../theme/theme';
+import { getAppTheme, applyColorPreset } from '../theme/theme';
 import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementDialog } from './components/AchievementDialog';
@@ -98,6 +105,7 @@ import { SettingsScreen } from './components/SettingsScreen';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
 import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
 import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
+import { useForegroundUserLocation } from './hooks/useForegroundUserLocation';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
@@ -117,6 +125,10 @@ const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
 const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 /** 現在地アイコン設定をSQLiteへ保存するキー。 */
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
+/** アプリカラープリセット設定をSQLiteへ保存するキー。 */
+const APP_COLOR_PRESET_SETTING_KEY = 'appColorPresetId';
+/** カスタムアイコン画像URIをSQLiteへ保存するキー。 */
+const CUSTOM_ICON_IMAGE_URI_SETTING_KEY = 'customIconImageUri';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
 
@@ -149,7 +161,15 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
 /** Strolliaの画面状態、地図表示、端末API連携を束ねるルートコンポーネント。 */
 export default function App() {
   const colorScheme = useColorScheme();
-  const theme = useMemo(() => getAppTheme(colorScheme), [colorScheme]);
+  const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
+  const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
+  const theme = useMemo(() => {
+    const rawTheme = getAppTheme(colorScheme);
+    const preset = premiumAccessState.isPlusActive
+      ? getAppColorPreset(selectedAppColorPresetId)
+      : getAppColorPreset(DEFAULT_APP_COLOR_PRESET_ID);
+    return applyColorPreset(rawTheme, preset);
+  }, [colorScheme, premiumAccessState.isPlusActive, selectedAppColorPresetId]);
   const styles = useMemo(() => createStyles(theme), [theme]);
   const mapRef = useRef<MapView | null>(null);
   const autoStartInFlightRef = useRef(false);
@@ -158,6 +178,7 @@ export default function App() {
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
+  const hasCenteredOnCustomLocationRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
@@ -190,6 +211,7 @@ export default function App() {
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
+  const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
@@ -224,7 +246,6 @@ export default function App() {
     () => paginateMapPhotos(selectedPhotoCluster?.photos ?? []),
     [selectedPhotoCluster],
   );
-  const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
   const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
   const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
   const [isPurchasingPremiumPackage, setIsPurchasingPremiumPackage] = useState(false);
@@ -235,8 +256,8 @@ export default function App() {
   const [isPremiumPaywallVisible, setIsPremiumPaywallVisible] = useState(false);
   const isPremiumPaywallVisibleRef = useRef(false);
   const userLocationIcon = useMemo(
-    () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive),
-    [premiumAccessState.isPlusActive, selectedUserLocationIconId],
+    () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive, customIconImageUri),
+    [premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
@@ -448,14 +469,18 @@ export default function App() {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
-        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon] = await Promise.all([
+        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon, savedAppColorPresetId, savedCustomIconImageUri] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
+          getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
+          getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
         setShowPhotosOnMap(savedShowPhotosOnMap);
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
+        setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
+        setCustomIconImageUri(savedCustomIconImageUri || null);
         getPremiumAccessState()
           .then(setPremiumAccessState)
           .catch((error: unknown) => {
@@ -595,6 +620,25 @@ export default function App() {
     setMessage,
   });
   useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
+  // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
+  useForegroundUserLocation(!userLocationIcon.useNativeUserLocation, applyUserLocation);
+
+  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、初回の現在地取得後に
+  // 一度だけ現在地へセンタリングする（前景ウォッチの初回更新がMapViewマウント前に届き、
+  // applyUserLocation内のanimateToRegionが空振りするケースを補う）。
+  useEffect(() => {
+    if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
+      hasCenteredOnCustomLocationRef.current = false;
+      return;
+    }
+
+    if (!isFollowingUserLocation || !userCoordinate || hasCenteredOnCustomLocationRef.current) {
+      return;
+    }
+
+    hasCenteredOnCustomLocationRef.current = true;
+    centerOnCoordinate(userCoordinate, false);
+  }, [screenMode, userLocationIcon.useNativeUserLocation, isFollowingUserLocation, userCoordinate]);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
@@ -668,9 +712,22 @@ export default function App() {
       return;
     }
 
-    const nextCoordinate = { latitude: coordinate.latitude, longitude: coordinate.longitude };
+    applyUserLocation(coordinate.latitude, coordinate.longitude, coordinate.speed);
+  }
+
+  /**
+   * 緯度経度と速度から現在地・速度表示・追従を更新する。
+   * OS標準の位置イベントと前景ウォッチの両方から呼ばれる。
+   *
+   * @param latitude - 緯度。
+   * @param longitude - 経度。
+   * @param speed - m/s単位の速度。取得できない場合はnull/undefined。
+   * @returns なし。
+   */
+  function applyUserLocation(latitude: number, longitude: number, speed: number | null | undefined): void {
+    const nextCoordinate = { latitude, longitude };
     setUserCoordinate(nextCoordinate);
-    const nextSpeedKmh = toDisplaySpeedKmh(coordinate.speed);
+    const nextSpeedKmh = toDisplaySpeedKmh(speed ?? null);
 
     if (nextSpeedKmh != null) {
       setCurrentSpeedKmh(nextSpeedKmh);
@@ -883,6 +940,76 @@ export default function App() {
   }
 
   /**
+   * アプリカラープリセットを保存して即時反映する。
+   *
+   * @param presetId - 保存するプリセットID。
+   * @returns なし。
+   */
+  function updateAppColorPreset(presetId: AppColorPresetId): void {
+    triggerSelectionHaptic();
+    setSelectedAppColorPresetId(presetId);
+    setSetting(APP_COLOR_PRESET_SETTING_KEY, presetId).catch((error: unknown) => {
+      Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'アプリカラーを保存できませんでした。');
+    });
+  }
+
+  /**
+   * フォトライブラリからカスタムアイコン画像を選択して保存する。
+   * システムの正方形クロップUIを使用する。
+   */
+  async function pickCustomIcon(): Promise<void> {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        Alert.alert('権限が必要です', 'カスタムアイコンを設定するには写真へのアクセス権限が必要です。');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      setCustomIconImageUri(uri);
+      setSelectedUserLocationIconId('custom');
+      setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, uri).catch((error: unknown) => {
+        Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。');
+      });
+      setSetting(USER_LOCATION_ICON_SETTING_KEY, 'custom').catch((error: unknown) => {
+        Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
+      });
+      Alert.alert('カスタムアイコン', '写真をアルバムから削除するとOS標準に戻ります。');
+    } catch (error: unknown) {
+      Alert.alert('エラー', error instanceof Error ? error.message : 'カスタムアイコンを設定できませんでした。');
+    }
+  }
+
+  /**
+   * カスタムアイコン画像をクリアしてOS標準へ戻す。
+   * 画像URIが無効になった場合（フォトライブラリから削除など）に呼ばれる。
+   *
+   * @returns なし。
+   */
+  function clearCustomIcon(): void {
+    setCustomIconImageUri(null);
+    setSelectedUserLocationIconId(DEFAULT_USER_LOCATION_ICON_ID);
+    setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, '').catch((error: unknown) => {
+      console.warn('Failed to clear custom icon URI:', error);
+    });
+    setSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID).catch((error: unknown) => {
+      console.warn('Failed to reset icon setting:', error);
+    });
+  }
+
+  /**
    * 現在地アイコンを保存して地図へ即時反映する。
    *
    * @param iconId - 保存する現在地アイコンID。
@@ -893,6 +1020,13 @@ export default function App() {
 
     if (option.premium && !premiumAccessState.isPlusActive) {
       showPremiumLockedMessage(option.label);
+      return;
+    }
+
+    if (iconId === 'custom') {
+      pickCustomIcon().catch((error: unknown) => {
+        console.warn('pickCustomIcon failed:', error);
+      });
       return;
     }
 
@@ -1031,6 +1165,7 @@ export default function App() {
               initialRegion={initialRegion}
               mapType={mapType}
               userLocationIcon={userLocationIcon}
+              onCustomIconError={clearCustomIcon}
               isFollowingUserLocation={isFollowingUserLocation}
               userCoordinate={userCoordinate}
               visitedGridCells={visitedGridCells}
@@ -1148,6 +1283,8 @@ export default function App() {
                         onUpdateKeepScreenAwake={updateKeepScreenAwake}
                         onToggleMapType={toggleMapType}
                         onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+                        selectedAppColorPresetId={selectedAppColorPresetId}
+                        onUpdateAppColorPreset={updateAppColorPreset}
                         onUpdateUserLocationIcon={updateUserLocationIcon}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
                         onPurchaseMonthlyPremiumPackage={() => {

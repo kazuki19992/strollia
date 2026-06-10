@@ -1,5 +1,5 @@
 /** 現在地アイコンの表示スタイルID。 */
-export type UserLocationIconId = 'default' | 'walker' | 'compass';
+export type UserLocationIconId = 'default' | 'walker' | 'compass' | 'custom';
 
 /** 現在地アイコンの選択肢。 */
 export type UserLocationIconOption = {
@@ -14,11 +14,12 @@ export type UserLocationIconOption = {
 /** 初期状態で使うOS標準の現在地アイコン。 */
 export const DEFAULT_USER_LOCATION_ICON_ID: UserLocationIconId = 'default';
 
-/** 課金で開放予定の現在地アイコン候補。 */
+/** 現在地アイコン候補。 */
 export const USER_LOCATION_ICON_OPTIONS: UserLocationIconOption[] = [
   { id: 'default', label: 'OS標準', premium: false },
   { id: 'walker', label: 'さんぽ', premium: true },
   { id: 'compass', label: 'コンパス', premium: true },
+  { id: 'custom', label: 'カスタム', premium: true },
 ];
 
 /**

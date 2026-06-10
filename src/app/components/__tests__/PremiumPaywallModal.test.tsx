@@ -71,7 +71,7 @@ describe('PremiumPaywallModal', () => {
       );
     });
     const pills = renderer.root.findAllByType(ActionPill);
-    const monthlyPill = pills.find((p: any) => p.props.label?.includes('月払い'));
+    const monthlyPill = pills.find((p: any) => p.props.label?.includes('月額300円'));
     act(() => { monthlyPill.props.onPress(); });
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
@@ -85,7 +85,7 @@ describe('PremiumPaywallModal', () => {
       );
     });
     const pills = renderer.root.findAllByType(ActionPill);
-    const yearlyPill = pills.find((p: any) => p.props.label?.includes('年払い'));
+    const yearlyPill = pills.find((p: any) => p.props.label?.includes('年額3300円'));
     act(() => { yearlyPill.props.onPress(); });
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
@@ -104,25 +104,15 @@ describe('PremiumPaywallModal', () => {
     expect(onRestore).toHaveBeenCalledTimes(1);
   });
 
-  test('premiumOfferingSummary がある場合は実際の価格を表示する', async () => {
+  test('購入ボタンは固定の月額300円・年額3300円を表示する', async () => {
     let renderer: any;
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <PremiumPaywallModal
-          {...baseProps}
-          premiumOfferingSummary={{
-            offeringId: 'default',
-            packages: [
-              { identifier: '$rc_monthly', packageType: 'MONTHLY', productIdentifier: 'monthly', title: '月払い', description: '', priceText: '¥300' },
-              { identifier: '$rc_annual', packageType: 'ANNUAL', productIdentifier: 'yearly', title: '年払い', description: '', priceText: '¥3,300' },
-            ],
-          }}
-        />,
-      );
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} />);
     });
-    const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
-    expect(texts.some((t: any) => typeof t === 'string' && t.includes('¥300'))).toBe(true);
-    expect(texts.some((t: any) => typeof t === 'string' && t.includes('¥3,300'))).toBe(true);
+    const pills = renderer.root.findAllByType(ActionPill);
+    const labels = pills.map((p: any) => p.props.label);
+    expect(labels.some((l: string) => l?.includes('月額300円'))).toBe(true);
+    expect(labels.some((l: string) => l?.includes('年額3300円'))).toBe(true);
   });
 
   test('isPurchasingPremiumPackage=true のとき購入ボタンが無効化される', async () => {

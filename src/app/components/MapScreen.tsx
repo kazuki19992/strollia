@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Animated, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
+import { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
 
 import { MapPhotoCluster } from '../../features/photos/photoClusters';
@@ -30,6 +31,8 @@ type UserLocationIcon = {
   useNativeUserLocation: boolean;
   /** カスタム現在地アイコンID。 */
   customIconId: string | null;
+  /** カスタム画像URI。 */
+  customImageUri: string | null;
 };
 
 /** メイン地図画面のprops。 */
@@ -104,6 +107,8 @@ export type MapScreenProps = {
   onRequestLocationPermission: () => void;
   /** 現在地へ戻るハンドラ。 */
   onRecenterOnUserLocation: () => void;
+  /** カスタムアイコン画像の読み込みに失敗したときの処理。 */
+  onCustomIconError?: () => void;
 };
 
 /** 全履歴ルートを表示するメイン地図画面を描画する。 */
@@ -143,8 +148,16 @@ export function MapScreen({
   onOpenSettings,
   onRequestLocationPermission,
   onRecenterOnUserLocation,
+  onCustomIconError,
 }: MapScreenProps) {
   const shouldRenderVisitedGrid = gridOverlayOpacity > 0;
+  // カスタム画像マーカーは画像ロード完了までネイティブスナップショットを更新し続ける。
+  // ロード後はパフォーマンスのため更新を止める。
+  const [isCustomMarkerRendered, setIsCustomMarkerRendered] = useState(false);
+
+  useEffect(() => {
+    setIsCustomMarkerRendered(false);
+  }, [userLocationIcon.customImageUri]);
 
   return (
     <View style={styles.container}>
@@ -175,14 +188,31 @@ export function MapScreen({
             />
           ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
-          <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
-            <View style={styles.customUserLocationMarker}>
-              <MaterialCommunityIcons
-                name={userLocationIcon.customIconId === 'compass' ? 'compass' : 'walk'}
-                size={22}
-                color={theme.colors.primaryText}
+          <Marker
+            coordinate={userCoordinate}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={userLocationIcon.customImageUri ? !isCustomMarkerRendered : undefined}
+          >
+            {userLocationIcon.customImageUri ? (
+              <Image
+                source={{ uri: userLocationIcon.customImageUri }}
+                style={styles.customUserLocationMarkerImage}
+                onLoad={() => {
+                  setIsCustomMarkerRendered(true);
+                }}
+                onError={() => {
+                  onCustomIconError?.();
+                }}
               />
-            </View>
+            ) : (
+              <View style={styles.customUserLocationMarker}>
+                <MaterialCommunityIcons
+                  name={userLocationIcon.customIconId === 'compass' ? 'compass' : 'walk'}
+                  size={22}
+                  color={theme.colors.primaryText}
+                />
+              </View>
+            )}
           </Marker>
         )}
         {showPhotosOnMap &&

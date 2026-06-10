@@ -2,11 +2,12 @@ import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
 import type { AppStyles } from '../appStyles';
+import { DescriptionText } from './DescriptionText';
 
 export type OptionGroupProps = {
   /** 選択肢。 */
   children: ReactNode;
-  /** 現在設定メモ。 */
+  /** 見出し下に表示する補足説明。 */
   note?: string;
   /** 画面共通スタイル。 */
   styles: AppStyles;
@@ -20,8 +21,8 @@ export function OptionGroup({ children, note, styles, title }: OptionGroupProps)
     <View style={styles.optionGroup}>
       <View style={styles.optionGroupHeader}>
         <Text style={styles.formItemTitle}>{title}</Text>
-        {note ? <Text style={styles.optionGroupNote}>{note}</Text> : null}
       </View>
+      {note ? <DescriptionText styles={styles}>{note}</DescriptionText> : null}
       <View style={styles.optionGroupGrid}>{children}</View>
     </View>
   );

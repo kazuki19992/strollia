@@ -86,6 +86,8 @@ export type MapScreenProps = {
   currentAreaLabel: AreaLabel;
   /** 現在地ボタンの透明度。 */
   recenterButtonOpacity: Animated.Value;
+  /** ネイティブ地図の初期化完了ハンドラ。 */
+  onMapReady: () => void;
   /** 現在地更新ハンドラ。 */
   onUserLocationChange: (event: UserLocationChangeEvent) => void;
   /** 地図ドラッグハンドラ。 */
@@ -139,6 +141,7 @@ export function MapScreen({
   currentSpeedKmh,
   currentAreaLabel,
   recenterButtonOpacity,
+  onMapReady,
   onUserLocationChange,
   onPanDrag,
   onRegionChangeComplete,
@@ -172,6 +175,7 @@ export function MapScreen({
         showsCompass
         showsUserLocation={userLocationIcon.useNativeUserLocation}
         followsUserLocation={isFollowingUserLocation && userLocationIcon.useNativeUserLocation}
+        onMapReady={onMapReady}
         onUserLocationChange={onUserLocationChange}
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}

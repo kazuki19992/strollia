@@ -191,7 +191,6 @@ export default function App() {
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
-  const hasCenteredOnCustomLocationRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
@@ -213,6 +212,9 @@ export default function App() {
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
+  // ネイティブ地図の初期化完了フラグ。onMapReady前のanimateToRegionはネイティブ側で
+  // 無視されるため、カスタムアイコンの初回センタリングは準備完了を待ってから実行する。
+  const [isMapReady, setIsMapReady] = useState(false);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   /** DBから取得して表示セルサイズへ集約したvisited cell。表示用フェードとは分けて保持する。 */
   const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
@@ -655,22 +657,34 @@ export default function App() {
   // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
   useForegroundUserLocation(!userLocationIcon.useNativeUserLocation, applyUserLocation);
 
-  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、初回の現在地取得後に
-  // 一度だけ現在地へセンタリングする（前景ウォッチの初回更新がMapViewマウント前に届き、
-  // applyUserLocation内のanimateToRegionが空振りするケースを補う）。
+  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、このeffectが唯一の
+  // オーナーとして追従センタリングを担う（applyUserLocation側はOS標準時のみセンタリングする）。
+  // 追従中は現在地更新のたびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
+  //
+  // 起動直後は前景ウォッチの初回更新（getLastKnownPositionAsync）がネイティブ地図の初期化完了より
+  // 先に届くことがあり、その時点のanimateToRegionはネイティブ側で無視される。さらに静止中は
+  // watchPositionAsyncが再発火しないため再センタリングの機会がなく、広域initialRegionで固定されてしまう。
+  // これを防ぐためisMapReady（onMapReady）を待ってからセンタリングする。現在地が先に届いていれば
+  // 準備完了時に、準備完了が先なら現在地到着時に、いずれの順序でも確実にセンタリングが走る。
   useEffect(() => {
     if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
-      hasCenteredOnCustomLocationRef.current = false;
       return;
     }
 
-    if (!isFollowingUserLocation || !userCoordinate || hasCenteredOnCustomLocationRef.current) {
+    if (!isMapReady || !isFollowingUserLocation || !userCoordinate) {
       return;
     }
 
-    hasCenteredOnCustomLocationRef.current = true;
     centerOnCoordinate(userCoordinate, false);
-  }, [screenMode, userLocationIcon.useNativeUserLocation, isFollowingUserLocation, userCoordinate]);
+  }, [screenMode, userLocationIcon.useNativeUserLocation, isMapReady, isFollowingUserLocation, userCoordinate]);
+
+  // MapViewは地図画面でのみマウントされる。地図から離れたら準備完了フラグを倒し、再表示時の
+  // 新しいネイティブ地図がonMapReadyを発火するまでカスタムセンタリングを待たせる。
+  useEffect(() => {
+    if (screenMode !== 'map') {
+      setIsMapReady(false);
+    }
+  }, [screenMode]);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
@@ -769,7 +783,9 @@ export default function App() {
       setCurrentSpeedKmh(nextSpeedKmh);
     }
 
-    if (isFollowingUserLocation) {
+    // OS標準アイコン時のみここでセンタリングする。カスタムアイコン時は専用effectが
+    // 唯一のオーナーとして追従するため、ここで重複してanimateToRegionを呼ばない。
+    if (isFollowingUserLocation && userLocationIcon.useNativeUserLocation) {
       centerOnCoordinate(nextCoordinate, false);
     }
   }
@@ -791,6 +807,15 @@ export default function App() {
    */
   function handleRegionChangeComplete(region: Region): void {
     setVisibleRegion(region);
+  }
+
+  /**
+   * ネイティブ地図の初期化完了を受けて、カスタムアイコンの初回センタリングを解禁する。
+   *
+   * @returns なし。
+   */
+  function handleMapReady(): void {
+    setIsMapReady(true);
   }
 
   /**
@@ -1284,6 +1309,7 @@ export default function App() {
               currentSpeedKmh={currentSpeedKmh}
               currentAreaLabel={currentAreaLabel}
               recenterButtonOpacity={recenterButtonOpacity}
+              onMapReady={handleMapReady}
               onUserLocationChange={handleUserLocationChange}
               onPanDrag={handleMapPanDrag}
               onRegionChangeComplete={handleRegionChangeComplete}

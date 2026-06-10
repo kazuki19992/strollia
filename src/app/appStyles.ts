@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 
+import { getAppColorPreset } from '../features/customization/colorPresets';
 import { NUMERIC_DISPLAY_FONT } from '../theme/fonts';
 import { AppTheme } from '../theme/theme';
 
@@ -21,6 +22,9 @@ function hexToRgba(hex: string, alpha: number): string {
  */
 export function createStyles(theme: AppTheme) {
   const { colors } = theme;
+  // Plusバッジはアプリカラープリセットに関わらず常に「まっちゃ」色を使う。
+  const matchaPreset = getAppColorPreset('matcha');
+  const plusBadgeColor = theme.name === 'dark' ? matchaPreset.dark.primary : matchaPreset.light.primary;
   const mapPanelBackground = 'rgba(51, 51, 51, 0.80)';
   const mapPanelText = '#ffffff';
   const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
@@ -1737,7 +1741,7 @@ export function createStyles(theme: AppTheme) {
       justifyContent: 'space-between',
     },
     settingsPlusBadge: {
-      backgroundColor: colors.primary,
+      backgroundColor: plusBadgeColor,
       borderRadius: 6,
       color: '#ffffff',
       fontSize: 11,

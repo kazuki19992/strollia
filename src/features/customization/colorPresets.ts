@@ -92,8 +92,8 @@ export const APP_COLOR_PRESETS: AppColorPreset[] = [
   {
     id: 'asatsuyu',
     label: 'あさつゆ',
-    light: { primary: '#007060', primaryText: '#ffffff', mapLine: '#007060' },
-    dark:  { primary: '#50b0a0', primaryText: '#001a16', mapLine: '#50b0a0' },
+    light: { primary: '#13a890', primaryText: '#ffffff', mapLine: '#13a890' },
+    dark:  { primary: '#5fd8be', primaryText: '#00201a', mapLine: '#5fd8be' },
   },
 ];
 

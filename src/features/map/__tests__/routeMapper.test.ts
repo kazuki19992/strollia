@@ -155,4 +155,20 @@ describe('ルート描画変換', () => {
     expect(region.latitudeDelta).toBeGreaterThan(1);
     expect(region.longitudeDelta).toBeGreaterThan(1);
   });
+
+  it('不正な座標を初期表示範囲から除外する', () => {
+    const region = createInitialRegion([point(Number.NaN, 139), point(35, 139), point(36, 140)]);
+
+    expect(region.latitude).toBeCloseTo(35.5);
+    expect(region.longitude).toBeCloseTo(139.5);
+  });
+
+  it('有効な座標がない場合は既定の初期表示範囲を使う', () => {
+    const region = createInitialRegion([point(Number.NaN, 139), point(35, Number.POSITIVE_INFINITY)]);
+
+    expect(region.latitude).toBe(35.681236);
+    expect(region.longitude).toBe(139.767125);
+    expect(region.latitudeDelta).toBe(0.08);
+    expect(region.longitudeDelta).toBe(0.08);
+  });
 });

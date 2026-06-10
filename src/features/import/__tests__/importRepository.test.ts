@@ -2,12 +2,20 @@ import { db } from '../../../db/database';
 import { importLocationPointsFromGpx } from '../importRepository';
 
 jest.mock('../../../db/database', () => {
-  const mockDb = {
+  type MockDatabase = {
+    getFirstAsync: jest.Mock;
+    runAsync: jest.Mock;
+    withTransactionAsync: jest.Mock;
+    withExclusiveTransactionAsync: jest.Mock;
+  };
+
+  const mockDb: MockDatabase = {
     getFirstAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 101, changes: 1 }),
     withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
-    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockDb) => Promise<void>) => callback(mockDb)),
+    withExclusiveTransactionAsync: jest.fn(),
   };
+  mockDb.withExclusiveTransactionAsync.mockImplementation(async (callback: (txn: MockDatabase) => Promise<void>) => callback(mockDb));
 
   return { db: mockDb };
 });

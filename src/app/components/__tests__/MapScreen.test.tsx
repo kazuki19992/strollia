@@ -171,9 +171,25 @@ describe('地図画面 MapScreen', () => {
     );
   });
 
-  test('距離値は右端固定で地名は6文字相当の幅を確保する', () => {
+  test('距離値は右端固定で指定桁数用の幅を確保する', () => {
     expect(StyleSheet.flatten(styles.speedometerDistanceValueRow)?.justifyContent).toBe('flex-end');
-    expect(StyleSheet.flatten(styles.dashboardPlaceMetric)?.minWidth).toBeGreaterThanOrEqual(96);
+    expect(StyleSheet.flatten(styles.dashboardOdometerMetric)?.minWidth).toBeGreaterThanOrEqual(98);
+    expect(StyleSheet.flatten(styles.dashboardTodayMetric)?.minWidth).toBeGreaterThanOrEqual(62);
+    expect(StyleSheet.flatten(styles.dashboardPlaceMetric)?.minWidth).toBeLessThan(96);
+  });
+
+  test('地図オーバーレイの文言はシステム文字サイズで拡大しない', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} hasRequiredPermission={false} />);
+    });
+
+    const overlayTexts = renderer.root
+      .findAllByType(Text)
+      .filter((node: any) => ['まだ足あとがありません', '位置情報の常時許可が必要です', '権限を付与する'].includes(node.props.children));
+    expect(overlayTexts).toHaveLength(3);
+    expect(overlayTexts.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
   });
 
   test('レポート操作にはHistoryアイコンを使う', () => {

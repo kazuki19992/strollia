@@ -14,6 +14,9 @@ import { AppStyles } from '../appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
 
+/** マップ上の補助UIはOS文字サイズで地図表示を覆わないよう固定する。 */
+const FIXED_MAP_UI_TEXT_PROPS = { allowFontScaling: false };
+
 /** MapViewへ渡す余白情報。値はネイティブ地図APIへそのまま渡す非負のedge insetとして扱う。 */
 type MapEdgePadding = {
   top: number;
@@ -222,30 +225,44 @@ export function MapScreen({
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
         {points.length === 0 && (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>まだ足あとがありません</Text>
-            <Text style={styles.emptyText}>起動後に自動で記録を開始します。権限を許可して歩いてみましょう。</Text>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.emptyTitle}>
+              まだ足あとがありません
+            </Text>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.emptyText}>
+              起動後に自動で記録を開始します。権限を許可して歩いてみましょう。
+            </Text>
           </View>
         )}
 
         {!hasRequiredPermission && (
           <View style={styles.permissionCard}>
-            <Text style={styles.permissionTitle}>位置情報の常時許可が必要です</Text>
-            <Text style={styles.permissionText}>バックグラウンドでGPSログを残すには、位置情報を常に許可してください。</Text>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionTitle}>
+              位置情報の常時許可が必要です
+            </Text>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionText}>
+              バックグラウンドでGPSログを残すには、位置情報を常に許可してください。
+            </Text>
             <Pressable onPress={onRequestLocationPermission} style={styles.permissionButton}>
-              <Text style={styles.permissionButtonText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
+              <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionButtonText}>
+                {shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}
+              </Text>
             </Pressable>
           </View>
         )}
 
         {showPhotosOnMap && photoErrorMessage && (
           <View style={styles.photoStatusCard}>
-            <Text style={styles.permissionText}>{photoErrorMessage}</Text>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionText}>
+              {photoErrorMessage}
+            </Text>
           </View>
         )}
 
         {showPhotosOnMap && isLoadingPhotos && (
           <View style={styles.photoStatusCard}>
-            <Text style={styles.permissionText}>ジオタグ付き写真を読み込んでいます...</Text>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionText}>
+              ジオタグ付き写真を読み込んでいます...
+            </Text>
           </View>
         )}
 

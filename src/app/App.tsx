@@ -123,7 +123,7 @@ import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { shouldStartRecordingAutomatically } from './autoRecording';
 import { getNextMapType } from './mapType';
-import { createUserCenteredRegion, shouldRestoreMapRegionOnMapOpen } from './mapRegion';
+import { createUserCenteredRegion, isValidMapCoordinate, shouldRestoreMapRegionOnMapOpen } from './mapRegion';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -739,6 +739,10 @@ export default function App() {
    */
   function applyUserLocation(latitude: number, longitude: number, speed: number | null | undefined): void {
     const nextCoordinate = { latitude, longitude };
+    if (!isValidMapCoordinate(nextCoordinate)) {
+      return;
+    }
+
     setUserCoordinate(nextCoordinate);
     const nextSpeedKmh = toDisplaySpeedKmh(speed ?? null);
 
@@ -778,6 +782,10 @@ export default function App() {
    * @returns なし。
    */
   function centerOnCoordinate(coordinate: LatLng, animated = true): void {
+    if (!isValidMapCoordinate(coordinate)) {
+      return;
+    }
+
     const region = createUserCenteredRegion(coordinate);
     setVisibleRegion(region);
     setVisitedGridRefreshVersion((version) => version + 1);

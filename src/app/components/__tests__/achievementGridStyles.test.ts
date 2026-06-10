@@ -18,9 +18,10 @@ describe('実績グリッドのスタイル', () => {
 
   test('画像の枠はカード背景・境界線を持たない', () => {
     const styles = createStyles(lightTheme);
+    const imageWrapStyle = styles.achievementTileImageWrap as Record<string, unknown>;
 
-    expect(styles.achievementTileImageWrap.backgroundColor).toBeUndefined();
-    expect(styles.achievementTileImageWrap.borderWidth).toBeUndefined();
+    expect(imageWrapStyle.backgroundColor).toBeUndefined();
+    expect(imageWrapStyle.borderWidth).toBeUndefined();
   });
 
   test('次の実績スタイルは薄い不透明度を持つ（脱色は Grayscale ラッパーで行う）', () => {

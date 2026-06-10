@@ -83,6 +83,23 @@ describe('マップ下部ダッシュボード', () => {
     expect(texts).toContain('船橋市');
   });
 
+  test('速度と距離の指定桁数を固定文字サイズで表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} currentSpeedKmh={999} distance={98_765_432_100} todayDistance={9_876_540} />);
+    });
+
+    const textNodes = renderer.root.findAllByType(Text).filter((node: any) => typeof node.props.children === 'string');
+    const texts = textNodes.map((node: any) => node.props.children);
+    expect(texts).toContain('999');
+    expect(texts).toContain('98765432');
+    expect(texts).toContain('10');
+    expect(texts).toContain('9876');
+    expect(texts).toContain('54');
+    expect(textNodes.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
+  });
+
   test('マップボタンから表示設定パネルを前面に開く', () => {
     let renderer: any;
 

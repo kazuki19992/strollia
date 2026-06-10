@@ -169,7 +169,7 @@ export function applyColorPreset(theme: AppTheme, preset: AppColorPreset): AppTh
 `AppColorPicker` は SettingsScreen 内プライベートコンポーネントとして定義。`Pressable` で現在選択中のカラードット＋名前を表示し、タップすると `Modal` ベースの選択リストを表示する（iOS/Android 共通。`ActionSheetIOS` はドットを表示できないため使わない）。
 
 選択リストの各行：
-```
+```text
 ● まっちゃ     ← カラードット（現在テーマの primary 色） + ラベル + チェックマーク（選択中）
 ```
 

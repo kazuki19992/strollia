@@ -79,6 +79,13 @@ jest.mock('../components/MapScreen', () => ({
         })}>
           <Text>現在地更新</Text>
         </Pressable>
+        <Pressable accessibilityLabel="不正な現在地更新" onPress={() => props.onUserLocationChange({
+          nativeEvent: {
+            coordinate: { latitude: Number.NaN, longitude: 139.767125, speed: 1 },
+          },
+        })}>
+          <Text>不正な現在地更新</Text>
+        </Pressable>
         <Pressable accessibilityLabel="現在地へ戻る" onPress={props.onRecenterOnUserLocation}>
           <Text>現在地へ戻る</Text>
         </Pressable>
@@ -907,5 +914,18 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+  });
+
+  test('不正な現在地座標ではMapKitへRegionを渡さない', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '不正な現在地更新' }).props.onPress();
+    });
+
+    expect(mockAnimateToRegion).not.toHaveBeenCalled();
   });
 });

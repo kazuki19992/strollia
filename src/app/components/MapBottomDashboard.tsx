@@ -9,6 +9,9 @@ import type { AppStyles } from '../appStyles';
 import type { AppTheme } from '../../theme/theme';
 import { classifyMovementSpeed, FAST_SPEED_MIN_KMH, VEHICLE_SPEED_MIN_KMH } from '../../features/location/locationSpeed';
 
+/** マップ上の計器UIはOS文字サイズで崩れないよう固定する。 */
+const FIXED_MAP_UI_TEXT_PROPS = { allowFontScaling: false };
+
 /** マップ下部ダッシュボードのprops。 */
 export type MapBottomDashboardProps = {
   /** 画面共通スタイル。 */
@@ -109,11 +112,11 @@ export function MapBottomDashboard({
             <DashboardDistanceMetric label="ODO" parts={odometerParts} styles={styles} />
             <DashboardDistanceMetric label="TODAY" parts={todayDistanceParts} styles={styles} />
             <View style={styles.dashboardPlaceMetric}>
-              <Text numberOfLines={1} style={styles.dashboardPlacePrimary}>
+              <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={styles.dashboardPlacePrimary}>
                 {currentAreaLabel.primary}
               </Text>
               {currentAreaLabel.secondary && (
-                <Text numberOfLines={1} style={styles.dashboardPlaceSecondary}>
+                <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={styles.dashboardPlaceSecondary}>
                   {currentAreaLabel.secondary}
                 </Text>
               )}
@@ -173,8 +176,12 @@ export function MapBottomDashboard({
             </View>
             <View style={styles.mapDisplayPhotoRow}>
               <View style={styles.mapDisplayPhotoTextColumn}>
-                <Text style={styles.mapDisplayPhotoTitle}>マップ上に写真を表示</Text>
-                <Text style={styles.mapDisplayPhotoDescription}>写真ライブラリの読込権限が必要です</Text>
+                <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoTitle}>
+                  マップ上に写真を表示
+                </Text>
+                <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoDescription}>
+                  写真ライブラリの読込権限が必要です
+                </Text>
               </View>
               <Switch
                 disabled={isUpdatingPhotoSetting}
@@ -241,9 +248,15 @@ function SpeedDial({
         )}
       </Svg>
       <View style={styles.speedDashboardDialContent}>
-        <Text style={styles.speedometerLabel}>SPEED</Text>
-        <Text style={[styles.speedDashboardSpeedValue, { color: speedColor }]}>{formatSpeedKmh(currentSpeedKmh)}</Text>
-        <Text style={styles.speedDashboardSpeedUnit}>km/h</Text>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.speedometerLabel}>
+          SPEED
+        </Text>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedDashboardSpeedValue, { color: speedColor }]}>
+          {formatSpeedKmh(currentSpeedKmh)}
+        </Text>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.speedDashboardSpeedUnit}>
+          km/h
+        </Text>
       </View>
     </View>
   );
@@ -253,14 +266,22 @@ function SpeedDial({
 function DashboardDistanceMetric({ label, parts, styles }: { label: string; parts: string[]; styles: AppStyles }) {
   return (
     <View style={[styles.dashboardDistanceMetric, label === 'ODO' ? styles.dashboardOdometerMetric : styles.dashboardTodayMetric]}>
-      <Text style={styles.dashboardMetricLabel}>{label}</Text>
+      <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardMetricLabel}>
+        {label}
+      </Text>
       <View style={styles.speedometerDistanceValueRow}>
-        <Text numberOfLines={1} style={styles.dashboardDistanceValueInteger}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={styles.dashboardDistanceValueInteger}>
           {parts[0]}
         </Text>
-        <Text style={styles.dashboardDistanceValueDot}>.</Text>
-        <Text style={styles.dashboardDistanceValueDecimal}>{parts[1]}</Text>
-        <Text style={styles.dashboardDistanceUnit}>km</Text>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardDistanceValueDot}>
+          .
+        </Text>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardDistanceValueDecimal}>
+          {parts[1]}
+        </Text>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardDistanceUnit}>
+          km
+        </Text>
       </View>
     </View>
   );
@@ -292,8 +313,14 @@ function MapDisplayTypeButton({
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={[styles.mapDisplayTypeButton, isSelected && styles.mapDisplayTypeButtonSelected]}>
       <MaterialCommunityIcons name={icon} size={36} color="#ffffff" />
-      {isSelected && <Text style={styles.mapDisplayTypeSelectedLabel}>✓　選択中</Text>}
-      <Text style={styles.mapDisplayTypeLabel}>{label}</Text>
+      {isSelected && (
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayTypeSelectedLabel}>
+          ✓　選択中
+        </Text>
+      )}
+      <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayTypeLabel}>
+        {label}
+      </Text>
     </Pressable>
   );
 }

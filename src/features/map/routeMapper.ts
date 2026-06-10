@@ -38,9 +38,26 @@ const ROUTE_SEGMENT_MAX_SPEED_MPS = 70;
 /** 長時間途切れた点間は同一Polylineで結ばない。 */
 const ROUTE_SEGMENT_MAX_GAP_MS = 10 * 60 * 1000;
 
+/**
+ * MapKitへ渡せる緯度経度か判定する。
+ *
+ * @param coordinate - 検証する緯度経度。
+ * @returns 有限値かつ地理座標の範囲内ならtrue。
+ */
+export function isValidRouteCoordinate(coordinate: RouteCoordinate): boolean {
+  return (
+    Number.isFinite(coordinate.latitude) &&
+    Number.isFinite(coordinate.longitude) &&
+    coordinate.latitude >= -90 &&
+    coordinate.latitude <= 90 &&
+    coordinate.longitude >= -180 &&
+    coordinate.longitude <= 180
+  );
+}
+
 /** 保存済みGPSポイントを地図描画用の緯度経度へ変換する。 */
 export function toRouteCoordinates(points: LocationPoint[]): RouteCoordinate[] {
-  return points.map((point) => ({ latitude: point.latitude, longitude: point.longitude }));
+  return points.map((point) => ({ latitude: point.latitude, longitude: point.longitude })).filter(isValidRouteCoordinate);
 }
 
 /** 保存用ポイントから簡略化済みの描画用座標を生成する。 */
@@ -131,12 +148,14 @@ export function filterRouteSegmentsByRegion(segments: RouteSegment[], region: Re
 
 /** GPSポイント群が収まる初期表示範囲を作る。 */
 export function createInitialRegion(points: LocationPoint[]): Region {
-  if (points.length === 0) {
+  const coordinates = toRouteCoordinates(points);
+
+  if (coordinates.length === 0) {
     return DEFAULT_REGION;
   }
 
-  const latitudes = points.map((point) => point.latitude);
-  const longitudes = points.map((point) => point.longitude);
+  const latitudes = coordinates.map((point) => point.latitude);
+  const longitudes = coordinates.map((point) => point.longitude);
   const minLatitude = Math.min(...latitudes);
   const maxLatitude = Math.max(...latitudes);
   const minLongitude = Math.min(...longitudes);

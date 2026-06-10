@@ -11,12 +11,33 @@ type MapRegionRestoreState = {
 };
 
 /**
+ * MapKitへ渡せる緯度経度か判定する。
+ *
+ * @param coordinate - 検証する緯度経度。
+ * @returns 有限値かつ地理座標の範囲内ならtrue。
+ */
+export function isValidMapCoordinate(coordinate: LatLng): boolean {
+  return (
+    Number.isFinite(coordinate.latitude) &&
+    Number.isFinite(coordinate.longitude) &&
+    coordinate.latitude >= -90 &&
+    coordinate.latitude <= 90 &&
+    coordinate.longitude >= -180 &&
+    coordinate.longitude <= 180
+  );
+}
+
+/**
  * 指定座標を中心にした通常利用向けの地図表示範囲を作る。
  *
  * @param coordinate - 中心にする緯度経度。
  * @returns 現在地追従や地図復帰で使う表示範囲。
  */
 export function createUserCenteredRegion(coordinate: LatLng): Region {
+  if (!isValidMapCoordinate(coordinate)) {
+    throw new Error('Map region requires a finite latitude/longitude coordinate.');
+  }
+
   return {
     latitude: coordinate.latitude,
     longitude: coordinate.longitude,

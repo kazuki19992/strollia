@@ -28,4 +28,11 @@ describe('Plusバッジの色', () => {
     const styles = createStyles(tomatoTheme);
     expect(styles.settingsPlusBadge.backgroundColor).toBe('#73c7a2');
   });
+
+  it('文字色はまっちゃプリセットのprimaryTextを使う', () => {
+    const lightStyles = createStyles(applyColorPreset(lightTheme, getAppColorPreset('tomato')));
+    const darkStyles = createStyles(applyColorPreset(darkTheme, getAppColorPreset('tomato')));
+    expect(lightStyles.settingsPlusBadge.color).toBe('#fffdf8');
+    expect(darkStyles.settingsPlusBadge.color).toBe('#102018');
+  });
 });

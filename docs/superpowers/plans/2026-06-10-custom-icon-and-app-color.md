@@ -705,19 +705,45 @@ Marker 描画ブロック（`!userLocationIcon.useNativeUserLocation && userCoor
 
 - [ ] **Step 2: MapScreen テストに customImageUri・onError のテストを追加**
 
-`src/app/components/__tests__/MapScreen.test.tsx` に以下を追加（既存テストを確認してパターンに合わせること）:
+`Image` を react-native の import に追加し、`createProps()` に `onCustomIconError: jest.fn()` を追加したうえで、`describe('地図画面 MapScreen')` 内に以下を追加する:
 
 ```typescript
-// customImageUri が設定されているときカスタム画像を描画する
-test('customImageUri があるとき Image コンポーネントで描画する', () => {
-  // userLocationIcon.customImageUri を設定して render し、
-  // Image コンポーネントが source={{ uri: ... }} で描画されることを確認
+test('customImageUri があるとき Image コンポーネントで円表示する', () => {
+  const props = {
+    ...createProps(),
+    userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
+    userCoordinate: { latitude: 35, longitude: 139 },
+  };
+  let renderer: any;
+
+  act(() => {
+    renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+  });
+
+  const image = renderer.root.findByType(Image);
+  expect(image.props.source).toEqual({ uri: 'file:///tmp/icon.png' });
 });
 
-// onError ハンドラが存在することを確認する
 test('カスタム画像エラー時に onCustomIconError を呼ぶ', () => {
-  // onCustomIconError prop を渡し、Image の onError を呼んだとき
-  // onCustomIconError が呼ばれることを確認
+  const onCustomIconError = jest.fn();
+  const props = {
+    ...createProps(),
+    userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
+    userCoordinate: { latitude: 35, longitude: 139 },
+    onCustomIconError,
+  };
+  let renderer: any;
+
+  act(() => {
+    renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+  });
+
+  const image = renderer.root.findByType(Image);
+  act(() => {
+    image.props.onError();
+  });
+
+  expect(onCustomIconError).toHaveBeenCalledTimes(1);
 });
 ```
 
@@ -731,10 +757,10 @@ npx jest
 
 Expected: PASS（全テスト）
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add src/app/components/MapScreen.tsx
+git add src/app/components/MapScreen.tsx src/app/components/__tests__/MapScreen.test.tsx
 git commit -m "feat(icon): MapScreenでカスタム画像アイコンを円表示する"
 ```
 

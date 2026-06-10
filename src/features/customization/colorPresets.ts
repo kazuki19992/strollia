@@ -98,7 +98,13 @@ export const APP_COLOR_PRESETS: AppColorPreset[] = [
 ];
 
 /**
- * IDからプリセットを取得する。未知IDはまっちゃへフォールバック。
+ * IDからカラープリセットを取得する。
+ *
+ * 保存済み設定が壊れている場合などに備え、未知のIDが渡されたときは
+ * 配列順に依存せず `DEFAULT_APP_COLOR_PRESET_ID`（まっちゃ）へフォールバックする。
+ *
+ * @param id - 取得するプリセットID。
+ * @returns 対応するプリセット。見つからない場合はデフォルト（まっちゃ）。
  */
 export function getAppColorPreset(id: AppColorPresetId): AppColorPreset {
   const defaultPreset = APP_COLOR_PRESETS.find((preset) => preset.id === DEFAULT_APP_COLOR_PRESET_ID) ?? APP_COLOR_PRESETS[0];
@@ -106,7 +112,12 @@ export function getAppColorPreset(id: AppColorPresetId): AppColorPreset {
 }
 
 /**
- * 文字列がAppColorPresetIdとして有効か判定する。
+ * 文字列が有効な `AppColorPresetId` か判定する型ガード。
+ *
+ * SQLiteから読み込んだ設定値の検証に使う。
+ *
+ * @param value - 判定する文字列。
+ * @returns 有効なプリセットIDであればtrue。
  */
 export function isAppColorPresetId(value: string): value is AppColorPresetId {
   return APP_COLOR_PRESETS.some((preset) => preset.id === value);

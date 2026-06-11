@@ -171,3 +171,45 @@ describe('汎用ダイアログ Dialog', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 });
+
+describe('Dialog dismissible', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('dismissible=false のとき閉じるボタンを描画しない', () => {
+    const ReactTestRenderer = require('react-test-renderer');
+    let tree: any;
+    ReactTestRenderer.act(() => {
+      tree = ReactTestRenderer.create(
+        <Dialog visible dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
+          <Text>本文</Text>
+        </Dialog>,
+      );
+    });
+    const closeButtons = tree!.root.findAll(
+      (node: any) => node.props.accessibilityLabel === '閉じる',
+    );
+    expect(closeButtons).toHaveLength(0);
+  });
+
+  it('dismissible 既定（true）では閉じるボタンを描画する', () => {
+    const ReactTestRenderer = require('react-test-renderer');
+    let tree: any;
+    ReactTestRenderer.act(() => {
+      tree = ReactTestRenderer.create(
+        <Dialog visible swipeToClose={false} styles={styles} onClose={() => undefined}>
+          <Text>本文</Text>
+        </Dialog>,
+      );
+    });
+    const closeButtons = tree!.root.findAll(
+      (node: any) => node.props.accessibilityLabel === '閉じる',
+    );
+    expect(closeButtons.length).toBeGreaterThan(0);
+  });
+});

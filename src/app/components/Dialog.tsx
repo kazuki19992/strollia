@@ -27,6 +27,8 @@ export type DialogProps = {
   autoClose?: boolean;
   /** スワイプで閉じられるようにするか。trueのときヒント文言も表示する。 */
   swipeToClose?: boolean;
+  /** false のとき閉じる手段（×ボタン・スワイプ・背景/戻る）を無効化する。既定 true。 */
+  dismissible?: boolean;
   /** 紙吹雪の再生キー。 */
   animationKey?: string | null;
   /** 画面共通スタイル。 */
@@ -36,7 +38,7 @@ export type DialogProps = {
 };
 
 /** スワイプ/紙吹雪/自動クローズを備えた汎用ダイアログ。 */
-export function Dialog({ visible, children, showConfetti = false, autoClose = false, swipeToClose = true, animationKey = null, styles, onClose }: DialogProps) {
+export function Dialog({ visible, children, showConfetti = false, autoClose = false, swipeToClose = true, dismissible = true, animationKey = null, styles, onClose }: DialogProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
   const autoCloseProgress = useRef(new Animated.Value(0)).current;
   const dragX = useRef(new Animated.Value(0)).current;
@@ -148,8 +150,8 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
       }
 
       return PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4,
+        onStartShouldSetPanResponder: () => dismissible,
+        onMoveShouldSetPanResponder: (_, gestureState) => dismissible && (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4),
         onPanResponderGrant: () => {
           dragX.stopAnimation();
           dragY.stopAnimation();
@@ -174,7 +176,7 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
         },
       });
     },
-    [animateOut, dragX, dragY, resetDragPosition, swipeToClose],
+    [animateOut, dismissible, dragX, dragY, resetDragPosition, swipeToClose],
   );
 
   const distanceOpacity = Animated.add(dragX, dragY).interpolate({
@@ -191,7 +193,7 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   const displayedContent = content || lastContentRef.current;
 
   return (
-    <Modal visible={isRendered} transparent animationType="none" onRequestClose={() => animateOut(true)}>
+    <Modal visible={isRendered} transparent animationType="none" onRequestClose={() => { if (dismissible) animateOut(true); }}>
       <View style={styles.achievementModalBackdrop}>
         <ConfettiOverlay styles={styles} active={showConfetti && isRendered} animationKey={animationKey} />
         {isRendered && (
@@ -209,9 +211,11 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
               },
             ]}
           >
-            <Pressable onPress={() => animateOut(true)} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
-              <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
-            </Pressable>
+            {dismissible && (
+              <Pressable onPress={() => animateOut(true)} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
+                <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
+              </Pressable>
+            )}
             {autoClose && !isAutoClosePaused && (
               <View style={styles.achievementAutoCloseTrack}>
                 <Animated.View
@@ -223,7 +227,7 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
               </View>
             )}
             {displayedContent}
-            {swipeToClose && <Text style={styles.dialogSwipeHint}>スワイプで閉じる</Text>}
+            {swipeToClose && dismissible && <Text style={styles.dialogSwipeHint}>スワイプで閉じる</Text>}
           </Animated.View>
         )}
       </View>

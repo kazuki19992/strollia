@@ -77,7 +77,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   const [isSliderDragging, setIsSliderDragging] = useState(false);
   const [isCapturingShare, setIsCapturingShare] = useState(false);
   const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
-  const [gifFrameIndex, setGifFrameIndex] = useState(0);
+  const [gifFrameIndex, setGifFrameIndex] = useState(-1);
   const gifAbortRef = useRef(false);
   const gifFrameRef = useRef<View>(null);
   const gifFrameResolveRef = useRef<(() => void) | null>(null);
@@ -219,10 +219,13 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
       return;
     }
     gifAbortRef.current = false;
-    setGifFrameIndex(0);
+    setGifFrameIndex(-1);
     setGifProgress({ done: 0, total: gifFrameMinutes.length });
     try {
       await waitForGifMapReady();
+      if (gifAbortRef.current) {
+        return;
+      }
       const success = await exportRouteGif({
         captureTarget: () => gifFrameRef.current,
         frameCount: gifFrameMinutes.length,
@@ -239,6 +242,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
       Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
     } finally {
       setGifProgress(null);
+      setGifFrameIndex(-1);
       gifMapReadyRef.current = null;
       gifFrameResolveRef.current = null;
     }
@@ -246,6 +250,8 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
 
   function handleCancelGif(): void {
     gifAbortRef.current = true;
+    gifMapReadyRef.current?.();
+    gifMapReadyRef.current = null;
   }
 
   return (

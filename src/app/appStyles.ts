@@ -657,19 +657,19 @@ export function createStyles(theme: AppTheme) {
     dashboardDistanceValueDecimal: {
       color: mapPanelText,
       fontFamily: NUMERIC_DISPLAY_FONT,
-      fontSize: 7,
+      fontSize: 6,
       lineHeight: 10,
     },
     dashboardDistanceValueDot: {
       color: mapPanelText,
       fontFamily: NUMERIC_DISPLAY_FONT,
-      fontSize: 12,
+      fontSize: 11,
       lineHeight: 16,
     },
     dashboardDistanceValueInteger: {
       color: mapPanelText,
       fontFamily: NUMERIC_DISPLAY_FONT,
-      fontSize: 12,
+      fontSize: 11,
       lineHeight: 16,
     },
     dashboardMapButton: {
@@ -704,15 +704,15 @@ export function createStyles(theme: AppTheme) {
       shadowRadius: 7,
     },
     dashboardOdometerMetric: {
-      flex: 1.55,
-      minWidth: 98,
+      flex: 1.42,
+      minWidth: 92,
     },
     dashboardPlaceMetric: {
       borderLeftColor: 'rgba(255, 255, 255, 0.72)',
       borderLeftWidth: 1,
-      flex: 0.9,
+      flex: 1.08,
       justifyContent: 'center',
-      minWidth: 64,
+      minWidth: 76,
       paddingLeft: 7,
     },
     dashboardPlacePrimary: {
@@ -757,8 +757,8 @@ export function createStyles(theme: AppTheme) {
       top: 0,
     },
     dashboardTodayMetric: {
-      flex: 0.95,
-      minWidth: 62,
+      flex: 0.88,
+      minWidth: 56,
     },
     emptyCard: {
       alignSelf: 'center',

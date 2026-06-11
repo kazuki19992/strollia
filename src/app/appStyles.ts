@@ -2127,6 +2127,23 @@ export function createStyles(theme: AppTheme) {
       color: colors.text,
       fontWeight: '700',
     },
+    gifRangeContent: {
+      gap: 12,
+      width: '100%' as unknown as number,
+    },
+    gifRangeTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '900',
+      textAlign: 'center',
+    },
+    gifRangeBody: {
+      color: colors.text,
+      fontSize: 13,
+      lineHeight: 18,
+      opacity: 0.8,
+      textAlign: 'center',
+    },
     topBar: {
       alignItems: 'flex-start',
       flexDirection: 'row',

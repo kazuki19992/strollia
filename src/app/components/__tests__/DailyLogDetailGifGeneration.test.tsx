@@ -154,9 +154,16 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     // 詳細データ読み込み完了を待つ
     await act(async () => {});
 
+    // GIFボタンを押すと、まず区間指定ダイアログが開く。
     const gifButton = renderer.root.findByProps({ accessibilityLabel: '移動記録をGIFで出力' });
     await act(async () => {
       gifButton.props.onPress();
+    });
+
+    // 区間指定ダイアログの「この範囲で出力」を押すと生成が始まる（区間は初期値＝記録全体）。
+    const exportButton = renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' });
+    await act(async () => {
+      exportButton.props.onPress();
     });
 
     // isGeneratingGif が true になった際に走る useEffect の RAF を先に消化しておく。

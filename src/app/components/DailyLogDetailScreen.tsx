@@ -22,6 +22,7 @@ import {
   computeRouteMaxEndMinutes,
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
+  filterLocationPointsBetweenMinutes,
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
   formatTimelineTimeLabel,
@@ -39,12 +40,15 @@ import { DataSummaryRow } from './DataSummaryRow';
 import { DescriptionText } from './DescriptionText';
 import { Dialog } from './Dialog';
 import { GifFrameRenderer } from './GifFrameRenderer';
+import { RangeSlider } from './RangeSlider';
 import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { StepSlider } from './StepSlider';
 
 const GIF_FRAME_STEP_MINUTES = 15;
 const GIF_FRAME_DELAY_MS = 500;
+/** GIF区間指定スライダーの選択粒度（分）。 */
+const GIF_RANGE_STEP_MINUTES = 5;
 
 export type DailyLogDetailScreenProps = {
   /** 表示対象の日別サマリー。 */
@@ -79,6 +83,9 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   const [isCapturingShare, setIsCapturingShare] = useState(false);
   const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
   const [gifFrameIndex, setGifFrameIndex] = useState(-1);
+  const [isSelectingGifRange, setIsSelectingGifRange] = useState(false);
+  const [gifRangeStart, setGifRangeStart] = useState(0);
+  const [gifRangeEnd, setGifRangeEnd] = useState(0);
   const gifAbortRef = useRef(false);
   const gifFrameRef = useRef<View>(null);
   const gifFrameResolveRef = useRef<(() => void) | null>(null);
@@ -91,20 +98,32 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     () => (showSlider ? filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes) : dailyPoints),
     [dailyPoints, routeEndMinutes, showSlider],
   );
-  const gifFrameMinutes = useMemo(() => {
-    if (dailyPoints.length < 2) return [];
-    const startMinute = getPointMinutesOfDay(dailyPoints[0]);
-    const endMinute = getPointMinutesOfDay(dailyPoints[dailyPoints.length - 1]);
-    return computeGifFrameMinutesInRange(startMinute, endMinute, GIF_FRAME_STEP_MINUTES);
-  }, [dailyPoints]);
-  const canExportGif = isPlusActive && gifFrameMinutes.length >= 2;
-  const gifRegion = useMemo(() => (dailyPoints.length > 0 ? createInitialRegion(dailyPoints) : null), [dailyPoints]);
-  const isGeneratingGif = gifProgress !== null;
-  const gifFramePoints = useMemo(
-    () => (gifRegion ? filterLocationPointsUntilMinute(dailyPoints, gifFrameMinutes[gifFrameIndex] ?? 0) : []),
-    [dailyPoints, gifFrameMinutes, gifFrameIndex, gifRegion],
+  // 記録の最初/最後の時刻（GIF区間指定スライダーの範囲）。
+  const recordingStartMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[0]) : 0;
+  const recordingEndMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[dailyPoints.length - 1]) : 0;
+  const canExportGif = isPlusActive && dailyPoints.length >= 2 && recordingEndMinute > recordingStartMinute;
+  // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
+  const gifRangePoints = useMemo(
+    () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifRangeEnd),
+    [dailyPoints, gifRangeStart, gifRangeEnd],
   );
-  const gifFrameTimeLabel = formatTimelineTimeLabel(gifFrameMinutes[gifFrameIndex] ?? 0);
+  // 選択区間を15分刻みにした各コマの時刻。
+  const gifFrameMinutes = useMemo(
+    () => computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, GIF_FRAME_STEP_MINUTES),
+    [gifRangeStart, gifRangeEnd],
+  );
+  const gifRegion = useMemo(
+    () => (gifRangePoints.length > 0 ? createInitialRegion(gifRangePoints) : null),
+    [gifRangePoints],
+  );
+  const isGeneratingGif = gifProgress !== null;
+  // 各コマは選択開始時刻からその時刻までの累積軌跡（区間内のみ）。
+  const gifFrameMinute = gifFrameMinutes[gifFrameIndex] ?? gifRangeStart;
+  const gifFramePoints = useMemo(
+    () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifFrameMinute),
+    [dailyPoints, gifRangeStart, gifFrameMinute],
+  );
+  const gifFrameTimeLabel = formatTimelineTimeLabel(gifFrameMinute);
 
   useEffect(() => {
     let isCancelled = false;
@@ -220,8 +239,19 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     });
   }
 
+  function openGifRangeSelection(): void {
+    setGifRangeStart(recordingStartMinute);
+    setGifRangeEnd(recordingEndMinute);
+    setIsSelectingGifRange(true);
+  }
+
+  function handleConfirmGifRange(): void {
+    setIsSelectingGifRange(false);
+    handleExportGif().catch(() => undefined);
+  }
+
   async function handleExportGif(): Promise<void> {
-    if (!canExportGif || isGeneratingGif || !gifRegion) {
+    if (!canExportGif || isGeneratingGif || !gifRegion || gifFrameMinutes.length < 2) {
       return;
     }
     gifAbortRef.current = false;
@@ -292,9 +322,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
                 icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
                 label="移動記録をGIFで出力"
                 styles={styles}
-                onPress={() => {
-                  handleExportGif().catch(() => undefined);
-                }}
+                onPress={openGifRangeSelection}
               />
             )}
           </View>
@@ -384,6 +412,44 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           }}
         />
       )}
+
+      <Dialog visible={isSelectingGifRange} swipeToClose={false} styles={styles} onClose={() => setIsSelectingGifRange(false)}>
+        <View style={styles.gifRangeContent}>
+          <Text style={styles.gifRangeTitle}>GIFにする時間範囲</Text>
+          <Text style={styles.gifRangeBody}>出力する移動の開始・終了時刻を選べます。範囲が短いほど早く生成できます。</Text>
+          <RouteMapPanel
+            emptyLabel="この範囲に移動記録がありません"
+            points={gifRangePoints}
+            regionPoints={dailyPoints}
+            styles={styles}
+            theme={theme}
+          />
+          <RangeSlider
+            accessibilityLabel="GIFにする時間範囲"
+            minValue={recordingStartMinute}
+            maxValue={recordingEndMinute}
+            stepValue={GIF_RANGE_STEP_MINUTES}
+            startValue={gifRangeStart}
+            endValue={gifRangeEnd}
+            startLabel={formatTimelineTimeLabel(recordingStartMinute)}
+            endLabel={formatTimelineTimeLabel(recordingEndMinute)}
+            valueLabel={`${formatTimelineTimeLabel(gifRangeStart)} 〜 ${formatTimelineTimeLabel(gifRangeEnd)}`}
+            styles={styles}
+            theme={theme}
+            onChange={(start, end) => {
+              setGifRangeStart(start);
+              setGifRangeEnd(end);
+            }}
+          />
+          <ActionPill
+            disabled={gifFrameMinutes.length < 2}
+            icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
+            label="この範囲で出力"
+            styles={styles}
+            onPress={handleConfirmGifRange}
+          />
+        </View>
+      </Dialog>
 
       <Dialog visible={isGeneratingGif} dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
         <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>

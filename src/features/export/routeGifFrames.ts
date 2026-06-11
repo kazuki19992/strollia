@@ -1,26 +1,21 @@
-import type { LocationPoint } from '../../types/gps';
-import { getPointMinutesOfDay } from '../../app/dailyRouteTimeline';
-
 /**
- * その日の点列から、累積GIFの各コマが表す「0時からの経過分」を算出する。
- * 最初の点の時刻から最後の点の時刻まで stepMinutes 刻みで進め、最後の時刻を必ず含める。
+ * 区間 [startMinutes, endMinutes] を stepMinutes 刻みにした、各GIFコマの「0時からの経過分」を返す。
+ * 終了時刻は必ず最後のコマとして含める。終了が開始以下なら開始のみ。
  *
- * @param points - 時刻昇順のGPSポイント。
+ * @param startMinutes - 区間開始（0時からの経過分）。
+ * @param endMinutes - 区間終了（0時からの経過分）。
  * @param stepMinutes - コマ間隔（分）。
- * @returns 各コマの minute-of-day 配列。点が1つ以下なら空配列。
+ * @returns 各コマの minute-of-day 配列。
  */
-export function computeGifFrameMinutes(points: LocationPoint[], stepMinutes: number): number[] {
-  if (points.length < 2) {
-    return [];
+export function computeGifFrameMinutesInRange(startMinutes: number, endMinutes: number, stepMinutes: number): number[] {
+  if (endMinutes <= startMinutes) {
+    return [startMinutes];
   }
-
-  const firstMinute = getPointMinutesOfDay(points[0]);
-  const lastMinute = getPointMinutesOfDay(points[points.length - 1]);
 
   const frames: number[] = [];
-  for (let minute = firstMinute; minute < lastMinute; minute += stepMinutes) {
+  for (let minute = startMinutes; minute < endMinutes; minute += stepMinutes) {
     frames.push(minute);
   }
-  frames.push(lastMinute);
+  frames.push(endMinutes);
   return frames;
 }

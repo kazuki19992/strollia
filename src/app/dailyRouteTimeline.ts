@@ -50,3 +50,11 @@ export function getPointMinutesOfDay(point: LocationPoint): number {
 export function filterLocationPointsUntilMinute(points: LocationPoint[], endMinutes: number): LocationPoint[] {
   return points.filter((point) => getPointMinutesOfDay(point) <= endMinutes);
 }
+
+/** 指定した開始〜終了（分）の範囲内のGPSポイントだけを返す。 */
+export function filterLocationPointsBetweenMinutes(points: LocationPoint[], startMinutes: number, endMinutes: number): LocationPoint[] {
+  return points.filter((point) => {
+    const minute = getPointMinutesOfDay(point);
+    return minute >= startMinutes && minute <= endMinutes;
+  });
+}

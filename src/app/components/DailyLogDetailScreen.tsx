@@ -11,7 +11,7 @@ import { getAchievementUnlocksByDate } from '../../features/achievements/achieve
 import { coordinateToGridCell } from '../../features/location/grid/gridCell';
 import { getVisitedCellsByIds } from '../../features/location/visitedCellRepository';
 import { getLocationPointsByDate } from '../../features/logs/logRepository';
-import { computeGifFrameMinutes } from '../../features/export/routeGifFrames';
+import { computeGifFrameMinutesInRange } from '../../features/export/routeGifFrames';
 import { exportRouteGif } from '../../features/export/routeGifExporter';
 import { createInitialRegion } from '../../features/map/routeMapper';
 import { createDailyDetailReport, DailyDetailReport } from '../../features/reports/dailyReport';
@@ -26,6 +26,7 @@ import {
   formatTimelineHourLabel,
   formatTimelineTimeLabel,
   getCurrentMinutesOfDay,
+  getPointMinutesOfDay,
   getTodayLocalDate,
 } from '../dailyRouteTimeline';
 import { formatDailyLogDetailTitle, formatDistanceKm, formatRouteEndpoints } from '../dailyLogDisplay';
@@ -42,7 +43,7 @@ import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { StepSlider } from './StepSlider';
 
-const GIF_FRAME_STEP_MINUTES = 10;
+const GIF_FRAME_STEP_MINUTES = 15;
 const GIF_FRAME_DELAY_MS = 500;
 
 export type DailyLogDetailScreenProps = {
@@ -90,7 +91,12 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     () => (showSlider ? filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes) : dailyPoints),
     [dailyPoints, routeEndMinutes, showSlider],
   );
-  const gifFrameMinutes = useMemo(() => computeGifFrameMinutes(dailyPoints, GIF_FRAME_STEP_MINUTES), [dailyPoints]);
+  const gifFrameMinutes = useMemo(() => {
+    if (dailyPoints.length < 2) return [];
+    const startMinute = getPointMinutesOfDay(dailyPoints[0]);
+    const endMinute = getPointMinutesOfDay(dailyPoints[dailyPoints.length - 1]);
+    return computeGifFrameMinutesInRange(startMinute, endMinute, GIF_FRAME_STEP_MINUTES);
+  }, [dailyPoints]);
   const canExportGif = isPlusActive && gifFrameMinutes.length >= 2;
   const gifRegion = useMemo(() => (dailyPoints.length > 0 ? createInitialRegion(dailyPoints) : null), [dailyPoints]);
   const isGeneratingGif = gifProgress !== null;

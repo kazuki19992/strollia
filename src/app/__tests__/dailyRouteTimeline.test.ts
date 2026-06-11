@@ -3,6 +3,7 @@ import {
   DAILY_ROUTE_END_MINUTES,
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
+  filterLocationPointsBetweenMinutes,
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
   formatTimelineTimeLabel,
@@ -23,6 +24,11 @@ describe('日別ルートタイムライン', () => {
 
   it('選択時刻までのGPSポイントだけを表示対象にする', () => {
     expect(filterLocationPointsUntilMinute(points, 30).map((point) => point.id)).toEqual([1, 2]);
+  });
+
+  it('開始〜終了の範囲内のGPSポイントだけを返す', () => {
+    expect(filterLocationPointsBetweenMinutes(points, 30, 60).map((point) => point.id)).toEqual([2, 3]);
+    expect(filterLocationPointsBetweenMinutes(points, 0, 0).map((point) => point.id)).toEqual([1]);
   });
 
   it('端の時刻を画面表示用ラベルに変換する', () => {

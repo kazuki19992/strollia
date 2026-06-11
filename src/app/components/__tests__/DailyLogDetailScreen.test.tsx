@@ -313,10 +313,10 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(renderer.root.findByType(StepSlider).props.maxValue).toBe(750);
   });
 
-  test('今日の 0:00〜0:30 の間はスライダーを非表示にする', async () => {
+  test('今日の 0:00〜0:05 の間はスライダーを非表示にする', async () => {
     const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
     getTodayLocalDate.mockReturnValue('2026-05-31');
-    getCurrentMinutesOfDay.mockReturnValue(15);
+    getCurrentMinutesOfDay.mockReturnValue(3);
 
     let renderer: any;
     await act(async () => {

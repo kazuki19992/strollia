@@ -1927,8 +1927,8 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '900',
     },
     stepSlider: {
-      gap: 4,
-      paddingHorizontal: 18,
+      gap: 2,
+      paddingHorizontal: 6,
     },
     stepSliderEdgeLabel: {
       color: settingsMuted,
@@ -1957,7 +1957,7 @@ export function createStyles(theme: AppTheme) {
     },
     stepSliderTouchArea: {
       flex: 1,
-      height: 44,
+      height: 32,
       justifyContent: 'center',
     },
     stepSliderTrack: {

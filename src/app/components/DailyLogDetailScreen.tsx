@@ -1,7 +1,7 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
@@ -11,6 +11,9 @@ import { getAchievementUnlocksByDate } from '../../features/achievements/achieve
 import { coordinateToGridCell } from '../../features/location/grid/gridCell';
 import { getVisitedCellsByIds } from '../../features/location/visitedCellRepository';
 import { getLocationPointsByDate } from '../../features/logs/logRepository';
+import { computeGifFrameMinutes } from '../../features/export/routeGifFrames';
+import { exportRouteGif } from '../../features/export/routeGifExporter';
+import { createInitialRegion } from '../../features/map/routeMapper';
 import { createDailyDetailReport, DailyDetailReport } from '../../features/reports/dailyReport';
 import type { PremiumAccessState } from '../../features/premium/revenueCatAccess';
 import type { AppTheme } from '../../theme/theme';
@@ -33,9 +36,14 @@ import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DataSummaryRow } from './DataSummaryRow';
 import { DescriptionText } from './DescriptionText';
+import { Dialog } from './Dialog';
+import { GifFrameRenderer } from './GifFrameRenderer';
 import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { StepSlider } from './StepSlider';
+
+const GIF_FRAME_STEP_MINUTES = 10;
+const GIF_FRAME_DELAY_MS = 500;
 
 export type DailyLogDetailScreenProps = {
   /** 表示対象の日別サマリー。 */
@@ -67,6 +75,13 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   );
   const [isSharingDetail, setIsSharingDetail] = useState(false);
   const [isSliderDragging, setIsSliderDragging] = useState(false);
+  const [isCapturingShare, setIsCapturingShare] = useState(false);
+  const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
+  const [gifFrameIndex, setGifFrameIndex] = useState(0);
+  const gifAbortRef = useRef(false);
+  const gifFrameRef = useRef<View>(null);
+  const gifFrameResolveRef = useRef<(() => void) | null>(null);
+  const gifMapReadyRef = useRef<(() => void) | null>(null);
   const captureViewRef = useRef<View>(null);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
@@ -75,6 +90,15 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     () => (showSlider ? filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes) : dailyPoints),
     [dailyPoints, routeEndMinutes, showSlider],
   );
+  const gifFrameMinutes = useMemo(() => computeGifFrameMinutes(dailyPoints, GIF_FRAME_STEP_MINUTES), [dailyPoints]);
+  const canExportGif = isPlusActive && gifFrameMinutes.length >= 2;
+  const gifRegion = useMemo(() => (dailyPoints.length > 0 ? createInitialRegion(dailyPoints) : null), [dailyPoints]);
+  const isGeneratingGif = gifProgress !== null;
+  const gifFramePoints = useMemo(
+    () => (gifRegion ? filterLocationPointsUntilMinute(dailyPoints, gifFrameMinutes[gifFrameIndex] ?? 0) : []),
+    [dailyPoints, gifFrameMinutes, gifFrameIndex, gifRegion],
+  );
+  const gifFrameTimeLabel = formatTimelineTimeLabel(gifFrameMinutes[gifFrameIndex] ?? 0);
 
   useEffect(() => {
     let isCancelled = false;
@@ -129,15 +153,29 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     };
   }, [log]);
 
+  useEffect(() => {
+    if (!isGeneratingGif) {
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        gifFrameResolveRef.current?.();
+        gifFrameResolveRef.current = null;
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [gifFrameIndex, isGeneratingGif]);
+
   async function shareDailyLogImage(): Promise<void> {
     if (!captureViewRef.current || isSharingDetail) {
       return;
     }
 
     setIsSharingDetail(true);
+    setIsCapturingShare(true);
 
     try {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
       if (!(await Sharing.isAvailableAsync())) {
         Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
@@ -158,8 +196,56 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     } catch (error: unknown) {
       Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
     } finally {
+      setIsCapturingShare(false);
       setIsSharingDetail(false);
     }
+  }
+
+  function waitForGifMapReady(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      gifMapReadyRef.current = resolve;
+    });
+  }
+
+  function renderGifFrame(index: number): Promise<void> {
+    return new Promise<void>((resolve) => {
+      gifFrameResolveRef.current = resolve;
+      setGifFrameIndex(index);
+    });
+  }
+
+  async function handleExportGif(): Promise<void> {
+    if (!canExportGif || isGeneratingGif || !gifRegion) {
+      return;
+    }
+    gifAbortRef.current = false;
+    setGifFrameIndex(0);
+    setGifProgress({ done: 0, total: gifFrameMinutes.length });
+    try {
+      await waitForGifMapReady();
+      const success = await exportRouteGif({
+        captureTarget: () => gifFrameRef.current,
+        frameCount: gifFrameMinutes.length,
+        delayMs: GIF_FRAME_DELAY_MS,
+        fileName: `strollia-${log.localDate}`,
+        renderFrame: renderGifFrame,
+        onProgress: (done, total) => setGifProgress({ done, total }),
+        shouldAbort: () => gifAbortRef.current,
+      });
+      if (!success && !gifAbortRef.current) {
+        Alert.alert('GIF出力', 'GIFを生成できませんでした。');
+      }
+    } catch (error: unknown) {
+      Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
+    } finally {
+      setGifProgress(null);
+      gifMapReadyRef.current = null;
+      gifFrameResolveRef.current = null;
+    }
+  }
+
+  function handleCancelGif(): void {
+    gifAbortRef.current = true;
   }
 
   return (
@@ -171,7 +257,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         <View ref={captureViewRef} collapsable={false} style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
             <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
-            {showSlider && (
+            {showSlider && !isCapturingShare && (
               <StepSlider
                 accessibilityLabel="移動地図の表示時刻"
                 minValue={DAILY_ROUTE_START_MINUTES}
@@ -186,6 +272,17 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
                 onDragStart={() => setIsSliderDragging(true)}
                 onDragEnd={() => setIsSliderDragging(false)}
                 onValueChange={setRouteEndMinutes}
+              />
+            )}
+            {canExportGif && !isCapturingShare && (
+              <ActionPill
+                disabled={isGeneratingGif}
+                icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
+                label="移動記録をGIFで出力"
+                styles={styles}
+                onPress={() => {
+                  handleExportGif().catch(() => undefined);
+                }}
               />
             )}
           </View>
@@ -260,6 +357,37 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         </View>
 
       </ScrollView>
+
+      {isGeneratingGif && gifRegion && (
+        <GifFrameRenderer
+          ref={gifFrameRef}
+          region={gifRegion}
+          points={gifFramePoints}
+          timeLabel={gifFrameTimeLabel}
+          styles={styles}
+          theme={theme}
+          onMapReady={() => {
+            gifMapReadyRef.current?.();
+            gifMapReadyRef.current = null;
+          }}
+        />
+      )}
+
+      <Dialog visible={isGeneratingGif} dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
+        <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>
+        <Text style={styles.gifProgressBody}>生成が終わるまで少しお待ちください。画面を閉じないでください。</Text>
+        <View style={styles.gifProgressTrack}>
+          <View
+            style={[
+              styles.gifProgressFill,
+              { width: `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number },
+            ]}
+          />
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="GIF生成をキャンセル" style={styles.gifProgressCancel} onPress={handleCancelGif}>
+          <Text style={styles.gifProgressCancelText}>キャンセル</Text>
+        </Pressable>
+      </Dialog>
     </SafeAreaView>
   );
 }

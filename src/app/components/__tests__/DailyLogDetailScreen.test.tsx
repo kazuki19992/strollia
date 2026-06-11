@@ -96,11 +96,31 @@ jest.mock('react-native-maps', () => {
     default: View,
     Marker: View,
     Polyline: View,
+    Polygon: View,
   };
 });
 
+jest.mock('expo-file-system/legacy', () => ({
+  cacheDirectory: '/tmp/',
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  EncodingType: { Base64: 'base64', UTF8: 'utf8' },
+}));
+
+jest.mock('../../../features/export/routeGifExporter', () => ({
+  exportRouteGif: jest.fn().mockResolvedValue(true),
+}));
+
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
+
+/** requestAnimationFrame の連鎖（共有キャプチャ前の2フレーム待ち等）を消化する。 */
+async function flushAnimationFrames(): Promise<void> {
+  for (let i = 0; i < 4; i += 1) {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+  }
+}
 
 const styles = new Proxy({}, { get: (_target, prop) => prop });
 const log = {
@@ -254,6 +274,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     const shareButton = renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' });
     await act(async () => {
       shareButton.props.onPress();
+      await flushAnimationFrames();
     });
 
     expect(captureRef).toHaveBeenCalledWith(
@@ -332,6 +353,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.disabled).toBe(true);
 
     await act(async () => {
+      await flushAnimationFrames();
       captureResolve!();
     });
 

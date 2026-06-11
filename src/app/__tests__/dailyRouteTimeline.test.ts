@@ -15,10 +15,10 @@ const points = [
 ] as never;
 
 describe('日別ルートタイムライン', () => {
-  it('0時から24時までを30分刻みで扱う定数を公開する', () => {
+  it('0時から24時までを5分刻みで扱う定数を公開する', () => {
     expect(DAILY_ROUTE_START_MINUTES).toBe(0);
     expect(DAILY_ROUTE_END_MINUTES).toBe(1440);
-    expect(DAILY_ROUTE_TIME_STEP_MINUTES).toBe(30);
+    expect(DAILY_ROUTE_TIME_STEP_MINUTES).toBe(5);
   });
 
   it('選択時刻までのGPSポイントだけを表示対象にする', () => {
@@ -41,15 +41,15 @@ describe('日別ルートタイムライン', () => {
     expect(computeRouteMaxEndMinutes('2026-05-31', '2026-06-04', 750)).toBe(DAILY_ROUTE_END_MINUTES);
   });
 
-  it('今日のルート最大時刻は現在時刻を 30 分単位に切り捨てた値になる', () => {
+  it('今日のルート最大時刻は現在時刻を 5 分単位に切り捨てた値になる', () => {
     expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 750)).toBe(750);
-    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 765)).toBe(750);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 762)).toBe(760);
     expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 780)).toBe(780);
   });
 
-  it('今日の 0:30 未満はルート最大時刻が 0 になる（スライダー非表示の条件）', () => {
+  it('今日の 0:05 未満はルート最大時刻が 0 になる（スライダー非表示の条件）', () => {
     expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 0)).toBe(0);
-    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 29)).toBe(0);
-    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 30)).toBe(30);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 4)).toBe(0);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 5)).toBe(5);
   });
 });

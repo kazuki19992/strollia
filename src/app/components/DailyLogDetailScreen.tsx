@@ -416,59 +416,73 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         />
       )}
 
-      <Dialog visible={isSelectingGifRange} swipeToClose={false} styles={styles} onClose={() => setIsSelectingGifRange(false)}>
-        <View style={styles.gifRangeContent}>
-          <Text style={styles.gifRangeTitle}>GIFにする時間範囲</Text>
-          <Text style={styles.gifRangeBody}>出力する移動の開始・終了時刻を選べます。範囲が短いほど早く生成できます。</Text>
-          <RouteMapPanel
-            emptyLabel="この範囲に移動記録がありません"
-            points={gifRangePoints}
-            regionPoints={dailyPoints}
-            styles={styles}
-            theme={theme}
-          />
-          <RangeSlider
-            accessibilityLabel="GIFにする時間範囲"
-            minValue={recordingStartMinute}
-            maxValue={recordingEndMinute}
-            stepValue={GIF_RANGE_STEP_MINUTES}
-            minSeparation={GIF_MIN_RANGE_MINUTES}
-            startValue={gifRangeStart}
-            endValue={gifRangeEnd}
-            startLabel={formatTimelineTimeLabel(recordingStartMinute)}
-            endLabel={formatTimelineTimeLabel(recordingEndMinute)}
-            valueLabel={`${formatTimelineTimeLabel(gifRangeStart)} 〜 ${formatTimelineTimeLabel(gifRangeEnd)}`}
-            styles={styles}
-            theme={theme}
-            onChange={(start, end) => {
-              setGifRangeStart(start);
-              setGifRangeEnd(end);
-            }}
-          />
-          <ActionPill
-            disabled={gifFrameMinutes.length < 2}
-            icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
-            label="この範囲で出力"
-            styles={styles}
-            onPress={handleConfirmGifRange}
-          />
-        </View>
-      </Dialog>
-
-      <Dialog visible={isGeneratingGif} dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
-        <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>
-        <Text style={styles.gifProgressBody}>生成が終わるまで少しお待ちください。画面を閉じないでください。</Text>
-        <View style={styles.gifProgressTrack}>
-          <View
-            style={[
-              styles.gifProgressFill,
-              { width: `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number },
-            ]}
-          />
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="GIF生成をキャンセル" style={styles.gifProgressCancel} onPress={handleCancelGif}>
-          <Text style={styles.gifProgressCancelText}>キャンセル</Text>
-        </Pressable>
+      {/* 区間選択と生成中は同じ Dialog（=同じ Modal）を使う。別 Modal にすると、選択ダイアログの
+          閉じアニメーション中に生成ダイアログを開くことになり、多重モーダルで生成中が表示されない。 */}
+      <Dialog
+        visible={isSelectingGifRange || isGeneratingGif}
+        dismissible={!isGeneratingGif}
+        swipeToClose={false}
+        styles={styles}
+        onClose={() => {
+          if (!isGeneratingGif) {
+            setIsSelectingGifRange(false);
+          }
+        }}
+      >
+        {isGeneratingGif ? (
+          <View style={styles.gifRangeContent}>
+            <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>
+            <Text style={styles.gifProgressBody}>生成が終わるまで少しお待ちください。画面を閉じないでください。</Text>
+            <View style={styles.gifProgressTrack}>
+              <View
+                style={[
+                  styles.gifProgressFill,
+                  { width: `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number },
+                ]}
+              />
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="GIF生成をキャンセル" style={styles.gifProgressCancel} onPress={handleCancelGif}>
+              <Text style={styles.gifProgressCancelText}>キャンセル</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.gifRangeContent}>
+            <Text style={styles.gifRangeTitle}>GIFにする時間範囲</Text>
+            <Text style={styles.gifRangeBody}>出力する移動の開始・終了時刻を選べます。範囲が短いほど早く生成できます。</Text>
+            <RouteMapPanel
+              emptyLabel="この範囲に移動記録がありません"
+              points={gifRangePoints}
+              regionPoints={dailyPoints}
+              styles={styles}
+              theme={theme}
+            />
+            <RangeSlider
+              accessibilityLabel="GIFにする時間範囲"
+              minValue={recordingStartMinute}
+              maxValue={recordingEndMinute}
+              stepValue={GIF_RANGE_STEP_MINUTES}
+              minSeparation={GIF_MIN_RANGE_MINUTES}
+              startValue={gifRangeStart}
+              endValue={gifRangeEnd}
+              startLabel={formatTimelineTimeLabel(recordingStartMinute)}
+              endLabel={formatTimelineTimeLabel(recordingEndMinute)}
+              valueLabel={`${formatTimelineTimeLabel(gifRangeStart)} 〜 ${formatTimelineTimeLabel(gifRangeEnd)}`}
+              styles={styles}
+              theme={theme}
+              onChange={(start, end) => {
+                setGifRangeStart(start);
+                setGifRangeEnd(end);
+              }}
+            />
+            <ActionPill
+              disabled={gifFrameMinutes.length < 2}
+              icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
+              label="この範囲で出力"
+              styles={styles}
+              onPress={handleConfirmGifRange}
+            />
+          </View>
+        )}
       </Dialog>
     </SafeAreaView>
   );

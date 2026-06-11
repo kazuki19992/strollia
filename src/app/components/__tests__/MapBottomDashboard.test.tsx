@@ -83,7 +83,7 @@ describe('マップ下部ダッシュボード', () => {
     expect(texts).toContain('船橋市');
   });
 
-  test('速度と距離の指定桁数を固定文字サイズで表示する', () => {
+  test('速度と距離の指定桁数と市名6文字プラス市を固定文字サイズで表示する', () => {
     let renderer: any;
 
     act(() => {
@@ -109,7 +109,7 @@ describe('マップ下部ダッシュボード', () => {
     expect(textNodes.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
   });
 
-  test('距離帯は6文字の市町村名用の幅を確保する', () => {
+  test('距離帯は市名6文字プラス市の7文字表示用の幅を確保する', () => {
     expect(styles.dashboardPlaceMetric.minWidth).toBeGreaterThanOrEqual(76);
     expect(styles.dashboardOdometerMetric.minWidth).toBeGreaterThanOrEqual(92);
     expect(styles.dashboardTodayMetric.minWidth).toBeGreaterThanOrEqual(56);

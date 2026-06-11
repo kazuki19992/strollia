@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Text } from 'react-native';
+import { PanResponder, Text } from 'react-native';
 
 import { createStyles } from '../../appStyles';
 import { lightTheme } from '../../../theme/theme';
@@ -130,6 +130,21 @@ describe('汎用ダイアログ Dialog', () => {
 
     const texts = renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).not.toContain('スワイプで閉じる');
+  });
+
+  test('swipeToClose=false のときスワイプ追従用のPanResponderを作らない', () => {
+    const createSpy = jest.spyOn(PanResponder, 'create');
+    const onClose = jest.fn();
+
+    act(() => {
+      renderer = create(
+        <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
+          <Text>本文</Text>
+        </Dialog>,
+      );
+    });
+
+    expect(createSpy).not.toHaveBeenCalled();
   });
 
   test('render-prop の pauseAutoClose を呼ぶと自動クローズが止まる', () => {

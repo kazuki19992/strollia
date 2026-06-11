@@ -142,8 +142,12 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   );
 
   const panResponder = useMemo(
-    () =>
-      PanResponder.create({
+    () => {
+      if (!swipeToClose) {
+        return null;
+      }
+
+      return PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4,
         onPanResponderGrant: () => {
@@ -168,7 +172,8 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
           }
           resetDragPosition();
         },
-      }),
+      });
+    },
     [animateOut, dragX, dragY, resetDragPosition, swipeToClose],
   );
 
@@ -191,7 +196,7 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
         <ConfettiOverlay styles={styles} active={showConfetti && isRendered} animationKey={animationKey} />
         {isRendered && (
           <Animated.View
-            {...panResponder.panHandlers}
+            {...panResponder?.panHandlers}
             style={[
               styles.achievementModalCard,
               {

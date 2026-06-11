@@ -83,11 +83,19 @@ describe('マップ下部ダッシュボード', () => {
     expect(texts).toContain('船橋市');
   });
 
-  test('速度と距離の指定桁数を固定文字サイズで表示する', () => {
+  test('速度と距離の指定桁数と市名6文字プラス市を固定文字サイズで表示する', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} currentSpeedKmh={999} distance={98_765_432_100} todayDistance={9_876_540} />);
+      renderer = ReactTestRenderer.create(
+        <MapBottomDashboard
+          {...createProps()}
+          currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }}
+          currentSpeedKmh={999}
+          distance={98_765_432_100}
+          todayDistance={9_876_540}
+        />,
+      );
     });
 
     const textNodes = renderer.root.findAllByType(Text).filter((node: any) => typeof node.props.children === 'string');
@@ -97,7 +105,14 @@ describe('マップ下部ダッシュボード', () => {
     expect(texts).toContain('10');
     expect(texts).toContain('9876');
     expect(texts).toContain('54');
+    expect(texts).toContain('つくばみらい市');
     expect(textNodes.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
+  });
+
+  test('距離帯は市名6文字プラス市の7文字表示用の幅を確保する', () => {
+    expect(styles.dashboardPlaceMetric.minWidth).toBeGreaterThanOrEqual(76);
+    expect(styles.dashboardOdometerMetric.minWidth).toBeGreaterThanOrEqual(92);
+    expect(styles.dashboardTodayMetric.minWidth).toBeGreaterThanOrEqual(56);
   });
 
   test('マップボタンから表示設定パネルを前面に開く', () => {

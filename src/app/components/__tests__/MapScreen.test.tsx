@@ -174,8 +174,9 @@ describe('地図画面 MapScreen', () => {
 
   test('距離値は右端固定で指定桁数用の幅を確保する', () => {
     expect(StyleSheet.flatten(styles.speedometerDistanceValueRow)?.justifyContent).toBe('flex-end');
-    expect(StyleSheet.flatten(styles.dashboardOdometerMetric)?.minWidth).toBeGreaterThanOrEqual(98);
-    expect(StyleSheet.flatten(styles.dashboardTodayMetric)?.minWidth).toBeGreaterThanOrEqual(62);
+    expect(StyleSheet.flatten(styles.dashboardOdometerMetric)?.minWidth).toBeGreaterThanOrEqual(92);
+    expect(StyleSheet.flatten(styles.dashboardTodayMetric)?.minWidth).toBeGreaterThanOrEqual(56);
+    expect(StyleSheet.flatten(styles.dashboardPlaceMetric)?.minWidth).toBeGreaterThanOrEqual(76);
     expect(StyleSheet.flatten(styles.dashboardPlaceMetric)?.minWidth).toBeLessThan(96);
   });
 

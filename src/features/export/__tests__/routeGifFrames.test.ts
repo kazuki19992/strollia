@@ -1,4 +1,44 @@
-import { computeGifFrameMinutesInRange } from '../routeGifFrames';
+import {
+  computeGifFrameMinutesInRange,
+  resolveGifFrameStepMinutes,
+  GIF_FRAME_STEP_MINUTES,
+  GIF_FRAME_DELAY_MS,
+  GIF_MIN_DURATION_MS,
+  GIF_MIN_RANGE_MINUTES,
+} from '../routeGifFrames';
+
+describe('GIF出力の定数', () => {
+  it('15分刻み・0.5秒/コマ・最短5秒・最短15分区間を公開する', () => {
+    expect(GIF_FRAME_STEP_MINUTES).toBe(15);
+    expect(GIF_FRAME_DELAY_MS).toBe(500);
+    expect(GIF_MIN_DURATION_MS).toBe(5000);
+    expect(GIF_MIN_RANGE_MINUTES).toBe(15);
+  });
+});
+
+describe('resolveGifFrameStepMinutes', () => {
+  it('長い区間は既定の15分刻みを使う', () => {
+    // 135分以上なら15分刻みで10コマ以上（=5秒以上）になる
+    expect(resolveGifFrameStepMinutes(135)).toBe(15);
+    expect(resolveGifFrameStepMinutes(300)).toBe(15);
+  });
+
+  it('5秒に満たない短い区間は15分より細かい刻みにして最低コマ数を満たす', () => {
+    // 最短15分区間: 10コマ以上にするため刻みは1分
+    expect(resolveGifFrameStepMinutes(15)).toBe(1);
+    // 60分: floor(60/9)=6分刻み
+    expect(resolveGifFrameStepMinutes(60)).toBe(6);
+  });
+
+  it('解決した刻みで必ず最低コマ数（5秒ぶん）以上になる', () => {
+    const minFrames = Math.ceil(GIF_MIN_DURATION_MS / GIF_FRAME_DELAY_MS);
+    for (const range of [15, 20, 45, 90, 134, 135, 200]) {
+      const step = resolveGifFrameStepMinutes(range);
+      const frames = computeGifFrameMinutesInRange(0, range, step);
+      expect(frames.length).toBeGreaterThanOrEqual(minFrames);
+    }
+  });
+});
 
 describe('computeGifFrameMinutesInRange', () => {
   it('開始から終了まで15分刻みにし終了を必ず含める', () => {

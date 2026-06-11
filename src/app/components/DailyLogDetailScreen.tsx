@@ -11,7 +11,12 @@ import { getAchievementUnlocksByDate } from '../../features/achievements/achieve
 import { coordinateToGridCell } from '../../features/location/grid/gridCell';
 import { getVisitedCellsByIds } from '../../features/location/visitedCellRepository';
 import { getLocationPointsByDate } from '../../features/logs/logRepository';
-import { computeGifFrameMinutesInRange } from '../../features/export/routeGifFrames';
+import {
+  computeGifFrameMinutesInRange,
+  resolveGifFrameStepMinutes,
+  GIF_FRAME_DELAY_MS,
+  GIF_MIN_RANGE_MINUTES,
+} from '../../features/export/routeGifFrames';
 import { exportRouteGif } from '../../features/export/routeGifExporter';
 import { createInitialRegion } from '../../features/map/routeMapper';
 import { createDailyDetailReport, DailyDetailReport } from '../../features/reports/dailyReport';
@@ -45,8 +50,6 @@ import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { StepSlider } from './StepSlider';
 
-const GIF_FRAME_STEP_MINUTES = 15;
-const GIF_FRAME_DELAY_MS = 500;
 /** GIF区間指定スライダーの選択粒度（分）。 */
 const GIF_RANGE_STEP_MINUTES = 5;
 
@@ -101,17 +104,17 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   // 記録の最初/最後の時刻（GIF区間指定スライダーの範囲）。
   const recordingStartMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[0]) : 0;
   const recordingEndMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[dailyPoints.length - 1]) : 0;
-  const canExportGif = isPlusActive && dailyPoints.length >= 2 && recordingEndMinute > recordingStartMinute;
+  const canExportGif = isPlusActive && dailyPoints.length >= 2 && recordingEndMinute - recordingStartMinute >= GIF_MIN_RANGE_MINUTES;
   // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
   const gifRangePoints = useMemo(
     () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifRangeEnd),
     [dailyPoints, gifRangeStart, gifRangeEnd],
   );
-  // 選択区間を15分刻みにした各コマの時刻。
-  const gifFrameMinutes = useMemo(
-    () => computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, GIF_FRAME_STEP_MINUTES),
-    [gifRangeStart, gifRangeEnd],
-  );
+  // 選択区間を刻んだ各コマの時刻。既定は15分刻みだが、最短5秒に満たない短い区間は刻みを細かくする。
+  const gifFrameMinutes = useMemo(() => {
+    const step = resolveGifFrameStepMinutes(gifRangeEnd - gifRangeStart);
+    return computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, step);
+  }, [gifRangeStart, gifRangeEnd]);
   const gifRegion = useMemo(
     () => (gifRangePoints.length > 0 ? createInitialRegion(gifRangePoints) : null),
     [gifRangePoints],
@@ -429,6 +432,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
             minValue={recordingStartMinute}
             maxValue={recordingEndMinute}
             stepValue={GIF_RANGE_STEP_MINUTES}
+            minSeparation={GIF_MIN_RANGE_MINUTES}
             startValue={gifRangeStart}
             endValue={gifRangeEnd}
             startLabel={formatTimelineTimeLabel(recordingStartMinute)}

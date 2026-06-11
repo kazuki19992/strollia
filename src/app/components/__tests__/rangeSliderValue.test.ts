@@ -15,4 +15,10 @@ describe('resolveRangeThumbValues', () => {
   it('end を範囲内で動かす', () => {
     expect(resolveRangeThumbValues('end', 73, { start: 0, end: 80 }, bounds)).toEqual({ start: 0, end: 75 });
   });
+
+  it('minSeparation を指定すると後ろつまみが前つまみを最短間隔より近づけない', () => {
+    const sep = { minValue: 0, maxValue: 100, stepValue: 5, minSeparation: 15 };
+    expect(resolveRangeThumbValues('end', 20, { start: 30, end: 80 }, sep)).toEqual({ start: 30, end: 45 });
+    expect(resolveRangeThumbValues('start', 90, { start: 10, end: 50 }, sep)).toEqual({ start: 35, end: 50 });
+  });
 });

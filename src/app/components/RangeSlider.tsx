@@ -14,6 +14,8 @@ export type RangeSliderProps = {
   maxValue: number;
   /** 1ステップの幅。 */
   stepValue: number;
+  /** 開始と終了を最低限離す間隔（後ろつまみが前つまみを追い越さない最短区間）。省略時は stepValue。 */
+  minSeparation?: number;
   /** 開始つまみの現在値。 */
   startValue: number;
   /** 終了つまみの現在値。 */
@@ -44,6 +46,7 @@ export function RangeSlider({
   minValue,
   maxValue,
   stepValue,
+  minSeparation,
   startValue,
   endValue,
   startLabel,
@@ -78,6 +81,8 @@ export function RangeSlider({
   maxValueRef.current = maxValue;
   const stepValueRef = useRef(stepValue);
   stepValueRef.current = stepValue;
+  const minSeparationRef = useRef(minSeparation);
+  minSeparationRef.current = minSeparation;
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const onDragStartRef = useRef(onDragStart);
@@ -111,7 +116,7 @@ export function RangeSlider({
           thumb,
           rawValue,
           { start: startRef.current, end: endRef.current },
-          { minValue: min, maxValue: max, stepValue: step },
+          { minValue: min, maxValue: max, stepValue: step, minSeparation: minSeparationRef.current },
         );
         if (next.start !== startRef.current || next.end !== endRef.current) {
           onChangeRef.current(next.start, next.end);
@@ -136,7 +141,7 @@ export function RangeSlider({
       thumb,
       raw,
       { start: startRef.current, end: endRef.current },
-      { minValue: minValueRef.current, maxValue: maxValueRef.current, stepValue: stepValueRef.current },
+      { minValue: minValueRef.current, maxValue: maxValueRef.current, stepValue: stepValueRef.current, minSeparation: minSeparationRef.current },
     );
     if (next.start !== startRef.current || next.end !== endRef.current) {
       onChangeRef.current(next.start, next.end);

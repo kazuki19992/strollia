@@ -58,7 +58,7 @@ jest.mock('../../../features/logs/logRepository', () => ({
     },
     {
       id: 2,
-      recordedAt: new Date(2026, 4, 31, 0, 10).toISOString(),
+      recordedAt: new Date(2026, 4, 31, 0, 30).toISOString(),
       localDate: '2026-05-31',
       latitude: 35.690921,
       longitude: 139.700258,

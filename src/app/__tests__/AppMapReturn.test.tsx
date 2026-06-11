@@ -9,6 +9,7 @@ import {
   startBackgroundLocationRecording,
 } from '../../features/location/locationService';
 import { getDailyLogs } from '../../features/logs/logRepository';
+import { pickAndReadGpxFile } from '../../features/import/gpxImportService';
 import {
   getPremiumAccessState,
   getPremiumOfferingSummary,
@@ -333,6 +334,10 @@ jest.mock('../../features/export/gpxExporter', () => ({
   shareGpx: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../features/import/gpxImportService', () => ({
+  pickAndReadGpxFile: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock('../../features/reports/monthlyAreaReport', () => ({
   getMonthlyAreaReport: jest.fn().mockResolvedValue(null),
 }));
@@ -415,6 +420,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
     (setSetting as jest.Mock).mockResolvedValue(undefined);
+    (pickAndReadGpxFile as jest.Mock).mockResolvedValue(null);
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -704,6 +710,36 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
 
     expect(renderer.root.findByProps({ accessibilityLabel: '日別詳細を開く' })).toBeTruthy();
+  });
+
+  test('GPXインポート押下直後に実績反映範囲の注意を表示してからファイル選択を開く', async () => {
+    const callOrder: string[] = [];
+    jest.spyOn(Alert, 'alert').mockImplementation((title: string, message?: string) => {
+      callOrder.push(`alert:${title}:${message ?? ''}`);
+    });
+    (pickAndReadGpxFile as jest.Mock).mockImplementation(async () => {
+      callOrder.push('pick');
+      return null;
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+
+    await act(async () => {
+      await mockLatestSettingsScreenProps.onImportGpx();
+    });
+
+    expect(callOrder).toEqual([
+      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+      'pick',
+    ]);
+    expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
   });
 
 

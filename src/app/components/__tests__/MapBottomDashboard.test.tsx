@@ -1,12 +1,16 @@
+import * as ReactNative from 'react-native';
 import { Animated, Text } from 'react-native';
 
 import { lightTheme } from '../../../theme/theme';
 import { createStyles } from '../../appStyles';
 import {
+  getDashboardScale,
+  getScaledSpeedDialLayout,
   getSpeedMeterAppearance,
   getSpeedMeterArcStroke,
   MapBottomDashboard,
   METER_CLUSTER_BACKGROUND_PATH,
+  SMALL_DASHBOARD_MIN_SCALE,
   SPEED_METER_ARC_CIRCUMFERENCE,
   SPEED_METER_ARC_RADIUS,
   SPEED_METER_ARC_STROKE_WIDTH,
@@ -36,6 +40,10 @@ jest.mock('react-native-svg', () => {
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
 const styles = createStyles(lightTheme);
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
 
 /** 下部ダッシュボードのテスト用propsを作る。 */
 function createProps() {
@@ -142,9 +150,65 @@ describe('マップ下部ダッシュボード', () => {
     expect(arc.props.stroke).toBe('#39d9ff');
     expect(arc.props.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
   });
+
+  test('小さい画面では現在地名に縮小許可を付けて描画する', () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 375, height: 667, scale: 2, fontScale: 1 });
+
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MapBottomDashboard {...createProps()} currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }} />,
+      );
+    });
+
+    const place = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'つくばみらい市');
+
+    expect(place.props.adjustsFontSizeToFit).toBe(true);
+    expect(place.props.minimumFontScale).toBeLessThan(1);
+    expect(place.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: expect.any(Number) })]));
+  });
+
+  test('小さい画面では速度リングの背景とSVGを同じ倍率で縮小する', () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 375, height: 667, scale: 2, fontScale: 1 });
+
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} />);
+    });
+
+    const scale = getDashboardScale(375);
+    const layout = getScaledSpeedDialLayout(scale);
+    const ringBase = renderer.root.find((node: any) => node.props.testID === 'speed-meter-ring-base');
+    const arcSvg = renderer.root.find((node: any) => node.props.testID === 'speed-meter-arc-svg');
+
+    expect(ringBase.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.ringBase)]));
+    expect(arcSvg.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.arcSvg)]));
+  });
 });
 
 describe('マップ下部ダッシュボードの速度帯', () => {
+  test('大きい画面ではダッシュボード倍率を1に保つ', () => {
+    expect(getDashboardScale(430)).toBe(1);
+    expect(getDashboardScale(460)).toBe(1);
+  });
+
+  test('小さい画面ではダッシュボード倍率を下限まで縮小する', () => {
+    expect(getDashboardScale(393)).toBeLessThan(1);
+    expect(getDashboardScale(320)).toBe(SMALL_DASHBOARD_MIN_SCALE);
+  });
+
+  test('小さい画面の速度メーターはリングとSVGを同じ寸法に縮小する', () => {
+    const scale = getDashboardScale(375);
+    const layout = getScaledSpeedDialLayout(scale);
+
+    expect(layout.dial.width).toBe(layout.arcSvg.width);
+    expect(layout.dial.height).toBe(layout.arcSvg.height);
+    expect(layout.ringBase.width).toBeCloseTo(100 * scale);
+    expect(layout.ringBase.height).toBeCloseTo(100 * scale);
+  });
+
   test('速度帯を30km/hと150km/hで切り替える', () => {
     const lowSpeed = getSpeedMeterAppearance(29.9, '#123456');
     const vehicleSpeed = getSpeedMeterAppearance(30, '#123456');

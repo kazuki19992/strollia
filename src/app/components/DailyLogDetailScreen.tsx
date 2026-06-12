@@ -98,6 +98,8 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   const gifFrameRef = useRef<View>(null);
   const gifFrameResolveRef = useRef<(() => void) | null>(null);
   const gifMapReadyRef = useRef<(() => void) | null>(null);
+  // 実行中の生成ループ。キャンセル後の再実行で、前のループ完了を待ってから次を始めるために使う。
+  const gifGenerationRef = useRef<Promise<void> | null>(null);
   const shareCardRef = useRef<View>(null);
   const shareMapReadyRef = useRef<(() => void) | null>(null);
   const title = formatDailyLogDetailTitle(log.localDate);
@@ -298,41 +300,62 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   function handleConfirmGifRange(): void {
     // 区間選択→生成中で中身の高さが変わるので、滑らかにリサイズさせる。
     animateDialogResize();
-    setIsSelectingGifRange(false);
     handleExportGif().catch(() => undefined);
   }
 
   async function handleExportGif(): Promise<void> {
-    if (!canExportGif || isGeneratingGif || !gifRegion || gifFrameMinutes.length < 2) {
+    if (!canExportGif || !gifRegion || gifFrameMinutes.length < 2) {
       return;
     }
-    gifAbortRef.current = false;
-    setGifFrameIndex(-1);
-    setGifProgress({ done: 0, total: gifFrameMinutes.length });
-    try {
-      await waitForGifMapReady();
-      if (gifAbortRef.current) {
-        return;
-      }
-      const success = await exportRouteGif({
-        captureTarget: () => gifFrameRef.current,
-        frameCount: gifFrameMinutes.length,
-        delayMs: GIF_FRAME_DELAY_MS,
-        fileName: `strollia-${log.localDate}`,
-        renderFrame: renderGifFrame,
-        onProgress: (done, total) => setGifProgress({ done, total }),
-        shouldAbort: () => gifAbortRef.current,
-      });
-      if (!success && !gifAbortRef.current) {
-        Alert.alert('GIF出力', 'GIFを生成できませんでした。');
-      }
-    } catch (error: unknown) {
-      Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
-    } finally {
-      setGifProgress(null);
-      setGifFrameIndex(-1);
+
+    // 直前の生成がキャンセル後にまだ巻き戻り中なら、中断させて完了を待ってから新しい生成を始める。
+    // refを共有しているため、前のループと新しいループを重ねて走らせない。
+    if (gifGenerationRef.current) {
+      gifAbortRef.current = true;
+      gifMapReadyRef.current?.();
       gifMapReadyRef.current = null;
-      gifFrameResolveRef.current = null;
+      await gifGenerationRef.current;
+    }
+
+    const total = gifFrameMinutes.length;
+    const run = (async () => {
+      gifAbortRef.current = false;
+      setGifFrameIndex(-1);
+      setIsSelectingGifRange(false);
+      setGifProgress({ done: 0, total });
+      try {
+        await waitForGifMapReady();
+        if (gifAbortRef.current) {
+          return;
+        }
+        const success = await exportRouteGif({
+          captureTarget: () => gifFrameRef.current,
+          frameCount: total,
+          delayMs: GIF_FRAME_DELAY_MS,
+          fileName: `strollia-${log.localDate}`,
+          renderFrame: renderGifFrame,
+          onProgress: (done, frameTotal) => setGifProgress({ done, total: frameTotal }),
+          shouldAbort: () => gifAbortRef.current,
+        });
+        if (!success && !gifAbortRef.current) {
+          Alert.alert('GIF出力', 'GIFを生成できませんでした。');
+        }
+      } catch (error: unknown) {
+        Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
+      } finally {
+        setGifProgress(null);
+        setGifFrameIndex(-1);
+        gifMapReadyRef.current = null;
+        gifFrameResolveRef.current = null;
+      }
+    })();
+    gifGenerationRef.current = run;
+    try {
+      await run;
+    } finally {
+      if (gifGenerationRef.current === run) {
+        gifGenerationRef.current = null;
+      }
     }
   }
 

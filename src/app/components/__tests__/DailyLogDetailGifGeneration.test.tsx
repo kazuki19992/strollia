@@ -231,4 +231,55 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     expect(Sharing.shareAsync).not.toHaveBeenCalled();
     expect(renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' })).toBeTruthy();
   });
+
+  it('キャンセル直後に再度生成しても、前のループを待ってから生成・共有できる', async () => {
+    const Sharing = require('expo-sharing');
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={jest.fn()}
+        />,
+      );
+    });
+    await act(async () => {});
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '移動記録をGIFで出力' }).props.onPress();
+    });
+    // 1回目の出力 → 地図ロード待ちで停止 → キャンセル。
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'GIF生成をキャンセル' }).props.onPress();
+    });
+
+    // 2回目の出力。前のループ完了を待ってから新しい生成が走る。
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByType(GifFrameRenderer).props.onMapLoaded();
+    });
+    for (let i = 0; i < 50; i += 1) {
+      if (Sharing.shareAsync.mock.calls.length > 0) {
+        break;
+      }
+      await act(async () => {
+        await flushAnimationFrames();
+      });
+    }
+
+    expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
+    expect(Sharing.shareAsync).toHaveBeenCalledWith(
+      '/tmp/strollia-2026-05-31.gif',
+      expect.objectContaining({ mimeType: 'image/gif' }),
+    );
+  });
 });

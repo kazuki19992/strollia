@@ -10,6 +10,8 @@ type TutorialStep = {
   title: string;
   /** 本文。 */
   description: string;
+  /** 本文の下に表示する箇条書き。 */
+  bulletItems?: string[];
 };
 
 /** 初回起動チュートリアルのprops。 */
@@ -34,6 +36,16 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     title: '実績を集める',
     description: '移動距離や訪問した地域、記録日数に応じて実績が解除されます。続けて使うほど、自分の移動の積み重ねが見えるようになります。',
+  },
+  {
+    title: 'さいごに',
+    description: '安全に楽しくおさんぽするために、次のことを守りましょう。',
+    bulletItems: [
+      '立入禁止の場所や私有地に入らない',
+      '交通ルールを守り、まわりに注意する',
+      '危険な場所には近づかない、入らない',
+      '体調が悪くなったら無理に続けない',
+    ],
   },
   {
     title: '権限を付与してはじめる',
@@ -63,6 +75,16 @@ export function FirstLaunchTutorialDialog({ visible, styles, onComplete }: First
       <Text style={styles.firstLaunchTutorialStepText}>{`${stepIndex + 1} / ${TUTORIAL_STEPS.length}`}</Text>
       <Text style={styles.firstLaunchTutorialTitle}>{currentStep.title}</Text>
       <Text style={styles.firstLaunchTutorialDescription}>{currentStep.description}</Text>
+      {currentStep.bulletItems && (
+        <View style={styles.firstLaunchTutorialBulletList}>
+          {currentStep.bulletItems.map((item) => (
+            <View key={item} style={styles.firstLaunchTutorialBulletRow}>
+              <Text style={styles.firstLaunchTutorialBulletMark}>•</Text>
+              <Text style={styles.firstLaunchTutorialBulletText}>{item}</Text>
+            </View>
+          ))}
+        </View>
+      )}
       <View style={styles.firstLaunchTutorialActions}>
         <Pressable accessibilityLabel={actionLabel} accessibilityRole="button" onPress={handlePrimaryAction} style={styles.firstLaunchTutorialButton}>
           <Text style={styles.firstLaunchTutorialButtonText}>{actionLabel}</Text>

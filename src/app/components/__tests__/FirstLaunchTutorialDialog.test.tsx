@@ -46,26 +46,35 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     });
 
     expect(visibleTexts()).toContain('Strolliaへようこそ');
-    expect(visibleTexts()).toContain('1 / 4');
+    expect(visibleTexts()).toContain('1 / 5');
     expect(visibleTexts()).toContain('Strolliaは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。');
   });
 
-  test('次へを押すと画面下の項目、実績、権限案内の順に進む', () => {
+  test('次へを押すと画面下の項目、実績、安全注意、権限案内の順に進む', () => {
     act(() => {
       renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
     });
 
     press('次へ');
     expect(visibleTexts()).toContain('画面下の項目');
-    expect(visibleTexts()).toContain('2 / 4');
+    expect(visibleTexts()).toContain('2 / 5');
 
     press('次へ');
     expect(visibleTexts()).toContain('実績を集める');
-    expect(visibleTexts()).toContain('3 / 4');
+    expect(visibleTexts()).toContain('3 / 5');
+
+    press('次へ');
+    expect(visibleTexts()).toContain('さいごに');
+    expect(visibleTexts()).toContain('4 / 5');
+    expect(visibleTexts()).toContain('安全に楽しくおさんぽするために、次のことを守りましょう。');
+    expect(visibleTexts()).toContain('立入禁止の場所や私有地に入らない');
+    expect(visibleTexts()).toContain('交通ルールを守り、まわりに注意する');
+    expect(visibleTexts()).toContain('危険な場所には近づかない、入らない');
+    expect(visibleTexts()).toContain('体調が悪くなったら無理に続けない');
 
     press('次へ');
     expect(visibleTexts()).toContain('権限を付与してはじめる');
-    expect(visibleTexts()).toContain('4 / 4');
+    expect(visibleTexts()).toContain('5 / 5');
     expect(visibleTexts()).toContain('まずは位置情報の権限を付与してはじめましょう。チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。');
   });
 
@@ -75,6 +84,7 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
     });
 
+    press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');

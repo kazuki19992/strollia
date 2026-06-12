@@ -156,6 +156,8 @@ type DailyLogStackParamList = {
   DailyLogDetail: { log: DailyLogSummary };
 };
 
+type FirstLaunchTutorialMode = 'firstLaunch' | 'replay';
+
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 const DailyLogStack = createNativeStackNavigator<DailyLogStackParamList>();
 /** 新規visited cellを塗るときのフェード時間。 */
@@ -229,6 +231,7 @@ export default function App() {
   const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
+  const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
   const hasRequestedAchievementNotificationPermissionRef = useRef(false);
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
@@ -534,6 +537,7 @@ export default function App() {
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         await refreshAchievementState(true);
         if (!savedFirstLaunchTutorialCompleted) {
+          setFirstLaunchTutorialMode('firstLaunch');
           setIsFirstLaunchTutorialVisible(true);
         }
       })
@@ -951,6 +955,7 @@ export default function App() {
   /** 設定画面から初回チュートリアルを再表示する。 */
   function openFirstLaunchTutorial(): void {
     triggerSelectionHaptic();
+    setFirstLaunchTutorialMode('replay');
     setIsFirstLaunchTutorialVisible(true);
   }
 
@@ -1241,9 +1246,13 @@ export default function App() {
     Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。設定画面の月払いまたは年払いから加入してください。`);
   }
 
-  /** 初回チュートリアルを閉じ、次回以降は表示しないよう保存する。 */
+  /** 初回チュートリアルを閉じ、初回表示時だけ次回以降は表示しないよう保存する。 */
   function completeFirstLaunchTutorial(): void {
     setIsFirstLaunchTutorialVisible(false);
+    if (firstLaunchTutorialMode === 'replay') {
+      return;
+    }
+
     setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
       console.warn('Failed to persist first launch tutorial flag:', error);
     });
@@ -1525,6 +1534,7 @@ export default function App() {
       <FirstLaunchTutorialDialog
         visible={isFirstLaunchTutorialVisible}
         styles={styles}
+        completionButtonLabel={firstLaunchTutorialMode === 'replay' ? '閉じる' : '地図で確認する'}
         onComplete={completeFirstLaunchTutorial}
       />
 

@@ -304,6 +304,9 @@ export function createStyles(theme: AppTheme) {
       lineHeight: 22,
       textAlign: 'center',
     },
+    firstLaunchTutorialDescriptionGroup: {
+      gap: 8,
+    },
     firstLaunchTutorialActions: {
       alignSelf: 'stretch',
       gap: 10,

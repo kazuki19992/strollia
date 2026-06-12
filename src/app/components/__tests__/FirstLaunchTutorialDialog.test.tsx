@@ -14,12 +14,12 @@ jest.mock('../ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
 
 const { act, create } = require('react-test-renderer') as {
   act: (callback: () => void) => void;
-  create: (element: ReactNode) => { root: any; unmount: () => void };
+  create: (element: ReactNode) => { root: any; update: (element: ReactNode) => void; unmount: () => void };
 };
 
 const styles = createStyles(lightTheme);
 
-let renderer: { root: any; unmount: () => void } | null = null;
+let renderer: { root: any; update: (element: ReactNode) => void; unmount: () => void } | null = null;
 
 function visibleTexts(): unknown[] {
   return renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
@@ -47,7 +47,8 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
     expect(visibleTexts()).toContain('Strolliaへようこそ');
     expect(visibleTexts()).toContain('1 / 5');
-    expect(visibleTexts()).toContain('Strolliaは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。');
+    expect(visibleTexts()).toContain('Strolliaは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。');
+    expect(visibleTexts()).toContain('記録したデータは、あなたの明示操作なしに外部へ送信しません。');
   });
 
   test('次へを押すと画面下の項目、実績、安全注意、権限案内の順に進む', () => {
@@ -75,7 +76,8 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     press('次へ');
     expect(visibleTexts()).toContain('権限を付与してはじめる');
     expect(visibleTexts()).toContain('5 / 5');
-    expect(visibleTexts()).toContain('まずは位置情報の権限を付与してはじめましょう。チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。');
+    expect(visibleTexts()).toContain('まずは位置情報の権限を付与してはじめましょう。');
+    expect(visibleTexts()).toContain('チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。');
   });
 
   test('最後のボタンで onComplete を呼ぶ', () => {
@@ -91,6 +93,45 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     press('地図で確認する');
 
     expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  test('完了ボタンの文言を再表示用に変更できる', () => {
+    const onComplete = jest.fn();
+    act(() => {
+      renderer = create(<FirstLaunchTutorialDialog visible completionButtonLabel="閉じる" styles={styles} onComplete={onComplete} />);
+    });
+
+    press('次へ');
+    press('次へ');
+    press('次へ');
+    press('次へ');
+    expect(visibleTexts()).toContain('閉じる');
+    press('チュートリアルを閉じる');
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  test('再表示したときは最初の説明から始まる', () => {
+    const onComplete = jest.fn();
+    act(() => {
+      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
+    });
+
+    press('次へ');
+    press('次へ');
+    press('次へ');
+    press('次へ');
+    expect(visibleTexts()).toContain('5 / 5');
+
+    act(() => {
+      renderer!.update(<FirstLaunchTutorialDialog visible={false} styles={styles} onComplete={onComplete} />);
+    });
+    act(() => {
+      renderer!.update(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
+    });
+
+    expect(visibleTexts()).toContain('1 / 5');
+    expect(visibleTexts()).toContain('Strolliaへようこそ');
   });
 
   test('閉じるボタンで onComplete を呼ぶ', () => {

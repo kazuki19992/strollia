@@ -98,6 +98,9 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 実績解除ダイアログや実績詳細ダイアログとは別 state で管理する。初回チュートリアルは初回起動時のみの説明であり、実績通知キューには参加しない。
 
 設定画面では「このアプリについて」の直下に `チュートリアル` の `ActionPill` を置く。再表示時は `firstLaunchTutorialCompleted` を変更せず、現在のセッションで `FirstLaunchTutorialDialog` を開くだけにする。
+設定画面から再表示した場合、最終ステップのボタン文言は `閉じる` にする。初回起動時の最終ステップは、権限付与パネルへ視線を戻す意図で `地図で確認する` のままにする。
+
+`FirstLaunchTutorialDialog` は `visible=true` になったタイミングでステップを1ページ目へ戻す。本文は1つの長文にせず、読みやすい単位の段落として複数の `Text` に分けて表示する。
 
 ## スタイル
 
@@ -121,6 +124,8 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 - 1ステップ目のタイトルと本文を表示する。
 - `次へ` を押すと2、3、4、5ステップ目へ進む。
 - 5ステップ目で `地図で確認する` を押すと `onComplete` を呼ぶ。
+- 再表示用の完了ボタン文言を `閉じる` に変更できる。
+- 非表示から再表示したときは1ステップ目から始まる。
 - 閉じる操作でも `onComplete` を呼ぶ。
 - `Dialog` に `swipeToClose={false}` 相当の挙動としてスワイプヒントを表示しない。
 
@@ -132,6 +137,7 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 - 完了ボタン押下で `setSetting('firstLaunchTutorialCompleted', true)` を呼ぶ。
 - `firstLaunchTutorialCompleted=true` のとき表示しない。
 - 設定画面の `チュートリアル` 押下で初回チュートリアルを再表示する。
+- 設定画面からの再表示では最終ボタン文言を `閉じる` にし、閉じても初回完了保存や通知権限要求を再実行しない。
 
 ## ドキュメント更新
 

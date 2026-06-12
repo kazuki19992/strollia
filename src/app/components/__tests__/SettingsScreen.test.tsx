@@ -765,6 +765,28 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     expect(Clipboard.setStringAsync).toHaveBeenCalledWith('$RCAnonymousID:abc123');
+    expect(alertSpy).toHaveBeenCalledWith('コピーしました', 'サポート用IDをクリップボードにコピーしました。');
+    alertSpy.mockRestore();
+  });
+
+  test('サポート用IDのコピーに失敗したときは失敗アラートを表示する', async () => {
+    const Clipboard = require('expo-clipboard');
+    const { Alert } = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    (Clipboard.setStringAsync as jest.Mock).mockRejectedValueOnce(new Error('copy failed'));
+    const props = { ...createProps(), revenueCatAppUserId: '$RCAnonymousID:abc123' };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const copyButton = renderer.root.findByProps({ accessibilityLabel: 'サポート用IDをコピー' });
+    await act(async () => {
+      copyButton.props.onPress();
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith('コピーできませんでした', 'もう一度お試しください。');
     alertSpy.mockRestore();
   });
 

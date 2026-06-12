@@ -13,6 +13,7 @@ import { pickAndReadGpxFile } from '../../features/import/gpxImportService';
 import {
   getPremiumAccessState,
   getPremiumOfferingSummary,
+  getRevenueCatAppUserId,
   presentPremiumCustomerCenter,
   purchasePremiumPackage,
   restorePremiumPurchases,
@@ -544,6 +545,22 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
+  });
+
+  test('起動時にRevenueCat App User IDを取得し設定画面へ渡す', async () => {
+    (getRevenueCatAppUserId as jest.Mock).mockResolvedValueOnce('$RCAnonymousID:abc123');
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(getRevenueCatAppUserId).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+    expect(mockLatestSettingsScreenProps.revenueCatAppUserId).toBe('$RCAnonymousID:abc123');
   });
 
   test('初回チュートリアル未完了の場合は初回チュートリアルを表示する', async () => {

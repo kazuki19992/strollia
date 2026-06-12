@@ -21,7 +21,15 @@ export type DialogChildHelpers = {
 export type DialogProps = {
   /** 表示状態。 */
   visible: boolean;
-  /** 本文。関数を渡すと pauseAutoClose を受け取れる。 */
+  /**
+   * 本文。関数を渡すと pauseAutoClose を受け取れる。
+   *
+   * 注意: カードは「中身の自然な高さ」に合わせて高さをアニメーションする（{@link Dialog} 参照）。
+   * そのため本文は内容なりの高さになるものを渡すこと。`flex: 1` や `height: '100%'` のように
+   * 親の高さを埋めようとするスタイルは効かない（高さが確定しないため潰れる）。
+   * 画面より高い中身（内部スクロールが必要なもの）も想定していない。
+   * 配置は Dialog 側が行うため、呼び出し側で position:'absolute' などを付ける必要はない。
+   */
   children: ReactNode | ((helpers: DialogChildHelpers) => ReactNode);
   /** 紙吹雪を背景に表示するか。 */
   showConfetti?: boolean;
@@ -39,7 +47,17 @@ export type DialogProps = {
   onClose: () => void;
 };
 
-/** スワイプ/紙吹雪/自動クローズを備えた汎用ダイアログ。 */
+/**
+ * スワイプ/紙吹雪/自動クローズを備えた汎用ダイアログ。
+ *
+ * カードの高さは中身の自然な高さに追従し、中身が変わって高さが変わるときは
+ * 0.5秒の減速移動でアニメーションする（初回表示時は即時）。これは Dialog 共通の
+ * 既定挙動で、チュートリアルや実績モーダルなどすべての利用箇所に適用される。
+ *
+ * 実装上、中身は内部で absolute 配置のラッパーに入れて自然な高さを測定する。
+ * このため呼び出し側の本文では `flex: 1` / `height: '100%'` など親の高さを埋める指定は使えない
+ * （{@link DialogProps.children} 参照）。配置は Dialog が行うので absolute 等を付ける必要はない。
+ */
 export function Dialog({ visible, children, showConfetti = false, autoClose = false, swipeToClose = true, dismissible = true, animationKey = null, styles, onClose }: DialogProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
   const autoCloseProgress = useRef(new Animated.Value(0)).current;

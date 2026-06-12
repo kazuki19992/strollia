@@ -284,6 +284,15 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '900',
       textAlign: 'center',
     },
+    dialogMeasuredContent: {
+      alignItems: 'center',
+      gap: 12,
+      left: 0,
+      padding: 22,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+    },
     firstLaunchTutorialStepText: {
       color: colors.primary,
       fontSize: 13,

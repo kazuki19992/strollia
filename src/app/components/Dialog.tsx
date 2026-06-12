@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Modal, PanResponder, Pressable, Text, View } from 'react-native';
+import { Animated, Easing, LayoutChangeEvent, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
 import { AppStyles } from '../appStyles';
 import { shouldDismissAchievementModalSwipe, shouldDismissAchievementModalTerminate } from './achievementUnlockModalLogic';
@@ -8,6 +8,8 @@ import { ConfettiOverlay } from './ConfettiOverlay';
 
 /** 自動で閉じるまでの待機時間。 */
 const AUTO_CLOSE_DELAY_MS = 10_000;
+/** 中身が変わってカードの高さが変わるときのアニメーション時間。 */
+const CARD_RESIZE_DURATION_MS = 500;
 
 /** render-prop の子へ渡す補助関数。 */
 export type DialogChildHelpers = {
@@ -44,6 +46,10 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   const dragX = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const isClosingRef = useRef(false);
+  // 中身の高さ。最初の測定では即反映し、以降の変化は減速移動でアニメーションする。
+  const cardHeight = useRef(new Animated.Value(0)).current;
+  const measuredHeightRef = useRef(0);
+  const hasMeasuredRef = useRef(false);
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCloseRef = useRef(onClose);
   const lastContentRef = useRef<ReactNode>(null);
@@ -80,6 +86,9 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
         Animated.timing(dragY, { toValue: 0, duration: 500, useNativeDriver: true }),
       ]).start(({ finished }) => {
         if (finished) {
+          // 次に開くときは新しい中身の高さで測り直すため、測定状態をリセットする。
+          hasMeasuredRef.current = false;
+          measuredHeightRef.current = 0;
           setIsRendered(false);
         }
       });
@@ -185,6 +194,29 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
     extrapolate: 'clamp',
   });
 
+  // 中身の自然な高さを測定し、カード高さへ反映する。初回は即時、以降は減速移動でアニメーション。
+  const handleContentLayout = useCallback(
+    function handleContentLayout(event: LayoutChangeEvent): void {
+      const nextHeight = event.nativeEvent.layout.height;
+      if (nextHeight <= 0 || nextHeight === measuredHeightRef.current) {
+        return;
+      }
+      measuredHeightRef.current = nextHeight;
+      if (!hasMeasuredRef.current) {
+        hasMeasuredRef.current = true;
+        cardHeight.setValue(nextHeight);
+        return;
+      }
+      Animated.timing(cardHeight, {
+        toValue: nextHeight,
+        duration: CARD_RESIZE_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    },
+    [cardHeight],
+  );
+
   const content = typeof children === 'function' ? children({ pauseAutoClose }) : children;
   // 閉じる際に親が中身を空にしても、退場アニメーション中はカードが縮まないよう直前の中身を保持する。
   if (content) {
@@ -201,6 +233,10 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
             {...panResponder?.panHandlers}
             style={[
               styles.achievementModalCard,
+              // 中身の高さに合わせてカードの高さを減速移動でアニメーションさせる。
+              // 内側は absolute で自然な高さを測り、外側の高さだけをアニメーションする。
+              { padding: 0, gap: 0, alignItems: 'stretch', overflow: 'hidden' },
+              hasMeasuredRef.current ? { height: cardHeight } : null,
               {
                 opacity: Animated.multiply(modalProgress, distanceOpacity),
                 transform: [
@@ -211,23 +247,25 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
               },
             ]}
           >
-            {dismissible && (
-              <Pressable onPress={() => animateOut(true)} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
-                <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
-              </Pressable>
-            )}
-            {autoClose && !isAutoClosePaused && (
-              <View style={styles.achievementAutoCloseTrack}>
-                <Animated.View
-                  style={[
-                    styles.achievementAutoCloseProgress,
-                    { transform: [{ scaleX: autoCloseProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }] },
-                  ]}
-                />
-              </View>
-            )}
-            {displayedContent}
-            {swipeToClose && dismissible && <Text style={styles.dialogSwipeHint}>スワイプで閉じる</Text>}
+            <View onLayout={handleContentLayout} style={styles.dialogMeasuredContent}>
+              {dismissible && (
+                <Pressable onPress={() => animateOut(true)} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
+                  <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
+                </Pressable>
+              )}
+              {autoClose && !isAutoClosePaused && (
+                <View style={styles.achievementAutoCloseTrack}>
+                  <Animated.View
+                    style={[
+                      styles.achievementAutoCloseProgress,
+                      { transform: [{ scaleX: autoCloseProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }] },
+                    ]}
+                  />
+                </View>
+              )}
+              {displayedContent}
+              {swipeToClose && dismissible && <Text style={styles.dialogSwipeHint}>スワイプで閉じる</Text>}
+            </View>
           </Animated.View>
         )}
       </View>

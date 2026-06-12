@@ -67,13 +67,18 @@ export async function exportRouteGif(options: ExportRouteGifOptions): Promise<bo
     },
   });
 
-  if (!gif) {
+  // 生成完了とファイル書き出し・共有の間にキャンセル/離脱が起きた場合は共有しない。
+  if (!gif || shouldAbort?.()) {
     return false;
   }
 
   const fileUri = `${FileSystem.cacheDirectory}${fileName}.gif`;
   const base64Gif = Buffer.from(gif).toString('base64');
   await FileSystem.writeAsStringAsync(fileUri, base64Gif, { encoding: FileSystem.EncodingType.Base64 });
+
+  if (shouldAbort?.()) {
+    return false;
+  }
 
   if (!(await Sharing.isAvailableAsync())) {
     throw new Error('この端末では共有機能を利用できません。');

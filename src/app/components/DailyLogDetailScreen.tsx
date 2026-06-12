@@ -279,6 +279,11 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         result: 'tmpfile',
       });
 
+      // キャプチャ中に画面を離れた／中断された場合は共有しない。
+      if (shareAbortRef.current || !isMountedRef.current) {
+        return;
+      }
+
       await Sharing.shareAsync(uri, {
         dialogTitle: `すとろりあ 日別記録 ${title.subtitle}${title.title}`,
         mimeType: 'image/png',
@@ -588,7 +593,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
               }}
             />
             <ActionPill
-              disabled={gifFrameMinutes.length < 2}
+              disabled={gifFrameMinutes.length < 2 || !gifRegion}
               icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
               label="この範囲で出力"
               styles={styles}

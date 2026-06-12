@@ -284,6 +284,10 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '900',
       textAlign: 'center',
     },
+    dialogCardOuter: {
+      maxWidth: 360,
+      width: '100%',
+    },
     dialogMeasuredContent: {
       alignItems: 'center',
       gap: 12,

@@ -8,8 +8,10 @@ jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: require('react-native').Text,
 }));
 
+const mockPlusAdImage = jest.fn((_props: any) => null);
+
 jest.mock('../PlusAdImage', () => ({
-  PlusAdImage: () => null,
+  PlusAdImage: (props: any) => mockPlusAdImage(props),
 }));
 
 const ReactTestRenderer = require('react-test-renderer');
@@ -113,6 +115,17 @@ describe('PremiumPaywallModal', () => {
     const labels = pills.map((p: any) => p.props.label);
     expect(labels.some((l: string) => l?.includes('月額300円'))).toBe(true);
     expect(labels.some((l: string) => l?.includes('年額3300円'))).toBe(true);
+  });
+
+  test('Strollia Plusの機能比較広告画像を表示する', async () => {
+    await act(async () => {
+      ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} />);
+    });
+
+    expect(mockPlusAdImage).toHaveBeenCalledWith(expect.objectContaining({
+      accessibilityLabel: 'Strollia Plusの機能比較広告',
+      width: '100%',
+    }));
   });
 
   test('isPurchasingPremiumPackage=true のとき購入ボタンが無効化される', async () => {

@@ -57,8 +57,17 @@ export function DailyLogShareSections({
       {isPlusActive && (
         <View style={styles.dailyLogDetailSection}>
           <SectionTitle styles={styles}>おもいで</SectionTitle>
-          <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
-          <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
+          {/* 読み込み中・取得失敗（report=null）を「実績なし」と誤表示しないよう状態を分ける。 */}
+          {isLoadingDetail ? (
+            <Text style={styles.dailyLogDetailSubTitle}>この日に獲得した実績を読み込み中</Text>
+          ) : dailyDetailReport ? (
+            <>
+              <Text style={styles.dailyLogDetailSubTitle}>この日に獲得した実績</Text>
+              <AchievementScroller achievements={dailyDetailReport.unlockedAchievements} styles={styles} />
+            </>
+          ) : (
+            <Text style={styles.dailyLogDetailSubTitle}>実績を読み込めませんでした</Text>
+          )}
         </View>
       )}
     </>

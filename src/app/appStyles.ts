@@ -1854,6 +1854,25 @@ export function createStyles(theme: AppTheme) {
     screenSection: {
       gap: 10,
     },
+    supportUserIdRow: {
+      gap: 2,
+      paddingHorizontal: 4,
+      paddingTop: 4,
+    },
+    supportUserIdLabel: {
+      color: settingsMuted,
+      fontSize: 11,
+    },
+    supportUserIdValueRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 6,
+    },
+    supportUserIdValue: {
+      color: settingsMuted,
+      flexShrink: 1,
+      fontSize: 11,
+    },
     screenSectionBody: {
       gap: 14,
     },

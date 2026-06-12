@@ -61,6 +61,8 @@ export type RevenueCatClient = {
   presentCustomerCenter(): Promise<void>;
   /** 購入復元後のPlus状態を返す。 */
   restorePurchases(): Promise<PremiumAccessState>;
+  /** RevenueCatのApp User ID（サポート対応用）を返す。未設定/不明ならnull。 */
+  getAppUserId(): Promise<string | null>;
   /**
    * RevenueCat CustomerInfo更新を購読する。
    *
@@ -105,6 +107,16 @@ export async function resolvePremiumOfferingSummary(client: RevenueCatClient): P
   return client.getCurrentOffering();
 }
 
+/**
+ * RevenueCatクライアントからApp User ID（サポート対応用）を解決する。
+ *
+ * @param client - RevenueCat SDKを薄く包んだクライアント。
+ * @returns App User ID。未設定/不明ならnull。
+ */
+export async function resolveRevenueCatAppUserId(client: RevenueCatClient): Promise<string | null> {
+  return client.getAppUserId();
+}
+
 /** RevenueCat SDKが使える場合はCustomerInfoから、使えない場合は既定状態からPlus状態を返す。 */
 export async function getPremiumAccessState(): Promise<PremiumAccessState> {
   try {
@@ -113,6 +125,17 @@ export async function getPremiumAccessState(): Promise<PremiumAccessState> {
   } catch (error: unknown) {
     console.warn('Failed to load RevenueCat premium state:', error);
     return getDefaultPremiumAccessState();
+  }
+}
+
+/** RevenueCat SDKが使える場合はApp User IDを返し、未設定/失敗時はnullにする。 */
+export async function getRevenueCatAppUserId(): Promise<string | null> {
+  try {
+    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
+    return await resolveRevenueCatAppUserId(createRevenueCatClient());
+  } catch (error: unknown) {
+    console.warn('Failed to load RevenueCat app user id:', error);
+    return null;
   }
 }
 

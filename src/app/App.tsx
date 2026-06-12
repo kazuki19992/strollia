@@ -73,6 +73,7 @@ import {
   getDefaultPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
+  getRevenueCatAppUserId,
   PremiumOfferingSummary,
   PremiumPackagePlan,
   presentPremiumCustomerCenter,
@@ -177,6 +178,7 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
 export default function App() {
   const colorScheme = useColorScheme();
   const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
+  const [revenueCatAppUserId, setRevenueCatAppUserId] = useState<string | null>(null);
   const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
   const theme = useMemo(() => {
     const rawTheme = getAppTheme(colorScheme);
@@ -517,6 +519,11 @@ export default function App() {
           .then(setPremiumAccessState)
           .catch((error: unknown) => {
             console.warn('Failed to refresh premium access state:', error);
+          });
+        getRevenueCatAppUserId()
+          .then(setRevenueCatAppUserId)
+          .catch((error: unknown) => {
+            console.warn('Failed to refresh RevenueCat app user id:', error);
           });
         setIsLoadingPremiumOffering(true);
         getPremiumOfferingSummary()
@@ -1417,6 +1424,7 @@ export default function App() {
                         isUpdatingPhotoSetting={isUpdatingPhotoSetting}
                         isImportingGpx={isImportingGpx}
                         premiumAccessState={premiumAccessState}
+                        revenueCatAppUserId={revenueCatAppUserId}
                         premiumOfferingSummary={premiumOfferingSummary}
                         isLoadingPremiumOffering={isLoadingPremiumOffering}
                         isPurchasingPremiumPackage={isPurchasingPremiumPackage}

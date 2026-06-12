@@ -1019,6 +1019,10 @@ export default function App() {
     setIsImportingGpx(true);
 
     try {
+      Alert.alert(
+        'GPXインポートと実績について',
+        'GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+      );
       const pickedFile = await pickAndReadGpxFile();
 
       if (!pickedFile) {

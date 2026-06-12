@@ -15,6 +15,7 @@ import { MonthlyReportAnimatedCard } from './MonthlyReportAnimatedCard';
 import { MonthlyReportMetricValue } from './MonthlyReportMetricValue';
 import { MonthlyReportScrollIndicator } from './MonthlyReportScrollIndicator';
 import { NewRecordPill } from './NewRecordPill';
+import { ShareBranding } from '../ShareBranding';
 import { ShareButton } from '../ShareButton';
 import { reportStyles } from './reportStyles';
 
@@ -255,6 +256,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
           </View>
         </MonthlyReportAnimatedCard>
         <View style={reportStyles.monthlyReportEndSpacer} />
+        <ShareBranding />
         </View>
         <ShareButton
           accessibilityLabel="レポートを共有"

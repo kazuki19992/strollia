@@ -33,7 +33,7 @@ export type StepSliderProps = {
   onValueChange: (value: number) => void;
 };
 
-const THUMB_HALF_WIDTH = 13;
+const THUMB_HALF_WIDTH = 14;
 
 /** 指定ステップ単位で値を選択できる純粋 JS スライダー。 */
 export function StepSlider({

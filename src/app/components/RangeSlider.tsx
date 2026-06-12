@@ -38,7 +38,7 @@ export type RangeSliderProps = {
   onChange: (start: number, end: number) => void;
 };
 
-const THUMB_HALF_WIDTH = 13;
+const THUMB_HALF_WIDTH = 14;
 
 /** 開始・終了の2つのつまみで区間を選択できる純粋 JS スライダー。 */
 export function RangeSlider({

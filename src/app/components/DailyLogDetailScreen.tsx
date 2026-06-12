@@ -1,7 +1,7 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Dimensions, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
@@ -42,7 +42,8 @@ import type { AppStyles } from '../appStyles';
 import { AchievementScroller } from './AchievementScroller';
 import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
-import { DataSummaryRow } from './DataSummaryRow';
+import { DailyLogShareCard } from './DailyLogShareCard';
+import { DailyLogShareSections } from './DailyLogShareSections';
 import { DescriptionText } from './DescriptionText';
 import { Dialog } from './Dialog';
 import { GifFrameRenderer } from './GifFrameRenderer';
@@ -86,7 +87,6 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   );
   const [isSharingDetail, setIsSharingDetail] = useState(false);
   const [isSliderDragging, setIsSliderDragging] = useState(false);
-  const [isCapturingShare, setIsCapturingShare] = useState(false);
   const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
   const [gifFrameIndex, setGifFrameIndex] = useState(-1);
   const [isSelectingGifRange, setIsSelectingGifRange] = useState(false);
@@ -96,7 +96,8 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   const gifFrameRef = useRef<View>(null);
   const gifFrameResolveRef = useRef<(() => void) | null>(null);
   const gifMapReadyRef = useRef<(() => void) | null>(null);
-  const captureViewRef = useRef<View>(null);
+  const shareCardRef = useRef<View>(null);
+  const shareMapReadyRef = useRef<(() => void) | null>(null);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
   const showSlider = isPlusActive && routeMaxMinutes >= DAILY_ROUTE_TIME_STEP_MINUTES;
@@ -201,23 +202,42 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     return () => cancelAnimationFrame(raf);
   }, [gifFrameIndex, isGeneratingGif]);
 
+  // 共有用カードの地図タイル描画完了を待つ。発火しない端末でも詰まらないようフォールバックを設ける。
+  function waitForShareMapReady(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        shareMapReadyRef.current = null;
+        resolve();
+      }, GIF_MAP_READY_TIMEOUT_MS);
+      shareMapReadyRef.current = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+  }
+
   async function shareDailyLogImage(): Promise<void> {
-    if (!captureViewRef.current || isSharingDetail) {
+    if (isSharingDetail) {
       return;
     }
 
+    // 画面外に共有用カード（スライダー・ボタンを含まない）をマウントしてキャプチャするため、
+    // 画面上のスライダーや共有ボタンは消えない。
     setIsSharingDetail(true);
-    setIsCapturingShare(true);
 
     try {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await waitForShareMapReady();
+
+      if (!shareCardRef.current) {
+        return;
+      }
 
       if (!(await Sharing.isAvailableAsync())) {
         Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
         return;
       }
 
-      const uri = await captureRef(captureViewRef.current, {
+      const uri = await captureRef(shareCardRef.current, {
         format: 'png',
         quality: 1,
         result: 'tmpfile',
@@ -231,7 +251,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     } catch (error: unknown) {
       Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
     } finally {
-      setIsCapturingShare(false);
+      shareMapReadyRef.current = null;
       setIsSharingDetail(false);
     }
   }
@@ -315,11 +335,12 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
       <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
       <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
 
-        {/* キャプチャ範囲 */}
-        <View ref={captureViewRef} collapsable={false} style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
+        {/* 画面表示用。共有画像は画面外の DailyLogShareCard をキャプチャするため、
+            ここにあるスライダー・GIFボタンは共有時も消えない。 */}
+        <View style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
             <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
-            {showSlider && !isCapturingShare && (
+            {showSlider && (
               <StepSlider
                 accessibilityLabel="移動地図の表示時刻"
                 minValue={DAILY_ROUTE_START_MINUTES}
@@ -336,7 +357,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
                 onValueChange={setRouteEndMinutes}
               />
             )}
-            {canExportGif && !isCapturingShare && (
+            {canExportGif && (
               <ActionPill
                 disabled={isGeneratingGif}
                 icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
@@ -347,36 +368,17 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
             )}
           </View>
 
-          <View style={styles.dailyLogDetailSection}>
-            <SectionTitle styles={styles}>移動のデータ</SectionTitle>
-            {!isPlusActive && (
-              <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
-            )}
-            <View style={styles.dataSummaryList}>
-              <DataSummaryRow label="移動距離" value={distanceLabel} styles={styles} />
-              <DataSummaryRow label="開始地点と終了地点" value={routeEndpointsLabel} styles={styles} />
-              {isPlusActive && (
-                <>
-                  <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
-                  <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
-                </>
-              )}
-            </View>
-            {isPlusActive && (
-              <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
-            )}
-          </View>
-
-          {isPlusActive && (
-            <View style={styles.dailyLogDetailSection}>
-              <SectionTitle styles={styles}>おもいで</SectionTitle>
-              <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
-              <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
-            </View>
-          )}
+          <DailyLogShareSections
+            isPlusActive={isPlusActive}
+            distanceLabel={distanceLabel}
+            routeEndpointsLabel={routeEndpointsLabel}
+            dailyDetailReport={dailyDetailReport}
+            isLoadingDetail={isLoadingDetail}
+            styles={styles}
+          />
         </View>
 
-        {/* ブラーセクション（一般ユーザーのみ・キャプチャ範囲外） */}
+        {/* ブラーセクション（一般ユーザーのみ） */}
         {!isPlusActive && (
           <View style={[styles.dailyLogDetailSection, styles.dailyLogDetailPlusSection]}>
             <SectionTitle styles={styles}>おもいで</SectionTitle>
@@ -417,6 +419,26 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         </View>
 
       </ScrollView>
+
+      {isSharingDetail && (
+        <DailyLogShareCard
+          ref={shareCardRef}
+          width={Dimensions.get('window').width}
+          points={visibleRoutePoints}
+          regionPoints={dailyPoints}
+          isPlusActive={isPlusActive}
+          distanceLabel={distanceLabel}
+          routeEndpointsLabel={routeEndpointsLabel}
+          dailyDetailReport={dailyDetailReport}
+          isLoadingDetail={isLoadingDetail}
+          styles={styles}
+          theme={theme}
+          onMapLoaded={() => {
+            shareMapReadyRef.current?.();
+            shareMapReadyRef.current = null;
+          }}
+        />
+      )}
 
       {isGeneratingGif && gifRegion && (
         <GifFrameRenderer

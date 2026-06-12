@@ -17,10 +17,12 @@ export type RouteMapPanelProps = {
   styles: AppStyles;
   /** ルート線の色などに使う現在テーマ。 */
   theme: AppTheme;
+  /** 地図のタイル描画完了通知（任意）。共有画像のキャプチャ前待ちに使う。 */
+  onMapLoaded?: () => void;
 };
 
 /** 保存済みルートを、ユーザーがスクロール・ズームできるMapViewで表示する。 */
-export function RouteMapPanel({ emptyLabel, points, regionPoints = points, styles, theme }: RouteMapPanelProps) {
+export function RouteMapPanel({ emptyLabel, points, regionPoints = points, styles, theme, onMapLoaded }: RouteMapPanelProps) {
   const routeCoordinates = toRenderRouteCoordinates(points);
 
   if (regionPoints.length === 0) {
@@ -40,6 +42,7 @@ export function RouteMapPanel({ emptyLabel, points, regionPoints = points, style
         zoomEnabled
         rotateEnabled
         pitchEnabled={false}
+        onMapLoaded={onMapLoaded}
       >
         {routeCoordinates.length > 1 ? (
           <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />

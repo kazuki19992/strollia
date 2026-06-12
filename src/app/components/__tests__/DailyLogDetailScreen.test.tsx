@@ -6,6 +6,7 @@ import { getVisitedCellsByIds } from '../../../features/location/visitedCellRepo
 import { getLocationPointsByDate } from '../../../features/logs/logRepository';
 import { lightTheme } from '../../../theme/theme';
 import { DailyLogDetailScreen } from '../DailyLogDetailScreen';
+import { DailyLogShareCard } from '../DailyLogShareCard';
 import { StepSlider } from '../StepSlider';
 
 jest.mock('@expo/vector-icons', () => ({
@@ -274,6 +275,11 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     const shareButton = renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' });
     await act(async () => {
       shareButton.props.onPress();
+    });
+
+    // 画面外の共有カードがマウントされ、地図のタイル描画完了を発火させるとキャプチャが走る。
+    await act(async () => {
+      renderer.root.findByType(DailyLogShareCard).props.onMapLoaded();
       await flushAnimationFrames();
     });
 
@@ -353,6 +359,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.disabled).toBe(true);
 
     await act(async () => {
+      renderer.root.findByType(DailyLogShareCard).props.onMapLoaded();
       await flushAnimationFrames();
       captureResolve!();
     });

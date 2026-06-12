@@ -1,4 +1,5 @@
 import { Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+// useWindowDimensionsだけはテストで幅を差し替えるため名前空間経由で参照する。
 import * as ReactNative from 'react-native';
 import { Alert, Animated, Pressable, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
@@ -18,6 +19,78 @@ export const SMALL_DASHBOARD_BASE_WIDTH = 430;
 
 /** 小さい端末で読みやすさを保つための縮小率下限。 */
 export const SMALL_DASHBOARD_MIN_SCALE = 0.86;
+
+/**
+ * ダッシュボードの基準寸法。
+ *
+ * `appStyles` の同名スタイル値と対応させ、大画面では既存表示を保ったまま
+ * 小画面用の縮小値だけをinline styleとして重ねる。
+ */
+const DASHBOARD_BASE_LAYOUT = {
+  action: {
+    height: 50,
+    minWidth: 44,
+  },
+  actionsRow: {
+    gap: 8,
+    marginLeft: 110,
+    marginRight: 3,
+  },
+  icon: {
+    calendar: 27,
+    history: 31,
+    map: 31,
+    settings: 30,
+    trophy: 30,
+  },
+  mapButton: {
+    borderRadius: 10,
+    height: 54,
+    width: 54,
+  },
+  meterBackground: {
+    height: 104,
+  },
+  meterCluster: {
+    height: 56,
+  },
+  navPanel: {
+    borderRadius: 10,
+    minHeight: 54,
+    paddingHorizontal: 8,
+  },
+  placeMetric: {
+    minWidth: 76,
+    paddingLeft: 7,
+  },
+  speedDial: {
+    arcSize: 104,
+    contentSize: 84,
+    left: 2,
+    ringBorderWidth: 7,
+    ringSize: 100,
+  },
+  summaryPanel: {
+    gap: 6,
+    height: 52,
+    paddingLeft: 102,
+    paddingRight: 7,
+    paddingVertical: 6,
+  },
+} as const;
+
+/** `appStyles` のフォント基準値に対応する、縮小計算用のテキスト寸法。 */
+const DASHBOARD_BASE_TEXT = {
+  distanceDecimal: { fontSize: 6, lineHeight: 10 },
+  distanceInteger: { fontSize: 11, lineHeight: 16 },
+  distanceUnit: { fontSize: 7 },
+  metricLabel: { fontSize: 11 },
+  placePrimary: { fontSize: 13, lineHeight: 16 },
+  placeSecondary: { fontSize: 10, lineHeight: 13 },
+  speedLabel: { fontSize: 11 },
+  speedUnit: { fontSize: 13, marginTop: -5 },
+  speedValue: { fontSize: 30, lineHeight: 36 },
+} as const;
 
 /** マップ下部ダッシュボードのprops。 */
 export type MapBottomDashboardProps = {
@@ -128,7 +201,7 @@ export function MapBottomDashboard({
                 adjustsFontSizeToFit
                 minimumFontScale={dashboardScale < 1 ? 0.72 : 0.9}
                 numberOfLines={1}
-                style={[styles.dashboardPlacePrimary, getScaledTextStyle(13, 16, dashboardScale)]}
+                style={[styles.dashboardPlacePrimary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placePrimary, dashboardScale)]}
               >
                 {currentAreaLabel.primary}
               </Text>
@@ -138,7 +211,7 @@ export function MapBottomDashboard({
                   adjustsFontSizeToFit
                   minimumFontScale={dashboardScale < 1 ? 0.76 : 0.9}
                   numberOfLines={1}
-                  style={[styles.dashboardPlaceSecondary, getScaledTextStyle(10, 13, dashboardScale)]}
+                  style={[styles.dashboardPlaceSecondary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placeSecondary, dashboardScale)]}
                 >
                   {currentAreaLabel.secondary}
                 </Text>
@@ -306,13 +379,16 @@ function SpeedDial({
         )}
       </Svg>
       <View style={[styles.speedDashboardDialContent, layout.dialContent]}>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedometerLabel, getScaledTextStyle(11, undefined, scale)]}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedometerLabel, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedLabel, scale)]}>
           SPEED
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedDashboardSpeedValue, getScaledTextStyle(30, 36, scale), { color: speedColor }]}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedDashboardSpeedValue, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedValue, scale), { color: speedColor }]}>
           {formatSpeedKmh(currentSpeedKmh)}
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedDashboardSpeedUnit, getScaledTextStyle(13, undefined, scale), { marginTop: scaleNumber(-5, scale) }]}>
+        <Text
+          {...FIXED_MAP_UI_TEXT_PROPS}
+          style={[styles.speedDashboardSpeedUnit, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedUnit, scale)]}
+        >
           km/h
         </Text>
       </View>
@@ -324,22 +400,22 @@ function SpeedDial({
 function DashboardDistanceMetric({ label, parts, scale, styles }: { label: string; parts: string[]; scale: number; styles: AppStyles }) {
   return (
     <View style={[styles.dashboardDistanceMetric, label === 'ODO' ? styles.dashboardOdometerMetric : styles.dashboardTodayMetric]}>
-      <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardMetricLabel, getScaledTextStyle(11, undefined, scale)]}>
+      <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardMetricLabel, getScaledTextStyle(DASHBOARD_BASE_TEXT.metricLabel, scale)]}>
         {label}
       </Text>
       <View style={styles.speedometerDistanceValueRow}>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={[styles.dashboardDistanceValueInteger, getScaledTextStyle(11, 16, scale)]}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={[styles.dashboardDistanceValueInteger, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}>
           {parts[0]}
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDot, getScaledTextStyle(11, 16, scale)]}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDot, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}>
           .
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDecimal, getScaledTextStyle(6, 10, scale)]}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDecimal, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceDecimal, scale)]}>
           {parts[1]}
         </Text>
         <Text
           {...FIXED_MAP_UI_TEXT_PROPS}
-          style={[styles.dashboardDistanceUnit, getScaledTextStyle(7, undefined, scale), { marginBottom: scaleNumber(3, scale), marginLeft: scaleNumber(1, scale) }]}
+          style={[styles.dashboardDistanceUnit, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceUnit, scale), { marginBottom: scaleNumber(3, scale), marginLeft: scaleNumber(1, scale) }]}
         >
           km
         </Text>
@@ -432,93 +508,102 @@ function scaleNumber(value: number, scale: number): number {
   return Math.round(value * scale * 100) / 100;
 }
 
-/** スピードメーターの外形と円弧SVGを同じ倍率で縮小する。 */
+/** スピードメーターの外形と円弧SVGを同じ倍率で縮小する。テストで中心ズレの回帰を直接確認するためexportする。 */
 export function getScaledSpeedDialLayout(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT.speedDial;
+
   return {
     arcSvg: {
-      height: scaleNumber(104, scale),
-      width: scaleNumber(104, scale),
+      height: scaleNumber(base.arcSize, scale),
+      width: scaleNumber(base.arcSize, scale),
     },
     dial: {
-      height: scaleNumber(104, scale),
-      left: scaleNumber(2, scale),
+      height: scaleNumber(base.arcSize, scale),
+      left: scaleNumber(base.left, scale),
       top: 0,
-      width: scaleNumber(104, scale),
+      width: scaleNumber(base.arcSize, scale),
     },
     dialContent: {
-      height: scaleNumber(84, scale),
-      width: scaleNumber(84, scale),
+      height: scaleNumber(base.contentSize, scale),
+      width: scaleNumber(base.contentSize, scale),
     },
     ringBase: {
-      borderWidth: scaleNumber(7, scale),
-      height: scaleNumber(100, scale),
-      width: scaleNumber(100, scale),
+      borderWidth: scaleNumber(base.ringBorderWidth, scale),
+      height: scaleNumber(base.ringSize, scale),
+      width: scaleNumber(base.ringSize, scale),
     },
   };
 }
 
 /** ダッシュボードの主要レイアウトを小画面だけ縮小する。 */
 function getScaledDashboardLayout(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT;
+
   return {
     actionsRow: {
-      gap: scaleNumber(8, scale),
-      marginLeft: scaleNumber(110, scale),
-      marginRight: scaleNumber(3, scale),
+      gap: scaleNumber(base.actionsRow.gap, scale),
+      marginLeft: scaleNumber(base.actionsRow.marginLeft, scale),
+      marginRight: scaleNumber(base.actionsRow.marginRight, scale),
     },
     mapButton: {
-      borderRadius: scaleNumber(10, scale),
-      height: scaleNumber(54, scale),
-      width: scaleNumber(54, scale),
+      borderRadius: scaleNumber(base.mapButton.borderRadius, scale),
+      height: scaleNumber(base.mapButton.height, scale),
+      width: scaleNumber(base.mapButton.width, scale),
     },
     meterBackground: {
-      height: scaleNumber(104, scale),
+      height: scaleNumber(base.meterBackground.height, scale),
     },
     meterCluster: {
-      height: scaleNumber(56, scale),
+      height: scaleNumber(base.meterCluster.height, scale),
     },
     navPanel: {
-      borderRadius: scaleNumber(10, scale),
-      minHeight: scaleNumber(54, scale),
-      paddingHorizontal: scaleNumber(8, scale),
+      borderRadius: scaleNumber(base.navPanel.borderRadius, scale),
+      minHeight: scaleNumber(base.navPanel.minHeight, scale),
+      paddingHorizontal: scaleNumber(base.navPanel.paddingHorizontal, scale),
     },
     placeMetric: {
-      minWidth: scaleNumber(76, scale),
-      paddingLeft: scaleNumber(7, scale),
+      minWidth: scaleNumber(base.placeMetric.minWidth, scale),
+      paddingLeft: scaleNumber(base.placeMetric.paddingLeft, scale),
     },
     summaryPanel: {
-      gap: scaleNumber(6, scale),
-      height: scaleNumber(52, scale),
-      paddingLeft: scaleNumber(102, scale),
-      paddingRight: scaleNumber(7, scale),
-      paddingVertical: scaleNumber(6, scale),
+      gap: scaleNumber(base.summaryPanel.gap, scale),
+      height: scaleNumber(base.summaryPanel.height, scale),
+      paddingLeft: scaleNumber(base.summaryPanel.paddingLeft, scale),
+      paddingRight: scaleNumber(base.summaryPanel.paddingRight, scale),
+      paddingVertical: scaleNumber(base.summaryPanel.paddingVertical, scale),
     },
   };
 }
 
 /** フォントサイズと行高を同じ倍率で縮小する。 */
-function getScaledTextStyle(fontSize: number, lineHeight: number | undefined, scale: number) {
+function getScaledTextStyle(base: { fontSize: number; lineHeight?: number; marginTop?: number }, scale: number) {
   return {
-    fontSize: scaleNumber(fontSize, scale),
-    ...(lineHeight == null ? {} : { lineHeight: scaleNumber(lineHeight, scale) }),
+    fontSize: scaleNumber(base.fontSize, scale),
+    ...(base.lineHeight == null ? {} : { lineHeight: scaleNumber(base.lineHeight, scale) }),
+    ...(base.marginTop == null ? {} : { marginTop: scaleNumber(base.marginTop, scale) }),
   };
 }
 
 /** 下部ナビゲーションのタップ領域を縮小レイアウトへ合わせる。 */
 function getScaledDashboardActionStyle(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT.action;
+
   return {
-    height: scaleNumber(50, scale),
-    minWidth: scaleNumber(44, scale),
+    height: scaleNumber(base.height, scale),
+    minWidth: scaleNumber(base.minWidth, scale),
   };
 }
 
 /** 下部ダッシュボードのアイコンサイズを縮小レイアウトへ合わせる。 */
 function getScaledDashboardIconSizes(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT.icon;
+
   return {
-    calendar: scaleNumber(27, scale),
-    history: scaleNumber(31, scale),
-    map: scaleNumber(31, scale),
-    settings: scaleNumber(30, scale),
-    trophy: scaleNumber(30, scale),
+    calendar: scaleNumber(base.calendar, scale),
+    history: scaleNumber(base.history, scale),
+    map: scaleNumber(base.map, scale),
+    settings: scaleNumber(base.settings, scale),
+    trophy: scaleNumber(base.trophy, scale),
   };
 }
 

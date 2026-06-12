@@ -1,4 +1,4 @@
-import { StyleSheet, Text } from 'react-native';
+import { Image, StyleSheet, Text } from 'react-native';
 import { AppColorPresetId } from '../../../features/customization/colorPresets';
 
 import { darkTheme, lightTheme } from '../../../theme/theme';
@@ -274,9 +274,9 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    const adSvg = renderer.root.findAll(
+    const adImage = renderer.root.findAllByType(Image).find(
       (node: any) => node.props.accessibilityLabel === 'Strollia Plusの機能比較広告',
-    )[0];
+    );
 
     expect(texts).toContain('一般ユーザー');
     expect(texts).not.toContain('退会する場合は${ストア名}のサブスク設定から行ってください。');
@@ -287,8 +287,8 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('月額300円ではじめる！');
     expect(texts).toContain('年額3300円ではじめる！');
     expect(texts).toContain('Strollia Plusの購入を復元する');
-    expect(adSvg).toBeTruthy();
-    expect(adSvg.props.width).toBe('100%');
+    expect(adImage).toBeTruthy();
+    expect(adImage?.parent?.props.style).toEqual(expect.objectContaining({ width: '100%' }));
   });
 
   test('購入ボタンは固定の月額300円・年額3300円を表示する', () => {

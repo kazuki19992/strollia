@@ -51,6 +51,7 @@ const mockAnimateToRegion = jest.fn();
 let mockLatestSettingsScreenProps: any = null;
 let mockLatestMapScreenProps: any = null;
 let mockLatestMonthlyReportScreenProps: any = null;
+let mockLatestFirstLaunchTutorialProps: any = null;
 let mockPremiumCustomerInfoUpdate: ((state: { isPlusActive: boolean; entitlementId: string }) => void) | null = null;
 const mockPremiumUnsubscribe = jest.fn();
 
@@ -176,6 +177,7 @@ jest.mock('../components/AchievementUnlockModal', () => ({
 jest.mock('../components/FirstLaunchTutorialDialog', () => ({
   FirstLaunchTutorialDialog: (props: any) => {
     const { Pressable, Text } = require('react-native');
+    mockLatestFirstLaunchTutorialProps = props;
 
     if (!props.visible) return null;
 
@@ -204,9 +206,14 @@ jest.mock('../components/SettingsScreen', () => ({
     const { Pressable, Text } = require('react-native');
 
     return (
-      <Pressable accessibilityLabel="OSSライセンス" onPress={props.onOpenLicenseScreen}>
-        <Text>OSSライセンス</Text>
-      </Pressable>
+      <>
+        <Pressable accessibilityLabel="チュートリアルを開く" onPress={props.onOpenFirstLaunchTutorial}>
+          <Text>チュートリアル</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="OSSライセンス" onPress={props.onOpenLicenseScreen}>
+          <Text>OSSライセンス</Text>
+        </Pressable>
+      </>
     );
   },
 }));
@@ -411,6 +418,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     mockLatestSettingsScreenProps = null;
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
+    mockLatestFirstLaunchTutorialProps = null;
     mockPremiumCustomerInfoUpdate = null;
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
       if (key === 'firstLaunchTutorialCompleted') {
@@ -607,6 +615,64 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(requestAchievementNotificationPermissionOnFirstLaunch).toHaveBeenCalledTimes(1);
+  });
+
+  test('設定画面のチュートリアルから初回チュートリアルを再表示できる', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(true);
+      }
+
+      return Promise.resolve(fallback);
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(renderer.root.findAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
+    });
+
+    expect(renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+    expect(mockLatestFirstLaunchTutorialProps.completionButtonLabel).toBe('閉じる');
+  });
+
+  test('設定画面から再表示したチュートリアルを閉じても初回完了処理を再実行しない', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(true);
+      }
+
+      return Promise.resolve(fallback);
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    jest.clearAllMocks();
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+    });
+    await flushPromises();
+
+    expect(setSetting).not.toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
+    expect(requestAchievementNotificationPermissionOnFirstLaunch).not.toHaveBeenCalled();
   });
 
   test('起動時にRevenueCat CustomerInfo更新を購読しアンマウント時に解除する', async () => {

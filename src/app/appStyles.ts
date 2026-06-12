@@ -304,10 +304,43 @@ export function createStyles(theme: AppTheme) {
       lineHeight: 22,
       textAlign: 'center',
     },
+    firstLaunchTutorialDescriptionGroup: {
+      gap: 8,
+    },
+    firstLaunchTutorialInstructionImageFrame: {
+      alignSelf: 'stretch',
+      paddingHorizontal: 16,
+    },
+    firstLaunchTutorialInstructionImage: {
+      resizeMode: 'contain',
+    },
     firstLaunchTutorialActions: {
       alignSelf: 'stretch',
       gap: 10,
       paddingTop: 4,
+    },
+    firstLaunchTutorialBulletList: {
+      alignSelf: 'stretch',
+      gap: 8,
+      paddingTop: 2,
+    },
+    firstLaunchTutorialBulletRow: {
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    firstLaunchTutorialBulletMark: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: '400',
+      lineHeight: 22,
+    },
+    firstLaunchTutorialBulletText: {
+      color: colors.mutedText,
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '400',
+      lineHeight: 22,
     },
     firstLaunchTutorialButton: {
       alignItems: 'center',

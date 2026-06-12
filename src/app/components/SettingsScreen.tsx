@@ -84,6 +84,8 @@ export type SettingsScreenProps = {
   onUpdateAppColorPreset: (presetId: AppColorPresetId) => void;
   /** このアプリについて画面を開く処理。 */
   onOpenAboutAppScreen: () => void;
+  /** 初回チュートリアルを再表示する処理。 */
+  onOpenFirstLaunchTutorial: () => void;
   /** OSSライセンス画面を開く処理。 */
   onOpenLicenseScreen: () => void;
   /** 利用規約を開く処理。 */
@@ -150,6 +152,7 @@ export function SettingsScreen({
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
   onOpenAboutAppScreen,
+  onOpenFirstLaunchTutorial,
   onOpenLicenseScreen,
   onOpenTermsOfService,
   onOpenPrivacyPolicy,
@@ -371,6 +374,13 @@ export function SettingsScreen({
             label="このアプリについて"
             styles={styles}
             onPress={onOpenAboutAppScreen}
+          />
+          <ActionPill
+            alignLeft
+            icon={<Feather name="book-open" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="チュートリアル"
+            styles={styles}
+            onPress={onOpenFirstLaunchTutorial}
           />
           <ActionPill
             alignLeft

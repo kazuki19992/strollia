@@ -6,6 +6,7 @@ import { getVisitedCellsByIds } from '../../../features/location/visitedCellRepo
 import { getLocationPointsByDate } from '../../../features/logs/logRepository';
 import { lightTheme } from '../../../theme/theme';
 import { DailyLogDetailScreen } from '../DailyLogDetailScreen';
+import { DailyLogShareCard } from '../DailyLogShareCard';
 import { StepSlider } from '../StepSlider';
 
 jest.mock('@expo/vector-icons', () => ({
@@ -96,11 +97,31 @@ jest.mock('react-native-maps', () => {
     default: View,
     Marker: View,
     Polyline: View,
+    Polygon: View,
   };
 });
 
+jest.mock('expo-file-system/legacy', () => ({
+  cacheDirectory: '/tmp/',
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  EncodingType: { Base64: 'base64', UTF8: 'utf8' },
+}));
+
+jest.mock('../../../features/export/routeGifExporter', () => ({
+  exportRouteGif: jest.fn().mockResolvedValue(true),
+}));
+
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
+
+/** requestAnimationFrame の連鎖（共有キャプチャ前の2フレーム待ち等）を消化する。 */
+async function flushAnimationFrames(): Promise<void> {
+  for (let i = 0; i < 4; i += 1) {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+  }
+}
 
 const styles = new Proxy({}, { get: (_target, prop) => prop });
 const log = {
@@ -240,6 +261,32 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(scrollView.props.scrollEnabled).not.toBe(false);
   });
 
+  test('共有の画像生成中に画面を離れると、別画面をキャプチャせず中断する', async () => {
+    const { captureRef } = require('react-native-view-shot');
+    const Sharing = require('expo-sharing');
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+      );
+    });
+
+    // 共有開始（地図ロード完了 onMapLoaded はまだ発火させない＝キャプチャ前で待機中）。
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.onPress();
+    });
+
+    // 画面を離れる（アンマウント）。
+    await act(async () => {
+      renderer.unmount();
+    });
+
+    // 別画面をキャプチャせず、共有もしない。
+    expect(captureRef).not.toHaveBeenCalled();
+    expect(Sharing.shareAsync).not.toHaveBeenCalled();
+  });
+
   test('共有ボタンを押すと詳細コンテンツを画像キャプチャして共有する', async () => {
     const { captureRef } = require('react-native-view-shot');
     const Sharing = require('expo-sharing');
@@ -254,6 +301,12 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     const shareButton = renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' });
     await act(async () => {
       shareButton.props.onPress();
+    });
+
+    // 画面外の共有カードがマウントされ、地図のタイル描画完了を発火させるとキャプチャが走る。
+    await act(async () => {
+      renderer.root.findByType(DailyLogShareCard).props.onMapLoaded();
+      await flushAnimationFrames();
     });
 
     expect(captureRef).toHaveBeenCalledWith(
@@ -292,10 +345,10 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(renderer.root.findByType(StepSlider).props.maxValue).toBe(750);
   });
 
-  test('今日の 0:00〜0:30 の間はスライダーを非表示にする', async () => {
+  test('今日の 0:00〜0:05 の間はスライダーを非表示にする', async () => {
     const { getTodayLocalDate, getCurrentMinutesOfDay } = require('../../dailyRouteTimeline');
     getTodayLocalDate.mockReturnValue('2026-05-31');
-    getCurrentMinutesOfDay.mockReturnValue(15);
+    getCurrentMinutesOfDay.mockReturnValue(3);
 
     let renderer: any;
     await act(async () => {
@@ -329,9 +382,12 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.onPress();
     });
 
-    expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.disabled).toBe(true);
+    // 共有中はラベルが「画像を作っています……」に変わり、無効化される。
+    expect(renderer.root.findByProps({ accessibilityLabel: '画像を作っています……' }).props.disabled).toBe(true);
 
     await act(async () => {
+      renderer.root.findByType(DailyLogShareCard).props.onMapLoaded();
+      await flushAnimationFrames();
       captureResolve!();
     });
 

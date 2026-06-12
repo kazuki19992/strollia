@@ -1,7 +1,7 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Dimensions, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
@@ -11,6 +11,14 @@ import { getAchievementUnlocksByDate } from '../../features/achievements/achieve
 import { coordinateToGridCell } from '../../features/location/grid/gridCell';
 import { getVisitedCellsByIds } from '../../features/location/visitedCellRepository';
 import { getLocationPointsByDate } from '../../features/logs/logRepository';
+import {
+  computeGifFrameMinutesInRange,
+  resolveGifFrameStepMinutes,
+  GIF_FRAME_DELAY_MS,
+  GIF_MIN_RANGE_MINUTES,
+} from '../../features/export/routeGifFrames';
+import { exportRouteGif } from '../../features/export/routeGifExporter';
+import { createInitialRegion } from '../../features/map/routeMapper';
 import { createDailyDetailReport, DailyDetailReport } from '../../features/reports/dailyReport';
 import type { PremiumAccessState } from '../../features/premium/revenueCatAccess';
 import type { AppTheme } from '../../theme/theme';
@@ -19,23 +27,37 @@ import {
   computeRouteMaxEndMinutes,
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
+  filterLocationPointsBetweenMinutes,
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
   formatTimelineTimeLabel,
+  formatTimelineTimeLabelPadded,
   getCurrentMinutesOfDay,
+  getPointMinutesOfDay,
   getTodayLocalDate,
 } from '../dailyRouteTimeline';
-import { formatDailyLogDetailTitle, formatDistanceKm, formatRouteEndpoints } from '../dailyLogDisplay';
+import { formatDailyLogDetailTitle, formatDistanceKm, formatGifFrameDateLabel, formatRouteEndpoints } from '../dailyLogDisplay';
 import { totalDistanceMeters } from '../../utils/distance';
 import type { AppStyles } from '../appStyles';
 import { AchievementScroller } from './AchievementScroller';
 import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
-import { DataSummaryRow } from './DataSummaryRow';
+import { DailyLogShareCard } from './DailyLogShareCard';
+import { DailyLogShareSections } from './DailyLogShareSections';
 import { DescriptionText } from './DescriptionText';
+import { animateDialogResize, Dialog } from './Dialog';
+import { GifFrameRenderer } from './GifFrameRenderer';
+import { RangeSlider } from './RangeSlider';
 import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { StepSlider } from './StepSlider';
+
+/** GIF区間指定スライダーの選択粒度（分）。最小単位時間と同じ15分刻みで、00/15/30/45分に揃える。 */
+const GIF_RANGE_STEP_MINUTES = GIF_MIN_RANGE_MINUTES;
+/** 地図のタイル描画完了待ちのフォールバック上限（ミリ秒）。onMapLoadedが発火しない端末向け。 */
+const GIF_MAP_READY_TIMEOUT_MS = 6000;
+/** 各コマで Polyline 等のネイティブ更新が反映されるのを待つフレーム数。少ないと線が伸びない瞬間が出る。 */
+const GIF_FRAME_RENDER_SETTLE_FRAMES = 6;
 
 export type DailyLogDetailScreenProps = {
   /** 表示対象の日別サマリー。 */
@@ -67,7 +89,22 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   );
   const [isSharingDetail, setIsSharingDetail] = useState(false);
   const [isSliderDragging, setIsSliderDragging] = useState(false);
-  const captureViewRef = useRef<View>(null);
+  const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
+  const [gifFrameIndex, setGifFrameIndex] = useState(-1);
+  const [isSelectingGifRange, setIsSelectingGifRange] = useState(false);
+  const [gifRangeStart, setGifRangeStart] = useState(0);
+  const [gifRangeEnd, setGifRangeEnd] = useState(0);
+  const gifAbortRef = useRef(false);
+  const gifFrameRef = useRef<View>(null);
+  const gifFrameResolveRef = useRef<(() => void) | null>(null);
+  const gifMapReadyRef = useRef<(() => void) | null>(null);
+  // 実行中の生成ループ。キャンセル後の再実行で、前のループ完了を待ってから次を始めるために使う。
+  const gifGenerationRef = useRef<Promise<void> | null>(null);
+  const shareCardRef = useRef<View>(null);
+  const shareMapReadyRef = useRef<(() => void) | null>(null);
+  const shareAbortRef = useRef(false);
+  // 画面を離れたかどうか。離脱後のキャプチャ・アラート・state更新を抑止する。
+  const isMountedRef = useRef(true);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
   const showSlider = isPlusActive && routeMaxMinutes >= DAILY_ROUTE_TIME_STEP_MINUTES;
@@ -75,6 +112,36 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     () => (showSlider ? filterLocationPointsUntilMinute(dailyPoints, routeEndMinutes) : dailyPoints),
     [dailyPoints, routeEndMinutes, showSlider],
   );
+  // 記録の最初/最後の時刻（GIF区間指定スライダーの範囲）。
+  const recordingStartMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[0]) : 0;
+  const recordingEndMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[dailyPoints.length - 1]) : 0;
+  // スライダーの選択肢を00/15/30/45分に揃えるため、範囲を15分境界へ丸める。
+  const gifRangeMinMinute = Math.floor(recordingStartMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
+  const gifRangeMaxMinute = Math.ceil(recordingEndMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
+  const canExportGif = isPlusActive && dailyPoints.length >= 2 && gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
+  // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
+  const gifRangePoints = useMemo(
+    () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifRangeEnd),
+    [dailyPoints, gifRangeStart, gifRangeEnd],
+  );
+  // 選択区間を刻んだ各コマの時刻。既定は15分刻みだが、最短5秒に満たない短い区間は刻みを細かくする。
+  const gifFrameMinutes = useMemo(() => {
+    const step = resolveGifFrameStepMinutes(gifRangeEnd - gifRangeStart);
+    return computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, step);
+  }, [gifRangeStart, gifRangeEnd]);
+  const gifRegion = useMemo(
+    () => (gifRangePoints.length > 0 ? createInitialRegion(gifRangePoints) : null),
+    [gifRangePoints],
+  );
+  const isGeneratingGif = gifProgress !== null;
+  // 各コマは選択開始時刻からその時刻までの累積軌跡（区間内のみ）。
+  const gifFrameMinute = gifFrameMinutes[gifFrameIndex] ?? gifRangeStart;
+  const gifFramePoints = useMemo(
+    () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifFrameMinute),
+    [dailyPoints, gifRangeStart, gifFrameMinute],
+  );
+  const gifFrameTimeLabel = formatTimelineTimeLabelPadded(gifFrameMinute);
+  const gifFrameDateLabel = formatGifFrameDateLabel(log.localDate);
 
   useEffect(() => {
     let isCancelled = false;
@@ -129,26 +196,93 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     };
   }, [log]);
 
+  // 画面を離れたら、進行中の共有/GIF生成を中断する。
+  // 待ち（地図ロード）を解決してループを巻き戻し、離脱後のキャプチャやアラートを抑止する。
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      gifAbortRef.current = true;
+      shareAbortRef.current = true;
+      gifMapReadyRef.current?.();
+      gifMapReadyRef.current = null;
+      shareMapReadyRef.current?.();
+      shareMapReadyRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isGeneratingGif) {
+      return;
+    }
+    // Polyline などネイティブのオーバーレイ更新が反映されてからキャプチャするため、
+    // 数フレーム待ってから解決する（少なすぎると更新前の状態を撮ってしまい、線が伸びない瞬間が出る）。
+    let rafId = 0;
+    let remaining = GIF_FRAME_RENDER_SETTLE_FRAMES;
+    const tick = () => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        gifFrameResolveRef.current?.();
+        gifFrameResolveRef.current = null;
+        return;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [gifFrameIndex, isGeneratingGif]);
+
+  // 共有用カードの地図タイル描画完了を待つ。発火しない端末でも詰まらないようフォールバックを設ける。
+  function waitForShareMapReady(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        shareMapReadyRef.current = null;
+        resolve();
+      }, GIF_MAP_READY_TIMEOUT_MS);
+      shareMapReadyRef.current = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+  }
+
   async function shareDailyLogImage(): Promise<void> {
-    if (!captureViewRef.current || isSharingDetail) {
+    if (isSharingDetail) {
       return;
     }
 
+    // 画面外に共有用カード（スライダー・ボタンを含まない）をマウントしてキャプチャするため、
+    // 画面上のスライダーや共有ボタンは消えない。
+    shareAbortRef.current = false;
     setIsSharingDetail(true);
 
     try {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      // ポイントがある日だけ地図のタイル描画完了を待つ。空の日は MapView がマウントされず
+      // onMapLoaded が発火しないため、待つとフォールバックの数秒間ぶん無駄に待ってしまう。
+      if (dailyPoints.length > 0) {
+        await waitForShareMapReady();
+      }
+
+      // 画面を離れた／カードが消えたら、別画面をキャプチャせず中断する。
+      if (shareAbortRef.current || !shareCardRef.current) {
+        return;
+      }
 
       if (!(await Sharing.isAvailableAsync())) {
         Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
         return;
       }
 
-      const uri = await captureRef(captureViewRef.current, {
+      const uri = await captureRef(shareCardRef.current, {
         format: 'png',
         quality: 1,
         result: 'tmpfile',
       });
+
+      // キャプチャ中に画面を離れた／中断された場合は共有しない。
+      if (shareAbortRef.current || !isMountedRef.current) {
+        return;
+      }
 
       await Sharing.shareAsync(uri, {
         dialogTitle: `すとろりあ 日別記録 ${title.subtitle}${title.title}`,
@@ -156,10 +290,119 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         UTI: 'public.png',
       });
     } catch (error: unknown) {
-      Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
+      if (!shareAbortRef.current && isMountedRef.current) {
+        Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
+      }
     } finally {
-      setIsSharingDetail(false);
+      shareMapReadyRef.current = null;
+      if (isMountedRef.current) {
+        setIsSharingDetail(false);
+      }
     }
+  }
+
+  // 地図のタイル描画完了（onMapLoaded）を待つ。最初のコマが読み込み途中で撮られて
+  // 半分しか表示されない/軌跡線が出ない問題を防ぐ。万一発火しない端末でも詰まらないよう
+  // フォールバックのタイムアウトを設ける。
+  function waitForGifMapReady(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        gifMapReadyRef.current = null;
+        resolve();
+      }, GIF_MAP_READY_TIMEOUT_MS);
+      gifMapReadyRef.current = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+  }
+
+  function renderGifFrame(index: number): Promise<void> {
+    return new Promise<void>((resolve) => {
+      gifFrameResolveRef.current = resolve;
+      setGifFrameIndex(index);
+    });
+  }
+
+  function openGifRangeSelection(): void {
+    setGifRangeStart(gifRangeMinMinute);
+    setGifRangeEnd(gifRangeMaxMinute);
+    setIsSelectingGifRange(true);
+  }
+
+  function handleConfirmGifRange(): void {
+    // 区間選択→生成中で中身の高さが変わるので、滑らかにリサイズさせる。
+    animateDialogResize();
+    handleExportGif().catch(() => undefined);
+  }
+
+  async function handleExportGif(): Promise<void> {
+    if (!canExportGif || !gifRegion || gifFrameMinutes.length < 2) {
+      return;
+    }
+
+    // 直前の生成がキャンセル後にまだ巻き戻り中なら、中断させて完了を待ってから新しい生成を始める。
+    // refを共有しているため、前のループと新しいループを重ねて走らせない。
+    if (gifGenerationRef.current) {
+      gifAbortRef.current = true;
+      gifMapReadyRef.current?.();
+      gifMapReadyRef.current = null;
+      await gifGenerationRef.current;
+    }
+
+    const total = gifFrameMinutes.length;
+    const run = (async () => {
+      gifAbortRef.current = false;
+      setGifFrameIndex(-1);
+      setIsSelectingGifRange(false);
+      setGifProgress({ done: 0, total });
+      try {
+        await waitForGifMapReady();
+        if (gifAbortRef.current) {
+          return;
+        }
+        const success = await exportRouteGif({
+          captureTarget: () => gifFrameRef.current,
+          frameCount: total,
+          delayMs: GIF_FRAME_DELAY_MS,
+          fileName: `strollia-${log.localDate}`,
+          renderFrame: renderGifFrame,
+          onProgress: (done, frameTotal) => setGifProgress({ done, total: frameTotal }),
+          shouldAbort: () => gifAbortRef.current,
+        });
+        if (!success && !gifAbortRef.current && isMountedRef.current) {
+          Alert.alert('GIF出力', 'GIFを生成できませんでした。');
+        }
+      } catch (error: unknown) {
+        if (!gifAbortRef.current && isMountedRef.current) {
+          Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setGifProgress(null);
+          setGifFrameIndex(-1);
+        }
+        gifMapReadyRef.current = null;
+        gifFrameResolveRef.current = null;
+      }
+    })();
+    gifGenerationRef.current = run;
+    try {
+      await run;
+    } finally {
+      if (gifGenerationRef.current === run) {
+        gifGenerationRef.current = null;
+      }
+    }
+  }
+
+  function handleCancelGif(): void {
+    gifAbortRef.current = true;
+    gifMapReadyRef.current?.();
+    gifMapReadyRef.current = null;
+    // 生成を中断し、ダイアログは閉じずに区間選択へ戻す（裏でループは安全に巻き戻る）。
+    animateDialogResize();
+    setIsSelectingGifRange(true);
   }
 
   return (
@@ -167,8 +410,9 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
       <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
       <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
 
-        {/* キャプチャ範囲 */}
-        <View ref={captureViewRef} collapsable={false} style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
+        {/* 画面表示用。共有画像は画面外の DailyLogShareCard をキャプチャするため、
+            ここにあるスライダー・GIFボタンは共有時も消えない。 */}
+        <View style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
             <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
             {showSlider && (
@@ -188,38 +432,28 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
                 onValueChange={setRouteEndMinutes}
               />
             )}
-          </View>
-
-          <View style={styles.dailyLogDetailSection}>
-            <SectionTitle styles={styles}>移動のデータ</SectionTitle>
-            {!isPlusActive && (
-              <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
-            )}
-            <View style={styles.dataSummaryList}>
-              <DataSummaryRow label="移動距離" value={distanceLabel} styles={styles} />
-              <DataSummaryRow label="開始地点と終了地点" value={routeEndpointsLabel} styles={styles} />
-              {isPlusActive && (
-                <>
-                  <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
-                  <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
-                </>
-              )}
-            </View>
-            {isPlusActive && (
-              <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
+            {canExportGif && (
+              <ActionPill
+                disabled={isGeneratingGif}
+                icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
+                label="移動記録をGIFで出力"
+                styles={styles}
+                onPress={openGifRangeSelection}
+              />
             )}
           </View>
 
-          {isPlusActive && (
-            <View style={styles.dailyLogDetailSection}>
-              <SectionTitle styles={styles}>おもいで</SectionTitle>
-              <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
-              <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
-            </View>
-          )}
+          <DailyLogShareSections
+            isPlusActive={isPlusActive}
+            distanceLabel={distanceLabel}
+            routeEndpointsLabel={routeEndpointsLabel}
+            dailyDetailReport={dailyDetailReport}
+            isLoadingDetail={isLoadingDetail}
+            styles={styles}
+          />
         </View>
 
-        {/* ブラーセクション（一般ユーザーのみ・キャプチャ範囲外） */}
+        {/* ブラーセクション（一般ユーザーのみ） */}
         {!isPlusActive && (
           <View style={[styles.dailyLogDetailSection, styles.dailyLogDetailPlusSection]}>
             <SectionTitle styles={styles}>おもいで</SectionTitle>
@@ -237,7 +471,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           <ActionPill
             disabled={isSharingDetail}
             icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
-            label="この日の記録を共有"
+            label={isSharingDetail ? '画像を作っています……' : 'この日の記録を共有'}
             styles={styles}
             onPress={() => {
               shareDailyLogImage().catch(() => undefined);
@@ -260,6 +494,114 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         </View>
 
       </ScrollView>
+
+      {isSharingDetail && (
+        <DailyLogShareCard
+          ref={shareCardRef}
+          width={Dimensions.get('window').width}
+          points={visibleRoutePoints}
+          regionPoints={dailyPoints}
+          isPlusActive={isPlusActive}
+          distanceLabel={distanceLabel}
+          routeEndpointsLabel={routeEndpointsLabel}
+          dailyDetailReport={dailyDetailReport}
+          isLoadingDetail={isLoadingDetail}
+          dateLabel={gifFrameDateLabel}
+          styles={styles}
+          theme={theme}
+          onMapLoaded={() => {
+            shareMapReadyRef.current?.();
+            shareMapReadyRef.current = null;
+          }}
+        />
+      )}
+
+      {isGeneratingGif && gifRegion && (
+        <GifFrameRenderer
+          ref={gifFrameRef}
+          region={gifRegion}
+          points={gifFramePoints}
+          timeLabel={gifFrameTimeLabel}
+          dateLabel={gifFrameDateLabel}
+          styles={styles}
+          theme={theme}
+          onMapLoaded={() => {
+            gifMapReadyRef.current?.();
+            gifMapReadyRef.current = null;
+          }}
+        />
+      )}
+
+      {/* 区間選択と生成中は同じ Dialog（=同じ Modal）を使う。別 Modal にすると、選択ダイアログの
+          閉じアニメーション中に生成ダイアログを開くことになり、多重モーダルで生成中が表示されない。 */}
+      <Dialog
+        visible={isSelectingGifRange || isGeneratingGif}
+        dismissible={isSelectingGifRange}
+        swipeToClose={false}
+        styles={styles}
+        onClose={() => {
+          if (isSelectingGifRange) {
+            setIsSelectingGifRange(false);
+          }
+        }}
+      >
+        {/* 区間選択を優先表示。キャンセル時は isSelectingGifRange を立てて即座に選択へ戻る
+            （生成ループは裏で巻き戻る）。 */}
+        {!isSelectingGifRange && isGeneratingGif ? (
+          <View style={styles.gifRangeContent}>
+            <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>
+            <Text style={styles.gifProgressBody}>生成が終わるまで少しお待ちください。画面を閉じないでください。</Text>
+            <View style={styles.gifProgressTrack}>
+              <View
+                style={[
+                  styles.gifProgressFill,
+                  { width: `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number },
+                ]}
+              />
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="GIF生成をキャンセル" style={styles.gifProgressCancel} onPress={handleCancelGif}>
+              <Text style={styles.gifProgressCancelText}>キャンセル</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.gifRangeContent}>
+            <Text style={styles.gifRangeTitle}>GIFにする時間範囲</Text>
+            <Text style={styles.gifRangeBody}>出力する移動の開始・終了時刻を選べます。範囲が短いほど早く生成できます。</Text>
+            <RouteMapPanel
+              emptyLabel="この範囲に移動記録がありません"
+              points={gifRangePoints}
+              regionPoints={dailyPoints}
+              styles={styles}
+              theme={theme}
+            />
+            <RangeSlider
+              accessibilityLabel="GIFにする時間範囲"
+              minValue={gifRangeMinMinute}
+              maxValue={gifRangeMaxMinute}
+              stepValue={GIF_RANGE_STEP_MINUTES}
+              minSeparation={GIF_MIN_RANGE_MINUTES}
+              startValue={gifRangeStart}
+              endValue={gifRangeEnd}
+              startLabel={formatTimelineTimeLabel(gifRangeMinMinute)}
+              endLabel={formatTimelineTimeLabel(gifRangeMaxMinute)}
+              valueLabel={`${formatTimelineTimeLabel(gifRangeStart)} 〜 ${formatTimelineTimeLabel(gifRangeEnd)}`}
+              styles={styles}
+              theme={theme}
+              onChange={(start, end) => {
+                setGifRangeStart(start);
+                setGifRangeEnd(end);
+              }}
+            />
+            <ActionPill
+              disabled={gifFrameMinutes.length < 2 || !gifRegion}
+              icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
+              label="この範囲で出力"
+              styles={styles}
+              onPress={handleConfirmGifRange}
+            />
+          </View>
+        )}
+      </Dialog>
     </SafeAreaView>
   );
 }

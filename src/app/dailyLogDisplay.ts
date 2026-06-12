@@ -29,6 +29,12 @@ export function formatDailyLogListDateLabel(localDate: string): string {
   return `${date.getMonth() + 1}月${date.getDate()}日（${JAPANESE_WEEKDAYS[date.getDay()]}）`;
 }
 
+/** GIFオーバーレイ用の日付ラベル「YYYY年M月D日 (曜)」を作る。 */
+export function formatGifFrameDateLabel(localDate: string): string {
+  const date = parseLocalDateKey(localDate);
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 (${JAPANESE_WEEKDAYS[date.getDay()]})`;
+}
+
 /** 日別詳細ヘッダーの日付と年を分けて返す。 */
 export function formatDailyLogDetailTitle(localDate: string): { title: string; subtitle: string } {
   const date = parseLocalDateKey(localDate);

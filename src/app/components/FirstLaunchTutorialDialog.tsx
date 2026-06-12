@@ -3,7 +3,7 @@ import { Image, Pressable, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 
 import type { AppStyles } from '../appStyles';
-import { Dialog } from './Dialog';
+import { animateDialogResize, Dialog } from './Dialog';
 
 const INSTRUCTION_IMAGE_ASPECT_RATIO = 453 / 279;
 const INSTRUCTION_IMAGE_HORIZONTAL_PADDING = 16;
@@ -109,6 +109,8 @@ export function FirstLaunchTutorialDialog({
       return;
     }
 
+    // ステップが変わると説明文の量で高さが変わるので、滑らかにリサイズさせる。
+    animateDialogResize();
     setStepIndex((index) => Math.min(index + 1, TUTORIAL_STEPS.length - 1));
   }
 

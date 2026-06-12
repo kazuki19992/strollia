@@ -19,6 +19,16 @@ export function formatTimelineTimeLabel(minutes: number): string {
   return `${hours}:${String(remainingMinutes).padStart(2, '0')}`;
 }
 
+/**
+ * 1日の経過分を「 H:MM」形式へ変換する。時は0埋めせず半角スペースで2桁幅に揃える。
+ * GIFの時刻オーバーレイのように桁幅を揃えたい場合に使う。
+ */
+export function formatTimelineTimeLabelPadded(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${String(hours).padStart(2, ' ')}:${String(remainingMinutes).padStart(2, '0')}`;
+}
+
 /** 今日の日付を 'YYYY-MM-DD' 形式で返す。テストでモック可能にするため独立関数として公開。 */
 export function getTodayLocalDate(): string {
   const now = new Date();

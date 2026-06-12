@@ -12,19 +12,21 @@ export type GifFrameRendererProps = {
   region: Region;
   /** このコマで表示する累積ポイント。 */
   points: LocationPoint[];
-  /** 左上に表示する時刻ラベル（HH:MM）。 */
+  /** 左上に表示する時刻ラベル（スペース埋め H:MM）。 */
   timeLabel: string;
+  /** 時刻の下に表示する日付ラベル（YYYY年M月D日 (曜)）。 */
+  dateLabel: string;
   /** 画面共通スタイル。 */
   styles: AppStyles;
   /** 現在テーマ。 */
   theme: AppTheme;
-  /** 地図の初期化完了通知。 */
-  onMapReady: () => void;
+  /** 地図がタイル含め描画完了したときの通知（最初のコマを撮る前に待つ）。 */
+  onMapLoaded: () => void;
 };
 
 /** 画面外にマウントしてGIFの1コマをキャプチャするための地図View。 */
 export const GifFrameRenderer = forwardRef<View, GifFrameRendererProps>(function GifFrameRenderer(
-  { region, points, timeLabel, styles, theme, onMapReady },
+  { region, points, timeLabel, dateLabel, styles, theme, onMapLoaded },
   ref,
 ) {
   const routeCoordinates = toRenderRouteCoordinates(points);
@@ -38,7 +40,7 @@ export const GifFrameRenderer = forwardRef<View, GifFrameRendererProps>(function
         zoomEnabled={false}
         rotateEnabled={false}
         pitchEnabled={false}
-        onMapReady={onMapReady}
+        onMapLoaded={onMapLoaded}
       >
         {routeCoordinates.length > 1 ? (
           <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
@@ -46,6 +48,7 @@ export const GifFrameRenderer = forwardRef<View, GifFrameRendererProps>(function
       </MapView>
       <View style={styles.gifFrameTimeBadge}>
         <Text style={styles.gifFrameTimeText}>{timeLabel}</Text>
+        <Text style={styles.gifFrameDateText}>{dateLabel}</Text>
       </View>
       <View style={styles.gifFrameBranding}>
         <Image source={require('../../../assets/icon.png')} style={styles.gifFrameBrandingIcon} />

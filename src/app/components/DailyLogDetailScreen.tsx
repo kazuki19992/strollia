@@ -31,11 +31,12 @@ import {
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
   formatTimelineTimeLabel,
+  formatTimelineTimeLabelPadded,
   getCurrentMinutesOfDay,
   getPointMinutesOfDay,
   getTodayLocalDate,
 } from '../dailyRouteTimeline';
-import { formatDailyLogDetailTitle, formatDistanceKm, formatRouteEndpoints } from '../dailyLogDisplay';
+import { formatDailyLogDetailTitle, formatDistanceKm, formatGifFrameDateLabel, formatRouteEndpoints } from '../dailyLogDisplay';
 import { totalDistanceMeters } from '../../utils/distance';
 import type { AppStyles } from '../appStyles';
 import { AchievementScroller } from './AchievementScroller';
@@ -50,8 +51,10 @@ import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { StepSlider } from './StepSlider';
 
-/** GIF区間指定スライダーの選択粒度（分）。 */
-const GIF_RANGE_STEP_MINUTES = 5;
+/** GIF区間指定スライダーの選択粒度（分）。最小単位時間と同じ15分刻みで、00/15/30/45分に揃える。 */
+const GIF_RANGE_STEP_MINUTES = GIF_MIN_RANGE_MINUTES;
+/** 地図のタイル描画完了待ちのフォールバック上限（ミリ秒）。onMapLoadedが発火しない端末向け。 */
+const GIF_MAP_READY_TIMEOUT_MS = 6000;
 
 export type DailyLogDetailScreenProps = {
   /** 表示対象の日別サマリー。 */
@@ -104,7 +107,10 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   // 記録の最初/最後の時刻（GIF区間指定スライダーの範囲）。
   const recordingStartMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[0]) : 0;
   const recordingEndMinute = dailyPoints.length > 0 ? getPointMinutesOfDay(dailyPoints[dailyPoints.length - 1]) : 0;
-  const canExportGif = isPlusActive && dailyPoints.length >= 2 && recordingEndMinute - recordingStartMinute >= GIF_MIN_RANGE_MINUTES;
+  // スライダーの選択肢を00/15/30/45分に揃えるため、範囲を15分境界へ丸める。
+  const gifRangeMinMinute = Math.floor(recordingStartMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
+  const gifRangeMaxMinute = Math.ceil(recordingEndMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
+  const canExportGif = isPlusActive && dailyPoints.length >= 2 && gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
   // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
   const gifRangePoints = useMemo(
     () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifRangeEnd),
@@ -126,7 +132,8 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifFrameMinute),
     [dailyPoints, gifRangeStart, gifFrameMinute],
   );
-  const gifFrameTimeLabel = formatTimelineTimeLabel(gifFrameMinute);
+  const gifFrameTimeLabel = formatTimelineTimeLabelPadded(gifFrameMinute);
+  const gifFrameDateLabel = formatGifFrameDateLabel(log.localDate);
 
   useEffect(() => {
     let isCancelled = false;
@@ -229,9 +236,19 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     }
   }
 
+  // 地図のタイル描画完了（onMapLoaded）を待つ。最初のコマが読み込み途中で撮られて
+  // 半分しか表示されない/軌跡線が出ない問題を防ぐ。万一発火しない端末でも詰まらないよう
+  // フォールバックのタイムアウトを設ける。
   function waitForGifMapReady(): Promise<void> {
     return new Promise<void>((resolve) => {
-      gifMapReadyRef.current = resolve;
+      const timer = setTimeout(() => {
+        gifMapReadyRef.current = null;
+        resolve();
+      }, GIF_MAP_READY_TIMEOUT_MS);
+      gifMapReadyRef.current = () => {
+        clearTimeout(timer);
+        resolve();
+      };
     });
   }
 
@@ -243,8 +260,8 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   }
 
   function openGifRangeSelection(): void {
-    setGifRangeStart(recordingStartMinute);
-    setGifRangeEnd(recordingEndMinute);
+    setGifRangeStart(gifRangeMinMinute);
+    setGifRangeEnd(gifRangeMaxMinute);
     setIsSelectingGifRange(true);
   }
 
@@ -407,9 +424,10 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           region={gifRegion}
           points={gifFramePoints}
           timeLabel={gifFrameTimeLabel}
+          dateLabel={gifFrameDateLabel}
           styles={styles}
           theme={theme}
-          onMapReady={() => {
+          onMapLoaded={() => {
             gifMapReadyRef.current?.();
             gifMapReadyRef.current = null;
           }}
@@ -458,14 +476,14 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
             />
             <RangeSlider
               accessibilityLabel="GIFにする時間範囲"
-              minValue={recordingStartMinute}
-              maxValue={recordingEndMinute}
+              minValue={gifRangeMinMinute}
+              maxValue={gifRangeMaxMinute}
               stepValue={GIF_RANGE_STEP_MINUTES}
               minSeparation={GIF_MIN_RANGE_MINUTES}
               startValue={gifRangeStart}
               endValue={gifRangeEnd}
-              startLabel={formatTimelineTimeLabel(recordingStartMinute)}
-              endLabel={formatTimelineTimeLabel(recordingEndMinute)}
+              startLabel={formatTimelineTimeLabel(gifRangeMinMinute)}
+              endLabel={formatTimelineTimeLabel(gifRangeMaxMinute)}
               valueLabel={`${formatTimelineTimeLabel(gifRangeStart)} 〜 ${formatTimelineTimeLabel(gifRangeEnd)}`}
               styles={styles}
               theme={theme}

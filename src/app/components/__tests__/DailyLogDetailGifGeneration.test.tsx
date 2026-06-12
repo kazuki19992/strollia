@@ -173,9 +173,9 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
       await flushAnimationFrames();
     });
 
-    // 画面外の GifFrameRenderer がマウントされ、地図初期化完了を発火させる
+    // 画面外の GifFrameRenderer がマウントされ、地図のタイル描画完了を発火させる
     await act(async () => {
-      renderer.root.findByType(GifFrameRenderer).props.onMapReady();
+      renderer.root.findByType(GifFrameRenderer).props.onMapLoaded();
     });
 
     // RAF駆動のフレーム解決を上限付きで進め、生成完了まで待つ

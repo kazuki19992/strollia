@@ -2056,6 +2056,12 @@ export function createStyles(theme: AppTheme) {
       fontFamily: NUMERIC_DISPLAY_FONT,
       fontSize: 26,
     },
+    gifFrameDateText: {
+      color: '#ffffff',
+      fontSize: 11,
+      marginTop: 2,
+      opacity: 0.9,
+    },
     gifFrameBranding: {
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.45)',

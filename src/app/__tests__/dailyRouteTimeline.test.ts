@@ -7,6 +7,7 @@ import {
   filterLocationPointsUntilMinute,
   formatTimelineHourLabel,
   formatTimelineTimeLabel,
+  formatTimelineTimeLabelPadded,
 } from '../dailyRouteTimeline';
 
 const points = [
@@ -41,6 +42,12 @@ describe('日別ルートタイムライン', () => {
     expect(formatTimelineTimeLabel(30)).toBe('0:30');
     expect(formatTimelineTimeLabel(750)).toBe('12:30');
     expect(formatTimelineTimeLabel(1440)).toBe('24:00');
+  });
+
+  it('時刻をスペース埋め2桁幅で表示する（時は0埋めしない）', () => {
+    expect(formatTimelineTimeLabelPadded(0)).toBe(' 0:00');
+    expect(formatTimelineTimeLabelPadded(586)).toBe(' 9:46');
+    expect(formatTimelineTimeLabelPadded(750)).toBe('12:30');
   });
 
   it('過去日のルート最大時刻は 24:00 になる', () => {

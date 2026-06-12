@@ -414,6 +414,10 @@ export const reportStyles = StyleSheet.create({
   monthlyReportEndSpacer: {
     height: 24,
   },
+  monthlyShareBranding: {
+    marginBottom: 24,
+    marginRight: 24,
+  },
   monthlyHero: {
     alignItems: 'center',
     minHeight: 328,

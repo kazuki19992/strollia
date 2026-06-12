@@ -102,6 +102,9 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   const gifGenerationRef = useRef<Promise<void> | null>(null);
   const shareCardRef = useRef<View>(null);
   const shareMapReadyRef = useRef<(() => void) | null>(null);
+  const shareAbortRef = useRef(false);
+  // 画面を離れたかどうか。離脱後のキャプチャ・アラート・state更新を抑止する。
+  const isMountedRef = useRef(true);
   const title = formatDailyLogDetailTitle(log.localDate);
   const distanceLabel = formatDistanceKm(log.distanceMeters ?? totalDistanceMeters(dailyPoints));
   const showSlider = isPlusActive && routeMaxMinutes >= DAILY_ROUTE_TIME_STEP_MINUTES;
@@ -193,6 +196,21 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     };
   }, [log]);
 
+  // 画面を離れたら、進行中の共有/GIF生成を中断する。
+  // 待ち（地図ロード）を解決してループを巻き戻し、離脱後のキャプチャやアラートを抑止する。
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      gifAbortRef.current = true;
+      shareAbortRef.current = true;
+      gifMapReadyRef.current?.();
+      gifMapReadyRef.current = null;
+      shareMapReadyRef.current?.();
+      shareMapReadyRef.current = null;
+    };
+  }, []);
+
   useEffect(() => {
     if (!isGeneratingGif) {
       return;
@@ -235,12 +253,14 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
 
     // 画面外に共有用カード（スライダー・ボタンを含まない）をマウントしてキャプチャするため、
     // 画面上のスライダーや共有ボタンは消えない。
+    shareAbortRef.current = false;
     setIsSharingDetail(true);
 
     try {
       await waitForShareMapReady();
 
-      if (!shareCardRef.current) {
+      // 画面を離れた／カードが消えたら、別画面をキャプチャせず中断する。
+      if (shareAbortRef.current || !shareCardRef.current) {
         return;
       }
 
@@ -261,10 +281,14 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         UTI: 'public.png',
       });
     } catch (error: unknown) {
-      Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
+      if (!shareAbortRef.current && isMountedRef.current) {
+        Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
+      }
     } finally {
       shareMapReadyRef.current = null;
-      setIsSharingDetail(false);
+      if (isMountedRef.current) {
+        setIsSharingDetail(false);
+      }
     }
   }
 
@@ -337,14 +361,18 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           onProgress: (done, frameTotal) => setGifProgress({ done, total: frameTotal }),
           shouldAbort: () => gifAbortRef.current,
         });
-        if (!success && !gifAbortRef.current) {
+        if (!success && !gifAbortRef.current && isMountedRef.current) {
           Alert.alert('GIF出力', 'GIFを生成できませんでした。');
         }
       } catch (error: unknown) {
-        Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
+        if (!gifAbortRef.current && isMountedRef.current) {
+          Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
+        }
       } finally {
-        setGifProgress(null);
-        setGifFrameIndex(-1);
+        if (isMountedRef.current) {
+          setGifProgress(null);
+          setGifFrameIndex(-1);
+        }
         gifMapReadyRef.current = null;
         gifFrameResolveRef.current = null;
       }

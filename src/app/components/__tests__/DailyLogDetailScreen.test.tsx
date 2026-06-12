@@ -261,6 +261,32 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(scrollView.props.scrollEnabled).not.toBe(false);
   });
 
+  test('共有の画像生成中に画面を離れると、別画面をキャプチャせず中断する', async () => {
+    const { captureRef } = require('react-native-view-shot');
+    const Sharing = require('expo-sharing');
+
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+      );
+    });
+
+    // 共有開始（地図ロード完了 onMapLoaded はまだ発火させない＝キャプチャ前で待機中）。
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.onPress();
+    });
+
+    // 画面を離れる（アンマウント）。
+    await act(async () => {
+      renderer.unmount();
+    });
+
+    // 別画面をキャプチャせず、共有もしない。
+    expect(captureRef).not.toHaveBeenCalled();
+    expect(Sharing.shareAsync).not.toHaveBeenCalled();
+  });
+
   test('共有ボタンを押すと詳細コンテンツを画像キャプチャして共有する', async () => {
     const { captureRef } = require('react-native-view-shot');
     const Sharing = require('expo-sharing');

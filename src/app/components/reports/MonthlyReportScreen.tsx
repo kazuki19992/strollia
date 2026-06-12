@@ -256,7 +256,8 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
           </View>
         </MonthlyReportAnimatedCard>
         <View style={reportStyles.monthlyReportEndSpacer} />
-        <ShareBranding />
+        {/* 通常フローで内容の末尾に置き、画像内の要素と重ならないようにする（端に余白を付ける）。 */}
+        <ShareBranding style={reportStyles.monthlyShareBranding} />
         </View>
         <ShareButton
           accessibilityLabel="レポートを共有"

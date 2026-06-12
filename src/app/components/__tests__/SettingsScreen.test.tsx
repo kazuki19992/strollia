@@ -288,6 +288,7 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('年額3300円ではじめる！');
     expect(texts).toContain('Strollia Plusの購入を復元する');
     expect(adImage).toBeTruthy();
+    expect(adImage?.parent?.props.style).toEqual(expect.objectContaining({ width: '100%' }));
   });
 
   test('購入ボタンは固定の月額300円・年額3300円を表示する', () => {

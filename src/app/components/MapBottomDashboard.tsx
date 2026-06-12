@@ -1,4 +1,6 @@
 import { Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+// useWindowDimensionsだけはテストで幅を差し替えるため名前空間経由で参照する。
+import * as ReactNative from 'react-native';
 import { Alert, Animated, Pressable, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -11,6 +13,84 @@ import { classifyMovementSpeed, FAST_SPEED_MIN_KMH, VEHICLE_SPEED_MIN_KMH } from
 
 /** マップ上の計器UIはOS文字サイズで崩れないよう固定する。 */
 const FIXED_MAP_UI_TEXT_PROPS = { allowFontScaling: false };
+
+/** 大きい端末で既存表示を維持するためのダッシュボード基準幅。 */
+export const SMALL_DASHBOARD_BASE_WIDTH = 430;
+
+/** 小さい端末で読みやすさを保つための縮小率下限。 */
+export const SMALL_DASHBOARD_MIN_SCALE = 0.86;
+
+/**
+ * ダッシュボードの基準寸法。
+ *
+ * `appStyles` の同名スタイル値と対応させ、大画面では既存表示を保ったまま
+ * 小画面用の縮小値だけをinline styleとして重ねる。
+ */
+const DASHBOARD_BASE_LAYOUT = {
+  action: {
+    height: 50,
+    minWidth: 44,
+  },
+  actionsRow: {
+    gap: 8,
+    marginLeft: 110,
+    marginRight: 3,
+  },
+  icon: {
+    calendar: 27,
+    history: 31,
+    map: 31,
+    settings: 30,
+    trophy: 30,
+  },
+  mapButton: {
+    borderRadius: 10,
+    height: 54,
+    width: 54,
+  },
+  meterBackground: {
+    height: 104,
+  },
+  meterCluster: {
+    height: 56,
+  },
+  navPanel: {
+    borderRadius: 10,
+    minHeight: 54,
+    paddingHorizontal: 8,
+  },
+  placeMetric: {
+    minWidth: 76,
+    paddingLeft: 7,
+  },
+  speedDial: {
+    arcSize: 104,
+    contentSize: 84,
+    left: 2,
+    ringBorderWidth: 7,
+    ringSize: 100,
+  },
+  summaryPanel: {
+    gap: 6,
+    height: 52,
+    paddingLeft: 102,
+    paddingRight: 7,
+    paddingVertical: 6,
+  },
+} as const;
+
+/** `appStyles` のフォント基準値に対応する、縮小計算用のテキスト寸法。 */
+const DASHBOARD_BASE_TEXT = {
+  distanceDecimal: { fontSize: 6, lineHeight: 10 },
+  distanceInteger: { fontSize: 11, lineHeight: 16 },
+  distanceUnit: { fontSize: 7 },
+  metricLabel: { fontSize: 11 },
+  placePrimary: { fontSize: 13, lineHeight: 16 },
+  placeSecondary: { fontSize: 10, lineHeight: 13 },
+  speedLabel: { fontSize: 11 },
+  speedUnit: { fontSize: 13, marginTop: -5 },
+  speedValue: { fontSize: 30, lineHeight: 36 },
+} as const;
 
 /** マップ下部ダッシュボードのprops。 */
 export type MapBottomDashboardProps = {
@@ -74,6 +154,10 @@ export function MapBottomDashboard({
   onUpdateShowPhotosOnMap,
 }: MapBottomDashboardProps) {
   const [isMapDisplayPanelVisible, setIsMapDisplayPanelVisible] = useState(false);
+  const { width } = ReactNative.useWindowDimensions();
+  const dashboardScale = getDashboardScale(width);
+  const dashboardLayout = getScaledDashboardLayout(dashboardScale);
+  const iconSizes = getScaledDashboardIconSizes(dashboardScale);
   const speedMeter = getSpeedMeterAppearance(currentSpeedKmh, theme.colors.primary);
   const odometerParts = formatDistanceKilometers(distance).split('.');
   const todayDistanceParts = formatDistanceKilometers(todayDistance).split('.');
@@ -98,53 +182,91 @@ export function MapBottomDashboard({
           </Pressable>
         </Animated.View>
 
-        <View style={styles.dashboardMeterCluster}>
+        <View style={[styles.dashboardMeterCluster, dashboardLayout.meterCluster]}>
+          {/* 横幅は画面に追従し、高さだけ小画面倍率に合わせて速度メーター中心と揃える。 */}
           <Svg
             accessibilityElementsHidden
             focusable={false}
             preserveAspectRatio="none"
-            style={styles.dashboardMeterBackground}
+            style={[styles.dashboardMeterBackground, dashboardLayout.meterBackground]}
             viewBox="0 0 402 104"
           >
             <Path d={METER_CLUSTER_BACKGROUND_PATH} fill="rgba(51, 51, 51, 0.80)" />
           </Svg>
-          <View style={styles.dashboardSummaryPanel}>
-            <DashboardDistanceMetric label="ODO" parts={odometerParts} styles={styles} />
-            <DashboardDistanceMetric label="TODAY" parts={todayDistanceParts} styles={styles} />
-            <View style={styles.dashboardPlaceMetric}>
-              <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={styles.dashboardPlacePrimary}>
+          <View style={[styles.dashboardSummaryPanel, dashboardLayout.summaryPanel]}>
+            <DashboardDistanceMetric label="ODO" parts={odometerParts} scale={dashboardScale} styles={styles} />
+            <DashboardDistanceMetric label="TODAY" parts={todayDistanceParts} scale={dashboardScale} styles={styles} />
+            <View style={[styles.dashboardPlaceMetric, dashboardLayout.placeMetric]}>
+              <Text
+                {...FIXED_MAP_UI_TEXT_PROPS}
+                adjustsFontSizeToFit
+                minimumFontScale={dashboardScale < 1 ? 0.72 : 0.9}
+                numberOfLines={1}
+                style={[styles.dashboardPlacePrimary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placePrimary, dashboardScale)]}
+              >
                 {currentAreaLabel.primary}
               </Text>
               {currentAreaLabel.secondary && (
-                <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={styles.dashboardPlaceSecondary}>
+                <Text
+                  {...FIXED_MAP_UI_TEXT_PROPS}
+                  adjustsFontSizeToFit
+                  minimumFontScale={dashboardScale < 1 ? 0.76 : 0.9}
+                  numberOfLines={1}
+                  style={[styles.dashboardPlaceSecondary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placeSecondary, dashboardScale)]}
+                >
                   {currentAreaLabel.secondary}
                 </Text>
               )}
             </View>
           </View>
 
-          <SpeedDial currentSpeedKmh={currentSpeedKmh} progressPercent={speedMeter.progressPercent} speedColor={speedMeter.color} styles={styles} />
+          <SpeedDial
+            currentSpeedKmh={currentSpeedKmh}
+            progressPercent={speedMeter.progressPercent}
+            scale={dashboardScale}
+            speedColor={speedMeter.color}
+            styles={styles}
+          />
         </View>
 
-        <View style={styles.dashboardActionsRow}>
-          <View style={styles.dashboardNavPanel}>
-            <DashboardAction icon={<Feather name="calendar" size={27} color="#ffffff" />} label="日ごとの記録" onPress={onOpenDailyLogs} styles={styles} />
+        <View style={[styles.dashboardActionsRow, dashboardLayout.actionsRow]}>
+          <View style={[styles.dashboardNavPanel, dashboardLayout.navPanel]}>
             <DashboardAction
-              icon={<MaterialCommunityIcons name="trophy-outline" size={30} color="#ffffff" />}
-              label="実績"
-              onPress={onOpenAchievements}
+              icon={<Feather name="calendar" size={iconSizes.calendar} color="#ffffff" />}
+              label="日ごとの記録"
+              onPress={onOpenDailyLogs}
+              scale={dashboardScale}
               styles={styles}
             />
-            <DashboardAction icon={<MaterialIcons name="history" size={31} color="#ffffff" />} label="レポートを見る" onPress={onOpenMonthlyReport} styles={styles} />
-            <DashboardAction icon={<Feather name="settings" size={30} color="#ffffff" />} label="設定" onPress={onOpenSettings} styles={styles} />
+            <DashboardAction
+              icon={<MaterialCommunityIcons name="trophy-outline" size={iconSizes.trophy} color="#ffffff" />}
+              label="実績"
+              onPress={onOpenAchievements}
+              scale={dashboardScale}
+              styles={styles}
+            />
+            <DashboardAction
+              icon={<MaterialIcons name="history" size={iconSizes.history} color="#ffffff" />}
+              label="レポートを見る"
+              onPress={onOpenMonthlyReport}
+              scale={dashboardScale}
+              styles={styles}
+            />
+            <DashboardAction
+              icon={<Feather name="settings" size={iconSizes.settings} color="#ffffff" />}
+              label="設定"
+              onPress={onOpenSettings}
+              scale={dashboardScale}
+              styles={styles}
+            />
           </View>
           <Pressable
             accessibilityLabel="マップの表示"
             accessibilityRole="button"
             onPress={() => setIsMapDisplayPanelVisible((visible) => !visible)}
-            style={styles.dashboardMapButton}
+            style={[styles.dashboardMapButton, dashboardLayout.mapButton]}
           >
-            <Feather name="map" size={31} color="#ffffff" />
+            <Feather name="map" size={iconSizes.map} color="#ffffff" />
           </Pressable>
         </View>
 
@@ -215,20 +337,30 @@ export const METER_CLUSTER_BACKGROUND_PATH =
 function SpeedDial({
   currentSpeedKmh,
   progressPercent,
+  scale,
   speedColor,
   styles,
 }: {
   currentSpeedKmh: number;
   progressPercent: number;
+  scale: number;
   speedColor: string;
   styles: AppStyles;
 }) {
   const arcStroke = getSpeedMeterArcStroke(progressPercent);
+  const layout = getScaledSpeedDialLayout(scale);
 
   return (
-    <View style={styles.speedDashboardDial}>
-      <View style={styles.speedDashboardRingBase} />
-      <Svg accessibilityElementsHidden focusable={false} pointerEvents="none" style={styles.speedDashboardArcSvg} viewBox="0 0 104 104">
+    <View style={[styles.speedDashboardDial, layout.dial]}>
+      <View style={[styles.speedDashboardRingBase, layout.ringBase]} testID="speed-meter-ring-base" />
+      <Svg
+        accessibilityElementsHidden
+        focusable={false}
+        pointerEvents="none"
+        style={[styles.speedDashboardArcSvg, layout.arcSvg]}
+        testID="speed-meter-arc-svg"
+        viewBox="0 0 104 104"
+      >
         {progressPercent > 0 && (
           <Circle
             cx="52"
@@ -247,14 +379,17 @@ function SpeedDial({
           />
         )}
       </Svg>
-      <View style={styles.speedDashboardDialContent}>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.speedometerLabel}>
+      <View style={[styles.speedDashboardDialContent, layout.dialContent]}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedometerLabel, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedLabel, scale)]}>
           SPEED
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedDashboardSpeedValue, { color: speedColor }]}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedDashboardSpeedValue, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedValue, scale), { color: speedColor }]}>
           {formatSpeedKmh(currentSpeedKmh)}
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.speedDashboardSpeedUnit}>
+        <Text
+          {...FIXED_MAP_UI_TEXT_PROPS}
+          style={[styles.speedDashboardSpeedUnit, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedUnit, scale)]}
+        >
           km/h
         </Text>
       </View>
@@ -263,23 +398,26 @@ function SpeedDial({
 }
 
 /** 下部ダッシュボードの距離数値を描画する。 */
-function DashboardDistanceMetric({ label, parts, styles }: { label: string; parts: string[]; styles: AppStyles }) {
+function DashboardDistanceMetric({ label, parts, scale, styles }: { label: string; parts: string[]; scale: number; styles: AppStyles }) {
   return (
     <View style={[styles.dashboardDistanceMetric, label === 'ODO' ? styles.dashboardOdometerMetric : styles.dashboardTodayMetric]}>
-      <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardMetricLabel}>
+      <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardMetricLabel, getScaledTextStyle(DASHBOARD_BASE_TEXT.metricLabel, scale)]}>
         {label}
       </Text>
       <View style={styles.speedometerDistanceValueRow}>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={styles.dashboardDistanceValueInteger}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={[styles.dashboardDistanceValueInteger, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}>
           {parts[0]}
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardDistanceValueDot}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDot, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}>
           .
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardDistanceValueDecimal}>
+        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDecimal, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceDecimal, scale)]}>
           {parts[1]}
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.dashboardDistanceUnit}>
+        <Text
+          {...FIXED_MAP_UI_TEXT_PROPS}
+          style={[styles.dashboardDistanceUnit, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceUnit, scale), { marginBottom: scaleNumber(3, scale), marginLeft: scaleNumber(1, scale) }]}
+        >
           km
         </Text>
       </View>
@@ -288,9 +426,9 @@ function DashboardDistanceMetric({ label, parts, styles }: { label: string; part
 }
 
 /** 下部ナビゲーションのアイコンボタンを描画する。 */
-function DashboardAction({ icon, label, onPress, styles }: { icon: ReactNode; label: string; onPress: () => void; styles: AppStyles }) {
+function DashboardAction({ icon, label, onPress, scale, styles }: { icon: ReactNode; label: string; onPress: () => void; scale: number; styles: AppStyles }) {
   return (
-    <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={styles.dashboardAction}>
+    <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={[styles.dashboardAction, getScaledDashboardActionStyle(scale)]}>
       {icon}
     </Pressable>
   );
@@ -354,6 +492,119 @@ export function getSpeedMeterArcStroke(progressPercent: number): SpeedMeterArcSt
   return {
     strokeDasharray: SPEED_METER_ARC_CIRCUMFERENCE,
     strokeDashoffset: SPEED_METER_ARC_CIRCUMFERENCE * (1 - clampedProgress / 100),
+  };
+}
+
+/** 画面幅から小画面用ダッシュボード倍率を決める。 */
+export function getDashboardScale(width: number): number {
+  if (!Number.isFinite(width) || width <= 0) {
+    return 1;
+  }
+
+  return Math.max(SMALL_DASHBOARD_MIN_SCALE, Math.min(width / SMALL_DASHBOARD_BASE_WIDTH, 1));
+}
+
+/** 小数誤差でReact Nativeのstyle値が読みにくくならないよう丸める。 */
+function scaleNumber(value: number, scale: number): number {
+  return Math.round(value * scale * 100) / 100;
+}
+
+/** スピードメーターの外形と円弧SVGを同じ倍率で縮小する。テストで中心ズレの回帰を直接確認するためexportする。 */
+export function getScaledSpeedDialLayout(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT.speedDial;
+
+  return {
+    arcSvg: {
+      height: scaleNumber(base.arcSize, scale),
+      width: scaleNumber(base.arcSize, scale),
+    },
+    dial: {
+      height: scaleNumber(base.arcSize, scale),
+      left: scaleNumber(base.left, scale),
+      top: 0,
+      width: scaleNumber(base.arcSize, scale),
+    },
+    dialContent: {
+      height: scaleNumber(base.contentSize, scale),
+      width: scaleNumber(base.contentSize, scale),
+    },
+    ringBase: {
+      borderWidth: scaleNumber(base.ringBorderWidth, scale),
+      height: scaleNumber(base.ringSize, scale),
+      width: scaleNumber(base.ringSize, scale),
+    },
+  };
+}
+
+/** ダッシュボードの主要レイアウトを小画面だけ縮小する。 */
+function getScaledDashboardLayout(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT;
+
+  return {
+    actionsRow: {
+      gap: scaleNumber(base.actionsRow.gap, scale),
+      marginLeft: scaleNumber(base.actionsRow.marginLeft, scale),
+      marginRight: scaleNumber(base.actionsRow.marginRight, scale),
+    },
+    mapButton: {
+      borderRadius: scaleNumber(base.mapButton.borderRadius, scale),
+      height: scaleNumber(base.mapButton.height, scale),
+      width: scaleNumber(base.mapButton.width, scale),
+    },
+    meterBackground: {
+      height: scaleNumber(base.meterBackground.height, scale),
+    },
+    meterCluster: {
+      height: scaleNumber(base.meterCluster.height, scale),
+    },
+    navPanel: {
+      borderRadius: scaleNumber(base.navPanel.borderRadius, scale),
+      minHeight: scaleNumber(base.navPanel.minHeight, scale),
+      paddingHorizontal: scaleNumber(base.navPanel.paddingHorizontal, scale),
+    },
+    placeMetric: {
+      minWidth: scaleNumber(base.placeMetric.minWidth, scale),
+      paddingLeft: scaleNumber(base.placeMetric.paddingLeft, scale),
+    },
+    summaryPanel: {
+      gap: scaleNumber(base.summaryPanel.gap, scale),
+      height: scaleNumber(base.summaryPanel.height, scale),
+      paddingLeft: scaleNumber(base.summaryPanel.paddingLeft, scale),
+      paddingRight: scaleNumber(base.summaryPanel.paddingRight, scale),
+      paddingVertical: scaleNumber(base.summaryPanel.paddingVertical, scale),
+    },
+  };
+}
+
+/** フォントサイズと行高を同じ倍率で縮小する。 */
+function getScaledTextStyle(base: { fontSize: number; lineHeight?: number; marginTop?: number }, scale: number) {
+  return {
+    fontSize: scaleNumber(base.fontSize, scale),
+    ...(base.lineHeight == null ? {} : { lineHeight: scaleNumber(base.lineHeight, scale) }),
+    ...(base.marginTop == null ? {} : { marginTop: scaleNumber(base.marginTop, scale) }),
+  };
+}
+
+/** 下部ナビゲーションのタップ領域を縮小レイアウトへ合わせる。 */
+function getScaledDashboardActionStyle(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT.action;
+
+  return {
+    height: scaleNumber(base.height, scale),
+    minWidth: scaleNumber(base.minWidth, scale),
+  };
+}
+
+/** 下部ダッシュボードのアイコンサイズを縮小レイアウトへ合わせる。 */
+function getScaledDashboardIconSizes(scale: number) {
+  const base = DASHBOARD_BASE_LAYOUT.icon;
+
+  return {
+    calendar: scaleNumber(base.calendar, scale),
+    history: scaleNumber(base.history, scale),
+    map: scaleNumber(base.map, scale),
+    settings: scaleNumber(base.settings, scale),
+    trophy: scaleNumber(base.trophy, scale),
   };
 }
 

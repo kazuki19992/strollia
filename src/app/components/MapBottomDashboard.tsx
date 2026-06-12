@@ -183,6 +183,7 @@ export function MapBottomDashboard({
         </Animated.View>
 
         <View style={[styles.dashboardMeterCluster, dashboardLayout.meterCluster]}>
+          {/* 横幅は画面に追従し、高さだけ小画面倍率に合わせて速度メーター中心と揃える。 */}
           <Svg
             accessibilityElementsHidden
             focusable={false}

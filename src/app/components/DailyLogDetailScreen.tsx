@@ -257,7 +257,11 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     setIsSharingDetail(true);
 
     try {
-      await waitForShareMapReady();
+      // ポイントがある日だけ地図のタイル描画完了を待つ。空の日は MapView がマウントされず
+      // onMapLoaded が発火しないため、待つとフォールバックの数秒間ぶん無駄に待ってしまう。
+      if (dailyPoints.length > 0) {
+        await waitForShareMapReady();
+      }
 
       // 画面を離れた／カードが消えたら、別画面をキャプチャせず中断する。
       if (shareAbortRef.current || !shareCardRef.current) {

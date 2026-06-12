@@ -11,8 +11,8 @@ function fakeEncoder() {
 
 const capture = async () => ({ data: new Uint8Array(4), width: 1, height: 1 });
 
-describe('buildRouteGif', () => {
-  it('全フレームを capture/encode し GIF バイト列を返す', async () => {
+describe('buildRouteGif（GIF生成オーケストレーション）', () => {
+  it('全フレームを capture/encode して GIF バイト列と進捗を返す', async () => {
     const encoder = fakeEncoder();
     const progress: Array<[number, number]> = [];
     const result = await buildRouteGif({
@@ -27,20 +27,32 @@ describe('buildRouteGif', () => {
     expect(progress).toEqual([[1, 3], [2, 3], [3, 3]]);
   });
 
-  it('shouldAbort が true を返したら中断して null を返す', async () => {
+  it('途中で shouldAbort が true になったら、それ以上 capture せず null を返す', async () => {
     const encoder = fakeEncoder();
-    let calls = 0;
     const result = await buildRouteGif({
       frameCount: 5,
       delayMs: 500,
       capture,
       createEncoder: () => encoder,
-      shouldAbort: () => {
-        calls += 1;
-        return calls >= 2; // 2フレーム目の後で中断
-      },
+      // 2コマ取り込んだ時点で中断する。
+      shouldAbort: () => encoder.frames.length >= 2,
     });
     expect(result).toBeNull();
     expect(encoder.frames.length).toBe(2);
+  });
+
+  it('開始時点で中断済みなら capture を一度も呼ばず null を返す', async () => {
+    const encoder = fakeEncoder();
+    const captureSpy = jest.fn(capture);
+    const result = await buildRouteGif({
+      frameCount: 5,
+      delayMs: 500,
+      capture: captureSpy,
+      createEncoder: () => encoder,
+      shouldAbort: () => true,
+    });
+    expect(result).toBeNull();
+    expect(captureSpy).not.toHaveBeenCalled();
+    expect(encoder.frames.length).toBe(0);
   });
 });

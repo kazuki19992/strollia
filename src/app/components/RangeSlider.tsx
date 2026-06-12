@@ -5,6 +5,7 @@ import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
 import { resolveRangeThumbValues, type RangeThumb } from './rangeSliderValue';
 
+/** 開始・終了の2つのつまみで時間範囲を選択する {@link RangeSlider} のprops。 */
 export type RangeSliderProps = {
   /** スライダーのアクセシビリティラベル。 */
   accessibilityLabel: string;

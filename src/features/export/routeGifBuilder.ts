@@ -35,6 +35,11 @@ export async function buildRouteGif(options: BuildRouteGifOptions): Promise<Uint
   const encoder = createEncoder();
 
   for (let index = 0; index < frameCount; index += 1) {
+    // capture は描画待ち＋キャプチャ＋エンコードで重いので、フレーム先頭でも中断判定する。
+    if (shouldAbort?.()) {
+      return null;
+    }
+
     const frame = await capture(index);
     encoder.addFrame(frame.data, frame.width, frame.height, delayMs);
     onProgress?.(index + 1, frameCount);

@@ -43,8 +43,9 @@ export function DailyLogShareSections({
           <DataSummaryRow label="開始地点と終了地点" value={routeEndpointsLabel} styles={styles} />
           {isPlusActive && (
             <>
-              <DataSummaryRow label="訪問したエリア数" value={`${dailyDetailReport?.visitedAreaCount ?? 0}エリア`} styles={styles} />
-              <DataSummaryRow label="新しく訪問したエリア数" value={`${dailyDetailReport?.newAreaCount ?? 0}エリア`} styles={styles} />
+              {/* レポート未取得（読み込み中・失敗）の間は 0エリア と誤表示せずプレースホルダにする。 */}
+              <DataSummaryRow label="訪問したエリア数" value={dailyDetailReport ? `${dailyDetailReport.visitedAreaCount}エリア` : '—'} styles={styles} />
+              <DataSummaryRow label="新しく訪問したエリア数" value={dailyDetailReport ? `${dailyDetailReport.newAreaCount}エリア` : '—'} styles={styles} />
             </>
           )}
         </View>

@@ -65,6 +65,12 @@
 - `src/app/components/GifFrameRenderer.tsx`（新規）: 画面外にマウントする固定サイズのフレーム描画View（MapView＋Polyline＋時刻オーバーレイ＋ブランディング）。
 - `src/app/components/DailyLogDetailScreen.tsx`: スライダー/ボタン配置変更、キャプチャ除外、GIF生成フローと進捗ダイアログの組み込み。
 
+#### 改訂（区間指定）で追加する主なファイル
+- `src/app/components/RangeSlider.tsx`（新規）: 開始・終了の2つのつまみで時間範囲を選ぶスライダー。5分粒度・15分の最小間隔（後ろが前を追い越さない）を強制し、正規化した開始/終了を `onChange` で通知する。
+- `src/app/components/rangeSliderValue.ts`（新規・純関数）: つまみの生値をステップへ丸め、`minSeparation` 以上離して範囲外に出ないようクランプする（`resolveRangeThumbValues`）。
+- `src/features/export/routeGifFrames.ts`: フレーム時刻を「区間 [開始,終了] を刻む」方式へ変更し、共通定数（`GIF_FRAME_STEP_MINUTES=15`/`GIF_FRAME_DELAY_MS=500`/`GIF_MIN_DURATION_MS=5000`/`GIF_MIN_RANGE_MINUTES=15`）と、最短再生時間を満たすための刻み解決（`resolveGifFrameStepMinutes`）を追加。
+- `src/app/components/DailyLogDetailScreen.tsx`: GIFボタン押下でまず区間指定ダイアログ（地図プレビュー＋`RangeSlider`＋「この範囲で出力」）を表示し、選んだ区間だけを生成へ渡す。
+
 ### 新規依存
 - `gifenc`（純JS・MIT）: GIFエンコード。
 - `upng-js`（純JS・MIT）: captureRef が返す PNG を RGBA へデコード。
@@ -96,6 +102,9 @@
 - スライダー step 定数変更の回帰テスト更新。
 - GIF生成オーケストレーション: capture/encode を fake 注入し、フレーム数・キャンセル中断・進捗更新を検証。
 - Dialog の `dismissible=false` 時に閉じ操作が無効であることのテスト。
+- 区間指定（`resolveRangeThumbValues`）: 5分粒度の丸め、15分の最小間隔（後ろが前を追い越さない）、範囲端でのクランプ。
+- 刻み解決（`resolveGifFrameStepMinutes`）: 5秒に満たない区間で刻みを細かくし最低コマ数を満たすこと。
+- 生成フロー: 初回フレームでデッドロックしないこと、キャンセルで区間選択へ戻ること、キャンセル後の再生成が前ループ完了を待つこと、生成中の画面離脱で別画面をキャプチャしないこと。
 - 実際の captureRef / エンコード / 共有は実機確認。
 
 ## 非対象（YAGNI）

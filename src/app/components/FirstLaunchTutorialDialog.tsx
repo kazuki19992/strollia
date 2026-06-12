@@ -5,6 +5,9 @@ import type { ImageSourcePropType } from 'react-native';
 import type { AppStyles } from '../appStyles';
 import { Dialog } from './Dialog';
 
+const INSTRUCTION_IMAGE_ASPECT_RATIO = 453 / 279;
+const INSTRUCTION_IMAGE_HORIZONTAL_PADDING = 16;
+
 /** 初回起動チュートリアルの1ステップ分の表示内容。 */
 type TutorialStep = {
   /** 見出し。 */
@@ -82,10 +85,16 @@ export function FirstLaunchTutorialDialog({
   onComplete,
 }: FirstLaunchTutorialDialogProps) {
   const [stepIndex, setStepIndex] = useState(0);
+  const [instructionImageFrameWidth, setInstructionImageFrameWidth] = useState(0);
   const currentStep = TUTORIAL_STEPS[stepIndex];
   const isLastStep = stepIndex === TUTORIAL_STEPS.length - 1;
   const actionLabel = isLastStep ? completionButtonLabel : '次へ';
   const actionAccessibilityLabel = isLastStep && actionLabel === '閉じる' ? 'チュートリアルを閉じる' : actionLabel;
+  const instructionImageWidth = Math.max(0, instructionImageFrameWidth - INSTRUCTION_IMAGE_HORIZONTAL_PADDING * 2);
+  const instructionImageSize = {
+    width: instructionImageWidth,
+    height: instructionImageWidth / INSTRUCTION_IMAGE_ASPECT_RATIO,
+  };
 
   useEffect(() => {
     if (visible) {
@@ -108,12 +117,15 @@ export function FirstLaunchTutorialDialog({
       <Text style={styles.firstLaunchTutorialStepText}>{`${stepIndex + 1} / ${TUTORIAL_STEPS.length}`}</Text>
       <Text style={styles.firstLaunchTutorialTitle}>{currentStep.title}</Text>
       {currentStep.instructionImage && (
-        <View style={styles.firstLaunchTutorialInstructionImageFrame}>
+        <View
+          style={styles.firstLaunchTutorialInstructionImageFrame}
+          onLayout={(event) => setInstructionImageFrameWidth(event.nativeEvent.layout.width)}
+        >
           <Image
             accessibilityLabel={currentStep.instructionImageAccessibilityLabel}
             resizeMode="contain"
             source={currentStep.instructionImage}
-            style={styles.firstLaunchTutorialInstructionImage}
+            style={[styles.firstLaunchTutorialInstructionImage, instructionImageSize]}
           />
         </View>
       )}

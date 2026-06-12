@@ -61,10 +61,18 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(visibleTexts()).toContain('2 / 5');
     const instructionImage = renderer!.root.findByType(Image);
     expect(instructionImage.props.accessibilityLabel).toBe('マップ画面の要素説明');
-    expect(instructionImage.props.style).toEqual(expect.objectContaining({ alignSelf: 'stretch', aspectRatio: 453 / 279, resizeMode: 'contain' }));
-    expect(instructionImage.props.style).not.toEqual(expect.objectContaining({ width: '100%' }));
     const instructionImageFrame = renderer!.root.findAllByType(View).find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
     expect(instructionImageFrame).toBeTruthy();
+    act(() => {
+      instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
+    });
+    const measuredInstructionImage = renderer!.root.findByType(Image);
+    expect(measuredInstructionImage.props.style).toEqual([
+      styles.firstLaunchTutorialInstructionImage,
+      { width: 268, height: 268 / (453 / 279) },
+    ]);
+    expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ width: '100%' }));
+    expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ alignSelf: 'stretch' }));
 
     press('次へ');
     expect(visibleTexts()).toContain('実績を集める');

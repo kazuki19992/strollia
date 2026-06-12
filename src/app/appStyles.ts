@@ -312,8 +312,6 @@ export function createStyles(theme: AppTheme) {
       paddingHorizontal: 16,
     },
     firstLaunchTutorialInstructionImage: {
-      alignSelf: 'stretch',
-      aspectRatio: 453 / 279,
       resizeMode: 'contain',
     },
     firstLaunchTutorialActions: {

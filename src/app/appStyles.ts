@@ -2067,6 +2067,20 @@ export function createStyles(theme: AppTheme) {
       position: 'absolute',
       top: 0,
     },
+    dailyLogShareFooter: {
+      alignItems: 'flex-end',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 16,
+    },
+    dailyLogShareDate: {
+      color: colors.mutedText,
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    dailyLogShareFooterBranding: {
+      marginTop: 0,
+    },
     gifFrameBranding: {
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.45)',

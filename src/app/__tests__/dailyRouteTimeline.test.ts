@@ -44,9 +44,9 @@ describe('日別ルートタイムライン', () => {
     expect(formatTimelineTimeLabel(1440)).toBe('24:00');
   });
 
-  it('時刻をスペース埋め2桁幅で表示する（時は0埋めしない）', () => {
-    expect(formatTimelineTimeLabelPadded(0)).toBe(' 0:00');
-    expect(formatTimelineTimeLabelPadded(586)).toBe(' 9:46');
+  it('時刻を0埋め2桁(HH:MM)で表示する（等幅フォントで幅を揃える）', () => {
+    expect(formatTimelineTimeLabelPadded(0)).toBe('00:00');
+    expect(formatTimelineTimeLabelPadded(586)).toBe('09:46');
     expect(formatTimelineTimeLabelPadded(750)).toBe('12:30');
   });
 

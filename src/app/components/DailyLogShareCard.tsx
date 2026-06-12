@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import type { DailyDetailReport } from '../../features/reports/dailyReport';
 import type { AppTheme } from '../../theme/theme';
@@ -26,6 +26,8 @@ export type DailyLogShareCardProps = {
   dailyDetailReport: DailyDetailReport | null;
   /** 詳細データ読み込み中か。 */
   isLoadingDetail: boolean;
+  /** 左下に表示する日付ラベル（YYYY年M月D日 (曜)）。 */
+  dateLabel: string;
   /** 画面共通スタイル。 */
   styles: AppStyles;
   /** 現在テーマ。 */
@@ -39,7 +41,7 @@ export type DailyLogShareCardProps = {
  * 画面上のスライダーや共有ボタンを含まないため、共有時にUIが消えることなくキャプチャできる。
  */
 export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(function DailyLogShareCard(
-  { width, points, regionPoints, isPlusActive, distanceLabel, routeEndpointsLabel, dailyDetailReport, isLoadingDetail, styles, theme, onMapLoaded },
+  { width, points, regionPoints, isPlusActive, distanceLabel, routeEndpointsLabel, dailyDetailReport, isLoadingDetail, dateLabel, styles, theme, onMapLoaded },
   ref,
 ) {
   return (
@@ -67,8 +69,11 @@ export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(functi
           isLoadingDetail={isLoadingDetail}
           styles={styles}
         />
-        {/* おもいで（実績）の下に、画像内の要素と重ならないよう通常フローで配置する。 */}
-        <ShareBranding />
+        {/* おもいで（実績）の下に、日付（左下）とブランディング（右下）を同じ行で重ならないよう配置する。 */}
+        <View style={styles.dailyLogShareFooter}>
+          <Text style={styles.dailyLogShareDate}>{dateLabel}</Text>
+          <ShareBranding style={styles.dailyLogShareFooterBranding} />
+        </View>
       </View>
     </View>
   );

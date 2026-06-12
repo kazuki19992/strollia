@@ -501,6 +501,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           routeEndpointsLabel={routeEndpointsLabel}
           dailyDetailReport={dailyDetailReport}
           isLoadingDetail={isLoadingDetail}
+          dateLabel={gifFrameDateLabel}
           styles={styles}
           theme={theme}
           onMapLoaded={() => {

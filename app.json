@@ -13,7 +13,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "すとろりあは、移動ルートを記録するために現在地を使用します。",
         "ITSAppUsesNonExemptEncryption": false,

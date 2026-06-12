@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Image, View } from 'react-native';
 
-import { PlusAdImage } from '../PlusAdImage';
+import { PlusAdImage, PLUS_AD_IMAGE_ASPECT_RATIO } from '../PlusAdImage';
 
 const { act, create } = require('react-test-renderer') as {
   act: (callback: () => void) => void;
@@ -35,7 +35,7 @@ describe('PlusAdImage', () => {
     expect(image.props.resizeMode).toBe('contain');
     expect(image.props.style).toEqual([
       expect.objectContaining({ resizeMode: 'contain' }),
-      { width: 320, height: 320 / (1044 / 1233) },
+      { width: 320, height: 320 / PLUS_AD_IMAGE_ASPECT_RATIO },
     ]);
   });
 });

@@ -5,7 +5,7 @@ import type { DimensionValue } from 'react-native';
 const PLUS_AD_IMAGE_SOURCE = require('../../../assets/ad/plus-ad.png');
 const plusAdImageAsset = Image.resolveAssetSource(PLUS_AD_IMAGE_SOURCE);
 const PLUS_AD_IMAGE_DEFAULT_ASPECT_RATIO = 1044 / 1233;
-const PLUS_AD_IMAGE_ASPECT_RATIO =
+export const PLUS_AD_IMAGE_ASPECT_RATIO =
   plusAdImageAsset.width > 0 && plusAdImageAsset.height > 0
     ? plusAdImageAsset.width / plusAdImageAsset.height
     : PLUS_AD_IMAGE_DEFAULT_ASPECT_RATIO;

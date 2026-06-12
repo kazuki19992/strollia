@@ -307,6 +307,12 @@ export function createStyles(theme: AppTheme) {
     firstLaunchTutorialDescriptionGroup: {
       gap: 8,
     },
+    firstLaunchTutorialInstructionImage: {
+      alignSelf: 'stretch',
+      aspectRatio: 453 / 279,
+      resizeMode: 'contain',
+      width: '100%',
+    },
     firstLaunchTutorialActions: {
       alignSelf: 'stretch',
       gap: 10,

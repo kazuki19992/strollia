@@ -102,6 +102,8 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 
 `FirstLaunchTutorialDialog` は `visible=true` になったタイミングでステップを1ページ目へ戻す。本文は1つの長文にせず、読みやすい単位の段落として複数の `Text` に分けて表示する。
 
+2ステップ目の「画面下の項目」では、タイトル直下・本文上に `assets/tutorial/home-screen-instruction.png` を `width: '100%'` で収まるように表示する。画像はマップ画面上の要素説明に使う。
+
 ## スタイル
 
 既存の `Dialog` 用スタイルを枠として再利用し、本文用に最小限のスタイルを `appStyles.ts` へ追加する。
@@ -123,6 +125,7 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 
 - 1ステップ目のタイトルと本文を表示する。
 - `次へ` を押すと2、3、4、5ステップ目へ進む。
+- 2ステップ目ではマップ画面の要素説明画像をタイトル下に表示する。
 - 5ステップ目で `地図で確認する` を押すと `onComplete` を呼ぶ。
 - 再表示用の完了ボタン文言を `閉じる` に変更できる。
 - 非表示から再表示したときは1ステップ目から始まる。

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 
 import type { AppStyles } from '../appStyles';
 import { Dialog } from './Dialog';
@@ -10,6 +11,10 @@ type TutorialStep = {
   title: string;
   /** 本文の段落。 */
   paragraphs: string[];
+  /** タイトル下に表示する補足画像。 */
+  instructionImage?: ImageSourcePropType;
+  /** 補足画像のアクセシビリティラベル。 */
+  instructionImageAccessibilityLabel?: string;
   /** 本文の下に表示する箇条書き。 */
   bulletItems?: string[];
 };
@@ -36,6 +41,8 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     title: '画面下の項目',
+    instructionImage: require('../../../assets/tutorial/home-screen-instruction.png'),
+    instructionImageAccessibilityLabel: 'マップ画面の要素説明',
     paragraphs: [
       '画面下から、日ごとの記録、実績、月ごとのレポート、設定を開けます。',
       '普段は地図を見ながら、必要なときに各項目を確認できます。',
@@ -100,6 +107,14 @@ export function FirstLaunchTutorialDialog({
     <Dialog visible={visible} autoClose={false} swipeToClose={false} styles={styles} onClose={onComplete}>
       <Text style={styles.firstLaunchTutorialStepText}>{`${stepIndex + 1} / ${TUTORIAL_STEPS.length}`}</Text>
       <Text style={styles.firstLaunchTutorialTitle}>{currentStep.title}</Text>
+      {currentStep.instructionImage && (
+        <Image
+          accessibilityLabel={currentStep.instructionImageAccessibilityLabel}
+          resizeMode="contain"
+          source={currentStep.instructionImage}
+          style={styles.firstLaunchTutorialInstructionImage}
+        />
+      )}
       <View style={styles.firstLaunchTutorialDescriptionGroup}>
         {currentStep.paragraphs.map((paragraph) => (
           <Text key={paragraph} style={styles.firstLaunchTutorialDescription}>{paragraph}</Text>

@@ -356,7 +356,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.onPress();
     });
 
-    expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' }).props.disabled).toBe(true);
+    // 共有中はラベルが「画像を作っています……」に変わり、無効化される。
+    expect(renderer.root.findByProps({ accessibilityLabel: '画像を作っています……' }).props.disabled).toBe(true);
 
     await act(async () => {
       renderer.root.findByType(DailyLogShareCard).props.onMapLoaded();

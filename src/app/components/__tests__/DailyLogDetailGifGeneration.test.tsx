@@ -193,4 +193,42 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
       expect.objectContaining({ mimeType: 'image/gif' }),
     );
   });
+
+  it('生成中にキャンセルすると共有せず区間選択へ戻る', async () => {
+    const Sharing = require('expo-sharing');
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={jest.fn()}
+        />,
+      );
+    });
+    await act(async () => {});
+
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: '移動記録をGIFで出力' }).props.onPress();
+    });
+    // 「この範囲で出力」を押すと生成が始まり、地図のタイル描画完了待ち（onMapLoaded前）で停止する。
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' }).props.onPress();
+    });
+
+    // 生成中（キャンセルボタンが出ている）状態でキャンセルする。
+    await act(async () => {
+      renderer.root.findByProps({ accessibilityLabel: 'GIF生成をキャンセル' }).props.onPress();
+    });
+    await act(async () => {
+      await flushAnimationFrames();
+    });
+
+    // 共有されず、区間選択（「この範囲で出力」）へ戻っている。
+    expect(Sharing.shareAsync).not.toHaveBeenCalled();
+    expect(renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' })).toBeTruthy();
+  });
 });

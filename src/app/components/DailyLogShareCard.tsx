@@ -67,8 +67,9 @@ export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(functi
           isLoadingDetail={isLoadingDetail}
           styles={styles}
         />
+        {/* おもいで（実績）の下に、画像内の要素と重ならないよう通常フローで配置する。 */}
+        <ShareBranding />
       </View>
-      <ShareBranding />
     </View>
   );
 });

@@ -6,7 +6,8 @@ export type ShareBrandingProps = {
 };
 
 /**
- * 共有画像の右下に表示するアプリのブランディング（アイコン＋アプリ名）。
+ * 共有画像に表示するアプリのブランディング（アイコン＋アプリ名）。
+ * 画像内の他要素と重ならないよう通常フローで配置し、右寄せにする（中身の末尾に置く想定）。
  * どの画面のキャプチャでも使えるよう、スタイルは自己完結させている。
  */
 export function ShareBranding({ style }: ShareBrandingProps) {
@@ -24,15 +25,14 @@ export function ShareBranding({ style }: ShareBrandingProps) {
 const styles = StyleSheet.create({
   branding: {
     alignItems: 'center',
+    alignSelf: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.45)',
     borderRadius: 8,
-    bottom: 12,
     flexDirection: 'row',
     gap: 8,
+    marginTop: 16,
     paddingHorizontal: 8,
     paddingVertical: 6,
-    position: 'absolute',
-    right: 12,
   },
   icon: {
     borderRadius: 6,

@@ -56,6 +56,8 @@ import { StepSlider } from './StepSlider';
 const GIF_RANGE_STEP_MINUTES = GIF_MIN_RANGE_MINUTES;
 /** 地図のタイル描画完了待ちのフォールバック上限（ミリ秒）。onMapLoadedが発火しない端末向け。 */
 const GIF_MAP_READY_TIMEOUT_MS = 6000;
+/** 各コマで Polyline 等のネイティブ更新が反映されるのを待つフレーム数。少ないと線が伸びない瞬間が出る。 */
+const GIF_FRAME_RENDER_SETTLE_FRAMES = 6;
 
 export type DailyLogDetailScreenProps = {
   /** 表示対象の日別サマリー。 */
@@ -193,13 +195,21 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     if (!isGeneratingGif) {
       return;
     }
-    const raf = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    // Polyline などネイティブのオーバーレイ更新が反映されてからキャプチャするため、
+    // 数フレーム待ってから解決する（少なすぎると更新前の状態を撮ってしまい、線が伸びない瞬間が出る）。
+    let rafId = 0;
+    let remaining = GIF_FRAME_RENDER_SETTLE_FRAMES;
+    const tick = () => {
+      remaining -= 1;
+      if (remaining <= 0) {
         gifFrameResolveRef.current?.();
         gifFrameResolveRef.current = null;
-      });
-    });
-    return () => cancelAnimationFrame(raf);
+        return;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [gifFrameIndex, isGeneratingGif]);
 
   // 共有用カードの地図タイル描画完了を待つ。発火しない端末でも詰まらないようフォールバックを設ける。
@@ -330,6 +340,9 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     gifAbortRef.current = true;
     gifMapReadyRef.current?.();
     gifMapReadyRef.current = null;
+    // 生成を中断し、ダイアログは閉じずに区間選択へ戻す（裏でループは安全に巻き戻る）。
+    animateDialogResize();
+    setIsSelectingGifRange(true);
   }
 
   return (
@@ -398,7 +411,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           <ActionPill
             disabled={isSharingDetail}
             icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
-            label="この日の記録を共有"
+            label={isSharingDetail ? '画像を作っています……' : 'この日の記録を共有'}
             styles={styles}
             onPress={() => {
               shareDailyLogImage().catch(() => undefined);
@@ -462,16 +475,18 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           閉じアニメーション中に生成ダイアログを開くことになり、多重モーダルで生成中が表示されない。 */}
       <Dialog
         visible={isSelectingGifRange || isGeneratingGif}
-        dismissible={!isGeneratingGif}
+        dismissible={isSelectingGifRange}
         swipeToClose={false}
         styles={styles}
         onClose={() => {
-          if (!isGeneratingGif) {
+          if (isSelectingGifRange) {
             setIsSelectingGifRange(false);
           }
         }}
       >
-        {isGeneratingGif ? (
+        {/* 区間選択を優先表示。キャンセル時は isSelectingGifRange を立てて即座に選択へ戻る
+            （生成ループは裏で巻き戻る）。 */}
+        {!isSelectingGifRange && isGeneratingGif ? (
           <View style={styles.gifRangeContent}>
             <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>
             <Text style={styles.gifProgressBody}>生成が終わるまで少しお待ちください。画面を閉じないでください。</Text>

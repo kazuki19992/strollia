@@ -74,6 +74,7 @@ function createProps() {
     selectedAppColorPresetId: 'matcha' as AppColorPresetId,
     onUpdateAppColorPreset: jest.fn(),
     onOpenAboutAppScreen: jest.fn(),
+    onOpenFirstLaunchTutorial: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
     onOpenTermsOfService: jest.fn(),
     onOpenPrivacyPolicy: jest.fn(),
@@ -111,7 +112,7 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).toContain('GPXファイルのエクスポート');
   });
 
-  test('このアプリについてをライセンスより上に表示して開ける', () => {
+  test('このアプリについての下にチュートリアルを表示して開ける', () => {
     const props = createProps();
     let renderer: any;
 
@@ -121,19 +122,25 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     const aboutIndex = texts.indexOf('このアプリについて');
+    const tutorialIndex = texts.indexOf('チュートリアル');
     const licenseIndex = texts.indexOf('オープンソースライセンス');
 
     expect(aboutIndex).toBeGreaterThanOrEqual(0);
+    expect(tutorialIndex).toBeGreaterThanOrEqual(0);
     expect(licenseIndex).toBeGreaterThanOrEqual(0);
-    expect(aboutIndex).toBeLessThan(licenseIndex);
+    expect(aboutIndex).toBeLessThan(tutorialIndex);
+    expect(tutorialIndex).toBeLessThan(licenseIndex);
 
     const aboutButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenAboutAppScreen)[0];
+    const tutorialButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenFirstLaunchTutorial)[0];
 
     act(() => {
       aboutButton.props.onPress();
+      tutorialButton.props.onPress();
     });
 
     expect(props.onOpenAboutAppScreen).toHaveBeenCalledTimes(1);
+    expect(props.onOpenFirstLaunchTutorial).toHaveBeenCalledTimes(1);
   });
 
   test('ダークモードでもGPS正常パネルはライトモードと同じ白文字で表示する', () => {

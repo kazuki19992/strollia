@@ -948,6 +948,12 @@ export default function App() {
     navigateToScreen('settings');
   }
 
+  /** 設定画面から初回チュートリアルを再表示する。 */
+  function openFirstLaunchTutorial(): void {
+    triggerSelectionHaptic();
+    setIsFirstLaunchTutorialVisible(true);
+  }
+
   /** 設定画面から法務ページを端末のブラウザで開く。 */
   function openLegalLink(url: string): void {
     Linking.openURL(url).catch((error: unknown) => {
@@ -1414,6 +1420,7 @@ export default function App() {
                         onUpdateAppColorPreset={updateAppColorPreset}
                         onUpdateUserLocationIcon={updateUserLocationIcon}
                         onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
+                        onOpenFirstLaunchTutorial={openFirstLaunchTutorial}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
                         onOpenTermsOfService={() => openLegalLink(TERMS_OF_SERVICE_URL)}
                         onOpenPrivacyPolicy={() => openLegalLink(PRIVACY_POLICY_URL)}

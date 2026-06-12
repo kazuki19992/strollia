@@ -11,6 +11,7 @@
 - 画像は使わず、短いタイトル・本文・ステップ表示・進行ボタンで構成する。
 - 最後のステップを閉じたあと、地図上の赤い権限付与パネルのボタンを押すよう明確に案内する。
 - 表示済み状態は既存の `app_settings` に保存し、次回起動以降は表示しない。
+- 設定画面の「このアプリについて」の直下に「チュートリアル」を表示し、完了後も同じチュートリアルを再表示できる。
 
 ## コンポーネント
 
@@ -91,9 +92,12 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 - `isFirstLaunchTutorialVisible` state。
 - 初期化時の設定読み込み。
 - `completeFirstLaunchTutorial` ハンドラ。
+- 設定画面から呼ぶ `openFirstLaunchTutorial` ハンドラ。
 - ルート描画の末尾に `FirstLaunchTutorialDialog` を配置。
 
 実績解除ダイアログや実績詳細ダイアログとは別 state で管理する。初回チュートリアルは初回起動時のみの説明であり、実績通知キューには参加しない。
+
+設定画面では「このアプリについて」の直下に `チュートリアル` の `ActionPill` を置く。再表示時は `firstLaunchTutorialCompleted` を変更せず、現在のセッションで `FirstLaunchTutorialDialog` を開くだけにする。
 
 ## スタイル
 
@@ -127,6 +131,7 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 - `firstLaunchTutorialCompleted=false` のとき初回チュートリアルを表示する。
 - 完了ボタン押下で `setSetting('firstLaunchTutorialCompleted', true)` を呼ぶ。
 - `firstLaunchTutorialCompleted=true` のとき表示しない。
+- 設定画面の `チュートリアル` 押下で初回チュートリアルを再表示する。
 
 ## ドキュメント更新
 

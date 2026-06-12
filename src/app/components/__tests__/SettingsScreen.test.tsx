@@ -25,6 +25,10 @@ jest.mock('react-native-svg', () => {
   };
 });
 
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: jest.fn().mockResolvedValue(true),
+}));
+
 
 import { SettingsScreen, getSubscriptionStoreName } from '../SettingsScreen';
 
@@ -58,6 +62,7 @@ function createProps() {
     isUpdatingPhotoSetting: false,
     isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
+    revenueCatAppUserId: null as string | null,
     premiumOfferingSummary: null as PremiumOfferingSummary | null,
     isLoadingPremiumOffering: false,
     isPurchasingPremiumPackage: false,
@@ -738,6 +743,63 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     expect(props.onToggleMapType).toHaveBeenCalledTimes(1);
+  });
+
+  test('サポート用IDがあるとアプリ情報の末尾に表示し、タップでクリップボードへコピーする', async () => {
+    const Clipboard = require('expo-clipboard');
+    const { Alert } = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const props = { ...createProps(), revenueCatAppUserId: '$RCAnonymousID:abc123' };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('$RCAnonymousID:abc123');
+
+    const copyButton = renderer.root.findByProps({ accessibilityLabel: 'サポート用IDをコピー' });
+    await act(async () => {
+      copyButton.props.onPress();
+    });
+
+    expect(Clipboard.setStringAsync).toHaveBeenCalledWith('$RCAnonymousID:abc123');
+    expect(alertSpy).toHaveBeenCalledWith('コピーしました', 'サポート用IDをクリップボードにコピーしました。');
+    alertSpy.mockRestore();
+  });
+
+  test('サポート用IDのコピーに失敗したときは失敗アラートを表示する', async () => {
+    const Clipboard = require('expo-clipboard');
+    const { Alert } = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    (Clipboard.setStringAsync as jest.Mock).mockRejectedValueOnce(new Error('copy failed'));
+    const props = { ...createProps(), revenueCatAppUserId: '$RCAnonymousID:abc123' };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const copyButton = renderer.root.findByProps({ accessibilityLabel: 'サポート用IDをコピー' });
+    await act(async () => {
+      copyButton.props.onPress();
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith('コピーできませんでした', 'もう一度お試しください。');
+    alertSpy.mockRestore();
+  });
+
+  test('サポート用IDがnullのときはサポート用ID行を表示しない', () => {
+    const props = { ...createProps(), revenueCatAppUserId: null };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const labels = renderer.root.findAll((node: any) => node.props.accessibilityLabel === 'サポート用IDをコピー');
+    expect(labels).toHaveLength(0);
   });
 
 });

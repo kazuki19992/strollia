@@ -41,6 +41,17 @@ export function configureRevenueCatIfAvailable(): boolean {
   return true;
 }
 
+/** RevenueCatのApp User ID（サポート対応用）を返す。未設定ならnull。 */
+export async function getRevenueCatAppUserId(): Promise<string | null> {
+  const configured = configureRevenueCatIfAvailable();
+
+  if (!configured) {
+    return null;
+  }
+
+  return Purchases.getAppUserID();
+}
+
 /** RevenueCatのCustomerInfoからentitlement有効状態を判定する。 */
 export async function getPremiumAccessStateFromRevenueCat(entitlementId: string): Promise<boolean> {
   const configured = configureRevenueCatIfAvailable();
@@ -178,5 +189,6 @@ export function createRevenueCatClient(): RevenueCatClient {
     presentCustomerCenter: presentCustomerCenterWithRevenueCat,
     restorePurchases: restorePremiumPurchasesWithRevenueCat,
     subscribeToCustomerInfoUpdates: subscribePremiumAccessStateUpdatesWithRevenueCat,
+    getAppUserId: getRevenueCatAppUserId,
   };
 }

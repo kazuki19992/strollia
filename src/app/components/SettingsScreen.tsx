@@ -1,4 +1,5 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import type { ComponentProps } from 'react';
 import { useState } from 'react';
 import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
@@ -52,6 +53,8 @@ export type SettingsScreenProps = {
   isImportingGpx: boolean;
   /** Plus権限状態。 */
   premiumAccessState: ReturnType<typeof getDefaultPremiumAccessState>;
+  /** RevenueCatのApp User ID（サポート対応用）。未取得ならnull。 */
+  revenueCatAppUserId: string | null;
   /** RevenueCat Offeringの商品概要。 */
   premiumOfferingSummary: PremiumOfferingSummary | null;
   /** 商品情報を読み込み中か。 */
@@ -136,6 +139,7 @@ export function SettingsScreen({
   isUpdatingPhotoSetting,
   isImportingGpx,
   premiumAccessState,
+  revenueCatAppUserId,
   premiumOfferingSummary,
   isLoadingPremiumOffering,
   isPurchasingPremiumPackage,
@@ -167,6 +171,20 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
   const subscriptionDescription = isPlusActive ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。` : undefined;
+
+  /** サポート用IDをクリップボードへコピーする。 */
+  async function handleCopyAppUserId(): Promise<void> {
+    if (!revenueCatAppUserId) {
+      return;
+    }
+
+    try {
+      await Clipboard.setStringAsync(revenueCatAppUserId);
+      Alert.alert('コピーしました', 'サポート用IDをクリップボードにコピーしました。');
+    } catch {
+      Alert.alert('コピーできませんでした', 'もう一度お試しください。');
+    }
+  }
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -410,6 +428,24 @@ export function SettingsScreen({
             styles={styles}
             onPress={onOpenSpecifiedCommercialTransactionAct}
           />
+          {revenueCatAppUserId ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="サポート用IDをコピー"
+              style={styles.supportUserIdRow}
+              onPress={() => {
+                handleCopyAppUserId().catch(() => undefined);
+              }}
+            >
+              <Text style={styles.supportUserIdLabel}>サポート用ID（タップでコピー）</Text>
+              <View style={styles.supportUserIdValueRow}>
+                <Text style={styles.supportUserIdValue} numberOfLines={1} ellipsizeMode="middle">
+                  {revenueCatAppUserId}
+                </Text>
+                <Feather name="copy" size={13} color={theme.colors.mutedText} />
+              </View>
+            </Pressable>
+          ) : null}
         </ScreenSection>
       </ScrollView>
     </SafeAreaView>

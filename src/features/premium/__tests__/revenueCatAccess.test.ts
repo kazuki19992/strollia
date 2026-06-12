@@ -30,6 +30,7 @@ jest.mock('react-native-purchases', () => ({
   default: {
     configure: jest.fn(),
     addCustomerInfoUpdateListener: jest.fn(),
+    getAppUserID: jest.fn(),
     getCustomerInfo: jest.fn(),
     getOfferings: jest.fn(),
     purchasePackage: jest.fn(),
@@ -86,6 +87,7 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
       presentCustomerCenter: jest.fn().mockResolvedValue(undefined),
       restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
       subscribeToCustomerInfoUpdates: jest.fn(() => jest.fn()),
+      getAppUserId: jest.fn().mockResolvedValue(null),
     };
 
     await expect(resolvePremiumAccessState(client)).resolves.toEqual({
@@ -115,6 +117,7 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
       presentCustomerCenter: jest.fn().mockResolvedValue(undefined),
       restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
       subscribeToCustomerInfoUpdates: jest.fn(() => jest.fn()),
+      getAppUserId: jest.fn().mockResolvedValue(null),
     };
 
     await expect(resolvePremiumOfferingSummary(client)).resolves.toEqual({
@@ -140,6 +143,7 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
       presentCustomerCenter: jest.fn().mockResolvedValue(undefined),
       restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
       subscribeToCustomerInfoUpdates: jest.fn(() => jest.fn()),
+      getAppUserId: jest.fn().mockResolvedValue(null),
     };
 
     await expect(resolvePremiumOfferingSummary(client)).resolves.toBeNull();
@@ -192,6 +196,26 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
     await expect(client.hasActiveEntitlement(STROLLIA_PLUS_ENTITLEMENT_ID)).resolves.toBe(true);
     expect(Purchases.configure).toHaveBeenCalledWith({ apiKey: 'appl_ios_key' });
     expect(Purchases.getCustomerInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('API key設定時はApp User IDを返す', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (Purchases.getAppUserID as jest.Mock).mockReturnValue('$RCAnonymousID:abc123');
+
+    const client = createRevenueCatClient();
+
+    await expect(client.getAppUserId()).resolves.toBe('$RCAnonymousID:abc123');
+  });
+
+  it('API key未設定時はApp User IDをnullにする', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', undefined);
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', undefined);
+
+    const client = createRevenueCatClient();
+
+    await expect(client.getAppUserId()).resolves.toBeNull();
   });
 
   it('RevenueCat CustomerInfoにentitlementがなければPlus無効にする', async () => {

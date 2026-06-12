@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import type { AppStyles } from '../appStyles';
-import { Dialog } from './Dialog';
+import { animateDialogResize, Dialog } from './Dialog';
 
 /** 初回起動チュートリアルの1ステップ分の表示内容。 */
 type TutorialStep = {
@@ -55,6 +55,8 @@ export function FirstLaunchTutorialDialog({ visible, styles, onComplete }: First
       return;
     }
 
+    // ステップが変わると説明文の量で高さが変わるので、滑らかにリサイズさせる。
+    animateDialogResize();
     setStepIndex((index) => Math.min(index + 1, TUTORIAL_STEPS.length - 1));
   }
 

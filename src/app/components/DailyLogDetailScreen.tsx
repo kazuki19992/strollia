@@ -45,7 +45,7 @@ import { AppScreenHeader } from './AppScreenHeader';
 import { DailyLogShareCard } from './DailyLogShareCard';
 import { DailyLogShareSections } from './DailyLogShareSections';
 import { DescriptionText } from './DescriptionText';
-import { Dialog } from './Dialog';
+import { animateDialogResize, Dialog } from './Dialog';
 import { GifFrameRenderer } from './GifFrameRenderer';
 import { RangeSlider } from './RangeSlider';
 import { RouteMapPanel } from './RouteMapPanel';
@@ -286,6 +286,8 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
   }
 
   function handleConfirmGifRange(): void {
+    // 区間選択→生成中で中身の高さが変わるので、滑らかにリサイズさせる。
+    animateDialogResize();
     setIsSelectingGifRange(false);
     handleExportGif().catch(() => undefined);
   }

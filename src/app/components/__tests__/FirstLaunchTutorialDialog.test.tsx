@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Image, Text } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
 import { createStyles } from '../../appStyles';
 import { lightTheme } from '../../../theme/theme';
@@ -61,7 +61,10 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(visibleTexts()).toContain('2 / 5');
     const instructionImage = renderer!.root.findByType(Image);
     expect(instructionImage.props.accessibilityLabel).toBe('マップ画面の要素説明');
-    expect(instructionImage.props.style).toEqual(expect.objectContaining({ width: '100%', aspectRatio: 453 / 279, resizeMode: 'contain' }));
+    expect(instructionImage.props.style).toEqual(expect.objectContaining({ alignSelf: 'stretch', aspectRatio: 453 / 279, resizeMode: 'contain' }));
+    expect(instructionImage.props.style).not.toEqual(expect.objectContaining({ width: '100%' }));
+    const instructionImageFrame = renderer!.root.findAllByType(View).find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
+    expect(instructionImageFrame).toBeTruthy();
 
     press('次へ');
     expect(visibleTexts()).toContain('実績を集める');

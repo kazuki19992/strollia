@@ -102,7 +102,7 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 
 `FirstLaunchTutorialDialog` は `visible=true` になったタイミングでステップを1ページ目へ戻す。本文は1つの長文にせず、読みやすい単位の段落として複数の `Text` に分けて表示する。
 
-2ステップ目の「画面下の項目」では、タイトル直下・本文上に `assets/tutorial/home-screen-instruction.png` を `width: '100%'` で収まるように表示する。画像はマップ画面上の要素説明に使う。
+2ステップ目の「画面下の項目」では、タイトル直下・本文上に `assets/tutorial/home-screen-instruction.png` を表示する。画像用の枠はダイアログ幅いっぱいに取り、画像本体は左右余白を残してアスペクト比を維持した高さで収める。画像はマップ画面上の要素説明に使う。
 
 ## スタイル
 

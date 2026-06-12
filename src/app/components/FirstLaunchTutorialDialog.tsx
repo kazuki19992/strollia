@@ -108,12 +108,14 @@ export function FirstLaunchTutorialDialog({
       <Text style={styles.firstLaunchTutorialStepText}>{`${stepIndex + 1} / ${TUTORIAL_STEPS.length}`}</Text>
       <Text style={styles.firstLaunchTutorialTitle}>{currentStep.title}</Text>
       {currentStep.instructionImage && (
-        <Image
-          accessibilityLabel={currentStep.instructionImageAccessibilityLabel}
-          resizeMode="contain"
-          source={currentStep.instructionImage}
-          style={styles.firstLaunchTutorialInstructionImage}
-        />
+        <View style={styles.firstLaunchTutorialInstructionImageFrame}>
+          <Image
+            accessibilityLabel={currentStep.instructionImageAccessibilityLabel}
+            resizeMode="contain"
+            source={currentStep.instructionImage}
+            style={styles.firstLaunchTutorialInstructionImage}
+          />
+        </View>
       )}
       <View style={styles.firstLaunchTutorialDescriptionGroup}>
         {currentStep.paragraphs.map((paragraph) => (

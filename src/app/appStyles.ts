@@ -1811,6 +1811,20 @@ export function createStyles(theme: AppTheme) {
       fontWeight: '400',
       lineHeight: 14,
     },
+    paywallLegal: {
+      gap: 8,
+      marginTop: 4,
+    },
+    paywallLegalLinks: {
+      flexDirection: 'row',
+      gap: 16,
+    },
+    paywallLegalLink: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '700',
+      textDecorationLine: 'underline',
+    },
     formItemTitle: {
       color: settingsText,
       fontSize: 14,

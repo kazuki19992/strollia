@@ -296,6 +296,29 @@ describe('設定画面 SettingsScreen', () => {
     expect(adImage?.parent?.props.style).toEqual(expect.objectContaining({ width: '100%' }));
   });
 
+  test('サブスク未加入時は自動更新の開示文と規約/プライバシーリンクを購入導線に表示する', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const disclosure = texts.find((t: any) => typeof t === 'string' && t.includes('自動更新'));
+    expect(disclosure).toBeDefined();
+    expect(disclosure).toContain('自動的に更新');
+
+    const termsLink = renderer.root.findByProps({ accessibilityLabel: '利用規約を開く' });
+    const privacyLink = renderer.root.findByProps({ accessibilityLabel: 'プライバシーポリシーを開く' });
+    act(() => {
+      termsLink.props.onPress();
+      privacyLink.props.onPress();
+    });
+    expect(props.onOpenTermsOfService).toHaveBeenCalled();
+    expect(props.onOpenPrivacyPolicy).toHaveBeenCalled();
+  });
+
   test('購入ボタンは固定の月額300円・年額3300円を表示する', () => {
     let renderer: any;
 
@@ -521,8 +544,9 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     const licenseIndex = texts.indexOf('オープンソースライセンス');
-    const termsIndex = texts.indexOf('利用規約');
-    const privacyIndex = texts.indexOf('プライバシーポリシー');
+    // 利用規約/プライバシーはサブスク導線にも表示されるため、アプリ情報セクション側（後方）を対象にする。
+    const termsIndex = texts.lastIndexOf('利用規約');
+    const privacyIndex = texts.lastIndexOf('プライバシーポリシー');
     const commercialIndex = texts.indexOf('特商法に基づく表記');
 
     expect(licenseIndex).toBeGreaterThanOrEqual(0);

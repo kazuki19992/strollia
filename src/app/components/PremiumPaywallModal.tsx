@@ -1,7 +1,9 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Modal, Pressable, SafeAreaView, ScrollView, View } from 'react-native';
+import { Linking, Modal, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../config/legalLinks';
 import type { PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
+import { SUBSCRIPTION_DISCLOSURE_TEXT } from '../../features/premium/subscriptionDisclosure';
 import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
 import { ActionPill } from './ActionPill';
@@ -109,6 +111,29 @@ export function PremiumPaywallModal({
           {isLoadingPremiumOffering && (
             <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>
           )}
+          <View style={styles.paywallLegal}>
+            <DescriptionText styles={styles}>{SUBSCRIPTION_DISCLOSURE_TEXT}</DescriptionText>
+            <View style={styles.paywallLegalLinks}>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="利用規約を開く"
+                onPress={() => {
+                  Linking.openURL(TERMS_OF_SERVICE_URL).catch(() => undefined);
+                }}
+              >
+                <Text style={styles.paywallLegalLink}>利用規約</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="プライバシーポリシーを開く"
+                onPress={() => {
+                  Linking.openURL(PRIVACY_POLICY_URL).catch(() => undefined);
+                }}
+              >
+                <Text style={styles.paywallLegalLink}>プライバシーポリシー</Text>
+              </Pressable>
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </Modal>

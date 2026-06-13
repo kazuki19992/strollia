@@ -1,6 +1,7 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Modal, Pressable, SafeAreaView, ScrollView, View } from 'react-native';
+import { Linking, Modal, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../config/legalLinks';
 import type { PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
 import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
@@ -8,6 +9,10 @@ import { ActionPill } from './ActionPill';
 import { DescriptionText } from './DescriptionText';
 import { InfoBlock } from './InfoBlock';
 import { PlusAdImage } from './PlusAdImage';
+
+/** 自動更新サブスクリプションの定型開示文（App Store審査 3.1.2 対応）。 */
+const SUBSCRIPTION_DISCLOSURE_TEXT =
+  'Strollia Plus は自動更新サブスクリプションです。月額プランは300円/月、年額プランは3,300円/年で、購入確定時にApple IDアカウントへ請求されます。現在の期間が終了する24時間以上前に自動更新をオフにしない限り自動的に更新され、更新ごとに同額が請求されます。購入後はApp Storeアカウントの設定からいつでも管理・解約できます。';
 
 export type PremiumPaywallModalProps = {
   /** モーダルの表示状態。 */
@@ -109,6 +114,29 @@ export function PremiumPaywallModal({
           {isLoadingPremiumOffering && (
             <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>
           )}
+          <View style={styles.paywallLegal}>
+            <DescriptionText styles={styles}>{SUBSCRIPTION_DISCLOSURE_TEXT}</DescriptionText>
+            <View style={styles.paywallLegalLinks}>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="利用規約を開く"
+                onPress={() => {
+                  Linking.openURL(TERMS_OF_SERVICE_URL).catch(() => undefined);
+                }}
+              >
+                <Text style={styles.paywallLegalLink}>利用規約</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="プライバシーポリシーを開く"
+                onPress={() => {
+                  Linking.openURL(PRIVACY_POLICY_URL).catch(() => undefined);
+                }}
+              >
+                <Text style={styles.paywallLegalLink}>プライバシーポリシー</Text>
+              </Pressable>
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </Modal>

@@ -1,5 +1,6 @@
-import { Modal, Text } from 'react-native';
+import { Linking, Modal, Text } from 'react-native';
 import { lightTheme } from '../../../theme/theme';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../../config/legalLinks';
 import { PremiumPaywallModal } from '../PremiumPaywallModal';
 import { ActionPill } from '../ActionPill';
 
@@ -161,5 +162,37 @@ describe('PremiumPaywallModal', () => {
     const pills = renderer.root.findAllByType(ActionPill);
     const restorePill = pills.find((p: any) => p.props.label?.includes('復元'));
     expect(restorePill.props.disabled).toBe(true);
+  });
+
+  test('自動更新サブスクの定型開示文を表示する（App Store 3.1.2 対応）', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} />);
+    });
+    const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
+    const disclosure = texts.find((t: any) => typeof t === 'string' && t.includes('自動更新'));
+    expect(disclosure).toBeDefined();
+    expect(disclosure).toContain('自動的に更新');
+    expect(disclosure).toContain('解約');
+  });
+
+  test('利用規約とプライバシーポリシーのリンクをそれぞれ開ける', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
+    let renderer: any;
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} />);
+    });
+
+    act(() => {
+      renderer.root.findByProps({ accessibilityLabel: '利用規約を開く' }).props.onPress();
+    });
+    expect(openURL).toHaveBeenCalledWith(TERMS_OF_SERVICE_URL);
+
+    act(() => {
+      renderer.root.findByProps({ accessibilityLabel: 'プライバシーポリシーを開く' }).props.onPress();
+    });
+    expect(openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
+
+    openURL.mockRestore();
   });
 });

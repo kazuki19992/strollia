@@ -16,6 +16,7 @@ import {
   getAppColorPreset,
 } from '../../features/customization/colorPresets';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
+import { SUBSCRIPTION_DISCLOSURE_TEXT } from '../../features/premium/subscriptionDisclosure';
 import { AppTheme } from '../../theme/theme';
 import { AutoStartStatus } from '../appTypes';
 import { AppStyles } from '../appStyles';
@@ -349,6 +350,17 @@ export function SettingsScreen({
                 onPress={onRestorePremiumPurchases}
               />
               {isLoadingPremiumOffering && <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>}
+              <View style={styles.paywallLegal}>
+                <DescriptionText styles={styles}>{SUBSCRIPTION_DISCLOSURE_TEXT}</DescriptionText>
+                <View style={styles.paywallLegalLinks}>
+                  <Pressable accessibilityRole="link" accessibilityLabel="利用規約を開く" onPress={onOpenTermsOfService}>
+                    <Text style={styles.paywallLegalLink}>利用規約</Text>
+                  </Pressable>
+                  <Pressable accessibilityRole="link" accessibilityLabel="プライバシーポリシーを開く" onPress={onOpenPrivacyPolicy}>
+                    <Text style={styles.paywallLegalLink}>プライバシーポリシー</Text>
+                  </Pressable>
+                </View>
+              </View>
             </View>
           )}
         </ScreenSection>

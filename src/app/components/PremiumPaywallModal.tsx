@@ -3,16 +3,13 @@ import { Linking, Modal, Pressable, SafeAreaView, ScrollView, Text, View } from 
 
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../config/legalLinks';
 import type { PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
+import { SUBSCRIPTION_DISCLOSURE_TEXT } from '../../features/premium/subscriptionDisclosure';
 import type { AppTheme } from '../../theme/theme';
 import type { AppStyles } from '../appStyles';
 import { ActionPill } from './ActionPill';
 import { DescriptionText } from './DescriptionText';
 import { InfoBlock } from './InfoBlock';
 import { PlusAdImage } from './PlusAdImage';
-
-/** 自動更新サブスクリプションの定型開示文（App Store審査 3.1.2 対応）。 */
-const SUBSCRIPTION_DISCLOSURE_TEXT =
-  'Strollia Plus は自動更新サブスクリプションです。月額プランは300円/月、年額プランは3,300円/年で、購入確定時にApple IDアカウントへ請求されます。現在の期間が終了する24時間以上前に自動更新をオフにしない限り自動的に更新され、更新ごとに同額が請求されます。購入後はApp Storeアカウントの設定からいつでも管理・解約できます。';
 
 export type PremiumPaywallModalProps = {
   /** モーダルの表示状態。 */

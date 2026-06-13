@@ -199,7 +199,7 @@ describe('設定画面 SettingsScreen', () => {
 
     const permissionButton = permissionRenderer.root.findAll((node: any) => node.props.onPress === permissionProps.onRequestLocationPermission)[0];
     const failedButton = failedRenderer.root.findAll((node: any) => node.props.onPress === failedProps.onStartRecording)[0];
-    const permissionText = permissionRenderer.root.findAllByType(Text).find((node: any) => node.props.children === '権限を付与する');
+    const permissionText = permissionRenderer.root.findAllByType(Text).find((node: any) => node.props.children === '続ける');
     const failedText = failedRenderer.root.findAllByType(Text).find((node: any) => node.props.children === 'GPSの記録を開始する');
 
     expect(flattenStyle(permissionButton.props.style).backgroundColor).toBe('#ffffff');
@@ -667,7 +667,7 @@ describe('設定画面 SettingsScreen', () => {
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
     expect(texts).not.toContain('GPSの記録を開始する');
-    expect(texts).toContain('GPSの権限をください!');
+    expect(texts).toContain('位置情報の許可が必要です');
   });
 
   test('記録中でない待機状態のときはGPSパネルに準備中メッセージを表示する', () => {

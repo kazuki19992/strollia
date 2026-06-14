@@ -233,7 +233,7 @@ export function MapScreen({
               まだ足あとがありません
             </Text>
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.emptyText}>
-              起動後に自動で記録を開始します。権限を許可して歩いてみましょう。
+              起動後に自動で記録を開始します。位置情報の利用について確認して歩いてみましょう。
             </Text>
           </View>
         )}
@@ -248,7 +248,7 @@ export function MapScreen({
             </Text>
             <Pressable onPress={onRequestLocationPermission} style={styles.permissionButton}>
               <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionButtonText}>
-                {shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}
+                {shouldOpenSettingsForPermission ? '設定を開く' : '続ける'}
               </Text>
             </Pressable>
           </View>

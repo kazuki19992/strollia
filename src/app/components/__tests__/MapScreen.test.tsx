@@ -189,7 +189,7 @@ describe('地図画面 MapScreen', () => {
 
     const overlayTexts = renderer.root
       .findAllByType(Text)
-      .filter((node: any) => ['まだ足あとがありません', '位置情報の常時許可が必要です', '権限を付与する'].includes(node.props.children));
+      .filter((node: any) => ['まだ足あとがありません', '位置情報の常時許可が必要です', '続ける'].includes(node.props.children));
     expect(overlayTexts).toHaveLength(3);
     expect(overlayTexts.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
   });

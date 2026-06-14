@@ -88,10 +88,10 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(visibleTexts()).toContain('体調が悪くなったら無理に続けない');
 
     press('次へ');
-    expect(visibleTexts()).toContain('権限を付与してはじめる');
+    expect(visibleTexts()).toContain('位置情報を確認してはじめる');
     expect(visibleTexts()).toContain('5 / 5');
-    expect(visibleTexts()).toContain('まずは位置情報の権限を付与してはじめましょう。');
-    expect(visibleTexts()).toContain('チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。');
+    expect(visibleTexts()).toContain('GPSログの記録には位置情報の常時許可が必要です。');
+    expect(visibleTexts()).toContain('チュートリアルを閉じたあと、地図上に表示される位置情報の案内パネルから続けられます。');
   });
 
   test('最後のボタンで onComplete を呼ぶ', () => {

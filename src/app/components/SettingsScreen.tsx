@@ -482,10 +482,10 @@ function GpsStatusPanel({
   if (!hasRequiredPermission) {
     return (
       <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelDanger]}>
-        <Text style={styles.settingsGpsPanelTitle}>GPSの権限をください!</Text>
-        <Text style={styles.settingsGpsPanelText}>GPS権限がありません! 記録を始めるにはボタンをタップ!</Text>
+        <Text style={styles.settingsGpsPanelTitle}>位置情報の許可が必要です</Text>
+        <Text style={styles.settingsGpsPanelText}>GPSログの記録には位置情報の常時許可が必要です。</Text>
         <Pressable accessibilityRole="button" onPress={onRequestLocationPermission} style={styles.settingsGpsPanelButton}>
-          <Text style={styles.settingsGpsPanelButtonDangerText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
+          <Text style={styles.settingsGpsPanelButtonDangerText}>{shouldOpenSettingsForPermission ? '設定を開く' : '続ける'}</Text>
         </Pressable>
       </View>
     );

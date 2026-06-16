@@ -1051,6 +1051,11 @@ export default function App() {
 
       // ファイル選択後の取り込み処理中は、削除などの操作を防ぐためブロッキングダイアログを表示する。
       setIsProcessingGpxImport(true);
+      // 同期的なパースに入る前に1フレーム譲り、ブロッキングダイアログを確実に描画させる。
+      // （パースは同期処理のため、譲らないと大きなGPXでは旧画面のまま固まる）
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
       const pointsToImport = parseGpxToLocationPoints(pickedFile.content);
 
       if (pointsToImport.length === 0) {

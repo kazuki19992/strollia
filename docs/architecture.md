@@ -220,6 +220,28 @@ iOS / Android ともにバックグラウンド位置情報にはOS側の制約�
 
 GPSログや写真メタデータはRevenueCatへ送信しない。
 
+重大な例外やクラッシュの解析にはSentryを利用する。Sentryのproject slugは `strollia` とする。初期運用ではproductionビルドのみアプリクラッシュや未捕捉例外を自動捕捉し、必要に応じて調査対象として明示した例外も送信する。developmentビルドとpreviewビルドでは無料枠を消費しないよう、Sentry SDKの初期化とRoot Componentのwrapを行わず、EAS profileでは `SENTRY_DISABLE_AUTO_UPLOAD=true` も設定する。Sentryへはスタックトレース、アプリ/ビルド情報、OS/端末情報、画面名、RevenueCatのSupport ID、サブスク加入状況などの診断情報を送るが、GPSログ本体や写真ジオタグ、座標値は送信しない。Sentry SDKのPII送信は無効化し、送信直前にも位置情報らしいフィールドをマスクする。
+
+Sentryへ送信する項目は以下に限定する。
+
+- 未捕捉例外やクラッシュのエラー内容、スタックトレース
+- Sentry SDKが付与する実行環境情報、SDK情報、リリース/ソースマップ紐づけに必要な情報
+- アプリ情報: Application ID、アプリ名、アプリバージョン、Build番号、Runtime Version
+- 端末/OS情報: 動作プラットフォーム（`ios` / `android`）、OS名、iOS/Androidバージョン、端末モデル、端末モデルID、UI種別
+- Support ID: RevenueCat App User IDをSentryの `user.id` として設定する
+- サブスク加入状況: `free` / `plus`、Plus有効状態、RevenueCat entitlement ID
+- 画面名: `Map`、`DailyLogs:DailyLogList`、`DailyLogs:DailyLogDetail`、`AchievementList`、`MonthlyReport`、`Settings:SettingsHome`、`Settings:AboutApp`、`Settings:LicenseList`、`Settings:LicenseDetail`、`PremiumPaywall`、`FirstLaunchTutorial`、`FirstLaunchTutorialReplay`、`PhotoPreview`
+- 調査対象として明示送信する例外では、調査領域、画面名、呼び出し元が追加したタグ/コンテキスト
+
+Sentryへ送信しない項目は以下とする。
+
+- GPSログ本体、ルート点列、緯度経度、速度、高度、方角、精度
+- 写真画像、写真ジオタグ、写真ライブラリのメタデータ本文
+- GPX / KMLファイル本文、インポート/エクスポート対象データ本文
+- ユーザーのメールアドレス、氏名などの個人情報
+
+送信前のスクラブ処理で位置情報らしいキーはマスクする。対象キーは `accuracy`、`altitude`、`altitudeAccuracy`、`coordinate`、`coordinates`、`coords`、`heading`、`lat`、`latitude`、`latitudeDelta`、`lng`、`location`、`locations`、`lon`、`longitude`、`longitudeDelta`、`speed` とする。
+
 ## 13. 実績システム方針
 
 実績システムは `src/features/achievements/` にまとめる。

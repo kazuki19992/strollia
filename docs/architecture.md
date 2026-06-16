@@ -230,7 +230,7 @@ Sentryへ送信する項目は以下に限定する。
 - 端末/OS情報: 動作プラットフォーム（`ios` / `android`）、OS名、iOS/Androidバージョン、端末モデル、端末モデルID、UI種別
 - Support ID: RevenueCat App User IDをSentryの `user.id` として設定する
 - サブスク加入状況: `free` / `plus`、Plus有効状態、RevenueCat entitlement ID
-- 画面名: `Map`、`DailyLogList`、`DailyLogs:DailyLogDetail`、`AchievementList`、`MonthlyReport`、`SettingsHome`、`Settings:AboutApp`、`Settings:LicenseList`、`Settings:LicenseDetail`、`PremiumPaywall`、`FirstLaunchTutorial`、`FirstLaunchTutorialReplay`、`PhotoPreview`
+- 画面名: `Map`、`DailyLogs:DailyLogList`、`DailyLogs:DailyLogDetail`、`AchievementList`、`MonthlyReport`、`Settings:SettingsHome`、`Settings:AboutApp`、`Settings:LicenseList`、`Settings:LicenseDetail`、`PremiumPaywall`、`FirstLaunchTutorial`、`FirstLaunchTutorialReplay`、`PhotoPreview`
 - 調査対象として明示送信する例外では、調査領域、画面名、呼び出し元が追加したタグ/コンテキスト
 
 Sentryへ送信しない項目は以下とする。

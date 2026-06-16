@@ -131,6 +131,7 @@ import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './
 import { shouldStartRecordingAutomatically } from './autoRecording';
 import { getNextMapType } from './mapType';
 import { createUserCenteredRegion, isValidMapCoordinate, shouldRestoreMapRegionOnMapOpen } from './mapRegion';
+import { resolveSentryScreenName } from './sentryScreen';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -219,6 +220,8 @@ export default function App() {
   const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+  const [dailyLogsSentryScreenName, setDailyLogsSentryScreenName] = useState('DailyLogs:DailyLogList');
+  const [settingsSentryScreenName, setSettingsSentryScreenName] = useState('Settings:SettingsHome');
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   // ネイティブ地図の初期化完了フラグ。onMapReady前のanimateToRegionはネイティブ側で
@@ -291,41 +294,53 @@ export default function App() {
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
-  const sentryScreenName = useMemo(() => {
-    if (isPremiumPaywallVisible) {
-      return 'PremiumPaywall';
-    }
+  /**
+   * Sentryへ送る現在画面名を、前面表示を優先して解決する。
+   * 日別記録/設定の子画面は各NavigationContainerの状態を `DailyLogs:*` / `Settings:*` として使う。
+   */
+  const sentryScreenName = useMemo(
+    () =>
+      resolveSentryScreenName({
+        dailyLogsScreenName: dailyLogsSentryScreenName,
+        firstLaunchTutorialMode,
+        isFirstLaunchTutorialVisible,
+        isPhotoPreviewVisible: Boolean(selectedPhoto || selectedPhotoCluster),
+        isPremiumPaywallVisible,
+        screenMode,
+        settingsScreenName: settingsSentryScreenName,
+      }),
+    [
+      dailyLogsSentryScreenName,
+      firstLaunchTutorialMode,
+      isFirstLaunchTutorialVisible,
+      isPremiumPaywallVisible,
+      screenMode,
+      selectedPhoto,
+      selectedPhotoCluster,
+      settingsSentryScreenName,
+    ],
+  );
 
-    if (isFirstLaunchTutorialVisible) {
-      return firstLaunchTutorialMode === 'replay' ? 'FirstLaunchTutorialReplay' : 'FirstLaunchTutorial';
-    }
-
-    if (selectedPhoto || selectedPhotoCluster) {
-      return 'PhotoPreview';
-    }
-
-    switch (screenMode) {
-      case 'achievements':
-        return 'AchievementList';
-      case 'dailyLogs':
-        return 'DailyLogList';
-      case 'map':
-        return 'Map';
-      case 'monthlyReport':
-        return 'MonthlyReport';
-      case 'settings':
-        return 'SettingsHome';
-    }
-  }, [firstLaunchTutorialMode, isFirstLaunchTutorialVisible, isPremiumPaywallVisible, screenMode, selectedPhoto, selectedPhotoCluster]);
-
+  /**
+   * RevenueCat App User IDをSentryのユーザーコンテキストへ反映する。
+   * クラッシュレポートをSupport IDで問い合わせられるようにするために必要。
+   */
   useEffect(() => {
     updateSentryUserContext(revenueCatAppUserId);
   }, [revenueCatAppUserId]);
 
+  /**
+   * Plus加入状態をSentryへ反映する。
+   * 課金状態に依存する画面や機能で発生した問題を切り分けやすくするために必要。
+   */
   useEffect(() => {
     updateSentrySubscriptionContext(premiumAccessState);
   }, [premiumAccessState]);
 
+  /**
+   * 現在画面名をSentryへ反映する。
+   * どの画面で例外が起きたかをStackTrace以外からも追えるようにするために必要。
+   */
   useEffect(() => {
     updateSentryScreenContext(sentryScreenName);
   }, [sentryScreenName]);
@@ -1396,9 +1411,12 @@ export default function App() {
           {screenMode === 'dailyLogs' && (
             <NavigationIndependentTree>
               <NavigationContainer
+                // 日別記録スタック内の遷移をSentryの画面コンテキストへ反映する。
                 onStateChange={(state) => {
                   const route = state?.routes[state.index ?? 0];
-                  updateSentryScreenContext(route ? `DailyLogs:${route.name}` : 'DailyLogList');
+                  const nextScreenName = route ? `DailyLogs:${route.name}` : 'DailyLogs:DailyLogList';
+                  setDailyLogsSentryScreenName(nextScreenName);
+                  updateSentryScreenContext(nextScreenName);
                 }}
               >
                 <DailyLogStack.Navigator
@@ -1449,9 +1467,12 @@ export default function App() {
           {screenMode === 'settings' && (
             <NavigationIndependentTree>
               <NavigationContainer
+                // 設定スタック内の遷移をSentryの画面コンテキストへ反映する。
                 onStateChange={(state) => {
                   const route = state?.routes[state.index ?? 0];
-                  updateSentryScreenContext(route ? `Settings:${route.name}` : 'SettingsHome');
+                  const nextScreenName = route ? `Settings:${route.name}` : 'Settings:SettingsHome';
+                  setSettingsSentryScreenName(nextScreenName);
+                  updateSentryScreenContext(nextScreenName);
                 }}
               >
                 <SettingsStack.Navigator

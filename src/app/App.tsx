@@ -141,6 +141,8 @@ const KEEP_AWAKE_TAG = 'strollia-foreground-map';
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
 /** マップ上の写真表示設定をSQLiteへ保存するキー。 */
 const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
+/** 写真表示を安全に有効化できたかを判定するための一時フラグ。 */
+const SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY = 'showPhotosOnMapEnablePending';
 /** 現在地アイコン設定をSQLiteへ保存するキー。 */
 const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
 /** アプリカラープリセット設定をSQLiteへ保存するキー。 */
@@ -152,6 +154,8 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 const REVIEW_PROMPTED_SETTING_KEY = 'reviewPrompted';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
+/** 写真マーカー描画後にクラッシュしないことを確認する猶予時間。 */
+const PHOTO_MAP_ENABLE_STABLE_DELAY_MS = 2000;
 
 type SettingsStackParamList = {
   SettingsHome: undefined;
@@ -215,6 +219,7 @@ export default function App() {
   const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
+  const [shouldRestorePhotosOnMapAfterMapReady, setShouldRestorePhotosOnMapAfterMapReady] = useState(false);
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
@@ -510,6 +515,15 @@ export default function App() {
   }, []);
 
   /**
+   * 写真表示を有効化する前にpendingを保存し、ネイティブクラッシュ後の次回起動で復旧できるようにする。
+   */
+  const enableShowPhotosOnMapWithCrashBreaker = useCallback(async (): Promise<void> => {
+    await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, true);
+    setShowPhotosOnMap(true);
+    await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, true);
+  }, []);
+
+  /**
    * 写真表示設定を切り替える。初回ON時は写真ライブラリのフルアクセス権限を要求する。
    *
    * @param enabled - マップ上の写真表示を有効にするかどうか。
@@ -525,16 +539,20 @@ export default function App() {
 
     try {
       if (!enabled) {
+        setShouldRestorePhotosOnMapAfterMapReady(false);
         setShowPhotosOnMap(false);
         await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+        await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
         return;
       }
 
       const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
 
       if (!hasFullPhotoAccess(permission)) {
+        setShouldRestorePhotosOnMapAfterMapReady(false);
         setShowPhotosOnMap(false);
         await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+        await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
         Alert.alert(
           '写真のフルアクセスが必要です',
           'マップ上に写真を表示するには、写真ライブラリへのフルアクセスを許可してください。限定アクセスではジオタグ付き写真を十分に読み取れません。',
@@ -542,13 +560,12 @@ export default function App() {
         return;
       }
 
-      setShowPhotosOnMap(true);
-      await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, true);
+      await enableShowPhotosOnMapWithCrashBreaker();
     } finally {
       isUpdatingPhotoSettingRef.current = false;
       setIsUpdatingPhotoSetting(false);
     }
-  }, []);
+  }, [enableShowPhotosOnMapWithCrashBreaker]);
 
   /**
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
@@ -562,6 +579,7 @@ export default function App() {
         const [
           savedKeepScreenAwake,
           savedShowPhotosOnMap,
+          savedShowPhotosOnMapEnablePending,
           savedUserLocationIcon,
           savedAppColorPresetId,
           savedCustomIconImageUri,
@@ -570,6 +588,7 @@ export default function App() {
         ] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
+          getBooleanSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false),
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
           getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
@@ -577,7 +596,16 @@ export default function App() {
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
-        setShowPhotosOnMap(savedShowPhotosOnMap);
+        if (savedShowPhotosOnMapEnablePending) {
+          setShowPhotosOnMap(false);
+          setShouldRestorePhotosOnMapAfterMapReady(false);
+          await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+          await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
+          setMessage('前回の写真表示で問題が発生した可能性があるため、写真表示をOFFに戻しました。');
+        } else {
+          setShowPhotosOnMap(false);
+          setShouldRestorePhotosOnMapAfterMapReady(savedShowPhotosOnMap);
+        }
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
         setCustomIconImageUri(savedCustomIconImageUri || null);
@@ -766,6 +794,42 @@ export default function App() {
       setIsMapReady(false);
     }
   }, [screenMode]);
+
+  /**
+   * 保存済みの写真表示ONは、MapViewの準備完了後に初めて復元する。
+   * 起動直後のネイティブ地図初期化中に写真マーカーを載せてクラッシュする経路を避けるため。
+   */
+  useEffect(() => {
+    if (!shouldRestorePhotosOnMapAfterMapReady || !isReady || !isMapReady) {
+      return;
+    }
+
+    setShouldRestorePhotosOnMapAfterMapReady(false);
+    enableShowPhotosOnMapWithCrashBreaker().catch((error: unknown) => {
+      console.warn('Failed to restore photo map overlay:', error);
+      setShowPhotosOnMap(false);
+      setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch(() => undefined);
+      setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch(() => undefined);
+    });
+  }, [enableShowPhotosOnMapWithCrashBreaker, isMapReady, isReady, shouldRestorePhotosOnMapAfterMapReady]);
+
+  /**
+   * 写真読み込みとマーカー描画が一定時間続いたら、前回クラッシュ判定用のpendingを解除する。
+   * ネイティブクラッシュはJSで捕捉できないため、次回起動時に残ったpendingを復旧シグナルとして使う。
+   */
+  useEffect(() => {
+    if (!showPhotosOnMap || !isMapReady || isLoadingPhotos) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch((error: unknown) => {
+        console.warn('Failed to clear photo map crash breaker:', error);
+      });
+    }, PHOTO_MAP_ENABLE_STABLE_DELAY_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [isLoadingPhotos, isMapReady, showPhotosOnMap]);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。

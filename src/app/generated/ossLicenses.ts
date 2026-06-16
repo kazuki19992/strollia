@@ -15,7 +15,7 @@ export type OssLicenseEntry = {
   noticeText: string | null;
 };
 
-export const OSS_LICENSES_GENERATED_AT = "2026-06-02T06:47:45.556Z";
+export const OSS_LICENSES_GENERATED_AT = "2026-06-16T08:16:53.771Z";
 
 export const OSS_LICENSES: OssLicenseEntry[] = [
   {
@@ -1429,6 +1429,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:@react-native-community/slider@5.2.0",
+    "name": "@react-native-community/slider",
+    "version": "5.2.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/callstack/react-native-slider",
+    "source": "npm",
+    "licenseText": "<p align=\"center\">\n  <a href=\"https://www.callstack.com/open-source?utm_campaign=generic&utm_source=github&utm_medium=referral&utm_content=slider\" align=\"center\">\n    <img alt=\"React Native Slider\" src=\"https://github.com/user-attachments/assets/1a42c57e-b7c1-4bda-bd02-39c903f42d57\">\n</p>\n<p align=\"center\">\n    <a href=\"https://www.npmjs.com/package/@react-native-community/slider\">\n        <img src=\"https://img.shields.io/npm/v/@react-native-community/slider.svg\" alt=\"Latest version released on npmjs\" />\n    </a>\n    <a href=\"https://github.com/callstack/react-native-slider/actions/workflows/ReactNativeSlider-CI.yml\">\n        <img src=\"https://github.com/callstack/react-native-slider/actions/workflows/ReactNativeSlider-CI.yml/badge.svg?branch=main\" alt=\"Build on GitHub Actions\" />\n    </a>\n    <a href=\"https://github.com/callstack/react-native-slider\">\n        <img src=\"https://img.shields.io/badge/platforms-android%20|%20ios%20|%20windows%20|%20web-lightgrey.svg\" alt=\"Supported platforms\" />\n    </a>\n    <a href=\"https://github.com/callstack/react-native-slider/blob/main/LICENSE.md\">\n        <img src=\"https://img.shields.io/npm/l/@react-native-community/slider.svg\" alt=\"License\" />\n    </a>\n</p>\n<p align=\"center\">\n  React Native component used to select a single value from a range of values.\n  <br>Currently supported on following platforms:\n</p>\n\n|iOS|Android|Windows|Web|\n|:-:|:-:|:-:|:-:|\n|![iOS Screenshot](.github/Examples/Slider-iOS-Example.gif)|![Android Screenshot](.github/Examples/Slider-Android-Example.gif)|![Windows Screenshot](.github/Examples/Slider-Windows-Example.gif)|![Web Screenshot](.github/Examples/Slider-Web-Example.gif)|\n\n## Installation & Usage\n\nTo install this module `cd` to your project directory and enter the following command:\n```\nyarn add @react-native-community/slider\n```\nor\n```\nnpm install @react-native-community/slider --save\n```\nIf using iOS please remember to install cocoapods by running: `npx pod-install`\n\nThe following code presents the basic usage scenario of this library:\n```javascript\nimport Slider from '@react-native-community/slider';\n\n<Slider\n  style={{width: 200, height: 40}}\n  minimumValue={0}\n  maximumValue={1}\n  minimumTrackTintColor=\"#FFFFFF\"\n  maximumTrackTintColor=\"#000000\"\n  thumbSize={32}\n/>\n```\n\nCheck out the [example project](example) for more examples.\n\n### Reach out on Discord\n\nIf you have any questions, issues or any other topic that you need an advise in, reach out to us on our channel on Discord under this 👉 [link](https://discord.com/channels/426714625279524876/1339942689524678737).\n<br/>See you there!\n\n## React Native Compatibility\nTo use this library you need to ensure you are using the correct version of React Native.\n\n| `@react-native-community/slider` version | Required React Native Version |\n| ---------------------------------------- | ---------------------------- |\n| `5.0.0`                                  | `>=0.76`                     |\n| `4.5.1`                                  | `>=0.69`                     |\n| `4.3.0`                                  | `>=0.64`                     |\n| `4.x.x`                                  | `>=0.60`; `>=0.62` (on Windows); |\n| `3.1.x`                                  | `>=0.60`                     |\n| `2.x.x`                                  | `>= 0.60`                    |\n| [`1.x.x`](https://github.com/react-native-community/react-native-slider/tree/937f0942f1fffc6ed88b5cf7c88d73b7878f00f0) | `<= 0.59` |\n\n\n## Properties\n\n| Property | Description | Type | Platform |\n| -------- | ----------- | ---- | -------- |\n| `style` | Used to style and layout the `Slider`. See `StyleSheet.js` and `ViewStylePropTypes.js` for more info. | View.style | |\n| `disabled`| If true the user won't be able to move the slider.<br/>Default value is false. | bool | |\n| `maximumValue` | Initial maximum value of the slider.<br/>Default value is 1. | number | |\n| `minimumTrackTintColor` | The color used for the track to the left of the button.<br/>Overrides the default blue gradient image on iOS. | [color](https://reactnative.dev/docs/colors) | |\n| `minimumValue` | Initial minimum value of the slider.<br/>Default value is 0. | number | |\n| `lowerLimit` | Slide lower limit. The user won't be able to slide below this limit. | number | Android, iOS, Web |\n| `upperLimit` | Slide upper limit. The user won't be able to slide above this limit. | number | Android, iOS, Web |\n| `onSlidingStart` | Callback that is called when the user picks up the slider.<br/>The initial value is passed as an argument to the callback handler. | function | |\n| `onSlidingComplete` | Callback that is called when the user releases the slider, regardless if the value has changed.<br/>The current value is passed as an argument to the callback handler. | function | |\n| `onValueChange` | Callback continuously called while the user is dragging the slider. | function | |\n| `step` | Step value of the slider. The value should be between 0 and (maximumValue - minimumValue). Default value is 0.<br/>On Windows OS the default value is 1% of slider's range (from `minimumValue` to `maximumValue`). | number | |\n| `maximumTrackTintColor` | The color used for the track to the right of the button.<br/>Overrides the default gray gradient image on iOS. | [color](https://reactnative.dev/docs/colors) | |\n| `testID` | Used to locate this view in UI automation tests. | string | |\n| `value` | Write-only property representing the value of the slider. Can be used to programmatically control the position of the thumb. Entered once at the beginning still acts as an initial value. Changing the value programmatically does not trigger any event.<br/>The value should be between minimumValue and maximumValue, which default to 0 and 1 respectively. Default value is 0.<br/>_This is not a controlled component_, you don't need to update the value during dragging. | number | |\n| `tapToSeek` | Permits tapping on the slider track to set the thumb position.<br/>Defaults to false on iOS. No effect on Android or Windows. | bool | iOS |\n| `inverted` | Reverses the direction of the slider.<br/>Default value is false. | bool | |\n| `vertical` | Changes the orientation of the slider to vertical, if set to `true`.<br/>Default value is false. | bool | Windows |\n| `thumbTintColor` | Color of the foreground switch grip.<br/>**NOTE:** This prop will override the `thumbImage` prop set, meaning that if both `thumbImage` and `thumbTintColor` will be set, image used for the thumb may not be displayed correctly! | [color](https://reactnative.dev/docs/colors) | Android |\n| `thumbSize` | Sets the size (width and height) of the thumb.<br/>If `thumbImage` is provided, it will be scaled to this size.<br/>Units: points on iOS, dp on Android. | number | Android, iOS, Web |\n| `maximumTrackImage` | Assigns a maximum track image. Only static images are supported. The leftmost pixel of the image will be stretched to fill the track. | Image<br/>.propTypes<br/>.source | iOS |\n| `minimumTrackImage` | Assigns a minimum track image. Only static images are supported. The rightmost pixel of the image will be stretched to fill the track. | Image<br/>.propTypes<br/>.source | iOS |\n| `thumbImage` | Sets an image for the thumb. Only static images are supported. Needs to be a URI of a local or network image; base64-encoded SVG is not supported. | Image<br/>.propTypes<br/>.source | |\n| `trackImage` | Assigns a single image for the track. Only static images are supported. The center pixel of the image will be stretched to fill the track. | Image<br/>.propTypes<br/>.source | iOS |\n| [`StepMarker`](#stepmarker) | Component to be rendered for each step on the track,<br/>with the possibility to change the styling, when thumb is at that given step | `FC<MarkerProps>` | iOS, Android, Windows |\n| [`renderStepNumber`](#renderstepnumber) | Turns on the displaying of numbers of steps.<br/>Numbers of steps are displayed under the track | bool | iOS, Android, Windows |\n| `ref` | Reference object. | MutableRefObject | web |\n| `View` | [Inherited `View` props...](https://github.com/facebook/react-native-website/blob/master/docs/view.md#props) | | |\n\n## Custom step marker and step numbers\n\nIt is possible to render default step numbers under your slider and to render custom step component and step marker.\n<br/>This can be achieved by using:\n\n### `renderStepNumber`\n\nTurns on the displaying of numbers of steps.<br/>Numbers of steps are displayed under the track.\n<br/>Two font sizes are available and they will be selected automatically depending on the overall number of steps.\n\n### `StepMarker`\n\nYour custom component rendered for every step on the Slider, both the thumb and the rest of steps along the Slider's whole length.\n<br/>This `StepMarker` prop accepts your custom component and provides it with the following parameters:\n\n<table>\n<tr>\n<td>\n\n```typescript\n  stepMarked: boolean;\n```\n\n</td>\n<td>\n\nIndicates whether that custom step is the one that the thum is currently on.\n<br/>If user drags or clicks on that step, thumb will be moved there and the `stepMarked` parameter will be set to `true`.\n<br/>Use it, to differentiate between rendering your custom thumb component, or your custom step marker.\n\n</td>\n</tr>\n<tr>\n<td>\n\n```typescript\n  currentValue: number;\n```\n\n</td>\n<td>\nContains the `number` type saying at which value of the Slider the thumb currently is.\n<br/>Use it, for example, to render the Slider value on every step marker, or to render different step marker's variant depending on the Thumb position.\n\n</td>\n</tr>\n<tr>\n<td>\n\n```typescript\n  index: number;\n```\n\n</td>\n<td>\n\nContains the index at which this exact instantiation of your custom step marker was rendered at.\n<br/>Use it if you would like to render step number within the step marker, or, for example, if you want to render many variants of step marker depending on their positions along the Slider's width.\n\n</td>\n</tr>\n<tr>\n<td>\n\n```typescript\n  min: number;\n```\n\n</td>\n<td>\n\nMinimum value of the Slider. It is equal to `minimumValue` and has the same default if not set.\n\n</td>\n</tr>\n<tr>\n<td>\n\n```typescript\n  max: number;\n```\n\n</td>\n<td>\n\nMaximum value of the Slider. It is equal to `maximumValue` and has the same default if not set.\n\n</td>\n</tr>\n</table>\n\n## Roadmap and Progress\n\nThere's a Project board available [here](https://github.com/callstack/react-native-slider/projects/1) which contains all reported issues organized into columns regarding their status.\n\nIf you are interested in knowing whether the issue you reported is handled or just to check the status of a feature you would like to have in Slider, please check the board.\n\n## Contributing\n\nThe main package implementation is done in the `package/` directory.\nSo when implementing changes there, make sure your code passes ESLint and the tests. Run the following to verify:\n```sh\ncd package/\nnpm run lint\nnpm run test\n```\n\n* Remember to cover your changes with tests if possible.\n\nWhen [creating an issue](https://github.com/callstack/react-native-slider/issues/new/choose) please remember to specify the platform which the issue occurs on.\n\n## Running the example app\nWhile developing, you can run the example app to test your changes.\n\n### Setup\n\n- Clone the repository\n- Run `npm install` in the root directory to install dependencies.\n- Run `npm run example-<platform>`, where platform can be: `ios`, `android`, `windows`\n\nYou can also do this manually by:\n- Installing node modules for example app\n- Installing pods for iOS app\n- Running example app like always: `npx react-native run-<platform>`\n\n## Maintainers\n\n- [Bartosz Klonowski](https://github.com/BartoszKlonowski) - [Callstack](https://callstack.com/)\n- [Maciej Łodygowski](https://github.com/draggie) - [Callstack](https://callstack.com/)\n\n## Contributors\n\nThis module was extracted from `react-native` core. Please, refer to [contributors graph](https://github.com/react-native-community/react-native-slider/graphs/contributors) for the complete list of contributors.\n\n---\n\n## Made with ❤️ at Callstack\n\n`@callstack/react-native-slider` is an open source project and will always remain free to use. If you think it's cool, please star it 🌟. [Callstack](https://callstack.com/) is a group of React and React Native geeks, contact us at [hello@callstack.com](mailto:hello@callstack.com) if you need any help with these or just want to say hi!\n\nLike the project? ⚛️ [Join the team](https://callstack.com/careers) who does amazing stuff for clients and drives React Native Open Source! 🔥",
+    "noticeText": null
+  },
+  {
     "id": "npm:@react-native/assets-registry@0.81.5",
     "name": "@react-native/assets-registry",
     "version": "0.81.5",
@@ -1616,6 +1626,126 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/RevenueCat/purchases-hybrid-common",
     "source": "npm",
     "licenseText": null,
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry-internal/browser-utils@10.57.0",
+    "name": "@sentry-internal/browser-utils",
+    "version": "10.57.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2020 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry-internal/feedback@10.57.0",
+    "name": "@sentry-internal/feedback",
+    "version": "10.57.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2023 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry-internal/replay@10.57.0",
+    "name": "@sentry-internal/replay",
+    "version": "10.57.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry-internal/replay-canvas@10.57.0",
+    "name": "@sentry-internal/replay-canvas",
+    "version": "10.57.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2024 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/babel-plugin-component-annotate@5.3.0",
+    "name": "@sentry/babel-plugin-component-annotate",
+    "version": "5.3.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript-bundler-plugins",
+    "source": "npm",
+    "licenseText": "# MIT License\n\nCopyright (c) 2024, Sentry\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n- Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n- Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\n- Neither the name of the copyright holder nor the names of its\n  contributors may be used to endorse or promote products derived from\n  this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/browser@10.57.0",
+    "name": "@sentry/browser",
+    "version": "10.57.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2019 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/cli@3.5.0",
+    "name": "@sentry/cli",
+    "version": "3.5.0",
+    "licenses": "FSL-1.1-MIT",
+    "repository": "https://github.com/getsentry/sentry-cli",
+    "source": "npm",
+    "licenseText": "# Functional Source License, Version 1.1, MIT Future License\n\n## Abbreviation\n\nFSL-1.1-MIT\n\n## Notice\n\nCopyright 2008-2025 Functional Software, Inc. dba Sentry\n\n## Terms and Conditions\n\n### Licensor (\"We\")\n\nThe party offering the Software under these Terms and Conditions.\n\n### The Software\n\nThe \"Software\" is each version of the software that we make available under\nthese Terms and Conditions, as indicated by our inclusion of these Terms and\nConditions with the Software.\n\n### License Grant\n\nSubject to your compliance with this License Grant and the Patents,\nRedistribution and Trademark clauses below, we hereby grant you the right to\nuse, copy, modify, create derivative works, publicly perform, publicly display\nand redistribute the Software for any Permitted Purpose identified below.\n\n### Permitted Purpose\n\nA Permitted Purpose is any purpose other than a Competing Use. A Competing Use\nmeans making the Software available to others in a commercial product or\nservice that:\n\n1. substitutes for the Software;\n\n2. substitutes for any other product or service we offer using the Software\n   that exists as of the date we make the Software available; or\n\n3. offers the same or substantially similar functionality as the Software.\n\nPermitted Purposes specifically include using the Software:\n\n1. for your internal use and access;\n\n2. for non-commercial education;\n\n3. for non-commercial research; and\n\n4. in connection with professional services that you provide to a licensee\n   using the Software in accordance with these Terms and Conditions.\n\n### Patents\n\nTo the extent your use for a Permitted Purpose would necessarily infringe our\npatents, the license grant above includes a license under our patents. If you\nmake a claim against any party that the Software infringes or contributes to\nthe infringement of any patent, then your patent license to the Software ends\nimmediately.\n\n### Redistribution\n\nThe Terms and Conditions apply to all copies, modifications and derivatives of\nthe Software.\n\nIf you redistribute any copies, modifications or derivatives of the Software,\nyou must include a copy of or a link to these Terms and Conditions and not\nremove any copyright notices provided in or with the Software.\n\n### Disclaimer\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING WITHOUT LIMITATION WARRANTIES OF FITNESS FOR A PARTICULAR\nPURPOSE, MERCHANTABILITY, TITLE OR NON-INFRINGEMENT.\n\nIN NO EVENT WILL WE HAVE ANY LIABILITY TO YOU ARISING OUT OF OR RELATED TO THE\nSOFTWARE, INCLUDING INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES,\nEVEN IF WE HAVE BEEN INFORMED OF THEIR POSSIBILITY IN ADVANCE.\n\n### Trademarks\n\nExcept for displaying the License Details and identifying us as the origin of\nthe Software, you have no right under these Terms and Conditions to use our\ntrademarks, trade names, service marks or product names.\n\n## Grant of Future License\n\nWe hereby irrevocably grant you an additional license to use the Software under\nthe MIT license that is effective on the second anniversary of the date we make\nthe Software available. On or after that date, you may use the Software under\nthe MIT license, in which case the following will apply:\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/cli-darwin@3.5.0",
+    "name": "@sentry/cli-darwin",
+    "version": "3.5.0",
+    "licenses": "FSL-1.1-MIT",
+    "repository": "https://github.com/getsentry/sentry-cli",
+    "source": "npm",
+    "licenseText": "<p align=\"center\">\n  <a href=\"https://sentry.io/?utm_source=github&utm_medium=logo\" target=\"_blank\">\n    <img src=\"https://sentry-brand.storage.googleapis.com/sentry-wordmark-dark-280x84.png\" alt=\"Sentry\" width=\"280\" height=\"84\">\n  </a>\n</p>\n\n# Sentry CLI Darwin Binary\n\nThis package contains the Sentry CLI binary for darwin.\n\nSee https://github.com/getsentry/sentry-cli for more information.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/core@10.57.0",
+    "name": "@sentry/core",
+    "version": "10.57.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2019 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/expo-upload-sourcemaps@8.14.0",
+    "name": "@sentry/expo-upload-sourcemaps",
+    "version": "8.14.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-react-native",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2017-2026 Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/react@10.57.0",
+    "name": "@sentry/react",
+    "version": "10.57.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2019 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/react-native@8.14.0",
+    "name": "@sentry/react-native",
+    "version": "8.14.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-react-native",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2017-2024 Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -2519,6 +2649,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:clamp@1.0.1",
+    "name": "clamp",
+    "version": "1.0.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/hughsk/clamp",
+    "source": "npm",
+    "licenseText": "## The MIT License (MIT) ##\n\nCopyright (c) 2013 Hugh Kennedy\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:cli-cursor@2.1.0",
     "name": "cli-cursor",
     "version": "2.1.0",
@@ -2676,6 +2816,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/expressjs/compression",
     "source": "npm",
     "licenseText": "(The MIT License)\n\nCopyright (c) 2014 Jonathan Ong <me@jongleberry.com>\nCopyright (c) 2014-2015 Douglas Christopher Wilson <doug@somethingdoug.com>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:concat-color-matrices@1.0.0",
+    "name": "concat-color-matrices",
+    "version": "1.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/iyegoroff/concat-color-matrices",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2018 iyegoroff\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -3199,6 +3349,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:expo-blur@15.0.8",
+    "name": "expo-blur",
+    "version": "15.0.8",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/blur-view/\">\n    <img\n      src=\"../../.github/resources/expo-blur.svg\"\n      alt=\"expo-blur\"\n      height=\"64\" />\n  </a>\n</p>\n\nA component that renders a native blur view on iOS and falls back to a semi-transparent view on Android. A common usage of this is for navigation bars, tab bars, and modals.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/blur-view/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/blur-view/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/blur-view/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-blur\n```\n\n### Configure for Android\n\n> [!note]\n> This package only supports iOS. On Android, a plain `View` with a translucent background will be rendered.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-clipboard@8.0.8",
+    "name": "expo-clipboard",
+    "version": "8.0.8",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/clipboard/\">\n    <img\n      src=\"../../.github/resources/expo-clipboard.svg\"\n      alt=\"expo-clipboard\"\n      height=\"64\" />\n  </a>\n</p>\n\n`expo-clipboard` provides an interface for getting and setting Clipboard content on Android, iOS, and Web.\n\n## API documentation\n\nPlease refer to the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/clipboard/).\n\n\n## Installation in bare React Native projects\n\nFor bare React Native projects, ensure you've [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/).\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-clipboard\n```\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the library.\n\n### Configure for Android\n\nNo additional set up necessary.\n\n## Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "noticeText": null
+  },
+  {
     "id": "npm:expo-constants@18.0.13",
     "name": "expo-constants",
     "version": "18.0.13",
@@ -3286,6 +3456,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/expo/expo",
     "source": "npm",
     "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/haptics/\">\n    <img\n      src=\"../../.github/resources/expo-haptics.svg\"\n      alt=\"expo-haptics\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to the system's haptics engine on iOS, vibration effects on Android, and Web Vibration API on web.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/haptics/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/haptics/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/haptics/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-haptics\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\nThis module requires permission to control vibration on the device, it's added automatically.\n\n```xml\n<!-- Added permissions -->\n<uses-permission android:name=\"android.permission.VIBRATE\" />\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-image-loader@6.0.0",
+    "name": "expo-image-loader",
+    "version": "6.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "# expo-image-loader\n\nProvides image loader\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](#api-documentation). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpm install expo-image-loader\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-image-picker@17.0.11",
+    "name": "expo-image-picker",
+    "version": "17.0.11",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/imagepicker/\">\n    <img\n      src=\"../../.github/resources/expo-image-picker.svg\"\n      alt=\"expo-image-picker\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to the system's UI for selecting images and videos from the phone's library or taking a photo with the camera.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/imagepicker/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/imagepicker/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/imagepicker/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-image-picker\n```\n\n### Configure for Android\n\n> This is only required for usage in bare React Native apps.\n\nThis package automatically adds the `CAMERA`, `READ_EXTERNAL_STORAGE`, and `WRITE_EXTERNAL_STORAGE` permissions. They are used when picking images from the camera directly, or from the camera roll.\n\n```xml\n<!-- Added permissions -->\n<uses-permission android:name=\"android.permission.CAMERA\" />\n<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\n```\n\n### Configure for iOS\n\n> This is only required for usage in bare React Native apps.\n\nAdd `NSPhotoLibraryUsageDescription`, `NSCameraUsageDescription`, and `NSMicrophoneUsageDescription` keys to your `Info.plist`:\n\n```xml\n<key>NSPhotoLibraryUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to save photos</string>\n<key>NSCameraUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to access your camera</string>\n<key>NSMicrophoneUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to use your microphone</string>\n```\n\nRun `npx pod-install` after installing the npm package.\n\n## Config Plugin\n\n> This plugin is applied automatically in EAS Build, only add the config plugin if you want to pass in extra properties.\n\nAfter installing this npm package, add the [config plugin](https://docs.expo.dev/config-plugins/introduction) to the [`plugins`](https://docs.expo.io/versions/latest/config/app/#plugins) array of your `app.json` or `app.config.js`:\n\n```json\n{\n  \"expo\": {\n    \"plugins\": [\"expo-image-picker\"]\n  }\n}\n```\n\nNext, rebuild your app as described in the [\"Adding custom native code\"](https://docs.expo.dev/workflow/customizing/) guide.\n\n### API\n\nThe plugin provides props for extra customization. Every time you change the props or plugins, you'll need to rebuild (and `prebuild`) the native app. If no extra properties are added, defaults will be used.\n\n- `photosPermission` (_string | false_): Sets the iOS `NSPhotoLibraryUsageDescription` permission message to the `Info.plist`. Setting `false` will skip adding the permission on iOS and **does not** skip the permission on Android. Defaults to `Allow $(PRODUCT_NAME) to access your photos`.\n- `cameraPermission` (_string | false_): Sets the iOS `NSCameraUsageDescription` permission message to the `Info.plist`. Setting `false` will skip adding the permission on iOS and **does not** skip the permission on Android. Defaults to `Allow $(PRODUCT_NAME) to access your camera`.\n- `microphonePermission` (_string | false_): Sets the iOS `NSCameraUsageDescription` permission message to the `Info.plist`. Setting `false` will skip adding the permission on iOS and skips adding the `android.permission.RECORD_AUDIO` Android permission. Defaults to `Allow $(PRODUCT_NAME) to access your photos`.\n\n### Example\n\n```json\n{\n  \"expo\": {\n    \"plugins\": [\n      [\n        \"expo-image-picker\",\n        {\n          \"photosPermission\": \"custom photos permission\",\n          \"cameraPermission\": \"Allow $(PRODUCT_NAME) to open the camera\",\n\n          \"//\": \"Disables the microphone permission\",\n          \"microphonePermission\": false\n        }\n      ]\n    ]\n  }\n}\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
     "noticeText": null
   },
   {
@@ -3406,6 +3596,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/expo/expo",
     "source": "npm",
     "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/status-bar/\">\n    <img\n      src=\"../../.github/resources/expo-status-bar.svg\"\n      alt=\"expo-status-bar\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides the same interface as the React Native [StatusBar API](https://reactnative.dev/docs/statusbar), but with slightly different defaults to work great in Expo environments.\n\n- Default to `translucent={true}` on Android.\n- The `style=\"auto\"` maps to a dark status bar when in light mode and a light status bar when in dark moded. `style=\"inverted\"` inverts this behavior.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/status-bar/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/status-bar/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/status-bar/). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\nPlease refer to the [React Native StatusBar API documentation](https://reactnative.dev/docs/statusbar).\n\n# Installation in bare React Native projects\n\n```\nnpm install expo-status-bar\n```\n\n### Configure for Android\n\nNo additional setup necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-store-review@9.0.9",
+    "name": "expo-store-review",
+    "version": "9.0.9",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/storereview/\">\n    <img\n      src=\"../../.github/resources/expo-store-review.svg\"\n      alt=\"expo-store-review\"\n      height=\"64\" />\n  </a>\n</p>\n\n`expo-store-review` allows users rate your application inside App Store and Google Play Store.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/storereview/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/storereview/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/storereview/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your dependencies\n\n```\nnpx expo install expo-store-review\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
     "noticeText": null
   },
   {
@@ -3696,6 +3896,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/ctavan/node-getenv",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\nCopyright (c) 2012-2019 Christoph Tavan <dev@tavan.de>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:gifenc@1.0.3",
+    "name": "gifenc",
+    "version": "1.0.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/mattdesl/gifenc",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\nCopyright (c) 2017 Matt DesLauriers\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR\nOTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE\nOR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -5059,6 +5269,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:pako@1.0.11",
+    "name": "pako",
+    "version": "1.0.11",
+    "licenses": "(MIT AND Zlib)",
+    "repository": "https://github.com/nodeca/pako",
+    "source": "npm",
+    "licenseText": "(The MIT License)\n\nCopyright (C) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:parse-png@2.1.0",
     "name": "parse-png",
     "version": "2.1.0",
@@ -5279,6 +5499,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:proxy-from-env@1.1.0",
+    "name": "proxy-from-env",
+    "version": "1.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/Rob--W/proxy-from-env",
+    "source": "npm",
+    "licenseText": "The MIT License\n\nCopyright (C) 2016-2018 Rob Wu <rob@robwu.nl>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:punycode@2.3.1",
     "name": "punycode",
     "version": "2.3.1",
@@ -5396,6 +5626,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-native-color-matrix-image-filters@8.0.2",
+    "name": "react-native-color-matrix-image-filters",
+    "version": "8.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/iyegoroff/react-native-color-matrix-image-filters",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2018-2022 iyegoroff\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -5646,6 +5886,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/isaacs/rimraf",
     "source": "npm",
     "licenseText": "The ISC License\n\nCopyright (c) Isaac Z. Schlueter and Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:rn-color-matrices@4.1.0",
+    "name": "rn-color-matrices",
+    "version": "4.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/iyegoroff/rn-color-matrices",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2018 iyegoroff\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -6239,6 +6489,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:ts-tiny-invariant@2.0.5",
+    "name": "ts-tiny-invariant",
+    "version": "2.0.5",
+    "licenses": "MIT",
+    "repository": "https://github.com/iyegoroff/ts-tiny-invariant",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2019-2022 iyegoroff\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:type-detect@4.0.8",
     "name": "type-detect",
     "version": "4.0.8",
@@ -6366,6 +6626,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/browserslist/update-db",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright 2022 Andrey Sitnik <andrey@sitnik.ru> and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:upng-js@2.1.0",
+    "name": "upng-js",
+    "version": "2.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/photopea/UPNG.js",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Photopea\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {

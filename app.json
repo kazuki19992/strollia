@@ -87,6 +87,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "kushida-software"
+        }
+      ],
       "./plugins/withFmtCxx17",
       "expo-sqlite",
       [

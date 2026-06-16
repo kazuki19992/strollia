@@ -86,7 +86,7 @@ describe('Sentry送信制御', () => {
     });
   });
 
-  it('アプリバージョン、ビルド番号、OS、端末情報をSentry contextに設定する', () => {
+  it('アプリバージョン、ビルド番号、動作プラットフォーム、OS、端末情報をSentry contextに設定する', () => {
     configureSentryAppContext();
 
     expect(Sentry.setContext).toHaveBeenCalledWith('app', {

@@ -227,7 +227,7 @@ Sentryへ送信する項目は以下に限定する。
 - 未捕捉例外やクラッシュのエラー内容、スタックトレース
 - Sentry SDKが付与する実行環境情報、SDK情報、リリース/ソースマップ紐づけに必要な情報
 - アプリ情報: Application ID、アプリ名、アプリバージョン、Build番号、Runtime Version
-- 端末/OS情報: プラットフォーム、OS名、iOS/Androidバージョン、端末モデル、端末モデルID、UI種別
+- 端末/OS情報: 動作プラットフォーム（`ios` / `android`）、OS名、iOS/Androidバージョン、端末モデル、端末モデルID、UI種別
 - Support ID: RevenueCat App User IDをSentryの `user.id` として設定する
 - サブスク加入状況: `free` / `plus`、Plus有効状態、RevenueCat entitlement ID
 - 画面名: `Map`、`DailyLogList`、`DailyLogs:DailyLogDetail`、`AchievementList`、`MonthlyReport`、`SettingsHome`、`Settings:AboutApp`、`Settings:LicenseList`、`Settings:LicenseDetail`、`PremiumPaywall`、`FirstLaunchTutorial`、`FirstLaunchTutorialReplay`、`PhotoPreview`

@@ -153,7 +153,10 @@ StrolliaはローカルファーストのGPSロガーである。
 
 ### 10.1 worktree / ブランチ / PR
 
-- `main` から作業を始めるよう依頼された場合は、先に最新の `main` を取得し、`.worktrees/` 配下に新しい worktree とエージェントごとの接頭辞を付けたブランチを作成してから作業する。Codex は `codex/`、Claude Code は `claude/` を使う。
+- `develop` を開発中のデフォルトブランチ、`main` をリリース状態のブランチとして扱う。
+- 通常の開発作業は、先に最新の `develop` を取得し、`develop` から `.worktrees/` 配下に新しい worktree とエージェントごとの接頭辞を付けたブランチを作成してから作業する。Codex は `codex/`、Claude Code は `claude/` を使う。
+- `main` はリリース反映用のブランチとして扱い、通常の開発ブランチの起点にしない。リリース作業では `develop` から `main` への PR を作成する。
+- `develop` と `main` はどちらも PR 経由で変更し、直接 push しない。
 - `worktreeで作業` と依頼された場合も、通常のチェックアウトではなく分離 worktree を使う。
 - ただし、ユーザーが「この worktree をそのまま使って作業しても可」と明示した場合は、その worktree 内で通常の checkout をしてよい。
 - `.worktrees/` はこのリポジトリで通常利用する作業場所として扱う。作成前に `git worktree list` で既存 worktree とブランチ名の衝突を確認する。

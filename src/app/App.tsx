@@ -107,6 +107,7 @@ import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { FirstLaunchTutorialDialog } from './components/FirstLaunchTutorialDialog';
 import { LicenseDetailScreen, LicenseScreen } from './components/LicenseScreen';
 import type { OssLicenseEntry } from './generated/ossLicenses';
+import { GpxImportProgressDialog } from './components/GpxImportProgressDialog';
 import { MapScreen } from './components/MapScreen';
 import { PhotoPreviewModals } from './components/PhotoPreviewModals';
 import { PremiumPaywallModal } from './components/PremiumPaywallModal';
@@ -209,6 +210,7 @@ export default function App() {
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
+  const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [achievementItems, setAchievementItems] = useState<AchievementListItem[]>([]);
   const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
@@ -1047,6 +1049,8 @@ export default function App() {
         return;
       }
 
+      // ファイル選択後の取り込み処理中は、削除などの操作を防ぐためブロッキングダイアログを表示する。
+      setIsProcessingGpxImport(true);
       const pointsToImport = parseGpxToLocationPoints(pickedFile.content);
 
       if (pointsToImport.length === 0) {
@@ -1063,6 +1067,7 @@ export default function App() {
     } finally {
       isImportingGpxRef.current = false;
       setIsImportingGpx(false);
+      setIsProcessingGpxImport(false);
     }
   }
 
@@ -1558,6 +1563,7 @@ export default function App() {
         onSelectPhotoCluster={setSelectedPhotoCluster}
         onSelectPhoto={setSelectedPhoto}
       />
+      <GpxImportProgressDialog visible={isProcessingGpxImport} styles={styles} theme={theme} />
     </View>
   );
 }

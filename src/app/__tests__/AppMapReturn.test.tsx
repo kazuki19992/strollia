@@ -10,6 +10,9 @@ import {
 } from '../../features/location/locationService';
 import { getDailyLogs } from '../../features/logs/logRepository';
 import { pickAndReadGpxFile } from '../../features/import/gpxImportService';
+import { parseGpxToLocationPoints } from '../../features/import/gpxImporter';
+import { importLocationPointsFromGpx } from '../../features/import/importRepository';
+import { GpxImportProgressDialog } from '../components/GpxImportProgressDialog';
 import {
   getPremiumAccessState,
   getPremiumOfferingSummary,
@@ -345,6 +348,14 @@ jest.mock('../../features/export/gpxExporter', () => ({
 
 jest.mock('../../features/import/gpxImportService', () => ({
   pickAndReadGpxFile: jest.fn().mockResolvedValue(null),
+}));
+
+jest.mock('../../features/import/gpxImporter', () => ({
+  parseGpxToLocationPoints: jest.fn().mockReturnValue([]),
+}));
+
+jest.mock('../../features/import/importRepository', () => ({
+  importLocationPointsFromGpx: jest.fn().mockResolvedValue({ importedPointCount: 0, skippedPointCount: 0 }),
 }));
 
 jest.mock('../../features/reports/monthlyAreaReport', () => ({
@@ -935,6 +946,63 @@ describe('App 地図復帰時の表示範囲復元', () => {
       'pick',
     ]);
     expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+  });
+
+  test('GPX取り込み処理中だけブロッキングダイアログを表示し、完了後(finally)に閉じる', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    // 本体は requestAnimationFrame で1フレーム譲るため、テストでは同期的に解決させる。
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    (pickAndReadGpxFile as jest.Mock).mockResolvedValue({ content: '<gpx/>', fileName: 'a.gpx' });
+    (parseGpxToLocationPoints as jest.Mock).mockReturnValue([{ latitude: 1, longitude: 2, timestamp: 0 }]);
+
+    let resolveImport: (value: { importedPointCount: number; skippedPointCount: number }) => void = () => undefined;
+    (importLocationPointsFromGpx as jest.Mock).mockImplementation(
+      () => new Promise((resolve) => {
+        resolveImport = resolve;
+      }),
+    );
+
+    // 退場アニメーション中は中身が残るため、表示状態は Dialog の visible プロップで判定する。
+    const isImportDialogVisible = () =>
+      renderer.root.findByType(GpxImportProgressDialog).props.visible;
+
+    try {
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<App />);
+      });
+      await flushPromises();
+
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      });
+
+      // 取り込み開始前はダイアログは出ていない。
+      expect(isImportDialogVisible()).toBe(false);
+
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+      });
+      await flushPromises();
+
+      // import が未解決の間はブロッキングダイアログが表示される。
+      expect(isImportDialogVisible()).toBe(true);
+
+      await act(async () => {
+        resolveImport({ importedPointCount: 1, skippedPointCount: 0 });
+        await importPromise;
+      });
+      await flushPromises();
+
+      // finally で処理中フラグが下り、ダイアログは閉じる。
+      expect(isImportDialogVisible()).toBe(false);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
   });
 
 

@@ -37,6 +37,11 @@ describe('app.config.ts (Android Google Maps キー注入)', () => {
     expect(result.android.config.googleMaps.apiKey).toBeUndefined();
   });
 
+  it('環境変数が空文字/空白のときも apiKey は undefined になる(.envテンプレのまま=未設定扱い)', () => {
+    expect(buildConfig('').android.config.googleMaps.apiKey).toBeUndefined();
+    expect(buildConfig('   ').android.config.googleMaps.apiKey).toBeUndefined();
+  });
+
   it('iOS設定(infoPlist・bundleIdentifier)を app.json のまま保持する', () => {
     const result = buildConfig('TEST_ANDROID_MAPS_KEY');
 

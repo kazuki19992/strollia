@@ -18,7 +18,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       ...config.android?.config,
       googleMaps: {
         ...config.android?.config?.googleMaps,
-        apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY,
+        // 空文字（.env テンプレのまま等）は未設定として扱い、不正キーの注入を防ぐ。
+        apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY?.trim() || undefined,
       },
     },
   },

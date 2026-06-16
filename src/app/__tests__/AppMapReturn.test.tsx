@@ -624,6 +624,63 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(setSetting).toHaveBeenCalledWith('showPhotosOnMapEnablePending', true);
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(true);
+    const pendingWriteIndex = (setSetting as jest.Mock).mock.calls.findIndex(
+      ([key, value]) => key === 'showPhotosOnMapEnablePending' && value === true,
+    );
+    const enabledWriteIndex = (setSetting as jest.Mock).mock.calls.findIndex(
+      ([key, value]) => key === 'showPhotosOnMap' && value === true,
+    );
+    const pendingWriteOrder = (setSetting as jest.Mock).mock.invocationCallOrder[pendingWriteIndex];
+    const enabledWriteOrder = (setSetting as jest.Mock).mock.invocationCallOrder[enabledWriteIndex];
+    expect(pendingWriteOrder).toBeLessThan(enabledWriteOrder);
+  });
+
+  test('保存済み写真表示の復元中は手動OFFを割り込ませない', async () => {
+    let resolvePendingEnable: (() => void) | null = null;
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'showPhotosOnMap') {
+        return Promise.resolve(true);
+      }
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(true);
+      }
+
+      return Promise.resolve(fallback);
+    });
+    (setSetting as jest.Mock).mockImplementation((key: string, value: boolean) => {
+      if (key === 'showPhotosOnMapEnablePending' && value === true) {
+        return new Promise<void>((resolve) => {
+          resolvePendingEnable = resolve;
+        });
+      }
+
+      return Promise.resolve();
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      mockLatestMapScreenProps.onMapReady();
+    });
+    await flushPromises();
+
+    await act(async () => {
+      mockLatestMapScreenProps.onUpdateShowPhotosOnMap(false);
+    });
+    await flushPromises();
+
+    expect(setSetting).not.toHaveBeenCalledWith('showPhotosOnMap', false);
+    expect(setSetting).not.toHaveBeenCalledWith('showPhotosOnMapEnablePending', false);
+
+    await act(async () => {
+      resolvePendingEnable?.();
+    });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(true);
   });
 
   test('初回チュートリアル完了時に表示済み設定を保存する', async () => {

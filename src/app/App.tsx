@@ -804,12 +804,21 @@ export default function App() {
       return;
     }
 
+    if (isUpdatingPhotoSettingRef.current) {
+      return;
+    }
+
+    isUpdatingPhotoSettingRef.current = true;
+    setIsUpdatingPhotoSetting(true);
     setShouldRestorePhotosOnMapAfterMapReady(false);
     enableShowPhotosOnMapWithCrashBreaker().catch((error: unknown) => {
       console.warn('Failed to restore photo map overlay:', error);
       setShowPhotosOnMap(false);
       setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch(() => undefined);
       setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch(() => undefined);
+    }).finally(() => {
+      isUpdatingPhotoSettingRef.current = false;
+      setIsUpdatingPhotoSetting(false);
     });
   }, [enableShowPhotosOnMapWithCrashBreaker, isMapReady, isReady, shouldRestorePhotosOnMapAfterMapReady]);
 

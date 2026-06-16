@@ -123,6 +123,7 @@ const log = {
   endLocationPointId: 2,
 };
 const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
+let renderer: any = null;
 
 describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   beforeEach(() => {
@@ -131,13 +132,18 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   });
 
   afterEach(() => {
+    if (renderer) {
+      act(() => {
+        renderer.unmount();
+      });
+      renderer = null;
+    }
     jest.restoreAllMocks();
   });
 
   test('GIF出力ボタンを押すと初回フレームでデッドロックせず生成・共有まで完了する', async () => {
     const Sharing = require('expo-sharing');
 
-    let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
         <DailyLogDetailScreen
@@ -196,7 +202,6 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
   it('生成中にキャンセルすると共有せず区間選択へ戻る', async () => {
     const Sharing = require('expo-sharing');
-    let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
         <DailyLogDetailScreen
@@ -234,7 +239,6 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
   it('キャンセル直後に再度生成しても、前のループを待ってから生成・共有できる', async () => {
     const Sharing = require('expo-sharing');
-    let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
         <DailyLogDetailScreen

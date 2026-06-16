@@ -66,6 +66,7 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   const dragX = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const isClosingRef = useRef(false);
+  const isMountedRef = useRef(true);
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onCloseRef = useRef(onClose);
   const lastContentRef = useRef<ReactNode>(null);
@@ -82,6 +83,19 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
       autoCloseTimerRef.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      clearAutoCloseTimer();
+      modalProgress.stopAnimation();
+      autoCloseProgress.stopAnimation();
+      dragX.stopAnimation();
+      dragY.stopAnimation();
+    };
+  }, [autoCloseProgress, clearAutoCloseTimer, dragX, dragY, modalProgress]);
 
   /** 退場アニメーションを再生し、必要なら親へ通知する。 */
   const animateOut = useCallback(
@@ -101,7 +115,7 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
         Animated.timing(dragX, { toValue: 0, duration: 500, useNativeDriver: true }),
         Animated.timing(dragY, { toValue: 0, duration: 500, useNativeDriver: true }),
       ]).start(({ finished }) => {
-        if (finished) {
+        if (finished && isMountedRef.current) {
           setIsRendered(false);
         }
       });

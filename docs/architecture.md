@@ -220,7 +220,7 @@ iOS / Android ともにバックグラウンド位置情報にはOS側の制約�
 
 GPSログや写真メタデータはRevenueCatへ送信しない。
 
-重大な例外やクラッシュの解析にはSentryを利用する。初期運用ではアプリクラッシュや未捕捉例外を自動捕捉し、必要に応じて調査対象として明示した例外も送信する。Sentryへはスタックトレース、アプリ/ビルド情報、OS/端末情報、画面名、RevenueCatのSupport ID、サブスク加入状況などの診断情報を送るが、GPSログ本体や写真ジオタグ、座標値は送信しない。Sentry SDKのPII送信は無効化し、送信直前にも位置情報らしいフィールドをマスクする。
+重大な例外やクラッシュの解析にはSentryを利用する。Sentryのproject slugは `strollia` とする。初期運用ではproductionビルドのみアプリクラッシュや未捕捉例外を自動捕捉し、必要に応じて調査対象として明示した例外も送信する。developmentビルドとpreviewビルドでは無料枠を消費しないよう、Sentry SDKの初期化とRoot Componentのwrapを行わず、EAS profileでは `SENTRY_DISABLE_AUTO_UPLOAD=true` も設定する。Sentryへはスタックトレース、アプリ/ビルド情報、OS/端末情報、画面名、RevenueCatのSupport ID、サブスク加入状況などの診断情報を送るが、GPSログ本体や写真ジオタグ、座標値は送信しない。Sentry SDKのPII送信は無効化し、送信直前にも位置情報らしいフィールドをマスクする。
 
 Sentryへ送信する項目は以下に限定する。
 

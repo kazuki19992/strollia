@@ -9,6 +9,7 @@ import { scrubSentryEventLocationData } from './sentryScrubber';
 const SENTRY_DSN = 'https://c74942d776de099ad82e73ef400d0525@o4511573900132352.ingest.us.sentry.io/4511573917106176';
 
 let isSentryInitialized = false;
+type RootComponent = Parameters<typeof Sentry.wrap>[0];
 
 type PremiumAccessLike = {
   entitlementId: string;
@@ -21,6 +22,15 @@ export type InvestigatedErrorContext = {
   screenName?: string;
   tags?: Record<string, string>;
 };
+
+/**
+ * Sentryへイベントを送信するビルドかどうかを返す。
+ *
+ * dev/previewビルドでは無料枠を消費しないよう、production profileだけ有効にする。
+ */
+export function isSentryEnabledForBuild(): boolean {
+  return process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE === 'production';
+}
 
 /**
  * Sentryへ送るイベントの最終加工を行う。
@@ -38,6 +48,10 @@ export function filterSentryEventBeforeSend(event: ErrorEvent): ErrorEvent {
  * 無料枠の調整が必要になった場合は、`beforeSend` やsampling設定で絞り込む。
  */
 export function initializeSentry(): void {
+  if (!isSentryEnabledForBuild()) {
+    return;
+  }
+
   if (isSentryInitialized) {
     return;
   }
@@ -153,4 +167,13 @@ export function reportInvestigatedError(error: unknown, options: InvestigatedErr
   });
 }
 
-export const wrapWithSentry = Sentry.wrap;
+/**
+ * productionビルドだけRoot ComponentをSentryでwrapする。
+ */
+export function wrapWithSentry<T extends RootComponent>(component: T): T {
+  if (!isSentryEnabledForBuild()) {
+    return component;
+  }
+
+  return Sentry.wrap(component) as T;
+}

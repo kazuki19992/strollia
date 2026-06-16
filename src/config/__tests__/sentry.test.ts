@@ -3,10 +3,12 @@ import * as Sentry from '@sentry/react-native';
 import {
   configureSentryAppContext,
   filterSentryEventBeforeSend,
+  initializeSentry,
   reportInvestigatedError,
   updateSentryScreenContext,
   updateSentrySubscriptionContext,
   updateSentryUserContext,
+  wrapWithSentry,
 } from '../sentry';
 
 const mockScope = {
@@ -62,8 +64,54 @@ jest.mock('react-native', () => ({
 }));
 
 describe('Sentry送信制御', () => {
+  const originalBuildProfile = process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE;
+
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE = originalBuildProfile;
+  });
+
+  it('productionビルド以外ではSentry SDKを初期化しない', () => {
+    process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE = 'preview';
+
+    initializeSentry();
+
+    expect(Sentry.init).not.toHaveBeenCalled();
+    expect(Sentry.setContext).not.toHaveBeenCalled();
+  });
+
+  it('productionビルドではSentry SDKを初期化する', () => {
+    process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE = 'production';
+
+    initializeSentry();
+
+    expect(Sentry.init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enableAutoPerformanceTracing: false,
+        enableAutoSessionTracking: false,
+        enableCaptureFailedRequests: false,
+        sendDefaultPii: false,
+      }),
+    );
+    expect(Sentry.setContext).toHaveBeenCalledWith(
+      'app',
+      expect.objectContaining({
+        applicationId: 'com.kazuki19992.strollia',
+        buildNumber: '45',
+        version: '1.2.3',
+      }),
+    );
+  });
+
+  it('productionビルド以外ではRoot ComponentをSentryでwrapしない', () => {
+    process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE = 'development';
+    const RootComponent = jest.fn();
+
+    expect(wrapWithSentry(RootComponent)).toBe(RootComponent);
+    expect(Sentry.wrap).not.toHaveBeenCalled();
   });
 
   it('自動捕捉された重大イベントも送信対象にし、位置情報だけをマスクする', () => {

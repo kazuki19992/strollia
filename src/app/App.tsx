@@ -52,6 +52,7 @@ import {
   canRequestLocationPermissionInApp,
   getLocationPermissionState,
   hasRequiredLocationPermission,
+  isWhileInUseOnlyMode,
   LocationPermissionState,
 } from '../features/location/locationPermission';
 import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
@@ -112,6 +113,7 @@ import { PhotoPreviewModals } from './components/PhotoPreviewModals';
 import { PremiumPaywallModal } from './components/PremiumPaywallModal';
 import { MonthlyReportScreen } from './components/reports/MonthlyReportScreen';
 import { SettingsScreen } from './components/SettingsScreen';
+import { TopToast } from './components/TopToast';
 import { useAchievementDialogEffects } from './hooks/useAchievementDialogEffects';
 import { useAnimatedBooleanOpacity } from './hooks/useAnimatedBooleanOpacity';
 import { useAutoFitInitialRoute } from './hooks/useAutoFitInitialRoute';
@@ -278,12 +280,14 @@ export default function App() {
   const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
   const [isPremiumPaywallVisible, setIsPremiumPaywallVisible] = useState(false);
   const isPremiumPaywallVisibleRef = useRef(false);
+  const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive, customIconImageUri),
     [premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
+  const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
 
@@ -404,6 +408,11 @@ export default function App() {
 
     await startRecording('manual');
   }, [shouldOpenSettingsForPermission, startRecording]);
+
+  /** OSの設定画面を開き、位置情報を「常に許可」へ変更できるよう誘導する。 */
+  const openLocationSettings = useCallback(async (): Promise<void> => {
+    await Linking.openSettings();
+  }, []);
 
   /** 全期間のGPSログをGPXとして共有する。 */
   const exportAllLogs = useCallback(async (): Promise<void> => {
@@ -540,6 +549,9 @@ export default function App() {
           await requestAchievementNotificationPermissionIfNeeded();
         }
         const initialState = await refreshData();
+        if (isWhileInUseOnlyMode(initialState.permissions)) {
+          setIsWhileInUseToastVisible(true);
+        }
         await maybeStartRecordingAutomatically(initialState);
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         await refreshAchievementState(true);
@@ -1295,6 +1307,12 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
+      <TopToast
+        visible={isWhileInUseToastVisible}
+        message="アプリが起動している場合のみ記録します！"
+        theme={theme}
+        onHide={() => setIsWhileInUseToastVisible(false)}
+      />
       {shouldShowDevelopmentFlagBanner && (
         <SafeAreaView pointerEvents="none" style={styles.developmentFlagBannerContainer}>
           <Text style={styles.developmentFlagBannerText}>開発フラグ有効</Text>
@@ -1328,6 +1346,7 @@ export default function App() {
               points={points}
               hasRequiredPermission={hasRequiredPermission}
               shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+              isWhileInUseOnlyMode={isWhileInUseRecordingMode}
               photoErrorMessage={photoErrorMessage}
               isLoadingPhotos={isLoadingPhotos}
               distance={distance}
@@ -1418,6 +1437,7 @@ export default function App() {
                         autoStartStatus={autoStartStatus}
                         hasRequiredPermission={hasRequiredPermission}
                         shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+                        isWhileInUseOnlyMode={isWhileInUseRecordingMode}
                         keepScreenAwake={keepScreenAwake}
                         mapType={mapType}
                         showPhotosOnMap={showPhotosOnMap}
@@ -1434,6 +1454,7 @@ export default function App() {
                         onBackToMap={openMap}
                         onStartRecording={() => startRecording('manual')}
                         onRequestLocationPermission={requestLocationPermission}
+                        onOpenLocationSettings={openLocationSettings}
                         onUpdateKeepScreenAwake={updateKeepScreenAwake}
                         onToggleMapType={toggleMapType}
                         onUpdateShowPhotosOnMap={updateShowPhotosOnMap}

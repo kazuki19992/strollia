@@ -126,6 +126,7 @@ jest.mock('../../features/location/locationPermission', () => ({
     canAskBackground: true,
   }),
   hasRequiredLocationPermission: jest.fn((state) => state.foregroundGranted && state.backgroundGranted),
+  isWhileInUseOnlyMode: jest.fn((state) => state.foregroundGranted && !state.backgroundGranted),
 }));
 jest.mock('../../features/logs/logRepository', () => ({
   deleteAllUserData: jest.fn().mockResolvedValue(undefined),

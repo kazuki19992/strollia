@@ -72,6 +72,8 @@ export type MapScreenProps = {
   hasRequiredPermission: boolean;
   /** 権限ボタンを設定誘導にするか。 */
   shouldOpenSettingsForPermission: boolean;
+  /** 「アプリ起動中のみ記録」モードか（バックグラウンド権限なし）。 */
+  isWhileInUseOnlyMode: boolean;
   /** 写真エラーメッセージ。 */
   photoErrorMessage: string | null;
   /** 写真読み込み中か。 */
@@ -134,6 +136,7 @@ export function MapScreen({
   points,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
+  isWhileInUseOnlyMode,
   photoErrorMessage,
   isLoadingPhotos,
   distance,
@@ -238,7 +241,7 @@ export function MapScreen({
           </View>
         )}
 
-        {!hasRequiredPermission && (
+        {!hasRequiredPermission && !isWhileInUseOnlyMode && (
           <View style={styles.permissionCard}>
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionTitle}>
               位置情報の常時許可が必要です

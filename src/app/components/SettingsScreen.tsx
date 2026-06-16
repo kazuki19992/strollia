@@ -42,6 +42,8 @@ export type SettingsScreenProps = {
   hasRequiredPermission: boolean;
   /** 権限要求ボタンの文言を設定誘導にするか。 */
   shouldOpenSettingsForPermission: boolean;
+  /** 「アプリ起動中のみ記録」モードか（バックグラウンド権限なし）。 */
+  isWhileInUseOnlyMode: boolean;
   /** 画面ON維持設定。 */
   keepScreenAwake: boolean;
   /** 表示中の地図種別。 */
@@ -74,6 +76,8 @@ export type SettingsScreenProps = {
   onStartRecording: () => void;
   /** 位置情報権限要求処理。 */
   onRequestLocationPermission: () => void;
+  /** OSの位置情報設定画面を開く処理。 */
+  onOpenLocationSettings: () => void;
   /** 画面ON維持設定の更新処理。 */
   onUpdateKeepScreenAwake: (enabled: boolean) => Promise<void>;
   /** 地図種別の切り替え処理。 */
@@ -134,6 +138,7 @@ export function SettingsScreen({
   autoStartStatus,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
+  isWhileInUseOnlyMode,
   keepScreenAwake,
   mapType,
   showPhotosOnMap,
@@ -152,6 +157,7 @@ export function SettingsScreen({
   onBackToMap,
   onStartRecording,
   onRequestLocationPermission,
+  onOpenLocationSettings,
   onUpdateKeepScreenAwake,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
@@ -195,9 +201,11 @@ export function SettingsScreen({
         <GpsStatusPanel
           autoStartStatus={autoStartStatus}
           hasRequiredPermission={hasRequiredPermission}
+          isWhileInUseOnlyMode={isWhileInUseOnlyMode}
           isRecording={isRecording}
           shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
           styles={styles}
+          onOpenLocationSettings={onOpenLocationSettings}
           onRequestLocationPermission={onRequestLocationPermission}
           onStartRecording={onStartRecording}
         />
@@ -466,19 +474,33 @@ export function SettingsScreen({
 
 type GpsStatusPanelProps = Pick<
   SettingsScreenProps,
-  'styles' | 'isRecording' | 'autoStartStatus' | 'hasRequiredPermission' | 'shouldOpenSettingsForPermission' | 'onRequestLocationPermission' | 'onStartRecording'
+  'styles' | 'isRecording' | 'autoStartStatus' | 'hasRequiredPermission' | 'isWhileInUseOnlyMode' | 'shouldOpenSettingsForPermission' | 'onOpenLocationSettings' | 'onRequestLocationPermission' | 'onStartRecording'
 >;
 
-/** GPS権限と自動記録状態を、3種類の目立つパネルへ変換する。 */
+/** GPS権限と自動記録状態を、目立つパネルへ変換する。 */
 function GpsStatusPanel({
   styles,
   isRecording,
   autoStartStatus,
   hasRequiredPermission,
+  isWhileInUseOnlyMode,
   shouldOpenSettingsForPermission,
+  onOpenLocationSettings,
   onRequestLocationPermission,
   onStartRecording,
 }: GpsStatusPanelProps) {
+  if (isWhileInUseOnlyMode) {
+    return (
+      <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelWarning]}>
+        <Text style={styles.settingsGpsPanelTitle}>アプリ起動中のみ記録</Text>
+        <Text style={styles.settingsGpsPanelText}>{'アプリが起動しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。'}</Text>
+        <Pressable accessibilityRole="button" onPress={onOpenLocationSettings} style={styles.settingsGpsPanelButton}>
+          <Text style={styles.settingsGpsPanelButtonWarningText}>設定を開く</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (!hasRequiredPermission) {
     return (
       <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelDanger]}>

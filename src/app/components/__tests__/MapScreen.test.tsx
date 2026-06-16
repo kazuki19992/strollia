@@ -69,6 +69,7 @@ function createProps() {
     photoClusters: [],
     points: [],
     hasRequiredPermission: true,
+    isWhileInUseOnlyMode: false,
     shouldOpenSettingsForPermission: false,
     photoErrorMessage: null,
     isLoadingPhotos: false,
@@ -192,6 +193,36 @@ describe('地図画面 MapScreen', () => {
       .filter((node: any) => ['まだ足あとがありません', '位置情報の常時許可が必要です', '続ける'].includes(node.props.children));
     expect(overlayTexts).toHaveLength(3);
     expect(overlayTexts.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
+  });
+
+  test('アプリ起動中のみ記録モードでは権限エラーパネルを表示しない', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={true} />,
+      );
+    });
+
+    const permissionTexts = renderer.root
+      .findAllByType(Text)
+      .filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
+    expect(permissionTexts).toHaveLength(0);
+  });
+
+  test('権限が無くアプリ起動中のみ記録モードでもない場合は権限エラーパネルを表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={false} />,
+      );
+    });
+
+    const permissionTexts = renderer.root
+      .findAllByType(Text)
+      .filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
+    expect(permissionTexts).toHaveLength(1);
   });
 
   test('レポート操作にはHistoryアイコンを使う', () => {

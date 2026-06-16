@@ -56,6 +56,7 @@ function createProps() {
     autoStartStatus: 'recording' as const,
     hasRequiredPermission: true,
     shouldOpenSettingsForPermission: false,
+    isWhileInUseOnlyMode: false,
     keepScreenAwake: false,
     mapType: 'standard' as const,
     showPhotosOnMap: false,
@@ -72,6 +73,7 @@ function createProps() {
     onBackToMap: jest.fn(),
     onStartRecording: jest.fn(),
     onRequestLocationPermission: jest.fn(),
+    onOpenLocationSettings: jest.fn(),
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
@@ -173,6 +175,30 @@ describe('設定画面 SettingsScreen', () => {
     expect(flattenStyle(darkStyles.settingsGpsPanelDanger).backgroundColor).toBe('#b0002f');
     expect(flattenStyle(lightStyles.settingsGpsPanelWarning).backgroundColor).toBe('#a36100');
     expect(flattenStyle(darkStyles.settingsGpsPanelWarning).backgroundColor).toBe('#a36100');
+  });
+
+  test('アプリ起動中のみ記録モードでは専用パネルを表示し、ボタンでOS設定を開く', () => {
+    const props = {
+      ...createProps(),
+      hasRequiredPermission: false,
+      isWhileInUseOnlyMode: true,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('アプリ起動中のみ記録');
+    expect(texts).toContain('アプリが起動しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。');
+    // 「位置情報の許可が必要です」エラーパネルは出さない
+    expect(texts).not.toContain('位置情報の許可が必要です');
+
+    const button = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenLocationSettings)[0];
+    expect(button).toBeDefined();
+    act(() => { button.props.onPress(); });
+    expect(props.onOpenLocationSettings).toHaveBeenCalledTimes(1);
   });
 
   test('ダークモードでもGPS操作ボタンはライトモードと同じ白背景で表示する', () => {

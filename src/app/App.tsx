@@ -29,6 +29,11 @@ import {
   SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL,
   TERMS_OF_SERVICE_URL,
 } from '../config/legalLinks';
+import {
+  updateSentryScreenContext,
+  updateSentrySubscriptionContext,
+  updateSentryUserContext,
+} from '../config/sentry';
 import { initializeAchievementNotificationHandler, requestAchievementNotificationPermissionOnFirstLaunch, setupAchievementNotificationChannel } from '../features/achievements/achievementNotificationService';
 import {
   AchievementListItem,
@@ -286,6 +291,44 @@ export default function App() {
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
+  const sentryScreenName = useMemo(() => {
+    if (isPremiumPaywallVisible) {
+      return 'PremiumPaywall';
+    }
+
+    if (isFirstLaunchTutorialVisible) {
+      return firstLaunchTutorialMode === 'replay' ? 'FirstLaunchTutorialReplay' : 'FirstLaunchTutorial';
+    }
+
+    if (selectedPhoto || selectedPhotoCluster) {
+      return 'PhotoPreview';
+    }
+
+    switch (screenMode) {
+      case 'achievements':
+        return 'AchievementList';
+      case 'dailyLogs':
+        return 'DailyLogList';
+      case 'map':
+        return 'Map';
+      case 'monthlyReport':
+        return 'MonthlyReport';
+      case 'settings':
+        return 'SettingsHome';
+    }
+  }, [firstLaunchTutorialMode, isFirstLaunchTutorialVisible, isPremiumPaywallVisible, screenMode, selectedPhoto, selectedPhotoCluster]);
+
+  useEffect(() => {
+    updateSentryUserContext(revenueCatAppUserId);
+  }, [revenueCatAppUserId]);
+
+  useEffect(() => {
+    updateSentrySubscriptionContext(premiumAccessState);
+  }, [premiumAccessState]);
+
+  useEffect(() => {
+    updateSentryScreenContext(sentryScreenName);
+  }, [sentryScreenName]);
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
   const refreshData = useCallback(async () => {
@@ -1352,7 +1395,12 @@ export default function App() {
           )}
           {screenMode === 'dailyLogs' && (
             <NavigationIndependentTree>
-              <NavigationContainer>
+              <NavigationContainer
+                onStateChange={(state) => {
+                  const route = state?.routes[state.index ?? 0];
+                  updateSentryScreenContext(route ? `DailyLogs:${route.name}` : 'DailyLogList');
+                }}
+              >
                 <DailyLogStack.Navigator
                   initialRouteName="DailyLogList"
                   screenOptions={{
@@ -1400,7 +1448,12 @@ export default function App() {
           {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} theme={theme} onBackToMap={openMap} />}
           {screenMode === 'settings' && (
             <NavigationIndependentTree>
-              <NavigationContainer>
+              <NavigationContainer
+                onStateChange={(state) => {
+                  const route = state?.routes[state.index ?? 0];
+                  updateSentryScreenContext(route ? `Settings:${route.name}` : 'SettingsHome');
+                }}
+              >
                 <SettingsStack.Navigator
                   initialRouteName="SettingsHome"
                   screenOptions={{

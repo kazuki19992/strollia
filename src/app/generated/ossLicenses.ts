@@ -15,7 +15,7 @@ export type OssLicenseEntry = {
   noticeText: string | null;
 };
 
-export const OSS_LICENSES_GENERATED_AT = "2026-06-16T08:16:53.771Z";
+export const OSS_LICENSES_GENERATED_AT = "2026-06-16T08:49:36.907Z";
 
 export const OSS_LICENSES: OssLicenseEntry[] = [
   {

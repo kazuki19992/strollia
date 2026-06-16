@@ -24,7 +24,7 @@ describe('TopToast', () => {
     jest.useRealTimers();
   });
 
-  test('visible=true のときメッセージを表示する', () => {
+  test('visible=true のとき指定メッセージを表示する(出ないと起動中のみ記録モードをユーザーへ通知できない)', () => {
     let renderer: any;
     act(() => {
       renderer = ReactTestRenderer.create(<TopToast {...baseProps} />);
@@ -34,7 +34,7 @@ describe('TopToast', () => {
     expect(texts).toContain('アプリが起動している場合のみ記録します！');
   });
 
-  test('visible=false のときは何も表示しない', () => {
+  test('visible=false のときは要素を一切描画しない(描画されると非表示時もトーストが残り誤表示になる)', () => {
     let renderer: any;
     act(() => {
       renderer = ReactTestRenderer.create(<TopToast {...baseProps} visible={false} />);
@@ -44,7 +44,7 @@ describe('TopToast', () => {
     expect(texts).toHaveLength(0);
   });
 
-  test('durationMs 経過後に onHide を呼ぶ', () => {
+  test('durationMs(4000ms)経過でちょうど1回onHideを呼ぶ(呼ばないとトーストが閉じず残り続ける)', () => {
     const onHide = jest.fn();
     act(() => {
       ReactTestRenderer.create(<TopToast {...baseProps} durationMs={4000} onHide={onHide} />);

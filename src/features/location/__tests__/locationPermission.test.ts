@@ -33,7 +33,7 @@ describe('位置情報権限ヘルパー', () => {
     })).toBe(false);
   });
 
-  it('フォアグラウンドのみ許可されているとき「アプリ起動中のみ記録」モードと判定する', () => {
+  it('フォアグラウンドのみ許可(背景なし)を「アプリ起動中のみ記録」モードと判定する(誤るとマップに権限エラーパネルが誤表示される)', () => {
     expect(isWhileInUseOnlyMode({
       foregroundGranted: true,
       backgroundGranted: false,
@@ -42,7 +42,7 @@ describe('位置情報権限ヘルパー', () => {
     })).toBe(true);
   });
 
-  it('バックグラウンドも許可済みなら「アプリ起動中のみ記録」モードではない', () => {
+  it('背景も許可済み(常時許可)ならモードではない(誤判定すると常時記録中なのにトースト/専用パネルが誤表示される)', () => {
     expect(isWhileInUseOnlyMode({
       foregroundGranted: true,
       backgroundGranted: true,
@@ -51,7 +51,7 @@ describe('位置情報権限ヘルパー', () => {
     })).toBe(false);
   });
 
-  it('フォアグラウンド未許可なら「アプリ起動中のみ記録」モードではない', () => {
+  it('フォアグラウンド未許可ならモードではない(誤判定すると権限要求すべき場面でエラーパネルを隠してしまう)', () => {
     expect(isWhileInUseOnlyMode({
       foregroundGranted: false,
       backgroundGranted: false,

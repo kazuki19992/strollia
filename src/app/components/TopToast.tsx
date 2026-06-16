@@ -19,12 +19,20 @@ export type TopToastProps = {
 /** 画面上部にしばらく表示して自動で消えるトースト。 */
 export function TopToast({ visible, message, theme, durationMs = 4000, onHide }: TopToastProps) {
   const opacity = useRef(new Animated.Value(0)).current;
+  // onHide が毎レンダー新しい関数参照でも effect を張り直さないよう ref 経由で参照する。
+  const onHideRef = useRef(onHide);
+
+  useEffect(() => {
+    onHideRef.current = onHide;
+  }, [onHide]);
 
   useEffect(() => {
     if (!visible) {
       return;
     }
 
+    // 再表示のたびに確実にフェードインさせるため都度リセットする。
+    opacity.setValue(0);
     Animated.timing(opacity, {
       toValue: 1,
       duration: 200,
@@ -32,11 +40,11 @@ export function TopToast({ visible, message, theme, durationMs = 4000, onHide }:
     }).start();
 
     const timer = setTimeout(() => {
-      onHide();
+      onHideRef.current();
     }, durationMs);
 
     return () => clearTimeout(timer);
-  }, [visible, durationMs, onHide, opacity]);
+  }, [visible, durationMs, opacity]);
 
   if (!visible) {
     return null;

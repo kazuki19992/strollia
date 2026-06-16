@@ -27,4 +27,10 @@ describe('位置情報追跡設定', () => {
     expect(options.deferredUpdatesInterval).toBe(10000);
     expect(options.foregroundService?.notificationTitle).toBe('すとろりあで記録中');
   });
+
+  it('Dynamic Island等の位置情報インジケータを表示しない', () => {
+    const options = getLocationTaskOptions();
+
+    expect(options.showsBackgroundLocationIndicator).toBe(false);
+  });
 });

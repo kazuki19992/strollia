@@ -19,7 +19,8 @@ export function getLocationTaskOptions(): Location.LocationTaskOptions {
     distanceInterval: LOCATION_UPDATE_DISTANCE_METERS,
     deferredUpdatesInterval: LOCATION_UPDATE_INTERVAL_MS,
     pausesUpdatesAutomatically: false,
-    showsBackgroundLocationIndicator: true,
+    // Dynamic Island等の位置情報インジケータを表示しない（フォアグラウンドサービス通知で記録中を示すため）。
+    showsBackgroundLocationIndicator: false,
     foregroundService: {
       notificationTitle: 'すとろりあで記録中',
       notificationBody: 'GPSログをバックグラウンドで保存しています。',

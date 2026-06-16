@@ -13,6 +13,14 @@ export function hasRequiredLocationPermission(state: LocationPermissionState): b
   return state.foregroundGranted && state.backgroundGranted;
 }
 
+/**
+ * 「アプリ起動中のみ記録」モードかどうかを返す。
+ * フォアグラウンド権限はあるがバックグラウンド権限がない状態を指す。
+ */
+export function isWhileInUseOnlyMode(state: LocationPermissionState): boolean {
+  return state.foregroundGranted && !state.backgroundGranted;
+}
+
 /** アプリ内ダイアログで追加権限を要求できる余地があるか返す。 */
 export function canRequestLocationPermissionInApp(state: LocationPermissionState): boolean {
   return !state.foregroundGranted ? state.canAskForeground : state.canAskBackground;

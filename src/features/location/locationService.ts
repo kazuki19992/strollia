@@ -57,6 +57,29 @@ export async function startBackgroundLocationRecording(): Promise<void> {
   await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
 }
 
+/**
+ * 起動時に、記録中ならタスクを stop→start で再登録し、最新の監視オプションを適用する。
+ *
+ * `startLocationUpdatesAsync` は既に開始済みだと新しいオプションを反映しないため、
+ * 既存ユーザーへオプション変更（例: showsBackgroundLocationIndicator）を再インストール無しで届ける。
+ * また古い/残留したタスクセッションを作り直すことで、残留インジケータ等の解消も期待できる。
+ * 記録中（タスク開始済み）のときだけ実行し、停止中ユーザーに記録を開始させない。
+ */
+export async function refreshBackgroundLocationTaskRegistration(): Promise<void> {
+  if (!(await TaskManager.isAvailableAsync())) {
+    return;
+  }
+
+  const alreadyStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
+
+  if (!alreadyStarted) {
+    return;
+  }
+
+  await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
+  await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
+}
+
 /** バックグラウンドGPS記録を停止する。未開始の場合は何もしない。 */
 export async function stopBackgroundLocationRecording(): Promise<void> {
   const alreadyStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);

@@ -58,6 +58,10 @@ export type SettingsScreenProps = {
   premiumAccessState: ReturnType<typeof getDefaultPremiumAccessState>;
   /** RevenueCatのApp User ID（サポート対応用）。未取得ならnull。 */
   revenueCatAppUserId: string | null;
+  /** アプリのマーケティングバージョン（例: 1.1.0）。未取得ならnull。 */
+  appVersion: string | null;
+  /** アプリのビルド番号（例: 21）。未取得ならnull。 */
+  buildNumber: string | null;
   /** RevenueCat Offeringの商品概要。 */
   premiumOfferingSummary: PremiumOfferingSummary | null;
   /** 商品情報を読み込み中か。 */
@@ -146,6 +150,8 @@ export function SettingsScreen({
   isImportingGpx,
   premiumAccessState,
   revenueCatAppUserId,
+  appVersion,
+  buildNumber,
   premiumOfferingSummary,
   isLoadingPremiumOffering,
   isPurchasingPremiumPackage,
@@ -466,6 +472,9 @@ export function SettingsScreen({
               </View>
             </Pressable>
           ) : null}
+          <Text style={styles.supportUserIdLabel}>
+            {`バージョン ${appVersion ?? '不明'} (${buildNumber ?? '不明'})`}
+          </Text>
         </ScreenSection>
       </ScrollView>
     </SafeAreaView>

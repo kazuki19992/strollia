@@ -182,6 +182,7 @@ jest.mock('../../features/location/visitedCellRepository', () => ({
 }));
 jest.mock('../../features/location/grid/gridCell', () => ({
   getGridBoundsForRegion: jest.fn(() => ({ minX: 0, maxX: 0, minY: 0, maxY: 0 })),
+  isGridBoundsContained: jest.fn(() => false),
 }));
 
 const ReactTestRenderer = require('react-test-renderer');

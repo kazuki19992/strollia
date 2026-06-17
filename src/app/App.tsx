@@ -93,7 +93,7 @@ import { getBooleanSetting, getStringSetting, setSetting } from '../features/set
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '../features/location/grid/gridAggregation';
-import { getGridBoundsForRegion, GridCellPolygonSource } from '../features/location/grid/gridCell';
+import { getGridBoundsForRegion, GridBounds, GridCellPolygonSource, isGridBoundsContained } from '../features/location/grid/gridCell';
 import { getVisitedCellsInBounds } from '../features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '../features/map/gridOverlay';
 import { GRID_OVERLAY_CONFIG } from '../features/map/config/gridOverlayConfig';
@@ -136,6 +136,7 @@ import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './
 import { shouldStartRecordingAutomatically } from './autoRecording';
 import { getNextMapType } from './mapType';
 import { createUserCenteredRegion, isValidMapCoordinate, shouldRestoreMapRegionOnMapOpen } from './mapRegion';
+import { shouldApplyThrottledRegionChange } from './regionChangeThrottle';
 import { resolveSentryScreenName } from './sentryScreen';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
@@ -249,6 +250,8 @@ export default function App() {
   /** 新規visited cellの0.5秒フェードを進めるため、50ms間隔で表示セルを再計算する。 */
   const [visitedGridFadeFrame, setVisitedGridFadeFrame] = useState(0);
   const visitedGridDisplayCellSizeRef = useRef<number | null>(null);
+  /** 直近にvisited cellを取得したときの範囲・表示セルサイズ・データ版。取得済み範囲内の小移動では再取得を省く。 */
+  const lastVisitedGridFetchRef = useRef<{ bounds: GridBounds; cellSizeMeters: number; version: number } | null>(null);
   const visitedGridFadeStartedAtRef = useRef(new Map<string, number>());
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
@@ -726,6 +729,20 @@ export default function App() {
       GRID_OVERLAY_CONFIG,
     );
     visitedGridDisplayCellSizeRef.current = displayCellSizeMeters;
+
+    // ジェスチャー中（特にAndroidの onRegionChange）に同じ範囲・表示セルサイズで
+    // SQLite取得を連発しないよう、取得済み範囲内かつデータ未更新なら再取得を省く。
+    const lastFetch = lastVisitedGridFetchRef.current;
+    const coveredByLastFetch =
+      lastFetch != null &&
+      lastFetch.version === visitedGridRefreshVersion &&
+      lastFetch.cellSizeMeters === displayCellSizeMeters &&
+      isGridBoundsContained(lastFetch.bounds, bounds);
+
+    if (coveredByLastFetch) {
+      return;
+    }
+
     let isCancelled = false;
 
     getVisitedCellsInBounds(bounds)
@@ -734,6 +751,7 @@ export default function App() {
           return;
         }
 
+        lastVisitedGridFetchRef.current = { bounds, cellSizeMeters: displayCellSizeMeters, version: visitedGridRefreshVersion };
         const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
         syncVisitedGridFadeState(aggregatedCells);
         setVisitedGridSourceCells(aggregatedCells);
@@ -990,7 +1008,7 @@ export default function App() {
   function handleRegionChange(region: Region): void {
     const now = Date.now();
 
-    if (now - regionChangeThrottleRef.current < REGION_CHANGE_THROTTLE_MS) {
+    if (!shouldApplyThrottledRegionChange(regionChangeThrottleRef.current, now, REGION_CHANGE_THROTTLE_MS)) {
       return;
     }
 

@@ -412,6 +412,7 @@ jest.mock('../../features/location/grid/gridCell', () => ({
     minY: Math.round(region.latitudeDelta * 1000),
     maxY: Math.round(region.longitudeDelta * 1000),
   })),
+  isGridBoundsContained: jest.fn(() => false),
 }));
 
 const ReactTestRenderer = require('react-test-renderer');

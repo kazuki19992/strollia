@@ -473,7 +473,7 @@ export function SettingsScreen({
             </Pressable>
           ) : null}
           <Text style={styles.supportUserIdLabel}>
-            {`バージョン ${appVersion ?? '不明'} (${buildNumber ?? '不明'})`}
+            {`バージョン ${appVersion ?? '不明'} (Build ${buildNumber ?? '不明'})`}
           </Text>
         </ScreenSection>
       </ScrollView>

@@ -1,3 +1,4 @@
+import * as Application from 'expo-application';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
@@ -1602,6 +1603,8 @@ export default function App() {
                         isImportingGpx={isImportingGpx}
                         premiumAccessState={premiumAccessState}
                         revenueCatAppUserId={revenueCatAppUserId}
+                        appVersion={Application.nativeApplicationVersion}
+                        buildNumber={Application.nativeBuildVersion}
                         premiumOfferingSummary={premiumOfferingSummary}
                         isLoadingPremiumOffering={isLoadingPremiumOffering}
                         isPurchasingPremiumPackage={isPurchasingPremiumPackage}

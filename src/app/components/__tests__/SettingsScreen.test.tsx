@@ -64,6 +64,8 @@ function createProps() {
     isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
     revenueCatAppUserId: null as string | null,
+    appVersion: '1.1.0' as string | null,
+    buildNumber: '21' as string | null,
     premiumOfferingSummary: null as PremiumOfferingSummary | null,
     isLoadingPremiumOffering: false,
     isPurchasingPremiumPackage: false,
@@ -103,6 +105,19 @@ describe('設定画面 SettingsScreen', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  test('アプリバージョンとビルド番号を表示する', () => {
+    const props = { ...createProps(), appVersion: '1.1.0', buildNumber: '21' };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const versionText = texts.find((t: any) => typeof t === 'string' && t.includes('1.1.0') && t.includes('21'));
+    expect(versionText).toBeDefined();
   });
 
   test('GPS記録とデータ操作の項目を表示する', () => {

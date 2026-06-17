@@ -108,7 +108,7 @@ describe('設定画面 SettingsScreen', () => {
   });
 
   test('アプリバージョンとビルド番号を表示する', () => {
-    const props = { ...createProps(), appVersion: '1.1.0', buildNumber: '21' };
+    const props = { ...createProps(), appVersion: '1.1.0', buildNumber: '24' };
     let renderer: any;
 
     act(() => {
@@ -116,8 +116,7 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    const versionText = texts.find((t: any) => typeof t === 'string' && t.includes('1.1.0') && t.includes('21'));
-    expect(versionText).toBeDefined();
+    expect(texts).toContain('バージョン 1.1.0 (Build 24)');
   });
 
   test('GPS記録とデータ操作の項目を表示する', () => {

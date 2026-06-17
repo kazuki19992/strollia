@@ -1,5 +1,9 @@
 import appJson from '../../../app.json';
 
+/**
+ * Expo設定から、iOSの言語判定に使うInfo.plist項目だけを型付きで参照する。
+ * app.jsonの構成変更時にも安全に検証できるよう、iOSセクションや対象キーは任意として扱う。
+ */
 const expoConfig = appJson.expo as {
   ios?: {
     infoPlist?: {

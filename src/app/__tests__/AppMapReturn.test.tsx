@@ -2,7 +2,7 @@ import App from '../App';
 import { createUserCenteredRegion } from '../mapRegion';
 import { Alert, AppState, Pressable, Text } from 'react-native';
 import { getVisitedCellsInBounds } from '../../features/location/visitedCellRepository';
-import { getGridBoundsForRegion } from '../../features/location/grid/gridCell';
+import { getGridBoundsForRegion, isGridBoundsContained } from '../../features/location/grid/gridCell';
 import { getLocationPermissionState } from '../../features/location/locationPermission';
 import {
   isBackgroundLocationRecording,
@@ -492,6 +492,34 @@ describe('App 地図復帰時の表示範囲復元', () => {
       minY: Math.round(userRegion.latitudeDelta * 1000),
       maxY: Math.round(userRegion.longitudeDelta * 1000),
     });
+  });
+
+  test('取得済み範囲内(isGridBoundsContained=true)の再移動ではvisited cellを再取得しない', async () => {
+    (isGridBoundsContained as jest.Mock).mockReturnValue(true);
+
+    try {
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<App />);
+      });
+      await flushPromises();
+
+      // 同じ範囲へ一度移動して直近取得状態を確定させる。
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+      });
+      await flushPromises();
+      const callsAfterFirst = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
+
+      // 同じ範囲へ再移動 → 取得済み範囲内なので再取得しない（呼び出し回数が増えない）。
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+      });
+      await flushPromises();
+
+      expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBe(callsAfterFirst);
+    } finally {
+      (isGridBoundsContained as jest.Mock).mockReturnValue(false);
+    }
   });
 
   test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {

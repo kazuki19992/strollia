@@ -383,8 +383,7 @@ describe('地図画面 MapScreen', () => {
 
   test('Androidでは操作中のonRegionChangeでも表示範囲を更新する（エリア拡大の追従を速くするため）', () => {
     const { Platform } = require('react-native');
-    const originalOS = Platform.OS;
-    Platform.OS = 'android';
+    const osReplaced = jest.replaceProperty(Platform, 'OS', 'android');
     const props = createProps();
     let renderer: any;
 
@@ -395,14 +394,13 @@ describe('地図画面 MapScreen', () => {
       const mapView = renderer.root.find((node: any) => node.type === 'MapView');
       expect(mapView.props.onRegionChange).toBe(props.onRegionChange);
     } finally {
-      Platform.OS = originalOS;
+      osReplaced.restore();
     }
   });
 
   test('iOSでは操作中のonRegionChangeは渡さない（既存挙動を維持しiOSに影響を与えない）', () => {
     const { Platform } = require('react-native');
-    const originalOS = Platform.OS;
-    Platform.OS = 'ios';
+    const osReplaced = jest.replaceProperty(Platform, 'OS', 'ios');
     let renderer: any;
 
     try {
@@ -412,7 +410,7 @@ describe('地図画面 MapScreen', () => {
       const mapView = renderer.root.find((node: any) => node.type === 'MapView');
       expect(mapView.props.onRegionChange).toBeUndefined();
     } finally {
-      Platform.OS = originalOS;
+      osReplaced.restore();
     }
   });
 

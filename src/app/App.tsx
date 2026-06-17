@@ -52,6 +52,7 @@ import { pickAndReadGpxFile } from '../features/import/gpxImportService';
 import { importLocationPointsFromGpx } from '../features/import/importRepository';
 import {
   isBackgroundLocationRecording,
+  refreshBackgroundLocationTaskRegistration,
   startBackgroundLocationRecording,
 } from '../features/location/locationService';
 import {
@@ -637,6 +638,11 @@ export default function App() {
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
         }
+        // 記録中なら最新の監視オプションでタスクを再登録する（再インストール無しでオプション反映/残留解消）。
+        // refreshData より前に行い、再登録で変わった記録状態を initialState に正しく反映させる。
+        await refreshBackgroundLocationTaskRegistration().catch((error: unknown) => {
+          console.warn('Failed to refresh background location task registration:', error);
+        });
         const initialState = await refreshData();
         if (isWhileInUseOnlyMode(initialState.permissions)) {
           setIsWhileInUseToastVisible(true);

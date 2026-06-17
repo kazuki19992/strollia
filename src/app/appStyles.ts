@@ -936,17 +936,19 @@ export function createStyles(theme: AppTheme) {
       flexDirection: 'row',
       gap: 8,
     },
-    mapDisplayTypeSelectedLabel: {
+    mapDisplayTypeSelectedBadge: {
       backgroundColor: '#138f68',
       borderColor: '#ffffff',
       borderRadius: 999,
       borderWidth: 1,
+      paddingHorizontal: 9,
+      paddingVertical: 2,
+    },
+    mapDisplayTypeSelectedBadgeText: {
       color: '#ffffff',
       fontSize: 11,
       fontWeight: '900',
-      overflow: 'hidden',
-      paddingHorizontal: 9,
-      paddingVertical: 2,
+      lineHeight: 14,
     },
     locationDivider: {
       backgroundColor: 'rgba(255, 255, 255, 0.7)',

@@ -139,6 +139,24 @@ describe('マップ下部ダッシュボード', () => {
     expect(texts).toContain('マップ上に写真を表示');
   });
 
+  test('地図種別の選択中バッジはViewで装飾しTextは文字だけ描画する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} />);
+    });
+
+    const mapButton = renderer.root.find((node: any) => node.props.accessibilityLabel === 'マップの表示');
+    act(() => mapButton.props.onPress());
+
+    const selectedLabel = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '✓ 選択中');
+
+    expect(selectedLabel).toBeTruthy();
+    expect(selectedLabel.props.style).toEqual(styles.mapDisplayTypeSelectedBadgeText);
+    expect(selectedLabel.parent.type).toBe('View');
+    expect(selectedLabel.parent.props.style).toEqual(styles.mapDisplayTypeSelectedBadge);
+  });
+
   test('速度リングを連続円弧で描画する', () => {
     let renderer: any;
 

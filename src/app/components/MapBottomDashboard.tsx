@@ -452,9 +452,11 @@ function MapDisplayTypeButton({
     <Pressable accessibilityRole="button" onPress={onPress} style={[styles.mapDisplayTypeButton, isSelected && styles.mapDisplayTypeButtonSelected]}>
       <MaterialCommunityIcons name={icon} size={36} color="#ffffff" />
       {isSelected && (
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayTypeSelectedLabel}>
-          ✓　選択中
-        </Text>
+        <View style={styles.mapDisplayTypeSelectedBadge}>
+          <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayTypeSelectedBadgeText}>
+            ✓ 選択中
+          </Text>
+        </View>
       )}
       <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayTypeLabel}>
         {label}

@@ -42,6 +42,20 @@ export type GridBounds = {
   maxY: number;
 };
 
+/**
+ * `inner` の範囲が `outer` に完全に含まれるか返す。
+ *
+ * 取得済みのセル範囲内に収まる小さな移動では再取得を省くために使う。
+ */
+export function isGridBoundsContained(outer: GridBounds, inner: GridBounds): boolean {
+  return (
+    outer.minX <= inner.minX &&
+    outer.maxX >= inner.maxX &&
+    outer.minY <= inner.minY &&
+    outer.maxY >= inner.maxY
+  );
+}
+
 /** 表示範囲からセル検索範囲を作るときのオプション。 */
 export type GridBoundsOptions = {
   /** 表示範囲の半径に対して外側へ追加する比率。 */

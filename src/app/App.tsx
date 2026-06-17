@@ -178,6 +178,8 @@ const DailyLogStack = createNativeStackNavigator<DailyLogStackParamList>();
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
 const VISITED_GRID_FADE_FRAME_MS = 50;
+/** Android操作中のonRegionChangeを間引く間隔。エリア追従の速さとDB負荷のバランス。 */
+const REGION_CHANGE_THROTTLE_MS = 150;
 
 /** 権限状態を取得する前にUIが参照する安全な初期値。 */
 const EMPTY_PERMISSION_STATE: LocationPermissionState = {
@@ -237,6 +239,8 @@ export default function App() {
   // 無視されるため、カスタムアイコンの初回センタリングは準備完了を待ってから実行する。
   const [isMapReady, setIsMapReady] = useState(false);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
+  /** Android操作中のonRegionChangeをスロットルするための最終更新時刻。 */
+  const regionChangeThrottleRef = useRef(0);
   /** DBから取得して表示セルサイズへ集約したvisited cell。表示用フェードとは分けて保持する。 */
   const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
   const [visitedGridRefreshVersion, setVisitedGridRefreshVersion] = useState(0);
@@ -962,6 +966,28 @@ export default function App() {
    * @returns なし。
    */
   function handleRegionChangeComplete(region: Region): void {
+    regionChangeThrottleRef.current = Date.now();
+    setVisibleRegion(region);
+  }
+
+  /**
+   * 操作中の表示範囲更新（Androidのみ使用）。
+   *
+   * AndroidはonRegionChangeCompleteの発火が遅く、広域縮小時にエリア表示の追従が遅れて見えるため、
+   * 操作中もスロットルしながら表示範囲を更新してエリア集約を追従させる。
+   * visibleRegionはグリッド集約の計算にのみ使い地図カメラへは戻さないため、ジェスチャーは妨げない。
+   *
+   * @param region - MapViewの現在表示範囲。
+   * @returns なし。
+   */
+  function handleRegionChange(region: Region): void {
+    const now = Date.now();
+
+    if (now - regionChangeThrottleRef.current < REGION_CHANGE_THROTTLE_MS) {
+      return;
+    }
+
+    regionChangeThrottleRef.current = now;
     setVisibleRegion(region);
   }
 
@@ -1499,6 +1525,7 @@ export default function App() {
               onUserLocationChange={handleUserLocationChange}
               onPanDrag={handleMapPanDrag}
               onRegionChangeComplete={handleRegionChangeComplete}
+              onRegionChange={handleRegionChange}
               onPhotoClusterPress={handlePhotoClusterPress}
               onOpenDailyLogs={openDailyLogs}
               onOpenAchievements={openAchievements}

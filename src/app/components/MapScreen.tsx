@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Animated, Image, Platform, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import { useEffect, useState } from 'react';
@@ -94,8 +94,10 @@ export type MapScreenProps = {
   onUserLocationChange: (event: UserLocationChangeEvent) => void;
   /** 地図ドラッグハンドラ。 */
   onPanDrag: () => void;
-  /** 表示範囲更新ハンドラ。 */
+  /** 表示範囲更新ハンドラ（操作完了時）。 */
   onRegionChangeComplete: (region: Region) => void;
+  /** 表示範囲更新ハンドラ（操作中・Androidのみ使用）。 */
+  onRegionChange: (region: Region) => void;
   /** 写真クラスタ押下ハンドラ。 */
   onPhotoClusterPress: (cluster: MapPhotoCluster) => void;
   /** 日別ログ画面を開くハンドラ。 */
@@ -148,6 +150,7 @@ export function MapScreen({
   onUserLocationChange,
   onPanDrag,
   onRegionChangeComplete,
+  onRegionChange,
   onPhotoClusterPress,
   onOpenDailyLogs,
   onOpenAchievements,
@@ -184,6 +187,9 @@ export function MapScreen({
         onUserLocationChange={onUserLocationChange}
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}
+        // Androidは操作完了時(onRegionChangeComplete)しか発火が遅く、エリア表示の追従が遅れるため、
+        // 操作中のonRegionChange(スロットルは呼び出し側で実施)でも更新する。iOSは既存挙動を維持。
+        onRegionChange={Platform.OS === 'android' ? onRegionChange : undefined}
         mapPadding={MAP_PADDING}
       >
         {shouldRenderVisitedGrid &&

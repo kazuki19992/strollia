@@ -369,6 +369,17 @@ describe('地図画面 MapScreen', () => {
     expect(mapView.props.showsUserLocation).toBe(true);
   });
 
+  test('OS標準の現在地ボタン(Android)は非表示にする（アプリ独自の現在地ボタンを使うため）', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+    });
+
+    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
+    expect(mapView.props.showsMyLocationButton).toBe(false);
+  });
+
   test('customImageUri があるとき Image コンポーネントで円表示する', () => {
     const props = {
       ...createProps(),

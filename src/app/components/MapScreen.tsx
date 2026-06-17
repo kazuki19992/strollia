@@ -176,6 +176,8 @@ export function MapScreen({
         initialRegion={initialRegion}
         mapType={mapType}
         showsCompass
+        // Android標準の現在地ボタンは非表示にし、アプリ独自の現在地ボタンを使う（iOSでは無視される）。
+        showsMyLocationButton={false}
         showsUserLocation={userLocationIcon.useNativeUserLocation}
         followsUserLocation={isFollowingUserLocation && userLocationIcon.useNativeUserLocation}
         onMapReady={onMapReady}

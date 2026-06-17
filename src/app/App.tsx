@@ -637,11 +637,12 @@ export default function App() {
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
         }
-        const initialState = await refreshData();
         // 記録中なら最新の監視オプションでタスクを再登録する（再インストール無しでオプション反映/残留解消）。
+        // refreshData より前に行い、再登録で変わった記録状態を initialState に正しく反映させる。
         await refreshBackgroundLocationTaskRegistration().catch((error: unknown) => {
           console.warn('Failed to refresh background location task registration:', error);
         });
+        const initialState = await refreshData();
         if (isWhileInUseOnlyMode(initialState.permissions)) {
           setIsWhileInUseToastVisible(true);
         }

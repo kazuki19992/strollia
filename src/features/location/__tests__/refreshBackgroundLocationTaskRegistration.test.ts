@@ -18,7 +18,7 @@ jest.mock('expo-task-manager', () => ({
 const mockedLocation = Location as jest.Mocked<typeof Location>;
 const mockedTaskManager = TaskManager as jest.Mocked<typeof TaskManager>;
 
-describe('refreshBackgroundLocationTaskRegistration', () => {
+describe('バックグラウンド位置情報タスクの再登録 refreshBackgroundLocationTaskRegistration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedTaskManager.isAvailableAsync.mockResolvedValue(true);

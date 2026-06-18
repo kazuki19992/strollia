@@ -5,8 +5,22 @@ import type { ImageSourcePropType } from 'react-native';
 import type { AppStyles } from '../appStyles';
 import { animateDialogResize, Dialog } from './Dialog';
 
-const INSTRUCTION_IMAGE_ASPECT_RATIO = 453 / 279;
+const FALLBACK_INSTRUCTION_IMAGE_ASPECT_RATIO = 453 / 279;
 const INSTRUCTION_IMAGE_HORIZONTAL_PADDING = 16;
+
+/** 補足画像の元サイズから、安全に表示用アスペクト比を解決する。 */
+function resolveInstructionImageAspectRatio(source?: ImageSourcePropType): number {
+  if (!source) {
+    return FALLBACK_INSTRUCTION_IMAGE_ASPECT_RATIO;
+  }
+
+  const asset = Image.resolveAssetSource(source);
+  if (!asset || asset.width <= 0 || asset.height <= 0) {
+    return FALLBACK_INSTRUCTION_IMAGE_ASPECT_RATIO;
+  }
+
+  return asset.width / asset.height;
+}
 
 /** 初回起動チュートリアルの1ステップ分の表示内容。 */
 type TutorialStep = {
@@ -52,6 +66,15 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     ],
   },
   {
+    title: 'エリアを広げよう',
+    instructionImage: require('../../../assets/tutorial/area-instruction.png'),
+    instructionImageAccessibilityLabel: '地図上のエリアの説明',
+    paragraphs: [
+      '地図上で薄く色が塗られているマスを、Strolliaでは「エリア」と呼びます。',
+      '歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。',
+    ],
+  },
+  {
     title: '実績を集める',
     paragraphs: [
       '移動距離や訪問した地域、記録日数に応じて実績が解除されます。',
@@ -90,10 +113,11 @@ export function FirstLaunchTutorialDialog({
   const isLastStep = stepIndex === TUTORIAL_STEPS.length - 1;
   const actionLabel = isLastStep ? completionButtonLabel : '次へ';
   const actionAccessibilityLabel = isLastStep && actionLabel === '閉じる' ? 'チュートリアルを閉じる' : actionLabel;
+  const instructionImageAspectRatio = resolveInstructionImageAspectRatio(currentStep.instructionImage);
   const instructionImageWidth = Math.max(0, instructionImageFrameWidth - INSTRUCTION_IMAGE_HORIZONTAL_PADDING * 2);
   const instructionImageSize = {
     width: instructionImageWidth,
-    height: instructionImageWidth / INSTRUCTION_IMAGE_ASPECT_RATIO,
+    height: instructionImageWidth / instructionImageAspectRatio,
   };
 
   useEffect(() => {

@@ -53,7 +53,7 @@ test('次へを押すと画面下の項目、エリア、実績、安全注意�
   press('次へ');
   expect(visibleTexts()).toContain('エリアを広げよう');
   expect(visibleTexts()).toContain('3 / 6');
-  expect(visibleTexts()).toContain('地図上で薄く色が塗られているマスを、Strolliaでは「エリア」と呼びます。');
+  expect(visibleTexts()).toContain('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。');
   expect(visibleTexts()).toContain('歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。');
   expect(renderer!.root.findByType(Image).props.accessibilityLabel).toBe('地図上のエリアの説明');
 
@@ -202,7 +202,7 @@ function resolveInstructionImageAspectRatio(source?: ImageSourcePropType): numbe
   instructionImage: require('../../../assets/tutorial/area-instruction.png'),
   instructionImageAccessibilityLabel: '地図上のエリアの説明',
   paragraphs: [
-    '地図上で薄く色が塗られているマスを、Strolliaでは「エリア」と呼びます。',
+    '地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。',
     '歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。',
   ],
 },

@@ -50,9 +50,9 @@ export type FirstLaunchTutorialDialogProps = {
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
-    title: 'Strolliaへようこそ',
+    title: 'すとろりあへようこそ',
     paragraphs: [
-      'Strolliaは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。',
+      'すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。',
       '記録したデータは、あなたの明示操作なしに外部へ送信しません。',
     ],
   },
@@ -70,7 +70,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     instructionImage: require('../../../assets/tutorial/area-instruction.png'),
     instructionImageAccessibilityLabel: '地図上のエリアの説明',
     paragraphs: [
-      '地図上で薄く色が塗られているマスを、Strolliaでは「エリア」と呼びます。',
+      '地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。',
       '歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。',
     ],
   },

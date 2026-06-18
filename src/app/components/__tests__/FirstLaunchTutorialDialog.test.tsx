@@ -47,9 +47,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
     });
 
-    expect(visibleTexts()).toContain('Strolliaへようこそ');
+    expect(visibleTexts()).toContain('すとろりあへようこそ');
     expect(visibleTexts()).toContain('1 / 6');
-    expect(visibleTexts()).toContain('Strolliaは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。');
+    expect(visibleTexts()).toContain('すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。');
     expect(visibleTexts()).toContain('記録したデータは、あなたの明示操作なしに外部へ送信しません。');
   });
 
@@ -67,7 +67,7 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     press('次へ');
     expect(visibleTexts()).toContain('エリアを広げよう');
     expect(visibleTexts()).toContain('3 / 6');
-    expect(visibleTexts()).toContain('地図上で薄く色が塗られているマスを、Strolliaでは「エリア」と呼びます。');
+    expect(visibleTexts()).toContain('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。');
     expect(visibleTexts()).toContain('歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。');
     expect(renderer!.root.findByType(Image).props.accessibilityLabel).toBe('地図上のエリアの説明');
 
@@ -204,7 +204,7 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     });
 
     expect(visibleTexts()).toContain('1 / 6');
-    expect(visibleTexts()).toContain('Strolliaへようこそ');
+    expect(visibleTexts()).toContain('すとろりあへようこそ');
   });
 
   test('閉じるボタンで onComplete を呼ぶ', () => {

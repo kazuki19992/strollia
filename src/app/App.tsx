@@ -53,6 +53,7 @@ import { importLocationPointsFromGpx } from '../features/import/importRepository
 import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
+  stopBackgroundLocationRecording,
   updateBackgroundLocationTaskOptionsIfNeeded,
 } from '../features/location/locationService';
 import {
@@ -234,6 +235,7 @@ export default function App() {
   const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+  const [isLocationRecordingModeSynchronized, setIsLocationRecordingModeSynchronized] = useState(false);
   const [dailyLogsSentryScreenName, setDailyLogsSentryScreenName] = useState('DailyLogs:DailyLogList');
   const [settingsSentryScreenName, setSettingsSentryScreenName] = useState('Settings:SettingsHome');
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
@@ -312,6 +314,12 @@ export default function App() {
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
+  const shouldDisplayCustomLocation = !userLocationIcon.useNativeUserLocation;
+  const shouldPersistForegroundLocation = appState === 'active'
+    && isWhileInUseRecordingMode
+    && isLocationRecordingModeSynchronized;
+  const foregroundWatchEnabled = appState === 'active'
+    && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
   /**
@@ -471,6 +479,32 @@ export default function App() {
       }
     },
     [startRecording],
+  );
+
+  /** 権限状態に合わせ、背景タスクと前景限定記録の所有権を同期する。 */
+  const synchronizeLocationRecordingMode = useCallback(
+    async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
+      if (state.permissions.backgroundGranted) {
+        await updateBackgroundLocationTaskOptionsIfNeeded().catch((error: unknown) => {
+          console.warn('Failed to update background location task options:', error);
+        });
+        await maybeStartRecordingAutomatically(state);
+        setIsLocationRecordingModeSynchronized(true);
+        return;
+      }
+
+      try {
+        await stopBackgroundLocationRecording();
+        setIsRecording(false);
+        setAutoStartStatus('needsPermission');
+        setIsLocationRecordingModeSynchronized(true);
+      } catch (error: unknown) {
+        // 停止確認前に前景保存を開始すると二重保存になり得るため、同期済みにしない。
+        setIsLocationRecordingModeSynchronized(false);
+        setMessage(error instanceof Error ? error.message : 'バックグラウンドGPS記録の停止に失敗しました。');
+      }
+    },
+    [maybeStartRecordingAutomatically],
   );
 
   /** 権限状態に応じてアプリ内要求またはOS設定画面への誘導を行う。 */
@@ -645,15 +679,11 @@ export default function App() {
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
         }
-        // 登録済み設定が古い場合だけ、記録を止めずに最新の監視オプションを反映する。
-        await updateBackgroundLocationTaskOptionsIfNeeded().catch((error: unknown) => {
-          console.warn('Failed to update background location task options:', error);
-        });
         const initialState = await refreshData();
         if (isWhileInUseOnlyMode(initialState.permissions)) {
           setIsWhileInUseToastVisible(true);
         }
-        await maybeStartRecordingAutomatically(initialState);
+        await synchronizeLocationRecordingMode(initialState);
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         await refreshAchievementState(true);
         if (!savedFirstLaunchTutorialCompleted) {
@@ -665,7 +695,7 @@ export default function App() {
         setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
       })
       .finally(() => setIsReady(true));
-  }, [maybeStartRecordingAutomatically, refreshAchievementState, refreshData]);
+  }, [refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
 
   /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */
   useEffect(() => subscribePremiumAccessStateUpdates(setPremiumAccessState), []);
@@ -677,8 +707,11 @@ export default function App() {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       setAppState(state);
       if (state === 'active') {
+        setIsLocationRecordingModeSynchronized(false);
         refreshData()
-          .then(maybeStartRecordingAutomatically)
+          .then(async (result) => {
+            await synchronizeLocationRecordingMode(result);
+          })
           .then(evaluateAchievementsIfDialogIdle)
           .then(async (didEvaluate) => {
             if (didEvaluate) {
@@ -692,7 +725,7 @@ export default function App() {
     });
 
     return () => subscription.remove();
-  }, [evaluateAchievementsIfDialogIdle, maybeStartRecordingAutomatically, refreshAchievementState, refreshData]);
+  }, [evaluateAchievementsIfDialogIdle, refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
 
 
   /**
@@ -793,11 +826,14 @@ export default function App() {
     setMessage,
   });
   useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
-  // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
+  // カスタムアイコン表示と前景限定記録で1つの位置購読を共有する。
   useForegroundUserLocation({
-    enabled: !userLocationIcon.useNativeUserLocation,
-    shouldPersist: false,
-    onLocation: applyUserLocation,
+    enabled: foregroundWatchEnabled,
+    shouldPersist: shouldPersistForegroundLocation,
+    onLocation: shouldDisplayCustomLocation ? applyUserLocation : undefined,
+    onError: (error: unknown) => {
+      setMessage(error instanceof Error ? error.message : 'フォアグラウンド位置情報の取得に失敗しました。');
+    },
   });
 
   // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、このeffectが唯一の

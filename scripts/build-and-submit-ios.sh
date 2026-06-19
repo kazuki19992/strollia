@@ -45,8 +45,10 @@ npx eas-cli build \
   --local \
   --non-interactive
 
-# ビルドで生成された最新の .ipa を特定する
-LATEST_IPA="$(ls -t "${BUILDS_DIR}"/*.ipa 2>/dev/null | head -1)"
+# ビルドで生成された最新の .ipa を特定する（macOS の stat で更新時刻順にソート）
+LATEST_IPA="$(find "${BUILDS_DIR}" -maxdepth 1 -name '*.ipa' -print0 2>/dev/null \
+  | xargs -0 stat -f '%m %N' 2>/dev/null \
+  | sort -rn | head -1 | cut -d' ' -f2-)"
 
 if [[ -z "${LATEST_IPA}" ]]; then
   echo "エラー: ${BUILDS_DIR} に .ipa ファイルが見つかりません。" >&2

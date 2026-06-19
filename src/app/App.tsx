@@ -794,7 +794,11 @@ export default function App() {
   });
   useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
   // カスタムアイコン時はOS標準ドットを隠すため、前景ウォッチで現在地を供給する。
-  useForegroundUserLocation(!userLocationIcon.useNativeUserLocation, applyUserLocation);
+  useForegroundUserLocation({
+    enabled: !userLocationIcon.useNativeUserLocation,
+    shouldPersist: false,
+    onLocation: applyUserLocation,
+  });
 
   // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、このeffectが唯一の
   // オーナーとして追従センタリングを担う（applyUserLocation側はOS標準時のみセンタリングする）。

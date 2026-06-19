@@ -29,3 +29,25 @@ export function getLocationTaskOptions(): Location.LocationTaskOptions {
     },
   };
 }
+
+/** 登録済みタスクにStrollia管理対象の最新オプションが反映済みか返す。 */
+export function hasCurrentLocationTaskOptions(
+  current: Location.LocationTaskOptions | null,
+): boolean {
+  if (!current) {
+    return false;
+  }
+
+  const expected = getLocationTaskOptions();
+
+  return current.accuracy === expected.accuracy
+    && current.timeInterval === expected.timeInterval
+    && current.distanceInterval === expected.distanceInterval
+    && current.deferredUpdatesInterval === expected.deferredUpdatesInterval
+    && current.pausesUpdatesAutomatically === expected.pausesUpdatesAutomatically
+    && current.showsBackgroundLocationIndicator === expected.showsBackgroundLocationIndicator
+    && current.foregroundService?.notificationTitle === expected.foregroundService?.notificationTitle
+    && current.foregroundService?.notificationBody === expected.foregroundService?.notificationBody
+    && current.foregroundService?.notificationColor === expected.foregroundService?.notificationColor
+    && current.foregroundService?.killServiceOnDestroy === expected.foregroundService?.killServiceOnDestroy;
+}

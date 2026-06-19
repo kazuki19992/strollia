@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import {
   BACKGROUND_LOCATION_TASK_NAME,
   getLocationTaskOptions,
+  hasCurrentLocationTaskOptions,
   LOCATION_MAX_ACCURACY_METERS,
   LOCATION_MIN_SAVE_DISTANCE_METERS,
   LOCATION_UPDATE_DISTANCE_METERS,
@@ -32,5 +33,37 @@ describe('位置情報追跡設定', () => {
     const options = getLocationTaskOptions();
 
     expect(options.showsBackgroundLocationIndicator).toBe(false);
+  });
+
+  it('Strolliaが管理する登録済みオプションがすべて一致すると最新と判定する', () => {
+    expect(hasCurrentLocationTaskOptions(getLocationTaskOptions())).toBe(true);
+  });
+
+  it('Dynamic Island表示設定が古いと最新ではないと判定する', () => {
+    expect(hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      showsBackgroundLocationIndicator: true,
+    })).toBe(false);
+  });
+
+  it('監視間隔またはforeground service設定が異なると最新ではないと判定する', () => {
+    expect(hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      distanceInterval: 100,
+    })).toBe(false);
+    expect(hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      foregroundService: {
+        ...getLocationTaskOptions().foregroundService!,
+        notificationBody: '古い通知文言',
+      },
+    })).toBe(false);
+  });
+
+  it('Strolliaが管理しない余分なプロパティは一致判定へ影響しない', () => {
+    expect(hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      deferredUpdatesDistance: 0,
+    })).toBe(true);
   });
 });

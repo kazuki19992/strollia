@@ -1,7 +1,11 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions } from './locationTrackingConfig';
+import {
+  BACKGROUND_LOCATION_TASK_NAME,
+  getLocationTaskOptions,
+  hasCurrentLocationTaskOptions,
+} from './locationTrackingConfig';
 
 /** フォアグラウンド位置情報権限を確認し、必要ならOSダイアログで要求する。 */
 export async function ensureForegroundLocationPermission(): Promise<boolean> {
@@ -58,14 +62,12 @@ export async function startBackgroundLocationRecording(): Promise<void> {
 }
 
 /**
- * 起動時に、記録中ならタスクを stop→start で再登録し、最新の監視オプションを適用する。
+ * 記録中タスクの設定が古い場合だけ、同名タスクへ最新オプションを適用する。
  *
- * `startLocationUpdatesAsync` は既に開始済みだと新しいオプションを反映しないため、
- * 既存ユーザーへオプション変更（例: showsBackgroundLocationIndicator）を再インストール無しで届ける。
- * また古い/残留したタスクセッションを作り直すことで、残留インジケータ等の解消も期待できる。
- * 記録中（タスク開始済み）のときだけ実行し、停止中ユーザーに記録を開始させない。
+ * Expo TaskManagerは同名・同consumerへのstartを既存タスクの設定更新として扱う。
+ * 明示的なstopは記録を中断するため行わない。
  */
-export async function refreshBackgroundLocationTaskRegistration(): Promise<void> {
+export async function updateBackgroundLocationTaskOptionsIfNeeded(): Promise<void> {
   if (!(await TaskManager.isAvailableAsync())) {
     return;
   }
@@ -76,7 +78,14 @@ export async function refreshBackgroundLocationTaskRegistration(): Promise<void>
     return;
   }
 
-  await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
+  const currentOptions = await TaskManager.getTaskOptionsAsync<Location.LocationTaskOptions>(
+    BACKGROUND_LOCATION_TASK_NAME,
+  );
+
+  if (hasCurrentLocationTaskOptions(currentOptions)) {
+    return;
+  }
+
   await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
 }
 

@@ -114,7 +114,7 @@ jest.mock('../../features/settings/settingsRepository', () => ({
 jest.mock('../../features/location/locationService', () => ({
   ensureForegroundLocationPermission: jest.fn().mockResolvedValue(true),
   isBackgroundLocationRecording: jest.fn().mockResolvedValue(true),
-  refreshBackgroundLocationTaskRegistration: jest.fn().mockResolvedValue(undefined),
+  updateBackgroundLocationTaskOptionsIfNeeded: jest.fn().mockResolvedValue(undefined),
   startBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
   stopBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
 }));

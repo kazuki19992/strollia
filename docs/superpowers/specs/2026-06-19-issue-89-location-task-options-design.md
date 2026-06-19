@@ -153,7 +153,7 @@ Expoネイティブ内部のタスク辞書実装自体はStrolliaの単体テ�
 実装後に以下を実行する。
 
 ```text
-npm test -- --runInBand src/features/location/__tests__/locationTrackingConfig.test.ts src/features/location/__tests__/refreshBackgroundLocationTaskRegistration.test.ts
+npm test -- --runInBand src/features/location/__tests__/locationTrackingConfig.test.ts src/features/location/__tests__/updateBackgroundLocationTaskOptionsIfNeeded.test.ts
 npm run typecheck
 npm test -- --runInBand
 ```

@@ -66,4 +66,24 @@ describe('位置情報追跡設定', () => {
       deferredUpdatesDistance: 0,
     })).toBe(true);
   });
+
+  it('監視設定の項目を追加した場合に一致判定の更新漏れを検知できる', () => {
+    const options = getLocationTaskOptions();
+
+    expect(Object.keys(options).sort()).toEqual([
+      'accuracy',
+      'deferredUpdatesInterval',
+      'distanceInterval',
+      'foregroundService',
+      'pausesUpdatesAutomatically',
+      'showsBackgroundLocationIndicator',
+      'timeInterval',
+    ]);
+    expect(Object.keys(options.foregroundService ?? {}).sort()).toEqual([
+      'killServiceOnDestroy',
+      'notificationBody',
+      'notificationColor',
+      'notificationTitle',
+    ]);
+  });
 });

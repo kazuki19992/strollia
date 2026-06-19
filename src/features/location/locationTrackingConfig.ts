@@ -30,7 +30,12 @@ export function getLocationTaskOptions(): Location.LocationTaskOptions {
   };
 }
 
-/** 登録済みタスクにStrollia管理対象の最新オプションが反映済みか返す。 */
+/**
+ * 登録済みタスクにStrollia管理対象の最新オプションが反映済みか返す。
+ *
+ * 起動ごとの不要な同名タスク更新を避けつつ、監視設定の変更だけを
+ * 既存ユーザーへ反映するために比較する。
+ */
 export function hasCurrentLocationTaskOptions(
   current: Location.LocationTaskOptions | null,
 ): boolean {

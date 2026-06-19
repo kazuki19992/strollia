@@ -249,7 +249,7 @@ Expected: PASS。設定が最新ならstartしない、古い場合もstopしな
 - [ ] **Step 6: タスク更新修正をコミットする**
 
 ```text
-git add src/features/location/locationService.ts src/features/location/__tests__/refreshBackgroundLocationTaskRegistration.test.ts src/features/location/__tests__/updateBackgroundLocationTaskOptionsIfNeeded.test.ts src/app/App.tsx src/app/__tests__/AppMapReturn.test.tsx src/app/__tests__/AppCustomIconCentering.test.tsx
+git add src/features/location/locationService.ts src/features/location/__tests__/updateBackgroundLocationTaskOptionsIfNeeded.test.ts src/app/App.tsx src/app/__tests__/AppMapReturn.test.tsx src/app/__tests__/AppCustomIconCentering.test.tsx
 git commit -m "fix(location): 記録を止めずタスク設定を更新する"
 ```
 

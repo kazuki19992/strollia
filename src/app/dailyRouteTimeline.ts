@@ -7,11 +7,6 @@ export const DAILY_ROUTE_END_MINUTES = 24 * 60;
 /** 日別ルートタイムラインの移動刻み。必要になったらこの値を変更する。 */
 export const DAILY_ROUTE_TIME_STEP_MINUTES = 5;
 
-/** 1日の経過分を「0時」「24時」などの表示へ変換する。 */
-export function formatTimelineHourLabel(minutes: number): string {
-  return `${Math.floor(minutes / 60)}時`;
-}
-
 /** 1日の経過分を「H:MM」形式の現在選択時刻の表示へ変換する。 */
 export function formatTimelineTimeLabel(minutes: number): string {
   const hours = Math.floor(minutes / 60);

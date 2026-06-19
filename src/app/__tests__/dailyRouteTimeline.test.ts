@@ -5,7 +5,6 @@ import {
   DAILY_ROUTE_TIME_STEP_MINUTES,
   filterLocationPointsBetweenMinutes,
   filterLocationPointsUntilMinute,
-  formatTimelineHourLabel,
   formatTimelineTimeLabel,
   formatTimelineTimeLabelPadded,
 } from '../dailyRouteTimeline';
@@ -30,11 +29,6 @@ describe('日別ルートタイムライン', () => {
   it('開始〜終了の範囲内のGPSポイントだけを返す', () => {
     expect(filterLocationPointsBetweenMinutes(points, 30, 60).map((point) => point.id)).toEqual([2, 3]);
     expect(filterLocationPointsBetweenMinutes(points, 0, 0).map((point) => point.id)).toEqual([1]);
-  });
-
-  it('端の時刻を画面表示用ラベルに変換する', () => {
-    expect(formatTimelineHourLabel(0)).toBe('0時');
-    expect(formatTimelineHourLabel(1440)).toBe('24時');
   });
 
   it('選択中の時刻を HH:MM 形式で表示する', () => {

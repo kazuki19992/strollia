@@ -203,7 +203,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     expect(renderer.root.findAll((node: any) => node.props.strokeWidth === 5 && node.props.coordinates?.length === 2)).toHaveLength(0);
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['0時', '24時']));
+    expect(texts).toEqual(expect.arrayContaining(['0:00', '24:00']));
     expect(texts).not.toContain('移動地図を表示できません');
   });
 

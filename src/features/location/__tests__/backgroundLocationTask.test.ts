@@ -26,6 +26,7 @@ describe('バックグラウンド位置情報タスク', () => {
     jest.isolateModules(() => {
       require('../backgroundLocationTask');
     });
+    expect(definedTask).toEqual(expect.any(Function));
   });
 
   beforeEach(() => {
@@ -37,15 +38,15 @@ describe('バックグラウンド位置情報タスク', () => {
   it('受信した位置情報配列を共通保存セッションへ渡す', async () => {
     const location = { timestamp: 1, coords: {} } as LocationObject;
 
-    await definedTask?.({ data: { locations: [location] }, error: null });
+    await definedTask!({ data: { locations: [location] }, error: null });
 
     expect(mockCreateLocationRecordingSession).toHaveBeenCalledTimes(1);
     expect(mockRecordLocations).toHaveBeenCalledWith([location]);
   });
 
   it('位置情報が空の場合は保存セッションを作らない', async () => {
-    await definedTask?.({ data: { locations: [] }, error: null });
-    await definedTask?.({ error: null });
+    await definedTask!({ data: { locations: [] }, error: null });
+    await definedTask!({ error: null });
 
     expect(mockCreateLocationRecordingSession).not.toHaveBeenCalled();
   });
@@ -53,7 +54,7 @@ describe('バックグラウンド位置情報タスク', () => {
   it('タスクエラーがある場合は警告し、保存セッションを作らない', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    await definedTask?.({ data: { locations: [{ timestamp: 1, coords: {} } as LocationObject] }, error: new Error('failed') });
+    await definedTask!({ data: { locations: [{ timestamp: 1, coords: {} } as LocationObject] }, error: new Error('failed') });
 
     expect(mockCreateLocationRecordingSession).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith('Background location task failed:', 'failed');

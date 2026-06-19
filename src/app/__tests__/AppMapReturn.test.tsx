@@ -547,7 +547,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
     let appStateHandler: ((state: string) => void) | null = null;
-    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+    const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
       appStateHandler = handler;
       return { remove: jest.fn() } as any;
     });
@@ -645,7 +645,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   test('inactiveとbackgroundでは前景限定監視を解除し、active復帰後に再開する', async () => {
     let appStateHandler: ((state: string) => void) | null = null;
-    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+    const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
       appStateHandler = handler;
       return { remove: jest.fn() } as any;
     });

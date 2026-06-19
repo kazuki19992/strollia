@@ -90,7 +90,9 @@ export function useForegroundUserLocation({
             } catch (error: unknown) {
               // 部分保存後のメモリ状態を再利用せず、次の更新でDBから再初期化する。
               sessionPromise = null;
-              onErrorRef.current?.(error);
+              if (!cancelled) {
+                onErrorRef.current?.(error);
+              }
             }
           });
         },

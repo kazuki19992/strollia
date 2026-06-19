@@ -20,16 +20,6 @@ jest.mock('../locationRecordingSession', () => ({
   createLocationRecordingSession: (...args: unknown[]) => mockCreateLocationRecordingSession(...args),
 }));
 
-jest.mock('../../../db/database', () => ({ initializeDatabase: jest.fn().mockResolvedValue(undefined) }));
-jest.mock('../../achievements/achievementService', () => ({ processAchievementsForSavedPoint: jest.fn().mockResolvedValue(undefined) }));
-jest.mock('../../logs/logRepository', () => ({
-  getLatestLocationPoint: jest.fn().mockResolvedValue(null),
-  insertLocationPoint: jest.fn().mockResolvedValue(1),
-}));
-jest.mock('../locationMapper', () => ({ toLocationPoint: jest.fn(() => ({ recordedAt: '2026-06-19T00:00:00.000Z' })) }));
-jest.mock('../grid/gridInterpolation', () => ({ getVisitedCellsForLocationPoint: jest.fn(() => []) }));
-jest.mock('../locationSaveFilter', () => ({ shouldSaveLocationPoint: jest.fn(() => false) }));
-jest.mock('../visitedCellRepository', () => ({ upsertVisitedCells: jest.fn().mockResolvedValue(undefined) }));
 
 describe('バックグラウンド位置情報タスク', () => {
   beforeAll(() => {

@@ -7,7 +7,10 @@ import { getLocationPermissionState } from '../../features/location/locationPerm
 import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
+  stopBackgroundLocationRecording,
+  updateBackgroundLocationTaskOptionsIfNeeded,
 } from '../../features/location/locationService';
+import { resolveUserLocationIcon } from '../../features/customization/customizationResolver';
 import { getDailyLogs } from '../../features/logs/logRepository';
 import { pickAndReadGpxFile } from '../../features/import/gpxImportService';
 import { parseGpxToLocationPoints } from '../../features/import/gpxImporter';
@@ -56,6 +59,7 @@ let mockLatestSettingsScreenProps: any = null;
 let mockLatestMapScreenProps: any = null;
 let mockLatestMonthlyReportScreenProps: any = null;
 let mockLatestFirstLaunchTutorialProps: any = null;
+let mockLatestForegroundLocationOptions: any = null;
 let mockPremiumCustomerInfoUpdate: ((state: { isPlusActive: boolean; entitlementId: string }) => void) | null = null;
 const mockPremiumUnsubscribe = jest.fn();
 
@@ -274,6 +278,12 @@ jest.mock('../hooks/useCurrentAreaName', () => ({
   useCurrentAreaLabel: () => ({ primary: '船橋市', secondary: '行田' }),
 }));
 
+jest.mock('../hooks/useForegroundUserLocation', () => ({
+  useForegroundUserLocation: (options: unknown) => {
+    mockLatestForegroundLocationOptions = options;
+  },
+}));
+
 jest.mock('../../db/database', () => ({
   initializeDatabase: jest.fn().mockResolvedValue(undefined),
 }));
@@ -431,11 +441,24 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(AppState, 'currentState', { configurable: true, value: 'active', writable: true });
     mockLatestSettingsScreenProps = null;
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
     mockLatestFirstLaunchTutorialProps = null;
+    mockLatestForegroundLocationOptions = null;
     mockPremiumCustomerInfoUpdate = null;
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: true,
+      canAskForeground: true,
+      canAskBackground: true,
+    });
+    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
+    (startBackgroundLocationRecording as jest.Mock).mockResolvedValue(undefined);
+    (stopBackgroundLocationRecording as jest.Mock).mockResolvedValue(undefined);
+    (updateBackgroundLocationTaskOptionsIfNeeded as jest.Mock).mockResolvedValue(undefined);
+    (resolveUserLocationIcon as jest.Mock).mockReturnValue({ useNativeUserLocation: true, customIconId: null });
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
       if (key === 'firstLaunchTutorialCompleted') {
         return Promise.resolve(false);
@@ -524,7 +547,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
     let appStateHandler: ((state: string) => void) | null = null;
-    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+    const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
       appStateHandler = handler;
       return { remove: jest.fn() } as any;
     });
@@ -569,6 +592,108 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(renderer).toBeTruthy();
     expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+  });
+
+  test('フォアグラウンド権限のみでは背景タスクを停止してから前景保存を有効にする', async () => {
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: false,
+      canAskForeground: true,
+      canAskBackground: false,
+    });
+    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(stopBackgroundLocationRecording).toHaveBeenCalledTimes(1);
+    expect(updateBackgroundLocationTaskOptionsIfNeeded).not.toHaveBeenCalled();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
+  });
+
+  test('常時許可では権限取得後に背景タスク設定を更新し、OS標準アイコンの前景監視を開始しない', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect((getLocationPermissionState as jest.Mock).mock.invocationCallOrder[0])
+      .toBeLessThan((updateBackgroundLocationTaskOptionsIfNeeded as jest.Mock).mock.invocationCallOrder[0]);
+    expect(stopBackgroundLocationRecording).not.toHaveBeenCalled();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
+  });
+
+  test('常時許可かつカスタムアイコンでは表示用前景監視を1つ使い、前景保存しない', async () => {
+    (resolveUserLocationIcon as jest.Mock).mockReturnValue({
+      useNativeUserLocation: false,
+      customIconId: 'walker',
+      customImageUri: null,
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(updateBackgroundLocationTaskOptionsIfNeeded).toHaveBeenCalledTimes(1);
+    expect(stopBackgroundLocationRecording).not.toHaveBeenCalled();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: false });
+    expect(mockLatestForegroundLocationOptions.onLocation).toEqual(expect.any(Function));
+  });
+
+  test('inactiveとbackgroundでは前景限定監視を解除し、active復帰後に再開する', async () => {
+    let appStateHandler: ((state: string) => void) | null = null;
+    const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+      appStateHandler = handler;
+      return { remove: jest.fn() } as any;
+    });
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: false,
+      canAskForeground: true,
+      canAskBackground: false,
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
+
+    await act(async () => {
+      appStateHandler?.('inactive');
+    });
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
+
+    await act(async () => {
+      appStateHandler?.('background');
+    });
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
+
+    await act(async () => {
+      appStateHandler?.('active');
+    });
+    await flushPromises();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
+  });
+
+  test('背景タスク停止に失敗した場合は前景保存を開始しない', async () => {
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: false,
+      canAskForeground: true,
+      canAskBackground: false,
+    });
+    (stopBackgroundLocationRecording as jest.Mock).mockRejectedValueOnce(new Error('stop failed'));
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
   });
 
   test('起動後にRevenueCat由来のPlus状態を読み込む', async () => {

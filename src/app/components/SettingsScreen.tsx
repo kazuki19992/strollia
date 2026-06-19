@@ -502,7 +502,7 @@ function GpsStatusPanel({
     return (
       <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelWarning]}>
         <Text style={styles.settingsGpsPanelTitle}>アプリ起動中のみ記録</Text>
-        <Text style={styles.settingsGpsPanelText}>{'アプリが起動しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。'}</Text>
+        <Text style={styles.settingsGpsPanelText}>{'アプリを画面に表示しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。'}</Text>
         <Pressable accessibilityRole="button" onPress={onOpenLocationSettings} style={styles.settingsGpsPanelButton}>
           <Text style={styles.settingsGpsPanelButtonWarningText}>設定を開く</Text>
         </Pressable>

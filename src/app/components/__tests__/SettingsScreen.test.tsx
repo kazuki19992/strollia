@@ -205,7 +205,7 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('アプリ起動中のみ記録');
-    expect(texts).toContain('アプリが起動しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。');
+    expect(texts).toContain('アプリを画面に表示しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。');
     // 「位置情報の許可が必要です」エラーパネルは出さない
     expect(texts).not.toContain('位置情報の許可が必要です');
 

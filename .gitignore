@@ -43,4 +43,9 @@ yarn-error.*
 # local worktrees
 .worktrees/
 
+# build
 *.ipa
+builds/
+
+tmp/
+

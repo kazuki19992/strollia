@@ -29,7 +29,6 @@ import {
   DAILY_ROUTE_TIME_STEP_MINUTES,
   filterLocationPointsBetweenMinutes,
   filterLocationPointsUntilMinute,
-  formatTimelineHourLabel,
   formatTimelineTimeLabel,
   formatTimelineTimeLabelPadded,
   getCurrentMinutesOfDay,
@@ -421,8 +420,8 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
                 minValue={DAILY_ROUTE_START_MINUTES}
                 maxValue={routeMaxMinutes}
                 stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
-                startLabel={formatTimelineHourLabel(DAILY_ROUTE_START_MINUTES)}
-                endLabel={routeMaxMinutes % 60 === 0 ? formatTimelineHourLabel(routeMaxMinutes) : formatTimelineTimeLabel(routeMaxMinutes)}
+                startLabel={formatTimelineTimeLabel(DAILY_ROUTE_START_MINUTES)}
+                endLabel={formatTimelineTimeLabel(routeMaxMinutes)}
                 value={routeEndMinutes}
                 valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
                 styles={styles}

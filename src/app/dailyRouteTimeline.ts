@@ -39,11 +39,11 @@ export function getCurrentMinutesOfDay(): number {
 
 /**
  * ルート表示の最大終了時刻（分）を計算する純粋関数。
- * 今日の日付は現在時刻を DAILY_ROUTE_TIME_STEP_MINUTES 単位に切り捨て、過去日は DAILY_ROUTE_END_MINUTES。
+ * 今日の日付は現在時刻をそのまま返し、過去日は DAILY_ROUTE_END_MINUTES。
  */
 export function computeRouteMaxEndMinutes(localDate: string, todayLocalDate: string, currentMinutes: number): number {
   if (localDate !== todayLocalDate) return DAILY_ROUTE_END_MINUTES;
-  return Math.floor(currentMinutes / DAILY_ROUTE_TIME_STEP_MINUTES) * DAILY_ROUTE_TIME_STEP_MINUTES;
+  return currentMinutes;
 }
 
 /** GPSポイントの記録時刻を、その日の0時からの経過分へ変換する。 */

@@ -48,15 +48,15 @@ describe('日別ルートタイムライン', () => {
     expect(computeRouteMaxEndMinutes('2026-05-31', '2026-06-04', 750)).toBe(DAILY_ROUTE_END_MINUTES);
   });
 
-  it('今日のルート最大時刻は現在時刻を 5 分単位に切り捨てた値になる', () => {
+  it('今日のルート最大時刻は現在時刻をそのまま使う（分単位の端数を切り捨てない）', () => {
     expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 750)).toBe(750);
-    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 762)).toBe(760);
-    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 780)).toBe(780);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 762)).toBe(762);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 943)).toBe(943);
   });
 
-  it('今日の 0:05 未満はルート最大時刻が 0 になる（スライダー非表示の条件）', () => {
+  it('今日の 0 分はルート最大時刻が 0 になる', () => {
     expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 0)).toBe(0);
-    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 4)).toBe(0);
+    expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 4)).toBe(4);
     expect(computeRouteMaxEndMinutes('2026-06-04', '2026-06-04', 5)).toBe(5);
   });
 });

@@ -39,7 +39,7 @@ mkdir -p "${BUILDS_DIR}"
 echo "=== iOS プロダクションビルド（ローカル）を開始します ==="
 echo "成果物の出力先: ${BUILDS_DIR}"
 
-npx eas-cli build \
+eas build \
   --platform ios \
   --profile production \
   --local \
@@ -59,7 +59,7 @@ echo ""
 echo "=== App Store Connect へ提出します ==="
 echo "対象ファイル: ${LATEST_IPA}"
 
-npx eas-cli submit \
+eas submit \
   --platform ios \
   --profile production \
   --path "${LATEST_IPA}" \

@@ -318,8 +318,11 @@ export default function App() {
   const shouldPersistForegroundLocation = appState === 'active'
     && isWhileInUseRecordingMode
     && isLocationRecordingModeSynchronized;
-  const foregroundWatchEnabled = appState === 'active'
-    && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
+  // カスタムアイコン表示用の購読はバックグラウンドでも維持する。
+  // バックグラウンド移行時に subscription.remove() を呼ぶと iOS の CLLocationManager が
+  // 停止してバックグラウンドタスクも止まるため、購読を持ち続けて CLLocationManager を保持する。
+  // shouldPersistForegroundLocation はすでに appState === 'active' を含む。
+  const foregroundWatchEnabled = shouldDisplayCustomLocation || shouldPersistForegroundLocation;
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
   /**

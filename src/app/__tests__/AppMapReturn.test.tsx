@@ -643,6 +643,41 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestForegroundLocationOptions.onLocation).toEqual(expect.any(Function));
   });
 
+  test('常時許可かつカスタムアイコンではbackground移行後も前景監視を維持し、バックグラウンドタスクを保護する', async () => {
+    let appStateHandler: ((state: string) => void) | null = null;
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+      appStateHandler = handler;
+      return { remove: jest.fn() } as any;
+    });
+    (resolveUserLocationIcon as jest.Mock).mockReturnValue({
+      useNativeUserLocation: false,
+      customIconId: 'walker',
+      customImageUri: null,
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: false });
+
+    await act(async () => {
+      appStateHandler?.('inactive');
+    });
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: false });
+
+    await act(async () => {
+      appStateHandler?.('background');
+    });
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: false });
+
+    await act(async () => {
+      appStateHandler?.('active');
+    });
+    await flushPromises();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: false });
+  });
+
   test('inactiveとbackgroundでは前景限定監視を解除し、active復帰後に再開する', async () => {
     let appStateHandler: ((state: string) => void) | null = null;
     const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {

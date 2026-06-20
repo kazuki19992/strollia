@@ -22,13 +22,19 @@ export async function replaceCustomIconSelection({
   try {
     await persistSelection(replacement.reference);
   } catch (error: unknown) {
-    await deleteManagedCustomIcon(replacement.reference).catch(() => undefined);
+    if (replacement.reference !== previousReference) {
+      await deleteManagedCustomIcon(replacement.reference).catch((cleanupError: unknown) => {
+        console.warn('Failed to delete unpersisted custom icon:', cleanupError);
+      });
+    }
     throw error;
   }
 
-  await deleteManagedCustomIcon(previousReference).catch((error: unknown) => {
-    console.warn('Failed to delete previous custom icon:', error);
-  });
+  if (replacement.reference !== previousReference) {
+    await deleteManagedCustomIcon(previousReference).catch((error: unknown) => {
+      console.warn('Failed to delete previous custom icon:', error);
+    });
+  }
 
   return replacement;
 }

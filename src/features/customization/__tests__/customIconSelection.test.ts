@@ -6,8 +6,12 @@ jest.mock('../customIconStorage', () => ({
   persistCustomIconImage: jest.fn(),
 }));
 
-const deleteManagedCustomIconMock = deleteManagedCustomIcon as jest.Mock;
-const persistCustomIconImageMock = persistCustomIconImage as jest.Mock;
+const deleteManagedCustomIconMock = deleteManagedCustomIcon as jest.MockedFunction<
+  typeof deleteManagedCustomIcon
+>;
+const persistCustomIconImageMock = persistCustomIconImage as jest.MockedFunction<
+  typeof persistCustomIconImage
+>;
 
 describe('カスタム現在地アイコンの安全な置き換え', () => {
   beforeEach(() => {
@@ -48,10 +52,9 @@ describe('カスタム現在地アイコンの安全な置き換え', () => {
     );
   });
 
-  it('設定保存に失敗した場合は新規ファイルだけを削除し削除失敗より元のエラーを優先する', async () => {
+  it('設定保存に失敗した場合は新規ファイルだけを削除して元のエラーを返す', async () => {
     const persistenceError = new Error('DB error');
     const persistSelection = jest.fn().mockRejectedValue(persistenceError);
-    deleteManagedCustomIconMock.mockRejectedValue(new Error('cleanup error'));
 
     await expect(
       replaceCustomIconSelection({
@@ -64,6 +67,70 @@ describe('カスタム現在地アイコンの安全な置き換え', () => {
     expect(deleteManagedCustomIcon).toHaveBeenCalledTimes(1);
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:new.jpg');
     expect(deleteManagedCustomIcon).not.toHaveBeenCalledWith('managed:old.jpg');
+  });
+
+  it('設定保存失敗後の新規ファイル削除にも失敗した場合は警告して設定保存エラーを優先する', async () => {
+    const persistenceError = new Error('DB error');
+    const cleanupError = new Error('cleanup error');
+    const persistSelection = jest.fn().mockRejectedValue(persistenceError);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    deleteManagedCustomIconMock.mockRejectedValue(cleanupError);
+
+    await expect(
+      replaceCustomIconSelection({
+        sourceUri: 'file:///cache/new.jpg',
+        previousReference: 'managed:old.jpg',
+        persistSelection,
+      }),
+    ).rejects.toBe(persistenceError);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to delete unpersisted custom icon:',
+      cleanupError,
+    );
+    expect(deleteManagedCustomIcon).toHaveBeenCalledTimes(1);
+    expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:new.jpg');
+  });
+
+  it('保存後の参照が以前と同じ場合は現在のファイルを削除しない', async () => {
+    const persistSelection = jest.fn().mockResolvedValue(undefined);
+    persistCustomIconImageMock.mockResolvedValue({
+      reference: 'managed:same.jpg',
+      uri: 'file:///documents/strollia-custom-icons/same.jpg',
+    });
+
+    await expect(
+      replaceCustomIconSelection({
+        sourceUri: 'file:///cache/same.jpg',
+        previousReference: 'managed:same.jpg',
+        persistSelection,
+      }),
+    ).resolves.toEqual({
+      reference: 'managed:same.jpg',
+      uri: 'file:///documents/strollia-custom-icons/same.jpg',
+    });
+
+    expect(persistSelection).toHaveBeenCalledWith('managed:same.jpg');
+    expect(deleteManagedCustomIcon).not.toHaveBeenCalled();
+  });
+
+  it('設定保存失敗時に新旧参照が同じ場合は現在のファイルを削除しない', async () => {
+    const persistenceError = new Error('DB error');
+    const persistSelection = jest.fn().mockRejectedValue(persistenceError);
+    persistCustomIconImageMock.mockResolvedValue({
+      reference: 'managed:same.jpg',
+      uri: 'file:///documents/strollia-custom-icons/same.jpg',
+    });
+
+    await expect(
+      replaceCustomIconSelection({
+        sourceUri: 'file:///cache/same.jpg',
+        previousReference: 'managed:same.jpg',
+        persistSelection,
+      }),
+    ).rejects.toBe(persistenceError);
+
+    expect(deleteManagedCustomIcon).not.toHaveBeenCalled();
   });
 
   it('設定保存後の旧ファイル削除に失敗しても警告して置き換えを成功させる', async () => {

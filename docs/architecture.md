@@ -196,6 +196,8 @@ Expo managed checkoutでは `ios/` や `android/` が存在しない場合があ
 
 登録値が最新の場合は `startLocationUpdatesAsync` を呼ばず、位置監視をそのまま継続する。
 
+iOSでは `showsBackgroundLocationIndicator: false` を維持しつつ、Core Locationの継続的なバックグラウンド更新がサスペンドされる組み合わせを避けるため、ネイティブの `distanceInterval` を指定しない。Androidでは5mの距離フィルターを維持する。GPSポイントの保存間隔はプラットフォーム共通の5m保存判定で制御し、iOSで受信回数が増えてもSQLiteへ保存するポイントを無制限に増やさない。
+
 位置情報の保存処理は前景・背景で共通の保存セッションを使用する。セッションは開始時にSQLiteから最新保存点を1回取得し、以後は保存済みの前回点とVisited Grid用の前回観測点をメモリ上で引き継ぐ。GPSログの保存判定、Visited Grid、実績処理の規則は保存元によって変えない。
 
 権限状態ごとの保存元は以下とする。

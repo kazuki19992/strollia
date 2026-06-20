@@ -633,6 +633,7 @@ export default function App() {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
+        const initialPremiumAccessRequest = getPremiumAccessState();
         const [
           savedKeepScreenAwake,
           savedShowPhotosOnMap,
@@ -642,7 +643,7 @@ export default function App() {
           savedCustomIconImageUri,
           savedReviewPrompted,
           savedFirstLaunchTutorialCompleted,
-          initialPremiumAccessState,
+          initialPremiumAccessResult,
         ] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
@@ -653,7 +654,7 @@ export default function App() {
           getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
           resolveInitialPremiumAccess(
-            getPremiumAccessState(),
+            initialPremiumAccessRequest,
             getDefaultPremiumAccessState(),
           ),
         ]);
@@ -671,7 +672,18 @@ export default function App() {
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
         if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
-          setPremiumAccessState(initialPremiumAccessState);
+          setPremiumAccessState(initialPremiumAccessResult.state);
+        }
+        if (initialPremiumAccessResult.timedOut) {
+          initialPremiumAccessRequest
+            .then((state) => {
+              if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+                setPremiumAccessState(state);
+              }
+            })
+            .catch((error: unknown) => {
+              console.warn('Failed to refresh delayed premium access state:', error);
+            });
         }
         setCustomIconReference(savedCustomIconImageUri);
         setHasCustomIconImageLoadFailed(false);

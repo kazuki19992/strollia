@@ -13,7 +13,7 @@ describe('起動時のPlus状態取得', () => {
     const resultPromise = resolveInitialPremiumAccess(pending, fallback, 3000);
     await jest.advanceTimersByTimeAsync(3000);
 
-    await expect(resultPromise).resolves.toBe(fallback);
+    await expect(resultPromise).resolves.toEqual({ state: fallback, timedOut: true });
     expect(jest.getTimerCount()).toBe(0);
   });
 
@@ -22,7 +22,7 @@ describe('起動時のPlus状態取得', () => {
     const fallback = { isPlusActive: false, entitlementId: 'strollia_plus' };
     const active = { isPlusActive: true, entitlementId: 'strollia_plus' };
 
-    await expect(resolveInitialPremiumAccess(Promise.resolve(active), fallback, 3000)).resolves.toBe(active);
+    await expect(resolveInitialPremiumAccess(Promise.resolve(active), fallback, 3000)).resolves.toEqual({ state: active, timedOut: false });
     expect(jest.getTimerCount()).toBe(0);
   });
 
@@ -30,7 +30,7 @@ describe('起動時のPlus状態取得', () => {
     jest.useFakeTimers();
     const fallback = { isPlusActive: false, entitlementId: 'strollia_plus' };
 
-    await expect(resolveInitialPremiumAccess(Promise.reject(new Error('取得失敗')), fallback, 3000)).resolves.toBe(fallback);
+    await expect(resolveInitialPremiumAccess(Promise.reject(new Error('取得失敗')), fallback, 3000)).resolves.toEqual({ state: fallback, timedOut: false });
     expect(jest.getTimerCount()).toBe(0);
   });
 });

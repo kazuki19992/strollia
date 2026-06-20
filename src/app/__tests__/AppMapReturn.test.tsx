@@ -1096,8 +1096,59 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
     expect(setSettings).not.toHaveBeenCalled();
     expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
-    resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    await act(async () => { resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
     jest.useRealTimers();
+  });
+
+  test('タイムアウト後に初回Plus取得が成功したら保存済みカスタムアイコンを復元する', async () => {
+    jest.useFakeTimers();
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:saved.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:saved.jpg', uri: 'file:///saved.jpg', migrated: false });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus, uri) => ({
+      useNativeUserLocation: !(id === 'custom' && plus && uri),
+      customIconId: null,
+      customImageUri: id === 'custom' && plus ? uri : null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+
+    await act(async () => { resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///saved.jpg');
+    expect(setSettings).not.toHaveBeenCalled();
+  });
+
+  test('タイムアウト後の購読更新を遅延した古い初回取得結果で上書きしない', async () => {
+    jest.useFakeTimers();
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => key === 'userLocationIcon' ? Promise.resolve('walker') : Promise.resolve(fallback));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: !(id === 'walker' && plus),
+      customIconId: id === 'walker' && plus ? 'walker' : null,
+      customImageUri: null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+    act(() => { mockPremiumCustomerInfoUpdate?.({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
+    await act(async () => { resolvePremium({ isPlusActive: false, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
   });
 
   test('初回Plus取得中の購読更新を古い取得結果で上書きしない', async () => {

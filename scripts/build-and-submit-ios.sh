@@ -7,7 +7,7 @@ set -euo pipefail
 #   ./scripts/build-and-submit-ios.sh
 #
 # 前提:
-#   - .env.local に SENTRY_AUTH_TOKEN が設定されている
+#   - .env.local に SENTRY_AUTH_TOKEN と EXPO_PUBLIC_REVENUECAT_IOS_API_KEY が設定されている
 #   - eas-cli がインストールされている（npx 経由で使用）
 #   - Apple Developer の認証情報が EAS に登録されている
 
@@ -22,14 +22,23 @@ if [[ ! -f "${ENV_LOCAL}" ]]; then
   exit 1
 fi
 
-SENTRY_AUTH_TOKEN="$(grep -E '^SENTRY_AUTH_TOKEN=' "${ENV_LOCAL}" | head -1 | cut -d'=' -f2-)"
+SENTRY_AUTH_TOKEN="$(grep -E '^SENTRY_AUTH_TOKEN=' "${ENV_LOCAL}" | tail -1 | cut -d'=' -f2-)"
 
 if [[ -z "${SENTRY_AUTH_TOKEN}" ]]; then
   echo "エラー: .env.local に SENTRY_AUTH_TOKEN が設定されていません。" >&2
   exit 1
 fi
 
+# .env.local の最後の定義を使用する（複数行ある場合は後の値が優先）
+EXPO_PUBLIC_REVENUECAT_IOS_API_KEY="$(grep -E '^EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=' "${ENV_LOCAL}" | tail -1 | cut -d'=' -f2-)"
+
+if [[ -z "${EXPO_PUBLIC_REVENUECAT_IOS_API_KEY}" ]]; then
+  echo "エラー: .env.local に EXPO_PUBLIC_REVENUECAT_IOS_API_KEY が設定されていません。" >&2
+  exit 1
+fi
+
 export SENTRY_AUTH_TOKEN
+export EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
 export EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT=false
 export EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH=false
 export EAS_LOCAL_BUILD_ARTIFACTS_DIR="${BUILDS_DIR}"

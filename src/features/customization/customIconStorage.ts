@@ -23,6 +23,7 @@ export type StoredCustomIcon = {
 /** 保存済み参照の解決結果。従来URIから移行したかどうかを含む。 */
 export type ResolvedCustomIcon = StoredCustomIcon & {
   migrated: boolean;
+  migrationFailed?: boolean;
 };
 
 type IdFactory = () => string;
@@ -86,8 +87,13 @@ export async function resolveCustomIconReference(
     return null;
   }
 
-  const stored = await persistCustomIconImage(reference, idFactory);
-  return { ...stored, migrated: true };
+  try {
+    const stored = await persistCustomIconImage(reference, idFactory);
+    return { ...stored, migrated: true };
+  } catch (error: unknown) {
+    console.warn('カスタム画像の移行に失敗したため旧URIを使用します。', error);
+    return { reference, uri: reference, migrated: false, migrationFailed: true };
+  }
 }
 
 /** 管理参照が指す画像だけを削除する。従来の絶対URIには触れない。 */

@@ -82,6 +82,7 @@ import {
 } from '../features/customization/colorPresets';
 import {
   getDefaultPremiumAccessState,
+  getConfirmedPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
   getRevenueCatAppUserId,
@@ -386,13 +387,18 @@ export default function App() {
   }, [sentryScreenName]);
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
-  const refreshData = useCallback(async () => {
+  const refreshData = useCallback(async (options: { signal?: AbortSignal } = {}) => {
+    const { signal } = options;
     const [logs, allPoints, recording, permissions] = await Promise.all([
       getDailyLogs(),
       getAllLocationPoints(),
       isBackgroundLocationRecording(),
       getLocationPermissionState(),
     ]);
+
+    if (signal?.aborted) {
+      return { logs, allPoints, recording, permissions };
+    }
 
     setDailyLogs(logs);
     setPoints(allPoints);
@@ -401,7 +407,9 @@ export default function App() {
     setVisitedGridRefreshVersion((version) => version + 1);
 
     getMonthlyAreaReport(getPreviousReportMonth())
-      .then(setMonthlyAreaReport)
+      .then((report) => {
+        if (!signal?.aborted) setMonthlyAreaReport(report);
+      })
       .catch((error: unknown) => {
         console.warn('Failed to refresh monthly area report:', error);
       });
@@ -455,14 +463,18 @@ export default function App() {
 
   /** GPSバックグラウンド記録を開始し、結果をユーザー向けメッセージへ反映する。 */
   const startRecording = useCallback(
-    async (reason: 'auto' | 'manual' = 'manual'): Promise<void> => {
+    async (reason: 'auto' | 'manual' = 'manual', signal?: AbortSignal): Promise<void> => {
       try {
         await startBackgroundLocationRecording();
-        const result = await refreshData();
+        if (signal?.aborted) return;
+        const result = await refreshData({ signal });
+        if (signal?.aborted) return;
         setMessage(reason === 'auto' ? 'GPS記録を自動開始しました。' : 'バックグラウンドGPS記録を開始しました。');
         setAutoStartStatus(hasRequiredLocationPermission(result.permissions) ? 'recording' : 'needsPermission');
       } catch (error: unknown) {
-        await refreshData().catch(() => undefined);
+        if (signal?.aborted) return;
+        await refreshData({ signal }).catch(() => undefined);
+        if (signal?.aborted) return;
         setMessage(error instanceof Error ? error.message : 'GPS記録の開始に失敗しました。');
         setAutoStartStatus('failed');
       }
@@ -472,20 +484,21 @@ export default function App() {
 
   /** 権限許可後に未記録ならGPS記録の自動開始を試みる。 */
   const maybeStartRecordingAutomatically = useCallback(
-    async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
+    async (state: { permissions: LocationPermissionState; recording: boolean }, signal?: AbortSignal): Promise<void> => {
+      if (signal?.aborted) return;
       if (!shouldStartRecordingAutomatically({
         permissions: state.permissions,
         isRecording: state.recording,
         isAutoStartInFlight: autoStartInFlightRef.current,
       })) {
-        setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
+        if (!signal?.aborted) setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
         return;
       }
 
       autoStartInFlightRef.current = true;
 
       try {
-        await startRecording('auto');
+        await startRecording('auto', signal);
       } finally {
         autoStartInFlightRef.current = false;
       }
@@ -495,22 +508,27 @@ export default function App() {
 
   /** 権限状態に合わせ、背景タスクと前景限定記録の所有権を同期する。 */
   const synchronizeLocationRecordingMode = useCallback(
-    async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
+    async (state: { permissions: LocationPermissionState; recording: boolean }, signal?: AbortSignal): Promise<void> => {
+      if (signal?.aborted) return;
       if (state.permissions.backgroundGranted) {
         await updateBackgroundLocationTaskOptionsIfNeeded().catch((error: unknown) => {
           console.warn('Failed to update background location task options:', error);
         });
-        await maybeStartRecordingAutomatically(state);
+        if (signal?.aborted) return;
+        await maybeStartRecordingAutomatically(state, signal);
+        if (signal?.aborted) return;
         setIsLocationRecordingModeSynchronized(true);
         return;
       }
 
       try {
         await stopBackgroundLocationRecording();
+        if (signal?.aborted) return;
         setIsRecording(false);
         setAutoStartStatus('needsPermission');
         setIsLocationRecordingModeSynchronized(true);
       } catch (error: unknown) {
+        if (signal?.aborted) return;
         // 停止確認前に前景保存を開始すると二重保存になり得るため、同期済みにしない。
         setIsLocationRecordingModeSynchronized(false);
         setMessage(error instanceof Error ? error.message : 'バックグラウンドGPS記録の停止に失敗しました。');
@@ -637,7 +655,7 @@ export default function App() {
           console.warn('Failed to load app fonts:', error);
         });
         if (signal.aborted) return;
-        const initialPremiumAccessRequest = getPremiumAccessState();
+        const initialPremiumAccessRequest = getConfirmedPremiumAccessState();
         const [
           savedKeepScreenAwake,
           savedShowPhotosOnMap,
@@ -681,7 +699,7 @@ export default function App() {
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
         if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
           setPremiumAccessState(initialPremiumAccessResult.state);
-          if (!initialPremiumAccessResult.timedOut) {
+          if (initialPremiumAccessResult.confirmed) {
             setIsPremiumAccessPendingForIcon(false);
           }
         }
@@ -753,12 +771,12 @@ export default function App() {
           await requestAchievementNotificationPermissionIfNeeded();
           if (signal.aborted) return;
         }
-        const initialState = await refreshData();
+        const initialState = await refreshData({ signal });
         if (signal.aborted) return;
         if (isWhileInUseOnlyMode(initialState.permissions)) {
           setIsWhileInUseToastVisible(true);
         }
-        await synchronizeLocationRecordingMode(initialState);
+        await synchronizeLocationRecordingMode(initialState, signal);
         if (signal.aborted) return;
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         if (signal.aborted) return;
@@ -1458,7 +1476,7 @@ export default function App() {
     } catch (error: unknown) {
       const detail = error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。';
       const message = customIconReference
-        ? `新しい画像を設定できませんでした。以前のアイコンは保持されています。\n${detail}`
+        ? `新しい画像を設定できませんでした。以前の設定は保持されています。\n${detail}`
         : `カスタムアイコンを設定できませんでした。\n${detail}`;
       Alert.alert('設定失敗', message);
     } finally {

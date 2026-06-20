@@ -14,6 +14,7 @@ import {
   subscribePremiumAccessStateUpdatesWithRevenueCat,
 } from '../revenueCatClient';
 import {
+  getConfirmedPremiumAccessState,
   getDefaultPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
@@ -312,6 +313,14 @@ describe('RevenueCat課金状態 revenueCatAccess', () => {
 
     await expect(getPremiumAccessState()).resolves.toEqual(getDefaultPremiumAccessState());
     expect(console.warn).toHaveBeenCalledWith('Failed to load RevenueCat premium state:', expect.any(Error));
+  });
+
+  it('確認済みPlus状態の取得はRevenueCat失敗を未加入へ変換せずエラーにする', async () => {
+    Platform.OS = 'ios';
+    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+    (Purchases.getCustomerInfo as jest.Mock).mockRejectedValue(new Error('network failed'));
+
+    await expect(getConfirmedPremiumAccessState()).rejects.toThrow('network failed');
   });
 
   it('RevenueCat Offering取得失敗時はnullへフォールバックする', async () => {

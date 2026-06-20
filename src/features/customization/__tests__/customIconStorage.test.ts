@@ -151,6 +151,22 @@ describe('カスタム画像の永続ファイル管理', () => {
     });
   });
 
+  it('読み取れる従来URIの移行コピーに失敗した場合は旧URIを表示用に返す', async () => {
+    getInfoAsync
+      .mockResolvedValueOnce({ exists: true, isDirectory: false })
+      .mockResolvedValueOnce({ exists: false });
+    copyAsync.mockRejectedValue(new Error('copy failed'));
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await expect(resolveCustomIconReference('file:///legacy/custom.jpg', () => 'partial')).resolves.toEqual({
+      reference: 'file:///legacy/custom.jpg',
+      uri: 'file:///legacy/custom.jpg',
+      migrated: false,
+      migrationFailed: true,
+    });
+    expect(warnSpy).toHaveBeenCalledWith('カスタム画像の移行に失敗したため旧URIを使用します。', expect.any(Error));
+  });
+
   it('存在しない従来URIは削除せずnullを返す', async () => {
     getInfoAsync.mockResolvedValue({ exists: false });
 

@@ -7,6 +7,7 @@ export const INITIAL_PREMIUM_ACCESS_TIMEOUT_MS = 3000;
 export type InitialPremiumAccessResult = {
   state: PremiumAccessState;
   timedOut: boolean;
+  confirmed: boolean;
 };
 
 /** 初回Plus状態待機の制御オプション。 */
@@ -25,7 +26,7 @@ export async function resolveInitialPremiumAccess(
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   let abortHandler: (() => void) | undefined;
   const timeout = new Promise<InitialPremiumAccessResult>((resolve) => {
-    timeoutId = setTimeout(() => resolve({ state: fallback, timedOut: true }), timeoutMs);
+    timeoutId = setTimeout(() => resolve({ state: fallback, timedOut: true, confirmed: false }), timeoutMs);
   });
   const aborted = new Promise<InitialPremiumAccessResult>((_resolve, reject) => {
     abortHandler = () => {
@@ -40,8 +41,8 @@ export async function resolveInitialPremiumAccess(
     signal?.addEventListener('abort', abortHandler, { once: true });
   });
   const settledRequest = request
-    .then((state) => ({ state, timedOut: false }))
-    .catch(() => ({ state: fallback, timedOut: false }));
+    .then((state) => ({ state, timedOut: false, confirmed: true }))
+    .catch(() => ({ state: fallback, timedOut: false, confirmed: false }));
 
   try {
     return await Promise.race([settledRequest, timeout, aborted]);

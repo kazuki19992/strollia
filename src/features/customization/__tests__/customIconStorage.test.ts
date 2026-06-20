@@ -22,10 +22,18 @@ const deleteAsync = FileSystem.deleteAsync as jest.Mock;
 describe('カスタム画像の永続ファイル管理', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    makeDirectoryAsync.mockResolvedValue(undefined);
+    copyAsync.mockResolvedValue(undefined);
+    getInfoAsync.mockResolvedValue({ exists: false });
+    deleteAsync.mockResolvedValue(undefined);
     Object.defineProperty(FileSystem, 'documentDirectory', {
       configurable: true,
       value: 'file:///documents/',
     });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('画像を専用領域へコピーし相対的な管理参照と表示URIを返す', async () => {
@@ -70,6 +78,47 @@ describe('カスタム画像の永続ファイル管理', () => {
     });
   });
 
+  it('保存先が既に存在する場合は既存ファイルに触れずエラーにする', async () => {
+    getInfoAsync.mockResolvedValue({ exists: true, isDirectory: false });
+
+    await expect(
+      persistCustomIconImage('file:///picker/photo.jpg', () => 'collision'),
+    ).rejects.toThrow('同じ保存先のカスタム画像が既に存在します。');
+    expect(copyAsync).not.toHaveBeenCalled();
+    expect(deleteAsync).not.toHaveBeenCalled();
+  });
+
+  it('コピー失敗時は生成された可能性がある部分ファイルを削除して元のエラーを投げる', async () => {
+    const copyError = new Error('copy failed');
+    copyAsync.mockRejectedValue(copyError);
+
+    await expect(
+      persistCustomIconImage('file:///picker/photo.jpg', () => 'partial'),
+    ).rejects.toBe(copyError);
+    expect(deleteAsync).toHaveBeenCalledWith(
+      'file:///documents/strollia-custom-icons/partial.jpg',
+      { idempotent: true },
+    );
+  });
+
+  it('部分ファイルの削除にも失敗した場合は警告してコピー元のエラーを保つ', async () => {
+    const copyError = new Error('copy failed');
+    const cleanupError = new Error('cleanup failed');
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    copyAsync.mockRejectedValue(copyError);
+    deleteAsync.mockRejectedValue(cleanupError);
+
+    await expect(
+      persistCustomIconImage('file:///picker/photo.jpg', () => 'partial'),
+    ).rejects.toBe(copyError);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'カスタム画像の部分ファイルを削除できませんでした。',
+      cleanupError,
+    );
+
+    warnSpy.mockRestore();
+  });
+
   it('管理参照から現在のdocumentDirectoryのURIを復元する', async () => {
     getInfoAsync.mockResolvedValue({ exists: true, isDirectory: false });
 
@@ -84,7 +133,9 @@ describe('カスタム画像の永続ファイル管理', () => {
   });
 
   it('読み取れる従来の絶対URIを専用領域へ移行する', async () => {
-    getInfoAsync.mockResolvedValue({ exists: true, isDirectory: false });
+    getInfoAsync
+      .mockResolvedValueOnce({ exists: true, isDirectory: false })
+      .mockResolvedValueOnce({ exists: false });
 
     await expect(
       resolveCustomIconReference('file:///legacy/custom.heic', () => 'migrated-id'),

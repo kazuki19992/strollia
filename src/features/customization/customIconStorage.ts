@@ -37,7 +37,21 @@ export async function persistCustomIconImage(
   const uri = `${directoryUri}${filename}`;
 
   await FileSystem.makeDirectoryAsync(directoryUri, { intermediates: true });
-  await FileSystem.copyAsync({ from: sourceUri, to: uri });
+  const destinationInfo = await FileSystem.getInfoAsync(uri);
+  if (destinationInfo.exists) {
+    throw new Error('同じ保存先のカスタム画像が既に存在します。');
+  }
+
+  try {
+    await FileSystem.copyAsync({ from: sourceUri, to: uri });
+  } catch (copyError) {
+    try {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+    } catch (cleanupError) {
+      console.warn('カスタム画像の部分ファイルを削除できませんでした。', cleanupError);
+    }
+    throw copyError;
+  }
 
   return {
     reference: `${MANAGED_REFERENCE_PREFIX}${filename}`,

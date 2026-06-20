@@ -67,6 +67,8 @@ import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../featur
 import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '../features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
+import { deleteManagedCustomIcon, resolveCustomIconReference } from '../features/customization/customIconStorage';
+import { replaceCustomIconSelection } from '../features/customization/customIconSelection';
 import {
   DEFAULT_USER_LOCATION_ICON_ID,
   getUserLocationIconOption,
@@ -90,7 +92,7 @@ import {
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
 } from '../features/premium/revenueCatAccess';
-import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
+import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '../features/location/grid/gridAggregation';
@@ -258,7 +260,9 @@ export default function App() {
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
+  const [customIconReference, setCustomIconReference] = useState('');
   const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
+  const [hasCustomIconImageLoadFailed, setHasCustomIconImageLoadFailed] = useState(false);
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
@@ -308,8 +312,12 @@ export default function App() {
   const isPremiumPaywallVisibleRef = useRef(false);
   const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const userLocationIcon = useMemo(
-    () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive, customIconImageUri),
-    [premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
+    () => resolveUserLocationIcon(
+      selectedUserLocationIconId,
+      premiumAccessState.isPlusActive,
+      hasCustomIconImageLoadFailed ? null : customIconImageUri,
+    ),
+    [hasCustomIconImageLoadFailed, premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
@@ -630,6 +638,7 @@ export default function App() {
           savedCustomIconImageUri,
           savedReviewPrompted,
           savedFirstLaunchTutorialCompleted,
+          initialPremiumAccessState,
         ] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
@@ -639,6 +648,10 @@ export default function App() {
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
           getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
+          getPremiumAccessState().catch((error: unknown) => {
+            console.warn('Failed to refresh premium access state:', error);
+            return getDefaultPremiumAccessState();
+          }),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
         if (savedShowPhotosOnMapEnablePending) {
@@ -653,13 +666,30 @@ export default function App() {
         }
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
-        setCustomIconImageUri(savedCustomIconImageUri || null);
+        setPremiumAccessState(initialPremiumAccessState);
+        setCustomIconReference(savedCustomIconImageUri);
+        setHasCustomIconImageLoadFailed(false);
+
+        const resolvedCustomIcon = await resolveCustomIconReference(savedCustomIconImageUri).catch((error: unknown) => {
+          console.warn('Failed to resolve custom icon reference:', error);
+          return null;
+        });
+        if (resolvedCustomIcon?.migrated) {
+          try {
+            await setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, resolvedCustomIcon.reference);
+            setCustomIconReference(resolvedCustomIcon.reference);
+            setCustomIconImageUri(resolvedCustomIcon.uri);
+          } catch (error: unknown) {
+            await deleteManagedCustomIcon(resolvedCustomIcon.reference).catch((cleanupError: unknown) => {
+              console.warn('Failed to delete unpersisted migrated custom icon:', cleanupError);
+            });
+            console.warn('Failed to persist migrated custom icon reference:', error);
+            setCustomIconImageUri(savedCustomIconImageUri || null);
+          }
+        } else {
+          setCustomIconImageUri(resolvedCustomIcon?.uri ?? null);
+        }
         setHasPromptedReview(savedReviewPrompted);
-        getPremiumAccessState()
-          .then(setPremiumAccessState)
-          .catch((error: unknown) => {
-            console.warn('Failed to refresh premium access state:', error);
-          });
         getRevenueCatAppUserId()
           .then(setRevenueCatAppUserId)
           .catch((error: unknown) => {
@@ -1347,36 +1377,29 @@ export default function App() {
         return;
       }
 
-      const uri = result.assets[0].uri;
-      setCustomIconImageUri(uri);
+      const replacement = await replaceCustomIconSelection({
+        sourceUri: result.assets[0].uri,
+        previousReference: customIconReference,
+        persistSelection: async (reference) => {
+          await setSettings([
+            { key: CUSTOM_ICON_IMAGE_URI_SETTING_KEY, value: reference },
+            { key: USER_LOCATION_ICON_SETTING_KEY, value: 'custom' },
+          ]);
+        },
+      });
+      setCustomIconReference(replacement.reference);
+      setCustomIconImageUri(replacement.uri);
       setSelectedUserLocationIconId('custom');
-      setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, uri).catch((error: unknown) => {
-        Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。');
-      });
-      setSetting(USER_LOCATION_ICON_SETTING_KEY, 'custom').catch((error: unknown) => {
-        Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
-      });
-      Alert.alert('カスタムアイコン', '写真をアルバムから削除するとOS標準に戻ります。');
+      setHasCustomIconImageLoadFailed(false);
     } catch (error: unknown) {
-      Alert.alert('エラー', error instanceof Error ? error.message : 'カスタムアイコンを設定できませんでした。');
+      const detail = error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。';
+      Alert.alert('設定失敗', `新しい画像を設定できませんでした。以前のアイコンは保持されています。\n${detail}`);
     }
   }
 
-  /**
-   * カスタムアイコン画像をクリアしてOS標準へ戻す。
-   * 画像URIが無効になった場合（フォトライブラリから削除など）に呼ばれる。
-   *
-   * @returns なし。
-   */
-  function clearCustomIcon(): void {
-    setCustomIconImageUri(null);
-    setSelectedUserLocationIconId(DEFAULT_USER_LOCATION_ICON_ID);
-    setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, '').catch((error: unknown) => {
-      console.warn('Failed to clear custom icon URI:', error);
-    });
-    setSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID).catch((error: unknown) => {
-      console.warn('Failed to reset icon setting:', error);
-    });
+  /** 画像読込失敗時は保存設定を維持し、このセッションだけOS標準表示へ切り替える。 */
+  function handleCustomIconLoadError(): void {
+    setHasCustomIconImageLoadFailed(true);
   }
 
   /**
@@ -1566,7 +1589,7 @@ export default function App() {
               initialRegion={initialRegion}
               mapType={mapType}
               userLocationIcon={userLocationIcon}
-              onCustomIconError={clearCustomIcon}
+              onCustomIconError={handleCustomIconLoadError}
               isFollowingUserLocation={isFollowingUserLocation}
               userCoordinate={userCoordinate}
               visitedGridCells={visitedGridCells}

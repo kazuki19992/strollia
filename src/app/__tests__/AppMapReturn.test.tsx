@@ -29,7 +29,10 @@ import {
   subscribePremiumAccessStateUpdates,
 } from '../../features/premium/revenueCatAccess';
 import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../../features/settings/settingsRepository';
-import { requestAchievementNotificationPermissionOnFirstLaunch } from '../../features/achievements/achievementNotificationService';
+import {
+  requestAchievementNotificationPermissionOnFirstLaunch,
+  setupAchievementNotificationChannel,
+} from '../../features/achievements/achievementNotificationService';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -1366,6 +1369,33 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:migrated.jpg');
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///legacy.jpg');
+  });
+
+  test('旧URI移行の設定保存待機中にアンマウントした場合は掃除後の状態更新と起動処理を行わない', async () => {
+    let rejectMigration!: (error: Error) => void;
+    const migrationSave = new Promise<void>((_resolve, reject) => { rejectMigration = reject; });
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///legacy.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:migrated.jpg', uri: 'file:///managed.jpg', migrated: true });
+    (setSetting as jest.Mock).mockImplementation((key: string) => key === 'customIconImageUri' ? migrationSave : Promise.resolve());
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(setSetting).toHaveBeenCalledWith('customIconImageUri', 'managed:migrated.jpg');
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    jest.clearAllMocks();
+    rejectMigration(new Error('DB失敗'));
+    await flushPromises();
+
+    expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:migrated.jpg');
+    expect(setupAchievementNotificationChannel).not.toHaveBeenCalled();
+    expect(console.warn).not.toHaveBeenCalledWith('Failed to persist migrated custom icon reference:', expect.anything());
+    expect(mockLatestMapScreenProps).toBeNull();
   });
 
   test('消えた旧URIは表示だけOS標準へ戻し保存設定を消さない', async () => {

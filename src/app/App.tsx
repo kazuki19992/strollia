@@ -720,6 +720,7 @@ export default function App() {
             await deleteManagedCustomIcon(resolvedCustomIcon.reference).catch((cleanupError: unknown) => {
               console.warn('Failed to delete unpersisted migrated custom icon:', cleanupError);
             });
+            if (signal.aborted) return;
             console.warn('Failed to persist migrated custom icon reference:', error);
             setCustomIconImageUri(savedCustomIconImageUri || null);
           }

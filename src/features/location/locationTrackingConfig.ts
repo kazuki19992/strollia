@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { Platform } from 'react-native';
 
 /** expo-task-managerに登録するバックグラウンド位置情報タスク名。 */
 export const BACKGROUND_LOCATION_TASK_NAME = 'strollia-background-location-task';
@@ -16,7 +17,9 @@ export function getLocationTaskOptions(): Location.LocationTaskOptions {
   return {
     accuracy: Location.Accuracy.High,
     timeInterval: LOCATION_UPDATE_INTERVAL_MS,
-    distanceInterval: LOCATION_UPDATE_DISTANCE_METERS,
+    // iOS 16.4以降はインジケーター非表示とdistanceFilterを併用すると背景更新が
+    // サスペンドされ得るため、iOSではプロパティ自体を渡さない。Androidは従来値を維持する。
+    ...(Platform.OS === 'ios' ? {} : { distanceInterval: LOCATION_UPDATE_DISTANCE_METERS }),
     deferredUpdatesInterval: LOCATION_UPDATE_INTERVAL_MS,
     pausesUpdatesAutomatically: false,
     // Dynamic Island等の位置情報インジケータを表示しない（フォアグラウンドサービス通知で記録中を示すため）。

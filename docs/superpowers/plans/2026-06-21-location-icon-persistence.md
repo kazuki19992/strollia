@@ -10,13 +10,62 @@
 
 ---
 
+## 実装同期（2026-06-21）
+
+以下はレビュー反映後の最終実装を表す。後続タスク内のコード断片と当初の期待件数はTDD着手時点の履歴として残し、差異がある場合はこの節を正とする。
+
+### 最終APIと保存方式
+
+- `customIconStorage.ts`
+  - `persistCustomIconImage(sourceUri, idFactory?)` は画像を `documentDirectory/strollia-custom-icons/` へコピーし、`managed:<filename>` と表示URIを返す。
+  - 許可する拡張子を `bmp`、`gif`、`heic`、`heif`、`jpeg`、`jpg`、`png`、`webp` に限定し、不明な拡張子は `jpg` とする。IDはファイル名に安全な文字へ正規化する。
+  - `resolveCustomIconReference(reference, idFactory?)` は安全な管理参照だけを現在の `documentDirectory` から解決する。従来の絶対URIは存在する通常ファイルに限って管理領域へ移行し、空値、不正な管理参照、相対参照、存在しないファイル、ディレクトリは `null` とする。
+  - `deleteManagedCustomIcon(reference)` は検証済みの管理参照だけを冪等削除し、従来URIや走査パスには触れない。
+- `settingsRepository.ts`
+  - `setSettings(entries)` は空配列なら何もせず、非空なら `db.withExclusiveTransactionAsync` が渡すトランザクションrunner上で全UPSERTを実行する。全エントリは同じ `updated_at` を使う。
+  - `setSetting` と `setSettings` はrunnerを受け取る共通UPSERT helperを利用する。
+- `customIconSelection.ts`
+  - `replaceCustomIconSelection({ sourceUri, previousReference, persistSelection })` は「新規ファイル保存 → 設定の排他的トランザクション保存 → 旧管理ファイル削除」の順で置き換える。
+  - 設定保存に失敗した場合は新規管理ファイルを掃除して元のエラーを再送出する。掃除失敗は警告だけに留める。同一参照を返した場合は新旧どちらも削除しない。
+- `initialPremiumAccess.ts`
+  - `resolveInitialPremiumAccess(request, fallback, { timeoutMs?, signal? })` は `{ state, timedOut }` を返す。既定の待機上限は3秒で、取得失敗時は `timedOut: false` のfallback、上限到達時は `timedOut: true` のfallbackを返す。
+  - `AbortSignal` による中止では `AbortError` を送出し、成功・失敗・タイムアウト・中止のすべてでタイマーとabort listenerを掃除する。
+
+### App統合の最終挙動
+
+- 起動時は設定読み込みと初回Plus状態取得を並行し、その結果を受けてカスタム参照を解決する。Plus取得を無期限に待たず、タイムアウト後も保存済みPlusアイコンを一時的なOS標準へ落とさない。
+- 初回Plus取得が遅延した場合は元のPromiseを継続監視して後から確定状態を反映する。ただしRevenueCat購読更新のgenerationが進んでいれば、遅延した初回結果で新しい状態を上書きしない。
+- Plus状態が未確定の間だけアイコン解決をPlus利用可能として扱う。確定後は通常の権限制御へ戻すため、未加入ユーザーへPlusアイコンを恒久表示しない。
+- 旧絶対URIの移行は、新しい管理参照のDB保存に成功してから表示参照へ採用する。DB保存失敗時は移行先ファイルを削除し、従来参照と表示を維持する。
+- 初期化effectは `AbortController` を所有し、アンマウント後のstate更新を止める。移行コピー直後に中止された場合は未保存の管理ファイルを削除する。
+- カスタム画像選択はin-flight guardで多重起動を防ぐ。選択、コピー、排他的な2設定保存が完了した後だけUIを切り替え、失敗時は以前の選択を維持する。完了・失敗・キャンセルのすべてでguardを解除する。
+- カスタム画像の読込失敗はセッション内表示だけOS標準へフォールバックし、`customIconImageUri` と `userLocationIcon` の永続値を変更しない。写真ライブラリ削除に関する旧alertは表示しない。
+
+### 最終テスト範囲
+
+- `customIconStorage.test.ts`: 永続コピー、許可拡張子、不明拡張子、ID正規化、管理参照復元、従来URI移行、欠損・空値・不正参照・走査パス拒否、管理ファイル限定削除、保存先欠損。
+- `settingsRepository.test.ts`: 排他的トランザクションrunner、共通更新日時、空配列no-op。
+- `customIconSelection.test.ts`: 成功順序、設定失敗時rollback、cleanup失敗時の元エラー維持、旧ファイル削除失敗の非致命化、同一参照の非削除。
+- `initialPremiumAccess.test.ts`: 成功、取得失敗、3秒タイムアウト、中止、および各経路のタイマー掃除。
+- `AppMapReturn.test.tsx`: 管理参照復元、旧URI移行と保存失敗rollback、Plus初期取得・タイムアウト後復元・購読generation guard、アイコンだけの未確定表示継続、選択in-flight guard、排他的な設定保存、非破壊画像エラー、アンマウント時の中止と移行ファイルcleanup。
+- 既存の `customizationResolver.test.ts`、`AppCustomIconCentering.test.tsx`、`MapScreen.test.tsx` も回帰対象に含める。
+
+### 完了時の検証基準
+
+- 集中テスト: 指定8スイートを `--runInBand` で実行する。
+- 型チェック: `npm run typecheck`。
+- 全テスト: `npm test -- --runInBand`。
+- 差分健全性: `git diff --check origin/develop...HEAD`。
+
+---
+
 ### Task 1: カスタム写真の永続ファイル管理
 
 **Files:**
 - Create: `src/features/customization/customIconStorage.ts`
 - Create: `src/features/customization/__tests__/customIconStorage.test.ts`
 
-- [ ] **Step 1: 永続保存・参照解決・旧URI移行の失敗テストを書く**
+- [x] **Step 1: 永続保存・参照解決・旧URI移行の失敗テストを書く**
 
 `src/features/customization/__tests__/customIconStorage.test.ts` を作成する。
 
@@ -99,7 +148,7 @@ describe('カスタム現在地アイコンの永続ファイル管理', () => {
 });
 ```
 
-- [ ] **Step 2: テストが未実装APIで失敗することを確認する**
+- [x] **Step 2: テストが未実装APIで失敗することを確認する**
 
 Run:
 
@@ -109,7 +158,7 @@ npm test -- --runInBand src/features/customization/__tests__/customIconStorage.t
 
 Expected: FAIL with `Cannot find module '../customIconStorage'`.
 
-- [ ] **Step 3: 最小限の永続ファイル管理を実装する**
+- [x] **Step 3: 最小限の永続ファイル管理を実装する**
 
 `src/features/customization/customIconStorage.ts` を作成する。
 
@@ -201,7 +250,7 @@ export async function deleteManagedCustomIcon(reference: string): Promise<void> 
 }
 ```
 
-- [ ] **Step 4: ファイル管理テストを成功させる**
+- [x] **Step 4: ファイル管理テストを成功させる**
 
 Run:
 
@@ -211,7 +260,7 @@ npm test -- --runInBand src/features/customization/__tests__/customIconStorage.t
 
 Expected: PASS, 5 tests.
 
-- [ ] **Step 5: ファイル管理をコミットする**
+- [x] **Step 5: ファイル管理をコミットする**
 
 ```bash
 git add src/features/customization/customIconStorage.ts src/features/customization/__tests__/customIconStorage.test.ts
@@ -224,7 +273,7 @@ git commit -m "feat(icon): カスタム画像を永続領域へ保存"
 - Modify: `src/features/settings/settingsRepository.ts`
 - Modify: `src/features/settings/__tests__/settingsRepository.test.ts`
 
-- [ ] **Step 1: 複数設定を同一トランザクションで保存する失敗テストを書く**
+- [x] **Step 1: 複数設定を同一トランザクションで保存する失敗テストを書く**
 
 DBモックへ `withTransactionAsync` を追加し、次のテストを `settingsRepository.test.ts` へ追加する。
 
@@ -264,7 +313,7 @@ it('複数設定を同一トランザクション内で保存する', async () =
 });
 ```
 
-- [ ] **Step 2: 新APIがないため失敗することを確認する**
+- [x] **Step 2: 新APIがないため失敗することを確認する**
 
 Run:
 
@@ -274,7 +323,7 @@ npm test -- --runInBand src/features/settings/__tests__/settingsRepository.test.
 
 Expected: FAIL because `setSettings` is not exported.
 
-- [ ] **Step 3: 単一設定と複数設定で共有するUPSERT処理を実装する**
+- [x] **Step 3: 単一設定と複数設定で共有するUPSERT処理を実装する**
 
 `settingsRepository.ts` に次を追加し、既存 `setSetting` も同じhelperを利用する。
 
@@ -312,7 +361,7 @@ export async function setSettings(entries: AppSettingEntry[]): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: 設定リポジトリテストを成功させる**
+- [x] **Step 4: 設定リポジトリテストを成功させる**
 
 Run:
 
@@ -322,7 +371,7 @@ npm test -- --runInBand src/features/settings/__tests__/settingsRepository.test.
 
 Expected: PASS, including the new transaction test.
 
-- [ ] **Step 5: 原子的設定保存をコミットする**
+- [x] **Step 5: 原子的設定保存をコミットする**
 
 ```bash
 git add src/features/settings/settingsRepository.ts src/features/settings/__tests__/settingsRepository.test.ts
@@ -335,7 +384,7 @@ git commit -m "feat(settings): 関連設定の原子的保存を追加"
 - Create: `src/features/customization/customIconSelection.ts`
 - Create: `src/features/customization/__tests__/customIconSelection.test.ts`
 
-- [ ] **Step 1: 成功順序と失敗時ロールバックのテストを書く**
+- [x] **Step 1: 成功順序と失敗時ロールバックのテストを書く**
 
 `src/features/customization/__tests__/customIconSelection.test.ts` を作成する。
 
@@ -392,7 +441,7 @@ describe('カスタム現在地アイコンの置き換え', () => {
 });
 ```
 
-- [ ] **Step 2: 未実装サービスで失敗することを確認する**
+- [x] **Step 2: 未実装サービスで失敗することを確認する**
 
 Run:
 
@@ -402,7 +451,7 @@ npm test -- --runInBand src/features/customization/__tests__/customIconSelection
 
 Expected: FAIL with `Cannot find module '../customIconSelection'`.
 
-- [ ] **Step 3: 安全な置き換え順序を実装する**
+- [x] **Step 3: 安全な置き換え順序を実装する**
 
 `src/features/customization/customIconSelection.ts` を作成する。
 
@@ -439,7 +488,7 @@ export async function replaceCustomIconSelection({
 }
 ```
 
-- [ ] **Step 4: 置き換えサービステストを成功させる**
+- [x] **Step 4: 置き換えサービステストを成功させる**
 
 Run:
 
@@ -449,7 +498,7 @@ npm test -- --runInBand src/features/customization/__tests__/customIconSelection
 
 Expected: PASS, 2 tests.
 
-- [ ] **Step 5: 置き換えサービスをコミットする**
+- [x] **Step 5: 置き換えサービスをコミットする**
 
 ```bash
 git add src/features/customization/customIconSelection.ts src/features/customization/__tests__/customIconSelection.test.ts
@@ -464,7 +513,7 @@ git commit -m "feat(icon): カスタム画像を安全に置き換え"
 - Modify: `src/app/components/__tests__/MapScreen.test.tsx`
 - Modify: `docs/data-storage.md`
 
-- [ ] **Step 1: 起動時復元と非破壊エラーの失敗テストを追加する**
+- [x] **Step 1: 起動時復元と非破壊エラーの失敗テストを追加する**
 
 `AppMapReturn.test.tsx` のモックへ `customIconStorage`、`customIconSelection`、`setSettings` を追加し、MapScreenモックに画像エラー発火ボタンを追加する。
 
@@ -594,7 +643,7 @@ test('Plus状態の解決前は地図を描画せず、解決後に保存済み�
 
 `MapScreen.test.tsx` の既存「カスタム画像エラー時に onCustomIconError を呼ぶ」は維持し、App側で非破壊になる責務分担を明示するためテスト名を「カスタム画像エラーをAppへ通知し、永続設定の扱いを委譲する」へ変更する。
 
-- [ ] **Step 2: Appテストが旧URI・破壊的フォールバックのため失敗することを確認する**
+- [x] **Step 2: Appテストが旧URI・破壊的フォールバックのため失敗することを確認する**
 
 Run:
 
@@ -604,7 +653,7 @@ npm test -- --runInBand src/app/__tests__/AppMapReturn.test.tsx src/app/componen
 
 Expected: FAIL because App does not resolve managed references and `clearCustomIcon()` writes `default`.
 
-- [ ] **Step 3: 起動時にPlus状態とカスタム画像を確定してから描画する**
+- [x] **Step 3: 起動時にPlus状態とカスタム画像を確定してから描画する**
 
 `App.tsx` へ次を反映する。
 
@@ -655,7 +704,7 @@ setPremiumAccessState(initialPremiumAccessState);
 
 旧URIが無効な場合も `savedCustomIconImageUri` と `savedUserLocationIcon` をSQLiteへ書き戻さない。
 
-- [ ] **Step 4: 写真選択を永続保存と安全な上書きへ切り替える**
+- [x] **Step 4: 写真選択を永続保存と安全な上書きへ切り替える**
 
 `pickCustomIcon()` の画像選択成功後を次へ置き換える。
 
@@ -692,7 +741,7 @@ Alert.alert(
 );
 ```
 
-- [ ] **Step 5: 画像エラーを非破壊なセッション内フォールバックへ変更する**
+- [x] **Step 5: 画像エラーを非破壊なセッション内フォールバックへ変更する**
 
 `clearCustomIcon()` を削除し、次へ置き換える。
 
@@ -705,7 +754,7 @@ function handleCustomIconLoadError(): void {
 
 MapScreenへ `onCustomIconError={handleCustomIconLoadError}` を渡す。新しい写真選択時はStep 4のとおり失敗状態を解除する。
 
-- [ ] **Step 6: 永続化仕様をデータ保存ドキュメントへ追記する**
+- [x] **Step 6: 永続化仕様をデータ保存ドキュメントへ追記する**
 
 `docs/data-storage.md` の設定保存節へ次を追加する。
 
@@ -717,7 +766,7 @@ MapScreenへ `onCustomIconError={handleCustomIconLoadError}` を渡す。新し�
 別の写真へ変更する場合は、新画像のコピーと設定保存が成功してから旧管理ファイルを削除する。画像読込エラー時はセッション内だけOS標準表示へフォールバックし、保存済み設定は削除しない。
 ```
 
-- [ ] **Step 7: App関連テストを成功させる**
+- [x] **Step 7: App関連テストを成功させる**
 
 Run:
 
@@ -727,7 +776,7 @@ npm test -- --runInBand src/app/__tests__/AppMapReturn.test.tsx src/app/__tests_
 
 Expected: PASS.
 
-- [ ] **Step 8: App統合をコミットする**
+- [x] **Step 8: App統合をコミットする**
 
 ```bash
 git add src/app/App.tsx src/app/__tests__/AppMapReturn.test.tsx src/app/components/__tests__/MapScreen.test.tsx docs/data-storage.md
@@ -741,7 +790,7 @@ git commit -m "fix(icon): 更新後も現在地アイコン設定を維持"
 - Verify: `docs/superpowers/plans/2026-06-21-location-icon-persistence.md`
 - Verify: all changed source and test files
 
-- [ ] **Step 1: 対象テストをまとめて実行する**
+- [x] **Step 1: 対象テストをまとめて実行する**
 
 Run:
 
@@ -758,7 +807,7 @@ npm test -- --runInBand \
 
 Expected: PASS.
 
-- [ ] **Step 2: 型チェックを実行する**
+- [x] **Step 2: 型チェックを実行する**
 
 Run:
 
@@ -768,7 +817,7 @@ npm run typecheck
 
 Expected: exit 0, no TypeScript errors.
 
-- [ ] **Step 3: 全テストを実行する**
+- [x] **Step 3: 全テストを実行する**
 
 Run:
 
@@ -778,7 +827,7 @@ npm test -- --runInBand
 
 Expected: all suites PASS.
 
-- [ ] **Step 4: 差分と作業ツリーを確認する**
+- [x] **Step 4: 差分と作業ツリーを確認する**
 
 Run:
 
@@ -790,7 +839,7 @@ git log --oneline origin/develop..HEAD
 
 Expected: `git diff --check` has no output; status is clean; commits are separated into design, storage, settings, replacement orchestration, and App integration purposes.
 
-- [ ] **Step 5: 実装中に計画修正が生じた場合だけ計画書を更新してコミットする**
+- [x] **Step 5: 実装中に計画修正が生じた場合だけ計画書を更新してコミットする**
 
 実装が計画どおりならこのStepは変更なしで完了する。API名や責務境界を変更した場合は、実装と一致するよう本計画書を修正し、次でコミットする。
 

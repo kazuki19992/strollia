@@ -628,12 +628,15 @@ export default function App() {
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
    */
   useEffect(() => {
+    const initializationController = new AbortController();
+    const { signal } = initializationController;
     const initialPremiumAccessUpdateVersion = premiumAccessUpdateVersionRef.current;
     initializeDatabase()
       .then(async () => {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
+        if (signal.aborted) return;
         const initialPremiumAccessRequest = getPremiumAccessState();
         const [
           savedKeepScreenAwake,
@@ -657,14 +660,18 @@ export default function App() {
           resolveInitialPremiumAccess(
             initialPremiumAccessRequest,
             getDefaultPremiumAccessState(),
+            { signal },
           ),
         ]);
+        if (signal.aborted) return;
         setKeepScreenAwake(savedKeepScreenAwake);
         if (savedShowPhotosOnMapEnablePending) {
           setShowPhotosOnMap(false);
           setShouldRestorePhotosOnMapAfterMapReady(false);
           await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+          if (signal.aborted) return;
           await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
+          if (signal.aborted) return;
           setMessage('前回の写真表示で問題が発生した可能性があるため、写真表示をOFFに戻しました。');
         } else {
           setShowPhotosOnMap(false);
@@ -681,7 +688,7 @@ export default function App() {
         if (initialPremiumAccessResult.timedOut) {
           initialPremiumAccessRequest
             .then((state) => {
-              if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+              if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
                 setPremiumAccessState(state);
                 setIsPremiumAccessPendingForIcon(false);
               }
@@ -697,9 +704,16 @@ export default function App() {
           console.warn('Failed to resolve custom icon reference:', error);
           return null;
         });
+        if (signal.aborted) {
+          if (resolvedCustomIcon?.migrated) {
+            await deleteManagedCustomIcon(resolvedCustomIcon.reference).catch(() => undefined);
+          }
+          return;
+        }
         if (resolvedCustomIcon?.migrated) {
           try {
             await setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, resolvedCustomIcon.reference);
+            if (signal.aborted) return;
             setCustomIconReference(resolvedCustomIcon.reference);
             setCustomIconImageUri(resolvedCustomIcon.uri);
           } catch (error: unknown) {
@@ -714,40 +728,57 @@ export default function App() {
         }
         setHasPromptedReview(savedReviewPrompted);
         getRevenueCatAppUserId()
-          .then(setRevenueCatAppUserId)
+          .then((appUserId) => {
+            if (!signal.aborted) setRevenueCatAppUserId(appUserId);
+          })
           .catch((error: unknown) => {
             console.warn('Failed to refresh RevenueCat app user id:', error);
           });
         setIsLoadingPremiumOffering(true);
         getPremiumOfferingSummary()
-          .then(setPremiumOfferingSummary)
+          .then((offering) => {
+            if (!signal.aborted) setPremiumOfferingSummary(offering);
+          })
           .catch((error: unknown) => {
             console.warn('Failed to refresh premium offering summary:', error);
           })
           .finally(() => {
-            setIsLoadingPremiumOffering(false);
+            if (!signal.aborted) setIsLoadingPremiumOffering(false);
           });
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
+        if (signal.aborted) return;
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
+          if (signal.aborted) return;
         }
         const initialState = await refreshData();
+        if (signal.aborted) return;
         if (isWhileInUseOnlyMode(initialState.permissions)) {
           setIsWhileInUseToastVisible(true);
         }
         await synchronizeLocationRecordingMode(initialState);
+        if (signal.aborted) return;
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
+        if (signal.aborted) return;
         await refreshAchievementState(true);
+        if (signal.aborted) return;
         if (!savedFirstLaunchTutorialCompleted) {
           setFirstLaunchTutorialMode('firstLaunch');
           setIsFirstLaunchTutorialVisible(true);
         }
       })
       .catch((error: unknown) => {
+        if (signal.aborted) return;
         setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
       })
-      .finally(() => setIsReady(true));
+      .finally(() => {
+        if (!signal.aborted) setIsReady(true);
+      });
+
+    return () => {
+      initializationController.abort();
+    };
   }, [refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
 
   /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */

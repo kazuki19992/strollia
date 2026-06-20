@@ -1122,6 +1122,29 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
   });
 
+  test('Plus初期取得待機中にアンマウントするとタイマーと残りの起動処理を中止する', async () => {
+    jest.useFakeTimers();
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(jest.getTimerCount()).toBeGreaterThan(0);
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    await flushPromises();
+
+    await act(async () => {
+      resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' });
+      jest.advanceTimersByTime(3000);
+    });
+    await flushPromises();
+    expect(mockLatestMapScreenProps).toBeNull();
+  });
+
   test('タイムアウト直後から保存済みカスタムアイコンを維持し、遅延した確定falseでOS標準へ切り替える', async () => {
     jest.useFakeTimers();
     let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;

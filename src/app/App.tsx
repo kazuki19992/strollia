@@ -92,6 +92,7 @@ import {
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
 } from '../features/premium/revenueCatAccess';
+import { resolveInitialPremiumAccess } from '../features/premium/initialPremiumAccess';
 import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
@@ -213,6 +214,8 @@ export default function App() {
   const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
   const isImportingGpxRef = useRef(false);
+  const isPickingCustomIconRef = useRef(false);
+  const premiumAccessUpdateVersionRef = useRef(0);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
@@ -624,6 +627,7 @@ export default function App() {
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
    */
   useEffect(() => {
+    const initialPremiumAccessUpdateVersion = premiumAccessUpdateVersionRef.current;
     initializeDatabase()
       .then(async () => {
         await loadAppFonts().catch((error: unknown) => {
@@ -648,10 +652,10 @@ export default function App() {
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
           getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
-          getPremiumAccessState().catch((error: unknown) => {
-            console.warn('Failed to refresh premium access state:', error);
-            return getDefaultPremiumAccessState();
-          }),
+          resolveInitialPremiumAccess(
+            getPremiumAccessState(),
+            getDefaultPremiumAccessState(),
+          ),
         ]);
         setKeepScreenAwake(savedKeepScreenAwake);
         if (savedShowPhotosOnMapEnablePending) {
@@ -666,7 +670,9 @@ export default function App() {
         }
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
-        setPremiumAccessState(initialPremiumAccessState);
+        if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+          setPremiumAccessState(initialPremiumAccessState);
+        }
         setCustomIconReference(savedCustomIconImageUri);
         setHasCustomIconImageLoadFailed(false);
 
@@ -728,7 +734,10 @@ export default function App() {
   }, [refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
 
   /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */
-  useEffect(() => subscribePremiumAccessStateUpdates(setPremiumAccessState), []);
+  useEffect(() => subscribePremiumAccessStateUpdates((state) => {
+    premiumAccessUpdateVersionRef.current += 1;
+    setPremiumAccessState(state);
+  }), []);
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。
@@ -1358,6 +1367,11 @@ export default function App() {
    * システムの正方形クロップUIを使用する。
    */
   async function pickCustomIcon(): Promise<void> {
+    if (isPickingCustomIconRef.current) {
+      return;
+    }
+
+    isPickingCustomIconRef.current = true;
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -1393,7 +1407,12 @@ export default function App() {
       setHasCustomIconImageLoadFailed(false);
     } catch (error: unknown) {
       const detail = error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。';
-      Alert.alert('設定失敗', `新しい画像を設定できませんでした。以前のアイコンは保持されています。\n${detail}`);
+      const message = customIconReference
+        ? `新しい画像を設定できませんでした。以前のアイコンは保持されています。\n${detail}`
+        : `カスタムアイコンを設定できませんでした。\n${detail}`;
+      Alert.alert('設定失敗', message);
+    } finally {
+      isPickingCustomIconRef.current = false;
     }
   }
 

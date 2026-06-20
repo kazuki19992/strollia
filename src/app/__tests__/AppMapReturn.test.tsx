@@ -1068,7 +1068,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///documents/strollia-custom-icons/saved.jpg');
   });
 
-  test('Plus状態の取得待機中は地図を描画せず、制限時間後は安全に起動する', async () => {
+  test('Plus状態の取得待機中は地図を描画せず、制限時間後は保存済みwalkerだけを維持して起動する', async () => {
     jest.useFakeTimers();
     let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
     (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
@@ -1093,15 +1093,36 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     await flushPromises();
     expect(mockLatestMapScreenProps).not.toBeNull();
-    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
     expect(setSettings).not.toHaveBeenCalled();
     expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
+
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
+
     await act(async () => { resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
     await flushPromises();
     jest.useRealTimers();
   });
 
-  test('タイムアウト後に初回Plus取得が成功したら保存済みカスタムアイコンを復元する', async () => {
+  test('Plus状態が未確定でも保存済みOS標準アイコンはOS標準のまま表示する', async () => {
+    jest.useFakeTimers();
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise(() => undefined));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: id === 'default' || !plus,
+      customIconId: null,
+      customImageUri: null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+  });
+
+  test('タイムアウト直後から保存済みカスタムアイコンを維持し、遅延した確定falseでOS標準へ切り替える', async () => {
     jest.useFakeTimers();
     let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
     (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
@@ -1121,12 +1142,34 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
     await act(async () => { jest.advanceTimersByTime(3000); });
     await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///saved.jpg');
+
+    await act(async () => { resolvePremium({ isPlusActive: false, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(setSettings).not.toHaveBeenCalled();
+  });
+
+  test('タイムアウト後の遅延した確定trueでも保存済みwalkerを維持する', async () => {
+    jest.useFakeTimers();
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => key === 'userLocationIcon' ? Promise.resolve('walker') : Promise.resolve(fallback));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: !(id === 'walker' && plus),
+      customIconId: id === 'walker' && plus ? 'walker' : null,
+      customImageUri: null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
 
     await act(async () => { resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
     await flushPromises();
-    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///saved.jpg');
-    expect(setSettings).not.toHaveBeenCalled();
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
   });
 
   test('タイムアウト後の購読更新を遅延した古い初回取得結果で上書きしない', async () => {

@@ -200,6 +200,7 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
 export default function App() {
   const colorScheme = useColorScheme();
   const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
+  const [isPremiumAccessPendingForIcon, setIsPremiumAccessPendingForIcon] = useState(true);
   const [revenueCatAppUserId, setRevenueCatAppUserId] = useState<string | null>(null);
   const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
   const theme = useMemo(() => {
@@ -317,10 +318,10 @@ export default function App() {
   const userLocationIcon = useMemo(
     () => resolveUserLocationIcon(
       selectedUserLocationIconId,
-      premiumAccessState.isPlusActive,
+      premiumAccessState.isPlusActive || isPremiumAccessPendingForIcon,
       hasCustomIconImageLoadFailed ? null : customIconImageUri,
     ),
-    [hasCustomIconImageLoadFailed, premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
+    [customIconImageUri, hasCustomIconImageLoadFailed, isPremiumAccessPendingForIcon, premiumAccessState.isPlusActive, selectedUserLocationIconId],
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
@@ -673,12 +674,16 @@ export default function App() {
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
         if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
           setPremiumAccessState(initialPremiumAccessResult.state);
+          if (!initialPremiumAccessResult.timedOut) {
+            setIsPremiumAccessPendingForIcon(false);
+          }
         }
         if (initialPremiumAccessResult.timedOut) {
           initialPremiumAccessRequest
             .then((state) => {
               if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
                 setPremiumAccessState(state);
+                setIsPremiumAccessPendingForIcon(false);
               }
             })
             .catch((error: unknown) => {
@@ -749,6 +754,7 @@ export default function App() {
   useEffect(() => subscribePremiumAccessStateUpdates((state) => {
     premiumAccessUpdateVersionRef.current += 1;
     setPremiumAccessState(state);
+    setIsPremiumAccessPendingForIcon(false);
   }), []);
 
   /**

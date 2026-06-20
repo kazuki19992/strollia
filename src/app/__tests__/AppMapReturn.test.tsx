@@ -35,6 +35,11 @@ import {
   requestAchievementNotificationPermissionOnFirstLaunch,
   setupAchievementNotificationChannel,
 } from '../../features/achievements/achievementNotificationService';
+import {
+  getAchievementListItems,
+  getPendingInAppAchievementNotifications,
+} from '../../features/achievements/achievementRepository';
+import { filterDismissedAchievementNotifications } from '../../features/achievements/pendingNotifications';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -1221,6 +1226,30 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(getDailyLogs).not.toHaveBeenCalled();
+    expect(mockLatestMapScreenProps).toBeNull();
+  });
+
+  test('初期実績読込待機中にアンマウントした場合は実績状態と通知キューを更新しない', async () => {
+    let resolveItems!: (value: never[]) => void;
+    let resolvePending!: (value: never[]) => void;
+    (getAchievementListItems as jest.Mock).mockReturnValue(new Promise((resolve) => { resolveItems = resolve; }));
+    (getPendingInAppAchievementNotifications as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePending = resolve; }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(getAchievementListItems).toHaveBeenCalled();
+    expect(getPendingInAppAchievementNotifications).toHaveBeenCalled();
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    jest.clearAllMocks();
+    await act(async () => {
+      resolveItems([]);
+      resolvePending([]);
+    });
+    await flushPromises();
+
+    expect(filterDismissedAchievementNotifications).not.toHaveBeenCalled();
     expect(mockLatestMapScreenProps).toBeNull();
   });
 

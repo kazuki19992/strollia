@@ -419,11 +419,17 @@ export default function App() {
 
 
   /** 実績一覧と未表示の解除演出キューを再読み込みする。 */
-  const refreshAchievementState = useCallback(async (showPendingNotifications = false): Promise<void> => {
+  const refreshAchievementState = useCallback(async (
+    showPendingNotifications = false,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<void> => {
+    const { signal } = options;
     const [items, pendingNotifications] = await Promise.all([
       getAchievementListItems(),
       showPendingNotifications ? getPendingInAppAchievementNotifications() : Promise.resolve([]),
     ]);
+
+    if (signal?.aborted) return;
 
     setAchievementItems(items);
 
@@ -780,7 +786,7 @@ export default function App() {
         if (signal.aborted) return;
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
         if (signal.aborted) return;
-        await refreshAchievementState(true);
+        await refreshAchievementState(true, { signal });
         if (signal.aborted) return;
         if (!savedFirstLaunchTutorialCompleted) {
           setFirstLaunchTutorialMode('firstLaunch');

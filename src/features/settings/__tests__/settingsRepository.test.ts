@@ -1,11 +1,16 @@
 import { db } from '../../../db/database';
 import { getStringSetting, setSettings } from '../settingsRepository';
 
+const mockTxn = {
+  runAsync: jest.fn(),
+};
+
 jest.mock('../../../db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     runAsync: jest.fn(),
     withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
   },
 }));
 
@@ -33,33 +38,36 @@ describe('設定リポジトリ settingsRepository', () => {
   });
 
   it('複数の設定を1つのトランザクション内で共通の更新日時を使って保存する', async () => {
-    let isInTransaction = false;
-    const transactionStates: boolean[] = [];
-    (db.withTransactionAsync as jest.Mock).mockImplementation(async (callback: () => Promise<void>) => {
-      isInTransaction = true;
-      try {
-        await callback();
-      } finally {
-        isInTransaction = false;
-      }
-    });
-    (db.runAsync as jest.Mock).mockImplementation(async () => {
-      transactionStates.push(isInTransaction);
-    });
-
     await setSettings([
       { key: 'customIconUri', value: 'file:///icon.png' },
       { key: 'selectedIcon', value: 'custom' },
     ]);
 
-    expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.runAsync).toHaveBeenCalledTimes(2);
-    expect(transactionStates).toEqual([true, true]);
+    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(db.withTransactionAsync).not.toHaveBeenCalled();
+    expect(db.runAsync).not.toHaveBeenCalled();
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
 
-    const firstCall = (db.runAsync as jest.Mock).mock.calls[0];
-    const secondCall = (db.runAsync as jest.Mock).mock.calls[1];
+    const firstCall = mockTxn.runAsync.mock.calls[0];
+    const secondCall = mockTxn.runAsync.mock.calls[1];
     expect(firstCall.slice(1, 3)).toEqual(['customIconUri', JSON.stringify('file:///icon.png')]);
     expect(secondCall.slice(1, 3)).toEqual(['selectedIcon', JSON.stringify('custom')]);
+
+    const firstTimestamp = firstCall[3];
+    const secondTimestamp = secondCall[3];
+    expect(typeof firstTimestamp).toBe('string');
+    expect(typeof secondTimestamp).toBe('string');
+    expect(new Date(firstTimestamp).toISOString()).toBe(firstTimestamp);
+    expect(new Date(secondTimestamp).toISOString()).toBe(secondTimestamp);
     expect(firstCall[3]).toBe(secondCall[3]);
+  });
+
+  it('保存対象が空の場合はトランザクションも書き込みも実行しない', async () => {
+    await setSettings([]);
+
+    expect(db.withExclusiveTransactionAsync).not.toHaveBeenCalled();
+    expect(db.withTransactionAsync).not.toHaveBeenCalled();
+    expect(db.runAsync).not.toHaveBeenCalled();
+    expect(mockTxn.runAsync).not.toHaveBeenCalled();
   });
 });

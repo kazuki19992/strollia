@@ -104,11 +104,9 @@ function getManagedFilename(reference: string): string | null {
   }
 
   const filename = reference.slice(MANAGED_REFERENCE_PREFIX.length);
-  if (
-    filename === '.' ||
-    filename === '..' ||
-    !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(filename)
-  ) {
+  const match = filename.match(/^([A-Za-z0-9][A-Za-z0-9_-]*)\.([A-Za-z0-9]+)$/);
+  const extension = match?.[2].toLowerCase();
+  if (extension === undefined || !RECOGNIZED_IMAGE_EXTENSIONS.has(extension)) {
     return null;
   }
 
@@ -117,7 +115,8 @@ function getManagedFilename(reference: string): string | null {
 
 /** ファイルURIから対応画像の拡張子だけを引き継ぐ。 */
 function getImageExtension(uri: string): string {
-  const match = uri.match(/\.([A-Za-z0-9]+)(?:[?#]|$)/);
+  const path = uri.split(/[?#]/, 1)[0];
+  const match = path.match(/\.([A-Za-z0-9]+)$/);
   const extension = match?.[1].toLowerCase();
   return extension !== undefined && RECOGNIZED_IMAGE_EXTENSIONS.has(extension)
     ? extension

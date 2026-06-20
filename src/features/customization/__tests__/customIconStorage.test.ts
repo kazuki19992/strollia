@@ -52,6 +52,24 @@ describe('カスタム画像の永続ファイル管理', () => {
     });
   });
 
+  it('クエリやフラグメント内の文字列を画像拡張子として扱わない', async () => {
+    await expect(
+      persistCustomIconImage('file:///picker/photo.jpeg?format=.png#preview.webp', () => 'image-id'),
+    ).resolves.toEqual({
+      reference: 'managed:image-id.jpeg',
+      uri: 'file:///documents/strollia-custom-icons/image-id.jpeg',
+    });
+  });
+
+  it('パスに拡張子がなくクエリにだけ拡張子らしい文字列がある場合はjpgにする', async () => {
+    await expect(
+      persistCustomIconImage('file:///picker/photo?format=.png', () => 'image-id'),
+    ).resolves.toEqual({
+      reference: 'managed:image-id.jpg',
+      uri: 'file:///documents/strollia-custom-icons/image-id.jpg',
+    });
+  });
+
   it('管理参照から現在のdocumentDirectoryのURIを復元する', async () => {
     getInfoAsync.mockResolvedValue({ exists: true, isDirectory: false });
 
@@ -104,6 +122,23 @@ describe('カスタム画像の永続ファイル管理', () => {
       'file:///documents/strollia-custom-icons/old.jpg',
       { idempotent: true },
     );
+  });
+
+  it('走査パスや管理形式に合わない参照はファイル操作せず拒否する', async () => {
+    const invalidReferences = [
+      'managed:../outside.jpg',
+      'managed:file',
+      'managed:file.exe',
+      'managed:file.',
+    ];
+
+    for (const reference of invalidReferences) {
+      await expect(resolveCustomIconReference(reference)).resolves.toBeNull();
+      await deleteManagedCustomIcon(reference);
+    }
+
+    expect(getInfoAsync).not.toHaveBeenCalled();
+    expect(deleteAsync).not.toHaveBeenCalled();
   });
 
   it('documentDirectoryを利用できない場合は明確なエラーにする', async () => {

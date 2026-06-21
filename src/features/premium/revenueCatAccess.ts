@@ -117,11 +117,16 @@ export async function resolveRevenueCatAppUserId(client: RevenueCatClient): Prom
   return client.getAppUserId();
 }
 
+/** RevenueCat CustomerInfoから確認済みのPlus状態を取得し、失敗は呼び出し元へ伝える。 */
+export async function getConfirmedPremiumAccessState(): Promise<PremiumAccessState> {
+  const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
+  return resolvePremiumAccessState(createRevenueCatClient());
+}
+
 /** RevenueCat SDKが使える場合はCustomerInfoから、使えない場合は既定状態からPlus状態を返す。 */
 export async function getPremiumAccessState(): Promise<PremiumAccessState> {
   try {
-    const { createRevenueCatClient } = require('./revenueCatClient') as typeof import('./revenueCatClient');
-    return await resolvePremiumAccessState(createRevenueCatClient());
+    return await getConfirmedPremiumAccessState();
   } catch (error: unknown) {
     console.warn('Failed to load RevenueCat premium state:', error);
     return getDefaultPremiumAccessState();

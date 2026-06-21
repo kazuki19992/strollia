@@ -67,6 +67,8 @@ import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../featur
 import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '../features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
+import { deleteManagedCustomIcon, resolveCustomIconReference } from '../features/customization/customIconStorage';
+import { replaceCustomIconSelection } from '../features/customization/customIconSelection';
 import {
   DEFAULT_USER_LOCATION_ICON_ID,
   getUserLocationIconOption,
@@ -80,6 +82,7 @@ import {
 } from '../features/customization/colorPresets';
 import {
   getDefaultPremiumAccessState,
+  getConfirmedPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
   getRevenueCatAppUserId,
@@ -90,7 +93,8 @@ import {
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
 } from '../features/premium/revenueCatAccess';
-import { getBooleanSetting, getStringSetting, setSetting } from '../features/settings/settingsRepository';
+import { resolveInitialPremiumAccess } from '../features/premium/initialPremiumAccess';
+import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
 import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '../features/location/grid/gridAggregation';
@@ -197,6 +201,7 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
 export default function App() {
   const colorScheme = useColorScheme();
   const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
+  const [isPremiumAccessPendingForIcon, setIsPremiumAccessPendingForIcon] = useState(true);
   const [revenueCatAppUserId, setRevenueCatAppUserId] = useState<string | null>(null);
   const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
   const theme = useMemo(() => {
@@ -211,6 +216,8 @@ export default function App() {
   const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
   const isImportingGpxRef = useRef(false);
+  const isPickingCustomIconRef = useRef(false);
+  const premiumAccessUpdateVersionRef = useRef(0);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
@@ -258,7 +265,9 @@ export default function App() {
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
+  const [customIconReference, setCustomIconReference] = useState('');
   const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
+  const [hasCustomIconImageLoadFailed, setHasCustomIconImageLoadFailed] = useState(false);
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
@@ -308,8 +317,12 @@ export default function App() {
   const isPremiumPaywallVisibleRef = useRef(false);
   const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const userLocationIcon = useMemo(
-    () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive, customIconImageUri),
-    [premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
+    () => resolveUserLocationIcon(
+      selectedUserLocationIconId,
+      premiumAccessState.isPlusActive || isPremiumAccessPendingForIcon,
+      hasCustomIconImageLoadFailed ? null : customIconImageUri,
+    ),
+    [customIconImageUri, hasCustomIconImageLoadFailed, isPremiumAccessPendingForIcon, premiumAccessState.isPlusActive, selectedUserLocationIconId],
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
@@ -374,13 +387,18 @@ export default function App() {
   }, [sentryScreenName]);
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
-  const refreshData = useCallback(async () => {
+  const refreshData = useCallback(async (options: { signal?: AbortSignal } = {}) => {
+    const { signal } = options;
     const [logs, allPoints, recording, permissions] = await Promise.all([
       getDailyLogs(),
       getAllLocationPoints(),
       isBackgroundLocationRecording(),
       getLocationPermissionState(),
     ]);
+
+    if (signal?.aborted) {
+      return { logs, allPoints, recording, permissions };
+    }
 
     setDailyLogs(logs);
     setPoints(allPoints);
@@ -389,7 +407,9 @@ export default function App() {
     setVisitedGridRefreshVersion((version) => version + 1);
 
     getMonthlyAreaReport(getPreviousReportMonth())
-      .then(setMonthlyAreaReport)
+      .then((report) => {
+        if (!signal?.aborted) setMonthlyAreaReport(report);
+      })
       .catch((error: unknown) => {
         console.warn('Failed to refresh monthly area report:', error);
       });
@@ -399,11 +419,17 @@ export default function App() {
 
 
   /** 実績一覧と未表示の解除演出キューを再読み込みする。 */
-  const refreshAchievementState = useCallback(async (showPendingNotifications = false): Promise<void> => {
+  const refreshAchievementState = useCallback(async (
+    showPendingNotifications = false,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<void> => {
+    const { signal } = options;
     const [items, pendingNotifications] = await Promise.all([
       getAchievementListItems(),
       showPendingNotifications ? getPendingInAppAchievementNotifications() : Promise.resolve([]),
     ]);
+
+    if (signal?.aborted) return;
 
     setAchievementItems(items);
 
@@ -443,14 +469,18 @@ export default function App() {
 
   /** GPSバックグラウンド記録を開始し、結果をユーザー向けメッセージへ反映する。 */
   const startRecording = useCallback(
-    async (reason: 'auto' | 'manual' = 'manual'): Promise<void> => {
+    async (reason: 'auto' | 'manual' = 'manual', signal?: AbortSignal): Promise<void> => {
       try {
         await startBackgroundLocationRecording();
-        const result = await refreshData();
+        if (signal?.aborted) return;
+        const result = await refreshData({ signal });
+        if (signal?.aborted) return;
         setMessage(reason === 'auto' ? 'GPS記録を自動開始しました。' : 'バックグラウンドGPS記録を開始しました。');
         setAutoStartStatus(hasRequiredLocationPermission(result.permissions) ? 'recording' : 'needsPermission');
       } catch (error: unknown) {
-        await refreshData().catch(() => undefined);
+        if (signal?.aborted) return;
+        await refreshData({ signal }).catch(() => undefined);
+        if (signal?.aborted) return;
         setMessage(error instanceof Error ? error.message : 'GPS記録の開始に失敗しました。');
         setAutoStartStatus('failed');
       }
@@ -460,20 +490,21 @@ export default function App() {
 
   /** 権限許可後に未記録ならGPS記録の自動開始を試みる。 */
   const maybeStartRecordingAutomatically = useCallback(
-    async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
+    async (state: { permissions: LocationPermissionState; recording: boolean }, signal?: AbortSignal): Promise<void> => {
+      if (signal?.aborted) return;
       if (!shouldStartRecordingAutomatically({
         permissions: state.permissions,
         isRecording: state.recording,
         isAutoStartInFlight: autoStartInFlightRef.current,
       })) {
-        setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
+        if (!signal?.aborted) setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
         return;
       }
 
       autoStartInFlightRef.current = true;
 
       try {
-        await startRecording('auto');
+        await startRecording('auto', signal);
       } finally {
         autoStartInFlightRef.current = false;
       }
@@ -483,22 +514,27 @@ export default function App() {
 
   /** 権限状態に合わせ、背景タスクと前景限定記録の所有権を同期する。 */
   const synchronizeLocationRecordingMode = useCallback(
-    async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
+    async (state: { permissions: LocationPermissionState; recording: boolean }, signal?: AbortSignal): Promise<void> => {
+      if (signal?.aborted) return;
       if (state.permissions.backgroundGranted) {
         await updateBackgroundLocationTaskOptionsIfNeeded().catch((error: unknown) => {
           console.warn('Failed to update background location task options:', error);
         });
-        await maybeStartRecordingAutomatically(state);
+        if (signal?.aborted) return;
+        await maybeStartRecordingAutomatically(state, signal);
+        if (signal?.aborted) return;
         setIsLocationRecordingModeSynchronized(true);
         return;
       }
 
       try {
         await stopBackgroundLocationRecording();
+        if (signal?.aborted) return;
         setIsRecording(false);
         setAutoStartStatus('needsPermission');
         setIsLocationRecordingModeSynchronized(true);
       } catch (error: unknown) {
+        if (signal?.aborted) return;
         // 停止確認前に前景保存を開始すると二重保存になり得るため、同期済みにしない。
         setIsLocationRecordingModeSynchronized(false);
         setMessage(error instanceof Error ? error.message : 'バックグラウンドGPS記録の停止に失敗しました。');
@@ -616,11 +652,16 @@ export default function App() {
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
    */
   useEffect(() => {
+    const initializationController = new AbortController();
+    const { signal } = initializationController;
+    const initialPremiumAccessUpdateVersion = premiumAccessUpdateVersionRef.current;
     initializeDatabase()
       .then(async () => {
         await loadAppFonts().catch((error: unknown) => {
           console.warn('Failed to load app fonts:', error);
         });
+        if (signal.aborted) return;
+        const initialPremiumAccessRequest = getConfirmedPremiumAccessState();
         const [
           savedKeepScreenAwake,
           savedShowPhotosOnMap,
@@ -630,6 +671,7 @@ export default function App() {
           savedCustomIconImageUri,
           savedReviewPrompted,
           savedFirstLaunchTutorialCompleted,
+          initialPremiumAccessResult,
         ] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
@@ -639,13 +681,21 @@ export default function App() {
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
           getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
+          resolveInitialPremiumAccess(
+            initialPremiumAccessRequest,
+            getDefaultPremiumAccessState(),
+            { signal },
+          ),
         ]);
+        if (signal.aborted) return;
         setKeepScreenAwake(savedKeepScreenAwake);
         if (savedShowPhotosOnMapEnablePending) {
           setShowPhotosOnMap(false);
           setShouldRestorePhotosOnMapAfterMapReady(false);
           await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+          if (signal.aborted) return;
           await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
+          if (signal.aborted) return;
           setMessage('前回の写真表示で問題が発生した可能性があるため、写真表示をOFFに戻しました。');
         } else {
           setShowPhotosOnMap(false);
@@ -653,52 +703,115 @@ export default function App() {
         }
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
-        setCustomIconImageUri(savedCustomIconImageUri || null);
+        if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+          setPremiumAccessState(initialPremiumAccessResult.state);
+          if (initialPremiumAccessResult.confirmed) {
+            setIsPremiumAccessPendingForIcon(false);
+          }
+        }
+        if (initialPremiumAccessResult.timedOut) {
+          initialPremiumAccessRequest
+            .then((state) => {
+              if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+                setPremiumAccessState(state);
+                setIsPremiumAccessPendingForIcon(false);
+              }
+            })
+            .catch((error: unknown) => {
+              console.warn('Failed to refresh delayed premium access state:', error);
+            });
+        }
+        setCustomIconReference(savedCustomIconImageUri);
+        setHasCustomIconImageLoadFailed(false);
+
+        const resolvedCustomIcon = await resolveCustomIconReference(savedCustomIconImageUri).catch((error: unknown) => {
+          console.warn('Failed to resolve custom icon reference:', error);
+          return null;
+        });
+        if (signal.aborted) {
+          if (resolvedCustomIcon?.migrated) {
+            await deleteManagedCustomIcon(resolvedCustomIcon.reference).catch(() => undefined);
+          }
+          return;
+        }
+        if (resolvedCustomIcon?.migrated) {
+          try {
+            await setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, resolvedCustomIcon.reference);
+            if (signal.aborted) return;
+            setCustomIconReference(resolvedCustomIcon.reference);
+            setCustomIconImageUri(resolvedCustomIcon.uri);
+          } catch (error: unknown) {
+            await deleteManagedCustomIcon(resolvedCustomIcon.reference).catch((cleanupError: unknown) => {
+              console.warn('Failed to delete unpersisted migrated custom icon:', cleanupError);
+            });
+            if (signal.aborted) return;
+            console.warn('Failed to persist migrated custom icon reference:', error);
+            setCustomIconImageUri(savedCustomIconImageUri || null);
+          }
+        } else {
+          setCustomIconImageUri(resolvedCustomIcon?.uri ?? null);
+        }
         setHasPromptedReview(savedReviewPrompted);
-        getPremiumAccessState()
-          .then(setPremiumAccessState)
-          .catch((error: unknown) => {
-            console.warn('Failed to refresh premium access state:', error);
-          });
         getRevenueCatAppUserId()
-          .then(setRevenueCatAppUserId)
+          .then((appUserId) => {
+            if (!signal.aborted) setRevenueCatAppUserId(appUserId);
+          })
           .catch((error: unknown) => {
             console.warn('Failed to refresh RevenueCat app user id:', error);
           });
         setIsLoadingPremiumOffering(true);
         getPremiumOfferingSummary()
-          .then(setPremiumOfferingSummary)
+          .then((offering) => {
+            if (!signal.aborted) setPremiumOfferingSummary(offering);
+          })
           .catch((error: unknown) => {
             console.warn('Failed to refresh premium offering summary:', error);
           })
           .finally(() => {
-            setIsLoadingPremiumOffering(false);
+            if (!signal.aborted) setIsLoadingPremiumOffering(false);
           });
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
+        if (signal.aborted) return;
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
+          if (signal.aborted) return;
         }
-        const initialState = await refreshData();
+        const initialState = await refreshData({ signal });
+        if (signal.aborted) return;
         if (isWhileInUseOnlyMode(initialState.permissions)) {
           setIsWhileInUseToastVisible(true);
         }
-        await synchronizeLocationRecordingMode(initialState);
+        await synchronizeLocationRecordingMode(initialState, signal);
+        if (signal.aborted) return;
         await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
-        await refreshAchievementState(true);
+        if (signal.aborted) return;
+        await refreshAchievementState(true, { signal });
+        if (signal.aborted) return;
         if (!savedFirstLaunchTutorialCompleted) {
           setFirstLaunchTutorialMode('firstLaunch');
           setIsFirstLaunchTutorialVisible(true);
         }
       })
       .catch((error: unknown) => {
+        if (signal.aborted) return;
         setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
       })
-      .finally(() => setIsReady(true));
+      .finally(() => {
+        if (!signal.aborted) setIsReady(true);
+      });
+
+    return () => {
+      initializationController.abort();
+    };
   }, [refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
 
   /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */
-  useEffect(() => subscribePremiumAccessStateUpdates(setPremiumAccessState), []);
+  useEffect(() => subscribePremiumAccessStateUpdates((state) => {
+    premiumAccessUpdateVersionRef.current += 1;
+    setPremiumAccessState(state);
+    setIsPremiumAccessPendingForIcon(false);
+  }), []);
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。
@@ -1328,6 +1441,11 @@ export default function App() {
    * システムの正方形クロップUIを使用する。
    */
   async function pickCustomIcon(): Promise<void> {
+    if (isPickingCustomIconRef.current) {
+      return;
+    }
+
+    isPickingCustomIconRef.current = true;
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -1347,36 +1465,34 @@ export default function App() {
         return;
       }
 
-      const uri = result.assets[0].uri;
-      setCustomIconImageUri(uri);
+      const replacement = await replaceCustomIconSelection({
+        sourceUri: result.assets[0].uri,
+        previousReference: customIconReference,
+        persistSelection: async (reference) => {
+          await setSettings([
+            { key: CUSTOM_ICON_IMAGE_URI_SETTING_KEY, value: reference },
+            { key: USER_LOCATION_ICON_SETTING_KEY, value: 'custom' },
+          ]);
+        },
+      });
+      setCustomIconReference(replacement.reference);
+      setCustomIconImageUri(replacement.uri);
       setSelectedUserLocationIconId('custom');
-      setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, uri).catch((error: unknown) => {
-        Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。');
-      });
-      setSetting(USER_LOCATION_ICON_SETTING_KEY, 'custom').catch((error: unknown) => {
-        Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
-      });
-      Alert.alert('カスタムアイコン', '写真をアルバムから削除するとOS標準に戻ります。');
+      setHasCustomIconImageLoadFailed(false);
     } catch (error: unknown) {
-      Alert.alert('エラー', error instanceof Error ? error.message : 'カスタムアイコンを設定できませんでした。');
+      const detail = error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。';
+      const message = customIconReference
+        ? `新しい画像を設定できませんでした。以前の設定は保持されています。\n${detail}`
+        : `カスタムアイコンを設定できませんでした。\n${detail}`;
+      Alert.alert('設定失敗', message);
+    } finally {
+      isPickingCustomIconRef.current = false;
     }
   }
 
-  /**
-   * カスタムアイコン画像をクリアしてOS標準へ戻す。
-   * 画像URIが無効になった場合（フォトライブラリから削除など）に呼ばれる。
-   *
-   * @returns なし。
-   */
-  function clearCustomIcon(): void {
-    setCustomIconImageUri(null);
-    setSelectedUserLocationIconId(DEFAULT_USER_LOCATION_ICON_ID);
-    setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, '').catch((error: unknown) => {
-      console.warn('Failed to clear custom icon URI:', error);
-    });
-    setSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID).catch((error: unknown) => {
-      console.warn('Failed to reset icon setting:', error);
-    });
+  /** 画像読込失敗時は保存設定を維持し、このセッションだけOS標準表示へ切り替える。 */
+  function handleCustomIconLoadError(): void {
+    setHasCustomIconImageLoadFailed(true);
   }
 
   /**
@@ -1566,7 +1682,7 @@ export default function App() {
               initialRegion={initialRegion}
               mapType={mapType}
               userLocationIcon={userLocationIcon}
-              onCustomIconError={clearCustomIcon}
+              onCustomIconError={handleCustomIconLoadError}
               isFollowingUserLocation={isFollowingUserLocation}
               userCoordinate={userCoordinate}
               visitedGridCells={visitedGridCells}

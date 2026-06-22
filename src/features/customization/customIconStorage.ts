@@ -154,6 +154,11 @@ function createUniqueId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
+/** 旧バージョンが保存した絶対URI形式かどうかを返す。 */
+export function isLegacyCustomIconReference(reference: string): boolean {
+  return isAbsoluteUri(reference);
+}
+
 /** 管理参照でない値のうち、従来形式として扱える絶対URIだけを許可する。 */
 function isAbsoluteUri(value: string): boolean {
   return /^[A-Za-z][A-Za-z\d+.-]*:\/\//.test(value);

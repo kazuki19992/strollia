@@ -174,7 +174,7 @@ const PHOTO_MAP_ENABLE_STABLE_DELAY_MS = 2000;
 type SettingsStackParamList = {
   SettingsHome: undefined;
   AboutApp: undefined;
-  FaqScreen: undefined;
+  Faq: undefined;
   LicenseList: undefined;
   LicenseDetail: { license: OssLicenseEntry };
 };
@@ -1856,7 +1856,7 @@ export default function App() {
                         onUpdateUserLocationIcon={updateUserLocationIcon}
                         onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
                         onOpenFirstLaunchTutorial={openFirstLaunchTutorial}
-                        onOpenFaqScreen={() => navigation.navigate('FaqScreen')}
+                        onOpenFaqScreen={() => navigation.navigate('Faq')}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
                         onOpenTermsOfService={() => openLegalLink(TERMS_OF_SERVICE_URL)}
                         onOpenPrivacyPolicy={() => openLegalLink(PRIVACY_POLICY_URL)}
@@ -1896,7 +1896,7 @@ export default function App() {
                       />
                     )}
                   </SettingsStack.Screen>
-                  <SettingsStack.Screen name="FaqScreen">
+                  <SettingsStack.Screen name="Faq">
                     {({ navigation }) => (
                       <FaqScreen
                         styles={styles}

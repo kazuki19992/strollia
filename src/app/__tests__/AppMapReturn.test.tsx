@@ -12,7 +12,11 @@ import {
   updateBackgroundLocationTaskOptionsIfNeeded,
 } from '../../features/location/locationService';
 import { resolveUserLocationIcon } from '../../features/customization/customizationResolver';
-import { deleteManagedCustomIcon, resolveCustomIconReference } from '../../features/customization/customIconStorage';
+import {
+  deleteManagedCustomIcon,
+  isLegacyCustomIconReference,
+  resolveCustomIconReference,
+} from '../../features/customization/customIconStorage';
 import { replaceCustomIconSelection } from '../../features/customization/customIconSelection';
 import { getDailyLogs } from '../../features/logs/logRepository';
 import { getMonthlyAreaReport } from '../../features/reports/monthlyAreaReport';
@@ -334,6 +338,7 @@ jest.mock('../../features/settings/settingsRepository', () => ({
 
 jest.mock('../../features/customization/customIconStorage', () => ({
   deleteManagedCustomIcon: jest.fn().mockResolvedValue(undefined),
+  isLegacyCustomIconReference: jest.fn((reference: string) => /^[A-Za-z][A-Za-z\d+.-]*:\/\//.test(reference)),
   resolveCustomIconReference: jest.fn().mockResolvedValue(null),
 }));
 
@@ -1524,10 +1529,57 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps).toBeNull();
   });
 
-  test('消えた旧URIは表示だけOS標準へ戻し保存設定を消さない', async () => {
+  test('消えた旧URIは保存設定を原子的にOS標準へ戻して案内する', async () => {
     (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'userLocationIcon') return Promise.resolve('custom');
       if (key === 'customIconImageUri') return Promise.resolve('file:///missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'customIconImageUri', value: '' },
+      { key: 'userLocationIcon', value: 'default' },
+    ]);
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
+    expect(alertSpy).toHaveBeenCalledWith(
+      'カスタムアイコンを読み込めませんでした',
+      '保存されていた画像を読み込めなかったため、現在地アイコンをOS標準に戻しました。カスタムアイコンを使用する場合は、設定画面から画像を再設定してください。',
+    );
+  });
+
+  test('消えた管理参照は保存設定を原子的にOS標準へ戻すが旧URI向け案内は表示しない', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'customIconImageUri', value: '' },
+      { key: 'userLocationIcon', value: 'default' },
+    ]);
+    expect(isLegacyCustomIconReference).toHaveBeenCalledWith('managed:missing.jpg');
+    expect(alertSpy).not.toHaveBeenCalledWith(
+      'カスタムアイコンを読み込めませんでした',
+      expect.anything(),
+    );
+  });
+
+  test('画像参照が空のカスタム設定は保存設定を原子的にOS標準へ戻す', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('');
       return Promise.resolve(fallback);
     });
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
@@ -1535,9 +1587,72 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await act(async () => { renderer = ReactTestRenderer.create(<App />); });
     await flushPromises();
 
-    expect(setSetting).not.toHaveBeenCalledWith('customIconImageUri', '');
-    expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'customIconImageUri', value: '' },
+      { key: 'userLocationIcon', value: 'default' },
+    ]);
+  });
+
+  test('画像参照の解決が一時エラーの場合は設定を変更せずセッション中だけOS標準を表示する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:saved.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockRejectedValue(new Error('一時エラー'));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
     expect(setSettings).not.toHaveBeenCalled();
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+  });
+
+  test('消えた画像参照の設定リセットに失敗してもセッション中はOS標準へ戻して警告する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(console.warn).toHaveBeenCalledWith(
+      'Failed to reset missing custom icon reference:',
+      expect.any(Error),
+    );
+  });
+
+  test('旧URI参照のリセット永続化失敗時にAlertを表示しない', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(console.warn).toHaveBeenCalledWith(
+      'Failed to reset missing custom icon reference:',
+      expect.any(Error),
+    );
+    expect(alertSpy).not.toHaveBeenCalledWith(
+      'カスタムアイコンを読み込めませんでした',
+      expect.any(String),
+    );
   });
 
   test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {

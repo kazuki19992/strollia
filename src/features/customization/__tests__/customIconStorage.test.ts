@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 import {
   deleteManagedCustomIcon,
+  isLegacyCustomIconReference,
   persistCustomIconImage,
   resolveCustomIconReference,
 } from '../customIconStorage';
@@ -34,6 +35,13 @@ describe('カスタム画像の永続ファイル管理', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it('従来の絶対URIだけを旧参照として判定する', () => {
+    expect(isLegacyCustomIconReference('file:///legacy/photo.jpg')).toBe(true);
+    expect(isLegacyCustomIconReference('ph://asset-id')).toBe(true);
+    expect(isLegacyCustomIconReference('managed:saved.jpg')).toBe(false);
+    expect(isLegacyCustomIconReference('')).toBe(false);
   });
 
   it('画像を専用領域へコピーし相対的な管理参照と表示URIを返す', async () => {

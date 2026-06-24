@@ -67,7 +67,11 @@ import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../featur
 import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '../features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
-import { deleteManagedCustomIcon, resolveCustomIconReference } from '../features/customization/customIconStorage';
+import {
+  deleteManagedCustomIcon,
+  isLegacyCustomIconReference,
+  resolveCustomIconReference,
+} from '../features/customization/customIconStorage';
 import { replaceCustomIconSelection } from '../features/customization/customIconSelection';
 import {
   DEFAULT_USER_LOCATION_ICON_ID,
@@ -726,7 +730,7 @@ export default function App() {
 
         const resolvedCustomIcon = await resolveCustomIconReference(savedCustomIconImageUri).catch((error: unknown) => {
           console.warn('Failed to resolve custom icon reference:', error);
-          return null;
+          return undefined;
         });
         if (signal.aborted) {
           if (resolvedCustomIcon?.migrated) {
@@ -734,7 +738,28 @@ export default function App() {
           }
           return;
         }
-        if (resolvedCustomIcon?.migrated) {
+        if (resolvedCustomIcon === null && savedUserLocationIcon === 'custom') {
+          let didPersistReset = false;
+          try {
+            await setSettings([
+              { key: CUSTOM_ICON_IMAGE_URI_SETTING_KEY, value: '' },
+              { key: USER_LOCATION_ICON_SETTING_KEY, value: DEFAULT_USER_LOCATION_ICON_ID },
+            ]);
+            didPersistReset = true;
+          } catch (error: unknown) {
+            console.warn('Failed to reset missing custom icon reference:', error);
+          }
+          if (signal.aborted) return;
+          setSelectedUserLocationIconId(DEFAULT_USER_LOCATION_ICON_ID);
+          setCustomIconReference('');
+          setCustomIconImageUri(null);
+          if (didPersistReset && isLegacyCustomIconReference(savedCustomIconImageUri)) {
+            Alert.alert(
+              'カスタムアイコンを読み込めませんでした',
+              '保存されていた画像を読み込めなかったため、現在地アイコンをOS標準に戻しました。カスタムアイコンを使用する場合は、設定画面から画像を再設定してください。',
+            );
+          }
+        } else if (resolvedCustomIcon?.migrated) {
           try {
             await setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, resolvedCustomIcon.reference);
             if (signal.aborted) return;

@@ -84,6 +84,7 @@ function createProps() {
     onUpdateAppColorPreset: jest.fn(),
     onOpenAboutAppScreen: jest.fn(),
     onOpenFirstLaunchTutorial: jest.fn(),
+    onOpenFaqScreen: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
     onOpenTermsOfService: jest.fn(),
     onOpenPrivacyPolicy: jest.fn(),
@@ -162,6 +163,36 @@ describe('設定画面 SettingsScreen', () => {
 
     expect(props.onOpenAboutAppScreen).toHaveBeenCalledTimes(1);
     expect(props.onOpenFirstLaunchTutorial).toHaveBeenCalledTimes(1);
+  });
+
+  test('チュートリアルの下によくある質問を表示して開ける', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const tutorialIndex = texts.indexOf('チュートリアル');
+    const faqIndex = texts.indexOf('よくある質問');
+    const licenseIndex = texts.indexOf('オープンソースライセンス');
+
+    expect(tutorialIndex).toBeGreaterThanOrEqual(0);
+    expect(faqIndex).toBeGreaterThanOrEqual(0);
+    expect(licenseIndex).toBeGreaterThanOrEqual(0);
+    expect(tutorialIndex).toBeLessThan(faqIndex);
+    expect(faqIndex).toBeLessThan(licenseIndex);
+
+    const faqButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenFaqScreen)[0];
+
+    act(() => {
+      faqButton.props.onPress();
+    });
+
+    expect(props.onOpenFaqScreen).toHaveBeenCalledTimes(1);
+
+    renderer.unmount();
   });
 
   test('ダークモードでもGPS正常パネルはライトモードと同じ白文字で表示する', () => {

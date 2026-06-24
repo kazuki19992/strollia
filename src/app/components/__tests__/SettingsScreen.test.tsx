@@ -185,6 +185,7 @@ describe('設定画面 SettingsScreen', () => {
     expect(faqIndex).toBeLessThan(licenseIndex);
 
     const faqButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenFaqScreen)[0];
+    expect(faqButton).toBeDefined();
 
     act(() => {
       faqButton.props.onPress();

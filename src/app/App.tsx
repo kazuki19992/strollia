@@ -739,11 +739,13 @@ export default function App() {
           return;
         }
         if (resolvedCustomIcon === null && savedUserLocationIcon === 'custom') {
+          let didPersistReset = false;
           try {
             await setSettings([
               { key: CUSTOM_ICON_IMAGE_URI_SETTING_KEY, value: '' },
               { key: USER_LOCATION_ICON_SETTING_KEY, value: DEFAULT_USER_LOCATION_ICON_ID },
             ]);
+            didPersistReset = true;
           } catch (error: unknown) {
             console.warn('Failed to reset missing custom icon reference:', error);
           }
@@ -751,7 +753,7 @@ export default function App() {
           setSelectedUserLocationIconId(DEFAULT_USER_LOCATION_ICON_ID);
           setCustomIconReference('');
           setCustomIconImageUri(null);
-          if (isLegacyCustomIconReference(savedCustomIconImageUri)) {
+          if (didPersistReset && isLegacyCustomIconReference(savedCustomIconImageUri)) {
             Alert.alert(
               'カスタムアイコンを読み込めませんでした',
               '保存されていた画像を読み込めなかったため、現在地アイコンをOS標準に戻しました。カスタムアイコンを使用する場合は、設定画面から画像を再設定してください。',

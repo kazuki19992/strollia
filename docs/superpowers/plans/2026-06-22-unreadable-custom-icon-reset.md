@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: 旧URI判定をストレージ層へ追加
+## Task 1: 旧URI判定をストレージ層へ追加
 
 **Files:**
 - Modify: `src/features/customization/customIconStorage.ts`
@@ -59,7 +59,7 @@ git add src/features/customization/customIconStorage.ts src/features/customizati
 git commit -m "feat(icon): 旧カスタム画像参照の判定を追加"
 ```
 
-### Task 2: 復旧不能な参照をOS標準へ原子的に戻す
+## Task 2: 復旧不能な参照をOS標準へ原子的に戻す
 
 **Files:**
 - Modify: `src/app/App.tsx:70,720-760`
@@ -236,7 +236,7 @@ git add src/app/App.tsx src/app/__tests__/AppMapReturn.test.tsx
 git commit -m "fix(icon): 復旧不能な画像参照をOS標準へ戻す"
 ```
 
-### Task 3: 保存仕様を同期して全体検証する
+## Task 3: 保存仕様を同期して全体検証する
 
 **Files:**
 - Modify: `docs/data-storage.md:166-178`

@@ -1629,6 +1629,32 @@ describe('App 地図復帰時の表示範囲復元', () => {
     );
   });
 
+  test('旧URI参照のリセット永続化失敗時にAlertを表示しない', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(console.warn).toHaveBeenCalledWith(
+      'Failed to reset missing custom icon reference:',
+      expect.any(Error),
+    );
+    expect(alertSpy).not.toHaveBeenCalledWith(
+      'カスタムアイコンを読み込めませんでした',
+      expect.any(String),
+    );
+  });
+
   test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);

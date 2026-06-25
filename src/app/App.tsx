@@ -118,6 +118,7 @@ import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementDialog } from './components/AchievementDialog';
 import { AchievementListScreen } from './components/AchievementListScreen';
 import { AboutAppScreen } from './components/AboutAppScreen';
+import { FaqScreen } from './components/FaqScreen';
 import { DailyLogDetailScreen } from './components/DailyLogDetailScreen';
 import { DailyLogsScreen } from './components/DailyLogsScreen';
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
@@ -173,6 +174,7 @@ const PHOTO_MAP_ENABLE_STABLE_DELAY_MS = 2000;
 type SettingsStackParamList = {
   SettingsHome: undefined;
   AboutApp: undefined;
+  Faq: undefined;
   LicenseList: undefined;
   LicenseDetail: { license: OssLicenseEntry };
 };
@@ -1854,6 +1856,7 @@ export default function App() {
                         onUpdateUserLocationIcon={updateUserLocationIcon}
                         onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
                         onOpenFirstLaunchTutorial={openFirstLaunchTutorial}
+                        onOpenFaqScreen={() => navigation.navigate('Faq')}
                         onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
                         onOpenTermsOfService={() => openLegalLink(TERMS_OF_SERVICE_URL)}
                         onOpenPrivacyPolicy={() => openLegalLink(PRIVACY_POLICY_URL)}
@@ -1887,6 +1890,15 @@ export default function App() {
                   <SettingsStack.Screen name="AboutApp">
                     {({ navigation }) => (
                       <AboutAppScreen
+                        styles={styles}
+                        theme={theme}
+                        onBackToSettings={() => navigation.goBack()}
+                      />
+                    )}
+                  </SettingsStack.Screen>
+                  <SettingsStack.Screen name="Faq">
+                    {({ navigation }) => (
+                      <FaqScreen
                         styles={styles}
                         theme={theme}
                         onBackToSettings={() => navigation.goBack()}

@@ -98,6 +98,8 @@ export type SettingsScreenProps = {
   onOpenAboutAppScreen: () => void;
   /** 初回チュートリアルを再表示する処理。 */
   onOpenFirstLaunchTutorial: () => void;
+  /** よくある質問画面を開く処理。 */
+  onOpenFaqScreen: () => void;
   /** OSSライセンス画面を開く処理。 */
   onOpenLicenseScreen: () => void;
   /** 利用規約を開く処理。 */
@@ -170,6 +172,7 @@ export function SettingsScreen({
   onUpdateUserLocationIcon,
   onOpenAboutAppScreen,
   onOpenFirstLaunchTutorial,
+  onOpenFaqScreen,
   onOpenLicenseScreen,
   onOpenTermsOfService,
   onOpenPrivacyPolicy,
@@ -425,6 +428,13 @@ export function SettingsScreen({
             label="チュートリアル"
             styles={styles}
             onPress={onOpenFirstLaunchTutorial}
+          />
+          <ActionPill
+            alignLeft
+            icon={<Feather name="help-circle" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="よくある質問"
+            styles={styles}
+            onPress={onOpenFaqScreen}
           />
           <ActionPill
             alignLeft

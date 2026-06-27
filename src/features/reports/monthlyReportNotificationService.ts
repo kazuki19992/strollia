@@ -18,7 +18,11 @@ export async function setupMonthlyReportNotificationChannel(): Promise<void> {
 
 export async function syncMonthlyReportNotification(isPlusActive: boolean): Promise<void> {
   if (!isPlusActive) {
-    await Notifications.cancelScheduledNotificationAsync(MONTHLY_REPORT_NOTIFICATION_ID);
+    try {
+      await Notifications.cancelScheduledNotificationAsync(MONTHLY_REPORT_NOTIFICATION_ID);
+    } catch (error: unknown) {
+      console.warn('Failed to cancel monthly report notification:', error);
+    }
     return;
   }
 
@@ -33,22 +37,25 @@ export async function syncMonthlyReportNotification(isPlusActive: boolean): Prom
     return;
   }
 
-  await Notifications.scheduleNotificationAsync({
-    identifier: MONTHLY_REPORT_NOTIFICATION_ID,
-    content: {
-      title: '先月のレポートが完成しました！',
-      body: 'いますぐ確認しましょう！👀',
-      data: { screen: 'monthlyReport' },
-      sound: true,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-      day: 1,
-      hour: 9,
-      minute: 0,
-      repeats: true,
-    },
-  });
+  try {
+    await Notifications.scheduleNotificationAsync({
+      identifier: MONTHLY_REPORT_NOTIFICATION_ID,
+      content: {
+        title: '先月のレポートが完成しました！',
+        body: 'いますぐ確認しましょう！👀',
+        data: { screen: 'monthlyReport' },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+        day: 1,
+        hour: 9,
+        minute: 0,
+        repeats: true,
+      },
+    });
+  } catch (error: unknown) {
+    console.warn('Failed to schedule monthly report notification:', error);
+  }
 }
 
 export function isMonthlyReportNotification(data: unknown): boolean {

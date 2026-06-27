@@ -44,7 +44,8 @@ export async function syncMonthlyReportNotification(isPlusActive: boolean): Prom
         title: '先月のレポートが完成しました！',
         body: 'いますぐ確認しましょう！👀',
         data: { screen: 'monthlyReport' },
-      },
+        channelId: MONTHLY_REPORT_NOTIFICATION_CHANNEL_ID,
+      } as Notifications.NotificationContentInput & { channelId: string },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
         day: 1,

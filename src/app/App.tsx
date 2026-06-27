@@ -231,6 +231,8 @@ export default function App() {
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
+  const openMonthlyReportRef = useRef<() => void>(() => undefined);
+  const lastHandledNotificationIdRef = useRef<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
@@ -813,6 +815,9 @@ export default function App() {
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
           if (signal.aborted) return;
+          syncMonthlyReportNotification(initialPremiumAccessResult.state.isPlusActive).catch((error: unknown) => {
+            console.warn('Failed to sync monthly report notification after permission:', error);
+          });
         }
         const initialState = await refreshData({ signal });
         if (signal.aborted) return;
@@ -853,22 +858,27 @@ export default function App() {
     });
   }), []);
 
+  useEffect(() => { openMonthlyReportRef.current = openMonthlyReport; });
+
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      if (isMonthlyReportNotification(response.notification.request.content.data)) {
-        openMonthlyReport();
-      }
+      if (!isMonthlyReportNotification(response.notification.request.content.data)) return;
+      const id = response.notification.request.identifier;
+      if (lastHandledNotificationIdRef.current === id) return;
+      lastHandledNotificationIdRef.current = id;
+      openMonthlyReportRef.current();
     });
     return () => subscription.remove();
   }, []);
 
   useEffect(() => {
     if (!isReady) return;
-    if (lastNotificationResponse && isMonthlyReportNotification(
-      lastNotificationResponse.notification.request.content.data,
-    )) {
-      openMonthlyReport();
-    }
+    if (!lastNotificationResponse) return;
+    if (!isMonthlyReportNotification(lastNotificationResponse.notification.request.content.data)) return;
+    const id = lastNotificationResponse.notification.request.identifier;
+    if (lastHandledNotificationIdRef.current === id) return;
+    lastHandledNotificationIdRef.current = id;
+    openMonthlyReportRef.current();
   }, [isReady, lastNotificationResponse]);
 
   /**

@@ -64,6 +64,7 @@ describe('月次レポート通知 monthlyReportNotificationService', () => {
             title: '先月のレポートが完成しました！',
             body: 'いますぐ確認しましょう！👀',
             data: { screen: 'monthlyReport' },
+            channelId: 'monthly-reports',
           }),
           trigger: expect.objectContaining({ day: 1, hour: 9, minute: 0, repeats: true }),
         }),

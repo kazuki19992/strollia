@@ -1694,9 +1694,11 @@ export default function App() {
     setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
       console.warn('Failed to persist first launch tutorial flag:', error);
     });
-    requestAchievementNotificationPermissionIfNeeded().catch((error: unknown) => {
-      console.warn('Failed to request achievement notification permission:', error);
-    });
+    requestAchievementNotificationPermissionIfNeeded()
+      .then(() => syncMonthlyReportNotification(premiumAccessState.isPlusActive))
+      .catch((error: unknown) => {
+        console.warn('Failed to request achievement notification permission:', error);
+      });
   }
 
   /** 実績通知権限要求を同一セッションで重複実行しないよう呼び出す。 */

@@ -36,7 +36,9 @@
           "ライフログ",
           "地図",
           "旅行",
-          "徒歩"
+          "徒歩",
+          "移動",
+          "sutororia"
         ]
       },
       "bundleIdentifier": "com.kazuki19992.strollia",

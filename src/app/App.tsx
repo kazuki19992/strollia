@@ -2,6 +2,7 @@ import * as Application from 'expo-application';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
+import * as Notifications from 'expo-notifications';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -36,6 +37,7 @@ import {
   updateSentryUserContext,
 } from '../config/sentry';
 import { initializeAchievementNotificationHandler, requestAchievementNotificationPermissionOnFirstLaunch, setupAchievementNotificationChannel } from '../features/achievements/achievementNotificationService';
+import { isMonthlyReportNotification, setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } from '../features/reports/monthlyReportNotificationService';
 import {
   AchievementListItem,
   PendingAchievementNotification,
@@ -228,6 +230,7 @@ export default function App() {
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
@@ -714,6 +717,9 @@ export default function App() {
           if (initialPremiumAccessResult.confirmed) {
             setIsPremiumAccessPendingForIcon(false);
           }
+          syncMonthlyReportNotification(initialPremiumAccessResult.state.isPlusActive).catch((error: unknown) => {
+            console.warn('Failed to sync monthly report notification:', error);
+          });
         }
         if (initialPremiumAccessResult.timedOut) {
           initialPremiumAccessRequest
@@ -721,6 +727,9 @@ export default function App() {
               if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
                 setPremiumAccessState(state);
                 setIsPremiumAccessPendingForIcon(false);
+                syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
+                  console.warn('Failed to sync monthly report notification:', error);
+                });
               }
             })
             .catch((error: unknown) => {
@@ -799,6 +808,7 @@ export default function App() {
           });
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
+        await setupMonthlyReportNotificationChannel().catch(() => undefined);
         if (signal.aborted) return;
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
@@ -838,7 +848,28 @@ export default function App() {
     premiumAccessUpdateVersionRef.current += 1;
     setPremiumAccessState(state);
     setIsPremiumAccessPendingForIcon(false);
+    syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
+      console.warn('Failed to sync monthly report notification:', error);
+    });
   }), []);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      if (isMonthlyReportNotification(response.notification.request.content.data)) {
+        openMonthlyReport();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (lastNotificationResponse && isMonthlyReportNotification(
+      lastNotificationResponse.notification.request.content.data,
+    )) {
+      openMonthlyReport();
+    }
+  }, [isReady, lastNotificationResponse]);
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。

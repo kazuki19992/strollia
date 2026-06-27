@@ -371,10 +371,21 @@ jest.mock('../../features/logs/logRepository', () => ({
   getDailyLogs: jest.fn().mockResolvedValue([]),
 }));
 
+jest.mock('expo-notifications', () => ({
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  useLastNotificationResponse: jest.fn(() => null),
+}));
+
 jest.mock('../../features/achievements/achievementNotificationService', () => ({
   initializeAchievementNotificationHandler: jest.fn(),
   requestAchievementNotificationPermissionOnFirstLaunch: jest.fn().mockResolvedValue(undefined),
   setupAchievementNotificationChannel: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../features/reports/monthlyReportNotificationService', () => ({
+  isMonthlyReportNotification: jest.fn(() => false),
+  setupMonthlyReportNotificationChannel: jest.fn().mockResolvedValue(undefined),
+  syncMonthlyReportNotification: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../../features/achievements/achievementRepository', () => ({

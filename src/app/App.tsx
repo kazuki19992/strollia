@@ -233,6 +233,7 @@ export default function App() {
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const openMonthlyReportRef = useRef<() => void>(() => undefined);
   const lastHandledNotificationIdRef = useRef<string | null>(null);
+  const isReadyRef = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
@@ -815,9 +816,15 @@ export default function App() {
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();
           if (signal.aborted) return;
-          syncMonthlyReportNotification(initialPremiumAccessResult.state.isPlusActive).catch((error: unknown) => {
-            console.warn('Failed to sync monthly report notification after permission:', error);
-          });
+          initialPremiumAccessRequest
+            .then((state) => {
+              if (!signal.aborted) {
+                syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
+                  console.warn('Failed to sync monthly report notification after permission:', error);
+                });
+              }
+            })
+            .catch(() => undefined);
         }
         const initialState = await refreshData({ signal });
         if (signal.aborted) return;
@@ -859,10 +866,12 @@ export default function App() {
   }), []);
 
   useEffect(() => { openMonthlyReportRef.current = openMonthlyReport; });
+  useEffect(() => { isReadyRef.current = isReady; }, [isReady]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       if (!isMonthlyReportNotification(response.notification.request.content.data)) return;
+      if (!isReadyRef.current) return;
       const id = response.notification.request.identifier;
       if (lastHandledNotificationIdRef.current === id) return;
       lastHandledNotificationIdRef.current = id;

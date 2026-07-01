@@ -114,6 +114,7 @@ jest.mock('../../features/settings/settingsRepository', () => ({
 jest.mock('../../features/location/locationService', () => ({
   ensureForegroundLocationPermission: jest.fn().mockResolvedValue(true),
   isBackgroundLocationRecording: jest.fn().mockResolvedValue(true),
+  updateBackgroundLocationTaskOptionsIfNeeded: jest.fn().mockResolvedValue(undefined),
   startBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
   stopBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
 }));
@@ -126,16 +127,28 @@ jest.mock('../../features/location/locationPermission', () => ({
     canAskBackground: true,
   }),
   hasRequiredLocationPermission: jest.fn((state) => state.foregroundGranted && state.backgroundGranted),
+  isWhileInUseOnlyMode: jest.fn((state) => state.foregroundGranted && !state.backgroundGranted),
 }));
 jest.mock('../../features/logs/logRepository', () => ({
   deleteAllUserData: jest.fn().mockResolvedValue(undefined),
   getAllLocationPoints: jest.fn().mockResolvedValue([]),
   getDailyLogs: jest.fn().mockResolvedValue([]),
 }));
+jest.mock('expo-notifications', () => ({
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  useLastNotificationResponse: jest.fn(() => null),
+}));
+
 jest.mock('../../features/achievements/achievementNotificationService', () => ({
   initializeAchievementNotificationHandler: jest.fn(),
   requestAchievementNotificationPermissionOnFirstLaunch: jest.fn().mockResolvedValue(undefined),
   setupAchievementNotificationChannel: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../features/reports/monthlyReportNotificationService', () => ({
+  isMonthlyReportNotification: jest.fn(() => false),
+  setupMonthlyReportNotificationChannel: jest.fn().mockResolvedValue(undefined),
+  syncMonthlyReportNotification: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('../../features/achievements/achievementRepository', () => ({
   getAchievementListItems: jest.fn().mockResolvedValue([]),
@@ -180,6 +193,7 @@ jest.mock('../../features/location/visitedCellRepository', () => ({
 }));
 jest.mock('../../features/location/grid/gridCell', () => ({
   getGridBoundsForRegion: jest.fn(() => ({ minX: 0, maxX: 0, minY: 0, maxY: 0 })),
+  isGridBoundsContained: jest.fn(() => false),
 }));
 
 const ReactTestRenderer = require('react-test-renderer');

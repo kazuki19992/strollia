@@ -1,7 +1,11 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions } from './locationTrackingConfig';
+import {
+  BACKGROUND_LOCATION_TASK_NAME,
+  getLocationTaskOptions,
+  hasCurrentLocationTaskOptions,
+} from './locationTrackingConfig';
 
 /** フォアグラウンド位置情報権限を確認し、必要ならOSダイアログで要求する。 */
 export async function ensureForegroundLocationPermission(): Promise<boolean> {
@@ -51,6 +55,34 @@ export async function startBackgroundLocationRecording(): Promise<void> {
   const alreadyStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
 
   if (alreadyStarted) {
+    return;
+  }
+
+  await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
+}
+
+/**
+ * 記録中タスクの設定が古い場合だけ、同名タスクへ最新オプションを適用する。
+ *
+ * Expo TaskManagerは同名・同consumerへのstartを既存タスクの設定更新として扱う。
+ * 明示的なstopは記録を中断するため行わない。
+ */
+export async function updateBackgroundLocationTaskOptionsIfNeeded(): Promise<void> {
+  if (!(await TaskManager.isAvailableAsync())) {
+    return;
+  }
+
+  const alreadyStarted = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
+
+  if (!alreadyStarted) {
+    return;
+  }
+
+  const currentOptions = await TaskManager.getTaskOptionsAsync<Location.LocationTaskOptions>(
+    BACKGROUND_LOCATION_TASK_NAME,
+  );
+
+  if (hasCurrentLocationTaskOptions(currentOptions)) {
     return;
   }
 

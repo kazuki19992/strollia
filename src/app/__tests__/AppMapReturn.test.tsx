@@ -1,16 +1,31 @@
 import App from '../App';
 import { createUserCenteredRegion } from '../mapRegion';
 import { Alert, AppState, Pressable, Text } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { getVisitedCellsInBounds } from '../../features/location/visitedCellRepository';
-import { getGridBoundsForRegion } from '../../features/location/grid/gridCell';
+import { getGridBoundsForRegion, isGridBoundsContained } from '../../features/location/grid/gridCell';
 import { getLocationPermissionState } from '../../features/location/locationPermission';
 import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
+  stopBackgroundLocationRecording,
+  updateBackgroundLocationTaskOptionsIfNeeded,
 } from '../../features/location/locationService';
-import { getDailyLogs } from '../../features/logs/logRepository';
-import { pickAndReadGpxFile } from '../../features/import/gpxImportService';
+import { resolveUserLocationIcon } from '../../features/customization/customizationResolver';
 import {
+  deleteManagedCustomIcon,
+  isLegacyCustomIconReference,
+  resolveCustomIconReference,
+} from '../../features/customization/customIconStorage';
+import { replaceCustomIconSelection } from '../../features/customization/customIconSelection';
+import { getDailyLogs } from '../../features/logs/logRepository';
+import { getMonthlyAreaReport } from '../../features/reports/monthlyAreaReport';
+import { pickAndReadGpxFile } from '../../features/import/gpxImportService';
+import { parseGpxToLocationPoints } from '../../features/import/gpxImporter';
+import { importLocationPointsFromGpx } from '../../features/import/importRepository';
+import { GpxImportProgressDialog } from '../components/GpxImportProgressDialog';
+import {
+  getConfirmedPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
   getRevenueCatAppUserId,
@@ -19,8 +34,16 @@ import {
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
 } from '../../features/premium/revenueCatAccess';
-import { getBooleanSetting, setSetting } from '../../features/settings/settingsRepository';
-import { requestAchievementNotificationPermissionOnFirstLaunch } from '../../features/achievements/achievementNotificationService';
+import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../../features/settings/settingsRepository';
+import {
+  requestAchievementNotificationPermissionOnFirstLaunch,
+  setupAchievementNotificationChannel,
+} from '../../features/achievements/achievementNotificationService';
+import {
+  getAchievementListItems,
+  getPendingInAppAchievementNotifications,
+} from '../../features/achievements/achievementRepository';
+import { filterDismissedAchievementNotifications } from '../../features/achievements/pendingNotifications';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -32,8 +55,19 @@ jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ accessPrivileges: 'all' }),
 }));
 
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+  launchImageLibraryAsync: jest.fn().mockResolvedValue({ canceled: true }),
+}));
+
 jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
+}));
+
+jest.mock('../../config/sentry', () => ({
+  updateSentryScreenContext: jest.fn(),
+  updateSentrySubscriptionContext: jest.fn(),
+  updateSentryUserContext: jest.fn(),
 }));
 
 jest.mock('@expo/vector-icons', () => {
@@ -53,6 +87,7 @@ let mockLatestSettingsScreenProps: any = null;
 let mockLatestMapScreenProps: any = null;
 let mockLatestMonthlyReportScreenProps: any = null;
 let mockLatestFirstLaunchTutorialProps: any = null;
+let mockLatestForegroundLocationOptions: any = null;
 let mockPremiumCustomerInfoUpdate: ((state: { isPlusActive: boolean; entitlementId: string }) => void) | null = null;
 const mockPremiumUnsubscribe = jest.fn();
 
@@ -214,6 +249,9 @@ jest.mock('../components/SettingsScreen', () => ({
         <Pressable accessibilityLabel="OSSライセンス" onPress={props.onOpenLicenseScreen}>
           <Text>OSSライセンス</Text>
         </Pressable>
+        <Pressable accessibilityLabel="カスタムアイコンを選ぶ" onPress={() => props.onUpdateUserLocationIcon('custom')}>
+          <Text>カスタムアイコン</Text>
+        </Pressable>
       </>
     );
   },
@@ -271,6 +309,12 @@ jest.mock('../hooks/useCurrentAreaName', () => ({
   useCurrentAreaLabel: () => ({ primary: '船橋市', secondary: '行田' }),
 }));
 
+jest.mock('../hooks/useForegroundUserLocation', () => ({
+  useForegroundUserLocation: (options: unknown) => {
+    mockLatestForegroundLocationOptions = options;
+  },
+}));
+
 jest.mock('../../db/database', () => ({
   initializeDatabase: jest.fn().mockResolvedValue(undefined),
 }));
@@ -289,10 +333,22 @@ jest.mock('../../features/settings/settingsRepository', () => ({
   getBooleanSetting: jest.fn().mockResolvedValue(false),
   getStringSetting: jest.fn().mockResolvedValue('default'),
   setSetting: jest.fn().mockResolvedValue(undefined),
+  setSettings: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../features/customization/customIconStorage', () => ({
+  deleteManagedCustomIcon: jest.fn().mockResolvedValue(undefined),
+  isLegacyCustomIconReference: jest.fn((reference: string) => /^[A-Za-z][A-Za-z\d+.-]*:\/\//.test(reference)),
+  resolveCustomIconReference: jest.fn().mockResolvedValue(null),
+}));
+
+jest.mock('../../features/customization/customIconSelection', () => ({
+  replaceCustomIconSelection: jest.fn(),
 }));
 
 jest.mock('../../features/location/locationService', () => ({
   isBackgroundLocationRecording: jest.fn().mockResolvedValue(true),
+  updateBackgroundLocationTaskOptionsIfNeeded: jest.fn().mockResolvedValue(undefined),
   startBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
   stopBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
 }));
@@ -306,6 +362,7 @@ jest.mock('../../features/location/locationPermission', () => ({
     canAskBackground: true,
   }),
   hasRequiredLocationPermission: jest.fn((state) => state.foregroundGranted && state.backgroundGranted),
+  isWhileInUseOnlyMode: jest.fn((state) => state.foregroundGranted && !state.backgroundGranted),
 }));
 
 jest.mock('../../features/logs/logRepository', () => ({
@@ -314,10 +371,21 @@ jest.mock('../../features/logs/logRepository', () => ({
   getDailyLogs: jest.fn().mockResolvedValue([]),
 }));
 
+jest.mock('expo-notifications', () => ({
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  useLastNotificationResponse: jest.fn(() => null),
+}));
+
 jest.mock('../../features/achievements/achievementNotificationService', () => ({
   initializeAchievementNotificationHandler: jest.fn(),
   requestAchievementNotificationPermissionOnFirstLaunch: jest.fn().mockResolvedValue(undefined),
   setupAchievementNotificationChannel: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../features/reports/monthlyReportNotificationService', () => ({
+  isMonthlyReportNotification: jest.fn(() => false),
+  setupMonthlyReportNotificationChannel: jest.fn().mockResolvedValue(undefined),
+  syncMonthlyReportNotification: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../../features/achievements/achievementRepository', () => ({
@@ -346,6 +414,14 @@ jest.mock('../../features/import/gpxImportService', () => ({
   pickAndReadGpxFile: jest.fn().mockResolvedValue(null),
 }));
 
+jest.mock('../../features/import/gpxImporter', () => ({
+  parseGpxToLocationPoints: jest.fn().mockReturnValue([]),
+}));
+
+jest.mock('../../features/import/importRepository', () => ({
+  importLocationPointsFromGpx: jest.fn().mockResolvedValue({ importedPointCount: 0, skippedPointCount: 0 }),
+}));
+
 jest.mock('../../features/reports/monthlyAreaReport', () => ({
   getMonthlyAreaReport: jest.fn().mockResolvedValue(null),
 }));
@@ -366,6 +442,7 @@ jest.mock('../../features/customization/customizationOptions', () => ({
 }));
 
 jest.mock('../../features/premium/revenueCatAccess', () => ({
+  getConfirmedPremiumAccessState: jest.fn(),
   getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false, entitlementId: 'strollia_plus' })),
   getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
   getPremiumOfferingSummary: jest.fn().mockResolvedValue(null),
@@ -399,6 +476,7 @@ jest.mock('../../features/location/grid/gridCell', () => ({
     minY: Math.round(region.latitudeDelta * 1000),
     maxY: Math.round(region.longitudeDelta * 1000),
   })),
+  isGridBoundsContained: jest.fn(() => false),
 }));
 
 const ReactTestRenderer = require('react-test-renderer');
@@ -417,11 +495,24 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(AppState, 'currentState', { configurable: true, value: 'active', writable: true });
     mockLatestSettingsScreenProps = null;
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
     mockLatestFirstLaunchTutorialProps = null;
+    mockLatestForegroundLocationOptions = null;
     mockPremiumCustomerInfoUpdate = null;
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: true,
+      canAskForeground: true,
+      canAskBackground: true,
+    });
+    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
+    (startBackgroundLocationRecording as jest.Mock).mockResolvedValue(undefined);
+    (stopBackgroundLocationRecording as jest.Mock).mockResolvedValue(undefined);
+    (updateBackgroundLocationTaskOptionsIfNeeded as jest.Mock).mockResolvedValue(undefined);
+    (resolveUserLocationIcon as jest.Mock).mockReturnValue({ useNativeUserLocation: true, customIconId: null });
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
       if (key === 'firstLaunchTutorialCompleted') {
         return Promise.resolve(false);
@@ -430,6 +521,18 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
     (setSetting as jest.Mock).mockResolvedValue(undefined);
+    (setSettings as jest.Mock).mockResolvedValue(undefined);
+    (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    (getConfirmedPremiumAccessState as jest.Mock).mockImplementation(() => getPremiumAccessState());
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => Promise.resolve(fallback));
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    (deleteManagedCustomIcon as jest.Mock).mockResolvedValue(undefined);
+    (replaceCustomIconSelection as jest.Mock).mockImplementation(async ({ persistSelection }: any) => {
+      await persistSelection('managed:new.jpg');
+      return { reference: 'managed:new.jpg', uri: 'file:///documents/strollia-custom-icons/new.jpg' };
+    });
+    (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+    (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: true });
     (pickAndReadGpxFile as jest.Mock).mockResolvedValue(null);
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
@@ -441,6 +544,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       });
       renderer = null;
     }
+    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
@@ -480,9 +584,37 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
   });
 
+  test('取得済み範囲内(isGridBoundsContained=true)の再移動ではvisited cellを再取得しない', async () => {
+    (isGridBoundsContained as jest.Mock).mockReturnValue(true);
+
+    try {
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<App />);
+      });
+      await flushPromises();
+
+      // 同じ範囲へ一度移動して直近取得状態を確定させる。
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+      });
+      await flushPromises();
+      const callsAfterFirst = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
+
+      // 同じ範囲へ再移動 → 取得済み範囲内なので再取得しない（呼び出し回数が増えない）。
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+      });
+      await flushPromises();
+
+      expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBe(callsAfterFirst);
+    } finally {
+      (isGridBoundsContained as jest.Mock).mockReturnValue(false);
+    }
+  });
+
   test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
     let appStateHandler: ((state: string) => void) | null = null;
-    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+    const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
       appStateHandler = handler;
       return { remove: jest.fn() } as any;
     });
@@ -529,6 +661,108 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
   });
 
+  test('フォアグラウンド権限のみでは背景タスクを停止してから前景保存を有効にする', async () => {
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: false,
+      canAskForeground: true,
+      canAskBackground: false,
+    });
+    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(stopBackgroundLocationRecording).toHaveBeenCalledTimes(1);
+    expect(updateBackgroundLocationTaskOptionsIfNeeded).not.toHaveBeenCalled();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
+  });
+
+  test('常時許可では権限取得後に背景タスク設定を更新し、OS標準アイコンの前景監視を開始しない', async () => {
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect((getLocationPermissionState as jest.Mock).mock.invocationCallOrder[0])
+      .toBeLessThan((updateBackgroundLocationTaskOptionsIfNeeded as jest.Mock).mock.invocationCallOrder[0]);
+    expect(stopBackgroundLocationRecording).not.toHaveBeenCalled();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
+  });
+
+  test('常時許可かつカスタムアイコンでは表示用前景監視を1つ使い、前景保存しない', async () => {
+    (resolveUserLocationIcon as jest.Mock).mockReturnValue({
+      useNativeUserLocation: false,
+      customIconId: 'walker',
+      customImageUri: null,
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(updateBackgroundLocationTaskOptionsIfNeeded).toHaveBeenCalledTimes(1);
+    expect(stopBackgroundLocationRecording).not.toHaveBeenCalled();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: false });
+    expect(mockLatestForegroundLocationOptions.onLocation).toEqual(expect.any(Function));
+  });
+
+  test('inactiveとbackgroundでは前景限定監視を解除し、active復帰後に再開する', async () => {
+    let appStateHandler: ((state: string) => void) | null = null;
+    const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+      appStateHandler = handler;
+      return { remove: jest.fn() } as any;
+    });
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: false,
+      canAskForeground: true,
+      canAskBackground: false,
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
+
+    await act(async () => {
+      appStateHandler?.('inactive');
+    });
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
+
+    await act(async () => {
+      appStateHandler?.('background');
+    });
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
+
+    await act(async () => {
+      appStateHandler?.('active');
+    });
+    await flushPromises();
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
+  });
+
+  test('背景タスク停止に失敗した場合は前景保存を開始しない', async () => {
+    (getLocationPermissionState as jest.Mock).mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: false,
+      canAskForeground: true,
+      canAskBackground: false,
+    });
+    (stopBackgroundLocationRecording as jest.Mock).mockRejectedValueOnce(new Error('stop failed'));
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
+  });
+
   test('起動後にRevenueCat由来のPlus状態を読み込む', async () => {
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);
@@ -570,6 +804,116 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+  });
+
+  test('前回の写真表示有効化が未完了なら起動時に写真表示を自動OFFへ戻す', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'showPhotosOnMap') {
+        return Promise.resolve(true);
+      }
+      if (key === 'showPhotosOnMapEnablePending') {
+        return Promise.resolve(true);
+      }
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(true);
+      }
+
+      return Promise.resolve(fallback);
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(false);
+    expect(setSetting).toHaveBeenCalledWith('showPhotosOnMap', false);
+    expect(setSetting).toHaveBeenCalledWith('showPhotosOnMapEnablePending', false);
+  });
+
+  test('保存済みの写真表示ONは地図準備完了後にpendingを立ててから有効化する', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'showPhotosOnMap') {
+        return Promise.resolve(true);
+      }
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(true);
+      }
+
+      return Promise.resolve(fallback);
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(false);
+
+    await act(async () => {
+      mockLatestMapScreenProps.onMapReady();
+    });
+    await flushPromises();
+
+    expect(setSetting).toHaveBeenCalledWith('showPhotosOnMapEnablePending', true);
+    expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(true);
+    const pendingWriteIndex = (setSetting as jest.Mock).mock.calls.findIndex(
+      ([key, value]) => key === 'showPhotosOnMapEnablePending' && value === true,
+    );
+    const enabledWriteIndex = (setSetting as jest.Mock).mock.calls.findIndex(
+      ([key, value]) => key === 'showPhotosOnMap' && value === true,
+    );
+    const pendingWriteOrder = (setSetting as jest.Mock).mock.invocationCallOrder[pendingWriteIndex];
+    const enabledWriteOrder = (setSetting as jest.Mock).mock.invocationCallOrder[enabledWriteIndex];
+    expect(pendingWriteOrder).toBeLessThan(enabledWriteOrder);
+  });
+
+  test('保存済み写真表示の復元中は手動OFFを割り込ませない', async () => {
+    let resolvePendingEnable: (() => void) | null = null;
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+      if (key === 'showPhotosOnMap') {
+        return Promise.resolve(true);
+      }
+      if (key === 'firstLaunchTutorialCompleted') {
+        return Promise.resolve(true);
+      }
+
+      return Promise.resolve(fallback);
+    });
+    (setSetting as jest.Mock).mockImplementation((key: string, value: boolean) => {
+      if (key === 'showPhotosOnMapEnablePending' && value === true) {
+        return new Promise<void>((resolve) => {
+          resolvePendingEnable = resolve;
+        });
+      }
+
+      return Promise.resolve();
+    });
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    await act(async () => {
+      mockLatestMapScreenProps.onMapReady();
+    });
+    await flushPromises();
+
+    await act(async () => {
+      mockLatestMapScreenProps.onUpdateShowPhotosOnMap(false);
+    });
+    await flushPromises();
+
+    expect(setSetting).not.toHaveBeenCalledWith('showPhotosOnMap', false);
+    expect(setSetting).not.toHaveBeenCalledWith('showPhotosOnMapEnablePending', false);
+
+    await act(async () => {
+      resolvePendingEnable?.();
+    });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(true);
   });
 
   test('初回チュートリアル完了時に表示済み設定を保存する', async () => {
@@ -727,6 +1071,601 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
   });
 
+  test('Plus確認と管理参照の解決後に保存済みカスタムアイコンを復元する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:saved.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({
+      reference: 'managed:saved.jpg',
+      uri: 'file:///documents/strollia-custom-icons/saved.jpg',
+      migrated: false,
+    });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus, uri) => ({
+      useNativeUserLocation: !(id === 'custom' && plus && uri),
+      customIconId: null,
+      customImageUri: id === 'custom' && plus ? uri : null,
+    }));
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///documents/strollia-custom-icons/saved.jpg');
+  });
+
+  test('初回Plus取得エラーは未確定として保存済みカスタムアイコンを維持する', async () => {
+    (getConfirmedPremiumAccessState as jest.Mock).mockRejectedValue(new Error('network failed'));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:saved.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:saved.jpg', uri: 'file:///saved.jpg', migrated: false });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus, uri) => ({
+      useNativeUserLocation: !(id === 'custom' && plus && uri),
+      customIconId: null,
+      customImageUri: id === 'custom' && plus ? uri : null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///saved.jpg');
+
+    act(() => { mockPremiumCustomerInfoUpdate?.({ isPlusActive: false, entitlementId: 'strollia_plus' }); });
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+  });
+
+  test('初回Plus取得が無効で成功した場合は保存済みwalkerをOS標準表示にする', async () => {
+    (getConfirmedPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: false, entitlementId: 'strollia_plus' });
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => key === 'userLocationIcon' ? Promise.resolve('walker') : Promise.resolve(fallback));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({ useNativeUserLocation: id === 'default' || !plus, customIconId: plus ? id : null, customImageUri: null }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+  });
+
+  test('Plus状態の取得待機中は地図を描画せず、制限時間後は保存済みwalkerだけを維持して起動する', async () => {
+    jest.useFakeTimers();
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('walker');
+      return Promise.resolve(fallback);
+    });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: !(id === 'walker' && plus),
+      customIconId: id === 'walker' && plus ? 'walker' : null,
+      customImageUri: null,
+    }));
+
+    await act(async () => {
+      renderer = ReactTestRenderer.create(<App />);
+    });
+    await flushPromises();
+    expect(mockLatestMapScreenProps).toBeNull();
+
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+    });
+    await flushPromises();
+    expect(mockLatestMapScreenProps).not.toBeNull();
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
+    expect(setSettings).not.toHaveBeenCalled();
+    expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
+
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+    expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
+
+    await act(async () => { resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
+    jest.useRealTimers();
+  });
+
+  test('Plus状態が未確定でも保存済みOS標準アイコンはOS標準のまま表示する', async () => {
+    jest.useFakeTimers();
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise(() => undefined));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: id === 'default' || !plus,
+      customIconId: null,
+      customImageUri: null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+  });
+
+  test('Plus初期取得待機中にアンマウントするとタイマーと残りの起動処理を中止する', async () => {
+    jest.useFakeTimers();
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(jest.getTimerCount()).toBeGreaterThan(0);
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    await flushPromises();
+
+    await act(async () => {
+      resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' });
+      jest.advanceTimersByTime(3000);
+    });
+    await flushPromises();
+    expect(mockLatestMapScreenProps).toBeNull();
+  });
+
+  test('初期データ読込待機中にアンマウントした場合は読込結果を状態反映せず記録同期へ進まない', async () => {
+    let resolveLogs!: (value: never[]) => void;
+    (getDailyLogs as jest.Mock).mockReturnValue(new Promise((resolve) => { resolveLogs = resolve; }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(getDailyLogs).toHaveBeenCalled();
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    jest.clearAllMocks();
+    await act(async () => { resolveLogs([]); });
+    await flushPromises();
+
+    expect(updateBackgroundLocationTaskOptionsIfNeeded).not.toHaveBeenCalled();
+    expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+    expect(getMonthlyAreaReport).not.toHaveBeenCalled();
+    expect(mockLatestMapScreenProps).toBeNull();
+  });
+
+  test('初期自動記録の端末処理待機中にアンマウントした場合は再読込と状態反映を行わない', async () => {
+    let resolveStart!: () => void;
+    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(false);
+    (startBackgroundLocationRecording as jest.Mock).mockReturnValue(new Promise<void>((resolve) => { resolveStart = resolve; }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(startBackgroundLocationRecording).toHaveBeenCalledTimes(1);
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    jest.clearAllMocks();
+    await act(async () => { resolveStart(); });
+    await flushPromises();
+
+    expect(getDailyLogs).not.toHaveBeenCalled();
+    expect(mockLatestMapScreenProps).toBeNull();
+  });
+
+  test('初期実績読込待機中にアンマウントした場合は実績状態と通知キューを更新しない', async () => {
+    let resolveItems!: (value: never[]) => void;
+    let resolvePending!: (value: never[]) => void;
+    (getAchievementListItems as jest.Mock).mockReturnValue(new Promise((resolve) => { resolveItems = resolve; }));
+    (getPendingInAppAchievementNotifications as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePending = resolve; }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(getAchievementListItems).toHaveBeenCalled();
+    expect(getPendingInAppAchievementNotifications).toHaveBeenCalled();
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    jest.clearAllMocks();
+    await act(async () => {
+      resolveItems([]);
+      resolvePending([]);
+    });
+    await flushPromises();
+
+    expect(filterDismissedAchievementNotifications).not.toHaveBeenCalled();
+    expect(mockLatestMapScreenProps).toBeNull();
+  });
+
+  test('タイムアウト直後から保存済みカスタムアイコンを維持し、遅延した確定falseでOS標準へ切り替える', async () => {
+    jest.useFakeTimers();
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:saved.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:saved.jpg', uri: 'file:///saved.jpg', migrated: false });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus, uri) => ({
+      useNativeUserLocation: !(id === 'custom' && plus && uri),
+      customIconId: null,
+      customImageUri: id === 'custom' && plus ? uri : null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///saved.jpg');
+
+    await act(async () => { resolvePremium({ isPlusActive: false, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(setSettings).not.toHaveBeenCalled();
+  });
+
+  test('タイムアウト後の遅延した確定trueでも保存済みwalkerを維持する', async () => {
+    jest.useFakeTimers();
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => key === 'userLocationIcon' ? Promise.resolve('walker') : Promise.resolve(fallback));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: !(id === 'walker' && plus),
+      customIconId: id === 'walker' && plus ? 'walker' : null,
+      customImageUri: null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
+
+    await act(async () => { resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
+  });
+
+  test('タイムアウト後の購読更新を遅延した古い初回取得結果で上書きしない', async () => {
+    jest.useFakeTimers();
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => key === 'userLocationIcon' ? Promise.resolve('walker') : Promise.resolve(fallback));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: !(id === 'walker' && plus),
+      customIconId: id === 'walker' && plus ? 'walker' : null,
+      customImageUri: null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { jest.advanceTimersByTime(3000); });
+    await flushPromises();
+    act(() => { mockPremiumCustomerInfoUpdate?.({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
+    await act(async () => { resolvePremium({ isPlusActive: false, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
+  });
+
+  test('初回Plus取得中の購読更新を古い取得結果で上書きしない', async () => {
+    let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
+    (getPremiumAccessState as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePremium = resolve; }));
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => key === 'userLocationIcon' ? Promise.resolve('walker') : Promise.resolve(fallback));
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus) => ({
+      useNativeUserLocation: !(id === 'walker' && plus),
+      customIconId: id === 'walker' && plus ? 'walker' : null,
+      customImageUri: null,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    act(() => { mockPremiumCustomerInfoUpdate?.({ isPlusActive: true, entitlementId: 'strollia_plus' }); });
+    await act(async () => { resolvePremium({ isPlusActive: false, entitlementId: 'strollia_plus' }); });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.customIconId).toBe('walker');
+  });
+
+  test('カスタム画像の読込エラーはセッション内だけOS標準へ戻し設定を消さない', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:saved.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:saved.jpg', uri: 'file:///saved.jpg', migrated: false });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((id, plus, uri) => ({
+      useNativeUserLocation: !uri,
+      customIconId: null,
+      customImageUri: uri,
+    }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    jest.clearAllMocks();
+    await act(async () => { mockLatestMapScreenProps.onCustomIconError(); });
+
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(resolveUserLocationIcon).toHaveBeenLastCalledWith('custom', true, null);
+    expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
+    expect(setSetting).not.toHaveBeenCalledWith('customIconImageUri', '');
+    expect(setSettings).not.toHaveBeenCalled();
+  });
+
+  test('写真選択成功時は安全な置換と原子的保存後に切り替え、旧成功アラートを表示しない', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:old.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:old.jpg', uri: 'file:///old.jpg', migrated: false });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((_id, _plus, uri) => ({ useNativeUserLocation: !uri, customIconId: null, customImageUri: uri }));
+    (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: false, assets: [{ uri: 'file:///crop.jpg' }] });
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress(); });
+    await flushPromises();
+
+    expect(replaceCustomIconSelection).toHaveBeenCalledWith(expect.objectContaining({ sourceUri: 'file:///crop.jpg', previousReference: 'managed:old.jpg' }));
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'customIconImageUri', value: 'managed:new.jpg' },
+      { key: 'userLocationIcon', value: 'custom' },
+    ]);
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('custom');
+    expect(alertSpy).not.toHaveBeenCalledWith('カスタムアイコン', expect.anything());
+  });
+
+  test('写真の置換に失敗した場合は以前の設定を保持して通知する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:old.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:old.jpg', uri: 'file:///old.jpg', migrated: false });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((_id, _plus, uri) => ({ useNativeUserLocation: !uri, customIconId: null, customImageUri: uri }));
+    (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: false, assets: [{ uri: 'file:///crop.jpg' }] });
+    (replaceCustomIconSelection as jest.Mock).mockRejectedValue(new Error('保存失敗'));
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress(); });
+    await flushPromises();
+
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('custom');
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///old.jpg');
+    expect(alertSpy).toHaveBeenCalledWith('設定失敗', expect.stringContaining('以前の設定'));
+  });
+
+  test('以前のカスタム参照がない写真設定失敗では保持メッセージを表示しない', async () => {
+    (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: false, assets: [{ uri: 'file:///crop.jpg' }] });
+    (replaceCustomIconSelection as jest.Mock).mockRejectedValue(new Error('保存失敗'));
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress(); });
+    await flushPromises();
+
+    expect(alertSpy).toHaveBeenCalledWith('設定失敗', expect.not.stringContaining('以前の設定'));
+  });
+
+  test('カスタム写真選択を連続実行しても置換処理は1件だけ開始する', async () => {
+    let resolvePermission!: (value: { granted: boolean }) => void;
+    (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockReturnValue(new Promise((resolve) => { resolvePermission = resolve; }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+    act(() => {
+      renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+    });
+
+    expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalledTimes(1);
+    await act(async () => { resolvePermission({ granted: false }); });
+    await flushPromises();
+  });
+
+  test('読み込める旧URIを管理参照へ移行して保存する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => key === 'customIconImageUri' ? Promise.resolve('file:///legacy.jpg') : Promise.resolve(fallback));
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:migrated.jpg', uri: 'file:///managed.jpg', migrated: true });
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(setSetting).toHaveBeenCalledWith('customIconImageUri', 'managed:migrated.jpg');
+  });
+
+  test('旧URI移行後のDB保存に失敗した場合は新規ファイルを削除して旧URI表示を維持する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///legacy.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:migrated.jpg', uri: 'file:///managed.jpg', migrated: true });
+    (setSetting as jest.Mock).mockImplementation((key: string) => key === 'customIconImageUri' ? Promise.reject(new Error('DB失敗')) : Promise.resolve());
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((_id, _plus, uri) => ({ useNativeUserLocation: !uri, customIconId: null, customImageUri: uri }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:migrated.jpg');
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///legacy.jpg');
+  });
+
+  test('旧URIの移行コピー失敗時はDBを変更せず有効な旧URIを表示する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///legacy.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({
+      reference: 'file:///legacy.jpg',
+      uri: 'file:///legacy.jpg',
+      migrated: false,
+      migrationFailed: true,
+    });
+    (resolveUserLocationIcon as jest.Mock).mockImplementation((_id, _plus, uri) => ({ useNativeUserLocation: !uri, customIconId: null, customImageUri: uri }));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///legacy.jpg');
+    expect(setSetting).not.toHaveBeenCalledWith('customIconImageUri', expect.anything());
+  });
+
+  test('旧URI移行の設定保存待機中にアンマウントした場合は掃除後の状態更新と起動処理を行わない', async () => {
+    let rejectMigration!: (error: Error) => void;
+    const migrationSave = new Promise<void>((_resolve, reject) => { rejectMigration = reject; });
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///legacy.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: 'managed:migrated.jpg', uri: 'file:///managed.jpg', migrated: true });
+    (setSetting as jest.Mock).mockImplementation((key: string) => key === 'customIconImageUri' ? migrationSave : Promise.resolve());
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    expect(setSetting).toHaveBeenCalledWith('customIconImageUri', 'managed:migrated.jpg');
+
+    act(() => { renderer.unmount(); });
+    renderer = null;
+    jest.clearAllMocks();
+    rejectMigration(new Error('DB失敗'));
+    await flushPromises();
+
+    expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:migrated.jpg');
+    expect(setupAchievementNotificationChannel).not.toHaveBeenCalled();
+    expect(console.warn).not.toHaveBeenCalledWith('Failed to persist migrated custom icon reference:', expect.anything());
+    expect(mockLatestMapScreenProps).toBeNull();
+  });
+
+  test('消えた旧URIは保存設定を原子的にOS標準へ戻して案内する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'customIconImageUri', value: '' },
+      { key: 'userLocationIcon', value: 'default' },
+    ]);
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
+    expect(alertSpy).toHaveBeenCalledWith(
+      'カスタムアイコンを読み込めませんでした',
+      '保存されていた画像を読み込めなかったため、現在地アイコンをOS標準に戻しました。カスタムアイコンを使用する場合は、設定画面から画像を再設定してください。',
+    );
+  });
+
+  test('消えた管理参照は保存設定を原子的にOS標準へ戻すが旧URI向け案内は表示しない', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'customIconImageUri', value: '' },
+      { key: 'userLocationIcon', value: 'default' },
+    ]);
+    expect(isLegacyCustomIconReference).toHaveBeenCalledWith('managed:missing.jpg');
+    expect(alertSpy).not.toHaveBeenCalledWith(
+      'カスタムアイコンを読み込めませんでした',
+      expect.anything(),
+    );
+  });
+
+  test('画像参照が空のカスタム設定は保存設定を原子的にOS標準へ戻す', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'customIconImageUri', value: '' },
+      { key: 'userLocationIcon', value: 'default' },
+    ]);
+  });
+
+  test('画像参照の解決が一時エラーの場合は設定を変更せずセッション中だけOS標準を表示する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:saved.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockRejectedValue(new Error('一時エラー'));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+
+    expect(setSettings).not.toHaveBeenCalled();
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+  });
+
+  test('消えた画像参照の設定リセットに失敗してもセッション中はOS標準へ戻して警告する', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('managed:missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(console.warn).toHaveBeenCalledWith(
+      'Failed to reset missing custom icon reference:',
+      expect.any(Error),
+    );
+  });
+
+  test('旧URI参照のリセット永続化失敗時にAlertを表示しない', async () => {
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'userLocationIcon') return Promise.resolve('custom');
+      if (key === 'customIconImageUri') return Promise.resolve('file:///missing.jpg');
+      return Promise.resolve(fallback);
+    });
+    (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
+    (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await act(async () => { renderer = ReactTestRenderer.create(<App />); });
+    await flushPromises();
+    await act(async () => { renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress(); });
+
+    expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
+    expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
+    expect(console.warn).toHaveBeenCalledWith(
+      'Failed to reset missing custom icon reference:',
+      expect.any(Error),
+    );
+    expect(alertSpy).not.toHaveBeenCalledWith(
+      'カスタムアイコンを読み込めませんでした',
+      expect.any(String),
+    );
+  });
+
   test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {
     await act(async () => {
       renderer = ReactTestRenderer.create(<App />);
@@ -824,6 +1763,63 @@ describe('App 地図復帰時の表示範囲復元', () => {
       'pick',
     ]);
     expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+  });
+
+  test('GPX取り込み処理中だけブロッキングダイアログを表示し、完了後(finally)に閉じる', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    // 本体は requestAnimationFrame で1フレーム譲るため、テストでは同期的に解決させる。
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    (pickAndReadGpxFile as jest.Mock).mockResolvedValue({ content: '<gpx/>', fileName: 'a.gpx' });
+    (parseGpxToLocationPoints as jest.Mock).mockReturnValue([{ latitude: 1, longitude: 2, timestamp: 0 }]);
+
+    let resolveImport: (value: { importedPointCount: number; skippedPointCount: number }) => void = () => undefined;
+    (importLocationPointsFromGpx as jest.Mock).mockImplementation(
+      () => new Promise((resolve) => {
+        resolveImport = resolve;
+      }),
+    );
+
+    // 退場アニメーション中は中身が残るため、表示状態は Dialog の visible プロップで判定する。
+    const isImportDialogVisible = () =>
+      renderer.root.findByType(GpxImportProgressDialog).props.visible;
+
+    try {
+      await act(async () => {
+        renderer = ReactTestRenderer.create(<App />);
+      });
+      await flushPromises();
+
+      await act(async () => {
+        renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      });
+
+      // 取り込み開始前はダイアログは出ていない。
+      expect(isImportDialogVisible()).toBe(false);
+
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+      });
+      await flushPromises();
+
+      // import が未解決の間はブロッキングダイアログが表示される。
+      expect(isImportDialogVisible()).toBe(true);
+
+      await act(async () => {
+        resolveImport({ importedPointCount: 1, skippedPointCount: 0 });
+        await importPromise;
+      });
+      await flushPromises();
+
+      // finally で処理中フラグが下り、ダイアログは閉じる。
+      expect(isImportDialogVisible()).toBe(false);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
   });
 
 

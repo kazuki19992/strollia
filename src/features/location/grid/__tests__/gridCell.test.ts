@@ -1,5 +1,20 @@
-import { cellToPolygonCoordinates, coordinateToGridCell, getGridBoundsForRegion } from '../gridCell';
+import { cellToPolygonCoordinates, coordinateToGridCell, getGridBoundsForRegion, isGridBoundsContained } from '../gridCell';
 import type { GridCell } from '../gridCell';
+
+describe('グリッド範囲の包含判定 isGridBoundsContained', () => {
+  const outer = { minX: 0, maxX: 100, minY: 0, maxY: 100 };
+
+  it('内側の範囲が外側に完全に含まれるとき true（再取得不要）', () => {
+    expect(isGridBoundsContained(outer, { minX: 10, maxX: 90, minY: 10, maxY: 90 })).toBe(true);
+    expect(isGridBoundsContained(outer, outer)).toBe(true);
+  });
+
+  it('内側がはみ出すとき false（範囲外なので再取得が必要）', () => {
+    expect(isGridBoundsContained(outer, { minX: -1, maxX: 90, minY: 10, maxY: 90 })).toBe(false);
+    expect(isGridBoundsContained(outer, { minX: 10, maxX: 101, minY: 10, maxY: 90 })).toBe(false);
+    expect(isGridBoundsContained(outer, { minX: 10, maxX: 90, minY: 10, maxY: 101 })).toBe(false);
+  });
+});
 
 describe('Visited Gridセル変換 gridCell', () => {
   it('同じ100mセル内の近い座標を同じcellIdにする', () => {

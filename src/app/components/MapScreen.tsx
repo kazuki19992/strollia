@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Image, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Animated, Image, Platform, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import { useEffect, useState } from 'react';
@@ -72,6 +72,8 @@ export type MapScreenProps = {
   hasRequiredPermission: boolean;
   /** 権限ボタンを設定誘導にするか。 */
   shouldOpenSettingsForPermission: boolean;
+  /** 「アプリ起動中のみ記録」モードか（バックグラウンド権限なし）。 */
+  isWhileInUseOnlyMode: boolean;
   /** 写真エラーメッセージ。 */
   photoErrorMessage: string | null;
   /** 写真読み込み中か。 */
@@ -92,8 +94,10 @@ export type MapScreenProps = {
   onUserLocationChange: (event: UserLocationChangeEvent) => void;
   /** 地図ドラッグハンドラ。 */
   onPanDrag: () => void;
-  /** 表示範囲更新ハンドラ。 */
+  /** 表示範囲更新ハンドラ（操作完了時）。 */
   onRegionChangeComplete: (region: Region) => void;
+  /** 表示範囲更新ハンドラ（操作中・Androidのみ使用）。 */
+  onRegionChange: (region: Region) => void;
   /** 写真クラスタ押下ハンドラ。 */
   onPhotoClusterPress: (cluster: MapPhotoCluster) => void;
   /** 日別ログ画面を開くハンドラ。 */
@@ -134,6 +138,7 @@ export function MapScreen({
   points,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
+  isWhileInUseOnlyMode,
   photoErrorMessage,
   isLoadingPhotos,
   distance,
@@ -145,6 +150,7 @@ export function MapScreen({
   onUserLocationChange,
   onPanDrag,
   onRegionChangeComplete,
+  onRegionChange,
   onPhotoClusterPress,
   onOpenDailyLogs,
   onOpenAchievements,
@@ -173,12 +179,17 @@ export function MapScreen({
         initialRegion={initialRegion}
         mapType={mapType}
         showsCompass
+        // Android標準の現在地ボタンは非表示にし、アプリ独自の現在地ボタンを使う（iOSでは無視される）。
+        showsMyLocationButton={false}
         showsUserLocation={userLocationIcon.useNativeUserLocation}
         followsUserLocation={isFollowingUserLocation && userLocationIcon.useNativeUserLocation}
         onMapReady={onMapReady}
         onUserLocationChange={onUserLocationChange}
         onPanDrag={onPanDrag}
         onRegionChangeComplete={onRegionChangeComplete}
+        // Androidは操作完了時(onRegionChangeComplete)しか発火が遅く、エリア表示の追従が遅れるため、
+        // 操作中のonRegionChange(スロットルは呼び出し側で実施)でも更新する。iOSは既存挙動を維持。
+        onRegionChange={Platform.OS === 'android' ? onRegionChange : undefined}
         mapPadding={MAP_PADDING}
       >
         {shouldRenderVisitedGrid &&
@@ -238,7 +249,7 @@ export function MapScreen({
           </View>
         )}
 
-        {!hasRequiredPermission && (
+        {!hasRequiredPermission && !isWhileInUseOnlyMode && (
           <View style={styles.permissionCard}>
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionTitle}>
               位置情報の常時許可が必要です

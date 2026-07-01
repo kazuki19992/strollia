@@ -93,22 +93,25 @@ DB接続、マイグレーション、スキーマ定義を担当する。
 
 ```mermaid
 flowchart TD
-  A[アプリ起動またはフォアグラウンド復帰] --> B[位置情報権限と記録状態を確認]
-  B --> C{権限あり?}
-  C -->|いいえ| D[権限付与またはOS設定への導線を表示]
+  A["アプリ起動またはフォアグラウンド復帰"] --> B["位置情報権限と記録状態を確認"]
+  B --> C{"フォアグラウンド権限あり?"}
+  C -->|いいえ| D["背景タスクを停止し権限導線を表示"]
   D --> A
-  C -->|はい| E{記録中?}
-  E -->|はい| H[raw GPS観測を取得]
-  E -->|いいえ| G[バックグラウンド現在地監視を自動開始]
-  G -->|失敗| F[復旧用の記録開始ボタンを表示]
-  F --> G
-  G -->|成功| H
-  H --> N[visited cellをupsert]
-  H --> I[軽量保存判定]
-  I -->|保存対象| J[SQLiteへ保存]
-  I -->|保存しない| H
-  J --> K[画面状態を更新]
-  K --> H
+  C -->|はい| E{"バックグラウンド権限あり?"}
+  E -->|はい| F["固定名の背景タスクを更新または自動開始"]
+  E -->|いいえ| G["登録済み背景タスクを停止"]
+  G --> H{"AppStateがactive?"}
+  H -->|はい| I["前景位置監視を開始"]
+  H -->|いいえ| A
+  F --> J["背景タスクからGPS観測を取得"]
+  I --> K["前景監視からGPS観測を取得"]
+  J --> L["共通保存セッション"]
+  K --> L
+  L --> M["visited cellをupsert"]
+  L --> N["軽量保存判定"]
+  N -->|保存対象| O["SQLiteへ保存"]
+  N -->|保存しない| A
+  O --> A
 ```
 
 ## 6. データ取得フロー
@@ -138,7 +141,7 @@ flowchart TD
 
 初期実装では以下を採用する。
 
-- 起動時とフォアグラウンド復帰時に、権限が揃っていればバックグラウンド記録開始を自動で試みる
+- 起動時とフォアグラウンド復帰時に権限を再取得し、常時許可ならバックグラウンド記録、フォアグラウンド権限のみならactive中の前景記録へ自動で同期する
 - 設定画面では通常の開始・停止操作を表示せず、自動開始失敗時だけ復旧用の開始操作を表示する
 - データはSQLiteにローカル保存
 - メイン画面は全履歴マップを全面表示する
@@ -189,6 +192,29 @@ Expo managed checkoutでは `ios/` や `android/` が存在しない場合があ
 - バックグラウンド位置情報権限を確認する
 - 未開始の場合のみバックグラウンド位置情報タスクを開始する
 
+登録済みタスクへ監視オプションの変更を反映する場合は、現在の登録値と最新値を比較する。差分がある場合だけ同じタスク名で `startLocationUpdatesAsync` を呼び、Expo TaskManagerの既存タスク更新を利用する。記録中タスクを明示的に停止して再登録してはならない。
+
+登録値が最新の場合は `startLocationUpdatesAsync` を呼ばず、位置監視をそのまま継続する。
+
+iOSでは `showsBackgroundLocationIndicator: false` を維持しつつ、Core Locationの継続的なバックグラウンド更新がサスペンドされる組み合わせを避けるため、ネイティブの `distanceInterval` を指定しない。Androidでは5mの距離フィルターを維持する。GPSポイントの保存間隔はプラットフォーム共通の5m保存判定で制御し、iOSで受信回数が増えてもSQLiteへ保存するポイントを無制限に増やさない。
+
+位置情報の保存処理は前景・背景で共通の保存セッションを使用する。セッションは開始時にSQLiteから最新保存点を1回取得し、以後は保存済みの前回点とVisited Grid用の前回観測点をメモリ上で引き継ぐ。GPSログの保存判定、Visited Grid、実績処理の規則は保存元によって変えない。
+
+権限状態ごとの保存元は以下とする。
+
+| 権限状態 | AppState | 保存元 |
+| --- | --- | --- |
+| フォアグラウンド・バックグラウンドともに許可 | 全状態 | 固定名のバックグラウンドタスク |
+| フォアグラウンドのみ許可 | `active` | `watchPositionAsync` の前景購読 |
+| フォアグラウンドのみ許可 | `inactive` / `background` | 保存しない |
+| フォアグラウンド権限なし | 全状態 | 保存しない |
+
+フォアグラウンド限定記録は `AppState === 'active'` の場合だけ購読する。`inactive` または `background` へ移行した場合は購読を解除し、`active` 復帰時に権限と背景タスク状態を再同期してから再開する。最後に取得済みの位置は現在地表示にだけ使い、古い観測として保存しない。
+
+バックグラウンド権限がなくなった場合は、以前に登録したバックグラウンドタスクを停止してから前景限定保存を有効にする。この停止は権限モードを切り替えるための処理であり、監視オプション更新のための `stop→start` ではない。停止に失敗した場合は二重保存を避けるため前景保存を開始しない。
+
+常時許可かつカスタム現在地アイコンの場合は、固定名のバックグラウンドタスク1件が保存を担当し、前景の `watchPositionAsync` 購読1件はアイコン表示だけを担当する。前景購読はTaskManagerのタスク登録ではなく、保存セッションも呼ばないため、タスク重複と二重保存は発生しない。
+
 通常のユーザー導線として記録停止は提供しない。記録を止めたい場合はOS側の位置情報権限変更に従う。
 
 iOS / Android ともにバックグラウンド位置情報にはOS側の制約があるため、10秒間隔は目標値であり、OSによって間引かれる可能性がある。
@@ -219,6 +245,28 @@ iOS / Android ともにバックグラウンド位置情報にはOS側の制約�
 無料状態では、現在地アイコンはOS標準表示を使う。Plus有効時にのみ、現在地アイコンはOS標準表示から独自Markerへ切り替えられる設計とする。メインマップはVisited Grid Overlayを主表示とするため、ルート線の見た目設定は持たない。
 
 GPSログや写真メタデータはRevenueCatへ送信しない。
+
+重大な例外やクラッシュの解析にはSentryを利用する。Sentryのproject slugは `strollia` とする。初期運用ではproductionビルドのみアプリクラッシュや未捕捉例外を自動捕捉し、必要に応じて調査対象として明示した例外も送信する。developmentビルドとpreviewビルドでは無料枠を消費しないよう、Sentry SDKの初期化とRoot Componentのwrapを行わず、EAS profileでは `SENTRY_DISABLE_AUTO_UPLOAD=true` も設定する。Sentryへはスタックトレース、アプリ/ビルド情報、OS/端末情報、画面名、RevenueCatのSupport ID、サブスク加入状況などの診断情報を送るが、GPSログ本体や写真ジオタグ、座標値は送信しない。Sentry SDKのPII送信は無効化し、送信直前にも位置情報らしいフィールドをマスクする。
+
+Sentryへ送信する項目は以下に限定する。
+
+- 未捕捉例外やクラッシュのエラー内容、スタックトレース
+- Sentry SDKが付与する実行環境情報、SDK情報、リリース/ソースマップ紐づけに必要な情報
+- アプリ情報: Application ID、アプリ名、アプリバージョン、Build番号、Runtime Version
+- 端末/OS情報: 動作プラットフォーム（`ios` / `android`）、OS名、iOS/Androidバージョン、端末モデル、端末モデルID、UI種別
+- Support ID: RevenueCat App User IDをSentryの `user.id` として設定する
+- サブスク加入状況: `free` / `plus`、Plus有効状態、RevenueCat entitlement ID
+- 画面名: `Map`、`DailyLogs:DailyLogList`、`DailyLogs:DailyLogDetail`、`AchievementList`、`MonthlyReport`、`Settings:SettingsHome`、`Settings:AboutApp`、`Settings:LicenseList`、`Settings:LicenseDetail`、`PremiumPaywall`、`FirstLaunchTutorial`、`FirstLaunchTutorialReplay`、`PhotoPreview`
+- 調査対象として明示送信する例外では、調査領域、画面名、呼び出し元が追加したタグ/コンテキスト
+
+Sentryへ送信しない項目は以下とする。
+
+- GPSログ本体、ルート点列、緯度経度、速度、高度、方角、精度
+- 写真画像、写真ジオタグ、写真ライブラリのメタデータ本文
+- GPX / KMLファイル本文、インポート/エクスポート対象データ本文
+- ユーザーのメールアドレス、氏名などの個人情報
+
+送信前のスクラブ処理で位置情報らしいキーはマスクする。対象キーは `accuracy`、`altitude`、`altitudeAccuracy`、`coordinate`、`coordinates`、`coords`、`heading`、`lat`、`latitude`、`latitudeDelta`、`lng`、`location`、`locations`、`lon`、`longitude`、`longitudeDelta`、`speed` とする。
 
 ## 13. 実績システム方針
 

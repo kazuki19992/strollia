@@ -69,6 +69,7 @@ function createProps() {
     photoClusters: [],
     points: [],
     hasRequiredPermission: true,
+    isWhileInUseOnlyMode: false,
     shouldOpenSettingsForPermission: false,
     photoErrorMessage: null,
     isLoadingPhotos: false,
@@ -81,6 +82,7 @@ function createProps() {
     onUserLocationChange: jest.fn(),
     onPanDrag: jest.fn(),
     onRegionChangeComplete: jest.fn(),
+    onRegionChange: jest.fn(),
     onPhotoClusterPress: jest.fn(),
     onOpenDailyLogs: jest.fn(),
     onOpenAchievements: jest.fn(),
@@ -192,6 +194,36 @@ describe('地図画面 MapScreen', () => {
       .filter((node: any) => ['まだ足あとがありません', '位置情報の常時許可が必要です', '続ける'].includes(node.props.children));
     expect(overlayTexts).toHaveLength(3);
     expect(overlayTexts.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
+  });
+
+  test('アプリ起動中のみ記録モードでは権限エラーパネルを表示しない', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={true} />,
+      );
+    });
+
+    const permissionTexts = renderer.root
+      .findAllByType(Text)
+      .filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
+    expect(permissionTexts).toHaveLength(0);
+  });
+
+  test('権限が無くアプリ起動中のみ記録モードでもない場合は権限エラーパネルを表示する', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={false} />,
+      );
+    });
+
+    const permissionTexts = renderer.root
+      .findAllByType(Text)
+      .filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
+    expect(permissionTexts).toHaveLength(1);
   });
 
   test('レポート操作にはHistoryアイコンを使う', () => {
@@ -336,6 +368,50 @@ describe('地図画面 MapScreen', () => {
 
     const mapView = renderer.root.find((node: any) => node.type === 'MapView');
     expect(mapView.props.showsUserLocation).toBe(true);
+  });
+
+  test('OS標準の現在地ボタン(Android)は非表示にする（アプリ独自の現在地ボタンを使うため）', () => {
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+    });
+
+    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
+    expect(mapView.props.showsMyLocationButton).toBe(false);
+  });
+
+  test('Androidでは操作中のonRegionChangeでも表示範囲を更新する（エリア拡大の追従を速くするため）', () => {
+    const { Platform } = require('react-native');
+    const osReplaced = jest.replaceProperty(Platform, 'OS', 'android');
+    const props = createProps();
+    let renderer: any;
+
+    try {
+      act(() => {
+        renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+      });
+      const mapView = renderer.root.find((node: any) => node.type === 'MapView');
+      expect(mapView.props.onRegionChange).toBe(props.onRegionChange);
+    } finally {
+      osReplaced.restore();
+    }
+  });
+
+  test('iOSでは操作中のonRegionChangeは渡さない（既存挙動を維持しiOSに影響を与えない）', () => {
+    const { Platform } = require('react-native');
+    const osReplaced = jest.replaceProperty(Platform, 'OS', 'ios');
+    let renderer: any;
+
+    try {
+      act(() => {
+        renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+      });
+      const mapView = renderer.root.find((node: any) => node.type === 'MapView');
+      expect(mapView.props.onRegionChange).toBeUndefined();
+    } finally {
+      osReplaced.restore();
+    }
   });
 
   test('customImageUri があるとき Image コンポーネントで円表示する', () => {

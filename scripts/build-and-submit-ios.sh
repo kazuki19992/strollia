@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# iOS プロダクションビルドをローカルで作成し、App Store Connect へ提出する。
+#
+# 使い方:
+#   ./scripts/build-and-submit-ios.sh
+#
+# 前提:
+#   - .env.local に SENTRY_AUTH_TOKEN と EXPO_PUBLIC_REVENUECAT_IOS_API_KEY が設定されている
+#   - eas-cli がインストールされている（npx 経由で使用）
+#   - Apple Developer の認証情報が EAS に登録されている
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+ENV_LOCAL="${REPO_ROOT}/.env.local"
+BUILDS_DIR="${REPO_ROOT}/builds"
+
+# .env.local から SENTRY_AUTH_TOKEN を読み込む
+if [[ ! -f "${ENV_LOCAL}" ]]; then
+  echo "エラー: ${ENV_LOCAL} が見つかりません。" >&2
+  exit 1
+fi
+
+SENTRY_AUTH_TOKEN="$(grep -E '^SENTRY_AUTH_TOKEN=' "${ENV_LOCAL}" | tail -1 | cut -d'=' -f2-)"
+
+if [[ -z "${SENTRY_AUTH_TOKEN}" ]]; then
+  echo "エラー: .env.local に SENTRY_AUTH_TOKEN が設定されていません。" >&2
+  exit 1
+fi
+
+# .env.local の最後の定義を使用する（複数行ある場合は後の値が優先）
+EXPO_PUBLIC_REVENUECAT_IOS_API_KEY="$(grep -E '^EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=' "${ENV_LOCAL}" | tail -1 | cut -d'=' -f2-)"
+
+if [[ -z "${EXPO_PUBLIC_REVENUECAT_IOS_API_KEY}" ]]; then
+  echo "エラー: .env.local に EXPO_PUBLIC_REVENUECAT_IOS_API_KEY が設定されていません。" >&2
+  exit 1
+fi
+
+export SENTRY_AUTH_TOKEN
+export EXPO_PUBLIC_REVENUECAT_IOS_API_KEY
+export EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT=false
+export EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH=false
+export EAS_LOCAL_BUILD_ARTIFACTS_DIR="${BUILDS_DIR}"
+
+mkdir -p "${BUILDS_DIR}"
+
+echo "=== iOS プロダクションビルド（ローカル）を開始します ==="
+echo "成果物の出力先: ${BUILDS_DIR}"
+
+eas build \
+  --platform ios \
+  --profile production \
+  --local \
+  --non-interactive
+
+# ビルドで生成された最新の .ipa を特定する（macOS の stat で更新時刻順にソート）
+LATEST_IPA="$(find "${BUILDS_DIR}" -maxdepth 1 -name '*.ipa' -print0 2>/dev/null \
+  | xargs -0 stat -f '%m %N' 2>/dev/null \
+  | sort -rn | head -1 | cut -d' ' -f2-)"
+
+if [[ -z "${LATEST_IPA}" ]]; then
+  echo "エラー: ${BUILDS_DIR} に .ipa ファイルが見つかりません。" >&2
+  exit 1
+fi
+
+echo ""
+echo "=== App Store Connect へ提出します ==="
+echo "対象ファイル: ${LATEST_IPA}"
+
+eas submit \
+  --platform ios \
+  --profile production \
+  --path "${LATEST_IPA}" \
+  --non-interactive
+
+echo ""
+echo "=== 完了 ==="

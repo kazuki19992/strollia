@@ -42,6 +42,8 @@ export type SettingsScreenProps = {
   hasRequiredPermission: boolean;
   /** 権限要求ボタンの文言を設定誘導にするか。 */
   shouldOpenSettingsForPermission: boolean;
+  /** 「アプリ起動中のみ記録」モードか（バックグラウンド権限なし）。 */
+  isWhileInUseOnlyMode: boolean;
   /** 画面ON維持設定。 */
   keepScreenAwake: boolean;
   /** 表示中の地図種別。 */
@@ -56,6 +58,10 @@ export type SettingsScreenProps = {
   premiumAccessState: ReturnType<typeof getDefaultPremiumAccessState>;
   /** RevenueCatのApp User ID（サポート対応用）。未取得ならnull。 */
   revenueCatAppUserId: string | null;
+  /** アプリのマーケティングバージョン（例: 1.1.0）。未取得ならnull。 */
+  appVersion: string | null;
+  /** アプリのビルド番号（例: 21）。未取得ならnull。 */
+  buildNumber: string | null;
   /** RevenueCat Offeringの商品概要。 */
   premiumOfferingSummary: PremiumOfferingSummary | null;
   /** 商品情報を読み込み中か。 */
@@ -74,6 +80,8 @@ export type SettingsScreenProps = {
   onStartRecording: () => void;
   /** 位置情報権限要求処理。 */
   onRequestLocationPermission: () => void;
+  /** OSの位置情報設定画面を開く処理。 */
+  onOpenLocationSettings: () => void;
   /** 画面ON維持設定の更新処理。 */
   onUpdateKeepScreenAwake: (enabled: boolean) => Promise<void>;
   /** 地図種別の切り替え処理。 */
@@ -90,6 +98,8 @@ export type SettingsScreenProps = {
   onOpenAboutAppScreen: () => void;
   /** 初回チュートリアルを再表示する処理。 */
   onOpenFirstLaunchTutorial: () => void;
+  /** よくある質問画面を開く処理。 */
+  onOpenFaqScreen: () => void;
   /** OSSライセンス画面を開く処理。 */
   onOpenLicenseScreen: () => void;
   /** 利用規約を開く処理。 */
@@ -134,6 +144,7 @@ export function SettingsScreen({
   autoStartStatus,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
+  isWhileInUseOnlyMode,
   keepScreenAwake,
   mapType,
   showPhotosOnMap,
@@ -141,6 +152,8 @@ export function SettingsScreen({
   isImportingGpx,
   premiumAccessState,
   revenueCatAppUserId,
+  appVersion,
+  buildNumber,
   premiumOfferingSummary,
   isLoadingPremiumOffering,
   isPurchasingPremiumPackage,
@@ -152,12 +165,14 @@ export function SettingsScreen({
   onBackToMap,
   onStartRecording,
   onRequestLocationPermission,
+  onOpenLocationSettings,
   onUpdateKeepScreenAwake,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
   onOpenAboutAppScreen,
   onOpenFirstLaunchTutorial,
+  onOpenFaqScreen,
   onOpenLicenseScreen,
   onOpenTermsOfService,
   onOpenPrivacyPolicy,
@@ -195,9 +210,11 @@ export function SettingsScreen({
         <GpsStatusPanel
           autoStartStatus={autoStartStatus}
           hasRequiredPermission={hasRequiredPermission}
+          isWhileInUseOnlyMode={isWhileInUseOnlyMode}
           isRecording={isRecording}
           shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
           styles={styles}
+          onOpenLocationSettings={onOpenLocationSettings}
           onRequestLocationPermission={onRequestLocationPermission}
           onStartRecording={onStartRecording}
         />
@@ -414,6 +431,13 @@ export function SettingsScreen({
           />
           <ActionPill
             alignLeft
+            icon={<Feather name="help-circle" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+            label="よくある質問"
+            styles={styles}
+            onPress={onOpenFaqScreen}
+          />
+          <ActionPill
+            alignLeft
             icon={<Feather name="file-text" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
             label="オープンソースライセンス"
             styles={styles}
@@ -458,6 +482,9 @@ export function SettingsScreen({
               </View>
             </Pressable>
           ) : null}
+          <Text style={styles.supportUserIdLabel}>
+            {`バージョン ${appVersion ?? '不明'} (Build ${buildNumber ?? '不明'})`}
+          </Text>
         </ScreenSection>
       </ScrollView>
     </SafeAreaView>
@@ -466,19 +493,33 @@ export function SettingsScreen({
 
 type GpsStatusPanelProps = Pick<
   SettingsScreenProps,
-  'styles' | 'isRecording' | 'autoStartStatus' | 'hasRequiredPermission' | 'shouldOpenSettingsForPermission' | 'onRequestLocationPermission' | 'onStartRecording'
+  'styles' | 'isRecording' | 'autoStartStatus' | 'hasRequiredPermission' | 'isWhileInUseOnlyMode' | 'shouldOpenSettingsForPermission' | 'onOpenLocationSettings' | 'onRequestLocationPermission' | 'onStartRecording'
 >;
 
-/** GPS権限と自動記録状態を、3種類の目立つパネルへ変換する。 */
+/** GPS権限と自動記録状態を、目立つパネルへ変換する。 */
 function GpsStatusPanel({
   styles,
   isRecording,
   autoStartStatus,
   hasRequiredPermission,
+  isWhileInUseOnlyMode,
   shouldOpenSettingsForPermission,
+  onOpenLocationSettings,
   onRequestLocationPermission,
   onStartRecording,
 }: GpsStatusPanelProps) {
+  if (isWhileInUseOnlyMode) {
+    return (
+      <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelWarning]}>
+        <Text style={styles.settingsGpsPanelTitle}>アプリ起動中のみ記録</Text>
+        <Text style={styles.settingsGpsPanelText}>{'アプリを画面に表示しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。'}</Text>
+        <Pressable accessibilityRole="button" onPress={onOpenLocationSettings} style={styles.settingsGpsPanelButton}>
+          <Text style={styles.settingsGpsPanelButtonWarningText}>設定を開く</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   if (!hasRequiredPermission) {
     return (
       <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelDanger]}>

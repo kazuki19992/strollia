@@ -2,7 +2,7 @@
   "expo": {
     "name": "すとろりあ",
     "slug": "strollia",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -15,6 +15,10 @@
     "ios": {
       "supportsTablet": false,
       "infoPlist": {
+        "CFBundleDevelopmentRegion": "ja",
+        "CFBundleLocalizations": [
+          "ja"
+        ],
         "NSLocationWhenInUseUsageDescription": "すとろりあは、移動ルートを記録するために現在地を使用します。",
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
@@ -32,7 +36,9 @@
           "ライフログ",
           "地図",
           "旅行",
-          "徒歩"
+          "徒歩",
+          "移動",
+          "sutororia"
         ]
       },
       "bundleIdentifier": "com.kazuki19992.strollia",
@@ -87,6 +93,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "strollia",
+          "organization": "kushida-software"
+        }
+      ],
       "./plugins/withFmtCxx17",
       "expo-sqlite",
       [

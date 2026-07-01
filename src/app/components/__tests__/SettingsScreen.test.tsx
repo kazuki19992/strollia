@@ -56,6 +56,7 @@ function createProps() {
     autoStartStatus: 'recording' as const,
     hasRequiredPermission: true,
     shouldOpenSettingsForPermission: false,
+    isWhileInUseOnlyMode: false,
     keepScreenAwake: false,
     mapType: 'standard' as const,
     showPhotosOnMap: false,
@@ -63,6 +64,8 @@ function createProps() {
     isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
     revenueCatAppUserId: null as string | null,
+    appVersion: '1.1.0' as string | null,
+    buildNumber: '21' as string | null,
     premiumOfferingSummary: null as PremiumOfferingSummary | null,
     isLoadingPremiumOffering: false,
     isPurchasingPremiumPackage: false,
@@ -72,6 +75,7 @@ function createProps() {
     onBackToMap: jest.fn(),
     onStartRecording: jest.fn(),
     onRequestLocationPermission: jest.fn(),
+    onOpenLocationSettings: jest.fn(),
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
@@ -80,6 +84,7 @@ function createProps() {
     onUpdateAppColorPreset: jest.fn(),
     onOpenAboutAppScreen: jest.fn(),
     onOpenFirstLaunchTutorial: jest.fn(),
+    onOpenFaqScreen: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
     onOpenTermsOfService: jest.fn(),
     onOpenPrivacyPolicy: jest.fn(),
@@ -101,6 +106,18 @@ describe('設定画面 SettingsScreen', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  test('アプリバージョンとビルド番号を表示する', () => {
+    const props = { ...createProps(), appVersion: '1.1.0', buildNumber: '24' };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('バージョン 1.1.0 (Build 24)');
   });
 
   test('GPS記録とデータ操作の項目を表示する', () => {
@@ -148,6 +165,37 @@ describe('設定画面 SettingsScreen', () => {
     expect(props.onOpenFirstLaunchTutorial).toHaveBeenCalledTimes(1);
   });
 
+  test('チュートリアルの下によくある質問を表示して開ける', () => {
+    const props = createProps();
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    const tutorialIndex = texts.indexOf('チュートリアル');
+    const faqIndex = texts.indexOf('よくある質問');
+    const licenseIndex = texts.indexOf('オープンソースライセンス');
+
+    expect(tutorialIndex).toBeGreaterThanOrEqual(0);
+    expect(faqIndex).toBeGreaterThanOrEqual(0);
+    expect(licenseIndex).toBeGreaterThanOrEqual(0);
+    expect(tutorialIndex).toBeLessThan(faqIndex);
+    expect(faqIndex).toBeLessThan(licenseIndex);
+
+    const faqButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenFaqScreen)[0];
+    expect(faqButton).toBeDefined();
+
+    act(() => {
+      faqButton.props.onPress();
+    });
+
+    expect(props.onOpenFaqScreen).toHaveBeenCalledTimes(1);
+
+    renderer.unmount();
+  });
+
   test('ダークモードでもGPS正常パネルはライトモードと同じ白文字で表示する', () => {
     const props = { ...createProps(), styles: createStyles(darkTheme), theme: darkTheme };
     let renderer: any;
@@ -173,6 +221,30 @@ describe('設定画面 SettingsScreen', () => {
     expect(flattenStyle(darkStyles.settingsGpsPanelDanger).backgroundColor).toBe('#b0002f');
     expect(flattenStyle(lightStyles.settingsGpsPanelWarning).backgroundColor).toBe('#a36100');
     expect(flattenStyle(darkStyles.settingsGpsPanelWarning).backgroundColor).toBe('#a36100');
+  });
+
+  test('アプリ起動中のみ記録モードでは専用パネルを表示し、ボタンでOS設定を開く', () => {
+    const props = {
+      ...createProps(),
+      hasRequiredPermission: false,
+      isWhileInUseOnlyMode: true,
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
+    });
+
+    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
+    expect(texts).toContain('アプリ起動中のみ記録');
+    expect(texts).toContain('アプリを画面に表示しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。');
+    // 「位置情報の許可が必要です」エラーパネルは出さない
+    expect(texts).not.toContain('位置情報の許可が必要です');
+
+    const button = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenLocationSettings)[0];
+    expect(button).toBeDefined();
+    act(() => { button.props.onPress(); });
+    expect(props.onOpenLocationSettings).toHaveBeenCalledTimes(1);
   });
 
   test('ダークモードでもGPS操作ボタンはライトモードと同じ白背景で表示する', () => {

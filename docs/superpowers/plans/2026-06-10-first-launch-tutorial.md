@@ -86,9 +86,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
     });
 
-    expect(visibleTexts()).toContain('Strolliaへようこそ');
+    expect(visibleTexts()).toContain('すとろりあへようこそ');
     expect(visibleTexts()).toContain('1 / 4');
-    expect(visibleTexts()).toContain('Strolliaは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。');
+    expect(visibleTexts()).toContain('すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。');
   });
 
   test('次へを押すと画面下の項目、実績、権限案内の順に進む', () => {
@@ -234,8 +234,8 @@ export type FirstLaunchTutorialDialogProps = {
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
-    title: 'Strolliaへようこそ',
-    description: 'Strolliaは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。',
+    title: 'すとろりあへようこそ',
+    description: 'すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。',
   },
   {
     title: '画面下の項目',

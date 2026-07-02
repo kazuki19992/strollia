@@ -19,7 +19,7 @@ Strollia (footspot) は Expo (React Native) 製のローカルファーストGPS
 
 ## レイヤー構成
 
-```
+```text
 UIコンポーネント (src/app/components/)
   ↓ props でデータと操作を受け取る(DB・端末APIを直接呼ばない)
 App.tsx (src/app/App.tsx) — 状態管理・画面切替・サービス呼び出しのハブ

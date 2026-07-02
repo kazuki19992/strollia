@@ -540,9 +540,9 @@ export function XxxScreen({ styles, theme, onBack }: XxxScreenProps) {
 
 ハプティクス(`expo-haptics`):
 
-- 実績解除など達成イベント: `Haptics.notificationAsync(Success)`
+- 実績解除など達成イベント: `Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)`
 - 選択操作: `Haptics.selectionAsync()`
-- 軽い操作フィードバック: `Haptics.impactAsync(ImpactFeedbackStyle.Light)`
+- 軽い操作フィードバック: `Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)`
 
 ## 17. 実装リファレンス: レポート画面専用カラー
 

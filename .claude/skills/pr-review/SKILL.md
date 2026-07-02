@@ -41,9 +41,10 @@ AGENTS.md §10.1「コメントを取得して修正」の実装手順。
 1. **未解決スレッド取得**:
 
    ```bash
-   gh api graphql -f query='query { repository(owner: "kazuki19992", name: "footspot") {
-     pullRequest(number: <PR番号>) { reviewThreads(first: 50) {
-       nodes { id isResolved path line comments(first: 10) { nodes { author { login } body } } } } } } }'
+   gh api graphql -F owner=':owner' -F name=':repo' -F pr=<PR番号> -f query='
+     query($owner: String!, $name: String!, $pr: Int!) { repository(owner: $owner, name: $name) {
+       pullRequest(number: $pr) { reviewThreads(first: 50) {
+         nodes { id isResolved path line comments(first: 10) { nodes { author { login } body } } } } } } }'
    ```
 
 2. **有効性判断**: `isResolved: false` のスレッドのうち、まだ有効な指摘だけを修正対象にする。対応しない指摘はユーザーの承認を得る(nits含め全コメント対応が原則)

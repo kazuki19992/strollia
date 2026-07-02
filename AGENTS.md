@@ -192,7 +192,7 @@ StrolliaはローカルファーストのGPSロガーである。
 ### 10.4 ドキュメント / 仕様確認
 
 - 作業開始時に `.ai/context/` の3ドキュメントを確認する: `architecture.md`(レイヤー構成・ディレクトリ構造)、`conventions.md`(コーディング規約)、`testing.md`(テストの書き方)。
-- 定型作業(画面追加、DBスキーマ変更、設定項目追加、Plus機能ゲート、ビルド、リリース、タグ付け、PRレビュー、issue作成)には `.claude/skills/` 配下の対応スキルを使う。
+- 定型作業(画面追加、DBスキーマ変更、設定項目追加、Plus機能ゲート、ビルド、リリース、タグ付け、PRレビュー、issue作成、マージ後クリーンアップ)には `.claude/skills/` 配下の対応スキルを使う。
 - 残作業や Plus 機能の確認では、まず `docs/todo.md`、`docs/monetization.md`、`docs/plus-features.md` を確認する。
 - GPX インポート作業を始めるときは、既存の設計・計画である `docs/superpowers/specs/2026-05-27-gpx-import-design.md` と `docs/superpowers/plans/2026-05-27-gpx-import.md` を先に確認する。
 - 仕様やユーザー向け挙動を変えた場合は、関連する `docs/` とテストを同じ作業内で更新する。

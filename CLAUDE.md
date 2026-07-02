@@ -17,3 +17,4 @@
   - ビルド系: `build-development`, `build-preview`, `build-production`, `publish`
   - リリース系: `release`, `tag-release`
   - GitHub運用系: `pr-review`, `create-issue`
+  - 後片付け: `post-merge-cleanup`(PRマージ後のworktree削除・develop最新化)

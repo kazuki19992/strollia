@@ -83,6 +83,9 @@
     "modulePathIgnorePatterns": [
       "<rootDir>/.worktrees/"
     ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
     "clearMocks": true
   }
 }

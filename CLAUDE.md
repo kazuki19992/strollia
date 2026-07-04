@@ -11,7 +11,7 @@
 
 ## クイックリファレンス
 
-- 型チェック: `npm run typecheck` / テスト: `npm test`(lint / format の設定はなし)
+- 型チェック: `npm run typecheck` / テスト: `npm test` / lint: `npm run lint` / format: `npm run format`
 - 定型作業は `.claude/skills/` のスキルを優先して使う:
   - 実装系: `add-screen`, `db-schema-change`, `add-setting`, `premium-gate`
   - ビルド系: `build-development`, `build-preview`, `build-production`, `publish`

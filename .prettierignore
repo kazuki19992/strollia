@@ -1,0 +1,8 @@
+src/app/generated/
+android/
+ios/
+builds/
+.worktrees/
+.expo/
+coverage/
+package-lock.json

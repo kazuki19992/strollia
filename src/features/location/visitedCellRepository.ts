@@ -36,7 +36,7 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
     return;
   }
 
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     await upsertVisitedCellsInCurrentTransaction(cells, visitedAt);
   });
 }
@@ -44,7 +44,7 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
 /**
  * 呼び出し元のtransaction内でvisited cellを保存する。
  *
- * `db.withTransactionAsync` のネストを避けるため、複数テーブル更新をまとめる処理から使う。
+ * `db.withExclusiveTransactionAsync` のネストを避けるため、複数テーブル更新をまとめる処理から使う。
  * `withExclusiveTransactionAsync` 内から呼ぶ場合は `runner` に `txn` を渡すこと。
  */
 export async function upsertVisitedCellsInCurrentTransaction(cells: GridCell[], visitedAt: string, runner: SQLite.SQLiteDatabase = db): Promise<void> {

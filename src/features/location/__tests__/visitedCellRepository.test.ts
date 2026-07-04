@@ -6,7 +6,7 @@ jest.mock('../../../db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue({}),
-    withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    withExclusiveTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
   },
 }));
 
@@ -82,7 +82,7 @@ describe('Visited Grid保存 visitedCellRepository', () => {
   it('upsertVisitedCellsは空配列入力時にDBへ書き込まない', async () => {
     await upsertVisitedCells([], '2026-05-23T00:00:00.000Z');
 
-    expect(db.withTransactionAsync).not.toHaveBeenCalled();
+    expect(db.withExclusiveTransactionAsync).not.toHaveBeenCalled();
     expect(db.runAsync).not.toHaveBeenCalled();
   });
 

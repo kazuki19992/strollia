@@ -157,7 +157,7 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
     return [];
   }
 
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     for (const definition of newlyUnlocked) {
       const progressValue = getProgressValueForCondition(definition.condition, progress);
 
@@ -188,7 +188,7 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
 
 /** 開発中の動作確認用に解除済み実績と通知キューを削除する。 */
 export async function resetAchievementUnlocksForDevelopment(): Promise<void> {
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     await db.runAsync('DELETE FROM achievement_notification_queue');
     await db.runAsync('DELETE FROM achievement_unlocks');
   });

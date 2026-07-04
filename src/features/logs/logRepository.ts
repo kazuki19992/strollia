@@ -23,7 +23,7 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<numb
   const segmentDistanceMeters = previousPoint ? distanceMeters(previousPoint, point) : 0;
   let insertedLocationPointId = 0;
 
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     const result = await db.runAsync(
       `INSERT INTO location_points (
         recorded_at,
@@ -164,7 +164,7 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
 
 /** ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。 */
 export async function deleteAllUserData(): Promise<void> {
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     await db.runAsync('DELETE FROM visited_cells');
     await db.runAsync('DELETE FROM achievement_notification_queue');
     await db.runAsync('DELETE FROM achievement_unlocks');

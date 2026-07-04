@@ -6,7 +6,7 @@ jest.mock('../../../db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     getFirstAsync: jest.fn(),
-    withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    withExclusiveTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
     runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
   },
 }));
@@ -83,7 +83,7 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
   it('GPSログ、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
     await deleteAllUserData();
 
-    expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
     expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM visited_cells');
     expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_notification_queue');
     expect(db.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');

@@ -5,7 +5,7 @@ jest.mock('../../../db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     getAllAsync: jest.fn(),
-    withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    withExclusiveTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
     runAsync: jest.fn(),
   },
 }));
@@ -88,7 +88,7 @@ describe('実績リポジトリ achievementRepository', () => {
     const unlocked = await evaluateAndStoreAchievementUnlocks({ now: '2026-05-07T00:00:00.000Z' });
 
     expect(unlocked.map((definition) => definition.id)).toEqual(expect.arrayContaining(['distance-100', 'log-days-1']));
-    expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
     expect(db.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT OR IGNORE INTO achievement_unlocks'),
       'distance-100',

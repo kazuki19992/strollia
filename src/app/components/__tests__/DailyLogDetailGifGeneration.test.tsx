@@ -84,7 +84,7 @@ jest.mock('@/features/achievements/achievementDefinitions', () => ({
 }));
 
 jest.mock('@/app/dailyRouteTimeline', () => ({
-  ...jest.requireActual('../../dailyRouteTimeline'),
+  ...jest.requireActual('@/app/dailyRouteTimeline'),
   getTodayLocalDate: jest.fn(() => '2026-06-04'),
   getCurrentMinutesOfDay: jest.fn(() => 750),
 }));

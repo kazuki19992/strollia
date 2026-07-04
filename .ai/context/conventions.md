@@ -56,6 +56,7 @@ test(export): GPX生成のテストを追加
 | `jest.mock` のパス          | import と同じルールを適用する | `jest.mock('@/db/database', ...)`    |
 
 - `../` を含む相対 import は ESLint の `no-restricted-imports` ルールで禁止している(error)
+- `jest.mock` / `jest.requireActual` 等のパス文字列は import 文ではないため、`no-restricted-syntax` ルールで同様に `../` 始まりを禁止している(error)
 - `src/` の外(root の `app.json` 等)を直接参照する場合のみ `eslint-disable-line` で例外扱いにする
 
 ## 開発フラグ

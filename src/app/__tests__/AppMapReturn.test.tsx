@@ -441,7 +441,7 @@ jest.mock('@/features/reports/monthlyAreaReport', () => ({
   getMonthlyAreaReport: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock('@/features/reports/monthlyReport', () => jest.requireActual('../../features/reports/monthlyReport'));
+jest.mock('@/features/reports/monthlyReport', () => jest.requireActual('@/features/reports/monthlyReport'));
 
 jest.mock('@/features/customization/customizationResolver', () => ({
   resolveUserLocationIcon: jest.fn(() => ({ useNativeUserLocation: true, customIconId: null })),

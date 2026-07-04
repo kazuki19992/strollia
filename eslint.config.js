@@ -32,6 +32,17 @@ module.exports = [
         },
       ],
 
+      // jest.mock / jest.requireActual 等のパス文字列は no-restricted-imports の対象外のため、
+      // no-restricted-syntax で ../ 始まりのパスを検出して @/ エイリアスへ誘導する
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='jest'][callee.property.name=/^(mock|doMock|unmock|requireActual|requireMock)$/] > Literal[value=/^\\.\\.\\//]",
+          message: 'jest.mock / jest.requireActual などのパスも @/ エイリアスを使う',
+        },
+      ],
+
       // react-hooks/exhaustive-deps は依存配列の自動変更=挙動変更になるため warn に留める。
       // 個別に意図的に無効化する場合は eslint-disable-next-line コメントで理由を明記する。
       'react-hooks/exhaustive-deps': 'warn',

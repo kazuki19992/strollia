@@ -171,7 +171,7 @@ jest.mock('@/features/achievements/pendingNotifications', () => ({
 }));
 jest.mock('@/features/export/gpxExporter', () => ({ shareGpx: jest.fn().mockResolvedValue(undefined) }));
 jest.mock('@/features/reports/monthlyAreaReport', () => ({ getMonthlyAreaReport: jest.fn().mockResolvedValue(null) }));
-jest.mock('@/features/reports/monthlyReport', () => jest.requireActual('../../features/reports/monthlyReport'));
+jest.mock('@/features/reports/monthlyReport', () => jest.requireActual('@/features/reports/monthlyReport'));
 jest.mock('@/features/customization/customizationResolver', () => ({
   resolveUserLocationIcon: jest.fn(() => ({ useNativeUserLocation: false, customIconId: 'walker', customImageUri: null })),
 }));

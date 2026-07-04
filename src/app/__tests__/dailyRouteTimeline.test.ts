@@ -7,7 +7,7 @@ import {
   filterLocationPointsUntilMinute,
   formatTimelineTimeLabel,
   formatTimelineTimeLabelPadded,
-} from '../dailyRouteTimeline';
+} from '@/app/dailyRouteTimeline';
 
 const points = [
   { id: 1, recordedAt: new Date(2026, 4, 31, 0, 0).toISOString(), localDate: '2026-05-31', latitude: 35, longitude: 139 },

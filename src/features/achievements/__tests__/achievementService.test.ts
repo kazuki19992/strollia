@@ -1,18 +1,18 @@
-import { evaluateAndStoreAchievementUnlocks, resetAchievementUnlocksForDevelopment } from '../achievementRepository';
-import { evaluateAchievementsAndNotify, processAchievementsForSavedPoint } from '../achievementService';
-import { notifyAchievementUnlocks } from '../achievementNotificationService';
-import { recordVisitedAdminAreasForPoint } from '../adminAreaResolver';
+import { evaluateAndStoreAchievementUnlocks, resetAchievementUnlocksForDevelopment } from '@/features/achievements/achievementRepository';
+import { evaluateAchievementsAndNotify, processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
+import { notifyAchievementUnlocks } from '@/features/achievements/achievementNotificationService';
+import { recordVisitedAdminAreasForPoint } from '@/features/achievements/adminAreaResolver';
 
-jest.mock('../adminAreaResolver', () => ({
+jest.mock('@/features/achievements/adminAreaResolver', () => ({
   recordVisitedAdminAreasForPoint: jest.fn(),
 }));
 
-jest.mock('../achievementRepository', () => ({
+jest.mock('@/features/achievements/achievementRepository', () => ({
   evaluateAndStoreAchievementUnlocks: jest.fn(),
   resetAchievementUnlocksForDevelopment: jest.fn(),
 }));
 
-jest.mock('../achievementNotificationService', () => ({
+jest.mock('@/features/achievements/achievementNotificationService', () => ({
   notifyAchievementUnlocks: jest.fn(),
 }));
 

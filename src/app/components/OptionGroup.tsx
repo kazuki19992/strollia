@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
+import type { AppStyles } from '@/app/appStyles';
 import { DescriptionText } from './DescriptionText';
 
 export type OptionGroupProps = {

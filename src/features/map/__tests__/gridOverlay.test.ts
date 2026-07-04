@@ -1,6 +1,6 @@
-import { GRID_OVERLAY_CONFIG } from '../config/gridOverlayConfig';
-import { toVisitedGridOverlayCells, getFogOpacity, resolveVisitedGridCellColor } from '../gridOverlay';
-import { coordinateToGridCell } from '../../location/grid/gridCell';
+import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
+import { toVisitedGridOverlayCells, getFogOpacity, resolveVisitedGridCellColor } from '@/features/map/gridOverlay';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 
 describe('Visited Grid Overlay表示計算 gridOverlay', () => {
   it('latitudeDeltaに応じてFog opacityを線形補間する', () => {

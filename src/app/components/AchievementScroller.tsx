@@ -1,7 +1,7 @@
 import { Image, ScrollView, Text, View } from 'react-native';
 
-import type { DailyDetailAchievement } from '../../features/reports/dailyReport';
-import type { AppStyles } from '../appStyles';
+import type { DailyDetailAchievement } from '@/features/reports/dailyReport';
+import type { AppStyles } from '@/app/appStyles';
 
 export type AchievementScrollerProps = {
   /** 横スクロールで表示する実績。 */

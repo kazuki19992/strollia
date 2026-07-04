@@ -1,5 +1,5 @@
-import { MonthlyReport } from '../../../../features/reports/monthlyReport';
-import { MonthlyMapReportPage } from '../MonthlyMapReportPage';
+import { MonthlyReport } from '@/features/reports/monthlyReport';
+import { MonthlyMapReportPage } from '@/app/components/reports/MonthlyMapReportPage';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

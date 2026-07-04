@@ -1,11 +1,11 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Linking, Modal, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
-import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../config/legalLinks';
-import type { PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
-import { SUBSCRIPTION_DISCLOSURE_TEXT } from '../../features/premium/subscriptionDisclosure';
-import type { AppTheme } from '../../theme/theme';
-import type { AppStyles } from '../appStyles';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/config/legalLinks';
+import type { PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
+import { SUBSCRIPTION_DISCLOSURE_TEXT } from '@/features/premium/subscriptionDisclosure';
+import type { AppTheme } from '@/theme/theme';
+import type { AppStyles } from '@/app/appStyles';
 import { ActionPill } from './ActionPill';
 import { DescriptionText } from './DescriptionText';
 import { InfoBlock } from './InfoBlock';

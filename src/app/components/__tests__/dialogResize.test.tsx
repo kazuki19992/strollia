@@ -1,12 +1,12 @@
 import { LayoutAnimation } from 'react-native';
 
-import { animateDialogResize } from '../Dialog';
-import { FirstLaunchTutorialDialog } from '../FirstLaunchTutorialDialog';
+import { animateDialogResize } from '@/app/components/Dialog';
+import { FirstLaunchTutorialDialog } from '@/app/components/FirstLaunchTutorialDialog';
 
 const ReactTestRenderer = require('react-test-renderer');
 
 jest.mock('@expo/vector-icons', () => ({ MaterialCommunityIcons: 'Icon' }));
-jest.mock('../ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
+jest.mock('@/app/components/ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
 
 const styles = new Proxy({}, { get: () => ({}) }) as never;
 

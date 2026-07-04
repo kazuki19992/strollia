@@ -9,7 +9,7 @@ import {
   updateSentrySubscriptionContext,
   updateSentryUserContext,
   wrapWithSentry,
-} from '../sentry';
+} from '@/config/sentry';
 
 const mockScope = {
   setContext: jest.fn(),

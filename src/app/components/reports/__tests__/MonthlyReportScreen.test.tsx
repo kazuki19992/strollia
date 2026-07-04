@@ -2,8 +2,8 @@ import { Alert, Text } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
-import { MonthlyReportScreen } from '../MonthlyReportScreen';
-import { darkTheme, lightTheme } from '../../../../theme/theme';
+import { MonthlyReportScreen } from '@/app/components/reports/MonthlyReportScreen';
+import { darkTheme, lightTheme } from '@/theme/theme';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

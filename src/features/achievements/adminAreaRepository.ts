@@ -1,4 +1,4 @@
-import { db } from '../../db/database';
+import { db } from '@/db/database';
 
 /** 訪問エリアの種類。 */
 export type AdminAreaType = 'prefecture' | 'municipality';

@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 
-import { pickAndReadGpxFile } from '../gpxImportService';
+import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 
 jest.mock('expo-document-picker', () => ({
   getDocumentAsync: jest.fn(),

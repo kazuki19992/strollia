@@ -1,6 +1,6 @@
 import type { LatLng, Region } from 'react-native-maps';
 
-import { GRID_OVERLAY_CONFIG } from '../../map/config/gridOverlayConfig';
+import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
 
 /** Web Mercatorで使う地球半径。単位はm。 */
 const WEB_MERCATOR_RADIUS_METERS = 6_378_137;

@@ -1,6 +1,6 @@
 import { Image, Text } from 'react-native';
 
-import { AchievementScroller } from '../AchievementScroller';
+import { AchievementScroller } from '@/app/components/AchievementScroller';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

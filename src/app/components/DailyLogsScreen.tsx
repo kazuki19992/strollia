@@ -1,11 +1,11 @@
 import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
-import { groupDailyLogsByMonth } from '../dailyLogDisplay';
-import { getLocationPointAdminAreaNames } from '../../features/achievements/adminAreaRepository';
-import { AppTheme } from '../../theme/theme';
-import { DailyLogSummary } from '../../types/gps';
-import { AppStyles } from '../appStyles';
+import { groupDailyLogsByMonth } from '@/app/dailyLogDisplay';
+import { getLocationPointAdminAreaNames } from '@/features/achievements/adminAreaRepository';
+import { AppTheme } from '@/theme/theme';
+import { DailyLogSummary } from '@/types/gps';
+import { AppStyles } from '@/app/appStyles';
 import { DailyLogListItem } from './DailyLogListItem';
 import { AppScreenHeader } from './AppScreenHeader';
 import { SectionTitle } from './SectionTitle';

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Image, View } from 'react-native';
 
-import { PlusAdImage, PLUS_AD_IMAGE_ASPECT_RATIO } from '../PlusAdImage';
+import { PlusAdImage, PLUS_AD_IMAGE_ASPECT_RATIO } from '@/app/components/PlusAdImage';
 
 const { act, create } = require('react-test-renderer') as {
   act: (callback: () => void) => void;

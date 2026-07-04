@@ -1,4 +1,4 @@
-import { LocationPoint } from '../../../types/gps';
+import { LocationPoint } from '@/types/gps';
 import {
   createInitialRegion,
   filterRouteCoordinatesByRegion,
@@ -7,7 +7,7 @@ import {
   toRenderRouteSegments,
   toRenderRouteCoordinates,
   toRouteCoordinates,
-} from '../routeMapper';
+} from '@/features/map/routeMapper';
 
 function point(latitude: number, longitude: number, recordedAt = '2026-05-04T00:00:00.000Z'): LocationPoint {
   return {

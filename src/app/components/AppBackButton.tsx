@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, Text } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
-import type { AppTheme } from '../../theme/theme';
+import type { AppStyles } from '@/app/appStyles';
+import type { AppTheme } from '@/theme/theme';
 
 export type AppBackButtonProps = {
   /** 戻る先の表示名。 */

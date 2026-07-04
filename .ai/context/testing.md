@@ -20,10 +20,10 @@
 `src/features/settings/__tests__/settingsRepository.test.ts` のパターン:
 
 ```typescript
-import { db } from '../../../db/database';
-import { getStringSetting } from '../settingsRepository';
+import { db } from '@/db/database';
+import { getStringSetting } from '@/features/settings/settingsRepository';
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     runAsync: jest.fn(),

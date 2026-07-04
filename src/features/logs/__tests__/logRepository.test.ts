@@ -1,12 +1,12 @@
-import { db } from '../../../db/database';
-import { NewLocationPoint } from '../../../types/gps';
-import { deleteAllUserData, getDailyLogs, insertLocationPoint } from '../logRepository';
+import { db } from '@/db/database';
+import { NewLocationPoint } from '@/types/gps';
+import { deleteAllUserData, getDailyLogs, insertLocationPoint } from '@/features/logs/logRepository';
 
 const mockTxn = {
   runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
 };
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     getFirstAsync: jest.fn(),

@@ -1,6 +1,6 @@
 import { Text } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
+import type { AppStyles } from '@/app/appStyles';
 
 export type SectionTitleProps = {
   /** 見出し文言。 */

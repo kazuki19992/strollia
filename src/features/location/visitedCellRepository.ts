@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-import { db } from '../../db/database';
+import { db } from '@/db/database';
 import type { GridBounds, GridCell } from './grid/gridCell';
 
 /** SQLiteから取得するvisited cell行。 */

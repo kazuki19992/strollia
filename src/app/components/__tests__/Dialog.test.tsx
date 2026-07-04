@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { PanResponder, Text } from 'react-native';
 
-import { createStyles } from '../../appStyles';
-import { lightTheme } from '../../../theme/theme';
-import { Dialog } from '../Dialog';
+import { createStyles } from '@/app/appStyles';
+import { lightTheme } from '@/theme/theme';
+import { Dialog } from '@/app/components/Dialog';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -11,7 +11,7 @@ jest.mock('@expo/vector-icons', () => {
 });
 
 const mockConfetti = jest.fn();
-jest.mock('../ConfettiOverlay', () => ({
+jest.mock('@/app/components/ConfettiOverlay', () => ({
   ConfettiOverlay: (props: Record<string, unknown>) => {
     mockConfetti(props);
     return null;

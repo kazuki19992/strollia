@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
+import type { AppStyles } from '@/app/appStyles';
 import { animateDialogResize, Dialog } from './Dialog';
 
 const FALLBACK_INSTRUCTION_IMAGE_ASPECT_RATIO = 453 / 279;

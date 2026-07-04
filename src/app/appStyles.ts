@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native';
 
-import { getAppColorPreset } from '../features/customization/colorPresets';
-import { NUMERIC_DISPLAY_FONT } from '../theme/fonts';
-import { AppTheme } from '../theme/theme';
+import { getAppColorPreset } from '@/features/customization/colorPresets';
+import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
+import { AppTheme } from '@/theme/theme';
 
 /** #rrggbbの色をrgba表記へ変換する。 */
 function hexToRgba(hex: string, alpha: number): string {

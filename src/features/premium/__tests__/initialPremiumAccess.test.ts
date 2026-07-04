@@ -1,4 +1,4 @@
-import { resolveInitialPremiumAccess } from '../initialPremiumAccess';
+import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAccess';
 
 describe('起動時のPlus状態取得', () => {
   afterEach(() => {

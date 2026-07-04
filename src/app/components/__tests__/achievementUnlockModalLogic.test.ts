@@ -3,7 +3,7 @@ import {
   ACHIEVEMENT_MODAL_SWIPE_DISMISS_VELOCITY,
   shouldDismissAchievementModalSwipe,
   shouldDismissAchievementModalTerminate,
-} from '../achievementUnlockModalLogic';
+} from '@/app/components/achievementUnlockModalLogic';
 
 describe('実績解除ダイアログの閉じ判定', () => {
   test('移動量がしきい値未満で速度も遅い場合は閉じない', () => {

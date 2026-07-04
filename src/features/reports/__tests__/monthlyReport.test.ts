@@ -5,8 +5,8 @@ import {
   getReportMonth,
   hasMonthlyReportData,
   isInReportMonth,
-} from '../monthlyReport';
-import { DailyLogSummary, LocationPoint } from '../../../types/gps';
+} from '@/features/reports/monthlyReport';
+import { DailyLogSummary, LocationPoint } from '@/types/gps';
 
 /**
  * 月次レポートテスト用の日別ログ最小フィクスチャを作る。

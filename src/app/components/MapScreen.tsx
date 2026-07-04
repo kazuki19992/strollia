@@ -5,12 +5,12 @@ import type { LatLng, MapType } from 'react-native-maps';
 import { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
 
-import { MapPhotoCluster } from '../../features/photos/photoClusters';
-import { AreaLabel } from '../areaName';
-import { AppTheme } from '../../theme/theme';
-import { VisitedGridOverlayCell } from '../../features/map/gridOverlay';
-import { LocationPoint } from '../../types/gps';
-import { AppStyles } from '../appStyles';
+import { MapPhotoCluster } from '@/features/photos/photoClusters';
+import { AreaLabel } from '@/app/areaName';
+import { AppTheme } from '@/theme/theme';
+import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
+import { LocationPoint } from '@/types/gps';
+import { AppStyles } from '@/app/appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
 

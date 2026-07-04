@@ -1,6 +1,6 @@
 import { Text } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
+import type { AppStyles } from '@/app/appStyles';
 
 export type DescriptionTextProps = {
   /** 説明テキスト。 */

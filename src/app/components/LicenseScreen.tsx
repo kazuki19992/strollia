@@ -1,9 +1,9 @@
 import { FlatList, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
-import { OSS_LICENSES } from '../generated/ossLicenses';
-import type { OssLicenseEntry } from '../generated/ossLicenses';
-import { AppStyles } from '../appStyles';
-import { AppTheme } from '../../theme/theme';
+import { OSS_LICENSES } from '@/app/generated/ossLicenses';
+import type { OssLicenseEntry } from '@/app/generated/ossLicenses';
+import { AppStyles } from '@/app/appStyles';
+import { AppTheme } from '@/theme/theme';
 import { AppScreenHeader } from './AppScreenHeader';
 import { AppListItem } from './AppListItem';
 

@@ -11,7 +11,7 @@ module.exports = [
   // プロジェクト共通カスタムルール
   {
     rules: {
-      // AsyncStorage 直接使用を禁止: 設定は settingsRepository (SQLite app_settings) を使う
+      // AsyncStorage 直接使用を禁止 / ディレクトリを跨ぐ相対 import 禁止
       'no-restricted-imports': [
         'error',
         {
@@ -21,6 +21,25 @@ module.exports = [
               message: '設定は settingsRepository (SQLite app_settings) を使う',
             },
           ],
+          patterns: [
+            {
+              // ../  を含むパスはディレクトリ跨ぎとみなし @/ エイリアスを使う
+              // 同一ディレクトリ内の ./xxx はこのルールの対象外
+              group: ['../*'],
+              message: 'ディレクトリを跨ぐimportは @/ エイリアスを使う',
+            },
+          ],
+        },
+      ],
+
+      // jest.mock / jest.requireActual 等のパス文字列は no-restricted-imports の対象外のため、
+      // no-restricted-syntax で ../ 始まりのパスを検出して @/ エイリアスへ誘導する
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='jest'][callee.property.name=/^(mock|doMock|unmock|requireActual|requireMock)$/] > Literal[value=/^\\.\\.\\//]",
+          message: 'jest.mock / jest.requireActual などのパスも @/ エイリアスを使う',
         },
       ],
 

@@ -1,5 +1,9 @@
-import { AchievementDefinition } from '../achievementDefinitions';
-import { evaluateAchievementUnlocks, getProgressValueForCondition, isAchievementConditionMet } from '../achievementEvaluator';
+import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
+import {
+  evaluateAchievementUnlocks,
+  getProgressValueForCondition,
+  isAchievementConditionMet,
+} from '@/features/achievements/achievementEvaluator';
 
 const definitions: AchievementDefinition[] = [
   {

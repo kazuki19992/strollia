@@ -1,4 +1,4 @@
-import { buildRouteGif } from '../routeGifBuilder';
+import { buildRouteGif } from '@/features/export/routeGifBuilder';
 
 function fakeEncoder() {
   const frames: number[] = [];

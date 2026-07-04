@@ -6,13 +6,13 @@ import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Te
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
 
-import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '../../features/customization/customizationOptions';
-import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '../../features/customization/colorPresets';
-import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
-import { SUBSCRIPTION_DISCLOSURE_TEXT } from '../../features/premium/subscriptionDisclosure';
-import { AppTheme } from '../../theme/theme';
-import { AutoStartStatus } from '../appTypes';
-import { AppStyles } from '../appStyles';
+import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '@/features/customization/customizationOptions';
+import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '@/features/customization/colorPresets';
+import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
+import { SUBSCRIPTION_DISCLOSURE_TEXT } from '@/features/premium/subscriptionDisclosure';
+import { AppTheme } from '@/theme/theme';
+import { AutoStartStatus } from '@/app/appTypes';
+import { AppStyles } from '@/app/appStyles';
 import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DescriptionText } from './DescriptionText';

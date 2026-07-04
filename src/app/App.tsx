@@ -23,69 +23,69 @@ import {
 } from 'react-native';
 import MapView, { Region, UserLocationChangeEvent } from 'react-native-maps';
 
-import { initializeDatabase } from '../db/database';
-import { AchievementDefinition } from '../features/achievements/achievementDefinitions';
-import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '../config/developmentFlags';
-import { PRIVACY_POLICY_URL, SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL, TERMS_OF_SERVICE_URL } from '../config/legalLinks';
-import { updateSentryScreenContext, updateSentrySubscriptionContext, updateSentryUserContext } from '../config/sentry';
+import { initializeDatabase } from '@/db/database';
+import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
+import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '@/config/developmentFlags';
+import { PRIVACY_POLICY_URL, SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL, TERMS_OF_SERVICE_URL } from '@/config/legalLinks';
+import { updateSentryScreenContext, updateSentrySubscriptionContext, updateSentryUserContext } from '@/config/sentry';
 import {
   initializeAchievementNotificationHandler,
   requestAchievementNotificationPermissionOnFirstLaunch,
   setupAchievementNotificationChannel,
-} from '../features/achievements/achievementNotificationService';
+} from '@/features/achievements/achievementNotificationService';
 import {
   isMonthlyReportNotification,
   setupMonthlyReportNotificationChannel,
   syncMonthlyReportNotification,
-} from '../features/reports/monthlyReportNotificationService';
+} from '@/features/reports/monthlyReportNotificationService';
 import {
   AchievementListItem,
   PendingAchievementNotification,
   getAchievementListItems,
   getPendingInAppAchievementNotifications,
   markAchievementShownInApp,
-} from '../features/achievements/achievementRepository';
-import { canEvaluateAchievementsInForeground } from '../features/achievements/achievementEvaluationGate';
-import { evaluateAchievementsAndNotify } from '../features/achievements/achievementService';
-import { filterDismissedAchievementNotifications } from '../features/achievements/pendingNotifications';
-import { shareGpx } from '../features/export/gpxExporter';
-import { parseGpxToLocationPoints } from '../features/import/gpxImporter';
-import { pickAndReadGpxFile } from '../features/import/gpxImportService';
-import { importLocationPointsFromGpx } from '../features/import/importRepository';
+} from '@/features/achievements/achievementRepository';
+import { canEvaluateAchievementsInForeground } from '@/features/achievements/achievementEvaluationGate';
+import { evaluateAchievementsAndNotify } from '@/features/achievements/achievementService';
+import { filterDismissedAchievementNotifications } from '@/features/achievements/pendingNotifications';
+import { shareGpx } from '@/features/export/gpxExporter';
+import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
+import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
+import { importLocationPointsFromGpx } from '@/features/import/importRepository';
 import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
   stopBackgroundLocationRecording,
   updateBackgroundLocationTaskOptionsIfNeeded,
-} from '../features/location/locationService';
+} from '@/features/location/locationService';
 import {
   canRequestLocationPermissionInApp,
   getLocationPermissionState,
   hasRequiredLocationPermission,
   isWhileInUseOnlyMode,
   LocationPermissionState,
-} from '../features/location/locationPermission';
-import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '../features/logs/logRepository';
-import { getMonthlyAreaReport, MonthlyAreaReport } from '../features/reports/monthlyAreaReport';
-import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '../features/reports/monthlyReport';
-import { resolveUserLocationIcon } from '../features/customization/customizationResolver';
+} from '@/features/location/locationPermission';
+import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '@/features/logs/logRepository';
+import { getMonthlyAreaReport, MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
+import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '@/features/reports/monthlyReport';
+import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 import {
   deleteManagedCustomIcon,
   isLegacyCustomIconReference,
   resolveCustomIconReference,
-} from '../features/customization/customIconStorage';
-import { replaceCustomIconSelection } from '../features/customization/customIconSelection';
+} from '@/features/customization/customIconStorage';
+import { replaceCustomIconSelection } from '@/features/customization/customIconSelection';
 import {
   DEFAULT_USER_LOCATION_ICON_ID,
   getUserLocationIconOption,
   UserLocationIconId,
-} from '../features/customization/customizationOptions';
+} from '@/features/customization/customizationOptions';
 import {
   AppColorPresetId,
   DEFAULT_APP_COLOR_PRESET_ID,
   getAppColorPreset,
   isAppColorPresetId,
-} from '../features/customization/colorPresets';
+} from '@/features/customization/colorPresets';
 import {
   getDefaultPremiumAccessState,
   getConfirmedPremiumAccessState,
@@ -98,23 +98,23 @@ import {
   purchasePremiumPackage,
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
-} from '../features/premium/revenueCatAccess';
-import { resolveInitialPremiumAccess } from '../features/premium/initialPremiumAccess';
-import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../features/settings/settingsRepository';
-import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '../features/photos/photoClusters';
-import { MapPhoto, hasFullPhotoAccess } from '../features/photos/photoLibrary';
-import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '../features/location/grid/gridAggregation';
-import { getGridBoundsForRegion, GridBounds, GridCellPolygonSource, isGridBoundsContained } from '../features/location/grid/gridCell';
-import { getVisitedCellsInBounds } from '../features/location/visitedCellRepository';
-import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '../features/map/gridOverlay';
-import { GRID_OVERLAY_CONFIG } from '../features/map/config/gridOverlayConfig';
-import { shouldRequestReviewAfterAchievement } from '../features/review/reviewPromptLogic';
-import { requestStoreReview } from '../features/review/storeReview';
-import { DailyLogSummary, LocationPoint } from '../types/gps';
-import { toLocalDate } from '../utils/date';
+} from '@/features/premium/revenueCatAccess';
+import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAccess';
+import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '@/features/settings/settingsRepository';
+import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
+import { MapPhoto, hasFullPhotoAccess } from '@/features/photos/photoLibrary';
+import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '@/features/location/grid/gridAggregation';
+import { getGridBoundsForRegion, GridBounds, GridCellPolygonSource, isGridBoundsContained } from '@/features/location/grid/gridCell';
+import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
+import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '@/features/map/gridOverlay';
+import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
+import { shouldRequestReviewAfterAchievement } from '@/features/review/reviewPromptLogic';
+import { requestStoreReview } from '@/features/review/storeReview';
+import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import { toLocalDate } from '@/utils/date';
 import type { LatLng, MapType } from 'react-native-maps';
-import { loadAppFonts } from '../theme/fonts';
-import { getAppTheme, applyColorPreset } from '../theme/theme';
+import { loadAppFonts } from '@/theme/fonts';
+import { getAppTheme, applyColorPreset } from '@/theme/theme';
 import { createStyles } from './appStyles';
 import { AutoStartStatus, ScreenMode } from './appTypes';
 import { AchievementDialog } from './components/AchievementDialog';

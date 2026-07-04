@@ -1,5 +1,5 @@
-import { createStyles } from '../../appStyles';
-import { lightTheme } from '../../../theme/theme';
+import { createStyles } from '@/app/appStyles';
+import { lightTheme } from '@/theme/theme';
 
 describe('実績グリッドのスタイル', () => {
   test('グリッドタイルとグレースケール用スタイルを持つ', () => {

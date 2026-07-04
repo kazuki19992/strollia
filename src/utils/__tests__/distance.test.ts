@@ -1,5 +1,5 @@
-import { LocationPoint } from '../../types/gps';
-import { distanceMeters, totalDistanceMeters } from '../distance';
+import { LocationPoint } from '@/types/gps';
+import { distanceMeters, totalDistanceMeters } from '@/utils/distance';
 
 function point(latitude: number, longitude: number): LocationPoint {
   return {

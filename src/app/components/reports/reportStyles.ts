@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
+import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
 
 const reportBackground = '#202020';
 const reportSurface = '#2d2d2d';

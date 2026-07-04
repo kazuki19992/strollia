@@ -1,4 +1,4 @@
-import type { LocationPoint } from '../types/gps';
+import type { LocationPoint } from '@/types/gps';
 
 /** 日別ルートタイムラインの開始時刻。単位は分。 */
 export const DAILY_ROUTE_START_MINUTES = 0;

@@ -1,4 +1,4 @@
-import { formatGifFrameDateLabel } from '../dailyLogDisplay';
+import { formatGifFrameDateLabel } from '@/app/dailyLogDisplay';
 
 describe('formatGifFrameDateLabel', () => {
   it('YYYY年M月D日 (曜) 形式で表示する', () => {

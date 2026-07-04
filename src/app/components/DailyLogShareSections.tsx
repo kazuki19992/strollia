@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
-import type { DailyDetailReport } from '../../features/reports/dailyReport';
-import type { AppStyles } from '../appStyles';
+import type { DailyDetailReport } from '@/features/reports/dailyReport';
+import type { AppStyles } from '@/app/appStyles';
 import { AchievementScroller } from './AchievementScroller';
 import { DataSummaryRow } from './DataSummaryRow';
 import { DescriptionText } from './DescriptionText';

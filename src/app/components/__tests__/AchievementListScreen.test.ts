@@ -1,10 +1,10 @@
-import { AchievementDefinition } from '../../../features/achievements/achievementDefinitions';
-import { AchievementListItem } from '../../../features/achievements/achievementRepository';
+import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
+import { AchievementListItem } from '@/features/achievements/achievementRepository';
 jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,
 }));
 
-const { getAchievementProgressLabel } = require('../AchievementListScreen') as typeof import('../AchievementListScreen');
+const { getAchievementProgressLabel } = require('../AchievementListScreen') as typeof import('@/app/components/AchievementListScreen');
 
 /** テスト用の実績一覧項目を作る。 */
 function item(condition: AchievementDefinition['condition'], progressValue: number, unlockedAt: string | null = null): AchievementListItem {

@@ -1,5 +1,5 @@
-import { DailyLogSummary, LocationPoint } from '../../../types/gps';
-import { calculateDisplayDistance } from '../useMapRouteState';
+import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import { calculateDisplayDistance } from '@/app/hooks/useMapRouteState';
 
 function point(latitude: number, longitude: number): LocationPoint {
   return {

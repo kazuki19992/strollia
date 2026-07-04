@@ -1,8 +1,8 @@
 import { Image, SafeAreaView, StyleSheet, Text } from 'react-native';
 
-import { lightTheme } from '../../../theme/theme';
-import { createStyles } from '../../appStyles';
-import { AboutAppScreen } from '../AboutAppScreen';
+import { lightTheme } from '@/theme/theme';
+import { createStyles } from '@/app/appStyles';
+import { AboutAppScreen } from '@/app/components/AboutAppScreen';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

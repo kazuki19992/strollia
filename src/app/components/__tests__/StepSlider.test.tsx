@@ -1,7 +1,7 @@
 import { PanResponder, Text, View } from 'react-native';
 
-import { lightTheme } from '../../../theme/theme';
-import { normalizeValue, StepSlider } from '../StepSlider';
+import { lightTheme } from '@/theme/theme';
+import { normalizeValue, StepSlider } from '@/app/components/StepSlider';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

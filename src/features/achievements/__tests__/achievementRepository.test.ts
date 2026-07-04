@@ -1,11 +1,15 @@
-import { db } from '../../../db/database';
-import { evaluateAndStoreAchievementUnlocks, getAchievementProgress, getAchievementUnlocksByDate } from '../achievementRepository';
+import { db } from '@/db/database';
+import {
+  evaluateAndStoreAchievementUnlocks,
+  getAchievementProgress,
+  getAchievementUnlocksByDate,
+} from '@/features/achievements/achievementRepository';
 
 const mockTxn = {
   runAsync: jest.fn(),
 };
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     getAllAsync: jest.fn(),

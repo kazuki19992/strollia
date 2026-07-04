@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 
-import { MonthlyReport } from '../../../features/reports/monthlyReport';
+import { MonthlyReport } from '@/features/reports/monthlyReport';
 import { reportStyles } from './reportStyles';
 import { ReportFrame } from './ReportFrame';
 

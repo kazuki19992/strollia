@@ -1,4 +1,4 @@
-import { getAreaLabelFromAddress, getAreaNameFromAddress } from '../areaName';
+import { getAreaLabelFromAddress, getAreaNameFromAddress } from '@/app/areaName';
 
 describe('現在地地域名 getAreaNameFromAddress', () => {
   it('cityがあればcityを優先する', () => {

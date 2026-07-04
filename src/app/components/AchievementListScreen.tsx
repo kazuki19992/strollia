@@ -1,10 +1,10 @@
 import { Image, Pressable, SafeAreaView, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Grayscale } from 'react-native-color-matrix-image-filters';
 
-import { AchievementCategory, formatAchievementDistance } from '../../features/achievements/achievementDefinitions';
-import { AchievementListItem } from '../../features/achievements/achievementRepository';
-import { AppTheme } from '../../theme/theme';
-import { AppStyles } from '../appStyles';
+import { AchievementCategory, formatAchievementDistance } from '@/features/achievements/achievementDefinitions';
+import { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { AppTheme } from '@/theme/theme';
+import { AppStyles } from '@/app/appStyles';
 import { resolveAchievementDisplayStates } from './achievementDisplayState';
 import { AppScreenHeader } from './AppScreenHeader';
 

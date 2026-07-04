@@ -1,4 +1,4 @@
-import { toDisplaySpeedKmh } from '../useRawLocationSpeed';
+import { toDisplaySpeedKmh } from '@/app/hooks/useRawLocationSpeed';
 
 describe('raw GPS speed表示 useRawLocationSpeed', () => {
   it('GPS speedのm/sをkm/hへ変換する', () => {

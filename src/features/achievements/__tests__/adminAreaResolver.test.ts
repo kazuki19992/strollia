@@ -1,8 +1,8 @@
-import { NewLocationPoint } from '../../../types/gps';
+import { NewLocationPoint } from '@/types/gps';
 
-import { normalizeAdminAreaName, toLocationPointAdminArea, toVisitedAdminAreas } from '../adminAreaResolver';
+import { normalizeAdminAreaName, toLocationPointAdminArea, toVisitedAdminAreas } from '@/features/achievements/adminAreaResolver';
 
-jest.mock('../adminAreaRepository', () => ({
+jest.mock('@/features/achievements/adminAreaRepository', () => ({
   upsertLocationPointAdminArea: jest.fn(),
   upsertVisitedAdminArea: jest.fn(),
 }));

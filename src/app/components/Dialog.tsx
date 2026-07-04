@@ -2,7 +2,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, LayoutAnimation, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
-import { AppStyles } from '../appStyles';
+import { AppStyles } from '@/app/appStyles';
 import { shouldDismissAchievementModalSwipe, shouldDismissAchievementModalTerminate } from './achievementUnlockModalLogic';
 import { ConfettiOverlay } from './ConfettiOverlay';
 

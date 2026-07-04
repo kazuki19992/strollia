@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import * as Location from 'expo-location';
 
-import { useCurrentAreaLabel, useCurrentAreaName } from '../useCurrentAreaName';
+import { useCurrentAreaLabel, useCurrentAreaName } from '@/app/hooks/useCurrentAreaName';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

@@ -1,4 +1,4 @@
-import { resolveUserLocationIcon } from '../customizationResolver';
+import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 
 describe('カスタマイズ反映 customizationResolver', () => {
   it('無課金時の現在地アイコンはOS標準を使う', () => {

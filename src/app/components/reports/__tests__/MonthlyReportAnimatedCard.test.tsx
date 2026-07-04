@@ -1,6 +1,6 @@
 import { Animated, Text } from 'react-native';
 
-import { MonthlyReportAnimatedCard } from '../MonthlyReportAnimatedCard';
+import { MonthlyReportAnimatedCard } from '@/app/components/reports/MonthlyReportAnimatedCard';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

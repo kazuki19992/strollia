@@ -1,7 +1,7 @@
-import { AchievementDefinition } from '../../../features/achievements/achievementDefinitions';
-import { createStyles } from '../../appStyles';
-import { darkTheme, lightTheme } from '../../../theme/theme';
-import { AchievementUnlockModal } from '../AchievementUnlockModal';
+import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
+import { createStyles } from '@/app/appStyles';
+import { darkTheme, lightTheme } from '@/theme/theme';
+import { AchievementUnlockModal } from '@/app/components/AchievementUnlockModal';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -17,7 +17,7 @@ const { act, create } = require('react-test-renderer') as {
   create: (element: React.ReactElement) => { root: any; unmount: () => void };
 };
 
-jest.mock('../ConfettiOverlay', () => ({
+jest.mock('@/app/components/ConfettiOverlay', () => ({
   ConfettiOverlay: () => null,
 }));
 

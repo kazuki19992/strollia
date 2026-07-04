@@ -1,11 +1,11 @@
-import { db } from '../../../db/database';
-import { getStringSetting, setSettings } from '../settingsRepository';
+import { db } from '@/db/database';
+import { getStringSetting, setSettings } from '@/features/settings/settingsRepository';
 
 const mockTxn = {
   runAsync: jest.fn(),
 };
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     runAsync: jest.fn(),

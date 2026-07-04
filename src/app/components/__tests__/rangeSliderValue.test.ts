@@ -1,4 +1,4 @@
-import { resolveRangeThumbValues } from '../rangeSliderValue';
+import { resolveRangeThumbValues } from '@/app/components/rangeSliderValue';
 
 const bounds = { minValue: 0, maxValue: 100, stepValue: 5 };
 

@@ -1,5 +1,5 @@
 import { Animated } from 'react-native';
-import { useAnimatedBooleanOpacity } from '../useAnimatedBooleanOpacity';
+import { useAnimatedBooleanOpacity } from '@/app/hooks/useAnimatedBooleanOpacity';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

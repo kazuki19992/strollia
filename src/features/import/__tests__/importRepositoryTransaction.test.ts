@@ -1,5 +1,5 @@
-import { db } from '../../../db/database';
-import { importLocationPointsFromGpx } from '../importRepository';
+import { db } from '@/db/database';
+import { importLocationPointsFromGpx } from '@/features/import/importRepository';
 
 let mockActiveTransactionDepth = 0;
 
@@ -8,7 +8,7 @@ export const mockTxn = {
   getFirstAsync: jest.fn(),
 };
 
-jest.mock('../../../db/database', () => {
+jest.mock('@/db/database', () => {
   const mockDb = {
     getFirstAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 101 }),

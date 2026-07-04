@@ -1,4 +1,4 @@
-import { toLocalDate } from '../date';
+import { toLocalDate } from '@/utils/date';
 
 describe('ローカル日付変換 toLocalDate', () => {
   it('Dateをローカル時刻基準のYYYY-MM-DDへ変換する', () => {

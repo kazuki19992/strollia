@@ -1,10 +1,10 @@
 import { Text, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 
-import { createInitialRegion, toRenderRouteCoordinates } from '../../features/map/routeMapper';
-import type { AppTheme } from '../../theme/theme';
-import type { LocationPoint } from '../../types/gps';
-import type { AppStyles } from '../appStyles';
+import { createInitialRegion, toRenderRouteCoordinates } from '@/features/map/routeMapper';
+import type { AppTheme } from '@/theme/theme';
+import type { LocationPoint } from '@/types/gps';
+import type { AppStyles } from '@/app/appStyles';
 
 export type RouteMapPanelProps = {
   /** 空状態で表示する文言。 */

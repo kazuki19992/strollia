@@ -1,7 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 
-import { NewLocationPoint } from '../../types/gps';
-import { toLocalDate } from '../../utils/date';
+import { NewLocationPoint } from '@/types/gps';
+import { toLocalDate } from '@/utils/date';
 
 type XmlNode = Record<string, unknown>;
 

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Image, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 
-import { MapPhotoCluster } from '../../features/photos/photoClusters';
-import { createStyles } from '../appStyles';
+import { MapPhotoCluster } from '@/features/photos/photoClusters';
+import { createStyles } from '@/app/appStyles';
 
 /** 写真クラスタマーカーに必要なStyleSheet型。 */
 type AppStyles = ReturnType<typeof createStyles>;

@@ -1,4 +1,4 @@
-import { LocationPoint } from '../types/gps';
+import { LocationPoint } from '@/types/gps';
 
 /** 距離計算に必要な最小限の緯度経度。 */
 export type CoordinateLike = {

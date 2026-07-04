@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 
-import { loadGeotaggedPhotos, MapPhoto } from '../../../features/photos/photoLibrary';
-import { PhotoMapOverlayState, usePhotoMapOverlay } from '../usePhotoMapOverlay';
+import { loadGeotaggedPhotos, MapPhoto } from '@/features/photos/photoLibrary';
+import { PhotoMapOverlayState, usePhotoMapOverlay } from '@/app/hooks/usePhotoMapOverlay';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
 
-jest.mock('../../../features/photos/photoLibrary', () => ({
+jest.mock('@/features/photos/photoLibrary', () => ({
   loadGeotaggedPhotos: jest.fn(),
 }));
 

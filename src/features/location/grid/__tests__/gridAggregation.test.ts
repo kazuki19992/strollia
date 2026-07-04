@@ -1,6 +1,6 @@
-import { GRID_OVERLAY_CONFIG } from '../../../map/config/gridOverlayConfig';
-import { aggregateVisitedCells, getDisplayCellSizeMeters, getStableDisplayCellSizeMeters } from '../gridAggregation';
-import { coordinateToGridCell } from '../gridCell';
+import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
+import { aggregateVisitedCells, getDisplayCellSizeMeters, getStableDisplayCellSizeMeters } from '@/features/location/grid/gridAggregation';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 
 describe('Visited Grid表示集約 gridAggregation', () => {
   it('ズームに応じて表示セルサイズを選ぶ', () => {

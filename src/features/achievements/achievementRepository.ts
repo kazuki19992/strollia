@@ -1,7 +1,7 @@
-import { db } from '../../db/database';
-import { LocationPoint } from '../../types/gps';
-import { toLocalDate } from '../../utils/date';
-import { totalDistanceMeters } from '../../utils/distance';
+import { db } from '@/db/database';
+import { LocationPoint } from '@/types/gps';
+import { toLocalDate } from '@/utils/date';
+import { totalDistanceMeters } from '@/utils/distance';
 import { ACHIEVEMENT_DEFINITIONS, AchievementDefinition, getAchievementDefinition } from './achievementDefinitions';
 import { AchievementProgress, evaluateAchievementUnlocks, getProgressValueForCondition } from './achievementEvaluator';
 

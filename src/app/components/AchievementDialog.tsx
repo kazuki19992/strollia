@@ -4,9 +4,9 @@ import { Alert, Image, Pressable, Text, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
-import { AchievementListItem } from '../../features/achievements/achievementRepository';
-import { AppTheme } from '../../theme/theme';
-import { AppStyles } from '../appStyles';
+import { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { AppTheme } from '@/theme/theme';
+import { AppStyles } from '@/app/appStyles';
 import { Dialog } from './Dialog';
 
 /** 実績詳細ダイアログのprops。 */

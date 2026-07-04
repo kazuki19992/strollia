@@ -1,8 +1,8 @@
 import { Text } from 'react-native';
 
-import { lightTheme } from '../../../theme/theme';
-import { Dialog } from '../Dialog';
-import { GpxImportProgressDialog } from '../GpxImportProgressDialog';
+import { lightTheme } from '@/theme/theme';
+import { Dialog } from '@/app/components/Dialog';
+import { GpxImportProgressDialog } from '@/app/components/GpxImportProgressDialog';
 
 jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: require('react-native').Text,

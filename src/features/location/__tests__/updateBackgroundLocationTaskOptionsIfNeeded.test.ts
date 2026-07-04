@@ -1,8 +1,8 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-import { updateBackgroundLocationTaskOptionsIfNeeded } from '../locationService';
-import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions } from '../locationTrackingConfig';
+import { updateBackgroundLocationTaskOptionsIfNeeded } from '@/features/location/locationService';
+import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions } from '@/features/location/locationTrackingConfig';
 
 jest.mock('expo-location', () => ({
   Accuracy: { High: 4 },

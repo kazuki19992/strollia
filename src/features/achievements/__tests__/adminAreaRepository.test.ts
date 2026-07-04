@@ -1,10 +1,10 @@
-import { db } from '../../../db/database';
+import { db } from '@/db/database';
 import {
   getLocationPointAdminAreaName,
   getLocationPointAdminAreaNames,
   upsertLocationPointAdminArea,
   upsertVisitedAdminArea,
-} from '../adminAreaRepository';
+} from '@/features/achievements/adminAreaRepository';
 
 type VisitedAdminAreaRow = {
   area_type: string;
@@ -33,7 +33,7 @@ type LocationPointAdminAreaRow = {
 const mockVisitedAdminAreas = new Map<string, VisitedAdminAreaRow>();
 const mockLocationPointAdminAreas = new Map<number, LocationPointAdminAreaRow>();
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   db: {
     runAsync: jest.fn(async (sql: string, ...params: (string | number | null)[]) => {
       if (sql.includes('location_point_admin_areas')) {

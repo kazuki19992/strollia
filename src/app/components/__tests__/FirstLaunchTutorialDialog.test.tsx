@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
 import { Image, Text, View } from 'react-native';
 
-import { createStyles } from '../../appStyles';
-import { lightTheme } from '../../../theme/theme';
-import { FirstLaunchTutorialDialog } from '../FirstLaunchTutorialDialog';
+import { createStyles } from '@/app/appStyles';
+import { lightTheme } from '@/theme/theme';
+import { FirstLaunchTutorialDialog } from '@/app/components/FirstLaunchTutorialDialog';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
   return { Feather: Text, MaterialCommunityIcons: Text };
 });
 
-jest.mock('../ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
+jest.mock('@/app/components/ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
 
 const { act, create } = require('react-test-renderer') as {
   act: (callback: () => void) => void;

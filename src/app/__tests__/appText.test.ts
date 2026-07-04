@@ -1,4 +1,4 @@
-import { getAutoRecordNote } from '../appText';
+import { getAutoRecordNote } from '@/app/appText';
 
 describe('自動記録ステータス文言 getAutoRecordNote', () => {
   it('確認中の場合は自動記録の状態確認中であることを説明する', () => {

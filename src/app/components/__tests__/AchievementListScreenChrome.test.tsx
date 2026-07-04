@@ -1,9 +1,9 @@
 import { SafeAreaView, Text } from 'react-native';
 
-import type { AchievementListItem } from '../../../features/achievements/achievementRepository';
-import { createStyles } from '../../appStyles';
-import { lightTheme } from '../../../theme/theme';
-import { AchievementListScreen } from '../AchievementListScreen';
+import type { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { createStyles } from '@/app/appStyles';
+import { lightTheme } from '@/theme/theme';
+import { AchievementListScreen } from '@/app/components/AchievementListScreen';
 
 jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,

@@ -1,8 +1,8 @@
 import { Linking, Modal, Text } from 'react-native';
-import { lightTheme } from '../../../theme/theme';
-import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../../config/legalLinks';
-import { PremiumPaywallModal } from '../PremiumPaywallModal';
-import { ActionPill } from '../ActionPill';
+import { lightTheme } from '@/theme/theme';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/config/legalLinks';
+import { PremiumPaywallModal } from '@/app/components/PremiumPaywallModal';
+import { ActionPill } from '@/app/components/ActionPill';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -11,7 +11,7 @@ jest.mock('@expo/vector-icons', () => ({
 
 const mockPlusAdImage = jest.fn((_props: any) => null);
 
-jest.mock('../PlusAdImage', () => ({
+jest.mock('@/app/components/PlusAdImage', () => ({
   PlusAdImage: (props: any) => mockPlusAdImage(props),
 }));
 

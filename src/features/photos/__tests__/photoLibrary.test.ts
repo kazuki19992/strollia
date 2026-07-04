@@ -1,6 +1,6 @@
 import * as MediaLibrary from 'expo-media-library';
 
-import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto } from '../photoLibrary';
+import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto } from '@/features/photos/photoLibrary';
 
 jest.mock('expo-media-library', () => ({
   getAssetsAsync: jest.fn(),

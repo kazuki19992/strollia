@@ -1,5 +1,5 @@
-import { NewLocationPoint } from '../../types/gps';
-import { CoordinateLike, distanceMeters } from '../../utils/distance';
+import { NewLocationPoint } from '@/types/gps';
+import { CoordinateLike, distanceMeters } from '@/utils/distance';
 import { LOCATION_MAX_ACCURACY_METERS, LOCATION_MIN_SAVE_DISTANCE_METERS } from './locationTrackingConfig';
 import { classifyMovementSpeed } from './locationSpeed';
 

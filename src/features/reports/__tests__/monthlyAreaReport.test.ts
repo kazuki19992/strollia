@@ -1,7 +1,7 @@
-import { db } from '../../../db/database';
-import { getMonthlyAreaReport } from '../monthlyAreaReport';
+import { db } from '@/db/database';
+import { getMonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     getFirstAsync: jest.fn(),

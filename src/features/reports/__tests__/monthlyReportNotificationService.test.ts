@@ -6,7 +6,7 @@ import {
   isMonthlyReportNotification,
   setupMonthlyReportNotificationChannel,
   syncMonthlyReportNotification,
-} from '../monthlyReportNotificationService';
+} from '@/features/reports/monthlyReportNotificationService';
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),

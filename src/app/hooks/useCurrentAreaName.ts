@@ -3,7 +3,7 @@ import { AppStateStatus } from 'react-native';
 import * as Location from 'expo-location';
 import type { LatLng } from 'react-native-maps';
 
-import { AreaLabel, getAreaLabelFromAddress, getAreaNameFromAddress } from '../areaName';
+import { AreaLabel, getAreaLabelFromAddress, getAreaNameFromAddress } from '@/app/areaName';
 
 /** 現在地地域名hookの引数。 */
 export type UseCurrentAreaNameArgs = {

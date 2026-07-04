@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { Region } from 'react-native-maps';
 
-import { createInitialRegion, RouteCoordinate, toRenderRouteCoordinates } from '../../features/map/routeMapper';
-import { DailyLogSummary, LocationPoint } from '../../types/gps';
-import { totalDistanceMeters } from '../../utils/distance';
+import { createInitialRegion, RouteCoordinate, toRenderRouteCoordinates } from '@/features/map/routeMapper';
+import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import { totalDistanceMeters } from '@/utils/distance';
 
 export type MapRouteState = {
   /** 全履歴から生成した簡略化済み描画座標。 */

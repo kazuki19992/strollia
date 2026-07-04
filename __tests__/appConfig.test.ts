@@ -1,5 +1,5 @@
-import appConfig from '../app.config';
-import appJson from '../app.json';
+import appConfig from '../app.config'; // eslint-disable-line no-restricted-imports -- src/ 外の Expo 設定ファイルを参照するため @/ エイリアス不使用
+import appJson from '../app.json'; // eslint-disable-line no-restricted-imports -- src/ 外の Expo 設定ファイルを参照するため @/ エイリアス不使用
 
 const staticExpo = appJson.expo as any;
 

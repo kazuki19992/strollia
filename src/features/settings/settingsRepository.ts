@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { db } from '../../db/database';
+import { db } from '@/db/database';
 
 /** SQLiteへJSON文字列として保存するアプリ設定値。 */
 export type AppSettingValue = boolean | number | string | null;

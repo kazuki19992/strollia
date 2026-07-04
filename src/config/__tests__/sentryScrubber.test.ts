@@ -1,4 +1,4 @@
-import { scrubSentryEventLocationData } from '../sentryScrubber';
+import { scrubSentryEventLocationData } from '@/config/sentryScrubber';
 
 describe('Sentryイベントの位置情報マスク', () => {
   it('ネストした位置情報フィールドを送信前に伏せる', () => {

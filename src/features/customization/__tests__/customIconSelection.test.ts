@@ -1,7 +1,7 @@
-import { deleteManagedCustomIcon, persistCustomIconImage } from '../customIconStorage';
-import { replaceCustomIconSelection } from '../customIconSelection';
+import { deleteManagedCustomIcon, persistCustomIconImage } from '@/features/customization/customIconStorage';
+import { replaceCustomIconSelection } from '@/features/customization/customIconSelection';
 
-jest.mock('../customIconStorage', () => ({
+jest.mock('@/features/customization/customIconStorage', () => ({
   deleteManagedCustomIcon: jest.fn(),
   persistCustomIconImage: jest.fn(),
 }));

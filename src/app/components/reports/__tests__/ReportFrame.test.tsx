@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import { ReportFrame } from '../ReportFrame';
+import { ReportFrame } from '@/app/components/reports/ReportFrame';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

@@ -1,4 +1,4 @@
-import { LocationPoint } from '../../types/gps';
+import { LocationPoint } from '@/types/gps';
 
 /** 日別ルート上に表示する開始/最新地点マーカー。 */
 export type EndpointMarker = {

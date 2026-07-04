@@ -1,5 +1,5 @@
-import { NewLocationPoint } from '../../../types/gps';
-import { classifyMovementSpeed, estimateAcceptedSegmentSpeedMps } from '../locationSpeed';
+import { NewLocationPoint } from '@/types/gps';
+import { classifyMovementSpeed, estimateAcceptedSegmentSpeedMps } from '@/features/location/locationSpeed';
 
 /** 速度計算テスト用のGPSポイントを作る。 */
 function point(latitude: number, longitude: number, recordedAt: string): NewLocationPoint {

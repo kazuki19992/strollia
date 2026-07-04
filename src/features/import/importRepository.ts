@@ -6,12 +6,24 @@ import { distanceMeters } from '@/utils/distance';
 import { getVisitedCellsForLocationPoint } from '@/features/location/grid/gridInterpolation';
 import { upsertVisitedCellsInCurrentTransaction } from '@/features/location/visitedCellRepository';
 
+/** GPX インポートの実行結果。 */
 export type GpxImportResult = {
+  /** 新規に取り込んだポイント数。 */
   importedPointCount: number;
+  /** 既存データと重複してスキップしたポイント数。 */
   skippedPointCount: number;
 };
 
-/** GPX由来のGPSポイントを既存データ優先でSQLiteへ取り込む。 */
+/**
+ * GPX 由来の GPS ポイントを既存データ優先で SQLite へ取り込む。
+ *
+ * - ポイントは `recorded_at` 昇順にソートしてから挿入する。
+ * - `INSERT OR IGNORE` で既存ポイント（同じ recorded_at / latitude / longitude）はスキップする。
+ * - 日別ログ（daily_logs）と訪問セル（visited_cells）も同一トランザクション内で更新する。
+ * - インポート履歴（import_history）に記録を残す。
+ * - すべての操作は排他トランザクション（withExclusiveTransactionAsync）で囲み、
+ *   途中失敗時にロールバックする。
+ */
 export async function importLocationPointsFromGpx(points: NewLocationPoint[], fileName: string): Promise<GpxImportResult> {
   const sortedPoints = [...points].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
   const now = new Date().toISOString();
@@ -39,6 +51,12 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   return { importedPointCount, skippedPointCount };
 }
 
+/**
+ * 1ポイントをトランザクション内に挿入し、挿入できたかどうかを返す。
+ *
+ * daily_logs は UPSERT（ON CONFLICT DO UPDATE）で集計値を更新する。
+ * 同一日付の前のポイントとの距離を distance_meters に累積する。
+ */
 async function insertImportedLocationPoint(
   point: NewLocationPoint,
   previousPoint: NewLocationPoint | null,
@@ -112,6 +130,11 @@ async function insertImportedLocationPoint(
   return true;
 }
 
+/**
+ * インポート実行履歴を import_history テーブルに記録する。
+ *
+ * ポイントが存在しない場合は range_from / range_to を null とする。
+ */
 async function insertImportHistory(
   points: NewLocationPoint[],
   fileName: string,

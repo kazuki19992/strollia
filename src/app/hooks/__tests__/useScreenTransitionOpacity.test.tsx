@@ -70,21 +70,34 @@ describe('画面遷移フェードhook useScreenTransitionOpacity', () => {
     expect(Animated.timing).toHaveBeenCalledTimes(2);
   });
 
-  it('screenKey が同じときは追加のアニメーションが呼ばれない', () => {
+  it('screenKey と durationMs が同じ再レンダーでは追加のアニメーションが呼ばれない', () => {
     let renderer: ReturnType<typeof ReactTestRenderer.create>;
 
     act(() => {
       renderer = ReactTestRenderer.create(<HookProbe screenKey="map" durationMs={300} onValue={jest.fn()} />);
     });
 
-    // 同じ screenKey で durationMs だけ変えても screenKey 依存の effect は再実行されない
+    // effect の依存配列 [durationMs, opacity, screenKey] がすべて同じなら再実行されない
+    act(() => {
+      renderer.update(<HookProbe screenKey="map" durationMs={300} onValue={jest.fn()} />);
+    });
+
+    expect(Animated.timing).toHaveBeenCalledTimes(1);
+  });
+
+  it('durationMs が変わると Animated.timing が再度呼ばれる（依存配列に含まれるため）', () => {
+    let renderer: ReturnType<typeof ReactTestRenderer.create>;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(<HookProbe screenKey="map" durationMs={300} onValue={jest.fn()} />);
+    });
+
     act(() => {
       renderer.update(<HookProbe screenKey="map" durationMs={500} onValue={jest.fn()} />);
     });
 
-    // durationMs 変化は timing 再実行のトリガーになる（依存配列に含まれるため）
-    // ここでは2回以下であることを確認する（screenKey が変わった時と同様またはそれ以下）
     expect(Animated.timing).toHaveBeenCalledTimes(2);
+    expect(Animated.timing).toHaveBeenLastCalledWith(expect.any(Animated.Value), expect.objectContaining({ duration: 500 }));
   });
 
   it('toValue=1 へのアニメーションが指定される（フェードイン）', () => {

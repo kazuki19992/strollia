@@ -1,3 +1,5 @@
+import { requestStoreReview } from '../storeReview';
+
 const mockIsAvailableAsync = jest.fn();
 const mockRequestReview = jest.fn();
 
@@ -5,8 +7,6 @@ jest.mock('expo-store-review', () => ({
   isAvailableAsync: (...args: unknown[]) => mockIsAvailableAsync(...args),
   requestReview: (...args: unknown[]) => mockRequestReview(...args),
 }));
-
-import { requestStoreReview } from '../storeReview';
 
 describe('ストアレビュー要求 requestStoreReview', () => {
   beforeEach(() => {

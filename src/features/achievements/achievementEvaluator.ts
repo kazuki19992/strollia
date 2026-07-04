@@ -38,6 +38,7 @@ export function evaluateAchievementUnlocks(
   definitions = ACHIEVEMENT_DEFINITIONS,
 ): AchievementDefinition[] {
   return definitions.filter(
-    (definition) => definition.enabled && !unlockedAchievementIds.has(definition.id) && isAchievementConditionMet(definition.condition, progress),
+    (definition) =>
+      definition.enabled && !unlockedAchievementIds.has(definition.id) && isAchievementConditionMet(definition.condition, progress),
   );
 }

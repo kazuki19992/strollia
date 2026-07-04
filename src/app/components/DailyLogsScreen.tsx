@@ -30,7 +30,9 @@ export function DailyLogsScreen({ dailyLogs, styles, theme, onBackToMap, onOpenD
   const [areaNameByPointId, setAreaNameByPointId] = useState(new Map<number, string>());
 
   useEffect(() => {
-    const locationPointIds = dailyLogs.flatMap((log) => [log.startLocationPointId, log.endLocationPointId]).filter((id): id is number => id !== null);
+    const locationPointIds = dailyLogs
+      .flatMap((log) => [log.startLocationPointId, log.endLocationPointId])
+      .filter((id): id is number => id !== null);
     let isCancelled = false;
 
     getLocationPointAdminAreaNames(locationPointIds)

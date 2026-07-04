@@ -35,10 +35,7 @@ describe('バックグラウンド位置情報タスクの設定更新 updateBac
     await updateBackgroundLocationTaskOptionsIfNeeded();
 
     expect(mockedLocation.stopLocationUpdatesAsync).not.toHaveBeenCalled();
-    expect(mockedLocation.startLocationUpdatesAsync).toHaveBeenCalledWith(
-      BACKGROUND_LOCATION_TASK_NAME,
-      getLocationTaskOptions(),
-    );
+    expect(mockedLocation.startLocationUpdatesAsync).toHaveBeenCalledWith(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
   });
 
   it('記録中で設定が最新の場合はstartもstopも呼ばない', async () => {

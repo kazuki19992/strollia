@@ -16,7 +16,13 @@ export type MonthlyReportAnimatedCardProps = PropsWithChildren<{
 }>;
 
 /** 画面下部に近づいたタイミングで奥から手前へ出る月次レポートカード。 */
-export function MonthlyReportAnimatedCard({ children, scrollY, viewportHeight, style, forceVisible = false }: MonthlyReportAnimatedCardProps) {
+export function MonthlyReportAnimatedCard({
+  children,
+  scrollY,
+  viewportHeight,
+  style,
+  forceVisible = false,
+}: MonthlyReportAnimatedCardProps) {
   const [cardY, setCardY] = useState(0);
 
   /** レイアウト位置を保持し、スクロール量から登場タイミングを算出する。 */
@@ -31,7 +37,10 @@ export function MonthlyReportAnimatedCard({ children, scrollY, viewportHeight, s
   const translateY = forceVisible ? 0 : scrollY.interpolate({ inputRange: [start, end], outputRange: [26, 0], extrapolate: 'clamp' });
 
   return (
-    <Animated.View onLayout={handleLayout} style={[reportStyles.monthlyAnimatedCard, style, { opacity, transform: [{ translateY }, { scale }] }]}>
+    <Animated.View
+      onLayout={handleLayout}
+      style={[reportStyles.monthlyAnimatedCard, style, { opacity, transform: [{ translateY }, { scale }] }]}
+    >
       {children}
     </Animated.View>
   );

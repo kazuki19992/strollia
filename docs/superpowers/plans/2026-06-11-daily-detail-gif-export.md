@@ -30,6 +30,7 @@
 ## Task 1: スライダーを5分刻みにする
 
 **Files:**
+
 - Modify: `src/app/dailyRouteTimeline.ts:8`
 - Test: `src/app/__tests__/dailyRouteTimeline.test.ts:19-23`
 
@@ -38,11 +39,11 @@
 `src/app/__tests__/dailyRouteTimeline.test.ts` の該当テストを書き換える:
 
 ```typescript
-  it('0時から24時までを5分刻みで扱う定数を公開する', () => {
-    expect(DAILY_ROUTE_START_MINUTES).toBe(0);
-    expect(DAILY_ROUTE_END_MINUTES).toBe(1440);
-    expect(DAILY_ROUTE_TIME_STEP_MINUTES).toBe(5);
-  });
+it('0時から24時までを5分刻みで扱う定数を公開する', () => {
+  expect(DAILY_ROUTE_START_MINUTES).toBe(0);
+  expect(DAILY_ROUTE_END_MINUTES).toBe(1440);
+  expect(DAILY_ROUTE_TIME_STEP_MINUTES).toBe(5);
+});
 ```
 
 - [ ] **Step 2: テストを実行して失敗を確認**
@@ -76,6 +77,7 @@ git commit -m "feat(daily-detail): 移動軌跡スライダーを5分刻みに�
 ## Task 2: スライダーのサイズ調整（低背・幅広）
 
 **Files:**
+
 - Modify: `src/app/appStyles.ts:1929-1980`
 
 UIスタイルのみのため自動テストはなし。手動確認。
@@ -118,6 +120,7 @@ git commit -m "style(daily-detail): スライダーを低背・幅広に調整�
 `dismissible=false`（既定 true）で ×ボタン・スワイプ閉じ・スワイプヒント・背景/戻る閉じを無効化する。
 
 **Files:**
+
 - Modify: `src/app/components/Dialog.tsx`
 - Test: `src/app/components/__tests__/Dialog.test.tsx`（新規）
 
@@ -146,9 +149,7 @@ describe('Dialog dismissible', () => {
         </Dialog>,
       );
     });
-    const closeButtons = tree!.root.findAll(
-      (node) => node.props.accessibilityLabel === '閉じる',
-    );
+    const closeButtons = tree!.root.findAll((node) => node.props.accessibilityLabel === '閉じる');
     expect(closeButtons).toHaveLength(0);
   });
 
@@ -161,9 +162,7 @@ describe('Dialog dismissible', () => {
         </Dialog>,
       );
     });
-    const closeButtons = tree!.root.findAll(
-      (node) => node.props.accessibilityLabel === '閉じる',
-    );
+    const closeButtons = tree!.root.findAll((node) => node.props.accessibilityLabel === '閉じる');
     expect(closeButtons.length).toBeGreaterThan(0);
   });
 });
@@ -205,17 +204,27 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
 ×ボタンを条件付きに変更（既存の `<Pressable ... accessibilityLabel="閉じる">...</Pressable>` を囲む）:
 
 ```tsx
-            {dismissible && (
-              <Pressable onPress={() => animateOut(true)} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
-                <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
-              </Pressable>
-            )}
+{
+  dismissible && (
+    <Pressable
+      onPress={() => animateOut(true)}
+      hitSlop={10}
+      style={styles.achievementCloseButton}
+      accessibilityLabel="閉じる"
+      accessibilityRole="button"
+    >
+      <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
+    </Pressable>
+  );
+}
 ```
 
 スワイプヒントの条件を変更:
 
 ```tsx
-            {swipeToClose && dismissible && <Text style={styles.dialogSwipeHint}>スワイプで閉じる</Text>}
+{
+  swipeToClose && dismissible && <Text style={styles.dialogSwipeHint}>スワイプで閉じる</Text>;
+}
 ```
 
 `useMemo` 依存配列に `dismissible` を追加:
@@ -248,6 +257,7 @@ git commit -m "feat(dialog): 閉じる手段を無効化する dismissible を�
 各コマが「開始から該当時刻まで」を表す、その日の0時からの経過分（minute-of-day）の配列を返す。
 
 **Files:**
+
 - Create: `src/features/export/routeGifFrames.ts`
 - Test: `src/features/export/__tests__/routeGifFrames.test.ts`
 
@@ -356,6 +366,7 @@ git commit -m "feat(export): GIFフレーム時刻の算出関数を追加"
 フレーム数ぶん capture→encode を回し、進捗通知・キャンセル中断を行う。ネイティブ非依存でテストする。
 
 **Files:**
+
 - Create: `src/features/export/routeGifBuilder.ts`
 - Test: `src/features/export/__tests__/routeGifBuilder.test.ts`
 
@@ -390,7 +401,11 @@ describe('buildRouteGif', () => {
     });
     expect(encoder.frames).toEqual([500, 500, 500]);
     expect(result).toEqual(new Uint8Array([1, 2, 3]));
-    expect(progress).toEqual([[1, 3], [2, 3], [3, 3]]);
+    expect(progress).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
   });
 
   it('shouldAbort が true を返したら中断して null を返す', async () => {
@@ -489,15 +504,18 @@ git commit -m "feat(export): GIF生成オーケストレーション（注入可
 ## Task 6: 依存パッケージの追加
 
 **Files:**
+
 - Modify: `package.json`, `package-lock.json`
 
 - [ ] **Step 1: gifenc と upng-js をインストール**
 
 Run:
+
 ```bash
 npm install gifenc@1.0.3 upng-js@2.1.0
 npm install --save-dev @types/upng-js
 ```
+
 （`@types/upng-js` が存在しない場合は Step 3 のローカル型宣言で対応する）
 
 - [ ] **Step 2: 既存テストが壊れていないか確認**
@@ -537,6 +555,7 @@ git commit -m "chore(deps): GIF生成のため gifenc と upng-js を追加"
 画面外にマウントする480×480の地図View。region固定・累積Polyline・左上時刻（DSEG）・右下ブランディング。ネイティブ描画のため自動テストはなし（手動確認）。
 
 **Files:**
+
 - Create: `src/app/components/GifFrameRenderer.tsx`
 - Modify: `src/app/appStyles.ts`（GIF用スタイル追加）
 
@@ -694,6 +713,7 @@ git commit -m "feat(daily-detail): GIFフレーム描画コンポーネントを
 `react-native-view-shot` でPNGキャプチャ→`upng-js`でRGBA→`gifenc`でGIF→ファイル書き出し。ネイティブ依存のため自動テストはなし。`buildRouteGif` を用いる。
 
 **Files:**
+
 - Create: `src/features/export/routeGifExporter.ts`
 
 - [ ] **Step 1: 実装**
@@ -808,6 +828,7 @@ git commit -m "feat(export): GIF生成・共有の実体を追加"
 スライダー/GIFボタンをキャプチャから除外し、GIFボタン・生成フロー・進捗ダイアログを組み込む。
 
 **Files:**
+
 - Modify: `src/app/components/DailyLogDetailScreen.tsx`
 - Modify: `src/app/appStyles.ts`（進捗ダイアログ用スタイル追加）
 
@@ -877,29 +898,29 @@ import { filterLocationPointsUntilMinute, formatTimelineTimeLabel } from '../dai
 コンポーネント本体に state を追加:
 
 ```typescript
-  const [isCapturingShare, setIsCapturingShare] = useState(false);
-  const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
-  const [gifFrameIndex, setGifFrameIndex] = useState(0);
-  const gifAbortRef = useRef(false);
-  const gifFrameRef = useRef<View>(null);
-  const gifFrameResolveRef = useRef<(() => void) | null>(null);
-  const gifMapReadyRef = useRef<(() => void) | null>(null);
+const [isCapturingShare, setIsCapturingShare] = useState(false);
+const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
+const [gifFrameIndex, setGifFrameIndex] = useState(0);
+const gifAbortRef = useRef(false);
+const gifFrameRef = useRef<View>(null);
+const gifFrameResolveRef = useRef<(() => void) | null>(null);
+const gifMapReadyRef = useRef<(() => void) | null>(null);
 ```
 
 GIFフレーム情報を算出:
 
 ```typescript
-  const GIF_FRAME_STEP_MINUTES = 10;
-  const GIF_FRAME_DELAY_MS = 500;
-  const gifFrameMinutes = useMemo(() => computeGifFrameMinutes(dailyPoints, GIF_FRAME_STEP_MINUTES), [dailyPoints]);
-  const canExportGif = isPlusActive && gifFrameMinutes.length >= 2;
-  const gifRegion = useMemo(() => (dailyPoints.length > 0 ? createInitialRegion(dailyPoints) : null), [dailyPoints]);
-  const isGeneratingGif = gifProgress !== null;
-  const gifFramePoints = useMemo(
-    () => (gifRegion ? filterLocationPointsUntilMinute(dailyPoints, gifFrameMinutes[gifFrameIndex] ?? 0) : []),
-    [dailyPoints, gifFrameMinutes, gifFrameIndex, gifRegion],
-  );
-  const gifFrameTimeLabel = formatTimelineTimeLabel(gifFrameMinutes[gifFrameIndex] ?? 0);
+const GIF_FRAME_STEP_MINUTES = 10;
+const GIF_FRAME_DELAY_MS = 500;
+const gifFrameMinutes = useMemo(() => computeGifFrameMinutes(dailyPoints, GIF_FRAME_STEP_MINUTES), [dailyPoints]);
+const canExportGif = isPlusActive && gifFrameMinutes.length >= 2;
+const gifRegion = useMemo(() => (dailyPoints.length > 0 ? createInitialRegion(dailyPoints) : null), [dailyPoints]);
+const isGeneratingGif = gifProgress !== null;
+const gifFramePoints = useMemo(
+  () => (gifRegion ? filterLocationPointsUntilMinute(dailyPoints, gifFrameMinutes[gifFrameIndex] ?? 0) : []),
+  [dailyPoints, gifFrameMinutes, gifFrameIndex, gifRegion],
+);
+const gifFrameTimeLabel = formatTimelineTimeLabel(gifFrameMinutes[gifFrameIndex] ?? 0);
 ```
 
 - [ ] **Step 3: shareDailyLogImage をキャプチャ除外対応にする**
@@ -940,75 +961,75 @@ GIFフレーム情報を算出:
 コンポーネント内に関数を追加:
 
 ```typescript
-  function waitForGifMapReady(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      gifMapReadyRef.current = resolve;
+function waitForGifMapReady(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    gifMapReadyRef.current = resolve;
+  });
+}
+
+function renderGifFrame(index: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    gifFrameResolveRef.current = resolve;
+    setGifFrameIndex(index);
+  });
+}
+
+async function handleExportGif(): Promise<void> {
+  if (!canExportGif || isGeneratingGif || !gifRegion) {
+    return;
+  }
+
+  gifAbortRef.current = false;
+  setGifFrameIndex(0);
+  setGifProgress({ done: 0, total: gifFrameMinutes.length });
+
+  try {
+    // フレームViewのマウントと地図初期化を待つ
+    await waitForGifMapReady();
+
+    const success = await exportRouteGif({
+      captureTarget: () => gifFrameRef.current,
+      frameCount: gifFrameMinutes.length,
+      delayMs: GIF_FRAME_DELAY_MS,
+      fileName: `strollia-${log.localDate}`,
+      renderFrame: renderGifFrame,
+      onProgress: (done, total) => setGifProgress({ done, total }),
+      shouldAbort: () => gifAbortRef.current,
     });
-  }
 
-  function renderGifFrame(index: number): Promise<void> {
-    return new Promise<void>((resolve) => {
-      gifFrameResolveRef.current = resolve;
-      setGifFrameIndex(index);
-    });
-  }
-
-  async function handleExportGif(): Promise<void> {
-    if (!canExportGif || isGeneratingGif || !gifRegion) {
-      return;
+    if (!success && !gifAbortRef.current) {
+      Alert.alert('GIF出力', 'GIFを生成できませんでした。');
     }
-
-    gifAbortRef.current = false;
-    setGifFrameIndex(0);
-    setGifProgress({ done: 0, total: gifFrameMinutes.length });
-
-    try {
-      // フレームViewのマウントと地図初期化を待つ
-      await waitForGifMapReady();
-
-      const success = await exportRouteGif({
-        captureTarget: () => gifFrameRef.current,
-        frameCount: gifFrameMinutes.length,
-        delayMs: GIF_FRAME_DELAY_MS,
-        fileName: `strollia-${log.localDate}`,
-        renderFrame: renderGifFrame,
-        onProgress: (done, total) => setGifProgress({ done, total }),
-        shouldAbort: () => gifAbortRef.current,
-      });
-
-      if (!success && !gifAbortRef.current) {
-        Alert.alert('GIF出力', 'GIFを生成できませんでした。');
-      }
-    } catch (error: unknown) {
-      Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
-    } finally {
-      setGifProgress(null);
-      gifMapReadyRef.current = null;
-      gifFrameResolveRef.current = null;
-    }
+  } catch (error: unknown) {
+    Alert.alert('GIF出力失敗', error instanceof Error ? error.message : 'GIFを生成できませんでした。');
+  } finally {
+    setGifProgress(null);
+    gifMapReadyRef.current = null;
+    gifFrameResolveRef.current = null;
   }
+}
 
-  function handleCancelGif(): void {
-    gifAbortRef.current = true;
-  }
+function handleCancelGif(): void {
+  gifAbortRef.current = true;
+}
 ```
 
 `renderGifFrame` の resolve は描画完了後に行う。`gifFrameIndex` 変更を反映する effect を追加:
 
 ```typescript
-  useEffect(() => {
-    if (!isGeneratingGif) {
-      return;
-    }
-    // フレーム描画がコミットされたら次フレーム待ちを解決する
-    const raf = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        gifFrameResolveRef.current?.();
-        gifFrameResolveRef.current = null;
-      });
+useEffect(() => {
+  if (!isGeneratingGif) {
+    return;
+  }
+  // フレーム描画がコミットされたら次フレーム待ちを解決する
+  const raf = requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      gifFrameResolveRef.current?.();
+      gifFrameResolveRef.current = null;
     });
-    return () => cancelAnimationFrame(raf);
-  }, [gifFrameIndex, isGeneratingGif]);
+  });
+  return () => cancelAnimationFrame(raf);
+}, [gifFrameIndex, isGeneratingGif]);
 ```
 
 - [ ] **Step 5: スライダー・GIFボタンをキャプチャ除外で描画**
@@ -1016,22 +1037,26 @@ GIFフレーム情報を算出:
 `StepSlider` を囲む `{showSlider && (...)}` を `{showSlider && !isCapturingShare && (...)}` に変更し、その直後（スライダーの `valueLabel` の下）にGIFボタンを追加:
 
 ```tsx
-            {showSlider && !isCapturingShare && (
-              <StepSlider
-                /* 既存の props そのまま */
-              />
-            )}
-            {canExportGif && !isCapturingShare && (
-              <ActionPill
-                disabled={isGeneratingGif}
-                icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
-                label="移動記録をGIFで出力"
-                styles={styles}
-                onPress={() => {
-                  handleExportGif().catch(() => undefined);
-                }}
-              />
-            )}
+{
+  showSlider && !isCapturingShare && (
+    <StepSlider
+    /* 既存の props そのまま */
+    />
+  );
+}
+{
+  canExportGif && !isCapturingShare && (
+    <ActionPill
+      disabled={isGeneratingGif}
+      icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
+      label="移動記録をGIFで出力"
+      styles={styles}
+      onPress={() => {
+        handleExportGif().catch(() => undefined);
+      }}
+    />
+  );
+}
 ```
 
 - [ ] **Step 6: 画面外フレームViewと進捗ダイアログを描画**
@@ -1039,36 +1064,38 @@ GIFフレーム情報を算出:
 `ScrollView` の閉じタグの後、`SafeAreaView` を閉じる前に追加:
 
 ```tsx
-      {isGeneratingGif && gifRegion && (
-        <GifFrameRenderer
-          ref={gifFrameRef}
-          region={gifRegion}
-          points={gifFramePoints}
-          timeLabel={gifFrameTimeLabel}
-          styles={styles}
-          theme={theme}
-          onMapReady={() => {
-            gifMapReadyRef.current?.();
-            gifMapReadyRef.current = null;
-          }}
-        />
-      )}
+{
+  isGeneratingGif && gifRegion && (
+    <GifFrameRenderer
+      ref={gifFrameRef}
+      region={gifRegion}
+      points={gifFramePoints}
+      timeLabel={gifFrameTimeLabel}
+      styles={styles}
+      theme={theme}
+      onMapReady={() => {
+        gifMapReadyRef.current?.();
+        gifMapReadyRef.current = null;
+      }}
+    />
+  );
+}
 
-      <Dialog visible={isGeneratingGif} dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
-        <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>
-        <Text style={styles.gifProgressBody}>生成が終わるまで少しお待ちください。画面を閉じないでください。</Text>
-        <View style={styles.gifProgressTrack}>
-          <View
-            style={[
-              styles.gifProgressFill,
-              { width: `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number },
-            ]}
-          />
-        </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="GIF生成をキャンセル" style={styles.gifProgressCancel} onPress={handleCancelGif}>
-          <Text style={styles.gifProgressCancelText}>キャンセル</Text>
-        </Pressable>
-      </Dialog>
+<Dialog visible={isGeneratingGif} dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
+  <Text style={styles.gifProgressTitle}>アニメGIF生成中…</Text>
+  <Text style={styles.gifProgressBody}>生成が終わるまで少しお待ちください。画面を閉じないでください。</Text>
+  <View style={styles.gifProgressTrack}>
+    <View
+      style={[
+        styles.gifProgressFill,
+        { width: `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number },
+      ]}
+    />
+  </View>
+  <Pressable accessibilityRole="button" accessibilityLabel="GIF生成をキャンセル" style={styles.gifProgressCancel} onPress={handleCancelGif}>
+    <Text style={styles.gifProgressCancelText}>キャンセル</Text>
+  </Pressable>
+</Dialog>;
 ```
 
 import に `Pressable` を追加（`react-native` から）。
@@ -1097,6 +1124,7 @@ Expected: 全PASS、型エラーなし
 - [ ] **Step 2: 手動確認（実機/シミュレータ）**
 
 確認項目:
+
 - スライダーが5分刻みで動き、低背・幅広になっている。
 - 「この日の記録を共有」のキャプチャ画像にスライダー・GIFボタンが含まれない。
 - GIFボタン押下で進捗ダイアログが出て、背景操作不可・×やスワイプで閉じられない・キャンセルのみ。
@@ -1108,7 +1136,9 @@ Expected: 全PASS、型エラーなし
 ```bash
 git add -A && git commit -m "chore(daily-detail): GIF出力の仕上げ"
 ```
+
 ```
+
 ```
 
 ---

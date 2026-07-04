@@ -25,12 +25,7 @@ export type ForegroundUserLocationOptions = {
  * 最終取得位置は表示だけに使い、watchから届く新しい観測だけを保存する。
  * 保存は直列化し、距離・時系列判定に使うセッション状態の競合を防ぐ。
  */
-export function useForegroundUserLocation({
-  enabled,
-  shouldPersist,
-  onLocation,
-  onError,
-}: ForegroundUserLocationOptions): void {
+export function useForegroundUserLocation({ enabled, shouldPersist, onLocation, onError }: ForegroundUserLocationOptions): void {
   const onLocationRef = useRef(onLocation);
   const onErrorRef = useRef(onError);
 

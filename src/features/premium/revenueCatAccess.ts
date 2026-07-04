@@ -156,7 +156,9 @@ export async function getPremiumOfferingSummary(): Promise<PremiumOfferingSummar
 }
 
 function isRevenueCatPurchaseCancelled(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'userCancelled' in error && (error as { userCancelled?: unknown }).userCancelled === true;
+  return (
+    typeof error === 'object' && error !== null && 'userCancelled' in error && (error as { userCancelled?: unknown }).userCancelled === true
+  );
 }
 
 /** RevenueCat Packageを設定画面から直接購入する。 */

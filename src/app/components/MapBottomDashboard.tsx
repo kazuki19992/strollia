@@ -383,7 +383,10 @@ function SpeedDial({
         <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedometerLabel, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedLabel, scale)]}>
           SPEED
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.speedDashboardSpeedValue, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedValue, scale), { color: speedColor }]}>
+        <Text
+          {...FIXED_MAP_UI_TEXT_PROPS}
+          style={[styles.speedDashboardSpeedValue, getScaledTextStyle(DASHBOARD_BASE_TEXT.speedValue, scale), { color: speedColor }]}
+        >
           {formatSpeedKmh(currentSpeedKmh)}
         </Text>
         <Text
@@ -405,18 +408,32 @@ function DashboardDistanceMetric({ label, parts, scale, styles }: { label: strin
         {label}
       </Text>
       <View style={styles.speedometerDistanceValueRow}>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} numberOfLines={1} style={[styles.dashboardDistanceValueInteger, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}>
+        <Text
+          {...FIXED_MAP_UI_TEXT_PROPS}
+          numberOfLines={1}
+          style={[styles.dashboardDistanceValueInteger, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}
+        >
           {parts[0]}
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDot, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}>
+        <Text
+          {...FIXED_MAP_UI_TEXT_PROPS}
+          style={[styles.dashboardDistanceValueDot, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceInteger, scale)]}
+        >
           .
         </Text>
-        <Text {...FIXED_MAP_UI_TEXT_PROPS} style={[styles.dashboardDistanceValueDecimal, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceDecimal, scale)]}>
+        <Text
+          {...FIXED_MAP_UI_TEXT_PROPS}
+          style={[styles.dashboardDistanceValueDecimal, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceDecimal, scale)]}
+        >
           {parts[1]}
         </Text>
         <Text
           {...FIXED_MAP_UI_TEXT_PROPS}
-          style={[styles.dashboardDistanceUnit, getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceUnit, scale), { marginBottom: scaleNumber(3, scale), marginLeft: scaleNumber(1, scale) }]}
+          style={[
+            styles.dashboardDistanceUnit,
+            getScaledTextStyle(DASHBOARD_BASE_TEXT.distanceUnit, scale),
+            { marginBottom: scaleNumber(3, scale), marginLeft: scaleNumber(1, scale) },
+          ]}
         >
           km
         </Text>
@@ -426,9 +443,26 @@ function DashboardDistanceMetric({ label, parts, scale, styles }: { label: strin
 }
 
 /** 下部ナビゲーションのアイコンボタンを描画する。 */
-function DashboardAction({ icon, label, onPress, scale, styles }: { icon: ReactNode; label: string; onPress: () => void; scale: number; styles: AppStyles }) {
+function DashboardAction({
+  icon,
+  label,
+  onPress,
+  scale,
+  styles,
+}: {
+  icon: ReactNode;
+  label: string;
+  onPress: () => void;
+  scale: number;
+  styles: AppStyles;
+}) {
   return (
-    <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={[styles.dashboardAction, getScaledDashboardActionStyle(scale)]}>
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[styles.dashboardAction, getScaledDashboardActionStyle(scale)]}
+    >
       {icon}
     </Pressable>
   );
@@ -449,7 +483,11 @@ function MapDisplayTypeButton({
   styles: AppStyles;
 }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[styles.mapDisplayTypeButton, isSelected && styles.mapDisplayTypeButtonSelected]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[styles.mapDisplayTypeButton, isSelected && styles.mapDisplayTypeButtonSelected]}
+    >
       <MaterialCommunityIcons name={icon} size={36} color="#ffffff" />
       {isSelected && (
         <View style={styles.mapDisplayTypeSelectedBadge}>

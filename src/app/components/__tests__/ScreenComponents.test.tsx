@@ -1,5 +1,4 @@
-import { Text } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 
 import { createStyles } from '../../appStyles';
 import { darkTheme, lightTheme } from '../../../theme/theme';
@@ -148,7 +147,9 @@ describe('画面共通コンポーネント', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<AppScreenHeader backLabel="長い戻り先" styles={styles} theme={lightTheme} title="設定" onBack={jest.fn()} />);
+      renderer = ReactTestRenderer.create(
+        <AppScreenHeader backLabel="長い戻り先" styles={styles} theme={lightTheme} title="設定" onBack={jest.fn()} />,
+      );
     });
 
     const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '設定');
@@ -187,7 +188,9 @@ describe('画面共通コンポーネント', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<AppScreenHeader backLabel="地図" styles={styles} theme={lightTheme} title="実績" onBack={onBack} />);
+      renderer = ReactTestRenderer.create(
+        <AppScreenHeader backLabel="地図" styles={styles} theme={lightTheme} title="実績" onBack={onBack} />,
+      );
     });
 
     const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });

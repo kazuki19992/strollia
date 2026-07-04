@@ -26,18 +26,18 @@ import MapView, { Region, UserLocationChangeEvent } from 'react-native-maps';
 import { initializeDatabase } from '../db/database';
 import { AchievementDefinition } from '../features/achievements/achievementDefinitions';
 import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '../config/developmentFlags';
+import { PRIVACY_POLICY_URL, SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL, TERMS_OF_SERVICE_URL } from '../config/legalLinks';
+import { updateSentryScreenContext, updateSentrySubscriptionContext, updateSentryUserContext } from '../config/sentry';
 import {
-  PRIVACY_POLICY_URL,
-  SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL,
-  TERMS_OF_SERVICE_URL,
-} from '../config/legalLinks';
+  initializeAchievementNotificationHandler,
+  requestAchievementNotificationPermissionOnFirstLaunch,
+  setupAchievementNotificationChannel,
+} from '../features/achievements/achievementNotificationService';
 import {
-  updateSentryScreenContext,
-  updateSentrySubscriptionContext,
-  updateSentryUserContext,
-} from '../config/sentry';
-import { initializeAchievementNotificationHandler, requestAchievementNotificationPermissionOnFirstLaunch, setupAchievementNotificationChannel } from '../features/achievements/achievementNotificationService';
-import { isMonthlyReportNotification, setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } from '../features/reports/monthlyReportNotificationService';
+  isMonthlyReportNotification,
+  setupMonthlyReportNotificationChannel,
+  syncMonthlyReportNotification,
+} from '../features/reports/monthlyReportNotificationService';
 import {
   AchievementListItem,
   PendingAchievementNotification,
@@ -287,10 +287,7 @@ export default function App() {
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
-  const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(
-    points,
-    dailyLogs,
-  );
+  const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(points, dailyLogs);
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const gridOverlayRegion = visibleRegion ?? initialRegion;
@@ -299,12 +296,8 @@ export default function App() {
   const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
     const now = Date.now();
 
-    return toVisitedGridOverlayCells(
-      visitedGridSourceCells,
-      gridOverlayOpacity,
-      theme.colors.primary,
-      GRID_OVERLAY_CONFIG,
-      (cell) => getVisitedGridFadeProgress(cell.cellId, now),
+    return toVisitedGridOverlayCells(visitedGridSourceCells, gridOverlayOpacity, theme.colors.primary, GRID_OVERLAY_CONFIG, (cell) =>
+      getVisitedGridFadeProgress(cell.cellId, now),
     );
   }, [gridOverlayOpacity, theme.colors.primary, visitedGridFadeFrame, visitedGridSourceCells]);
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
@@ -314,10 +307,7 @@ export default function App() {
   }, [dailyLogs]);
   const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
   const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
-  const selectedPhotoClusterPages = useMemo(
-    () => paginateMapPhotos(selectedPhotoCluster?.photos ?? []),
-    [selectedPhotoCluster],
-  );
+  const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
   const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
   const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
   const [isPurchasingPremiumPackage, setIsPurchasingPremiumPackage] = useState(false);
@@ -329,22 +319,26 @@ export default function App() {
   const isPremiumPaywallVisibleRef = useRef(false);
   const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const userLocationIcon = useMemo(
-    () => resolveUserLocationIcon(
+    () =>
+      resolveUserLocationIcon(
+        selectedUserLocationIconId,
+        premiumAccessState.isPlusActive || isPremiumAccessPendingForIcon,
+        hasCustomIconImageLoadFailed ? null : customIconImageUri,
+      ),
+    [
+      customIconImageUri,
+      hasCustomIconImageLoadFailed,
+      isPremiumAccessPendingForIcon,
+      premiumAccessState.isPlusActive,
       selectedUserLocationIconId,
-      premiumAccessState.isPlusActive || isPremiumAccessPendingForIcon,
-      hasCustomIconImageLoadFailed ? null : customIconImageUri,
-    ),
-    [customIconImageUri, hasCustomIconImageLoadFailed, isPremiumAccessPendingForIcon, premiumAccessState.isPlusActive, selectedUserLocationIconId],
+    ],
   );
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
   const shouldDisplayCustomLocation = !userLocationIcon.useNativeUserLocation;
-  const shouldPersistForegroundLocation = appState === 'active'
-    && isWhileInUseRecordingMode
-    && isLocationRecordingModeSynchronized;
-  const foregroundWatchEnabled = appState === 'active'
-    && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
+  const shouldPersistForegroundLocation = appState === 'active' && isWhileInUseRecordingMode && isLocationRecordingModeSynchronized;
+  const foregroundWatchEnabled = appState === 'active' && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
   /**
@@ -429,26 +423,27 @@ export default function App() {
     return { logs, allPoints, recording, permissions };
   }, []);
 
-
   /** 実績一覧と未表示の解除演出キューを再読み込みする。 */
-  const refreshAchievementState = useCallback(async (
-    showPendingNotifications = false,
-    options: { signal?: AbortSignal } = {},
-  ): Promise<void> => {
-    const { signal } = options;
-    const [items, pendingNotifications] = await Promise.all([
-      getAchievementListItems(),
-      showPendingNotifications ? getPendingInAppAchievementNotifications() : Promise.resolve([]),
-    ]);
+  const refreshAchievementState = useCallback(
+    async (showPendingNotifications = false, options: { signal?: AbortSignal } = {}): Promise<void> => {
+      const { signal } = options;
+      const [items, pendingNotifications] = await Promise.all([
+        getAchievementListItems(),
+        showPendingNotifications ? getPendingInAppAchievementNotifications() : Promise.resolve([]),
+      ]);
 
-    if (signal?.aborted) return;
+      if (signal?.aborted) return;
 
-    setAchievementItems(items);
+      setAchievementItems(items);
 
-    if (showPendingNotifications) {
-      setPendingAchievementNotifications(filterDismissedAchievementNotifications(pendingNotifications, dismissedAchievementQueueIdsRef.current));
-    }
-  }, []);
+      if (showPendingNotifications) {
+        setPendingAchievementNotifications(
+          filterDismissedAchievementNotifications(pendingNotifications, dismissedAchievementQueueIdsRef.current),
+        );
+      }
+    },
+    [],
+  );
 
   /**
    * 実績解除ダイアログが出ていない時だけ実績を評価する。
@@ -504,11 +499,13 @@ export default function App() {
   const maybeStartRecordingAutomatically = useCallback(
     async (state: { permissions: LocationPermissionState; recording: boolean }, signal?: AbortSignal): Promise<void> => {
       if (signal?.aborted) return;
-      if (!shouldStartRecordingAutomatically({
-        permissions: state.permissions,
-        isRecording: state.recording,
-        isAutoStartInFlight: autoStartInFlightRef.current,
-      })) {
+      if (
+        !shouldStartRecordingAutomatically({
+          permissions: state.permissions,
+          isRecording: state.recording,
+          isAutoStartInFlight: autoStartInFlightRef.current,
+        })
+      ) {
         if (!signal?.aborted) setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
         return;
       }
@@ -579,7 +576,6 @@ export default function App() {
     }
   }, [points]);
 
-
   /** 確認ダイアログを挟んで保存済みデータを全削除する。 */
   const deleteAllData = useCallback(async (): Promise<void> => {
     Alert.alert('すべてのデータを削除', '保存済みのGPSログ、訪問エリア、実績の解除状況をすべて削除します。この操作は取り消せません。', [
@@ -622,43 +618,46 @@ export default function App() {
    * @param enabled - マップ上の写真表示を有効にするかどうか。
    * @returns なし。
    */
-  const updateShowPhotosOnMap = useCallback(async (enabled: boolean): Promise<void> => {
-    if (isUpdatingPhotoSettingRef.current) {
-      return;
-    }
-
-    isUpdatingPhotoSettingRef.current = true;
-    setIsUpdatingPhotoSetting(true);
-
-    try {
-      if (!enabled) {
-        setShouldRestorePhotosOnMapAfterMapReady(false);
-        setShowPhotosOnMap(false);
-        await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
-        await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
+  const updateShowPhotosOnMap = useCallback(
+    async (enabled: boolean): Promise<void> => {
+      if (isUpdatingPhotoSettingRef.current) {
         return;
       }
 
-      const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+      isUpdatingPhotoSettingRef.current = true;
+      setIsUpdatingPhotoSetting(true);
 
-      if (!hasFullPhotoAccess(permission)) {
-        setShouldRestorePhotosOnMapAfterMapReady(false);
-        setShowPhotosOnMap(false);
-        await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
-        await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
-        Alert.alert(
-          '写真のフルアクセスが必要です',
-          'マップ上に写真を表示するには、写真ライブラリへのフルアクセスを許可してください。限定アクセスではジオタグ付き写真を十分に読み取れません。',
-        );
-        return;
+      try {
+        if (!enabled) {
+          setShouldRestorePhotosOnMapAfterMapReady(false);
+          setShowPhotosOnMap(false);
+          await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+          await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
+          return;
+        }
+
+        const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+
+        if (!hasFullPhotoAccess(permission)) {
+          setShouldRestorePhotosOnMapAfterMapReady(false);
+          setShowPhotosOnMap(false);
+          await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
+          await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
+          Alert.alert(
+            '写真のフルアクセスが必要です',
+            'マップ上に写真を表示するには、写真ライブラリへのフルアクセスを許可してください。限定アクセスではジオタグ付き写真を十分に読み取れません。',
+          );
+          return;
+        }
+
+        await enableShowPhotosOnMapWithCrashBreaker();
+      } finally {
+        isUpdatingPhotoSettingRef.current = false;
+        setIsUpdatingPhotoSetting(false);
       }
-
-      await enableShowPhotosOnMapWithCrashBreaker();
-    } finally {
-      isUpdatingPhotoSettingRef.current = false;
-      setIsUpdatingPhotoSetting(false);
-    }
-  }, [enableShowPhotosOnMapWithCrashBreaker]);
+    },
+    [enableShowPhotosOnMapWithCrashBreaker],
+  );
 
   /**
    * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
@@ -693,11 +692,7 @@ export default function App() {
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
           getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
-          resolveInitialPremiumAccess(
-            initialPremiumAccessRequest,
-            getDefaultPremiumAccessState(),
-            { signal },
-          ),
+          resolveInitialPremiumAccess(initialPremiumAccessRequest, getDefaultPremiumAccessState(), { signal }),
         ]);
         if (signal.aborted) return;
         setKeepScreenAwake(savedKeepScreenAwake);
@@ -856,17 +851,25 @@ export default function App() {
   }, [refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
 
   /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */
-  useEffect(() => subscribePremiumAccessStateUpdates((state) => {
-    premiumAccessUpdateVersionRef.current += 1;
-    setPremiumAccessState(state);
-    setIsPremiumAccessPendingForIcon(false);
-    syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
-      console.warn('Failed to sync monthly report notification:', error);
-    });
-  }), []);
+  useEffect(
+    () =>
+      subscribePremiumAccessStateUpdates((state) => {
+        premiumAccessUpdateVersionRef.current += 1;
+        setPremiumAccessState(state);
+        setIsPremiumAccessPendingForIcon(false);
+        syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
+          console.warn('Failed to sync monthly report notification:', error);
+        });
+      }),
+    [],
+  );
 
-  useEffect(() => { openMonthlyReportRef.current = openMonthlyReport; });
-  useEffect(() => { isReadyRef.current = isReady; }, [isReady]);
+  useEffect(() => {
+    openMonthlyReportRef.current = openMonthlyReport;
+  });
+  useEffect(() => {
+    isReadyRef.current = isReady;
+  }, [isReady]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -917,7 +920,6 @@ export default function App() {
     return () => subscription.remove();
   }, [evaluateAchievementsIfDialogIdle, refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
 
-
   /**
    * 更新ボタンを不要にするため、フォアグラウンド中は定期的にログを再読み込みする。
    */
@@ -927,10 +929,9 @@ export default function App() {
     }
 
     const intervalId = setInterval(() => {
-      refreshDataAndEvaluateAchievementsIfDialogIdle()
-        .catch((error: unknown) => {
-          setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
-        });
+      refreshDataAndEvaluateAchievementsIfDialogIdle().catch((error: unknown) => {
+        setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
+      });
     }, 10_000);
 
     return () => clearInterval(intervalId);
@@ -1071,15 +1072,17 @@ export default function App() {
     isUpdatingPhotoSettingRef.current = true;
     setIsUpdatingPhotoSetting(true);
     setShouldRestorePhotosOnMapAfterMapReady(false);
-    enableShowPhotosOnMapWithCrashBreaker().catch((error: unknown) => {
-      console.warn('Failed to restore photo map overlay:', error);
-      setShowPhotosOnMap(false);
-      setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch(() => undefined);
-      setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch(() => undefined);
-    }).finally(() => {
-      isUpdatingPhotoSettingRef.current = false;
-      setIsUpdatingPhotoSetting(false);
-    });
+    enableShowPhotosOnMapWithCrashBreaker()
+      .catch((error: unknown) => {
+        console.warn('Failed to restore photo map overlay:', error);
+        setShowPhotosOnMap(false);
+        setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch(() => undefined);
+        setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch(() => undefined);
+      })
+      .finally(() => {
+        isUpdatingPhotoSettingRef.current = false;
+        setIsUpdatingPhotoSetting(false);
+      });
   }, [enableShowPhotosOnMapWithCrashBreaker, isMapReady, isReady, shouldRestorePhotosOnMapAfterMapReady]);
 
   /**
@@ -1408,7 +1411,6 @@ export default function App() {
     setMapType(getNextMapType);
   }
 
-
   /** 実績解除モーダルを閉じ、次の未表示実績があれば続けて表示する。 */
   function closeAchievementUnlockModal(): void {
     const current = activeAchievementNotification;
@@ -1488,7 +1490,10 @@ export default function App() {
 
       const result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
       await refreshData();
-      Alert.alert('GPXインポート完了', `${result.importedPointCount}件を取り込みました。${result.skippedPointCount}件は既存データを優先してスキップしました。`);
+      Alert.alert(
+        'GPXインポート完了',
+        `${result.importedPointCount}件を取り込みました。${result.skippedPointCount}件は既存データを優先してスキップしました。`,
+      );
     } catch (error: unknown) {
       console.warn('GPX import failed:', error);
       Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
@@ -1638,7 +1643,10 @@ export default function App() {
     try {
       const restoredState = await restorePremiumPurchases();
       setPremiumAccessState(restoredState);
-      Alert.alert('購入の復元', restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。');
+      Alert.alert(
+        '購入の復元',
+        restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。',
+      );
       if (restoredState.isPlusActive) {
         closePremiumPaywall();
       }
@@ -1720,7 +1728,6 @@ export default function App() {
     await requestAchievementNotificationPermissionOnFirstLaunch();
   }
 
-
   if (!isReady) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -1753,239 +1760,238 @@ export default function App() {
           },
         ]}
       >
-          {screenMode === 'map' && (
-            <MapScreen
-              mapRef={mapRef}
-              styles={styles}
-              theme={theme}
-              initialRegion={initialRegion}
-              mapType={mapType}
-              userLocationIcon={userLocationIcon}
-              onCustomIconError={handleCustomIconLoadError}
-              isFollowingUserLocation={isFollowingUserLocation}
-              userCoordinate={userCoordinate}
-              visitedGridCells={visitedGridCells}
-              gridOverlayOpacity={gridOverlayOpacity}
-              showPhotosOnMap={showPhotosOnMap}
-              isUpdatingPhotoSetting={isUpdatingPhotoSetting}
-              photoClusters={photoClusters}
-              points={points}
-              hasRequiredPermission={hasRequiredPermission}
-              shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
-              isWhileInUseOnlyMode={isWhileInUseRecordingMode}
-              photoErrorMessage={photoErrorMessage}
-              isLoadingPhotos={isLoadingPhotos}
-              distance={distance}
-              todayDistance={todayDistanceMeters}
-              currentSpeedKmh={currentSpeedKmh}
-              currentAreaLabel={currentAreaLabel}
-              recenterButtonOpacity={recenterButtonOpacity}
-              onMapReady={handleMapReady}
-              onUserLocationChange={handleUserLocationChange}
-              onPanDrag={handleMapPanDrag}
-              onRegionChangeComplete={handleRegionChangeComplete}
-              onRegionChange={handleRegionChange}
-              onPhotoClusterPress={handlePhotoClusterPress}
-              onOpenDailyLogs={openDailyLogs}
-              onOpenAchievements={openAchievements}
-              onOpenMonthlyReport={openMonthlyReport}
-              onToggleMapType={toggleMapType}
-              onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-              onOpenSettings={openSettings}
-              onRequestLocationPermission={requestLocationPermission}
-              onRecenterOnUserLocation={recenterOnUserLocation}
-            />
-          )}
-          {screenMode === 'dailyLogs' && (
-            <NavigationIndependentTree>
-              <NavigationContainer
-                // 日別記録スタック内の遷移をSentryの画面コンテキストへ反映する。
-                onStateChange={(state) => {
-                  const route = state?.routes[state.index ?? 0];
-                  const nextScreenName = route ? `DailyLogs:${route.name}` : 'DailyLogs:DailyLogList';
-                  setDailyLogsSentryScreenName(nextScreenName);
-                  updateSentryScreenContext(nextScreenName);
+        {screenMode === 'map' && (
+          <MapScreen
+            mapRef={mapRef}
+            styles={styles}
+            theme={theme}
+            initialRegion={initialRegion}
+            mapType={mapType}
+            userLocationIcon={userLocationIcon}
+            onCustomIconError={handleCustomIconLoadError}
+            isFollowingUserLocation={isFollowingUserLocation}
+            userCoordinate={userCoordinate}
+            visitedGridCells={visitedGridCells}
+            gridOverlayOpacity={gridOverlayOpacity}
+            showPhotosOnMap={showPhotosOnMap}
+            isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+            photoClusters={photoClusters}
+            points={points}
+            hasRequiredPermission={hasRequiredPermission}
+            shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+            isWhileInUseOnlyMode={isWhileInUseRecordingMode}
+            photoErrorMessage={photoErrorMessage}
+            isLoadingPhotos={isLoadingPhotos}
+            distance={distance}
+            todayDistance={todayDistanceMeters}
+            currentSpeedKmh={currentSpeedKmh}
+            currentAreaLabel={currentAreaLabel}
+            recenterButtonOpacity={recenterButtonOpacity}
+            onMapReady={handleMapReady}
+            onUserLocationChange={handleUserLocationChange}
+            onPanDrag={handleMapPanDrag}
+            onRegionChangeComplete={handleRegionChangeComplete}
+            onRegionChange={handleRegionChange}
+            onPhotoClusterPress={handlePhotoClusterPress}
+            onOpenDailyLogs={openDailyLogs}
+            onOpenAchievements={openAchievements}
+            onOpenMonthlyReport={openMonthlyReport}
+            onToggleMapType={toggleMapType}
+            onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+            onOpenSettings={openSettings}
+            onRequestLocationPermission={requestLocationPermission}
+            onRecenterOnUserLocation={recenterOnUserLocation}
+          />
+        )}
+        {screenMode === 'dailyLogs' && (
+          <NavigationIndependentTree>
+            <NavigationContainer
+              // 日別記録スタック内の遷移をSentryの画面コンテキストへ反映する。
+              onStateChange={(state) => {
+                const route = state?.routes[state.index ?? 0];
+                const nextScreenName = route ? `DailyLogs:${route.name}` : 'DailyLogs:DailyLogList';
+                setDailyLogsSentryScreenName(nextScreenName);
+                updateSentryScreenContext(nextScreenName);
+              }}
+            >
+              <DailyLogStack.Navigator
+                initialRouteName="DailyLogList"
+                screenOptions={{
+                  animation: 'slide_from_right',
+                  gestureEnabled: true,
+                  headerShown: false,
                 }}
               >
-                <DailyLogStack.Navigator
-                  initialRouteName="DailyLogList"
-                  screenOptions={{
-                    animation: 'slide_from_right',
-                    gestureEnabled: true,
-                    headerShown: false,
-                  }}
-                >
-                  <DailyLogStack.Screen name="DailyLogList">
-                    {({ navigation }) => (
-                      <DailyLogsScreen
-                        dailyLogs={dailyLogs}
-                        styles={styles}
-                        theme={theme}
-                        onBackToMap={openMap}
-                        onOpenDailyLogDetail={(log) => navigation.navigate('DailyLogDetail', { log })}
-                      />
-                    )}
-                  </DailyLogStack.Screen>
-                  <DailyLogStack.Screen name="DailyLogDetail">
-                    {({ navigation, route }) => (
-                      <DailyLogDetailScreen
-                        log={route.params.log}
-                        styles={styles}
-                        theme={theme}
-                        premiumAccessState={premiumAccessState}
-                        onBackToDailyLogs={() => navigation.goBack()}
-                        onOpenPremiumPaywall={openPremiumPaywall}
-                      />
-                    )}
-                  </DailyLogStack.Screen>
-                </DailyLogStack.Navigator>
-              </NavigationContainer>
-            </NavigationIndependentTree>
-          )}
-          {screenMode === 'achievements' && (
-            <AchievementListScreen
-              items={achievementItems}
-              styles={styles}
-              theme={theme}
-              onBackToMap={openMap}
-              onSelectAchievement={setSelectedAchievement}
-            />
-          )}
-          {screenMode === 'monthlyReport' && <MonthlyReportScreen dailyLogs={dailyLogs} points={points} achievements={achievementItems} monthlyAreaReport={monthlyAreaReport} theme={theme} onBackToMap={openMap} />}
-          {screenMode === 'settings' && (
-            <NavigationIndependentTree>
-              <NavigationContainer
-                // 設定スタック内の遷移をSentryの画面コンテキストへ反映する。
-                onStateChange={(state) => {
-                  const route = state?.routes[state.index ?? 0];
-                  const nextScreenName = route ? `Settings:${route.name}` : 'Settings:SettingsHome';
-                  setSettingsSentryScreenName(nextScreenName);
-                  updateSentryScreenContext(nextScreenName);
+                <DailyLogStack.Screen name="DailyLogList">
+                  {({ navigation }) => (
+                    <DailyLogsScreen
+                      dailyLogs={dailyLogs}
+                      styles={styles}
+                      theme={theme}
+                      onBackToMap={openMap}
+                      onOpenDailyLogDetail={(log) => navigation.navigate('DailyLogDetail', { log })}
+                    />
+                  )}
+                </DailyLogStack.Screen>
+                <DailyLogStack.Screen name="DailyLogDetail">
+                  {({ navigation, route }) => (
+                    <DailyLogDetailScreen
+                      log={route.params.log}
+                      styles={styles}
+                      theme={theme}
+                      premiumAccessState={premiumAccessState}
+                      onBackToDailyLogs={() => navigation.goBack()}
+                      onOpenPremiumPaywall={openPremiumPaywall}
+                    />
+                  )}
+                </DailyLogStack.Screen>
+              </DailyLogStack.Navigator>
+            </NavigationContainer>
+          </NavigationIndependentTree>
+        )}
+        {screenMode === 'achievements' && (
+          <AchievementListScreen
+            items={achievementItems}
+            styles={styles}
+            theme={theme}
+            onBackToMap={openMap}
+            onSelectAchievement={setSelectedAchievement}
+          />
+        )}
+        {screenMode === 'monthlyReport' && (
+          <MonthlyReportScreen
+            dailyLogs={dailyLogs}
+            points={points}
+            achievements={achievementItems}
+            monthlyAreaReport={monthlyAreaReport}
+            theme={theme}
+            onBackToMap={openMap}
+          />
+        )}
+        {screenMode === 'settings' && (
+          <NavigationIndependentTree>
+            <NavigationContainer
+              // 設定スタック内の遷移をSentryの画面コンテキストへ反映する。
+              onStateChange={(state) => {
+                const route = state?.routes[state.index ?? 0];
+                const nextScreenName = route ? `Settings:${route.name}` : 'Settings:SettingsHome';
+                setSettingsSentryScreenName(nextScreenName);
+                updateSentryScreenContext(nextScreenName);
+              }}
+            >
+              <SettingsStack.Navigator
+                initialRouteName="SettingsHome"
+                screenOptions={{
+                  animation: 'slide_from_right',
+                  gestureEnabled: true,
+                  headerShown: false,
                 }}
               >
-                <SettingsStack.Navigator
-                  initialRouteName="SettingsHome"
-                  screenOptions={{
-                    animation: 'slide_from_right',
-                    gestureEnabled: true,
-                    headerShown: false,
-                  }}
-                >
-                  <SettingsStack.Screen name="SettingsHome">
-                    {({ navigation }) => (
-                      <SettingsScreen
-                        styles={styles}
-                        theme={theme}
-                        isRecording={isRecording}
-                        autoStartStatus={autoStartStatus}
-                        hasRequiredPermission={hasRequiredPermission}
-                        shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
-                        isWhileInUseOnlyMode={isWhileInUseRecordingMode}
-                        keepScreenAwake={keepScreenAwake}
-                        mapType={mapType}
-                        showPhotosOnMap={showPhotosOnMap}
-                        isUpdatingPhotoSetting={isUpdatingPhotoSetting}
-                        isImportingGpx={isImportingGpx}
-                        premiumAccessState={premiumAccessState}
-                        revenueCatAppUserId={revenueCatAppUserId}
-                        appVersion={Application.nativeApplicationVersion}
-                        buildNumber={Application.nativeBuildVersion}
-                        premiumOfferingSummary={premiumOfferingSummary}
-                        isLoadingPremiumOffering={isLoadingPremiumOffering}
-                        isPurchasingPremiumPackage={isPurchasingPremiumPackage}
-                        isPresentingPremiumCustomerCenter={isPresentingPremiumCustomerCenter}
-                        isRestoringPremiumPurchases={isRestoringPremiumPurchases}
-                        selectedUserLocationIconId={selectedUserLocationIconId}
-                        onBackToMap={openMap}
-                        onStartRecording={() => startRecording('manual')}
-                        onRequestLocationPermission={requestLocationPermission}
-                        onOpenLocationSettings={openLocationSettings}
-                        onUpdateKeepScreenAwake={updateKeepScreenAwake}
-                        onToggleMapType={toggleMapType}
-                        onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
-                        selectedAppColorPresetId={selectedAppColorPresetId}
-                        onUpdateAppColorPreset={updateAppColorPreset}
-                        onUpdateUserLocationIcon={updateUserLocationIcon}
-                        onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
-                        onOpenFirstLaunchTutorial={openFirstLaunchTutorial}
-                        onOpenFaqScreen={() => navigation.navigate('Faq')}
-                        onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
-                        onOpenTermsOfService={() => openLegalLink(TERMS_OF_SERVICE_URL)}
-                        onOpenPrivacyPolicy={() => openLegalLink(PRIVACY_POLICY_URL)}
-                        onOpenSpecifiedCommercialTransactionAct={() => openLegalLink(SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL)}
-                        onPurchaseMonthlyPremiumPackage={() => {
-                          purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
-                            console.warn('Failed to purchase monthly premium package:', error);
-                          });
-                        }}
-                        onPurchaseYearlyPremiumPackage={() => {
-                          purchasePremiumPackageFromSettings('yearly').catch((error: unknown) => {
-                            console.warn('Failed to purchase yearly premium package:', error);
-                          });
-                        }}
-                        onPresentPremiumCustomerCenter={() => {
-                          openPremiumCustomerCenter().catch((error: unknown) => {
-                            console.warn('Failed to open premium customer center:', error);
-                          });
-                        }}
-                        onRestorePremiumPurchases={() => {
-                          restorePurchasesFromSettings().catch((error: unknown) => {
-                            console.warn('Failed to restore premium purchases:', error);
-                          });
-                        }}
-                        onExportAllLogs={exportAllLogs}
-                        onImportGpx={importGpx}
-                        onDeleteAllData={deleteAllData}
-                      />
-                    )}
-                  </SettingsStack.Screen>
-                  <SettingsStack.Screen name="AboutApp">
-                    {({ navigation }) => (
-                      <AboutAppScreen
-                        styles={styles}
-                        theme={theme}
-                        onBackToSettings={() => navigation.goBack()}
-                      />
-                    )}
-                  </SettingsStack.Screen>
-                  <SettingsStack.Screen name="Faq">
-                    {({ navigation }) => (
-                      <FaqScreen
-                        styles={styles}
-                        theme={theme}
-                        onBackToSettings={() => navigation.goBack()}
-                      />
-                    )}
-                  </SettingsStack.Screen>
-                  <SettingsStack.Screen name="LicenseList">
-                    {({ navigation }) => (
-                      <LicenseScreen
-                        styles={styles}
-                        theme={theme}
-                        onBackToSettings={() => navigation.goBack()}
-                        onOpenLicenseDetail={(license) => navigation.navigate('LicenseDetail', { license })}
-                      />
-                    )}
-                  </SettingsStack.Screen>
-                  <SettingsStack.Screen name="LicenseDetail">
-                    {({ navigation, route }) => (
-                      <LicenseDetailScreen
-                        license={route.params.license}
-                        styles={styles}
-                        theme={theme}
-                        onBackToLicenseList={() => navigation.goBack()}
-                      />
-                    )}
-                  </SettingsStack.Screen>
-                </SettingsStack.Navigator>
-              </NavigationContainer>
-            </NavigationIndependentTree>
-          )}
+                <SettingsStack.Screen name="SettingsHome">
+                  {({ navigation }) => (
+                    <SettingsScreen
+                      styles={styles}
+                      theme={theme}
+                      isRecording={isRecording}
+                      autoStartStatus={autoStartStatus}
+                      hasRequiredPermission={hasRequiredPermission}
+                      shouldOpenSettingsForPermission={shouldOpenSettingsForPermission}
+                      isWhileInUseOnlyMode={isWhileInUseRecordingMode}
+                      keepScreenAwake={keepScreenAwake}
+                      mapType={mapType}
+                      showPhotosOnMap={showPhotosOnMap}
+                      isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+                      isImportingGpx={isImportingGpx}
+                      premiumAccessState={premiumAccessState}
+                      revenueCatAppUserId={revenueCatAppUserId}
+                      appVersion={Application.nativeApplicationVersion}
+                      buildNumber={Application.nativeBuildVersion}
+                      premiumOfferingSummary={premiumOfferingSummary}
+                      isLoadingPremiumOffering={isLoadingPremiumOffering}
+                      isPurchasingPremiumPackage={isPurchasingPremiumPackage}
+                      isPresentingPremiumCustomerCenter={isPresentingPremiumCustomerCenter}
+                      isRestoringPremiumPurchases={isRestoringPremiumPurchases}
+                      selectedUserLocationIconId={selectedUserLocationIconId}
+                      onBackToMap={openMap}
+                      onStartRecording={() => startRecording('manual')}
+                      onRequestLocationPermission={requestLocationPermission}
+                      onOpenLocationSettings={openLocationSettings}
+                      onUpdateKeepScreenAwake={updateKeepScreenAwake}
+                      onToggleMapType={toggleMapType}
+                      onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
+                      selectedAppColorPresetId={selectedAppColorPresetId}
+                      onUpdateAppColorPreset={updateAppColorPreset}
+                      onUpdateUserLocationIcon={updateUserLocationIcon}
+                      onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
+                      onOpenFirstLaunchTutorial={openFirstLaunchTutorial}
+                      onOpenFaqScreen={() => navigation.navigate('Faq')}
+                      onOpenLicenseScreen={() => navigation.navigate('LicenseList')}
+                      onOpenTermsOfService={() => openLegalLink(TERMS_OF_SERVICE_URL)}
+                      onOpenPrivacyPolicy={() => openLegalLink(PRIVACY_POLICY_URL)}
+                      onOpenSpecifiedCommercialTransactionAct={() => openLegalLink(SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL)}
+                      onPurchaseMonthlyPremiumPackage={() => {
+                        purchasePremiumPackageFromSettings('monthly').catch((error: unknown) => {
+                          console.warn('Failed to purchase monthly premium package:', error);
+                        });
+                      }}
+                      onPurchaseYearlyPremiumPackage={() => {
+                        purchasePremiumPackageFromSettings('yearly').catch((error: unknown) => {
+                          console.warn('Failed to purchase yearly premium package:', error);
+                        });
+                      }}
+                      onPresentPremiumCustomerCenter={() => {
+                        openPremiumCustomerCenter().catch((error: unknown) => {
+                          console.warn('Failed to open premium customer center:', error);
+                        });
+                      }}
+                      onRestorePremiumPurchases={() => {
+                        restorePurchasesFromSettings().catch((error: unknown) => {
+                          console.warn('Failed to restore premium purchases:', error);
+                        });
+                      }}
+                      onExportAllLogs={exportAllLogs}
+                      onImportGpx={importGpx}
+                      onDeleteAllData={deleteAllData}
+                    />
+                  )}
+                </SettingsStack.Screen>
+                <SettingsStack.Screen name="AboutApp">
+                  {({ navigation }) => <AboutAppScreen styles={styles} theme={theme} onBackToSettings={() => navigation.goBack()} />}
+                </SettingsStack.Screen>
+                <SettingsStack.Screen name="Faq">
+                  {({ navigation }) => <FaqScreen styles={styles} theme={theme} onBackToSettings={() => navigation.goBack()} />}
+                </SettingsStack.Screen>
+                <SettingsStack.Screen name="LicenseList">
+                  {({ navigation }) => (
+                    <LicenseScreen
+                      styles={styles}
+                      theme={theme}
+                      onBackToSettings={() => navigation.goBack()}
+                      onOpenLicenseDetail={(license) => navigation.navigate('LicenseDetail', { license })}
+                    />
+                  )}
+                </SettingsStack.Screen>
+                <SettingsStack.Screen name="LicenseDetail">
+                  {({ navigation, route }) => (
+                    <LicenseDetailScreen
+                      license={route.params.license}
+                      styles={styles}
+                      theme={theme}
+                      onBackToLicenseList={() => navigation.goBack()}
+                    />
+                  )}
+                </SettingsStack.Screen>
+              </SettingsStack.Navigator>
+            </NavigationContainer>
+          </NavigationIndependentTree>
+        )}
       </Animated.View>
 
       <AchievementUnlockModal
         achievement={activeAchievementNotification?.definition ?? null}
-        animationKey={activeAchievementNotification ? `${activeAchievementNotification.queueId}:${activeAchievementNotification.definition.id}` : null}
+        animationKey={
+          activeAchievementNotification ? `${activeAchievementNotification.queueId}:${activeAchievementNotification.definition.id}` : null
+        }
         styles={styles}
         onShareToX={shareAchievementToX}
         onClose={closeAchievementUnlockModal}

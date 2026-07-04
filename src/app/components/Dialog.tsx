@@ -60,7 +60,17 @@ export type DialogProps = {
  * 中身を切り替えてサイズが変わるときに滑らかにしたい場合は、その state 更新の直前に
  * {@link animateDialogResize} を呼ぶ（標準の LayoutAnimation で次のレイアウト変化を補間する）。
  */
-export function Dialog({ visible, children, showConfetti = false, autoClose = false, swipeToClose = true, dismissible = true, animationKey = null, styles, onClose }: DialogProps) {
+export function Dialog({
+  visible,
+  children,
+  showConfetti = false,
+  autoClose = false,
+  swipeToClose = true,
+  dismissible = true,
+  animationKey = null,
+  styles,
+  onClose,
+}: DialogProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
   const autoCloseProgress = useRef(new Animated.Value(0)).current;
   const dragX = useRef(new Animated.Value(0)).current;
@@ -179,41 +189,38 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
     [dragX, dragY],
   );
 
-  const panResponder = useMemo(
-    () => {
-      if (!swipeToClose) {
-        return null;
-      }
+  const panResponder = useMemo(() => {
+    if (!swipeToClose) {
+      return null;
+    }
 
-      return PanResponder.create({
-        onStartShouldSetPanResponder: () => dismissible,
-        onMoveShouldSetPanResponder: (_, gestureState) => dismissible && (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4),
-        onPanResponderGrant: () => {
-          dragX.stopAnimation();
-          dragY.stopAnimation();
-        },
-        onPanResponderMove: (_, gestureState) => {
-          dragX.setValue(gestureState.dx);
-          dragY.setValue(gestureState.dy);
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          if (swipeToClose && shouldDismissAchievementModalSwipe(gestureState)) {
-            animateOut(true);
-            return;
-          }
-          resetDragPosition();
-        },
-        onPanResponderTerminate: (_, gestureState) => {
-          if (swipeToClose && shouldDismissAchievementModalTerminate(gestureState)) {
-            animateOut(true);
-            return;
-          }
-          resetDragPosition();
-        },
-      });
-    },
-    [animateOut, dismissible, dragX, dragY, resetDragPosition, swipeToClose],
-  );
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => dismissible,
+      onMoveShouldSetPanResponder: (_, gestureState) => dismissible && (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4),
+      onPanResponderGrant: () => {
+        dragX.stopAnimation();
+        dragY.stopAnimation();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        dragX.setValue(gestureState.dx);
+        dragY.setValue(gestureState.dy);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (swipeToClose && shouldDismissAchievementModalSwipe(gestureState)) {
+          animateOut(true);
+          return;
+        }
+        resetDragPosition();
+      },
+      onPanResponderTerminate: (_, gestureState) => {
+        if (swipeToClose && shouldDismissAchievementModalTerminate(gestureState)) {
+          animateOut(true);
+          return;
+        }
+        resetDragPosition();
+      },
+    });
+  }, [animateOut, dismissible, dragX, dragY, resetDragPosition, swipeToClose]);
 
   const distanceOpacity = Animated.add(dragX, dragY).interpolate({
     inputRange: [-260, -90, 0, 90, 260],
@@ -229,7 +236,14 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   const displayedContent = content || lastContentRef.current;
 
   return (
-    <Modal visible={isRendered} transparent animationType="none" onRequestClose={() => { if (dismissible) animateOut(true); }}>
+    <Modal
+      visible={isRendered}
+      transparent
+      animationType="none"
+      onRequestClose={() => {
+        if (dismissible) animateOut(true);
+      }}
+    >
       <View style={styles.achievementModalBackdrop}>
         <ConfettiOverlay styles={styles} active={showConfetti && isRendered} animationKey={animationKey} />
         {isRendered && (
@@ -248,7 +262,13 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
             ]}
           >
             {dismissible && (
-              <Pressable onPress={() => animateOut(true)} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
+              <Pressable
+                onPress={() => animateOut(true)}
+                hitSlop={10}
+                style={styles.achievementCloseButton}
+                accessibilityLabel="閉じる"
+                accessibilityRole="button"
+              >
                 <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
               </Pressable>
             )}

@@ -57,7 +57,17 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <MonthlyReportScreen
-          dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234, startLocationPointId: null, endLocationPointId: null }]}
+          dailyLogs={[
+            {
+              localDate: '2026-05-01',
+              pointCount: 2,
+              startedAt: null,
+              endedAt: null,
+              distanceMeters: 1234,
+              startLocationPointId: null,
+              endLocationPointId: null,
+            },
+          ]}
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
@@ -82,11 +92,20 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} theme={lightTheme} onBackToMap={onBackToMap} />,
+        <MonthlyReportScreen
+          dailyLogs={[]}
+          points={[]}
+          achievements={[]}
+          monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+          theme={lightTheme}
+          onBackToMap={onBackToMap}
+        />,
       );
     });
 
-    const closeButton = renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを閉じる' && typeof node.props.onPress === 'function')[0];
+    const closeButton = renderer!.root.findAll(
+      (node: any) => node.props.accessibilityLabel === 'レポートを閉じる' && typeof node.props.onPress === 'function',
+    )[0];
     act(() => closeButton.props.onPress());
 
     expect(onBackToMap).toHaveBeenCalledTimes(1);
@@ -96,7 +115,17 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <MonthlyReportScreen
-          dailyLogs={[{ localDate: '2026-05-01', pointCount: 2, startedAt: null, endedAt: null, distanceMeters: 1234, startLocationPointId: null, endLocationPointId: null }]}
+          dailyLogs={[
+            {
+              localDate: '2026-05-01',
+              pointCount: 2,
+              startedAt: null,
+              endedAt: null,
+              distanceMeters: 1234,
+              startLocationPointId: null,
+              endLocationPointId: null,
+            },
+          ]}
           points={[]}
           achievements={[]}
           monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
@@ -106,7 +135,9 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       );
     });
 
-    const shareButton = renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function')[0];
+    const shareButton = renderer!.root.findAll(
+      (node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function',
+    )[0];
     await act(async () => {
       await shareButton.props.onPress();
     });
@@ -121,11 +152,20 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} theme={lightTheme} onBackToMap={jest.fn()} />,
+        <MonthlyReportScreen
+          dailyLogs={[]}
+          points={[]}
+          achievements={[]}
+          monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+          theme={lightTheme}
+          onBackToMap={jest.fn()}
+        />,
       );
     });
 
-    const shareButton = renderer!.root.findAll((node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function')[0];
+    const shareButton = renderer!.root.findAll(
+      (node: any) => node.props.accessibilityLabel === 'レポートを共有' && typeof node.props.onPress === 'function',
+    )[0];
     await act(async () => {
       await shareButton.props.onPress();
     });
@@ -137,11 +177,20 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
   it('OS設定ではなくAppから渡されたテーマで表示色を決める', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
-        <MonthlyReportScreen dailyLogs={[]} points={[]} achievements={[]} monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }} theme={darkTheme} onBackToMap={jest.fn()} />,
+        <MonthlyReportScreen
+          dailyLogs={[]}
+          points={[]}
+          achievements={[]}
+          monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+          theme={darkTheme}
+          onBackToMap={jest.fn()}
+        />,
       );
     });
 
-    const container = renderer!.root.findAll((node: any) => Array.isArray(node.props.style) && node.props.style.some((style: any) => style?.backgroundColor === '#111111'))[0];
+    const container = renderer!.root.findAll(
+      (node: any) => Array.isArray(node.props.style) && node.props.style.some((style: any) => style?.backgroundColor === '#111111'),
+    )[0];
 
     expect(container).toBeTruthy();
   });

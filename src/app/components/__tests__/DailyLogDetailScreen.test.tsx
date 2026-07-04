@@ -75,9 +75,11 @@ jest.mock('../../../features/location/visitedCellRepository', () => ({
 }));
 
 jest.mock('../../../features/achievements/achievementRepository', () => ({
-  getAchievementUnlocksByDate: jest.fn().mockResolvedValue([
-    { achievementId: 'distance-100', unlockedAt: '2026-05-31T09:00:00.000Z', unlockedLocalDate: '2026-05-31', progressValue: 100000 },
-  ]),
+  getAchievementUnlocksByDate: jest
+    .fn()
+    .mockResolvedValue([
+      { achievementId: 'distance-100', unlockedAt: '2026-05-31T09:00:00.000Z', unlockedLocalDate: '2026-05-31', progressValue: 100000 },
+    ]),
 }));
 
 jest.mock('../../../features/achievements/achievementDefinitions', () => ({
@@ -156,12 +158,33 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['日ごとの記録', '5月31日', '2026年', '移動のデータ', '移動距離', '146.20km', '船橋市 ▶ 船橋市', 'おもいで', 'この日に獲得した実績', 'この日の記録を共有', '移動距離はGPSのブレにより本来の距離より多く記録される場合があります。']));
+    expect(texts).toEqual(
+      expect.arrayContaining([
+        '日ごとの記録',
+        '5月31日',
+        '2026年',
+        '移動のデータ',
+        '移動距離',
+        '146.20km',
+        '船橋市 ▶ 船橋市',
+        'おもいで',
+        'この日に獲得した実績',
+        'この日の記録を共有',
+        '移動距離はGPSのブレにより本来の距離より多く記録される場合があります。',
+      ]),
+    );
     expect(texts).not.toContain('開始');
     expect(texts).not.toContain('最新');
     expect(renderer.root.findByProps({ accessibilityLabel: 'この日の記録を共有' })).toBeTruthy();
@@ -177,7 +200,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -191,11 +221,20 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
-    expect(renderer.root.findAll((node: any) => node.props.strokeWidth === 5 && node.props.coordinates?.length === 2).length).toBeGreaterThan(0);
+    expect(
+      renderer.root.findAll((node: any) => node.props.strokeWidth === 5 && node.props.coordinates?.length === 2).length,
+    ).toBeGreaterThan(0);
 
     await act(async () => {
       renderer.root.findByType(StepSlider).props.onValueChange(0);
@@ -212,7 +251,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -241,7 +287,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -268,7 +321,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -294,7 +354,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -309,21 +376,22 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       await flushAnimationFrames();
     });
 
-    expect(captureRef).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ format: 'png', quality: 1, result: 'tmpfile' }),
-    );
-    expect(Sharing.shareAsync).toHaveBeenCalledWith(
-      '/tmp/daily-log-detail.png',
-      expect.objectContaining({ mimeType: 'image/png' }),
-    );
+    expect(captureRef).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ format: 'png', quality: 1, result: 'tmpfile' }));
+    expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/daily-log-detail.png', expect.objectContaining({ mimeType: 'image/png' }));
   });
 
   test('今日以外の日付はスライダーの最大値が 24:00 になる', async () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -338,7 +406,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -353,7 +428,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 
@@ -372,7 +454,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     let renderer: any;
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen log={log} styles={styles as never} theme={lightTheme} premiumAccessState={plusAccessState} onBackToDailyLogs={jest.fn()} onOpenPremiumPaywall={onOpenPremiumPaywall} />,
+        <DailyLogDetailScreen
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          premiumAccessState={plusAccessState}
+          onBackToDailyLogs={jest.fn()}
+          onOpenPremiumPaywall={onOpenPremiumPaywall}
+        />,
       );
     });
 

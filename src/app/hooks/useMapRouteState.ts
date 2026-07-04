@@ -1,11 +1,7 @@
 import { useMemo } from 'react';
 import type { Region } from 'react-native-maps';
 
-import {
-  createInitialRegion,
-  RouteCoordinate,
-  toRenderRouteCoordinates,
-} from '../../features/map/routeMapper';
+import { createInitialRegion, RouteCoordinate, toRenderRouteCoordinates } from '../../features/map/routeMapper';
 import { DailyLogSummary, LocationPoint } from '../../types/gps';
 import { totalDistanceMeters } from '../../utils/distance';
 
@@ -42,10 +38,7 @@ export function calculateDisplayDistance(dailyLogs: DailyLogSummary[], points: L
  * @param dailyLogs - DBから取得した日別サマリー一覧。
  * @returns メインマップ描画に必要な派生状態一式。
  */
-export function useMapRouteState(
-  points: LocationPoint[],
-  dailyLogs: DailyLogSummary[],
-): MapRouteState {
+export function useMapRouteState(points: LocationPoint[], dailyLogs: DailyLogSummary[]): MapRouteState {
   const renderRouteCoordinates = useMemo(() => toRenderRouteCoordinates(points), [points]);
   const initialRegion = useMemo(() => createInitialRegion(points), [points]);
   const distance = useMemo(() => calculateDisplayDistance(dailyLogs, points), [dailyLogs, points]);

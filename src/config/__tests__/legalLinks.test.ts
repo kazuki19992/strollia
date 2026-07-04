@@ -1,8 +1,4 @@
-import {
-  PRIVACY_POLICY_URL,
-  SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL,
-  TERMS_OF_SERVICE_URL,
-} from '../legalLinks';
+import { PRIVACY_POLICY_URL, SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL, TERMS_OF_SERVICE_URL } from '../legalLinks';
 
 describe('法務リンク定数 legalLinks', () => {
   test('利用規約、プライバシーポリシー、特商法表記のURLをGitHub Pagesの短いパスに向ける', () => {

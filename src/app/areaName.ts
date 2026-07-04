@@ -29,8 +29,8 @@ export function getAreaLabelFromAddress(address: Location.LocationGeocodedAddres
   if (primary === null) {
     return null;
   }
-  const secondaryCandidates = [address?.district, address?.name, address?.street, address?.subregion].filter(
-    (value): value is string => Boolean(value && value !== primary),
+  const secondaryCandidates = [address?.district, address?.name, address?.street, address?.subregion].filter((value): value is string =>
+    Boolean(value && value !== primary),
   );
 
   return { primary, secondary: secondaryCandidates[0] ?? null };

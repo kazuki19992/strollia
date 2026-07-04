@@ -52,21 +52,11 @@ export function PremiumPaywallModal({
 }: PremiumPaywallModalProps) {
   /** フォールバック価格は本番の定価と一致しており、Offering 未取得時に表示される暫定値。 */
 
-
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.appScreen}>
         <View style={styles.appHeader}>
-          <Pressable
-            accessibilityLabel="ペイウォールを閉じる"
-            accessibilityRole="button"
-            onPress={onClose}
-          >
+          <Pressable accessibilityLabel="ペイウォールを閉じる" accessibilityRole="button" onPress={onClose}>
             <Feather name="x" size={24} color={theme.colors.text} />
           </Pressable>
         </View>
@@ -108,9 +98,7 @@ export function PremiumPaywallModal({
             styles={styles}
             onPress={onRestorePremiumPurchases}
           />
-          {isLoadingPremiumOffering && (
-            <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>
-          )}
+          {isLoadingPremiumOffering && <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>}
           <View style={styles.paywallLegal}>
             <DescriptionText styles={styles}>{SUBSCRIPTION_DISCLOSURE_TEXT}</DescriptionText>
             <View style={styles.paywallLegalLinks}>

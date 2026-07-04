@@ -1,5 +1,4 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { Animated } from 'react-native';
+import { Image, StyleSheet, Text, View, Animated } from 'react-native';
 
 import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
 import { lightTheme } from '../../../theme/theme';
@@ -149,7 +148,9 @@ describe('地図画面 MapScreen', () => {
     expect(StyleSheet.flatten(distanceText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
     expect(StyleSheet.flatten(dotText!.props.style)?.fontSize).toBe(StyleSheet.flatten(distanceText!.props.style)?.fontSize);
     expect(StyleSheet.flatten(decimalText!.props.style)?.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
-    expect(StyleSheet.flatten(decimalText!.props.style)?.fontSize).toBeLessThan(StyleSheet.flatten(distanceText!.props.style)?.fontSize ?? 0);
+    expect(StyleSheet.flatten(decimalText!.props.style)?.fontSize).toBeLessThan(
+      StyleSheet.flatten(distanceText!.props.style)?.fontSize ?? 0,
+    );
   });
 
   test('下部ダッシュボードに今日の距離と操作ボタンを表示する', () => {
@@ -200,14 +201,10 @@ describe('地図画面 MapScreen', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(
-        <MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={true} />,
-      );
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={true} />);
     });
 
-    const permissionTexts = renderer.root
-      .findAllByType(Text)
-      .filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
+    const permissionTexts = renderer.root.findAllByType(Text).filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
     expect(permissionTexts).toHaveLength(0);
   });
 
@@ -215,14 +212,10 @@ describe('地図画面 MapScreen', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(
-        <MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={false} />,
-      );
+      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={false} />);
     });
 
-    const permissionTexts = renderer.root
-      .findAllByType(Text)
-      .filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
+    const permissionTexts = renderer.root.findAllByType(Text).filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
     expect(permissionTexts).toHaveLength(1);
   });
 

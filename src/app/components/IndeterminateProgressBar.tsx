@@ -54,9 +54,7 @@ export function IndeterminateProgressBar({ styles, animating = true }: Indetermi
         }
       }}
     >
-      <Animated.View
-        style={[styles.gifProgressFill, { width: fillWidth, transform: [{ translateX }] }]}
-      />
+      <Animated.View style={[styles.gifProgressFill, { width: fillWidth, transform: [{ translateX }] }]} />
     </View>
   );
 }

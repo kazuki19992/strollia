@@ -20,7 +20,6 @@ jest.mock('../locationRecordingSession', () => ({
   createLocationRecordingSession: (...args: unknown[]) => mockCreateLocationRecordingSession(...args),
 }));
 
-
 describe('バックグラウンド位置情報タスク', () => {
   beforeAll(() => {
     jest.isolateModules(() => {

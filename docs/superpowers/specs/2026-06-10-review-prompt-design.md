@@ -31,11 +31,7 @@ export type ReviewPromptContext = {
  * - まだ一度も促していない
  */
 export function shouldRequestReviewAfterAchievement(context: ReviewPromptContext): boolean {
-  return (
-    context.dismissedAchievementId === REVIEW_PROMPT_ACHIEVEMENT_ID &&
-    !context.hasPendingNotifications &&
-    !context.hasAlreadyPrompted
-  );
+  return context.dismissedAchievementId === REVIEW_PROMPT_ACHIEVEMENT_ID && !context.hasPendingNotifications && !context.hasAlreadyPrompted;
 }
 
 /** レビュー促進のトリガーとなる実績ID。 */
@@ -99,12 +95,12 @@ function closeAchievementUnlockModal(): void {
 
 ## ファイル構成
 
-| ファイル | 種別 | 責務 |
-|---------|------|------|
-| `src/features/review/reviewPromptLogic.ts` | 新規 | 判定純粋関数・定数 |
-| `src/features/review/storeReview.ts` | 新規 | expo-store-reviewラッパー |
-| `src/app/App.tsx` | 改修 | state・設定読込・closeAchievementUnlockModal配線 |
-| `package.json` | 改修 | expo-store-review追加 |
+| ファイル                                   | 種別 | 責務                                             |
+| ------------------------------------------ | ---- | ------------------------------------------------ |
+| `src/features/review/reviewPromptLogic.ts` | 新規 | 判定純粋関数・定数                               |
+| `src/features/review/storeReview.ts`       | 新規 | expo-store-reviewラッパー                        |
+| `src/app/App.tsx`                          | 改修 | state・設定読込・closeAchievementUnlockModal配線 |
+| `package.json`                             | 改修 | expo-store-review追加                            |
 
 ## テスト方針
 

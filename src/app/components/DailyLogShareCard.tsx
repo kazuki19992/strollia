@@ -41,15 +41,24 @@ export type DailyLogShareCardProps = {
  * 画面上のスライダーや共有ボタンを含まないため、共有時にUIが消えることなくキャプチャできる。
  */
 export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(function DailyLogShareCard(
-  { width, points, regionPoints, isPlusActive, distanceLabel, routeEndpointsLabel, dailyDetailReport, isLoadingDetail, dateLabel, styles, theme, onMapLoaded },
+  {
+    width,
+    points,
+    regionPoints,
+    isPlusActive,
+    distanceLabel,
+    routeEndpointsLabel,
+    dailyDetailReport,
+    isLoadingDetail,
+    dateLabel,
+    styles,
+    theme,
+    onMapLoaded,
+  },
   ref,
 ) {
   return (
-    <View
-      ref={ref}
-      collapsable={false}
-      style={[styles.dailyLogShareCardOffscreen, { width, backgroundColor: theme.colors.background }]}
-    >
+    <View ref={ref} collapsable={false} style={[styles.dailyLogShareCardOffscreen, { width, backgroundColor: theme.colors.background }]}>
       <View style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
         <View style={styles.routeTimeline}>
           <RouteMapPanel

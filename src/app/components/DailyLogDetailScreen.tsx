@@ -74,7 +74,14 @@ export type DailyLogDetailScreenProps = {
 };
 
 /** 日ごとの記録の詳細画面を描画する。 */
-export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, onBackToDailyLogs, onOpenPremiumPaywall }: DailyLogDetailScreenProps) {
+export function DailyLogDetailScreen({
+  log,
+  styles,
+  theme,
+  premiumAccessState,
+  onBackToDailyLogs,
+  onOpenPremiumPaywall,
+}: DailyLogDetailScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
   const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
   const [dailyDetailReport, setDailyDetailReport] = useState<DailyDetailReport | null>(null);
@@ -128,10 +135,7 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
     const step = resolveGifFrameStepMinutes(gifRangeEnd - gifRangeStart);
     return computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, step);
   }, [gifRangeStart, gifRangeEnd]);
-  const gifRegion = useMemo(
-    () => (gifRangePoints.length > 0 ? createInitialRegion(gifRangePoints) : null),
-    [gifRangePoints],
-  );
+  const gifRegion = useMemo(() => (gifRangePoints.length > 0 ? createInitialRegion(gifRangePoints) : null), [gifRangePoints]);
   const isGeneratingGif = gifProgress !== null;
   // 各コマは選択開始時刻からその時刻までの累積軌跡（区間内のみ）。
   const gifFrameMinute = gifFrameMinutes[gifFrameIndex] ?? gifRangeStart;
@@ -406,14 +410,26 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
 
   return (
     <SafeAreaView style={styles.appScreen}>
-      <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
+      <AppScreenHeader
+        backLabel="日ごとの記録"
+        styles={styles}
+        theme={theme}
+        title={title.title}
+        subtitle={title.subtitle}
+        onBack={onBackToDailyLogs}
+      />
       <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
-
         {/* 画面表示用。共有画像は画面外の DailyLogShareCard をキャプチャするため、
             ここにあるスライダー・GIFボタンは共有時も消えない。 */}
         <View style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
-            <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
+            <RouteMapPanel
+              emptyLabel="移動地図を表示できません"
+              points={visibleRoutePoints}
+              regionPoints={dailyPoints}
+              styles={styles}
+              theme={theme}
+            />
             {showSlider && (
               <StepSlider
                 accessibilityLabel="移動地図の表示時刻"
@@ -456,7 +472,9 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         {!isPlusActive && (
           <View style={[styles.dailyLogDetailSection, styles.dailyLogDetailPlusSection]}>
             <SectionTitle styles={styles}>おもいで</SectionTitle>
-            <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
+            <Text style={styles.dailyLogDetailSubTitle}>
+              {isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}
+            </Text>
             <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
             <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, lockedOverlayStyles.overlay]}>
@@ -487,11 +505,12 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
                 textColor={theme.colors.primary}
                 onPress={onOpenPremiumPaywall}
               />
-              <DescriptionText styles={styles}>移動軌跡を時系列でふりかえられたり、獲得した実績、エリア数などもみることができます！</DescriptionText>
+              <DescriptionText styles={styles}>
+                移動軌跡を時系列でふりかえられたり、獲得した実績、エリア数などもみることができます！
+              </DescriptionText>
             </>
           )}
         </View>
-
       </ScrollView>
 
       {isSharingDetail && (
@@ -554,11 +573,19 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
               <View
                 style={[
                   styles.gifProgressFill,
-                  { width: `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number },
+                  {
+                    width:
+                      `${gifProgress ? Math.round((gifProgress.done / Math.max(gifProgress.total, 1)) * 100) : 0}%` as unknown as number,
+                  },
                 ]}
               />
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="GIF生成をキャンセル" style={styles.gifProgressCancel} onPress={handleCancelGif}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="GIF生成をキャンセル"
+              style={styles.gifProgressCancel}
+              onPress={handleCancelGif}
+            >
               <Text style={styles.gifProgressCancelText}>キャンセル</Text>
             </Pressable>
           </View>

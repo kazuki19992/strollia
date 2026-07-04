@@ -44,7 +44,11 @@ describe('月次行政区域レポート monthlyAreaReport', () => {
       ],
       topMunicipalityName: '東京都府中市',
     });
-    expect(db.getFirstAsync).toHaveBeenCalledWith(expect.stringContaining('GROUP BY normalized_prefecture_name, normalized_municipality_name'), '2026-04-01', '2026-05-01');
+    expect(db.getFirstAsync).toHaveBeenCalledWith(
+      expect.stringContaining('GROUP BY normalized_prefecture_name, normalized_municipality_name'),
+      '2026-04-01',
+      '2026-05-01',
+    );
   });
 
   it('対象月のGPSポイント履歴がない場合は空のサマリーを返す', async () => {

@@ -27,6 +27,7 @@
 ### Task 1: 状態付き位置情報保存セッション
 
 **Files:**
+
 - Create: `src/features/location/locationRecordingSession.ts`
 - Create: `src/features/location/__tests__/locationRecordingSession.test.ts`
 
@@ -103,6 +104,7 @@ git commit -m "refactor(location): 位置情報保存処理をセッション化
 ### Task 2: バックグラウンドタスクを共通セッションへ移行
 
 **Files:**
+
 - Create: `src/features/location/__tests__/backgroundLocationTask.test.ts`
 - Modify: `src/features/location/backgroundLocationTask.ts`
 
@@ -165,6 +167,7 @@ git commit -m "refactor(location): 背景タスクから共通保存セッショ
 ### Task 3: 単一の前景位置監視から保存する
 
 **Files:**
+
 - Modify: `src/app/hooks/useForegroundUserLocation.ts`
 - Modify: `src/app/hooks/__tests__/useForegroundUserLocation.test.tsx`
 
@@ -236,6 +239,7 @@ git commit -m "feat(location): 前景位置監視からGPSログを保存する"
 ### Task 4: Appで権限・AppState・タスクを同期する
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 
@@ -244,8 +248,9 @@ git commit -m "feat(location): 前景位置監視からGPSログを保存する"
 既存mockへ `stopBackgroundLocationRecording` と新しいフック引数の記録を追加し、次を検証する。
 
 ```typescript
-expect(mockGetLocationPermissionState.mock.invocationCallOrder[0])
-  .toBeLessThan(mockUpdateBackgroundLocationTaskOptionsIfNeeded.mock.invocationCallOrder[0]);
+expect(mockGetLocationPermissionState.mock.invocationCallOrder[0]).toBeLessThan(
+  mockUpdateBackgroundLocationTaskOptionsIfNeeded.mock.invocationCallOrder[0],
+);
 expect(mockStopBackgroundLocationRecording).toHaveBeenCalledTimes(1);
 expect(lastForegroundOptions).toMatchObject({ enabled: true, shouldPersist: true });
 ```
@@ -283,11 +288,8 @@ const [isLocationRecordingModeSynchronized, setIsLocationRecordingModeSynchroniz
 
 ```typescript
 const shouldDisplayCustomLocation = !userLocationIcon.useNativeUserLocation;
-const shouldPersistForegroundLocation = appState === 'active'
-  && isWhileInUseRecordingMode
-  && isLocationRecordingModeSynchronized;
-const foregroundWatchEnabled = appState === 'active'
-  && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
+const shouldPersistForegroundLocation = appState === 'active' && isWhileInUseRecordingMode && isLocationRecordingModeSynchronized;
+const foregroundWatchEnabled = appState === 'active' && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
 
 useForegroundUserLocation({
   enabled: foregroundWatchEnabled,
@@ -317,6 +319,7 @@ git commit -m "fix(location): 権限に応じて前景と背景の記録を同�
 ### Task 5: UI説明とアーキテクチャ文書を更新する
 
 **Files:**
+
 - Modify: `src/app/components/SettingsScreen.tsx`
 - Modify: `src/app/components/__tests__/SettingsScreen.test.tsx`
 - Modify: `docs/architecture.md`
@@ -363,6 +366,7 @@ git commit -m "docs(location): 前景限定記録の動作を明記"
 ### Task 6: 全体検証とPR作成
 
 **Files:**
+
 - Verify: 全変更ファイル
 
 - [ ] **Step 1: 位置情報関連の集中テストを実行する**

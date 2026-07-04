@@ -54,31 +54,39 @@ describe('位置情報追跡設定', () => {
   });
 
   it('Dynamic Island表示設定が古いと最新ではないと判定する', () => {
-    expect(hasCurrentLocationTaskOptions({
-      ...getLocationTaskOptions(),
-      showsBackgroundLocationIndicator: true,
-    })).toBe(false);
+    expect(
+      hasCurrentLocationTaskOptions({
+        ...getLocationTaskOptions(),
+        showsBackgroundLocationIndicator: true,
+      }),
+    ).toBe(false);
   });
 
   it('監視間隔またはforeground service設定が異なると最新ではないと判定する', () => {
-    expect(hasCurrentLocationTaskOptions({
-      ...getLocationTaskOptions(),
-      distanceInterval: 100,
-    })).toBe(false);
-    expect(hasCurrentLocationTaskOptions({
-      ...getLocationTaskOptions(),
-      foregroundService: {
-        ...getLocationTaskOptions().foregroundService!,
-        notificationBody: '古い通知文言',
-      },
-    })).toBe(false);
+    expect(
+      hasCurrentLocationTaskOptions({
+        ...getLocationTaskOptions(),
+        distanceInterval: 100,
+      }),
+    ).toBe(false);
+    expect(
+      hasCurrentLocationTaskOptions({
+        ...getLocationTaskOptions(),
+        foregroundService: {
+          ...getLocationTaskOptions().foregroundService!,
+          notificationBody: '古い通知文言',
+        },
+      }),
+    ).toBe(false);
   });
 
   it('Strolliaが管理しない余分なプロパティは一致判定へ影響しない', () => {
-    expect(hasCurrentLocationTaskOptions({
-      ...getLocationTaskOptions(),
-      deferredUpdatesDistance: 0,
-    })).toBe(true);
+    expect(
+      hasCurrentLocationTaskOptions({
+        ...getLocationTaskOptions(),
+        deferredUpdatesDistance: 0,
+      }),
+    ).toBe(true);
   });
 
   it('監視設定の項目を追加した場合に一致判定の更新漏れを検知できる', () => {

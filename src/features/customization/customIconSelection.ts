@@ -1,7 +1,4 @@
-import {
-  deleteManagedCustomIcon,
-  persistCustomIconImage,
-} from './customIconStorage';
+import { deleteManagedCustomIcon, persistCustomIconImage } from './customIconStorage';
 import type { StoredCustomIcon } from './customIconStorage';
 
 /** カスタム画像を安全に置き換えるための入力。 */

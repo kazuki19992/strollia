@@ -12,33 +12,38 @@ description: Use when creating a GitHub issue for this repository (bug report, f
 1. **重複確認**: `gh issue list --search "<キーワード>"` で既存issueを確認
 2. **ラベル選択**(既存ラベルから。新規ラベルは作らない):
 
-   | ラベル | 用途 |
-   | --- | --- |
-   | `bug` | 不具合 |
-   | `Emergency Bug` | 緊急対応バグ(起動しない、落ちる等) |
-   | `AppStore Issue` | App Storeの表示不具合 |
-   | `NewFeature` | 新機能 |
-   | `Enhanced` | 改善 |
-   | `test` | テスト系 |
-   | `documentation` | ドキュメント |
-   | `backlog` | バックログ・これやりたい |
+   | ラベル           | 用途                               |
+   | ---------------- | ---------------------------------- |
+   | `bug`            | 不具合                             |
+   | `Emergency Bug`  | 緊急対応バグ(起動しない、落ちる等) |
+   | `AppStore Issue` | App Storeの表示不具合              |
+   | `NewFeature`     | 新機能                             |
+   | `Enhanced`       | 改善                               |
+   | `test`           | テスト系                           |
+   | `documentation`  | ドキュメント                       |
+   | `backlog`        | バックログ・これやりたい           |
 
 3. **本文作成**: タイトル・本文とも日本語。本文テンプレート:
 
    ```markdown
    ## 概要
+
    <1〜2文で何のissueか>
 
    ## 背景
+
    <なぜ必要か、現状の問題>
 
    ## 期待する挙動
+
    <あるべき動作。バグの場合は再現手順と実際の挙動も>
 
    ## 受け入れ条件
+
    - [ ] <完了と判断できる条件>
 
    ## 関連
+
    <関連PR / issue / docs配下のドキュメントへのリンク>
    ```
 

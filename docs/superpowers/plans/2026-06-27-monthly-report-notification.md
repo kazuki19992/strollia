@@ -24,21 +24,23 @@
 
 ## ファイル構成
 
-| 操作 | パス |
-|------|------|
-| 新規作成 | `src/features/reports/monthlyReportNotificationService.ts` |
+| 操作     | パス                                                                      |
+| -------- | ------------------------------------------------------------------------- |
+| 新規作成 | `src/features/reports/monthlyReportNotificationService.ts`                |
 | 新規作成 | `src/features/reports/__tests__/monthlyReportNotificationService.test.ts` |
-| 修正 | `src/app/App.tsx` |
+| 修正     | `src/app/App.tsx`                                                         |
 
 ---
 
 ## Task 1: monthlyReportNotificationService の実装
 
 **Files:**
+
 - Create: `src/features/reports/monthlyReportNotificationService.ts`
 - Test: `src/features/reports/__tests__/monthlyReportNotificationService.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `MONTHLY_REPORT_NOTIFICATION_CHANNEL_ID: string`
   - `setupMonthlyReportNotificationChannel(): Promise<void>`
@@ -131,9 +133,7 @@ describe('月次レポート通知 monthlyReportNotificationService', () => {
 
     it('Plus有効かつすでに登録済みの場合は再スケジュールしない（重複防止）', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
-      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
-        { identifier: 'monthly-report' },
-      ]);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([{ identifier: 'monthly-report' }]);
 
       await syncMonthlyReportNotification(true);
 
@@ -259,9 +259,11 @@ git commit -m "feat(reports): 月次レポートのローカル通知サービ�
 ## Task 2: App.tsx へ統合する
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 
 **Interfaces:**
+
 - Consumes:
   - `setupMonthlyReportNotificationChannel(): Promise<void>` (Task 1)
   - `syncMonthlyReportNotification(isPlusActive: boolean): Promise<void>` (Task 1)
@@ -272,13 +274,23 @@ git commit -m "feat(reports): 月次レポートのローカル通知サービ�
 `src/app/App.tsx` の既存 import 群に以下を追加する（`achievementNotificationService` の import がある行付近）。
 
 現在（38行目付近）:
+
 ```typescript
-import { initializeAchievementNotificationHandler, requestAchievementNotificationPermissionOnFirstLaunch, setupAchievementNotificationChannel } from '../features/achievements/achievementNotificationService';
+import {
+  initializeAchievementNotificationHandler,
+  requestAchievementNotificationPermissionOnFirstLaunch,
+  setupAchievementNotificationChannel,
+} from '../features/achievements/achievementNotificationService';
 ```
 
 この行の直後に追加:
+
 ```typescript
-import { isMonthlyReportNotification, setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } from '../features/reports/monthlyReportNotificationService';
+import {
+  isMonthlyReportNotification,
+  setupMonthlyReportNotificationChannel,
+  syncMonthlyReportNotification,
+} from '../features/reports/monthlyReportNotificationService';
 ```
 
 - [ ] **Step 2: Android チャンネルセットアップを追加する**
@@ -286,14 +298,16 @@ import { isMonthlyReportNotification, setupMonthlyReportNotificationChannel, syn
 `src/app/App.tsx` の `setupAchievementNotificationChannel` を呼んでいる行（801行目付近）の直後に追加する:
 
 現在:
+
 ```typescript
-        await setupAchievementNotificationChannel().catch(() => undefined);
+await setupAchievementNotificationChannel().catch(() => undefined);
 ```
 
 変更後:
+
 ```typescript
-        await setupAchievementNotificationChannel().catch(() => undefined);
-        await setupMonthlyReportNotificationChannel().catch(() => undefined);
+await setupAchievementNotificationChannel().catch(() => undefined);
+await setupMonthlyReportNotificationChannel().catch(() => undefined);
 ```
 
 - [ ] **Step 3: 初期Plus状態確定時の同期を追加する**
@@ -301,53 +315,55 @@ import { isMonthlyReportNotification, setupMonthlyReportNotificationChannel, syn
 `src/app/App.tsx` の初期プレミアム状態を `setPremiumAccessState` で設定している箇所（712〜714行目付近）の直後に追加する:
 
 現在:
+
 ```typescript
-        if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
-          setPremiumAccessState(initialPremiumAccessResult.state);
-          if (initialPremiumAccessResult.confirmed) {
-            setIsPremiumAccessPendingForIcon(false);
-          }
-        }
+if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+  setPremiumAccessState(initialPremiumAccessResult.state);
+  if (initialPremiumAccessResult.confirmed) {
+    setIsPremiumAccessPendingForIcon(false);
+  }
+}
 ```
 
 変更後:
+
 ```typescript
-        if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
-          setPremiumAccessState(initialPremiumAccessResult.state);
-          if (initialPremiumAccessResult.confirmed) {
-            setIsPremiumAccessPendingForIcon(false);
-          }
-          syncMonthlyReportNotification(initialPremiumAccessResult.state.isPlusActive).catch((error: unknown) => {
-            console.warn('Failed to sync monthly report notification:', error);
-          });
-        }
+if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+  setPremiumAccessState(initialPremiumAccessResult.state);
+  if (initialPremiumAccessResult.confirmed) {
+    setIsPremiumAccessPendingForIcon(false);
+  }
+  syncMonthlyReportNotification(initialPremiumAccessResult.state.isPlusActive).catch((error: unknown) => {
+    console.warn('Failed to sync monthly report notification:', error);
+  });
+}
 ```
 
 タイムアウト後の遅延解決パス（721〜729行目付近）にも追加する:
 
 現在:
+
 ```typescript
-          initialPremiumAccessRequest
-            .then((state) => {
-              if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
-                setPremiumAccessState(state);
-                setIsPremiumAccessPendingForIcon(false);
-              }
-            })
+initialPremiumAccessRequest.then((state) => {
+  if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+    setPremiumAccessState(state);
+    setIsPremiumAccessPendingForIcon(false);
+  }
+});
 ```
 
 変更後:
+
 ```typescript
-          initialPremiumAccessRequest
-            .then((state) => {
-              if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
-                setPremiumAccessState(state);
-                setIsPremiumAccessPendingForIcon(false);
-                syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
-                  console.warn('Failed to sync monthly report notification:', error);
-                });
-              }
-            })
+initialPremiumAccessRequest.then((state) => {
+  if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
+    setPremiumAccessState(state);
+    setIsPremiumAccessPendingForIcon(false);
+    syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
+      console.warn('Failed to sync monthly report notification:', error);
+    });
+  }
+});
 ```
 
 - [ ] **Step 4: RevenueCat 状態変化時の同期を追加する**
@@ -355,24 +371,34 @@ import { isMonthlyReportNotification, setupMonthlyReportNotificationChannel, syn
 `src/app/App.tsx` の `subscribePremiumAccessStateUpdates` コールバック（837〜841行目付近）に追加する:
 
 現在:
+
 ```typescript
-  useEffect(() => subscribePremiumAccessStateUpdates((state) => {
-    premiumAccessUpdateVersionRef.current += 1;
-    setPremiumAccessState(state);
-    setIsPremiumAccessPendingForIcon(false);
-  }), []);
+useEffect(
+  () =>
+    subscribePremiumAccessStateUpdates((state) => {
+      premiumAccessUpdateVersionRef.current += 1;
+      setPremiumAccessState(state);
+      setIsPremiumAccessPendingForIcon(false);
+    }),
+  [],
+);
 ```
 
 変更後:
+
 ```typescript
-  useEffect(() => subscribePremiumAccessStateUpdates((state) => {
-    premiumAccessUpdateVersionRef.current += 1;
-    setPremiumAccessState(state);
-    setIsPremiumAccessPendingForIcon(false);
-    syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
-      console.warn('Failed to sync monthly report notification:', error);
-    });
-  }), []);
+useEffect(
+  () =>
+    subscribePremiumAccessStateUpdates((state) => {
+      premiumAccessUpdateVersionRef.current += 1;
+      setPremiumAccessState(state);
+      setIsPremiumAccessPendingForIcon(false);
+      syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
+        console.warn('Failed to sync monthly report notification:', error);
+      });
+    }),
+  [],
+);
 ```
 
 - [ ] **Step 5: フォアグラウンド/バックグラウンドでの通知タップ処理を追加する**
@@ -380,14 +406,14 @@ import { isMonthlyReportNotification, setupMonthlyReportNotificationChannel, syn
 `src/app/App.tsx` 内に `useEffect` を追加する。既存の `subscribePremiumAccessStateUpdates` の `useEffect` の直後に挿入する:
 
 ```typescript
-  useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      if (isMonthlyReportNotification(response.notification.request.content.data)) {
-        openMonthlyReport();
-      }
-    });
-    return () => subscription.remove();
-  }, []);
+useEffect(() => {
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    if (isMonthlyReportNotification(response.notification.request.content.data)) {
+      openMonthlyReport();
+    }
+  });
+  return () => subscription.remove();
+}, []);
 ```
 
 `App.tsx` には `expo-notifications` の直接 import がないため、以下を import 群に追加する（他の `expo-*` import と並べる）:
@@ -401,20 +427,18 @@ import * as Notifications from 'expo-notifications';
 `src/app/App.tsx` の `const [isReady, setIsReady]` の宣言（230行目付近）の近くに `useLastNotificationResponse` フックを追加する:
 
 ```typescript
-  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+const lastNotificationResponse = Notifications.useLastNotificationResponse();
 ```
 
 次に、`isReady` を監視する `useEffect` を追加する（Step 5 の `useEffect` の直後）:
 
 ```typescript
-  useEffect(() => {
-    if (!isReady) return;
-    if (lastNotificationResponse && isMonthlyReportNotification(
-      lastNotificationResponse.notification.request.content.data,
-    )) {
-      openMonthlyReport();
-    }
-  }, [isReady, lastNotificationResponse]);
+useEffect(() => {
+  if (!isReady) return;
+  if (lastNotificationResponse && isMonthlyReportNotification(lastNotificationResponse.notification.request.content.data)) {
+    openMonthlyReport();
+  }
+}, [isReady, lastNotificationResponse]);
 ```
 
 - [ ] **Step 7: TypeScript が通ることを確認する**

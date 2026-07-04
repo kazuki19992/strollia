@@ -69,6 +69,7 @@ Implementation approach:
 ### Task 1: Grid Config And Pure Grid Math
 
 **Files:**
+
 - Create: `src/features/map/config/gridOverlayConfig.ts`
 - Create: `src/features/location/grid/gridCell.ts`
 - Create: `src/features/location/grid/gridAggregation.ts`
@@ -221,6 +222,7 @@ git commit -m "feat(map): visited gridの基礎計算を追加"
 ### Task 2: Visited Cell Repository And Database Schema
 
 **Files:**
+
 - Modify: `src/db/database.ts`
 - Modify: `src/features/logs/logRepository.ts`
 - Create: `src/features/location/visitedCellRepository.ts`
@@ -267,12 +269,14 @@ describe('Visited Grid保存 visitedCellRepository', () => {
 
     await deleteAllUserData();
 
-    await expect(getVisitedCellsInBounds({
-      minX: cell.x - 1,
-      maxX: cell.x + 1,
-      minY: cell.y - 1,
-      maxY: cell.y + 1,
-    })).resolves.toEqual([]);
+    await expect(
+      getVisitedCellsInBounds({
+        minX: cell.x - 1,
+        maxX: cell.x + 1,
+        minY: cell.y - 1,
+        maxY: cell.y + 1,
+      }),
+    ).resolves.toEqual([]);
   });
 });
 ```
@@ -329,6 +333,7 @@ git commit -m "feat(location): visited cellの保存先を追加"
 ### Task 3: GPS To Visited Cells Pipeline
 
 **Files:**
+
 - Create: `src/features/location/grid/gridInterpolation.ts`
 - Test: `src/features/location/grid/__tests__/gridInterpolation.test.ts`
 - Modify: `src/features/location/backgroundLocationTask.ts`
@@ -379,6 +384,7 @@ git commit -m "feat(location): GPS点からvisited cellを生成する"
 ### Task 4: Map Overlay Rendering
 
 **Files:**
+
 - Modify: `src/features/map/gridOverlay.ts`
 - Test: `src/features/map/__tests__/gridOverlay.test.ts`
 - Modify: `src/app/App.tsx`
@@ -429,6 +435,7 @@ git commit -m "feat(map): visited grid overlayをメインマップに表示す�
 ### Task 5: Raw GPS Speed For UI
 
 **Files:**
+
 - Create: `src/app/hooks/useRawLocationSpeed.ts`
 - Test: `src/app/hooks/__tests__/useRawLocationSpeed.test.ts`
 - Modify: `src/app/App.tsx`
@@ -473,6 +480,7 @@ git commit -m "feat(map): 速度メーターをraw GPS speedに反応させる"
 ### Task 6: Documentation And Full Verification
 
 **Files:**
+
 - Modify: `docs/map-rendering.md`
 - Modify: `docs/data-storage.md`
 - Modify: `docs/architecture.md`

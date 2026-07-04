@@ -26,6 +26,7 @@
 ## Task 1: Stationary Drift Does Not Promote By Count Alone
 
 **Files:**
+
 - Modify: `src/features/location/__tests__/locationQualityFilter.test.ts`
 - Modify: `src/features/location/locationQualityFilter.ts`
 
@@ -34,22 +35,19 @@
 Add this test to `src/features/location/__tests__/locationQualityFilter.test.ts` inside `describe('GPS軌跡品質判定 locationQualityFilter', ...)`:
 
 ```ts
-  it('停止中に別位置へ3点だけドリフトしてもacceptedへ昇格しない', () => {
-    const stationary = [
-      point(35, 139, '2026-05-23T00:00:00.000Z'),
-      point(35.00002, 139, '2026-05-23T00:00:20.000Z'),
-      point(35.00001, 139.00001, '2026-05-23T00:00:40.000Z'),
-    ];
-    const first = advanceLocationQualityContext(
-      point(35.00035, 139, '2026-05-23T00:01:00.000Z'),
-      createLocationQualityContext(stationary),
-    );
-    const second = advanceLocationQualityContext(point(35.00036, 139.00001, '2026-05-23T00:01:20.000Z'), first.context);
-    const third = advanceLocationQualityContext(point(35.00035, 139.00002, '2026-05-23T00:01:40.000Z'), second.context);
+it('停止中に別位置へ3点だけドリフトしてもacceptedへ昇格しない', () => {
+  const stationary = [
+    point(35, 139, '2026-05-23T00:00:00.000Z'),
+    point(35.00002, 139, '2026-05-23T00:00:20.000Z'),
+    point(35.00001, 139.00001, '2026-05-23T00:00:40.000Z'),
+  ];
+  const first = advanceLocationQualityContext(point(35.00035, 139, '2026-05-23T00:01:00.000Z'), createLocationQualityContext(stationary));
+  const second = advanceLocationQualityContext(point(35.00036, 139.00001, '2026-05-23T00:01:20.000Z'), first.context);
+  const third = advanceLocationQualityContext(point(35.00035, 139.00002, '2026-05-23T00:01:40.000Z'), second.context);
 
-    expect(third.acceptedPoints).toEqual([]);
-    expect(third.context.provisionalPoints).toHaveLength(3);
-  });
+  expect(third.acceptedPoints).toEqual([]);
+  expect(third.context.provisionalPoints).toHaveLength(3);
+});
 ```
 
 - [ ] **Step 2: Verify the test fails**
@@ -104,16 +102,16 @@ function totalPathDistanceMeters(points: NewLocationPoint[]): number {
 Change the beginning of `confirmProvisionalTrack`:
 
 ```ts
-  const provisionalPoints = [...context.provisionalPoints, point];
-  const anchor = context.acceptedPoints.at(-1);
+const provisionalPoints = [...context.provisionalPoints, point];
+const anchor = context.acceptedPoints.at(-1);
 
-  if (anchor && isStationaryCluster(context.acceptedPoints) && !isReliableStationaryEscapeTrack(anchor, provisionalPoints)) {
-    return {
-      decision,
-      acceptedPoints: [],
-      context: createLocationQualityContext(context.acceptedPoints, provisionalPoints),
-    };
-  }
+if (anchor && isStationaryCluster(context.acceptedPoints) && !isReliableStationaryEscapeTrack(anchor, provisionalPoints)) {
+  return {
+    decision,
+    acceptedPoints: [],
+    context: createLocationQualityContext(context.acceptedPoints, provisionalPoints),
+  };
+}
 ```
 
 Keep the existing count-only promotion path after this block for non-stationary provisional tracks.
@@ -138,6 +136,7 @@ git commit -m "fix(location): 停止中ドリフトの昇格を抑制"
 ## Task 2: Reliable Stationary Escape Still Saves Real Movement
 
 **Files:**
+
 - Modify: `src/features/location/__tests__/locationQualityFilter.test.ts`
 - Modify: `src/features/location/locationQualityFilter.ts`
 
@@ -146,23 +145,20 @@ git commit -m "fix(location): 停止中ドリフトの昇格を抑制"
 Add this test:
 
 ```ts
-  it('停止中に一方向へ自然に離脱した点列はacceptedへ昇格する', () => {
-    const stationary = [
-      point(35, 139, '2026-05-23T00:00:00.000Z'),
-      point(35.00002, 139, '2026-05-23T00:00:20.000Z'),
-      point(35.00001, 139.00001, '2026-05-23T00:00:40.000Z'),
-    ];
-    const first = advanceLocationQualityContext(
-      point(35.00028, 139, '2026-05-23T00:01:00.000Z'),
-      createLocationQualityContext(stationary),
-    );
-    const second = advanceLocationQualityContext(point(35.00042, 139, '2026-05-23T00:01:20.000Z'), first.context);
-    const third = advanceLocationQualityContext(point(35.00056, 139, '2026-05-23T00:01:40.000Z'), second.context);
-    const fourth = advanceLocationQualityContext(point(35.0007, 139, '2026-05-23T00:02:00.000Z'), third.context);
+it('停止中に一方向へ自然に離脱した点列はacceptedへ昇格する', () => {
+  const stationary = [
+    point(35, 139, '2026-05-23T00:00:00.000Z'),
+    point(35.00002, 139, '2026-05-23T00:00:20.000Z'),
+    point(35.00001, 139.00001, '2026-05-23T00:00:40.000Z'),
+  ];
+  const first = advanceLocationQualityContext(point(35.00028, 139, '2026-05-23T00:01:00.000Z'), createLocationQualityContext(stationary));
+  const second = advanceLocationQualityContext(point(35.00042, 139, '2026-05-23T00:01:20.000Z'), first.context);
+  const third = advanceLocationQualityContext(point(35.00056, 139, '2026-05-23T00:01:40.000Z'), second.context);
+  const fourth = advanceLocationQualityContext(point(35.0007, 139, '2026-05-23T00:02:00.000Z'), third.context);
 
-    expect(fourth.acceptedPoints).toHaveLength(4);
-    expect(fourth.context.provisionalPoints).toEqual([]);
-  });
+  expect(fourth.acceptedPoints).toHaveLength(4);
+  expect(fourth.context.provisionalPoints).toEqual([]);
+});
 ```
 
 - [ ] **Step 2: Verify the test fails if Task 1 is too strict**
@@ -201,6 +197,7 @@ git commit -m "test(location): 停止離脱の保存条件を固定"
 ## Task 3: Provisional Track Quality Uses Accuracy And Speed Stability
 
 **Files:**
+
 - Modify: `src/features/location/__tests__/locationQualityFilter.test.ts`
 - Modify: `src/features/location/locationQualityFilter.ts`
 
@@ -209,18 +206,18 @@ git commit -m "test(location): 停止離脱の保存条件を固定"
 Add this test:
 
 ```ts
-  it('accuracyが悪いprovisional点列はacceptedへ昇格しない', () => {
-    const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
-    const first = advanceLocationQualityContext(
-      point(35.01, 139, '2026-05-23T00:00:10.000Z', { accuracy: 45 }),
-      createLocationQualityContext(accepted),
-    );
-    const second = advanceLocationQualityContext(point(35.011, 139, '2026-05-23T00:00:20.000Z', { accuracy: 45 }), first.context);
-    const third = advanceLocationQualityContext(point(35.012, 139, '2026-05-23T00:00:30.000Z', { accuracy: 45 }), second.context);
+it('accuracyが悪いprovisional点列はacceptedへ昇格しない', () => {
+  const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
+  const first = advanceLocationQualityContext(
+    point(35.01, 139, '2026-05-23T00:00:10.000Z', { accuracy: 45 }),
+    createLocationQualityContext(accepted),
+  );
+  const second = advanceLocationQualityContext(point(35.011, 139, '2026-05-23T00:00:20.000Z', { accuracy: 45 }), first.context);
+  const third = advanceLocationQualityContext(point(35.012, 139, '2026-05-23T00:00:30.000Z', { accuracy: 45 }), second.context);
 
-    expect(third.acceptedPoints).toEqual([]);
-    expect(third.context.provisionalPoints).toHaveLength(3);
-  });
+  expect(third.acceptedPoints).toEqual([]);
+  expect(third.context.provisionalPoints).toHaveLength(3);
+});
 ```
 
 - [ ] **Step 2: Write failing unstable-speed provisional test**
@@ -228,15 +225,15 @@ Add this test:
 Add this test:
 
 ```ts
-  it('区間速度が大きくばらつくprovisional点列はacceptedへ昇格しない', () => {
-    const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
-    const first = advanceLocationQualityContext(point(35.01, 139, '2026-05-23T00:00:10.000Z'), createLocationQualityContext(accepted));
-    const second = advanceLocationQualityContext(point(35.01005, 139, '2026-05-23T00:00:20.000Z'), first.context);
-    const third = advanceLocationQualityContext(point(35.02, 139, '2026-05-23T00:00:30.000Z'), second.context);
+it('区間速度が大きくばらつくprovisional点列はacceptedへ昇格しない', () => {
+  const accepted = [point(35, 139, '2026-05-23T00:00:00.000Z')];
+  const first = advanceLocationQualityContext(point(35.01, 139, '2026-05-23T00:00:10.000Z'), createLocationQualityContext(accepted));
+  const second = advanceLocationQualityContext(point(35.01005, 139, '2026-05-23T00:00:20.000Z'), first.context);
+  const third = advanceLocationQualityContext(point(35.02, 139, '2026-05-23T00:00:30.000Z'), second.context);
 
-    expect(third.acceptedPoints).toEqual([]);
-    expect(third.context.provisionalPoints).toHaveLength(3);
-  });
+  expect(third.acceptedPoints).toEqual([]);
+  expect(third.context.provisionalPoints).toHaveLength(3);
+});
 ```
 
 - [ ] **Step 3: Verify both tests fail**
@@ -297,13 +294,13 @@ function hasStableSegmentSpeeds(points: NewLocationPoint[]): boolean {
 Change the count promotion block in `confirmProvisionalTrack`:
 
 ```ts
-  if (provisionalPoints.length < PROVISIONAL_CONFIRMATION_COUNT || !isReliableProvisionalTrack(provisionalPoints)) {
-    return {
-      decision,
-      acceptedPoints: [],
-      context: createLocationQualityContext(context.acceptedPoints, provisionalPoints),
-    };
-  }
+if (provisionalPoints.length < PROVISIONAL_CONFIRMATION_COUNT || !isReliableProvisionalTrack(provisionalPoints)) {
+  return {
+    decision,
+    acceptedPoints: [],
+    context: createLocationQualityContext(context.acceptedPoints, provisionalPoints),
+  };
+}
 ```
 
 - [ ] **Step 5: Verify tests pass**
@@ -326,6 +323,7 @@ git commit -m "fix(location): 保留軌道の昇格条件を強化"
 ## Task 4: Documentation Update
 
 **Files:**
+
 - Modify: `docs/data-storage.md`
 - Modify: `docs/map-rendering.md`
 
@@ -355,6 +353,7 @@ git commit -m "docs(gps): 停止ドリフト抑制仕様を更新"
 ## Task 5: Full Verification
 
 **Files:**
+
 - No file changes expected.
 
 - [ ] **Step 1: Run typecheck**

@@ -92,9 +92,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
         height: 80,
       },
     ]);
-    expect(MediaLibrary.getAssetsAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ mediaType: MediaLibrary.MediaType.photo }),
-    );
+    expect(MediaLibrary.getAssetsAsync).toHaveBeenCalledWith(expect.objectContaining({ mediaType: MediaLibrary.MediaType.photo }));
   });
 
   it('写真ライブラリが空の場合は空配列を返す', async () => {

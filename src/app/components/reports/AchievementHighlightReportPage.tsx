@@ -15,7 +15,13 @@ export type AchievementHighlightReportPageProps = {
 };
 
 /** 今月達成した実績を表示するレポートページ。 */
-export function AchievementHighlightReportPage({ report, achievements, pageCount, pageIndex, onShare }: AchievementHighlightReportPageProps) {
+export function AchievementHighlightReportPage({
+  report,
+  achievements,
+  pageCount,
+  pageIndex,
+  onShare,
+}: AchievementHighlightReportPageProps) {
   const monthlyAchievements = achievements.filter((item) => item.unlockedAt?.startsWith(report.label)).slice(0, 3);
 
   return (

@@ -22,7 +22,11 @@ describe('起動時のPlus状態取得', () => {
     const fallback = { isPlusActive: false, entitlementId: 'strollia_plus' };
     const active = { isPlusActive: true, entitlementId: 'strollia_plus' };
 
-    await expect(resolveInitialPremiumAccess(Promise.resolve(active), fallback, { timeoutMs: 3000 })).resolves.toEqual({ state: active, timedOut: false, confirmed: true });
+    await expect(resolveInitialPremiumAccess(Promise.resolve(active), fallback, { timeoutMs: 3000 })).resolves.toEqual({
+      state: active,
+      timedOut: false,
+      confirmed: true,
+    });
     expect(jest.getTimerCount()).toBe(0);
   });
 
@@ -30,7 +34,11 @@ describe('起動時のPlus状態取得', () => {
     jest.useFakeTimers();
     const fallback = { isPlusActive: false, entitlementId: 'strollia_plus' };
 
-    await expect(resolveInitialPremiumAccess(Promise.reject(new Error('取得失敗')), fallback, { timeoutMs: 3000 })).resolves.toEqual({ state: fallback, timedOut: false, confirmed: false });
+    await expect(resolveInitialPremiumAccess(Promise.reject(new Error('取得失敗')), fallback, { timeoutMs: 3000 })).resolves.toEqual({
+      state: fallback,
+      timedOut: false,
+      confirmed: false,
+    });
     expect(jest.getTimerCount()).toBe(0);
   });
 
@@ -38,11 +46,10 @@ describe('起動時のPlus状態取得', () => {
     jest.useFakeTimers();
     const fallback = { isPlusActive: false, entitlementId: 'strollia_plus' };
     const controller = new AbortController();
-    const resultPromise = resolveInitialPremiumAccess(
-      new Promise(() => undefined),
-      fallback,
-      { timeoutMs: 3000, signal: controller.signal },
-    );
+    const resultPromise = resolveInitialPremiumAccess(new Promise(() => undefined), fallback, {
+      timeoutMs: 3000,
+      signal: controller.signal,
+    });
 
     controller.abort();
 

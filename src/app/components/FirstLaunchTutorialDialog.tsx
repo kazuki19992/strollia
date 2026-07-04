@@ -157,7 +157,9 @@ export function FirstLaunchTutorialDialog({
       )}
       <View style={styles.firstLaunchTutorialDescriptionGroup}>
         {currentStep.paragraphs.map((paragraph) => (
-          <Text key={paragraph} style={styles.firstLaunchTutorialDescription}>{paragraph}</Text>
+          <Text key={paragraph} style={styles.firstLaunchTutorialDescription}>
+            {paragraph}
+          </Text>
         ))}
       </View>
       {currentStep.bulletItems && (
@@ -171,7 +173,12 @@ export function FirstLaunchTutorialDialog({
         </View>
       )}
       <View style={styles.firstLaunchTutorialActions}>
-        <Pressable accessibilityLabel={actionAccessibilityLabel} accessibilityRole="button" onPress={handlePrimaryAction} style={styles.firstLaunchTutorialButton}>
+        <Pressable
+          accessibilityLabel={actionAccessibilityLabel}
+          accessibilityRole="button"
+          onPress={handlePrimaryAction}
+          style={styles.firstLaunchTutorialButton}
+        >
           <Text style={styles.firstLaunchTutorialButtonText}>{actionLabel}</Text>
         </Pressable>
       </View>

@@ -194,10 +194,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
       });
     }
 
-    expect(Sharing.shareAsync).toHaveBeenCalledWith(
-      '/tmp/strollia-2026-05-31.gif',
-      expect.objectContaining({ mimeType: 'image/gif' }),
-    );
+    expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/strollia-2026-05-31.gif', expect.objectContaining({ mimeType: 'image/gif' }));
   });
 
   it('生成中にキャンセルすると共有せず区間選択へ戻る', async () => {
@@ -281,9 +278,6 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     }
 
     expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
-    expect(Sharing.shareAsync).toHaveBeenCalledWith(
-      '/tmp/strollia-2026-05-31.gif',
-      expect.objectContaining({ mimeType: 'image/gif' }),
-    );
+    expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/strollia-2026-05-31.gif', expect.objectContaining({ mimeType: 'image/gif' }));
   });
 });

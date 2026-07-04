@@ -43,8 +43,6 @@ export async function getBooleanSetting(key: string, fallback: boolean): Promise
   }
 }
 
-
-
 /** string設定を読み込み、未保存または壊れた値の場合はfallbackを返す。 */
 export async function getStringSetting(key: string, fallback: string): Promise<string> {
   const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', key);

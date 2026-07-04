@@ -18,6 +18,7 @@
 ## Task 1: Pre-File-Picker Achievement Notice
 
 **Files:**
+
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 - Modify: `src/app/App.tsx`
 
@@ -146,6 +147,7 @@ Expected: Commit succeeds with only the App implementation and App test changes.
 ## Task 2: Final Verification
 
 **Files:**
+
 - Inspect: `src/app/App.tsx`
 - Inspect: `src/app/__tests__/AppMapReturn.test.tsx`
 
@@ -176,17 +178,21 @@ Use this summary if opening a PR:
 
 ```markdown
 ## 変更内容
+
 - GPXインポート押下直後、ファイル選択前に実績反映範囲の注意Alertを表示
 - AppのGPXインポートフローで、注意Alertがファイル選択より先に出ることをテスト
 
 ## 理由
+
 - GPXインポートでは総移動距離や記録日数など一部の実績は判定される一方、訪問地域など実際の記録中に確認する実績には反映されないため
 
 ## 影響範囲
+
 - 設定画面からのGPXインポート開始時の表示のみ
 - GPXパース、保存、完了/失敗Alert、実績判定ロジックは変更なし
 
 ## 検証
+
 - `npm test -- src/app/__tests__/AppMapReturn.test.tsx --runInBand`
 - `npm test -- src/app/__tests__/AppMapReturn.test.tsx src/app/components/__tests__/SettingsScreen.test.tsx src/features/import/__tests__/gpxImportService.test.ts --runInBand`
 - `npm run typecheck`

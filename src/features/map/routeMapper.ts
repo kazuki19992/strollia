@@ -75,10 +75,7 @@ export function toRenderRouteCoordinates(
  * @param toleranceMeters - segment単位の簡略化許容誤差。
  * @returns 2点以上を持つ描画用ルート区間。
  */
-export function toRenderRouteSegments(
-  points: LocationPoint[],
-  toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS,
-): RouteSegment[] {
+export function toRenderRouteSegments(points: LocationPoint[], toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS): RouteSegment[] {
   return splitRoutePoints(points)
     .map((segment, index) => ({
       id: `${segment[0].recordedAt}-${index}`,
@@ -88,7 +85,10 @@ export function toRenderRouteSegments(
 }
 
 /** Douglas-Peucker法でルート形状を保ちながら座標数を減らす。 */
-export function simplifyRouteCoordinates(coordinates: RouteCoordinate[], toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS): RouteCoordinate[] {
+export function simplifyRouteCoordinates(
+  coordinates: RouteCoordinate[],
+  toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS,
+): RouteCoordinate[] {
   if (coordinates.length <= 2 || toleranceMeters <= 0) {
     return coordinates;
   }

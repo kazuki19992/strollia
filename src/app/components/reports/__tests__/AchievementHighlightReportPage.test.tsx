@@ -46,7 +46,13 @@ describe('実績ハイライトレポート AchievementHighlightReportPage', () 
 
     act(() => {
       renderer = ReactTestRenderer.create(
-        <AchievementHighlightReportPage report={report} achievements={[achievement('a', '3月実績', '2026-03-01T00:00:00.000Z')]} pageCount={4} pageIndex={0} onShare={jest.fn()} />,
+        <AchievementHighlightReportPage
+          report={report}
+          achievements={[achievement('a', '3月実績', '2026-03-01T00:00:00.000Z')]}
+          pageCount={4}
+          pageIndex={0}
+          onShare={jest.fn()}
+        />,
       );
     });
 

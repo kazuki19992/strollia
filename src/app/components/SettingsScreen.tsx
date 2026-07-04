@@ -6,15 +6,8 @@ import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Te
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
 
-import {
-  USER_LOCATION_ICON_OPTIONS,
-  UserLocationIconId,
-} from '../../features/customization/customizationOptions';
-import {
-  APP_COLOR_PRESETS,
-  AppColorPresetId,
-  getAppColorPreset,
-} from '../../features/customization/colorPresets';
+import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '../../features/customization/customizationOptions';
+import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '../../features/customization/colorPresets';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../features/premium/revenueCatAccess';
 import { SUBSCRIPTION_DISCLOSURE_TEXT } from '../../features/premium/subscriptionDisclosure';
 import { AppTheme } from '../../theme/theme';
@@ -186,7 +179,9 @@ export function SettingsScreen({
   onDeleteAllData,
 }: SettingsScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
-  const subscriptionDescription = isPlusActive ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。` : undefined;
+  const subscriptionDescription = isPlusActive
+    ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。`
+    : undefined;
 
   /** サポート用IDをクリップボードへコピーする。 */
   async function handleCopyAppUserId(): Promise<void> {
@@ -223,7 +218,9 @@ export function SettingsScreen({
           <View style={styles.settingsInlineRow}>
             <View style={styles.settingsInlineText}>
               <Text style={styles.formItemTitle}>常に画面をONにする</Text>
-              <Text style={styles.formItemDescription}>{'アプリが前面にある場合は画面をロックしません。\n記録の精度があがる可能性がありますが、消費電力が増えます。'}</Text>
+              <Text style={styles.formItemDescription}>
+                {'アプリが前面にある場合は画面をロックしません。\n記録の精度があがる可能性がありますが、消費電力が増えます。'}
+              </Text>
             </View>
             <Switch
               value={keepScreenAwake}
@@ -251,7 +248,9 @@ export function SettingsScreen({
           <View style={styles.settingsInlineRow}>
             <View style={styles.settingsInlineText}>
               <Text style={styles.formItemTitle}>マップ上に写真を表示する</Text>
-              <Text style={styles.formItemDescription}>{'位置情報が記録されている写真をマップ上に表示します。\n初回ON時に写真ライブラリのフルアクセスを要求します。'}</Text>
+              <Text style={styles.formItemDescription}>
+                {'位置情報が記録されている写真をマップ上に表示します。\n初回ON時に写真ライブラリのフルアクセスを要求します。'}
+              </Text>
             </View>
             <Switch
               value={showPhotosOnMap}
@@ -310,7 +309,9 @@ export function SettingsScreen({
               <Text style={styles.formItemTitle}>ステータス</Text>
               {subscriptionDescription ? <DescriptionText styles={styles}>{subscriptionDescription}</DescriptionText> : null}
             </View>
-            <Text style={[styles.settingsPlusBadge, !isPlusActive && styles.settingsFreeBadge]}>{isPlusActive ? 'Plusユーザー' : '一般ユーザー'}</Text>
+            <Text style={[styles.settingsPlusBadge, !isPlusActive && styles.settingsFreeBadge]}>
+              {isPlusActive ? 'Plusユーザー' : '一般ユーザー'}
+            </Text>
           </View>
           {isPlusActive && (
             <View style={styles.settingsSubscriptionActions}>
@@ -331,10 +332,7 @@ export function SettingsScreen({
                 styles={styles}
                 title="Strollia Plus(有料サブスクリプション)のごあんない"
               />
-              <PlusAdImage
-                accessibilityLabel="Strollia Plusの機能比較広告"
-                width="100%"
-              />
+              <PlusAdImage accessibilityLabel="Strollia Plusの機能比較広告" width="100%" />
               <DescriptionText styles={styles}>いつでも解約できます。</DescriptionText>
               <ActionPill
                 alignLeft
@@ -384,7 +382,9 @@ export function SettingsScreen({
 
         <ScreenSection styles={styles} title="データ管理">
           <InfoBlock
-            description={'GPSログファイルの一般的な規格のGPXファイルでエクスポート/インポートが可能です。\nインポート時にデータが競合する場合は既存データを優先します。'}
+            description={
+              'GPSログファイルの一般的な規格のGPXファイルでエクスポート/インポートが可能です。\nインポート時にデータが競合する場合は既存データを優先します。'
+            }
             styles={styles}
             title="GPXファイル"
           />
@@ -482,9 +482,7 @@ export function SettingsScreen({
               </View>
             </Pressable>
           ) : null}
-          <Text style={styles.supportUserIdLabel}>
-            {`バージョン ${appVersion ?? '不明'} (Build ${buildNumber ?? '不明'})`}
-          </Text>
+          <Text style={styles.supportUserIdLabel}>{`バージョン ${appVersion ?? '不明'} (Build ${buildNumber ?? '不明'})`}</Text>
         </ScreenSection>
       </ScrollView>
     </SafeAreaView>
@@ -493,7 +491,15 @@ export function SettingsScreen({
 
 type GpsStatusPanelProps = Pick<
   SettingsScreenProps,
-  'styles' | 'isRecording' | 'autoStartStatus' | 'hasRequiredPermission' | 'isWhileInUseOnlyMode' | 'shouldOpenSettingsForPermission' | 'onOpenLocationSettings' | 'onRequestLocationPermission' | 'onStartRecording'
+  | 'styles'
+  | 'isRecording'
+  | 'autoStartStatus'
+  | 'hasRequiredPermission'
+  | 'isWhileInUseOnlyMode'
+  | 'shouldOpenSettingsForPermission'
+  | 'onOpenLocationSettings'
+  | 'onRequestLocationPermission'
+  | 'onStartRecording'
 >;
 
 /** GPS権限と自動記録状態を、目立つパネルへ変換する。 */
@@ -512,7 +518,9 @@ function GpsStatusPanel({
     return (
       <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelWarning]}>
         <Text style={styles.settingsGpsPanelTitle}>アプリ起動中のみ記録</Text>
-        <Text style={styles.settingsGpsPanelText}>{'アプリを画面に表示しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。'}</Text>
+        <Text style={styles.settingsGpsPanelText}>
+          {'アプリを画面に表示しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。'}
+        </Text>
         <Pressable accessibilityRole="button" onPress={onOpenLocationSettings} style={styles.settingsGpsPanelButton}>
           <Text style={styles.settingsGpsPanelButtonWarningText}>設定を開く</Text>
         </Pressable>
@@ -561,23 +569,35 @@ function GpsStatusPanel({
   );
 }
 
-type UserLocationIconPickerProps = Pick<SettingsScreenProps, 'styles' | 'theme' | 'selectedUserLocationIconId' | 'onUpdateUserLocationIcon'> & {
+type UserLocationIconPickerProps = Pick<
+  SettingsScreenProps,
+  'styles' | 'theme' | 'selectedUserLocationIconId' | 'onUpdateUserLocationIcon'
+> & {
   /** Plus加入状態。 */
   isPlusActive: boolean;
 };
 
 /** 現在地アイコンの選択ボタン一覧を描画する。 */
-function UserLocationIconPicker({ styles, theme, selectedUserLocationIconId, isPlusActive, onUpdateUserLocationIcon }: UserLocationIconPickerProps) {
+function UserLocationIconPicker({
+  styles,
+  theme,
+  selectedUserLocationIconId,
+  isPlusActive,
+  onUpdateUserLocationIcon,
+}: UserLocationIconPickerProps) {
   return (
     <OptionGroup styles={styles} title="現在地アイコン (Strollia Plus)">
       {USER_LOCATION_ICON_OPTIONS.map((option) => {
         const isSelected = selectedUserLocationIconId === option.id;
         const isLocked = option.premium && !isPlusActive;
         const iconName: MaterialIconName =
-          option.id === 'compass' ? 'compass-outline'
-          : option.id === 'walker' ? 'walk'
-          : option.id === 'custom' ? 'image-outline'
-          : 'crosshairs-gps';
+          option.id === 'compass'
+            ? 'compass-outline'
+            : option.id === 'walker'
+              ? 'walk'
+              : option.id === 'custom'
+                ? 'image-outline'
+                : 'crosshairs-gps';
 
         return (
           <SelectionTile
@@ -613,7 +633,11 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
   const dotColor = theme.name === 'dark' ? selectedPreset.dark.primary : selectedPreset.light.primary;
 
   return (
-    <OptionGroup styles={styles} title="アプリカラー (Strollia Plus)" note="現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。">
+    <OptionGroup
+      styles={styles}
+      title="アプリカラー (Strollia Plus)"
+      note="現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。"
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="アプリカラーを選択"
@@ -646,9 +670,7 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
                 >
                   <View style={[styles.colorPresetDot, { backgroundColor: presetDotColor }]} />
                   <Text style={styles.colorPresetRowLabel}>{preset.label}</Text>
-                  {isSelected && (
-                    <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} />
-                  )}
+                  {isSelected && <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} />}
                 </Pressable>
               );
             })}

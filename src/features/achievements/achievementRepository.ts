@@ -45,7 +45,6 @@ export async function getAchievementProgress(): Promise<AchievementProgress> {
   };
 }
 
-
 /**
  * daily_logsの距離合計を計算し、NULLの日はGPSポイントからフォールバック計算する。
  *
@@ -184,7 +183,6 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
 
   return newlyUnlocked;
 }
-
 
 /** 開発中の動作確認用に解除済み実績と通知キューを削除する。 */
 export async function resetAchievementUnlocksForDevelopment(): Promise<void> {

@@ -51,6 +51,7 @@
 ### `DailyLogDetailScreen`
 
 Props 追加:
+
 - `premiumAccessState: PremiumAccessState`
 - `onOpenPremiumPaywall: () => void`
 
@@ -111,6 +112,7 @@ captureViewRef 外:
 ## 共有ボタン変更
 
 既存の `ShareButton` コンポーネントを `ActionPill` に置き換え:
+
 - `alignLeft={false}`（中央揃え）
 - `icon={<Feather name="share-2" />}`
 - `label="この日の記録を共有"`

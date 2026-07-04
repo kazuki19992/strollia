@@ -38,10 +38,7 @@ describe('表示状態判定 resolveAchievementDisplayStates', () => {
   });
 
   test('カテゴリごとに独立して next を決める', () => {
-    const items = [
-      item('d1', 'distance', 1001, null),
-      item('p1', 'prefecture', 4001, null),
-    ];
+    const items = [item('d1', 'distance', 1001, null), item('p1', 'prefecture', 4001, null)];
 
     const states = resolveAchievementDisplayStates(items);
 

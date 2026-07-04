@@ -28,7 +28,9 @@ describe('実績画面 AchievementListScreen の画面共通UI', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<AchievementListScreen items={[]} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />);
+      renderer = ReactTestRenderer.create(
+        <AchievementListScreen items={[]} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
+      );
     });
 
     const container = renderer.root.findByType(SafeAreaView);
@@ -62,18 +64,20 @@ function gridItem(id: string, sortOrder: number, unlockedAt: string | null): Ach
 }
 
 describe('実績グリッドの3状態表示', () => {
-  const items = [
-    gridItem('d1', 1001, '2026-01-01T00:00:00.000Z'),
-    gridItem('d2', 1002, null),
-    gridItem('d3', 1003, null),
-  ];
+  const items = [gridItem('d1', 1001, '2026-01-01T00:00:00.000Z'), gridItem('d2', 1002, null), gridItem('d3', 1003, null)];
 
   test('解除済みタップで onSelectAchievement を呼ぶ', () => {
     const onSelectAchievement = jest.fn();
     let renderer: any;
     act(() => {
       renderer = ReactTestRenderer.create(
-        <AchievementListScreen items={items} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={onSelectAchievement} />,
+        <AchievementListScreen
+          items={items}
+          styles={styles}
+          theme={lightTheme}
+          onBackToMap={jest.fn()}
+          onSelectAchievement={onSelectAchievement}
+        />,
       );
     });
 

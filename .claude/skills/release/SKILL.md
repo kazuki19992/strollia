@@ -24,6 +24,7 @@ description: Use when preparing a new Strollia release (version bump and develop
    ```
 
    - description は日本語で、含まれる変更の要約・影響範囲・検証結果を記載
+
 7. **マージ後**: `tag-release` スキルで main にタグを付ける。ストアビルドは `build-production` → `publish` スキルへ
 
 ## 注意

@@ -21,12 +21,14 @@ declare module 'gifenc' {
   export function quantize(
     rgba: Uint8Array | Uint8ClampedArray,
     maxColors: number,
-    options?: { format?: string; oneBitAlpha?: boolean | number; clearAlpha?: boolean; clearAlphaThreshold?: number; clearAlphaColor?: number },
+    options?: {
+      format?: string;
+      oneBitAlpha?: boolean | number;
+      clearAlpha?: boolean;
+      clearAlphaThreshold?: number;
+      clearAlphaColor?: number;
+    },
   ): number[][];
 
-  export function applyPalette(
-    rgba: Uint8Array | Uint8ClampedArray,
-    palette: number[][] | Uint8Array[],
-    format?: string,
-  ): Uint8Array;
+  export function applyPalette(rgba: Uint8Array | Uint8ClampedArray, palette: number[][] | Uint8Array[], format?: string): Uint8Array;
 }

@@ -32,6 +32,7 @@
 ### Task 1: expo-image-picker インストール
 
 **Files:**
+
 - Modify: `package.json`（自動）
 
 - [ ] **Step 1: インストール**
@@ -62,6 +63,7 @@ git commit -m "chore: expo-image-pickerをインストールする"
 ### Task 2: アプリカラープリセット定義
 
 **Files:**
+
 - Create: `src/features/customization/colorPresets.ts`
 - Test: `src/features/customization/__tests__/colorPresets.test.ts`
 
@@ -70,11 +72,7 @@ git commit -m "chore: expo-image-pickerをインストールする"
 `src/features/customization/__tests__/colorPresets.test.ts` を新規作成:
 
 ```typescript
-import {
-  APP_COLOR_PRESETS,
-  DEFAULT_APP_COLOR_PRESET_ID,
-  getAppColorPreset,
-} from '../colorPresets';
+import { APP_COLOR_PRESETS, DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '../colorPresets';
 
 describe('アプリカラープリセット colorPresets', () => {
   it('デフォルトIDはまっちゃ', () => {
@@ -123,8 +121,7 @@ Expected: FAIL（`colorPresets` モジュール未存在）
 ```typescript
 /** アプリカラープリセットのID。 */
 export type AppColorPresetId =
-  | 'matcha' | 'wakaba' | 'himawari' | 'mikan' | 'yuuyake' | 'tomato'
-  | 'sakura' | 'tasogare' | 'hoshizora' | 'umi' | 'ramune' | 'asatsuyu';
+  'matcha' | 'wakaba' | 'himawari' | 'mikan' | 'yuuyake' | 'tomato' | 'sakura' | 'tasogare' | 'hoshizora' | 'umi' | 'ramune' | 'asatsuyu';
 
 /** ライト・ダーク両モード用のprimary系色セット。 */
 export type AppColorPresetColors = {
@@ -150,73 +147,73 @@ export const APP_COLOR_PRESETS: AppColorPreset[] = [
     id: 'matcha',
     label: 'まっちゃ',
     light: { primary: '#1f7a5c', primaryText: '#fffdf8', mapLine: '#1f7a5c' },
-    dark:  { primary: '#73c7a2', primaryText: '#102018', mapLine: '#73c7a2' },
+    dark: { primary: '#73c7a2', primaryText: '#102018', mapLine: '#73c7a2' },
   },
   {
     id: 'wakaba',
     label: 'わかば',
     light: { primary: '#5a8a1a', primaryText: '#ffffff', mapLine: '#5a8a1a' },
-    dark:  { primary: '#9fd45a', primaryText: '#0f2000', mapLine: '#9fd45a' },
+    dark: { primary: '#9fd45a', primaryText: '#0f2000', mapLine: '#9fd45a' },
   },
   {
     id: 'himawari',
     label: 'ひまわり',
     light: { primary: '#b08000', primaryText: '#ffffff', mapLine: '#b08000' },
-    dark:  { primary: '#f0c040', primaryText: '#1a1000', mapLine: '#f0c040' },
+    dark: { primary: '#f0c040', primaryText: '#1a1000', mapLine: '#f0c040' },
   },
   {
     id: 'mikan',
     label: 'みかん',
     light: { primary: '#c06010', primaryText: '#ffffff', mapLine: '#c06010' },
-    dark:  { primary: '#f08840', primaryText: '#1a0800', mapLine: '#f08840' },
+    dark: { primary: '#f08840', primaryText: '#1a0800', mapLine: '#f08840' },
   },
   {
     id: 'yuuyake',
     label: 'ゆうやけ',
     light: { primary: '#c04020', primaryText: '#ffffff', mapLine: '#c04020' },
-    dark:  { primary: '#f07050', primaryText: '#1a0500', mapLine: '#f07050' },
+    dark: { primary: '#f07050', primaryText: '#1a0500', mapLine: '#f07050' },
   },
   {
     id: 'tomato',
     label: 'トマト',
     light: { primary: '#b02020', primaryText: '#ffffff', mapLine: '#b02020' },
-    dark:  { primary: '#f06060', primaryText: '#1a0000', mapLine: '#f06060' },
+    dark: { primary: '#f06060', primaryText: '#1a0000', mapLine: '#f06060' },
   },
   {
     id: 'sakura',
     label: 'さくら',
     light: { primary: '#b04070', primaryText: '#ffffff', mapLine: '#b04070' },
-    dark:  { primary: '#f090b0', primaryText: '#1a0010', mapLine: '#f090b0' },
+    dark: { primary: '#f090b0', primaryText: '#1a0010', mapLine: '#f090b0' },
   },
   {
     id: 'tasogare',
     label: 'たそがれ',
     light: { primary: '#6030a0', primaryText: '#ffffff', mapLine: '#6030a0' },
-    dark:  { primary: '#a870e0', primaryText: '#0a0018', mapLine: '#a870e0' },
+    dark: { primary: '#a870e0', primaryText: '#0a0018', mapLine: '#a870e0' },
   },
   {
     id: 'hoshizora',
     label: 'ほしぞら',
     light: { primary: '#3040a0', primaryText: '#ffffff', mapLine: '#3040a0' },
-    dark:  { primary: '#7090e0', primaryText: '#00001a', mapLine: '#7090e0' },
+    dark: { primary: '#7090e0', primaryText: '#00001a', mapLine: '#7090e0' },
   },
   {
     id: 'umi',
     label: 'うみ',
     light: { primary: '#1060a0', primaryText: '#ffffff', mapLine: '#1060a0' },
-    dark:  { primary: '#50a0e0', primaryText: '#00101a', mapLine: '#50a0e0' },
+    dark: { primary: '#50a0e0', primaryText: '#00101a', mapLine: '#50a0e0' },
   },
   {
     id: 'ramune',
     label: 'ラムネ',
     light: { primary: '#008090', primaryText: '#ffffff', mapLine: '#008090' },
-    dark:  { primary: '#40c0d0', primaryText: '#001a1a', mapLine: '#40c0d0' },
+    dark: { primary: '#40c0d0', primaryText: '#001a1a', mapLine: '#40c0d0' },
   },
   {
     id: 'asatsuyu',
     label: 'あさつゆ',
     light: { primary: '#007060', primaryText: '#ffffff', mapLine: '#007060' },
-    dark:  { primary: '#50b0a0', primaryText: '#001a16', mapLine: '#50b0a0' },
+    dark: { primary: '#50b0a0', primaryText: '#001a16', mapLine: '#50b0a0' },
   },
 ];
 
@@ -261,6 +258,7 @@ git commit -m "feat(color): アプリカラープリセット定義を追加す�
 ### Task 3: theme.ts に applyColorPreset を追加
 
 **Files:**
+
 - Modify: `src/theme/theme.ts`
 - Test: `src/theme/__tests__/theme.test.ts`
 
@@ -359,6 +357,7 @@ git commit -m "feat(theme): applyColorPresetでカラープリセットをテー
 ### Task 4: customizationOptions に 'custom' を追加
 
 **Files:**
+
 - Modify: `src/features/customization/customizationOptions.ts`
 - Test: `src/features/customization/__tests__/customizationOptions.test.ts`
 
@@ -367,20 +366,20 @@ git commit -m "feat(theme): applyColorPresetでカラープリセットをテー
 `src/features/customization/__tests__/customizationOptions.test.ts` の末尾に追加:
 
 ```typescript
-  it('現在地アイコンIDにcustomを含む', () => {
-    const allIds = USER_LOCATION_ICON_OPTIONS.map((o) => o.id);
-    expect(allIds).toContain('custom');
-  });
+it('現在地アイコンIDにcustomを含む', () => {
+  const allIds = USER_LOCATION_ICON_OPTIONS.map((o) => o.id);
+  expect(allIds).toContain('custom');
+});
 
-  it('customはPlus限定である', () => {
-    const custom = getUserLocationIconOption('custom');
-    expect(custom.premium).toBe(true);
-  });
+it('customはPlus限定である', () => {
+  const custom = getUserLocationIconOption('custom');
+  expect(custom.premium).toBe(true);
+});
 
-  it('Plus有効時の利用可能アイコンにcustomを含む', () => {
-    const available = getAvailableCustomizationOptions(USER_LOCATION_ICON_OPTIONS, true);
-    expect(available.map((o) => o.id)).toContain('custom');
-  });
+it('Plus有効時の利用可能アイコンにcustomを含む', () => {
+  const available = getAvailableCustomizationOptions(USER_LOCATION_ICON_OPTIONS, true);
+  expect(available.map((o) => o.id)).toContain('custom');
+});
 ```
 
 - [ ] **Step 2: テスト実行（FAIL確認）**
@@ -462,6 +461,7 @@ git commit -m "feat(icon): 現在地アイコンIDにcustomを追加する"
 ### Task 5: customizationResolver を URI 対応に拡張
 
 **Files:**
+
 - Modify: `src/features/customization/customizationResolver.ts`
 - Test: `src/features/customization/__tests__/customizationResolver.test.ts`
 
@@ -470,45 +470,45 @@ git commit -m "feat(icon): 現在地アイコンIDにcustomを追加する"
 `src/features/customization/__tests__/customizationResolver.test.ts` の既存テストはそのまま残し、末尾に追加:
 
 ```typescript
-  it('customかつURIありPlusActiveのとき customImageUri を返す', () => {
-    expect(resolveUserLocationIcon('custom', true, 'file:///tmp/icon.jpg')).toEqual({
-      useNativeUserLocation: false,
-      customIconId: null,
-      customImageUri: 'file:///tmp/icon.jpg',
-    });
+it('customかつURIありPlusActiveのとき customImageUri を返す', () => {
+  expect(resolveUserLocationIcon('custom', true, 'file:///tmp/icon.jpg')).toEqual({
+    useNativeUserLocation: false,
+    customIconId: null,
+    customImageUri: 'file:///tmp/icon.jpg',
   });
+});
 
-  it('customかつURIなしのときOS標準へフォールバックする', () => {
-    expect(resolveUserLocationIcon('custom', true, null)).toEqual({
-      useNativeUserLocation: true,
-      customIconId: null,
-      customImageUri: null,
-    });
+it('customかつURIなしのときOS標準へフォールバックする', () => {
+  expect(resolveUserLocationIcon('custom', true, null)).toEqual({
+    useNativeUserLocation: true,
+    customIconId: null,
+    customImageUri: null,
   });
+});
 
-  it('customかつPlus非加入のときOS標準へフォールバックする', () => {
-    expect(resolveUserLocationIcon('custom', false, 'file:///tmp/icon.jpg')).toEqual({
-      useNativeUserLocation: true,
-      customIconId: null,
-      customImageUri: null,
-    });
+it('customかつPlus非加入のときOS標準へフォールバックする', () => {
+  expect(resolveUserLocationIcon('custom', false, 'file:///tmp/icon.jpg')).toEqual({
+    useNativeUserLocation: true,
+    customIconId: null,
+    customImageUri: null,
   });
+});
 
-  it('walkerかつPlus有効のとき customIconId を返す（customImageUriはnull）', () => {
-    expect(resolveUserLocationIcon('walker', true, null)).toEqual({
-      useNativeUserLocation: false,
-      customIconId: 'walker',
-      customImageUri: null,
-    });
+it('walkerかつPlus有効のとき customIconId を返す（customImageUriはnull）', () => {
+  expect(resolveUserLocationIcon('walker', true, null)).toEqual({
+    useNativeUserLocation: false,
+    customIconId: 'walker',
+    customImageUri: null,
   });
+});
 
-  it('無課金時の現在地アイコンはOS標準（既存テストをcustomImageUri対応で更新）', () => {
-    expect(resolveUserLocationIcon('walker', false, null)).toEqual({
-      useNativeUserLocation: true,
-      customIconId: null,
-      customImageUri: null,
-    });
+it('無課金時の現在地アイコンはOS標準（既存テストをcustomImageUri対応で更新）', () => {
+  expect(resolveUserLocationIcon('walker', false, null)).toEqual({
+    useNativeUserLocation: true,
+    customIconId: null,
+    customImageUri: null,
   });
+});
 ```
 
 既存の2テストは `customImageUri: null` が含まれないため削除し上記で置き換える。
@@ -526,11 +526,7 @@ Expected: FAIL（`customImageUri` プロパティ未存在・第3引数未対応
 `src/features/customization/customizationResolver.ts` を以下に置き換え:
 
 ```typescript
-import {
-  DEFAULT_USER_LOCATION_ICON_ID,
-  getUserLocationIconOption,
-  UserLocationIconId,
-} from './customizationOptions';
+import { DEFAULT_USER_LOCATION_ICON_ID, getUserLocationIconOption, UserLocationIconId } from './customizationOptions';
 
 /** 現在地アイコン描画方式の判定結果。 */
 export type ResolvedUserLocationIcon = {
@@ -596,6 +592,7 @@ git commit -m "feat(icon): resolveUserLocationIconをカスタム画像URI対応
 ### Task 6: appStyles に customUserLocationMarkerImage を追加
 
 **Files:**
+
 - Modify: `src/app/appStyles.ts`
 
 このタスクはスタイル追加のみ。TDD として「スタイルが存在する」アサーションを書く。
@@ -665,6 +662,7 @@ git commit -m "style(icon): カスタム画像アイコン用の円スタイル�
 ### Task 7: MapScreen でカスタム画像を描画
 
 **Files:**
+
 - Modify: `src/app/components/MapScreen.tsx`
 
 `ResolvedUserLocationIcon` に `customImageUri` が加わったため、MapScreen の Marker 描画を更新する。
@@ -680,27 +678,29 @@ import { Image, SafeAreaView, ... } from 'react-native';
 Marker 描画ブロック（`!userLocationIcon.useNativeUserLocation && userCoordinate` の条件）を以下に置き換え:
 
 ```tsx
-        {!userLocationIcon.useNativeUserLocation && userCoordinate && (
-          <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
-            {userLocationIcon.customImageUri ? (
-              <Image
-                source={{ uri: userLocationIcon.customImageUri }}
-                style={styles.customUserLocationMarkerImage}
-                onError={() => {
-                  // URI読み込み失敗時はApp.tsx側でフォールバック処理を行う
-                }}
-              />
-            ) : (
-              <View style={styles.customUserLocationMarker}>
-                <MaterialCommunityIcons
-                  name={userLocationIcon.customIconId === 'compass' ? 'compass' : 'walk'}
-                  size={22}
-                  color={theme.colors.primaryText}
-                />
-              </View>
-            )}
-          </Marker>
-        )}
+{
+  !userLocationIcon.useNativeUserLocation && userCoordinate && (
+    <Marker coordinate={userCoordinate} anchor={{ x: 0.5, y: 0.5 }}>
+      {userLocationIcon.customImageUri ? (
+        <Image
+          source={{ uri: userLocationIcon.customImageUri }}
+          style={styles.customUserLocationMarkerImage}
+          onError={() => {
+            // URI読み込み失敗時はApp.tsx側でフォールバック処理を行う
+          }}
+        />
+      ) : (
+        <View style={styles.customUserLocationMarker}>
+          <MaterialCommunityIcons
+            name={userLocationIcon.customIconId === 'compass' ? 'compass' : 'walk'}
+            size={22}
+            color={theme.colors.primaryText}
+          />
+        </View>
+      )}
+    </Marker>
+  );
+}
 ```
 
 - [ ] **Step 2: MapScreen テストに customImageUri・onError のテストを追加**
@@ -769,9 +769,11 @@ git commit -m "feat(icon): MapScreenでカスタム画像アイコンを円表�
 ### Task 8: App.tsx にアプリカラーとカスタムアイコンのstate・ロジックを追加
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 
 このタスクで追加・変更する内容：
+
 1. `selectedAppColorPresetId` state と設定読込・保存
 2. `customIconImageUri` state と設定読込
 3. `userLocationIcon` useMemo を第3引数付きに更新
@@ -787,7 +789,7 @@ git commit -m "feat(icon): MapScreenでカスタム画像アイコンを円表�
 ```typescript
 import * as ImagePicker from 'expo-image-picker';
 import {
-  APP_COLOR_PRESET_SETTING_KEY,  // 後述の定数
+  APP_COLOR_PRESET_SETTING_KEY, // 後述の定数
   AppColorPresetId,
   DEFAULT_APP_COLOR_PRESET_ID,
   getAppColorPreset,
@@ -806,17 +808,17 @@ const CUSTOM_ICON_IMAGE_URI_SETTING_KEY = 'customIconImageUri';
 **state 追加（`selectedUserLocationIconId` state の近くに）:**
 
 ```typescript
-  const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
-  const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
+const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
+const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
 ```
 
 **`userLocationIcon` useMemo を更新（第3引数追加）:**
 
 ```typescript
-  const userLocationIcon = useMemo(
-    () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive, customIconImageUri),
-    [premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
-  );
+const userLocationIcon = useMemo(
+  () => resolveUserLocationIcon(selectedUserLocationIconId, premiumAccessState.isPlusActive, customIconImageUri),
+  [premiumAccessState.isPlusActive, selectedUserLocationIconId, customIconImageUri],
+);
 ```
 
 **`theme` useMemo を更新（`src/app/App.tsx:152` 付近）:**
@@ -824,127 +826,128 @@ const CUSTOM_ICON_IMAGE_URI_SETTING_KEY = 'customIconImageUri';
 既存コード（`src/app/App.tsx:152`）:
 
 ```typescript
-  const colorScheme = useColorScheme();
-  const theme = useMemo(() => getAppTheme(colorScheme), [colorScheme]);
+const colorScheme = useColorScheme();
+const theme = useMemo(() => getAppTheme(colorScheme), [colorScheme]);
 ```
 
 を以下に置き換える:
 
 ```typescript
-  const colorScheme = useColorScheme();
-  const theme = useMemo(() => {
-    const rawTheme = getAppTheme(colorScheme);
-    const preset = premiumAccessState.isPlusActive
-      ? getAppColorPreset(selectedAppColorPresetId)
-      : getAppColorPreset(DEFAULT_APP_COLOR_PRESET_ID);
-    return applyColorPreset(rawTheme, preset);
-  }, [colorScheme, premiumAccessState.isPlusActive, selectedAppColorPresetId]);
+const colorScheme = useColorScheme();
+const theme = useMemo(() => {
+  const rawTheme = getAppTheme(colorScheme);
+  const preset = premiumAccessState.isPlusActive
+    ? getAppColorPreset(selectedAppColorPresetId)
+    : getAppColorPreset(DEFAULT_APP_COLOR_PRESET_ID);
+  return applyColorPreset(rawTheme, preset);
+}, [colorScheme, premiumAccessState.isPlusActive, selectedAppColorPresetId]);
 ```
 
 **設定読み込みに追加（`Promise.all` で読み込んでいる箇所）:**
 
 ```typescript
-        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon, savedAppColorPresetId, savedCustomIconImageUri] = await Promise.all([
-          getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
-          getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
-          getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
-          getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
-          getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
-        ]);
-        setKeepScreenAwake(savedKeepScreenAwake);
-        setShowPhotosOnMap(savedShowPhotosOnMap);
-        setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
-        setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
-        setCustomIconImageUri(savedCustomIconImageUri || null);
+const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon, savedAppColorPresetId, savedCustomIconImageUri] =
+  await Promise.all([
+    getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
+    getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
+    getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
+    getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
+    getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
+  ]);
+setKeepScreenAwake(savedKeepScreenAwake);
+setShowPhotosOnMap(savedShowPhotosOnMap);
+setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
+setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
+setCustomIconImageUri(savedCustomIconImageUri || null);
 ```
 
 **`updateAppColorPreset` 関数を追加（`updateUserLocationIcon` の近くに）:**
 
 ```typescript
-  /**
-   * アプリカラープリセットを保存して即時反映する。
-   *
-   * @param presetId - 保存するプリセットID。
-   */
-  function updateAppColorPreset(presetId: AppColorPresetId): void {
-    triggerSelectionHaptic();
-    setSelectedAppColorPresetId(presetId);
-    setSetting(APP_COLOR_PRESET_SETTING_KEY, presetId).catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'アプリカラーを保存できませんでした。');
-    });
-  }
+/**
+ * アプリカラープリセットを保存して即時反映する。
+ *
+ * @param presetId - 保存するプリセットID。
+ */
+function updateAppColorPreset(presetId: AppColorPresetId): void {
+  triggerSelectionHaptic();
+  setSelectedAppColorPresetId(presetId);
+  setSetting(APP_COLOR_PRESET_SETTING_KEY, presetId).catch((error: unknown) => {
+    Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'アプリカラーを保存できませんでした。');
+  });
+}
 ```
 
 **`pickCustomIcon` 関数を追加（`updateUserLocationIcon` の近くに）:**
 
 ```typescript
-  /**
-   * フォトライブラリからカスタムアイコン画像を選択して保存する。
-   * システムの正方形クロップUIを使用する。
-   */
-  async function pickCustomIcon(): Promise<void> {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+/**
+ * フォトライブラリからカスタムアイコン画像を選択して保存する。
+ * システムの正方形クロップUIを使用する。
+ */
+async function pickCustomIcon(): Promise<void> {
+  const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permissionResult.granted) {
-      Alert.alert('権限が必要です', 'カスタムアイコンを設定するには写真へのアクセス権限が必要です。');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (result.canceled) {
-      return;
-    }
-
-    const uri = result.assets[0].uri;
-    setCustomIconImageUri(uri);
-    setSelectedUserLocationIconId('custom');
-    setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, uri).catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。');
-    });
-    setSetting(USER_LOCATION_ICON_SETTING_KEY, 'custom').catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
-    });
-    Alert.alert('カスタムアイコン', '写真をアルバムから削除するとOS標準に戻ります。');
+  if (!permissionResult.granted) {
+    Alert.alert('権限が必要です', 'カスタムアイコンを設定するには写真へのアクセス権限が必要です。');
+    return;
   }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: 'images',
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 1,
+  });
+
+  if (result.canceled) {
+    return;
+  }
+
+  const uri = result.assets[0].uri;
+  setCustomIconImageUri(uri);
+  setSelectedUserLocationIconId('custom');
+  setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, uri).catch((error: unknown) => {
+    Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。');
+  });
+  setSetting(USER_LOCATION_ICON_SETTING_KEY, 'custom').catch((error: unknown) => {
+    Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
+  });
+  Alert.alert('カスタムアイコン', '写真をアルバムから削除するとOS標準に戻ります。');
+}
 ```
 
 **`updateUserLocationIcon` に custom タップ時の分岐を追加:**
 
 ```typescript
-  function updateUserLocationIcon(iconId: UserLocationIconId): void {
-    const option = getUserLocationIconOption(iconId);
+function updateUserLocationIcon(iconId: UserLocationIconId): void {
+  const option = getUserLocationIconOption(iconId);
 
-    if (option.premium && !premiumAccessState.isPlusActive) {
-      showPremiumLockedMessage(option.label);
-      return;
-    }
-
-    if (iconId === 'custom') {
-      pickCustomIcon().catch((error: unknown) => {
-        console.warn('pickCustomIcon failed:', error);
-      });
-      return;
-    }
-
-    triggerSelectionHaptic();
-    setSelectedUserLocationIconId(option.id);
-    setSetting(USER_LOCATION_ICON_SETTING_KEY, option.id).catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
-    });
+  if (option.premium && !premiumAccessState.isPlusActive) {
+    showPremiumLockedMessage(option.label);
+    return;
   }
+
+  if (iconId === 'custom') {
+    pickCustomIcon().catch((error: unknown) => {
+      console.warn('pickCustomIcon failed:', error);
+    });
+    return;
+  }
+
+  triggerSelectionHaptic();
+  setSelectedUserLocationIconId(option.id);
+  setSetting(USER_LOCATION_ICON_SETTING_KEY, option.id).catch((error: unknown) => {
+    Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
+  });
+}
 ```
 
 **`SettingsScreen` props に追加（JSX の `<SettingsScreen` に）:**
 
 ```tsx
-                        selectedAppColorPresetId={selectedAppColorPresetId}
-                        onUpdateAppColorPreset={updateAppColorPreset}
+selectedAppColorPresetId = { selectedAppColorPresetId };
+onUpdateAppColorPreset = { updateAppColorPreset };
 ```
 
 - [ ] **Step 2: 全テスト実行（型エラーがないか確認）**
@@ -967,6 +970,7 @@ git commit -m "feat: アプリカラーとカスタムアイコンのstate・ロ
 ### Task 9: SettingsScreen にアプリカラーPicker・カスタムアイコンタイルを追加
 
 **Files:**
+
 - Modify: `src/app/components/SettingsScreen.tsx`
 - Test: `src/app/components/__tests__/SettingsScreen.test.tsx`
 
@@ -1056,23 +1060,20 @@ import {
 **`UserLocationIconPicker` の直後に `AppColorPicker` を追加（`isPlusActive` 条件ブロック内）:**
 
 ```tsx
-          {isPlusActive ? (
-            <>
-              <UserLocationIconPicker
-                isPlusActive={isPlusActive}
-                selectedUserLocationIconId={selectedUserLocationIconId}
-                styles={styles}
-                theme={theme}
-                onUpdateUserLocationIcon={onUpdateUserLocationIcon}
-              />
-              <AppColorPicker
-                styles={styles}
-                theme={theme}
-                selectedPresetId={selectedAppColorPresetId}
-                onUpdatePreset={onUpdateAppColorPreset}
-              />
-            </>
-          ) : null}
+{
+  isPlusActive ? (
+    <>
+      <UserLocationIconPicker
+        isPlusActive={isPlusActive}
+        selectedUserLocationIconId={selectedUserLocationIconId}
+        styles={styles}
+        theme={theme}
+        onUpdateUserLocationIcon={onUpdateUserLocationIcon}
+      />
+      <AppColorPicker styles={styles} theme={theme} selectedPresetId={selectedAppColorPresetId} onUpdatePreset={onUpdateAppColorPreset} />
+    </>
+  ) : null;
+}
 ```
 
 **`AppColorPicker` コンポーネントを `UserLocationIconPicker` の後に追加（ファイル末尾近く）:**
@@ -1125,9 +1126,7 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
                 >
                   <View style={[styles.colorPresetDot, { backgroundColor: presetDotColor }]} />
                   <Text style={styles.colorPresetRowLabel}>{preset.label}</Text>
-                  {isSelected && (
-                    <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} />
-                  )}
+                  {isSelected && <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} />}
                 </Pressable>
               );
             })}
@@ -1198,11 +1197,14 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
 `UserLocationIconPicker` 内の `iconName` 計算を更新:
 
 ```typescript
-        const iconName: MaterialIconName =
-          option.id === 'compass' ? 'compass-outline'
-          : option.id === 'walker' ? 'walk'
-          : option.id === 'custom' ? 'image-outline'
-          : 'crosshairs-gps';
+const iconName: MaterialIconName =
+  option.id === 'compass'
+    ? 'compass-outline'
+    : option.id === 'walker'
+      ? 'walk'
+      : option.id === 'custom'
+        ? 'image-outline'
+        : 'crosshairs-gps';
 ```
 
 - [ ] **Step 5: テスト実行（PASS確認）**
@@ -1233,6 +1235,7 @@ git commit -m "feat(settings): アプリカラーPickerとカスタムアイコ�
 ### Task 10: AppMapReturn テストを新 props 対応に更新
 
 **Files:**
+
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 
 App.tsx の `SettingsScreen` に新 props が追加されたため、モックが型エラーになっている場合を修正する（モックは `() => null` なので実際は問題ないが、SettingsScreen mock の型定義が strict な場合に備える）。

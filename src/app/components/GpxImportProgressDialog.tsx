@@ -20,13 +20,7 @@ export type GpxImportProgressDialogProps = {
  */
 export function GpxImportProgressDialog({ visible, styles }: GpxImportProgressDialogProps) {
   return (
-    <Dialog
-      visible={visible}
-      dismissible={false}
-      swipeToClose={false}
-      styles={styles}
-      onClose={() => undefined}
-    >
+    <Dialog visible={visible} dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
       <View style={styles.gifRangeContent}>
         <Text style={styles.gifProgressTitle}>GPXを取り込んでいます…</Text>
         <Text style={styles.gifProgressBody}>取り込みが終わるまで少しお待ちください。画面を閉じないでください。</Text>

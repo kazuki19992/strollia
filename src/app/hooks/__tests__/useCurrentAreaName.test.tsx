@@ -52,7 +52,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   });
 
   test('逆ジオコーディング結果から下部ダッシュボード用の地域名を返す', async () => {
-    const labels: Array<{ primary: string; secondary: string | null }> = [];
+    const labels: { primary: string; secondary: string | null }[] = [];
     (Location.reverseGeocodeAsync as jest.Mock).mockResolvedValue([{ city: '千代田区', district: '神田' }]);
 
     act(() => {
@@ -81,7 +81,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   });
 
   test('起動直後に地域ラベル取得に失敗した場合は取得中…を表示する', async () => {
-    const labels: Array<{ primary: string; secondary: string | null }> = [];
+    const labels: { primary: string; secondary: string | null }[] = [];
     (Location.reverseGeocodeAsync as jest.Mock).mockRejectedValue(new Error('reverse geocode failed'));
 
     act(() => {
@@ -95,7 +95,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   });
 
   test('成功後に地域ラベル取得に失敗した場合は直前の地名を継続表示する', async () => {
-    const labels: Array<{ primary: string; secondary: string | null }> = [];
+    const labels: { primary: string; secondary: string | null }[] = [];
     (Location.reverseGeocodeAsync as jest.Mock)
       .mockResolvedValueOnce([{ city: '千代田区', district: '神田' }])
       .mockRejectedValueOnce(new Error('reverse geocode failed'));
@@ -104,18 +104,14 @@ describe('現在地地域名hook useCurrentAreaName', () => {
     const onAreaLabel = (label: { primary: string; secondary: string | null }) => labels.push(label);
 
     act(() => {
-      renderer = ReactTestRenderer.create(
-        <LabelHookProbe onAreaLabel={onAreaLabel} userCoordinate={{ latitude: 35, longitude: 139 }} />,
-      );
+      renderer = ReactTestRenderer.create(<LabelHookProbe onAreaLabel={onAreaLabel} userCoordinate={{ latitude: 35, longitude: 139 }} />);
     });
     await act(async () => {
       await Promise.resolve();
     });
 
     act(() => {
-      renderer.update(
-        <LabelHookProbe onAreaLabel={onAreaLabel} userCoordinate={{ latitude: 36, longitude: 140 }} />,
-      );
+      renderer.update(<LabelHookProbe onAreaLabel={onAreaLabel} userCoordinate={{ latitude: 36, longitude: 140 }} />);
     });
     await act(async () => {
       await Promise.resolve();
@@ -127,7 +123,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   });
 
   test('アプリが非アクティブなら地域ラベルの逆ジオコーディングを呼ばない', () => {
-    const labels: Array<{ primary: string; secondary: string | null }> = [];
+    const labels: { primary: string; secondary: string | null }[] = [];
 
     act(() => {
       ReactTestRenderer.create(<LabelHookProbe appState="background" onAreaLabel={(label) => labels.push(label)} />);

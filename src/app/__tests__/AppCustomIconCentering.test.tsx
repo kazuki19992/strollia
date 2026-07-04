@@ -59,11 +59,16 @@ jest.mock('../components/MapScreen', () => ({
 
     return (
       <>
-        <Pressable accessibilityLabel="現在地更新" onPress={() => props.onUserLocationChange({
-          nativeEvent: {
-            coordinate: { latitude: 35.681236, longitude: 139.767125, speed: 1 },
-          },
-        })}>
+        <Pressable
+          accessibilityLabel="現在地更新"
+          onPress={() =>
+            props.onUserLocationChange({
+              nativeEvent: {
+                coordinate: { latitude: 35.681236, longitude: 139.767125, speed: 1 },
+              },
+            })
+          }
+        >
           <Text>現在地更新</Text>
         </Pressable>
         <Pressable accessibilityLabel="地図準備完了" onPress={() => props.onMapReady?.()}>

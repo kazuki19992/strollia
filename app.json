@@ -16,9 +16,7 @@
       "supportsTablet": false,
       "infoPlist": {
         "CFBundleDevelopmentRegion": "ja",
-        "CFBundleLocalizations": [
-          "ja"
-        ],
+        "CFBundleLocalizations": ["ja"],
         "NSLocationWhenInUseUsageDescription": "すとろりあは、移動ルートを記録するために現在地を使用します。",
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "すとろりあは、画面を閉じている間も移動ルートを記録するために現在地を使用します。",
@@ -123,9 +121,7 @@
         {
           "photosPermission": "すとろりあは、ジオタグ付き写真をマップ上に表示するために写真ライブラリを読み取ります。",
           "isAccessMediaLocationEnabled": true,
-          "granularPermissions": [
-            "photo"
-          ]
+          "granularPermissions": ["photo"]
         }
       ]
     ],

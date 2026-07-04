@@ -40,9 +40,7 @@ describe('FirstLaunchTutorialDialog のサイズ変化アニメーション', ()
 
     let tree: any;
     ReactTestRenderer.act(() => {
-      tree = ReactTestRenderer.create(
-        <FirstLaunchTutorialDialog visible styles={styles} onComplete={() => undefined} />,
-      );
+      tree = ReactTestRenderer.create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={() => undefined} />);
     });
 
     ReactTestRenderer.act(() => {

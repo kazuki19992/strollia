@@ -22,7 +22,9 @@ describe('レポート共通枠 ReportFrame', () => {
       );
     });
 
-    const widths = [0, 1, 2].map((index) => renderer.root.findAll((node: any) => node.props.testID === `report-progress-fill-${index}`)[0].props.style[1].width);
+    const widths = [0, 1, 2].map(
+      (index) => renderer.root.findAll((node: any) => node.props.testID === `report-progress-fill-${index}`)[0].props.style[1].width,
+    );
     expect(widths).toEqual(['100%', '100%', '0%']);
     expect(JSON.stringify(renderer.root.findAllByType(Text).map((node: any) => node.props.children))).toContain('レポート ');
   });

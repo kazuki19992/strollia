@@ -191,9 +191,7 @@ describe('Dialog dismissible', () => {
         </Dialog>,
       );
     });
-    const closeButtons = tree!.root.findAll(
-      (node: any) => node.props.accessibilityLabel === '閉じる',
-    );
+    const closeButtons = tree!.root.findAll((node: any) => node.props.accessibilityLabel === '閉じる');
     expect(closeButtons).toHaveLength(0);
   });
 
@@ -207,9 +205,7 @@ describe('Dialog dismissible', () => {
         </Dialog>,
       );
     });
-    const closeButtons = tree!.root.findAll(
-      (node: any) => node.props.accessibilityLabel === '閉じる',
-    );
+    const closeButtons = tree!.root.findAll((node: any) => node.props.accessibilityLabel === '閉じる');
     expect(closeButtons.length).toBeGreaterThan(0);
   });
 });

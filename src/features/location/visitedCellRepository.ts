@@ -47,7 +47,11 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
  * `db.withExclusiveTransactionAsync` のネストを避けるため、複数テーブル更新をまとめる処理から使う。
  * `withExclusiveTransactionAsync` 内から呼ぶ場合は `runner` に `txn` を渡すこと。
  */
-export async function upsertVisitedCellsInCurrentTransaction(cells: GridCell[], visitedAt: string, runner: SQLite.SQLiteDatabase = db): Promise<void> {
+export async function upsertVisitedCellsInCurrentTransaction(
+  cells: GridCell[],
+  visitedAt: string,
+  runner: SQLite.SQLiteDatabase = db,
+): Promise<void> {
   if (cells.length === 0) {
     return;
   }

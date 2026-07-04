@@ -12,22 +12,23 @@
 
 ## ファイル構成
 
-| 操作 | パス |
-|------|------|
-| 新規作成 | `src/app/components/PremiumPaywallModal.tsx` |
-| 新規作成 | `src/app/components/__tests__/PremiumPaywallModal.test.tsx` |
-| 変更 | `src/app/components/DailyLogDetailScreen.tsx` |
-| 変更 | `src/app/components/__tests__/DailyLogDetailScreen.test.tsx` |
-| 変更 | `src/app/App.tsx` |
-| 変更 | `src/app/__tests__/AppMapReturn.test.tsx` |
-| 変更 | `src/app/components/ActionPill.tsx` |
-| 変更 | `src/app/appStyles.ts` |
+| 操作     | パス                                                         |
+| -------- | ------------------------------------------------------------ |
+| 新規作成 | `src/app/components/PremiumPaywallModal.tsx`                 |
+| 新規作成 | `src/app/components/__tests__/PremiumPaywallModal.test.tsx`  |
+| 変更     | `src/app/components/DailyLogDetailScreen.tsx`                |
+| 変更     | `src/app/components/__tests__/DailyLogDetailScreen.test.tsx` |
+| 変更     | `src/app/App.tsx`                                            |
+| 変更     | `src/app/__tests__/AppMapReturn.test.tsx`                    |
+| 変更     | `src/app/components/ActionPill.tsx`                          |
+| 変更     | `src/app/appStyles.ts`                                       |
 
 ---
 
 ## Task 1: expo-blur のインストール
 
 **Files:**
+
 - Modify: `package.json`
 
 - [ ] **Step 1: expo-blur をインストール**
@@ -59,6 +60,7 @@ git -C /Users/kazuki19992/gits/footspot/.worktrees/daily-log-plus-paywall commit
 ## Task 2: ActionPill に accessibilityLabel prop を追加
 
 **Files:**
+
 - Modify: `src/app/components/ActionPill.tsx`
 
 - [ ] **Step 1: ActionPillProps に accessibilityLabel を追加し Pressable に渡す**
@@ -109,6 +111,7 @@ git -C /Users/kazuki19992/gits/footspot/.worktrees/daily-log-plus-paywall commit
 ## Task 4: appStyles に新スタイルを追加
 
 **Files:**
+
 - Modify: `src/app/appStyles.ts`
 
 - [ ] **Step 1: `dailyLogDetailActions` / `dailyLogDetailPlusSection` / `dailyLogDetailPlusLabel` を追加**
@@ -153,6 +156,7 @@ git -C /Users/kazuki19992/gits/footspot/.worktrees/daily-log-plus-paywall commit
 ## Task 5: PremiumPaywallModal を作成
 
 **Files:**
+
 - Create: `src/app/components/PremiumPaywallModal.tsx`
 - Create: `src/app/components/__tests__/PremiumPaywallModal.test.tsx`
 
@@ -195,7 +199,9 @@ const baseProps = {
 };
 
 describe('PremiumPaywallModal', () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   test('visible=true のとき Modal が表示される', () => {
     const renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} visible={true} />);
@@ -218,34 +224,34 @@ describe('PremiumPaywallModal', () => {
 
   test('月払いボタンを押すと onPurchaseMonthlyPremiumPackage が呼ばれる', () => {
     const onPurchase = jest.fn();
-    const renderer = ReactTestRenderer.create(
-      <PremiumPaywallModal {...baseProps} onPurchaseMonthlyPremiumPackage={onPurchase} />,
-    );
+    const renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} onPurchaseMonthlyPremiumPackage={onPurchase} />);
     const pills = renderer.root.findAllByType(ActionPill);
     const monthlyPill = pills.find((p: any) => p.props.label?.includes('月払い'));
-    act(() => { monthlyPill.props.onPress(); });
+    act(() => {
+      monthlyPill.props.onPress();
+    });
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
 
   test('年払いボタンを押すと onPurchaseYearlyPremiumPackage が呼ばれる', () => {
     const onPurchase = jest.fn();
-    const renderer = ReactTestRenderer.create(
-      <PremiumPaywallModal {...baseProps} onPurchaseYearlyPremiumPackage={onPurchase} />,
-    );
+    const renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} onPurchaseYearlyPremiumPackage={onPurchase} />);
     const pills = renderer.root.findAllByType(ActionPill);
     const yearlyPill = pills.find((p: any) => p.props.label?.includes('年払い'));
-    act(() => { yearlyPill.props.onPress(); });
+    act(() => {
+      yearlyPill.props.onPress();
+    });
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
 
   test('購入復元ボタンを押すと onRestorePremiumPurchases が呼ばれる', () => {
     const onRestore = jest.fn();
-    const renderer = ReactTestRenderer.create(
-      <PremiumPaywallModal {...baseProps} onRestorePremiumPurchases={onRestore} />,
-    );
+    const renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} onRestorePremiumPurchases={onRestore} />);
     const pills = renderer.root.findAllByType(ActionPill);
     const restorePill = pills.find((p: any) => p.props.label?.includes('復元'));
-    act(() => { restorePill.props.onPress(); });
+    act(() => {
+      restorePill.props.onPress();
+    });
     expect(onRestore).toHaveBeenCalledTimes(1);
   });
 
@@ -256,8 +262,22 @@ describe('PremiumPaywallModal', () => {
         premiumOfferingSummary={{
           offeringId: 'default',
           packages: [
-            { identifier: '$rc_monthly', packageType: 'MONTHLY', productIdentifier: 'monthly', title: '月払い', description: '', priceText: '¥300' },
-            { identifier: '$rc_annual', packageType: 'ANNUAL', productIdentifier: 'yearly', title: '年払い', description: '', priceText: '¥3,300' },
+            {
+              identifier: '$rc_monthly',
+              packageType: 'MONTHLY',
+              productIdentifier: 'monthly',
+              title: '月払い',
+              description: '',
+              priceText: '¥300',
+            },
+            {
+              identifier: '$rc_annual',
+              packageType: 'ANNUAL',
+              productIdentifier: 'yearly',
+              title: '年払い',
+              description: '',
+              priceText: '¥3,300',
+            },
           ],
         }}
       />,
@@ -268,9 +288,7 @@ describe('PremiumPaywallModal', () => {
   });
 
   test('isPurchasingPremiumPackage=true のとき購入ボタンが無効化される', () => {
-    const renderer = ReactTestRenderer.create(
-      <PremiumPaywallModal {...baseProps} isPurchasingPremiumPackage={true} />,
-    );
+    const renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} isPurchasingPremiumPackage={true} />);
     const pills = renderer.root.findAllByType(ActionPill);
     const buyPills = pills.filter((p: any) => p.props.label?.includes('購入処理中'));
     expect(buyPills.length).toBeGreaterThanOrEqual(2);
@@ -343,25 +361,14 @@ export function PremiumPaywallModal({
   onPurchaseYearlyPremiumPackage,
   onRestorePremiumPurchases,
 }: PremiumPaywallModalProps) {
-  const monthlyPriceText =
-    premiumOfferingSummary?.packages.find((p) => p.packageType === 'MONTHLY')?.priceText ?? '300円';
-  const yearlyPriceText =
-    premiumOfferingSummary?.packages.find((p) => p.packageType === 'ANNUAL')?.priceText ?? '3300円';
+  const monthlyPriceText = premiumOfferingSummary?.packages.find((p) => p.packageType === 'MONTHLY')?.priceText ?? '300円';
+  const yearlyPriceText = premiumOfferingSummary?.packages.find((p) => p.packageType === 'ANNUAL')?.priceText ?? '3300円';
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.appScreen}>
         <View style={styles.appHeader}>
-          <Pressable
-            accessibilityLabel="ペイウォールを閉じる"
-            accessibilityRole="button"
-            onPress={onClose}
-          >
+          <Pressable accessibilityLabel="ペイウォールを閉じる" accessibilityRole="button" onPress={onClose}>
             <Feather name="x" size={24} color={theme.colors.text} />
           </Pressable>
         </View>
@@ -403,9 +410,7 @@ export function PremiumPaywallModal({
             styles={styles}
             onPress={onRestorePremiumPurchases}
           />
-          {isLoadingPremiumOffering && (
-            <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>
-          )}
+          {isLoadingPremiumOffering && <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>}
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -434,6 +439,7 @@ git -C /Users/kazuki19992/gits/footspot/.worktrees/daily-log-plus-paywall commit
 ## Task 6: App.tsx にペイウォールモーダルを組み込む
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 
@@ -461,17 +467,20 @@ Expected: `Tests: XX passed`
 `src/app/App.tsx` で以下の変更を行う。
 
 インポート追加（既存の import ブロックの末尾付近）:
+
 ```ts
 import { PremiumPaywallModal } from './components/PremiumPaywallModal';
 ```
 
 state 追加（`isPresentingPremiumCustomerCenter` の直後）:
+
 ```ts
 const [isPremiumPaywallVisible, setIsPremiumPaywallVisible] = useState(false);
 const isPremiumPaywallVisibleRef = useRef(false);
 ```
 
 ハンドラ追加（`openPremiumCustomerCenter` の直後）:
+
 ```ts
 function openPremiumPaywall(): void {
   if (isPremiumPaywallVisibleRef.current) {
@@ -549,6 +558,7 @@ git -C /Users/kazuki19992/gits/footspot/.worktrees/daily-log-plus-paywall commit
 ## Task 7: DailyLogDetailScreen を更新
 
 **Files:**
+
 - Modify: `src/app/components/DailyLogDetailScreen.tsx`
 - Modify: `src/app/components/__tests__/DailyLogDetailScreen.test.tsx`
 
@@ -557,6 +567,7 @@ git -C /Users/kazuki19992/gits/footspot/.worktrees/daily-log-plus-paywall commit
 `src/app/components/__tests__/DailyLogDetailScreen.test.tsx` を以下のように更新する:
 
 **モック追加**（既存の `jest.mock('@expo/vector-icons', ...)` を置き換え）:
+
 ```ts
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -569,6 +580,7 @@ jest.mock('expo-blur', () => ({
 ```
 
 **ヘルパー props を追加**（`const log = {...}` の直後）:
+
 ```ts
 const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
 const freeAccessState = { isPlusActive: false, entitlementId: 'Strollia Plus' };
@@ -576,6 +588,7 @@ const onOpenPremiumPaywall = jest.fn();
 ```
 
 **既存テストに新 props を追加**（全ての `DailyLogDetailScreen` レンダリング箇所）:
+
 ```tsx
 // 既存の全テストで以下のように props を追加する
 <DailyLogDetailScreen
@@ -805,7 +818,14 @@ export type DailyLogDetailScreenProps = {
 };
 
 /** 日ごとの記録の詳細画面を描画する。 */
-export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, onBackToDailyLogs, onOpenPremiumPaywall }: DailyLogDetailScreenProps) {
+export function DailyLogDetailScreen({
+  log,
+  styles,
+  theme,
+  premiumAccessState,
+  onBackToDailyLogs,
+  onOpenPremiumPaywall,
+}: DailyLogDetailScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
   const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
   const [dailyDetailReport, setDailyDetailReport] = useState<DailyDetailReport | null>(null);
@@ -916,13 +936,25 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
 
   return (
     <SafeAreaView style={styles.appScreen}>
-      <AppScreenHeader backLabel="日ごとの記録" styles={styles} theme={theme} title={title.title} subtitle={title.subtitle} onBack={onBackToDailyLogs} />
+      <AppScreenHeader
+        backLabel="日ごとの記録"
+        styles={styles}
+        theme={theme}
+        title={title.title}
+        subtitle={title.subtitle}
+        onBack={onBackToDailyLogs}
+      />
       <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
-
         {/* キャプチャ範囲 */}
         <View ref={captureViewRef} collapsable={false} style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
           <View style={styles.routeTimeline}>
-            <RouteMapPanel emptyLabel="移動地図を表示できません" points={visibleRoutePoints} regionPoints={dailyPoints} styles={styles} theme={theme} />
+            <RouteMapPanel
+              emptyLabel="移動地図を表示できません"
+              points={visibleRoutePoints}
+              regionPoints={dailyPoints}
+              styles={styles}
+              theme={theme}
+            />
             {showSlider && (
               <StepSlider
                 accessibilityLabel="移動地図の表示時刻"
@@ -965,7 +997,9 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
           {isPlusActive && (
             <View style={styles.dailyLogDetailSection}>
               <SectionTitle styles={styles}>おもいで</SectionTitle>
-              <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
+              <Text style={styles.dailyLogDetailSubTitle}>
+                {isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}
+              </Text>
               <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
             </View>
           )}
@@ -975,7 +1009,9 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
         {!isPlusActive && (
           <View style={[styles.dailyLogDetailSection, styles.dailyLogDetailPlusSection]}>
             <SectionTitle styles={styles}>おもいで</SectionTitle>
-            <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
+            <Text style={styles.dailyLogDetailSubTitle}>
+              {isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}
+            </Text>
             <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
             <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, lockedOverlayStyles.overlay]}>
@@ -1008,11 +1044,12 @@ export function DailyLogDetailScreen({ log, styles, theme, premiumAccessState, o
                 textColor={theme.colors.primary}
                 onPress={onOpenPremiumPaywall}
               />
-              <DescriptionText styles={styles}>移動軌跡を時系列でふりかえられたり、獲得した実績、エリア数などもみることができます！</DescriptionText>
+              <DescriptionText styles={styles}>
+                移動軌跡を時系列でふりかえられたり、獲得した実績、エリア数などもみることができます！
+              </DescriptionText>
             </>
           )}
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );

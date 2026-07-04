@@ -5,12 +5,7 @@ import { LocationPoint } from '../../types/gps';
 
 /** GPX内のテキスト要素でXML構文を壊す文字をエスケープする。 */
 function escapeXml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&apos;');
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
 }
 
 /** GPSポイント列をGPX 1.1形式の文字列へ変換する。 */

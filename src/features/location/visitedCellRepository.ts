@@ -36,8 +36,8 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
     return;
   }
 
-  await db.withExclusiveTransactionAsync(async () => {
-    await upsertVisitedCellsInCurrentTransaction(cells, visitedAt);
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    await upsertVisitedCellsInCurrentTransaction(cells, visitedAt, txn);
   });
 }
 

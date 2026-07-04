@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { loadGeotaggedPhotos, MapPhoto } from '../../features/photos/photoLibrary';
+import { loadGeotaggedPhotos, MapPhoto } from '@/features/photos/photoLibrary';
 
 export type PhotoMapOverlayState = {
   /** マップ上に表示するジオタグ付き写真。 */

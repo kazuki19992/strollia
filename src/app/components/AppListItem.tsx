@@ -1,8 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
-import type { AppTheme } from '../../theme/theme';
-import type { AppStyles } from '../appStyles';
+import type { AppTheme } from '@/theme/theme';
+import type { AppStyles } from '@/app/appStyles';
 
 export type AppListItemProps = {
   /** アクセシビリティ用の行ラベル。 */

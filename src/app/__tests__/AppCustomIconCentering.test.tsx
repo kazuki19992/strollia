@@ -1,5 +1,5 @@
-import App from '../App';
-import { createUserCenteredRegion } from '../mapRegion';
+import App from '@/app/App';
+import { createUserCenteredRegion } from '@/app/mapRegion';
 
 const mockAnimateToRegion = jest.fn();
 let mockLatestMapScreenProps: any = null;
@@ -50,7 +50,7 @@ jest.mock('react-native-maps', () => {
 
 // MapScreenモックは現在地更新（前景ウォッチ相当）と地図準備完了(onMapReady)を別々のボタンで発火させ、
 // センタリングが地図準備完了後にだけ起きることを検証できるようにする。
-jest.mock('../components/MapScreen', () => ({
+jest.mock('@/app/components/MapScreen', () => ({
   MapScreen: (props: any) => {
     const { Pressable, Text } = require('react-native');
 
@@ -79,51 +79,51 @@ jest.mock('../components/MapScreen', () => ({
   },
 }));
 
-jest.mock('../components/DailyLogsScreen', () => ({ DailyLogsScreen: () => null }));
-jest.mock('../components/PremiumPaywallModal', () => ({ PremiumPaywallModal: () => null }));
-jest.mock('../components/DailyLogDetailScreen', () => ({ DailyLogDetailScreen: () => null }));
-jest.mock('../components/AchievementListScreen', () => ({ AchievementListScreen: () => null }));
-jest.mock('../components/AchievementUnlockModal', () => ({ AchievementUnlockModal: () => null }));
-jest.mock('../components/FirstLaunchTutorialDialog', () => ({ FirstLaunchTutorialDialog: () => null }));
-jest.mock('../components/PhotoPreviewModals', () => ({ PhotoPreviewModals: () => null }));
-jest.mock('../components/reports/MonthlyReportScreen', () => ({ MonthlyReportScreen: () => null }));
-jest.mock('../components/SettingsScreen', () => ({ SettingsScreen: () => null }));
-jest.mock('../components/LicenseScreen', () => ({ LicenseScreen: () => null, LicenseDetailScreen: () => null }));
+jest.mock('@/app/components/DailyLogsScreen', () => ({ DailyLogsScreen: () => null }));
+jest.mock('@/app/components/PremiumPaywallModal', () => ({ PremiumPaywallModal: () => null }));
+jest.mock('@/app/components/DailyLogDetailScreen', () => ({ DailyLogDetailScreen: () => null }));
+jest.mock('@/app/components/AchievementListScreen', () => ({ AchievementListScreen: () => null }));
+jest.mock('@/app/components/AchievementUnlockModal', () => ({ AchievementUnlockModal: () => null }));
+jest.mock('@/app/components/FirstLaunchTutorialDialog', () => ({ FirstLaunchTutorialDialog: () => null }));
+jest.mock('@/app/components/PhotoPreviewModals', () => ({ PhotoPreviewModals: () => null }));
+jest.mock('@/app/components/reports/MonthlyReportScreen', () => ({ MonthlyReportScreen: () => null }));
+jest.mock('@/app/components/SettingsScreen', () => ({ SettingsScreen: () => null }));
+jest.mock('@/app/components/LicenseScreen', () => ({ LicenseScreen: () => null, LicenseDetailScreen: () => null }));
 
-jest.mock('../hooks/useAchievementDialogEffects', () => ({ useAchievementDialogEffects: jest.fn() }));
-jest.mock('../hooks/useKeepScreenAwake', () => ({ useKeepScreenAwake: jest.fn() }));
-jest.mock('../hooks/usePhotoMapOverlay', () => ({
+jest.mock('@/app/hooks/useAchievementDialogEffects', () => ({ useAchievementDialogEffects: jest.fn() }));
+jest.mock('@/app/hooks/useKeepScreenAwake', () => ({ useKeepScreenAwake: jest.fn() }));
+jest.mock('@/app/hooks/usePhotoMapOverlay', () => ({
   usePhotoMapOverlay: () => ({ photos: [], isLoadingPhotos: false, photoErrorMessage: null }),
 }));
-jest.mock('../hooks/useScreenTransitionOpacity', () => ({
+jest.mock('@/app/hooks/useScreenTransitionOpacity', () => ({
   useScreenTransitionOpacity: () => ({ interpolate: () => 0 }),
 }));
-jest.mock('../hooks/useCurrentAreaName', () => ({
+jest.mock('@/app/hooks/useCurrentAreaName', () => ({
   useCurrentAreaLabel: () => ({ primary: '船橋市', secondary: '行田' }),
 }));
 
-jest.mock('../../db/database', () => ({ initializeDatabase: jest.fn().mockResolvedValue(undefined) }));
-jest.mock('../../theme/fonts', () => ({
+jest.mock('@/db/database', () => ({ initializeDatabase: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('@/theme/fonts', () => ({
   loadAppFonts: jest.fn().mockResolvedValue(undefined),
   NUMERIC_DISPLAY_FONT: 'DSEG7ClassicMini-Regular',
 }));
-jest.mock('../../config/developmentFlags', () => ({
+jest.mock('@/config/developmentFlags', () => ({
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));
-jest.mock('../../features/settings/settingsRepository', () => ({
+jest.mock('@/features/settings/settingsRepository', () => ({
   getBooleanSetting: jest.fn().mockResolvedValue(true),
   getStringSetting: jest.fn().mockResolvedValue('walker'),
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('../../features/location/locationService', () => ({
+jest.mock('@/features/location/locationService', () => ({
   ensureForegroundLocationPermission: jest.fn().mockResolvedValue(true),
   isBackgroundLocationRecording: jest.fn().mockResolvedValue(true),
   updateBackgroundLocationTaskOptionsIfNeeded: jest.fn().mockResolvedValue(undefined),
   startBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
   stopBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('../../features/location/locationPermission', () => ({
+jest.mock('@/features/location/locationPermission', () => ({
   canRequestLocationPermissionInApp: jest.fn(() => true),
   getLocationPermissionState: jest.fn().mockResolvedValue({
     foregroundGranted: true,
@@ -134,7 +134,7 @@ jest.mock('../../features/location/locationPermission', () => ({
   hasRequiredLocationPermission: jest.fn((state) => state.foregroundGranted && state.backgroundGranted),
   isWhileInUseOnlyMode: jest.fn((state) => state.foregroundGranted && !state.backgroundGranted),
 }));
-jest.mock('../../features/logs/logRepository', () => ({
+jest.mock('@/features/logs/logRepository', () => ({
   deleteAllUserData: jest.fn().mockResolvedValue(undefined),
   getAllLocationPoints: jest.fn().mockResolvedValue([]),
   getDailyLogs: jest.fn().mockResolvedValue([]),
@@ -144,42 +144,42 @@ jest.mock('expo-notifications', () => ({
   useLastNotificationResponse: jest.fn(() => null),
 }));
 
-jest.mock('../../features/achievements/achievementNotificationService', () => ({
+jest.mock('@/features/achievements/achievementNotificationService', () => ({
   initializeAchievementNotificationHandler: jest.fn(),
   requestAchievementNotificationPermissionOnFirstLaunch: jest.fn().mockResolvedValue(undefined),
   setupAchievementNotificationChannel: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/reports/monthlyReportNotificationService', () => ({
+jest.mock('@/features/reports/monthlyReportNotificationService', () => ({
   isMonthlyReportNotification: jest.fn(() => false),
   setupMonthlyReportNotificationChannel: jest.fn().mockResolvedValue(undefined),
   syncMonthlyReportNotification: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('../../features/achievements/achievementRepository', () => ({
+jest.mock('@/features/achievements/achievementRepository', () => ({
   getAchievementListItems: jest.fn().mockResolvedValue([]),
   getPendingInAppAchievementNotifications: jest.fn().mockResolvedValue([]),
   markAchievementShownInApp: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('../../features/achievements/achievementEvaluationGate', () => ({
+jest.mock('@/features/achievements/achievementEvaluationGate', () => ({
   canEvaluateAchievementsInForeground: jest.fn(() => true),
 }));
-jest.mock('../../features/achievements/achievementService', () => ({
+jest.mock('@/features/achievements/achievementService', () => ({
   evaluateAchievementsAndNotify: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('../../features/achievements/pendingNotifications', () => ({
+jest.mock('@/features/achievements/pendingNotifications', () => ({
   filterDismissedAchievementNotifications: jest.fn(() => []),
 }));
-jest.mock('../../features/export/gpxExporter', () => ({ shareGpx: jest.fn().mockResolvedValue(undefined) }));
-jest.mock('../../features/reports/monthlyAreaReport', () => ({ getMonthlyAreaReport: jest.fn().mockResolvedValue(null) }));
-jest.mock('../../features/reports/monthlyReport', () => jest.requireActual('../../features/reports/monthlyReport'));
-jest.mock('../../features/customization/customizationResolver', () => ({
+jest.mock('@/features/export/gpxExporter', () => ({ shareGpx: jest.fn().mockResolvedValue(undefined) }));
+jest.mock('@/features/reports/monthlyAreaReport', () => ({ getMonthlyAreaReport: jest.fn().mockResolvedValue(null) }));
+jest.mock('@/features/reports/monthlyReport', () => jest.requireActual('../../features/reports/monthlyReport'));
+jest.mock('@/features/customization/customizationResolver', () => ({
   resolveUserLocationIcon: jest.fn(() => ({ useNativeUserLocation: false, customIconId: 'walker', customImageUri: null })),
 }));
-jest.mock('../../features/customization/customizationOptions', () => ({
+jest.mock('@/features/customization/customizationOptions', () => ({
   DEFAULT_USER_LOCATION_ICON_ID: 'default',
   getUserLocationIconOption: jest.fn((id: string) => ({ id, label: id, premium: id === 'walker' })),
 }));
-jest.mock('../../features/premium/revenueCatAccess', () => ({
+jest.mock('@/features/premium/revenueCatAccess', () => ({
   getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: true, entitlementId: 'strollia_plus' })),
   getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
   getPremiumOfferingSummary: jest.fn().mockResolvedValue(null),
@@ -188,15 +188,15 @@ jest.mock('../../features/premium/revenueCatAccess', () => ({
   restorePremiumPurchases: jest.fn(),
   subscribePremiumAccessStateUpdates: jest.fn(() => jest.fn()),
 }));
-jest.mock('../../features/photos/photoClusters', () => ({
+jest.mock('@/features/photos/photoClusters', () => ({
   clusterMapPhotos: jest.fn(() => []),
   paginateMapPhotos: jest.fn(() => []),
 }));
-jest.mock('../../features/photos/photoLibrary', () => ({ hasFullPhotoAccess: jest.fn(() => true) }));
-jest.mock('../../features/location/visitedCellRepository', () => ({
+jest.mock('@/features/photos/photoLibrary', () => ({ hasFullPhotoAccess: jest.fn(() => true) }));
+jest.mock('@/features/location/visitedCellRepository', () => ({
   getVisitedCellsInBounds: jest.fn().mockResolvedValue([]),
 }));
-jest.mock('../../features/location/grid/gridCell', () => ({
+jest.mock('@/features/location/grid/gridCell', () => ({
   getGridBoundsForRegion: jest.fn(() => ({ minX: 0, maxX: 0, minY: 0, maxY: 0 })),
   isGridBoundsContained: jest.fn(() => false),
 }));

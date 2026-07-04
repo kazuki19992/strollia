@@ -5,24 +5,24 @@ import { Alert, Dimensions, Pressable, SafeAreaView, ScrollView, StyleSheet, Tex
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 
-import { getLocationPointAdminAreaName } from '../../features/achievements/adminAreaRepository';
-import { getAchievementDefinition } from '../../features/achievements/achievementDefinitions';
-import { getAchievementUnlocksByDate } from '../../features/achievements/achievementRepository';
-import { coordinateToGridCell } from '../../features/location/grid/gridCell';
-import { getVisitedCellsByIds } from '../../features/location/visitedCellRepository';
-import { getLocationPointsByDate } from '../../features/logs/logRepository';
+import { getLocationPointAdminAreaName } from '@/features/achievements/adminAreaRepository';
+import { getAchievementDefinition } from '@/features/achievements/achievementDefinitions';
+import { getAchievementUnlocksByDate } from '@/features/achievements/achievementRepository';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
+import { getVisitedCellsByIds } from '@/features/location/visitedCellRepository';
+import { getLocationPointsByDate } from '@/features/logs/logRepository';
 import {
   computeGifFrameMinutesInRange,
   resolveGifFrameStepMinutes,
   GIF_FRAME_DELAY_MS,
   GIF_MIN_RANGE_MINUTES,
-} from '../../features/export/routeGifFrames';
-import { exportRouteGif } from '../../features/export/routeGifExporter';
-import { createInitialRegion } from '../../features/map/routeMapper';
-import { createDailyDetailReport, DailyDetailReport } from '../../features/reports/dailyReport';
-import type { PremiumAccessState } from '../../features/premium/revenueCatAccess';
-import type { AppTheme } from '../../theme/theme';
-import type { DailyLogSummary, LocationPoint } from '../../types/gps';
+} from '@/features/export/routeGifFrames';
+import { exportRouteGif } from '@/features/export/routeGifExporter';
+import { createInitialRegion } from '@/features/map/routeMapper';
+import { createDailyDetailReport, DailyDetailReport } from '@/features/reports/dailyReport';
+import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';
+import type { AppTheme } from '@/theme/theme';
+import type { DailyLogSummary, LocationPoint } from '@/types/gps';
 import {
   computeRouteMaxEndMinutes,
   DAILY_ROUTE_START_MINUTES,
@@ -34,10 +34,10 @@ import {
   getCurrentMinutesOfDay,
   getPointMinutesOfDay,
   getTodayLocalDate,
-} from '../dailyRouteTimeline';
-import { formatDailyLogDetailTitle, formatDistanceKm, formatGifFrameDateLabel, formatRouteEndpoints } from '../dailyLogDisplay';
-import { totalDistanceMeters } from '../../utils/distance';
-import type { AppStyles } from '../appStyles';
+} from '@/app/dailyRouteTimeline';
+import { formatDailyLogDetailTitle, formatDistanceKm, formatGifFrameDateLabel, formatRouteEndpoints } from '@/app/dailyLogDisplay';
+import { totalDistanceMeters } from '@/utils/distance';
+import type { AppStyles } from '@/app/appStyles';
 import { AchievementScroller } from './AchievementScroller';
 import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';

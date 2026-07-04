@@ -1,12 +1,17 @@
-import { db } from '../../../db/database';
-import { coordinateToGridCell } from '../grid/gridCell';
-import { deleteAllVisitedCells, getVisitedCellsByIds, getVisitedCellsInBounds, upsertVisitedCells } from '../visitedCellRepository';
+import { db } from '@/db/database';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
+import {
+  deleteAllVisitedCells,
+  getVisitedCellsByIds,
+  getVisitedCellsInBounds,
+  upsertVisitedCells,
+} from '@/features/location/visitedCellRepository';
 
 const mockTxn = {
   runAsync: jest.fn().mockResolvedValue({}),
 };
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue({}),

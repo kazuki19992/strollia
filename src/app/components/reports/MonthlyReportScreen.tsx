@@ -5,18 +5,18 @@ import { Alert, Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useW
 import MapView, { Polyline } from 'react-native-maps';
 import { captureRef } from 'react-native-view-shot';
 
-import { AchievementListItem } from '../../../features/achievements/achievementRepository';
-import { MonthlyAreaReport } from '../../../features/reports/monthlyAreaReport';
-import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData, MonthlyReport } from '../../../features/reports/monthlyReport';
-import { createInitialRegion, toRenderRouteCoordinates } from '../../../features/map/routeMapper';
-import { DailyLogSummary, LocationPoint } from '../../../types/gps';
-import type { AppTheme } from '../../../theme/theme';
+import { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
+import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData, MonthlyReport } from '@/features/reports/monthlyReport';
+import { createInitialRegion, toRenderRouteCoordinates } from '@/features/map/routeMapper';
+import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import type { AppTheme } from '@/theme/theme';
 import { MonthlyReportAnimatedCard } from './MonthlyReportAnimatedCard';
 import { MonthlyReportMetricValue } from './MonthlyReportMetricValue';
 import { MonthlyReportScrollIndicator } from './MonthlyReportScrollIndicator';
 import { NewRecordPill } from './NewRecordPill';
-import { ShareBranding } from '../ShareBranding';
-import { ShareButton } from '../ShareButton';
+import { ShareBranding } from '@/app/components/ShareBranding';
+import { ShareButton } from '@/app/components/ShareButton';
 import { reportStyles } from './reportStyles';
 
 /** 月次レポート画面のprops。 */

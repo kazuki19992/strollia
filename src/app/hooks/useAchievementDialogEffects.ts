@@ -2,7 +2,7 @@ import { MutableRefObject, useEffect } from 'react';
 import { AppStateStatus, Vibration } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-import { PendingAchievementNotification } from '../../features/achievements/achievementRepository';
+import { PendingAchievementNotification } from '@/features/achievements/achievementRepository';
 
 /** 実績解除ダイアログ副作用hookの引数。 */
 export type UseAchievementDialogEffectsArgs = {

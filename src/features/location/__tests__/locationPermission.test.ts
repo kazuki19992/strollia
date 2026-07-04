@@ -1,4 +1,8 @@
-import { canRequestLocationPermissionInApp, hasRequiredLocationPermission, isWhileInUseOnlyMode } from '../locationPermission';
+import {
+  canRequestLocationPermissionInApp,
+  hasRequiredLocationPermission,
+  isWhileInUseOnlyMode,
+} from '@/features/location/locationPermission';
 
 describe('位置情報権限ヘルパー', () => {
   it('フォアグラウンドとバックグラウンドの両方の権限を必要とする', () => {

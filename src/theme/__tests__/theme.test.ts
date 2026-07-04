@@ -1,5 +1,5 @@
-import { applyColorPreset, darkTheme, getAppTheme, isAppThemePreference, lightTheme } from '../theme';
-import { getAppColorPreset } from '../../features/customization/colorPresets';
+import { applyColorPreset, darkTheme, getAppTheme, isAppThemePreference, lightTheme } from '@/theme/theme';
+import { getAppColorPreset } from '@/features/customization/colorPresets';
 
 describe('テーマ選択 getAppTheme', () => {
   it('画面のデフォルト背景は設定画面と同じニュートラルな背景色にする', () => {

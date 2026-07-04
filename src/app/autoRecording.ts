@@ -1,4 +1,4 @@
-import { hasRequiredLocationPermission, LocationPermissionState } from '../features/location/locationPermission';
+import { hasRequiredLocationPermission, LocationPermissionState } from '@/features/location/locationPermission';
 
 /** 自動GPS記録開始判定に必要な状態。 */
 export type AutoRecordingDecisionInput = {

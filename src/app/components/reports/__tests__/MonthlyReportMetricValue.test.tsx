@@ -1,7 +1,7 @@
 import { StyleSheet, Text } from 'react-native';
 
-import { NUMERIC_DISPLAY_FONT } from '../../../../theme/fonts';
-import { MonthlyReportMetricValue } from '../MonthlyReportMetricValue';
+import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
+import { MonthlyReportMetricValue } from '@/app/components/reports/MonthlyReportMetricValue';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

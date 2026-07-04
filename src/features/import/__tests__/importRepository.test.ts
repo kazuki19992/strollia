@@ -1,7 +1,7 @@
-import { db } from '../../../db/database';
-import { importLocationPointsFromGpx } from '../importRepository';
+import { db } from '@/db/database';
+import { importLocationPointsFromGpx } from '@/features/import/importRepository';
 
-jest.mock('../../../db/database', () => {
+jest.mock('@/db/database', () => {
   type MockDatabase = {
     getFirstAsync: jest.Mock;
     runAsync: jest.Mock;
@@ -20,12 +20,12 @@ jest.mock('../../../db/database', () => {
   return { db: mockDb };
 });
 
-jest.mock('../../location/visitedCellRepository', () => ({
+jest.mock('@/features/location/visitedCellRepository', () => ({
   upsertVisitedCells: jest.fn(),
   upsertVisitedCellsInCurrentTransaction: jest.fn(),
 }));
 
-jest.mock('../../location/grid/gridInterpolation', () => ({
+jest.mock('@/features/location/grid/gridInterpolation', () => ({
   getVisitedCellsForLocationPoint: jest.fn(() => [{ cellId: '100:1:1', cellSizeMeters: 100, x: 1, y: 1 }]),
 }));
 

@@ -1,8 +1,8 @@
 import * as ReactNative from 'react-native';
 import { Animated, Text } from 'react-native';
 
-import { lightTheme } from '../../../theme/theme';
-import { createStyles } from '../../appStyles';
+import { lightTheme } from '@/theme/theme';
+import { createStyles } from '@/app/appStyles';
 import {
   getDashboardScale,
   getScaledSpeedDialLayout,
@@ -14,7 +14,7 @@ import {
   SPEED_METER_ARC_CIRCUMFERENCE,
   SPEED_METER_ARC_RADIUS,
   SPEED_METER_ARC_STROKE_WIDTH,
-} from '../MapBottomDashboard';
+} from '@/app/components/MapBottomDashboard';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

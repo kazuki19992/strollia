@@ -6,10 +6,10 @@ import type { MapType } from 'react-native-maps';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useState, type ReactNode } from 'react';
 
-import type { AreaLabel } from '../areaName';
-import type { AppStyles } from '../appStyles';
-import type { AppTheme } from '../../theme/theme';
-import { classifyMovementSpeed, FAST_SPEED_MIN_KMH, VEHICLE_SPEED_MIN_KMH } from '../../features/location/locationSpeed';
+import type { AreaLabel } from '@/app/areaName';
+import type { AppStyles } from '@/app/appStyles';
+import type { AppTheme } from '@/theme/theme';
+import { classifyMovementSpeed, FAST_SPEED_MIN_KMH, VEHICLE_SPEED_MIN_KMH } from '@/features/location/locationSpeed';
 
 /** マップ上の計器UIはOS文字サイズで崩れないよう固定する。 */
 const FIXED_MAP_UI_TEXT_PROPS = { allowFontScaling: false };

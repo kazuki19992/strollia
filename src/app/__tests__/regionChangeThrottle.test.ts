@@ -1,4 +1,4 @@
-import { shouldApplyThrottledRegionChange } from '../regionChangeThrottle';
+import { shouldApplyThrottledRegionChange } from '@/app/regionChangeThrottle';
 
 describe('表示範囲更新のスロットル判定 shouldApplyThrottledRegionChange', () => {
   const THROTTLE_MS = 150;

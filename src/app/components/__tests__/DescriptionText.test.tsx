@@ -1,6 +1,6 @@
 import { Text } from 'react-native';
 
-import { DescriptionText } from '../DescriptionText';
+import { DescriptionText } from '@/app/components/DescriptionText';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

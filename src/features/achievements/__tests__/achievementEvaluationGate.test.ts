@@ -1,4 +1,4 @@
-import { canEvaluateAchievementsInForeground } from '../achievementEvaluationGate';
+import { canEvaluateAchievementsInForeground } from '@/features/achievements/achievementEvaluationGate';
 
 describe('実績評価ガード canEvaluateAchievementsInForeground', () => {
   test('実績解除ダイアログが表示されていない場合は評価できる', () => {

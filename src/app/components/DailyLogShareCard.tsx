@@ -1,10 +1,10 @@
 import { forwardRef } from 'react';
 import { Text, View } from 'react-native';
 
-import type { DailyDetailReport } from '../../features/reports/dailyReport';
-import type { AppTheme } from '../../theme/theme';
-import type { LocationPoint } from '../../types/gps';
-import type { AppStyles } from '../appStyles';
+import type { DailyDetailReport } from '@/features/reports/dailyReport';
+import type { AppTheme } from '@/theme/theme';
+import type { LocationPoint } from '@/types/gps';
+import type { AppStyles } from '@/app/appStyles';
 import { DailyLogShareSections } from './DailyLogShareSections';
 import { RouteMapPanel } from './RouteMapPanel';
 import { ShareBranding } from './ShareBranding';

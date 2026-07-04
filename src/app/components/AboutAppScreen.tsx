@@ -1,7 +1,7 @@
 import { Image, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
-import { AppStyles } from '../appStyles';
-import { AppTheme } from '../../theme/theme';
+import { AppStyles } from '@/app/appStyles';
+import { AppTheme } from '@/theme/theme';
 import { AppScreenHeader } from './AppScreenHeader';
 import { ScreenSection } from './ScreenSection';
 

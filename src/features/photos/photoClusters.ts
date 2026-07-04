@@ -1,7 +1,7 @@
 import { Region } from 'react-native-maps';
 
 import { MapPhoto } from './photoLibrary';
-import { distanceMeters } from '../../utils/distance';
+import { distanceMeters } from '@/utils/distance';
 
 /** 地図上で近接写真をまとめた表示単位。 */
 export type MapPhotoCluster = {

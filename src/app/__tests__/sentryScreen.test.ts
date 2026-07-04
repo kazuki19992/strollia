@@ -1,4 +1,4 @@
-import { resolveSentryScreenName } from '../sentryScreen';
+import { resolveSentryScreenName } from '@/app/sentryScreen';
 
 describe('Sentry画面名解決', () => {
   it('日別記録と設定はネストしたナビゲーション状態の画面名を使う', () => {

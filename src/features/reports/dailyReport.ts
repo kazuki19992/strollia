@@ -1,8 +1,8 @@
-import type { GridCell } from '../location/grid/gridCell';
-import { coordinateToGridCell } from '../location/grid/gridCell';
+import type { GridCell } from '@/features/location/grid/gridCell';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 import type { ImageSourcePropType } from 'react-native';
-import type { LocationPoint } from '../../types/gps';
-import { toLocalDate } from '../../utils/date';
+import type { LocationPoint } from '@/types/gps';
+import { toLocalDate } from '@/utils/date';
 
 /** 日別詳細レポートに表示する解除済み実績。 */
 export type DailyDetailAchievement = {

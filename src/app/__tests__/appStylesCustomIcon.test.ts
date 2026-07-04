@@ -1,6 +1,6 @@
-import { createStyles } from '../appStyles';
-import { applyColorPreset, darkTheme, lightTheme } from '../../theme/theme';
-import { getAppColorPreset } from '../../features/customization/colorPresets';
+import { createStyles } from '@/app/appStyles';
+import { applyColorPreset, darkTheme, lightTheme } from '@/theme/theme';
+import { getAppColorPreset } from '@/features/customization/colorPresets';
 
 describe('カスタムアイコン画像スタイル', () => {
   it('customUserLocationMarkerImageスタイルを持つ', () => {

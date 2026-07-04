@@ -1,5 +1,5 @@
-import { LocationPoint } from '../../../types/gps';
-import { buildGpx } from '../gpxExporter';
+import { LocationPoint } from '@/types/gps';
+import { buildGpx } from '@/features/export/gpxExporter';
 
 const points: LocationPoint[] = [
   {

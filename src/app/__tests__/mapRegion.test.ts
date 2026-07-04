@@ -1,4 +1,9 @@
-import { createUserCenteredRegion, isValidMapCoordinate, shouldRestoreMapRegionOnMapOpen, USER_LOCATION_REGION_DELTA } from '../mapRegion';
+import {
+  createUserCenteredRegion,
+  isValidMapCoordinate,
+  shouldRestoreMapRegionOnMapOpen,
+  USER_LOCATION_REGION_DELTA,
+} from '@/app/mapRegion';
 
 describe('地図表示範囲 mapRegion', () => {
   test('現在地中心の通常縮尺Regionを作る', () => {

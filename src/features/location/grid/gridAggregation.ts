@@ -1,5 +1,5 @@
-import type { GridOverlayConfig } from '../../map/config/gridOverlayConfig';
-import { GRID_OVERLAY_CONFIG } from '../../map/config/gridOverlayConfig';
+import type { GridOverlayConfig } from '@/features/map/config/gridOverlayConfig';
+import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
 import type { GridCell } from './gridCell';
 
 type RegionZoomLike = {

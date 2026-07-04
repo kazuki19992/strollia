@@ -2,9 +2,9 @@ import { Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 import RevenueCatUI from 'react-native-purchases-ui';
 
-import { developmentFlags } from '../../../config/developmentFlags';
-import { STROLLIA_PLUS_ENTITLEMENT_ID } from '../premiumCatalog';
-import { getRevenueCatApiKeyForPlatform, getRevenueCatConfigureOptions } from '../revenueCatConfig';
+import { developmentFlags } from '@/config/developmentFlags';
+import { STROLLIA_PLUS_ENTITLEMENT_ID } from '@/features/premium/premiumCatalog';
+import { getRevenueCatApiKeyForPlatform, getRevenueCatConfigureOptions } from '@/features/premium/revenueCatConfig';
 import {
   createRevenueCatClient,
   getPremiumOfferingSummaryFromRevenueCat,
@@ -12,7 +12,7 @@ import {
   restorePremiumPurchasesWithRevenueCat,
   presentCustomerCenterWithRevenueCat,
   subscribePremiumAccessStateUpdatesWithRevenueCat,
-} from '../revenueCatClient';
+} from '@/features/premium/revenueCatClient';
 import {
   getConfirmedPremiumAccessState,
   getDefaultPremiumAccessState,
@@ -24,7 +24,7 @@ import {
   resolvePremiumOfferingSummary,
   restorePremiumPurchases,
   RevenueCatClient,
-} from '../revenueCatAccess';
+} from '@/features/premium/revenueCatAccess';
 
 jest.mock('react-native-purchases', () => ({
   __esModule: true,

@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
-import { LocationPoint } from '../../types/gps';
+import { LocationPoint } from '@/types/gps';
 
 /** GPX内のテキスト要素でXML構文を壊す文字をエスケープする。 */
 function escapeXml(value: string): string {

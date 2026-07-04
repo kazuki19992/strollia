@@ -1,8 +1,8 @@
 import type { LocationObject } from 'expo-location';
 
-import type { LocationPoint, NewLocationPoint } from '../../../types/gps';
+import type { LocationPoint, NewLocationPoint } from '@/types/gps';
 
-import { createLocationRecordingSession } from '../locationRecordingSession';
+import { createLocationRecordingSession } from '@/features/location/locationRecordingSession';
 
 const mockInitializeDatabase = jest.fn();
 const mockProcessAchievementsForSavedPoint = jest.fn();
@@ -13,32 +13,32 @@ const mockGetVisitedCellsForLocationPoint = jest.fn();
 const mockShouldSaveLocationPoint = jest.fn();
 const mockUpsertVisitedCells = jest.fn();
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   initializeDatabase: (...args: unknown[]) => mockInitializeDatabase(...args),
 }));
 
-jest.mock('../../achievements/achievementService', () => ({
+jest.mock('@/features/achievements/achievementService', () => ({
   processAchievementsForSavedPoint: (...args: unknown[]) => mockProcessAchievementsForSavedPoint(...args),
 }));
 
-jest.mock('../../logs/logRepository', () => ({
+jest.mock('@/features/logs/logRepository', () => ({
   getLatestLocationPoint: (...args: unknown[]) => mockGetLatestLocationPoint(...args),
   insertLocationPoint: (...args: unknown[]) => mockInsertLocationPoint(...args),
 }));
 
-jest.mock('../locationMapper', () => ({
+jest.mock('@/features/location/locationMapper', () => ({
   toLocationPoint: (...args: unknown[]) => mockToLocationPoint(...args),
 }));
 
-jest.mock('../grid/gridInterpolation', () => ({
+jest.mock('@/features/location/grid/gridInterpolation', () => ({
   getVisitedCellsForLocationPoint: (...args: unknown[]) => mockGetVisitedCellsForLocationPoint(...args),
 }));
 
-jest.mock('../locationSaveFilter', () => ({
+jest.mock('@/features/location/locationSaveFilter', () => ({
   shouldSaveLocationPoint: (...args: unknown[]) => mockShouldSaveLocationPoint(...args),
 }));
 
-jest.mock('../visitedCellRepository', () => ({
+jest.mock('@/features/location/visitedCellRepository', () => ({
   upsertVisitedCells: (...args: unknown[]) => mockUpsertVisitedCells(...args),
 }));
 

@@ -1,8 +1,8 @@
 import { SafeAreaView, StyleSheet, Text } from 'react-native';
 
-import { lightTheme } from '../../../theme/theme';
-import { LicenseDetailScreen, LicenseScreen } from '../LicenseScreen';
-import { OSS_LICENSES } from '../../generated/ossLicenses';
+import { lightTheme } from '@/theme/theme';
+import { LicenseDetailScreen, LicenseScreen } from '@/app/components/LicenseScreen';
+import { OSS_LICENSES } from '@/app/generated/ossLicenses';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -12,7 +12,7 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
-jest.mock('../../generated/ossLicenses', () => ({
+jest.mock('@/app/generated/ossLicenses', () => ({
   OSS_LICENSES: [
     {
       id: 'react@19.1.0',

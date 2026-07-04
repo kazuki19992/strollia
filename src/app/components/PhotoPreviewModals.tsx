@@ -1,8 +1,8 @@
 import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
-import { MapPhotoCluster } from '../../features/photos/photoClusters';
-import { MapPhoto } from '../../features/photos/photoLibrary';
-import { AppStyles } from '../appStyles';
+import { MapPhotoCluster } from '@/features/photos/photoClusters';
+import { MapPhoto } from '@/features/photos/photoLibrary';
+import { AppStyles } from '@/app/appStyles';
 
 /** 写真プレビュー系モーダルのprops。 */
 export type PhotoPreviewModalsProps = {

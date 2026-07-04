@@ -1,7 +1,7 @@
 import { Region } from 'react-native-maps';
 
-import { MapPhoto } from '../photoLibrary';
-import { clusterMapPhotos, getPhotoClusterRadiusMeters, paginateMapPhotos } from '../photoClusters';
+import { MapPhoto } from '@/features/photos/photoLibrary';
+import { clusterMapPhotos, getPhotoClusterRadiusMeters, paginateMapPhotos } from '@/features/photos/photoClusters';
 
 /**
  * テスト用の地図写真を最小プロパティで作る。

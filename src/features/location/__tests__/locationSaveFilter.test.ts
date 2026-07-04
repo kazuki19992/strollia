@@ -1,5 +1,5 @@
-import { NewLocationPoint } from '../../../types/gps';
-import { estimateSaveSegmentSpeedMps, shouldSaveLocationPoint } from '../locationSaveFilter';
+import { NewLocationPoint } from '@/types/gps';
+import { estimateSaveSegmentSpeedMps, shouldSaveLocationPoint } from '@/features/location/locationSaveFilter';
 
 /** GPS保存判定テスト用のポイントを作る。 */
 function point(

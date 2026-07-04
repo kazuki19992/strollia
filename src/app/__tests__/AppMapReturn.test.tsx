@@ -1,29 +1,29 @@
-import App from '../App';
-import { createUserCenteredRegion } from '../mapRegion';
+import App from '@/app/App';
+import { createUserCenteredRegion } from '@/app/mapRegion';
 import { Alert, AppState, Pressable, Text } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { getVisitedCellsInBounds } from '../../features/location/visitedCellRepository';
-import { getGridBoundsForRegion, isGridBoundsContained } from '../../features/location/grid/gridCell';
-import { getLocationPermissionState } from '../../features/location/locationPermission';
+import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
+import { getGridBoundsForRegion, isGridBoundsContained } from '@/features/location/grid/gridCell';
+import { getLocationPermissionState } from '@/features/location/locationPermission';
 import {
   isBackgroundLocationRecording,
   startBackgroundLocationRecording,
   stopBackgroundLocationRecording,
   updateBackgroundLocationTaskOptionsIfNeeded,
-} from '../../features/location/locationService';
-import { resolveUserLocationIcon } from '../../features/customization/customizationResolver';
+} from '@/features/location/locationService';
+import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 import {
   deleteManagedCustomIcon,
   isLegacyCustomIconReference,
   resolveCustomIconReference,
-} from '../../features/customization/customIconStorage';
-import { replaceCustomIconSelection } from '../../features/customization/customIconSelection';
-import { getDailyLogs } from '../../features/logs/logRepository';
-import { getMonthlyAreaReport } from '../../features/reports/monthlyAreaReport';
-import { pickAndReadGpxFile } from '../../features/import/gpxImportService';
-import { parseGpxToLocationPoints } from '../../features/import/gpxImporter';
-import { importLocationPointsFromGpx } from '../../features/import/importRepository';
-import { GpxImportProgressDialog } from '../components/GpxImportProgressDialog';
+} from '@/features/customization/customIconStorage';
+import { replaceCustomIconSelection } from '@/features/customization/customIconSelection';
+import { getDailyLogs } from '@/features/logs/logRepository';
+import { getMonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
+import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
+import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
+import { importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { GpxImportProgressDialog } from '@/app/components/GpxImportProgressDialog';
 import {
   getConfirmedPremiumAccessState,
   getPremiumAccessState,
@@ -33,14 +33,14 @@ import {
   purchasePremiumPackage,
   restorePremiumPurchases,
   subscribePremiumAccessStateUpdates,
-} from '../../features/premium/revenueCatAccess';
-import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../../features/settings/settingsRepository';
+} from '@/features/premium/revenueCatAccess';
+import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '@/features/settings/settingsRepository';
 import {
   requestAchievementNotificationPermissionOnFirstLaunch,
   setupAchievementNotificationChannel,
-} from '../../features/achievements/achievementNotificationService';
-import { getAchievementListItems, getPendingInAppAchievementNotifications } from '../../features/achievements/achievementRepository';
-import { filterDismissedAchievementNotifications } from '../../features/achievements/pendingNotifications';
+} from '@/features/achievements/achievementNotificationService';
+import { getAchievementListItems, getPendingInAppAchievementNotifications } from '@/features/achievements/achievementRepository';
+import { filterDismissedAchievementNotifications } from '@/features/achievements/pendingNotifications';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -61,7 +61,7 @@ jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
 
-jest.mock('../../config/sentry', () => ({
+jest.mock('@/config/sentry', () => ({
   updateSentryScreenContext: jest.fn(),
   updateSentrySubscriptionContext: jest.fn(),
   updateSentryUserContext: jest.fn(),
@@ -100,7 +100,7 @@ jest.mock('react-native-maps', () => {
   };
 });
 
-jest.mock('../components/MapScreen', () => ({
+jest.mock('@/app/components/MapScreen', () => ({
   MapScreen: (props: any) => {
     const { Pressable, Text } = require('react-native');
 
@@ -166,7 +166,7 @@ jest.mock('../components/MapScreen', () => ({
   },
 }));
 
-jest.mock('../components/DailyLogsScreen', () => ({
+jest.mock('@/app/components/DailyLogsScreen', () => ({
   DailyLogsScreen: (props: any) => {
     const { Pressable, Text } = require('react-native');
 
@@ -183,7 +183,7 @@ jest.mock('../components/DailyLogsScreen', () => ({
   },
 }));
 
-jest.mock('../components/PremiumPaywallModal', () => ({
+jest.mock('@/app/components/PremiumPaywallModal', () => ({
   PremiumPaywallModal: (props: any) => {
     const { Pressable, Text } = require('react-native');
 
@@ -202,7 +202,7 @@ jest.mock('../components/PremiumPaywallModal', () => ({
   },
 }));
 
-jest.mock('../components/DailyLogDetailScreen', () => ({
+jest.mock('@/app/components/DailyLogDetailScreen', () => ({
   DailyLogDetailScreen: ({ onBackToDailyLogs }: { onBackToDailyLogs: () => void }) => {
     const { Pressable, Text } = require('react-native');
 
@@ -214,15 +214,15 @@ jest.mock('../components/DailyLogDetailScreen', () => ({
   },
 }));
 
-jest.mock('../components/AchievementListScreen', () => ({
+jest.mock('@/app/components/AchievementListScreen', () => ({
   AchievementListScreen: () => null,
 }));
 
-jest.mock('../components/AchievementUnlockModal', () => ({
+jest.mock('@/app/components/AchievementUnlockModal', () => ({
   AchievementUnlockModal: () => null,
 }));
 
-jest.mock('../components/FirstLaunchTutorialDialog', () => ({
+jest.mock('@/app/components/FirstLaunchTutorialDialog', () => ({
   FirstLaunchTutorialDialog: (props: any) => {
     const { Pressable, Text } = require('react-native');
     mockLatestFirstLaunchTutorialProps = props;
@@ -237,18 +237,18 @@ jest.mock('../components/FirstLaunchTutorialDialog', () => ({
   },
 }));
 
-jest.mock('../components/PhotoPreviewModals', () => ({
+jest.mock('@/app/components/PhotoPreviewModals', () => ({
   PhotoPreviewModals: () => null,
 }));
 
-jest.mock('../components/reports/MonthlyReportScreen', () => ({
+jest.mock('@/app/components/reports/MonthlyReportScreen', () => ({
   MonthlyReportScreen: (props: any) => {
     mockLatestMonthlyReportScreenProps = props;
     return null;
   },
 }));
 
-jest.mock('../components/SettingsScreen', () => ({
+jest.mock('@/app/components/SettingsScreen', () => ({
   SettingsScreen: (props: any) => {
     mockLatestSettingsScreenProps = props;
     const { Pressable, Text } = require('react-native');
@@ -269,7 +269,7 @@ jest.mock('../components/SettingsScreen', () => ({
   },
 }));
 
-jest.mock('../components/LicenseScreen', () => ({
+jest.mock('@/app/components/LicenseScreen', () => ({
   LicenseScreen: ({
     onBackToSettings,
     onOpenLicenseDetail,
@@ -304,71 +304,71 @@ jest.mock('../components/LicenseScreen', () => ({
   },
 }));
 
-jest.mock('../hooks/useAchievementDialogEffects', () => ({
+jest.mock('@/app/hooks/useAchievementDialogEffects', () => ({
   useAchievementDialogEffects: jest.fn(),
 }));
 
-jest.mock('../hooks/useKeepScreenAwake', () => ({
+jest.mock('@/app/hooks/useKeepScreenAwake', () => ({
   useKeepScreenAwake: jest.fn(),
 }));
 
-jest.mock('../hooks/usePhotoMapOverlay', () => ({
+jest.mock('@/app/hooks/usePhotoMapOverlay', () => ({
   usePhotoMapOverlay: () => ({ photos: [], isLoadingPhotos: false, photoErrorMessage: null }),
 }));
 
-jest.mock('../hooks/useScreenTransitionOpacity', () => ({
+jest.mock('@/app/hooks/useScreenTransitionOpacity', () => ({
   useScreenTransitionOpacity: () => ({ interpolate: () => 0 }),
 }));
 
-jest.mock('../hooks/useCurrentAreaName', () => ({
+jest.mock('@/app/hooks/useCurrentAreaName', () => ({
   useCurrentAreaLabel: () => ({ primary: '船橋市', secondary: '行田' }),
 }));
 
-jest.mock('../hooks/useForegroundUserLocation', () => ({
+jest.mock('@/app/hooks/useForegroundUserLocation', () => ({
   useForegroundUserLocation: (options: unknown) => {
     mockLatestForegroundLocationOptions = options;
   },
 }));
 
-jest.mock('../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   initializeDatabase: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../theme/fonts', () => ({
+jest.mock('@/theme/fonts', () => ({
   loadAppFonts: jest.fn().mockResolvedValue(undefined),
   NUMERIC_DISPLAY_FONT: 'DSEG7ClassicMini-Regular',
 }));
 
-jest.mock('../../config/developmentFlags', () => ({
+jest.mock('@/config/developmentFlags', () => ({
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));
 
-jest.mock('../../features/settings/settingsRepository', () => ({
+jest.mock('@/features/settings/settingsRepository', () => ({
   getBooleanSetting: jest.fn().mockResolvedValue(false),
   getStringSetting: jest.fn().mockResolvedValue('default'),
   setSetting: jest.fn().mockResolvedValue(undefined),
   setSettings: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/customization/customIconStorage', () => ({
+jest.mock('@/features/customization/customIconStorage', () => ({
   deleteManagedCustomIcon: jest.fn().mockResolvedValue(undefined),
   isLegacyCustomIconReference: jest.fn((reference: string) => /^[A-Za-z][A-Za-z\d+.-]*:\/\//.test(reference)),
   resolveCustomIconReference: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock('../../features/customization/customIconSelection', () => ({
+jest.mock('@/features/customization/customIconSelection', () => ({
   replaceCustomIconSelection: jest.fn(),
 }));
 
-jest.mock('../../features/location/locationService', () => ({
+jest.mock('@/features/location/locationService', () => ({
   isBackgroundLocationRecording: jest.fn().mockResolvedValue(true),
   updateBackgroundLocationTaskOptionsIfNeeded: jest.fn().mockResolvedValue(undefined),
   startBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
   stopBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/location/locationPermission', () => ({
+jest.mock('@/features/location/locationPermission', () => ({
   canRequestLocationPermissionInApp: jest.fn(() => true),
   getLocationPermissionState: jest.fn().mockResolvedValue({
     foregroundGranted: true,
@@ -380,7 +380,7 @@ jest.mock('../../features/location/locationPermission', () => ({
   isWhileInUseOnlyMode: jest.fn((state) => state.foregroundGranted && !state.backgroundGranted),
 }));
 
-jest.mock('../../features/logs/logRepository', () => ({
+jest.mock('@/features/logs/logRepository', () => ({
   deleteAllUserData: jest.fn().mockResolvedValue(undefined),
   getAllLocationPoints: jest.fn().mockResolvedValue([]),
   getDailyLogs: jest.fn().mockResolvedValue([]),
@@ -391,63 +391,63 @@ jest.mock('expo-notifications', () => ({
   useLastNotificationResponse: jest.fn(() => null),
 }));
 
-jest.mock('../../features/achievements/achievementNotificationService', () => ({
+jest.mock('@/features/achievements/achievementNotificationService', () => ({
   initializeAchievementNotificationHandler: jest.fn(),
   requestAchievementNotificationPermissionOnFirstLaunch: jest.fn().mockResolvedValue(undefined),
   setupAchievementNotificationChannel: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/reports/monthlyReportNotificationService', () => ({
+jest.mock('@/features/reports/monthlyReportNotificationService', () => ({
   isMonthlyReportNotification: jest.fn(() => false),
   setupMonthlyReportNotificationChannel: jest.fn().mockResolvedValue(undefined),
   syncMonthlyReportNotification: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/achievements/achievementRepository', () => ({
+jest.mock('@/features/achievements/achievementRepository', () => ({
   getAchievementListItems: jest.fn().mockResolvedValue([]),
   getPendingInAppAchievementNotifications: jest.fn().mockResolvedValue([]),
   markAchievementShownInApp: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/achievements/achievementEvaluationGate', () => ({
+jest.mock('@/features/achievements/achievementEvaluationGate', () => ({
   canEvaluateAchievementsInForeground: jest.fn(() => true),
 }));
 
-jest.mock('../../features/achievements/achievementService', () => ({
+jest.mock('@/features/achievements/achievementService', () => ({
   evaluateAchievementsAndNotify: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/achievements/pendingNotifications', () => ({
+jest.mock('@/features/achievements/pendingNotifications', () => ({
   filterDismissedAchievementNotifications: jest.fn(() => []),
 }));
 
-jest.mock('../../features/export/gpxExporter', () => ({
+jest.mock('@/features/export/gpxExporter', () => ({
   shareGpx: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../features/import/gpxImportService', () => ({
+jest.mock('@/features/import/gpxImportService', () => ({
   pickAndReadGpxFile: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock('../../features/import/gpxImporter', () => ({
+jest.mock('@/features/import/gpxImporter', () => ({
   parseGpxToLocationPoints: jest.fn().mockReturnValue([]),
 }));
 
-jest.mock('../../features/import/importRepository', () => ({
+jest.mock('@/features/import/importRepository', () => ({
   importLocationPointsFromGpx: jest.fn().mockResolvedValue({ importedPointCount: 0, skippedPointCount: 0 }),
 }));
 
-jest.mock('../../features/reports/monthlyAreaReport', () => ({
+jest.mock('@/features/reports/monthlyAreaReport', () => ({
   getMonthlyAreaReport: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock('../../features/reports/monthlyReport', () => jest.requireActual('../../features/reports/monthlyReport'));
+jest.mock('@/features/reports/monthlyReport', () => jest.requireActual('../../features/reports/monthlyReport'));
 
-jest.mock('../../features/customization/customizationResolver', () => ({
+jest.mock('@/features/customization/customizationResolver', () => ({
   resolveUserLocationIcon: jest.fn(() => ({ useNativeUserLocation: true, customIconId: null })),
 }));
 
-jest.mock('../../features/customization/customizationOptions', () => ({
+jest.mock('@/features/customization/customizationOptions', () => ({
   DEFAULT_USER_LOCATION_ICON_ID: 'default',
   getUserLocationIconOption: jest.fn((id: string) => ({
     id,
@@ -456,7 +456,7 @@ jest.mock('../../features/customization/customizationOptions', () => ({
   })),
 }));
 
-jest.mock('../../features/premium/revenueCatAccess', () => ({
+jest.mock('@/features/premium/revenueCatAccess', () => ({
   getConfirmedPremiumAccessState: jest.fn(),
   getDefaultPremiumAccessState: jest.fn(() => ({ isPlusActive: false, entitlementId: 'strollia_plus' })),
   getPremiumAccessState: jest.fn().mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' }),
@@ -473,20 +473,20 @@ jest.mock('../../features/premium/revenueCatAccess', () => ({
   }),
 }));
 
-jest.mock('../../features/photos/photoClusters', () => ({
+jest.mock('@/features/photos/photoClusters', () => ({
   clusterMapPhotos: jest.fn(() => []),
   paginateMapPhotos: jest.fn(() => []),
 }));
 
-jest.mock('../../features/photos/photoLibrary', () => ({
+jest.mock('@/features/photos/photoLibrary', () => ({
   hasFullPhotoAccess: jest.fn(() => true),
 }));
 
-jest.mock('../../features/location/visitedCellRepository', () => ({
+jest.mock('@/features/location/visitedCellRepository', () => ({
   getVisitedCellsInBounds: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock('../../features/location/grid/gridCell', () => ({
+jest.mock('@/features/location/grid/gridCell', () => ({
   getGridBoundsForRegion: jest.fn((region: any) => ({
     minX: Math.round(region.latitude * 1000),
     maxX: Math.round(region.longitude * 1000),

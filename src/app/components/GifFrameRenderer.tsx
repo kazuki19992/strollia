@@ -2,10 +2,10 @@ import { forwardRef } from 'react';
 import { Image, Text, View } from 'react-native';
 import MapView, { Polyline, Region } from 'react-native-maps';
 
-import { toRenderRouteCoordinates } from '../../features/map/routeMapper';
-import type { AppTheme } from '../../theme/theme';
-import type { LocationPoint } from '../../types/gps';
-import type { AppStyles } from '../appStyles';
+import { toRenderRouteCoordinates } from '@/features/map/routeMapper';
+import type { AppTheme } from '@/theme/theme';
+import type { LocationPoint } from '@/types/gps';
+import type { AppStyles } from '@/app/appStyles';
 
 export type GifFrameRendererProps = {
   /** 全コマ共通の固定表示範囲。 */

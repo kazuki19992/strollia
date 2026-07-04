@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 
-import { NewLocationPoint } from '../../types/gps';
+import { NewLocationPoint } from '@/types/gps';
 import {
   LocationPointAdminAreaInput,
   VisitedAdminAreaInput,

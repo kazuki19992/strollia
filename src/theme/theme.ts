@@ -1,4 +1,4 @@
-import type { AppColorPreset } from '../features/customization/colorPresets';
+import type { AppColorPreset } from '@/features/customization/colorPresets';
 
 /** OSカラースキームに対応するアプリテーマ名。 */
 export type AppThemeName = 'light' | 'dark';

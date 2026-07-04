@@ -1,8 +1,8 @@
 import type * as Location from 'expo-location';
 
-import { initializeDatabase } from '../../db/database';
-import { processAchievementsForSavedPoint } from '../achievements/achievementService';
-import { getLatestLocationPoint, insertLocationPoint } from '../logs/logRepository';
+import { initializeDatabase } from '@/db/database';
+import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
+import { getLatestLocationPoint, insertLocationPoint } from '@/features/logs/logRepository';
 import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
 import { toLocationPoint } from './locationMapper';
 import { shouldSaveLocationPoint } from './locationSaveFilter';

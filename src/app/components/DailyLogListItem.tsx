@@ -1,7 +1,7 @@
-import { formatDailyLogListDateLabel, formatDistanceKm, formatRouteSummary, resolveDailyLogDistance } from '../dailyLogDisplay';
-import type { DailyLogSummary } from '../../types/gps';
-import type { AppStyles } from '../appStyles';
-import type { AppTheme } from '../../theme/theme';
+import { formatDailyLogListDateLabel, formatDistanceKm, formatRouteSummary, resolveDailyLogDistance } from '@/app/dailyLogDisplay';
+import type { DailyLogSummary } from '@/types/gps';
+import type { AppStyles } from '@/app/appStyles';
+import type { AppTheme } from '@/theme/theme';
 import { AppListItem } from './AppListItem';
 
 export type DailyLogListItemProps = {

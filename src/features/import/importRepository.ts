@@ -1,10 +1,10 @@
 import * as SQLite from 'expo-sqlite';
 
-import { db } from '../../db/database';
-import { NewLocationPoint } from '../../types/gps';
-import { distanceMeters } from '../../utils/distance';
-import { getVisitedCellsForLocationPoint } from '../location/grid/gridInterpolation';
-import { upsertVisitedCellsInCurrentTransaction } from '../location/visitedCellRepository';
+import { db } from '@/db/database';
+import { NewLocationPoint } from '@/types/gps';
+import { distanceMeters } from '@/utils/distance';
+import { getVisitedCellsForLocationPoint } from '@/features/location/grid/gridInterpolation';
+import { upsertVisitedCellsInCurrentTransaction } from '@/features/location/visitedCellRepository';
 
 export type GpxImportResult = {
   importedPointCount: number;

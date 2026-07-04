@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, View } from 'react-native';
 
-import { AppStyles } from '../appStyles';
+import { AppStyles } from '@/app/appStyles';
 
 /** 紙吹雪の吹き上げ開始位置。 */
 type ConfettiOrigin = 'left' | 'right';

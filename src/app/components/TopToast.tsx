@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 
-import type { AppTheme } from '../../theme/theme';
+import type { AppTheme } from '@/theme/theme';
 
 export type TopToastProps = {
   /** 表示状態。 */

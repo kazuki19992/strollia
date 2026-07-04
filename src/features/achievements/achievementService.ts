@@ -1,4 +1,4 @@
-import { NewLocationPoint } from '../../types/gps';
+import { NewLocationPoint } from '@/types/gps';
 import { recordVisitedAdminAreasForPoint } from './adminAreaResolver';
 import { AchievementDefinition } from './achievementDefinitions';
 import { evaluateAndStoreAchievementUnlocks, resetAchievementUnlocksForDevelopment } from './achievementRepository';

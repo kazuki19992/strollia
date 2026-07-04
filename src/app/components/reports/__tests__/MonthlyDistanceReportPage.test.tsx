@@ -1,8 +1,12 @@
 import { Text } from 'react-native';
 
-import { NUMERIC_DISPLAY_FONT } from '../../../../theme/fonts';
-import { MonthlyReport } from '../../../../features/reports/monthlyReport';
-import { formatOdometerKilometers, getNextDistanceMilestoneKilometers, MonthlyDistanceReportPage } from '../MonthlyDistanceReportPage';
+import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
+import { MonthlyReport } from '@/features/reports/monthlyReport';
+import {
+  formatOdometerKilometers,
+  getNextDistanceMilestoneKilometers,
+  MonthlyDistanceReportPage,
+} from '@/app/components/reports/MonthlyDistanceReportPage';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

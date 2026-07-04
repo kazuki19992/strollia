@@ -1,5 +1,5 @@
-import { shouldStartRecordingAutomatically } from '../autoRecording';
-import { LocationPermissionState } from '../../features/location/locationPermission';
+import { shouldStartRecordingAutomatically } from '@/app/autoRecording';
+import { LocationPermissionState } from '@/features/location/locationPermission';
 
 const grantedPermissions: LocationPermissionState = {
   foregroundGranted: true,

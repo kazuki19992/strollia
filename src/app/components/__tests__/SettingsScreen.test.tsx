@@ -1,12 +1,12 @@
 import { Image, StyleSheet, Text } from 'react-native';
-import { AppColorPresetId } from '../../../features/customization/colorPresets';
+import { AppColorPresetId } from '@/features/customization/colorPresets';
 
-import { darkTheme, lightTheme } from '../../../theme/theme';
-import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../../features/premium/revenueCatAccess';
-import { DEFAULT_USER_LOCATION_ICON_ID } from '../../../features/customization/customizationOptions';
-import { createStyles } from '../../appStyles';
+import { darkTheme, lightTheme } from '@/theme/theme';
+import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
+import { DEFAULT_USER_LOCATION_ICON_ID } from '@/features/customization/customizationOptions';
+import { createStyles } from '@/app/appStyles';
 
-import { SettingsScreen, getSubscriptionStoreName } from '../SettingsScreen';
+import { SettingsScreen, getSubscriptionStoreName } from '@/app/components/SettingsScreen';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

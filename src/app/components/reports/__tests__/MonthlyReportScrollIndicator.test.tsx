@@ -1,6 +1,6 @@
 import { Animated } from 'react-native';
 
-import { MonthlyReportScrollIndicator } from '../MonthlyReportScrollIndicator';
+import { MonthlyReportScrollIndicator } from '@/app/components/reports/MonthlyReportScrollIndicator';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

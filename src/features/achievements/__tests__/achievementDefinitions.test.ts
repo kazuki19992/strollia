@@ -4,7 +4,7 @@ import {
   createAchievementShareText,
   formatAchievementDistance,
   kilometersToMeters,
-} from '../achievementDefinitions';
+} from '@/features/achievements/achievementDefinitions';
 
 describe('実績定義 achievementDefinitions', () => {
   it('距離表記をkm単位で整形する', () => {

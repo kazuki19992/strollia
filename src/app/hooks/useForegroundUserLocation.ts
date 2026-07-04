@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
 
-import { createLocationRecordingSession, LocationRecordingSession } from '../../features/location/locationRecordingSession';
-import { ensureForegroundLocationPermission } from '../../features/location/locationService';
+import { createLocationRecordingSession, LocationRecordingSession } from '@/features/location/locationRecordingSession';
+import { ensureForegroundLocationPermission } from '@/features/location/locationService';
 
 /** 位置更新を受け取るコールバック。speedはm/s（取得できない場合はnull）。 */
 export type ForegroundUserLocationCallback = (latitude: number, longitude: number, speed: number | null) => void;

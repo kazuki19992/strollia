@@ -1,5 +1,5 @@
-import { NewLocationPoint } from '../../../../types/gps';
-import { getVisitedCellsForLocationPoint } from '../gridInterpolation';
+import { NewLocationPoint } from '@/types/gps';
+import { getVisitedCellsForLocationPoint } from '@/features/location/grid/gridInterpolation';
 
 function point(latitude: number, longitude: number, recordedAt: string, options: Partial<NewLocationPoint> = {}): NewLocationPoint {
   return {

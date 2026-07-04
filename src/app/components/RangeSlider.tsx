@@ -1,8 +1,8 @@
 import { PanResponder, Text, View } from 'react-native';
 import { useRef, useState } from 'react';
 
-import type { AppTheme } from '../../theme/theme';
-import type { AppStyles } from '../appStyles';
+import type { AppTheme } from '@/theme/theme';
+import type { AppStyles } from '@/app/appStyles';
 import { resolveRangeThumbValues, type RangeThumb } from './rangeSliderValue';
 
 /** 開始・終了の2つのつまみで時間範囲を選択する {@link RangeSlider} のprops。 */

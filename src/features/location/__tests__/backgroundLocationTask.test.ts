@@ -16,7 +16,7 @@ jest.mock('expo-task-manager', () => ({
   }),
 }));
 
-jest.mock('../locationRecordingSession', () => ({
+jest.mock('@/features/location/locationRecordingSession', () => ({
   createLocationRecordingSession: (...args: unknown[]) => mockCreateLocationRecordingSession(...args),
 }));
 

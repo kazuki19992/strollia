@@ -1,7 +1,7 @@
 import type { LocationObject } from 'expo-location';
 import type React from 'react';
 
-import { useForegroundUserLocation } from '../useForegroundUserLocation';
+import { useForegroundUserLocation } from '@/app/hooks/useForegroundUserLocation';
 
 const { act, create } = require('react-test-renderer') as {
   act: (callback: () => void | Promise<void>) => Promise<void>;
@@ -18,11 +18,11 @@ const mockRemove = jest.fn();
 const mockRecordLocations = jest.fn();
 const mockCreateLocationRecordingSession = jest.fn();
 
-jest.mock('../../../features/location/locationService', () => ({
+jest.mock('@/features/location/locationService', () => ({
   ensureForegroundLocationPermission: (...args: unknown[]) => mockEnsureForegroundLocationPermission(...args),
 }));
 
-jest.mock('../../../features/location/locationRecordingSession', () => ({
+jest.mock('@/features/location/locationRecordingSession', () => ({
   createLocationRecordingSession: (...args: unknown[]) => mockCreateLocationRecordingSession(...args),
 }));
 

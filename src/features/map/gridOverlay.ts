@@ -1,7 +1,7 @@
 import type { GridOverlayConfig } from './config/gridOverlayConfig';
 import { GRID_OVERLAY_CONFIG } from './config/gridOverlayConfig';
-import { cellToPolygonCoordinates } from '../location/grid/gridCell';
-import type { GridCellPolygonSource } from '../location/grid/gridCell';
+import { cellToPolygonCoordinates } from '@/features/location/grid/gridCell';
+import type { GridCellPolygonSource } from '@/features/location/grid/gridCell';
 import type { LatLng } from 'react-native-maps';
 
 type RegionOpacityLike = {

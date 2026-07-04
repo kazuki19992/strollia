@@ -1,6 +1,6 @@
-import { db } from '../../db/database';
-import { DailyLogSummary, LocationPoint, NewLocationPoint } from '../../types/gps';
-import { distanceMeters } from '../../utils/distance';
+import { db } from '@/db/database';
+import { DailyLogSummary, LocationPoint, NewLocationPoint } from '@/types/gps';
+import { distanceMeters } from '@/utils/distance';
 
 /** DB列名をアプリ内のcamelCaseプロパティへ揃える共通SELECT句。 */
 const pointColumns = `

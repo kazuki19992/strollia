@@ -1,8 +1,8 @@
 import { PanResponder, Text, View } from 'react-native';
 import { useRef, useState } from 'react';
 
-import type { AppTheme } from '../../theme/theme';
-import type { AppStyles } from '../appStyles';
+import type { AppTheme } from '@/theme/theme';
+import type { AppStyles } from '@/app/appStyles';
 
 export type StepSliderProps = {
   /** スライダーのアクセシビリティラベル。 */

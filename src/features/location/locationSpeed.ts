@@ -1,5 +1,5 @@
-import { LocationPoint, NewLocationPoint } from '../../types/gps';
-import { distanceMeters } from '../../utils/distance';
+import { LocationPoint, NewLocationPoint } from '@/types/gps';
+import { distanceMeters } from '@/utils/distance';
 
 /** 保存判定と速度メーターで共有する速度帯。 */
 export type MovementSpeedBand = 'low-speed' | 'vehicle' | 'fast';

@@ -1,14 +1,14 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { getBooleanSetting, setSetting } from '../../settings/settingsRepository';
-import { markAchievementPushDelivered } from '../achievementRepository';
+import { getBooleanSetting, setSetting } from '@/features/settings/settingsRepository';
+import { markAchievementPushDelivered } from '@/features/achievements/achievementRepository';
 import {
   ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
   requestAchievementNotificationPermissionOnFirstLaunch,
   notifyAchievementUnlocked,
   setupAchievementNotificationChannel,
-} from '../achievementNotificationService';
+} from '@/features/achievements/achievementNotificationService';
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
@@ -19,12 +19,12 @@ jest.mock('expo-notifications', () => ({
   AndroidImportance: { HIGH: 'high' },
 }));
 
-jest.mock('../../settings/settingsRepository', () => ({
+jest.mock('@/features/settings/settingsRepository', () => ({
   getBooleanSetting: jest.fn(),
   setSetting: jest.fn(),
 }));
 
-jest.mock('../achievementRepository', () => ({
+jest.mock('@/features/achievements/achievementRepository', () => ({
   markAchievementPushDelivered: jest.fn(),
 }));
 

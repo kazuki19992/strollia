@@ -1,7 +1,7 @@
 import type { Region } from 'react-native-maps';
 
-import { LocationPoint } from '../../types/gps';
-import { estimateAcceptedSegmentSpeedMps } from '../location/locationSpeed';
+import { LocationPoint } from '@/types/gps';
+import { estimateAcceptedSegmentSpeedMps } from '@/features/location/locationSpeed';
 
 /** react-native-mapsのPolylineへ渡す緯度経度座標。 */
 export type RouteCoordinate = {

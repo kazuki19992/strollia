@@ -1,5 +1,5 @@
-import { DailyLogSummary, LocationPoint } from '../../types/gps';
-import { totalDistanceMeters } from '../../utils/distance';
+import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import { totalDistanceMeters } from '@/utils/distance';
 
 /** 月次レポートで扱う年月。 */
 export type ReportMonth = {

@@ -1,4 +1,4 @@
-import { AchievementListItem } from '../../features/achievements/achievementRepository';
+import { AchievementListItem } from '@/features/achievements/achievementRepository';
 
 /** 実績グリッドの表示状態。 */
 export type AchievementDisplayState = 'unlocked' | 'next' | 'hidden';

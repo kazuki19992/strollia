@@ -1,4 +1,9 @@
-import { APP_COLOR_PRESETS, DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset, isAppColorPresetId } from '../colorPresets';
+import {
+  APP_COLOR_PRESETS,
+  DEFAULT_APP_COLOR_PRESET_ID,
+  getAppColorPreset,
+  isAppColorPresetId,
+} from '@/features/customization/colorPresets';
 
 describe('アプリカラープリセット colorPresets', () => {
   it('デフォルトIDはまっちゃ', () => {

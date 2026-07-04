@@ -1,7 +1,7 @@
 import { Text } from 'react-native';
 
-import { lightTheme } from '../../../theme/theme';
-import { TopToast } from '../TopToast';
+import { lightTheme } from '@/theme/theme';
+import { TopToast } from '@/app/components/TopToast';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

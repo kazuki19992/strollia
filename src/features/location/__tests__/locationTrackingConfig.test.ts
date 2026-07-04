@@ -9,7 +9,7 @@ import {
   LOCATION_MIN_SAVE_DISTANCE_METERS,
   LOCATION_UPDATE_DISTANCE_METERS,
   LOCATION_UPDATE_INTERVAL_MS,
-} from '../locationTrackingConfig';
+} from '@/features/location/locationTrackingConfig';
 
 describe('位置情報追跡設定', () => {
   const originalPlatformOS = Platform.OS;

@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
-import { AchievementListItem } from '../../../features/achievements/achievementRepository';
-import { MonthlyReport } from '../../../features/reports/monthlyReport';
+import { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { MonthlyReport } from '@/features/reports/monthlyReport';
 import { reportStyles } from './reportStyles';
 import { ReportFrame } from './ReportFrame';
 

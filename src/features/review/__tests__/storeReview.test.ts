@@ -1,4 +1,4 @@
-import { requestStoreReview } from '../storeReview';
+import { requestStoreReview } from '@/features/review/storeReview';
 
 const mockIsAvailableAsync = jest.fn();
 const mockRequestReview = jest.fn();

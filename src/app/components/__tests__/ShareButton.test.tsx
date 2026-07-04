@@ -1,6 +1,6 @@
 import { Text } from 'react-native';
 
-import { ShareButton } from '../ShareButton';
+import { ShareButton } from '@/app/components/ShareButton';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,

@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 
-import { estimateAcceptedSegmentSpeedMps } from '../../features/location/locationSpeed';
-import { LocationPoint } from '../../types/gps';
-import { distanceMeters } from '../../utils/distance';
+import { estimateAcceptedSegmentSpeedMps } from '@/features/location/locationSpeed';
+import { LocationPoint } from '@/types/gps';
+import { distanceMeters } from '@/utils/distance';
 
 /** 停止ドリフト判定に使う直近点数。 */
 const STATIONARY_DRIFT_WINDOW_POINT_COUNT = 4;

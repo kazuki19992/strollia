@@ -1,12 +1,12 @@
 import { Text, StyleSheet } from 'react-native';
 
-import { createStyles } from '../../appStyles';
-import { darkTheme, lightTheme } from '../../../theme/theme';
-import { ActionPill } from '../ActionPill';
-import { AppBackButton } from '../AppBackButton';
-import { AppScreenHeader } from '../AppScreenHeader';
-import { InfoBlock } from '../InfoBlock';
-import { SelectionTile } from '../SelectionTile';
+import { createStyles } from '@/app/appStyles';
+import { darkTheme, lightTheme } from '@/theme/theme';
+import { ActionPill } from '@/app/components/ActionPill';
+import { AppBackButton } from '@/app/components/AppBackButton';
+import { AppScreenHeader } from '@/app/components/AppScreenHeader';
+import { InfoBlock } from '@/app/components/InfoBlock';
+import { SelectionTile } from '@/app/components/SelectionTile';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

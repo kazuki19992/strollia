@@ -1,13 +1,13 @@
 import { Text } from 'react-native';
 
-import { getLocationPointAdminAreaName } from '../../../features/achievements/adminAreaRepository';
-import { getAchievementUnlocksByDate } from '../../../features/achievements/achievementRepository';
-import { getVisitedCellsByIds } from '../../../features/location/visitedCellRepository';
-import { getLocationPointsByDate } from '../../../features/logs/logRepository';
-import { lightTheme } from '../../../theme/theme';
-import { DailyLogDetailScreen } from '../DailyLogDetailScreen';
-import { DailyLogShareCard } from '../DailyLogShareCard';
-import { StepSlider } from '../StepSlider';
+import { getLocationPointAdminAreaName } from '@/features/achievements/adminAreaRepository';
+import { getAchievementUnlocksByDate } from '@/features/achievements/achievementRepository';
+import { getVisitedCellsByIds } from '@/features/location/visitedCellRepository';
+import { getLocationPointsByDate } from '@/features/logs/logRepository';
+import { lightTheme } from '@/theme/theme';
+import { DailyLogDetailScreen } from '@/app/components/DailyLogDetailScreen';
+import { DailyLogShareCard } from '@/app/components/DailyLogShareCard';
+import { StepSlider } from '@/app/components/StepSlider';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -27,11 +27,11 @@ jest.mock('expo-sharing', () => ({
   shareAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../../../features/achievements/adminAreaRepository', () => ({
+jest.mock('@/features/achievements/adminAreaRepository', () => ({
   getLocationPointAdminAreaName: jest.fn().mockResolvedValue({ locationPointId: 1, areaName: '船橋市' }),
 }));
 
-jest.mock('../../../features/logs/logRepository', () => ({
+jest.mock('@/features/logs/logRepository', () => ({
   getLocationPointsByDate: jest.fn().mockResolvedValue([
     {
       id: 1,
@@ -60,7 +60,7 @@ jest.mock('../../../features/logs/logRepository', () => ({
   ]),
 }));
 
-jest.mock('../../../features/location/visitedCellRepository', () => ({
+jest.mock('@/features/location/visitedCellRepository', () => ({
   getVisitedCellsByIds: jest.fn().mockResolvedValue([
     {
       cellId: '100:155582:425804',
@@ -74,7 +74,7 @@ jest.mock('../../../features/location/visitedCellRepository', () => ({
   ]),
 }));
 
-jest.mock('../../../features/achievements/achievementRepository', () => ({
+jest.mock('@/features/achievements/achievementRepository', () => ({
   getAchievementUnlocksByDate: jest
     .fn()
     .mockResolvedValue([
@@ -82,11 +82,11 @@ jest.mock('../../../features/achievements/achievementRepository', () => ({
     ]),
 }));
 
-jest.mock('../../../features/achievements/achievementDefinitions', () => ({
+jest.mock('@/features/achievements/achievementDefinitions', () => ({
   getAchievementDefinition: jest.fn(() => ({ id: 'distance-100', title: '100km移動した', trophyImage: { uri: 'badge.png' } })),
 }));
 
-jest.mock('../../dailyRouteTimeline', () => ({
+jest.mock('@/app/dailyRouteTimeline', () => ({
   ...jest.requireActual('../../dailyRouteTimeline'),
   getTodayLocalDate: jest.fn(),
   getCurrentMinutesOfDay: jest.fn(),
@@ -109,7 +109,7 @@ jest.mock('expo-file-system/legacy', () => ({
   EncodingType: { Base64: 'base64', UTF8: 'utf8' },
 }));
 
-jest.mock('../../../features/export/routeGifExporter', () => ({
+jest.mock('@/features/export/routeGifExporter', () => ({
   exportRouteGif: jest.fn().mockResolvedValue(true),
 }));
 

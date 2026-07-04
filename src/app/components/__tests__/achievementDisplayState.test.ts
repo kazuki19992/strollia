@@ -1,6 +1,6 @@
-import type { AchievementDefinition } from '../../../features/achievements/achievementDefinitions';
-import type { AchievementListItem } from '../../../features/achievements/achievementRepository';
-import { resolveAchievementDisplayStates } from '../achievementDisplayState';
+import type { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
+import type { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { resolveAchievementDisplayStates } from '@/app/components/achievementDisplayState';
 
 /** テスト用の実績一覧項目を作る。 */
 function item(id: string, category: AchievementDefinition['category'], sortOrder: number, unlockedAt: string | null): AchievementListItem {

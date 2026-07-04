@@ -1,6 +1,6 @@
-import { PendingAchievementNotification } from '../achievementRepository';
-import { AchievementDefinition } from '../achievementDefinitions';
-import { filterDismissedAchievementNotifications } from '../pendingNotifications';
+import { PendingAchievementNotification } from '@/features/achievements/achievementRepository';
+import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
+import { filterDismissedAchievementNotifications } from '@/features/achievements/pendingNotifications';
 
 const definition = {
   id: 'odo-1',

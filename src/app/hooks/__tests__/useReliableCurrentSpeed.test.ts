@@ -1,5 +1,5 @@
-import { LocationPoint } from '../../../types/gps';
-import { calculateReliableCurrentSpeedKmh } from '../useReliableCurrentSpeed';
+import { LocationPoint } from '@/types/gps';
+import { calculateReliableCurrentSpeedKmh } from '@/app/hooks/useReliableCurrentSpeed';
 
 /** 信頼済み速度テスト用の保存済みGPS点を作る。 */
 function point(latitude: number, longitude: number, recordedAt: string): LocationPoint {

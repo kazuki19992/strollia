@@ -1,16 +1,16 @@
 import { Text } from 'react-native';
 
-import type { AchievementListItem } from '../../../features/achievements/achievementRepository';
-import { createStyles } from '../../appStyles';
-import { lightTheme } from '../../../theme/theme';
-import { AchievementDialog } from '../AchievementDialog';
+import type { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { createStyles } from '@/app/appStyles';
+import { lightTheme } from '@/theme/theme';
+import { AchievementDialog } from '@/app/components/AchievementDialog';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
   return { Feather: Text, MaterialCommunityIcons: Text };
 });
 
-jest.mock('../ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
+jest.mock('@/app/components/ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
 
 const mockShareAsync = jest.fn().mockResolvedValue(undefined);
 const mockIsAvailableAsync = jest.fn().mockResolvedValue(true);

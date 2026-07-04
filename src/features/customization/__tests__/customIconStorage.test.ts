@@ -5,7 +5,7 @@ import {
   isLegacyCustomIconReference,
   persistCustomIconImage,
   resolveCustomIconReference,
-} from '../customIconStorage';
+} from '@/features/customization/customIconStorage';
 
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///documents/',

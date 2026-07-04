@@ -1,4 +1,4 @@
-import { developmentFlags } from '../../config/developmentFlags';
+import { developmentFlags } from '@/config/developmentFlags';
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from './premiumCatalog';
 
 /** RevenueCatから得る購読/買い切りの利用可否。 */

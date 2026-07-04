@@ -1,6 +1,6 @@
 import { Animated, Text } from 'react-native';
 
-import { NewRecordPill } from '../NewRecordPill';
+import { NewRecordPill } from '@/app/components/reports/NewRecordPill';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

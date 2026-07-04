@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
+import type { AppStyles } from '@/app/appStyles';
 
 export type DataSummaryRowProps = {
   /** 左側の項目名。 */

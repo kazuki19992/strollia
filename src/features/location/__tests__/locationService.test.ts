@@ -1,6 +1,6 @@
 import { LocationObject } from 'expo-location';
 
-import { toLocationPoint } from '../locationMapper';
+import { toLocationPoint } from '@/features/location/locationMapper';
 
 describe('保存用GPSポイント変換 toLocationPoint', () => {
   it('Expoの位置情報オブジェクトを保存用ポイントへ変換する', () => {

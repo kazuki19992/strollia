@@ -1,4 +1,4 @@
-import { useAutoFitInitialRoute } from '../useAutoFitInitialRoute';
+import { useAutoFitInitialRoute } from '@/app/hooks/useAutoFitInitialRoute';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;

@@ -1,4 +1,4 @@
-import { getNextMapType } from '../mapType';
+import { getNextMapType } from '@/app/mapType';
 
 describe('地図種別切り替え getNextMapType', () => {
   it('標準地図からラベル付き航空写真へ切り替える', () => {

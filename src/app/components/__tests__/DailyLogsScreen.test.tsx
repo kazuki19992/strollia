@@ -1,9 +1,9 @@
 import { SafeAreaView, Text } from 'react-native';
 
-import { lightTheme } from '../../../theme/theme';
-import { DailyLogsScreen } from '../DailyLogsScreen';
+import { lightTheme } from '@/theme/theme';
+import { DailyLogsScreen } from '@/app/components/DailyLogsScreen';
 
-jest.mock('../../../features/achievements/adminAreaRepository', () => ({
+jest.mock('@/features/achievements/adminAreaRepository', () => ({
   getLocationPointAdminAreaNames: jest.fn().mockResolvedValue(
     new Map([
       [10, '船橋市'],

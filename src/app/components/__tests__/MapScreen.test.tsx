@@ -1,16 +1,16 @@
 import { Image, StyleSheet, Text, View, Animated } from 'react-native';
 
-import { NUMERIC_DISPLAY_FONT } from '../../../theme/fonts';
-import { lightTheme } from '../../../theme/theme';
-import { createStyles } from '../../appStyles';
+import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
+import { lightTheme } from '@/theme/theme';
+import { createStyles } from '@/app/appStyles';
 import {
   formatDistanceKilometers,
   formatSpeedKmh,
   getSpeedMeterAppearance,
   getSpeedMeterArcStroke,
   SPEED_METER_ARC_CIRCUMFERENCE,
-} from '../MapBottomDashboard';
-import { MapScreen } from '../MapScreen';
+} from '@/app/components/MapBottomDashboard';
+import { MapScreen } from '@/app/components/MapScreen';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -41,7 +41,7 @@ jest.mock('react-native-maps', () => {
   };
 });
 
-jest.mock('../PhotoClusterMarker', () => ({
+jest.mock('@/app/components/PhotoClusterMarker', () => ({
   PhotoClusterMarker: () => null,
 }));
 

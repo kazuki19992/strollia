@@ -1,8 +1,8 @@
 import { Text } from 'react-native';
 
-import { AchievementListItem } from '../../../../features/achievements/achievementRepository';
-import { MonthlyReport } from '../../../../features/reports/monthlyReport';
-import { AchievementHighlightReportPage } from '../AchievementHighlightReportPage';
+import { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { MonthlyReport } from '@/features/reports/monthlyReport';
+import { AchievementHighlightReportPage } from '@/app/components/reports/AchievementHighlightReportPage';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');

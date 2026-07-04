@@ -1,7 +1,7 @@
 import { Image, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
 
-import { ShareButton } from '../ShareButton';
+import { ShareButton } from '@/app/components/ShareButton';
 import { reportStyles } from './reportStyles';
 
 /** レポート各ページの共通枠。 */

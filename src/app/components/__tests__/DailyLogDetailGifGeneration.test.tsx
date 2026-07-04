@@ -1,6 +1,6 @@
-import { lightTheme } from '../../../theme/theme';
-import { DailyLogDetailScreen } from '../DailyLogDetailScreen';
-import { GifFrameRenderer } from '../GifFrameRenderer';
+import { lightTheme } from '@/theme/theme';
+import { DailyLogDetailScreen } from '@/app/components/DailyLogDetailScreen';
+import { GifFrameRenderer } from '@/app/components/GifFrameRenderer';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -38,11 +38,11 @@ jest.mock('upng-js', () => ({
   default: { decode: () => ({ width: 480, height: 480 }), toRGBA8: () => [new ArrayBuffer(4)] },
 }));
 
-jest.mock('../../../features/achievements/adminAreaRepository', () => ({
+jest.mock('@/features/achievements/adminAreaRepository', () => ({
   getLocationPointAdminAreaName: jest.fn().mockResolvedValue({ locationPointId: 1, areaName: '船橋市' }),
 }));
 
-jest.mock('../../../features/logs/logRepository', () => ({
+jest.mock('@/features/logs/logRepository', () => ({
   getLocationPointsByDate: jest.fn().mockResolvedValue([
     {
       id: 1,
@@ -71,19 +71,19 @@ jest.mock('../../../features/logs/logRepository', () => ({
   ]),
 }));
 
-jest.mock('../../../features/location/visitedCellRepository', () => ({
+jest.mock('@/features/location/visitedCellRepository', () => ({
   getVisitedCellsByIds: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock('../../../features/achievements/achievementRepository', () => ({
+jest.mock('@/features/achievements/achievementRepository', () => ({
   getAchievementUnlocksByDate: jest.fn().mockResolvedValue([]),
 }));
 
-jest.mock('../../../features/achievements/achievementDefinitions', () => ({
+jest.mock('@/features/achievements/achievementDefinitions', () => ({
   getAchievementDefinition: jest.fn(() => null),
 }));
 
-jest.mock('../../dailyRouteTimeline', () => ({
+jest.mock('@/app/dailyRouteTimeline', () => ({
   ...jest.requireActual('../../dailyRouteTimeline'),
   getTodayLocalDate: jest.fn(() => '2026-06-04'),
   getCurrentMinutesOfDay: jest.fn(() => 750),

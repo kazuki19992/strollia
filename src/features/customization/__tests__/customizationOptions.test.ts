@@ -1,4 +1,8 @@
-import { getAvailableCustomizationOptions, getUserLocationIconOption, USER_LOCATION_ICON_OPTIONS } from '../customizationOptions';
+import {
+  getAvailableCustomizationOptions,
+  getUserLocationIconOption,
+  USER_LOCATION_ICON_OPTIONS,
+} from '@/features/customization/customizationOptions';
 
 describe('カスタマイズ選択肢 customizationOptions', () => {
   it('現在地アイコンはPlus無効時に無料項目だけを返す', () => {

@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
-import type { AppTheme } from '../../theme/theme';
+import type { AppStyles } from '@/app/appStyles';
+import type { AppTheme } from '@/theme/theme';
 import { AppBackButton } from './AppBackButton';
 
 export type AppScreenHeaderProps = {

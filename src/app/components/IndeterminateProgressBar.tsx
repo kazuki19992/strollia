@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
 
-import type { AppStyles } from '../appStyles';
+import type { AppStyles } from '@/app/appStyles';
 
 export type IndeterminateProgressBarProps = {
   /** 画面共通スタイル。track/fill のスタイルを使う。 */

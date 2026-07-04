@@ -28,6 +28,7 @@
 ### Task 1: expo-store-review インストール
 
 **Files:**
+
 - Modify: `package.json`（自動）
 
 - [ ] **Step 1: インストール**
@@ -56,6 +57,7 @@ git commit -m "chore: expo-store-reviewをインストールする"
 ### Task 2: レビュー促進の判定ロジック
 
 **Files:**
+
 - Create: `src/features/review/reviewPromptLogic.ts`
 - Test: `src/features/review/__tests__/reviewPromptLogic.test.ts`
 
@@ -149,11 +151,7 @@ export type ReviewPromptContext = {
  * @returns レビュー促進を要求すべきならtrue。
  */
 export function shouldRequestReviewAfterAchievement(context: ReviewPromptContext): boolean {
-  return (
-    context.dismissedAchievementId === REVIEW_PROMPT_ACHIEVEMENT_ID &&
-    !context.hasPendingNotifications &&
-    !context.hasAlreadyPrompted
-  );
+  return context.dismissedAchievementId === REVIEW_PROMPT_ACHIEVEMENT_ID && !context.hasPendingNotifications && !context.hasAlreadyPrompted;
 }
 ```
 
@@ -177,6 +175,7 @@ git commit -m "feat(review): レビュー促進の判定ロジックを追加す
 ### Task 3: expo-store-review ラッパー
 
 **Files:**
+
 - Create: `src/features/review/storeReview.ts`
 - Test: `src/features/review/__tests__/storeReview.test.ts`
 
@@ -270,6 +269,7 @@ git commit -m "feat(review): expo-store-reviewラッパーを追加する"
 ### Task 4: App.tsx への配線
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 
 - [ ] **Step 1: imports と定数を追加**
@@ -292,7 +292,7 @@ const REVIEW_PROMPTED_SETTING_KEY = 'reviewPrompted';
 `customIconImageUri` state の近くに追加:
 
 ```typescript
-  const [hasPromptedReview, setHasPromptedReview] = useState(false);
+const [hasPromptedReview, setHasPromptedReview] = useState(false);
 ```
 
 - [ ] **Step 3: 設定読み込みに追加**
@@ -308,20 +308,27 @@ const REVIEW_PROMPTED_SETTING_KEY = 'reviewPrompted';
 分割代入の末尾に `savedReviewPrompted` を追加し、setterを呼ぶ:
 
 ```typescript
-        const [savedKeepScreenAwake, savedShowPhotosOnMap, savedUserLocationIcon, savedAppColorPresetId, savedCustomIconImageUri, savedReviewPrompted] = await Promise.all([
-          getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
-          getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
-          getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
-          getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
-          getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
-          getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
-        ]);
+const [
+  savedKeepScreenAwake,
+  savedShowPhotosOnMap,
+  savedUserLocationIcon,
+  savedAppColorPresetId,
+  savedCustomIconImageUri,
+  savedReviewPrompted,
+] = await Promise.all([
+  getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
+  getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
+  getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
+  getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
+  getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
+  getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
+]);
 ```
 
 setter群（`setCustomIconImageUri(...)` の後）に追加:
 
 ```typescript
-        setHasPromptedReview(savedReviewPrompted);
+setHasPromptedReview(savedReviewPrompted);
 ```
 
 - [ ] **Step 4: closeAchievementUnlockModal を更新**
@@ -329,39 +336,39 @@ setter群（`setCustomIconImageUri(...)` の後）に追加:
 `src/app/App.tsx:886-896` の関数を以下へ置き換え:
 
 ```typescript
-  /** 実績解除モーダルを閉じ、次の未表示実績があれば続けて表示する。 */
-  function closeAchievementUnlockModal(): void {
-    const current = activeAchievementNotification;
+/** 実績解除モーダルを閉じ、次の未表示実績があれば続けて表示する。 */
+function closeAchievementUnlockModal(): void {
+  const current = activeAchievementNotification;
 
-    if (!current) {
-      return;
-    }
-
-    const hasPendingAfterClose = pendingAchievementNotifications.length > 1;
-
-    dismissedAchievementQueueIdsRef.current.add(current.queueId);
-    markAchievementShownInApp(current.queueId).catch(() => undefined);
-    setPendingAchievementNotifications((notifications) => notifications.slice(1));
-
-    if (
-      shouldRequestReviewAfterAchievement({
-        dismissedAchievementId: current.definition.id,
-        hasPendingNotifications: hasPendingAfterClose,
-        hasAlreadyPrompted: hasPromptedReview,
-      })
-    ) {
-      setHasPromptedReview(true);
-      setSetting(REVIEW_PROMPTED_SETTING_KEY, true).catch((error: unknown) => {
-        console.warn('Failed to persist review prompted flag:', error);
-      });
-      // ダイアログ退場アニメーション（約500ms）と被らないよう少し遅らせて要求する。
-      setTimeout(() => {
-        requestStoreReview().catch((error: unknown) => {
-          console.warn('Failed to request store review:', error);
-        });
-      }, 700);
-    }
+  if (!current) {
+    return;
   }
+
+  const hasPendingAfterClose = pendingAchievementNotifications.length > 1;
+
+  dismissedAchievementQueueIdsRef.current.add(current.queueId);
+  markAchievementShownInApp(current.queueId).catch(() => undefined);
+  setPendingAchievementNotifications((notifications) => notifications.slice(1));
+
+  if (
+    shouldRequestReviewAfterAchievement({
+      dismissedAchievementId: current.definition.id,
+      hasPendingNotifications: hasPendingAfterClose,
+      hasAlreadyPrompted: hasPromptedReview,
+    })
+  ) {
+    setHasPromptedReview(true);
+    setSetting(REVIEW_PROMPTED_SETTING_KEY, true).catch((error: unknown) => {
+      console.warn('Failed to persist review prompted flag:', error);
+    });
+    // ダイアログ退場アニメーション（約500ms）と被らないよう少し遅らせて要求する。
+    setTimeout(() => {
+      requestStoreReview().catch((error: unknown) => {
+        console.warn('Failed to request store review:', error);
+      });
+    }, 700);
+  }
+}
 ```
 
 - [ ] **Step 5: 全テスト実行**

@@ -52,17 +52,17 @@ GPX内の名前空間有無に依存しないよう、パーサはタグ名の�
 
 各値の変換は以下とする。
 
-| 保存値 | GPX由来 |
-| --- | --- |
-| `recordedAt` | `trkpt/time` |
-| `localDate` | `recordedAt` を既存の `toLocalDate` で変換 |
-| `latitude` | `trkpt@lat` |
-| `longitude` | `trkpt@lon` |
-| `altitude` | `trkpt/ele`。なければ `null` |
-| `speed` | `null` |
-| `heading` | `null` |
-| `accuracy` | `null` |
-| `altitudeAccuracy` | `null` |
+| 保存値             | GPX由来                                    |
+| ------------------ | ------------------------------------------ |
+| `recordedAt`       | `trkpt/time`                               |
+| `localDate`        | `recordedAt` を既存の `toLocalDate` で変換 |
+| `latitude`         | `trkpt@lat`                                |
+| `longitude`        | `trkpt@lon`                                |
+| `altitude`         | `trkpt/ele`。なければ `null`               |
+| `speed`            | `null`                                     |
+| `heading`          | `null`                                     |
+| `accuracy`         | `null`                                     |
+| `altitudeAccuracy` | `null`                                     |
 
 DB保存時の `source` は、通常のGPS記録と区別できるよう `gpx-import` とする。
 

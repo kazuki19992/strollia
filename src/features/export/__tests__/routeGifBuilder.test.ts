@@ -14,7 +14,7 @@ const capture = async () => ({ data: new Uint8Array(4), width: 1, height: 1 });
 describe('buildRouteGif（GIF生成オーケストレーション）', () => {
   it('全フレームを capture/encode して GIF バイト列と進捗を返す', async () => {
     const encoder = fakeEncoder();
-    const progress: Array<[number, number]> = [];
+    const progress: [number, number][] = [];
     const result = await buildRouteGif({
       frameCount: 3,
       delayMs: 500,
@@ -24,7 +24,11 @@ describe('buildRouteGif（GIF生成オーケストレーション）', () => {
     });
     expect(encoder.frames).toEqual([500, 500, 500]);
     expect(result).toEqual(new Uint8Array([1, 2, 3]));
-    expect(progress).toEqual([[1, 3], [2, 3], [3, 3]]);
+    expect(progress).toEqual([
+      [1, 3],
+      [2, 3],
+      [3, 3],
+    ]);
   });
 
   it('途中で shouldAbort が true になったら、それ以上 capture せず null を返す', async () => {

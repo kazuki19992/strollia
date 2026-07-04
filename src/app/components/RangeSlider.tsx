@@ -142,7 +142,12 @@ export function RangeSlider({
       thumb,
       raw,
       { start: startRef.current, end: endRef.current },
-      { minValue: minValueRef.current, maxValue: maxValueRef.current, stepValue: stepValueRef.current, minSeparation: minSeparationRef.current },
+      {
+        minValue: minValueRef.current,
+        maxValue: maxValueRef.current,
+        stepValue: stepValueRef.current,
+        minSeparation: minSeparationRef.current,
+      },
     );
     if (next.start !== startRef.current || next.end !== endRef.current) {
       onChangeRef.current(next.start, next.end);

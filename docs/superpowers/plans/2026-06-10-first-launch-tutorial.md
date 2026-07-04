@@ -30,6 +30,7 @@
 ### Task 1: FirstLaunchTutorialDialog
 
 **Files:**
+
 - Create: `src/app/components/FirstLaunchTutorialDialog.tsx`
 - Create: `src/app/components/__tests__/FirstLaunchTutorialDialog.test.tsx`
 - Modify: `src/app/appStyles.ts`
@@ -88,7 +89,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
     expect(visibleTexts()).toContain('すとろりあへようこそ');
     expect(visibleTexts()).toContain('1 / 4');
-    expect(visibleTexts()).toContain('すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。');
+    expect(visibleTexts()).toContain(
+      'すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。',
+    );
   });
 
   test('次へを押すと画面下の項目、実績、権限案内の順に進む', () => {
@@ -107,7 +110,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     press('次へ');
     expect(visibleTexts()).toContain('権限を付与してはじめる');
     expect(visibleTexts()).toContain('4 / 4');
-    expect(visibleTexts()).toContain('まずは位置情報の権限を付与してはじめましょう。チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。');
+    expect(visibleTexts()).toContain(
+      'まずは位置情報の権限を付与してはじめましょう。チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。',
+    );
   });
 
   test('最後のボタンで onComplete を呼ぶ', () => {
@@ -235,11 +240,13 @@ export type FirstLaunchTutorialDialogProps = {
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
     title: 'すとろりあへようこそ',
-    description: 'すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。',
+    description:
+      'すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。記録したデータは、あなたの明示操作なしに外部へ送信しません。',
   },
   {
     title: '画面下の項目',
-    description: '画面下から、日ごとの記録、実績、月ごとのレポート、設定を開けます。普段は地図を見ながら、必要なときに各項目を確認できます。',
+    description:
+      '画面下から、日ごとの記録、実績、月ごとのレポート、設定を開けます。普段は地図を見ながら、必要なときに各項目を確認できます。',
   },
   {
     title: '実績を集める',
@@ -247,7 +254,8 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     title: '権限を付与してはじめる',
-    description: 'まずは位置情報の権限を付与してはじめましょう。チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。',
+    description:
+      'まずは位置情報の権限を付与してはじめましょう。チュートリアルを閉じたあと、地図上に表示される赤い権限付与パネルのボタンを押してください。',
   },
 ];
 
@@ -314,6 +322,7 @@ Expected: commit succeeds.
 ### Task 2: App Integration
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 
@@ -361,44 +370,44 @@ jest.mock('../components/FirstLaunchTutorialDialog', () => ({
 4. Add tests near the other App initialization tests:
 
 ```tsx
-  test('初回チュートリアル未完了の場合は初回チュートリアルを表示する', async () => {
-    let renderer: any;
-    await act(async () => {
-      renderer = create(<App />);
-    });
-
-    expect(renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+test('初回チュートリアル未完了の場合は初回チュートリアルを表示する', async () => {
+  let renderer: any;
+  await act(async () => {
+    renderer = create(<App />);
   });
 
-  test('初回チュートリアル完了時に表示済み設定を保存する', async () => {
-    let renderer: any;
-    await act(async () => {
-      renderer = create(<App />);
-    });
+  expect(renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+});
 
-    await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
-    });
-
-    expect(setSetting).toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
+test('初回チュートリアル完了時に表示済み設定を保存する', async () => {
+  let renderer: any;
+  await act(async () => {
+    renderer = create(<App />);
   });
 
-  test('初回チュートリアル完了済みの場合は表示しない', async () => {
-    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
-      if (key === 'firstLaunchTutorialCompleted') {
-        return Promise.resolve(true);
-      }
-
-      return Promise.resolve(fallback);
-    });
-
-    let renderer: any;
-    await act(async () => {
-      renderer = create(<App />);
-    });
-
-    expect(renderer.root.findAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
+  await act(async () => {
+    renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
   });
+
+  expect(setSetting).toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
+});
+
+test('初回チュートリアル完了済みの場合は表示しない', async () => {
+  (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
+    if (key === 'firstLaunchTutorialCompleted') {
+      return Promise.resolve(true);
+    }
+
+    return Promise.resolve(fallback);
+  });
+
+  let renderer: any;
+  await act(async () => {
+    renderer = create(<App />);
+  });
+
+  expect(renderer.root.findAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
+});
 ```
 
 - [ ] **Step 2: Run App test to verify it fails**
@@ -431,59 +440,55 @@ const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialComplete
 3. Add state near the other modal/state values:
 
 ```ts
-  const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
+const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
 ```
 
 4. Include the setting in initialization:
 
 ```ts
-        const [
-          savedKeepScreenAwake,
-          savedShowPhotosOnMap,
-          savedUserLocationIcon,
-          savedAppColorPresetId,
-          savedCustomIconImageUri,
-          savedReviewPrompted,
-          savedFirstLaunchTutorialCompleted,
-        ] = await Promise.all([
-          getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
-          getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
-          getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
-          getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
-          getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
-          getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
-          getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
-        ]);
+const [
+  savedKeepScreenAwake,
+  savedShowPhotosOnMap,
+  savedUserLocationIcon,
+  savedAppColorPresetId,
+  savedCustomIconImageUri,
+  savedReviewPrompted,
+  savedFirstLaunchTutorialCompleted,
+] = await Promise.all([
+  getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
+  getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
+  getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
+  getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
+  getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
+  getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
+  getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
+]);
 ```
 
 After `await refreshAchievementState(true);`, add:
 
 ```ts
-        if (!savedFirstLaunchTutorialCompleted) {
-          setIsFirstLaunchTutorialVisible(true);
-        }
+if (!savedFirstLaunchTutorialCompleted) {
+  setIsFirstLaunchTutorialVisible(true);
+}
 ```
 
 5. Add completion handler before render:
 
 ```ts
-  /** 初回チュートリアルを閉じ、次回以降は表示しないよう保存する。 */
-  function completeFirstLaunchTutorial(): void {
-    setIsFirstLaunchTutorialVisible(false);
-    setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
-      console.warn('Failed to persist first launch tutorial flag:', error);
-    });
-  }
+/** 初回チュートリアルを閉じ、次回以降は表示しないよう保存する。 */
+function completeFirstLaunchTutorial(): void {
+  setIsFirstLaunchTutorialVisible(false);
+  setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
+    console.warn('Failed to persist first launch tutorial flag:', error);
+  });
+}
 ```
 
 6. Render the tutorial near other root modals:
 
 ```tsx
-      <FirstLaunchTutorialDialog
-        visible={isFirstLaunchTutorialVisible}
-        styles={styles}
-        onComplete={completeFirstLaunchTutorial}
-      />
+<FirstLaunchTutorialDialog visible={isFirstLaunchTutorialVisible} styles={styles} onComplete={completeFirstLaunchTutorial} />
 ```
 
 - [ ] **Step 4: Run App test to verify it passes**
@@ -522,6 +527,7 @@ Expected: commit succeeds.
 ### Task 3: Docs and Verification
 
 **Files:**
+
 - Modify: `docs/mvp.md`
 
 - [ ] **Step 1: Update MVP docs**
@@ -593,6 +599,7 @@ Expected: commit succeeds.
 ### Task 4: Final Branch Verification
 
 **Files:**
+
 - Read-only verification across the branch.
 
 - [ ] **Step 1: Check status**

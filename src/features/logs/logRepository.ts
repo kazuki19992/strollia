@@ -115,7 +115,6 @@ export async function getDailyLogs(): Promise<DailyLogSummary[]> {
   );
 }
 
-
 /** 日別距離を差分加算するため、同じ日の最後の保存点を取得する。 */
 async function getLatestLocationPointByDate(localDate: string): Promise<LocationPoint | null> {
   const point = await db.getFirstAsync<LocationPoint>(

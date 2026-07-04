@@ -81,9 +81,7 @@ describe('月次レポート通知 monthlyReportNotificationService', () => {
 
     it('Plus有効かつすでに登録済みの場合は再スケジュールしない（重複防止）', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
-      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
-        { identifier: 'monthly-report' },
-      ]);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([{ identifier: 'monthly-report' }]);
 
       await syncMonthlyReportNotification(true);
 

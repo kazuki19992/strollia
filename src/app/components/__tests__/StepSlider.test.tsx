@@ -33,9 +33,7 @@ describe('ステップスライダー StepSlider', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(
-        <StepSlider {...defaultProps} onValueChange={jest.fn()} />,
-      );
+      renderer = ReactTestRenderer.create(<StepSlider {...defaultProps} onValueChange={jest.fn()} />);
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
@@ -46,14 +44,10 @@ describe('ステップスライダー StepSlider', () => {
     let renderer: any;
 
     act(() => {
-      renderer = ReactTestRenderer.create(
-        <StepSlider {...defaultProps} onValueChange={jest.fn()} />,
-      );
+      renderer = ReactTestRenderer.create(<StepSlider {...defaultProps} onValueChange={jest.fn()} />);
     });
 
-    const touchArea = renderer.root.findAll(
-      (node: any) => node.type === View && typeof node.props.onLayout === 'function',
-    )[0];
+    const touchArea = renderer.root.findAll((node: any) => node.type === View && typeof node.props.onLayout === 'function')[0];
     expect(touchArea).toBeTruthy();
   });
 
@@ -77,15 +71,11 @@ describe('ステップスライダー StepSlider', () => {
       let renderer: any;
 
       act(() => {
-        renderer = ReactTestRenderer.create(
-          <StepSlider {...defaultProps} value={720} onValueChange={onValueChange} />,
-        );
+        renderer = ReactTestRenderer.create(<StepSlider {...defaultProps} value={720} onValueChange={onValueChange} />);
       });
 
       // trackWidth を 300px に設定
-      const touchArea = renderer.root.findAll(
-        (node: any) => node.type === View && typeof node.props.onLayout === 'function',
-      )[0];
+      const touchArea = renderer.root.findAll((node: any) => node.type === View && typeof node.props.onLayout === 'function')[0];
       act(() => {
         touchArea.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
       });
@@ -129,22 +119,15 @@ describe('ステップスライダー StepSlider', () => {
       let renderer: any;
 
       act(() => {
-        renderer = ReactTestRenderer.create(
-          <StepSlider {...defaultProps} value={720} onValueChange={jest.fn()} />,
-        );
+        renderer = ReactTestRenderer.create(<StepSlider {...defaultProps} value={720} onValueChange={jest.fn()} />);
       });
 
       // accessibilityRole="adjustable" の View を探す（onAccessibilityAction は RN が
       // ネイティブレベルで処理するためテストレンダラーの props には現れない）
-      const touchArea = renderer.root.findAll(
-        (node: any) => node.type === View && node.props.accessibilityRole === 'adjustable',
-      )[0];
+      const touchArea = renderer.root.findAll((node: any) => node.type === View && node.props.accessibilityRole === 'adjustable')[0];
 
       expect(touchArea).toBeTruthy();
-      expect(touchArea.props.accessibilityActions).toEqual([
-        { name: 'increment' },
-        { name: 'decrement' },
-      ]);
+      expect(touchArea.props.accessibilityActions).toEqual([{ name: 'increment' }, { name: 'decrement' }]);
       expect(touchArea.props.accessibilityValue).toEqual({
         min: 0,
         max: 1440,

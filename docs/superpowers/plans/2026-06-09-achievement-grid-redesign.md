@@ -36,6 +36,7 @@
 ### Task 1: テーマ無彩色化
 
 **Files:**
+
 - Modify: `src/theme/theme.ts:34-83`
 - Test: `src/theme/__tests__/theme.test.ts:9-18`
 
@@ -44,29 +45,29 @@
 `src/theme/__tests__/theme.test.ts` の「日別ルートと共有ボタンの色はテーマトークンとして持つ」テスト内、ダークの `shareButtonBackground` 期待値を更新する。該当行を次へ置換:
 
 ```typescript
-    expect(darkTheme.colors.shareButtonBackground).toBe('#f0f0f0');
+expect(darkTheme.colors.shareButtonBackground).toBe('#f0f0f0');
 ```
 
 さらに同 `describe` 内に無彩色化を固定する新規テストを追加:
 
 ```typescript
-  it('カード・境界・文字色は無彩色トークンを使う', () => {
-    expect(lightTheme.colors.card).toBe('#f8f8f8');
-    expect(lightTheme.colors.cardStrong).toBe('#f0f0f0');
-    expect(lightTheme.colors.text).toBe('#1a1a1a');
-    expect(lightTheme.colors.mutedText).toBe('#666666');
-    expect(lightTheme.colors.border).toBe('#e0e0e0');
-    expect(lightTheme.colors.surfaceOverlay).toBe('rgba(248, 248, 248, 0.94)');
-    expect(lightTheme.colors.scrim).toBe('rgba(0, 0, 0, 0.08)');
-    expect(lightTheme.colors.shadow).toBe('#000000');
+it('カード・境界・文字色は無彩色トークンを使う', () => {
+  expect(lightTheme.colors.card).toBe('#f8f8f8');
+  expect(lightTheme.colors.cardStrong).toBe('#f0f0f0');
+  expect(lightTheme.colors.text).toBe('#1a1a1a');
+  expect(lightTheme.colors.mutedText).toBe('#666666');
+  expect(lightTheme.colors.border).toBe('#e0e0e0');
+  expect(lightTheme.colors.surfaceOverlay).toBe('rgba(248, 248, 248, 0.94)');
+  expect(lightTheme.colors.scrim).toBe('rgba(0, 0, 0, 0.08)');
+  expect(lightTheme.colors.shadow).toBe('#000000');
 
-    expect(darkTheme.colors.card).toBe('#252525');
-    expect(darkTheme.colors.cardStrong).toBe('#2e2e2e');
-    expect(darkTheme.colors.text).toBe('#f0f0f0');
-    expect(darkTheme.colors.mutedText).toBe('#999999');
-    expect(darkTheme.colors.border).toBe('#3a3a3a');
-    expect(darkTheme.colors.surfaceOverlay).toBe('rgba(37, 37, 37, 0.94)');
-  });
+  expect(darkTheme.colors.card).toBe('#252525');
+  expect(darkTheme.colors.cardStrong).toBe('#2e2e2e');
+  expect(darkTheme.colors.text).toBe('#f0f0f0');
+  expect(darkTheme.colors.mutedText).toBe('#999999');
+  expect(darkTheme.colors.border).toBe('#3a3a3a');
+  expect(darkTheme.colors.surfaceOverlay).toBe('rgba(37, 37, 37, 0.94)');
+});
 ```
 
 - [ ] **Step 2: テストを実行して失敗を確認**
@@ -135,6 +136,7 @@ git commit -m "style(theme): カード・境界・文字色を無彩色化する
 ### Task 2: 汎用 Dialog コンポーネント
 
 **Files:**
+
 - Create: `src/app/components/Dialog.tsx`
 - Test: `src/app/components/__tests__/Dialog.test.tsx`
 
@@ -326,7 +328,16 @@ export type DialogProps = {
 };
 
 /** スワイプ/紙吹雪/自動クローズを備えた汎用ダイアログ。 */
-export function Dialog({ visible, children, showConfetti = false, autoClose = false, animationKey = null, styles, theme, onClose }: DialogProps) {
+export function Dialog({
+  visible,
+  children,
+  showConfetti = false,
+  autoClose = false,
+  animationKey = null,
+  styles,
+  theme,
+  onClose,
+}: DialogProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
   const autoCloseProgress = useRef(new Animated.Value(0)).current;
   const dragX = useRef(new Animated.Value(0)).current;
@@ -413,16 +424,22 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
   }, [autoClose, visible, isRendered, isAutoClosePaused, animationKey, animateOut, clearAutoCloseTimer]);
 
   /** 自動クローズを止める。 */
-  const pauseAutoClose = useCallback(function pauseAutoClose(): void {
-    setIsAutoClosePaused(true);
-    autoCloseProgress.stopAnimation();
-    clearAutoCloseTimer();
-  }, [autoCloseProgress, clearAutoCloseTimer]);
+  const pauseAutoClose = useCallback(
+    function pauseAutoClose(): void {
+      setIsAutoClosePaused(true);
+      autoCloseProgress.stopAnimation();
+      clearAutoCloseTimer();
+    },
+    [autoCloseProgress, clearAutoCloseTimer],
+  );
 
-  const resetDragPosition = useCallback(function resetDragPosition(): void {
-    Animated.spring(dragX, { toValue: 0, damping: 12, stiffness: 210, useNativeDriver: true }).start();
-    Animated.spring(dragY, { toValue: 0, damping: 12, stiffness: 210, useNativeDriver: true }).start();
-  }, [dragX, dragY]);
+  const resetDragPosition = useCallback(
+    function resetDragPosition(): void {
+      Animated.spring(dragX, { toValue: 0, damping: 12, stiffness: 210, useNativeDriver: true }).start();
+      Animated.spring(dragY, { toValue: 0, damping: 12, stiffness: 210, useNativeDriver: true }).start();
+    },
+    [dragX, dragY],
+  );
 
   const panResponder = useMemo(
     () =>
@@ -482,7 +499,13 @@ export function Dialog({ visible, children, showConfetti = false, autoClose = fa
               },
             ]}
           >
-            <Pressable onPress={() => animateOut(true)} hitSlop={10} style={styles.achievementCloseButton} accessibilityLabel="閉じる" accessibilityRole="button">
+            <Pressable
+              onPress={() => animateOut(true)}
+              hitSlop={10}
+              style={styles.achievementCloseButton}
+              accessibilityLabel="閉じる"
+              accessibilityRole="button"
+            >
               <MaterialCommunityIcons name="close" size={18} color={styles.achievementCloseButtonIcon.color} />
             </Pressable>
             {autoClose && !isAutoClosePaused && (
@@ -523,6 +546,7 @@ git commit -m "feat(dialog): 汎用Dialogコンポーネントを追加する"
 ### Task 3: AchievementUnlockModal を Dialog 利用へ改修
 
 **Files:**
+
 - Modify: `src/app/components/AchievementUnlockModal.tsx`（全面書き換え）
 - Modify: `src/app/components/__tests__/AchievementUnlockModal.test.tsx`
 - Modify: `src/app/App.tsx:1172-1178`
@@ -648,7 +672,15 @@ export type AchievementUnlockModalProps = {
 /** 実績解除時の紙吹雪付きモーダル。汎用 Dialog を解除通知向けに使う。 */
 export function AchievementUnlockModal({ achievement, animationKey, styles, theme, onShareToX, onClose }: AchievementUnlockModalProps) {
   return (
-    <Dialog visible={achievement != null} showConfetti autoClose animationKey={animationKey} styles={styles} theme={theme} onClose={onClose}>
+    <Dialog
+      visible={achievement != null}
+      showConfetti
+      autoClose
+      animationKey={animationKey}
+      styles={styles}
+      theme={theme}
+      onClose={onClose}
+    >
       {({ pauseAutoClose }) =>
         achievement && (
           <>
@@ -689,14 +721,16 @@ Expected: PASS
 `src/app/App.tsx:1172-1178` の `<AchievementUnlockModal ... />` に `theme={theme}` を追加:
 
 ```tsx
-      <AchievementUnlockModal
-        achievement={activeAchievementNotification?.definition ?? null}
-        animationKey={activeAchievementNotification ? `${activeAchievementNotification.queueId}:${activeAchievementNotification.definition.id}` : null}
-        styles={styles}
-        theme={theme}
-        onShareToX={shareAchievementToX}
-        onClose={closeAchievementUnlockModal}
-      />
+<AchievementUnlockModal
+  achievement={activeAchievementNotification?.definition ?? null}
+  animationKey={
+    activeAchievementNotification ? `${activeAchievementNotification.queueId}:${activeAchievementNotification.definition.id}` : null
+  }
+  styles={styles}
+  theme={theme}
+  onShareToX={shareAchievementToX}
+  onClose={closeAchievementUnlockModal}
+/>
 ```
 
 - [ ] **Step 6: 関連テストの回帰確認**
@@ -716,6 +750,7 @@ git commit -m "refactor(achievement): 解除モーダルを汎用Dialog利用へ
 ### Task 4: 表示状態判定ヘルパー resolveAchievementDisplayStates
 
 **Files:**
+
 - Create: `src/app/components/achievementDisplayState.ts`
 - Test: `src/app/components/__tests__/achievementDisplayState.test.ts`
 
@@ -766,10 +801,7 @@ describe('表示状態判定 resolveAchievementDisplayStates', () => {
   });
 
   test('カテゴリごとに独立して next を決める', () => {
-    const items = [
-      item('d1', 'distance', 1001, null),
-      item('p1', 'prefecture', 4001, null),
-    ];
+    const items = [item('d1', 'distance', 1001, null), item('p1', 'prefecture', 4001, null)];
 
     const states = resolveAchievementDisplayStates(items);
 
@@ -866,6 +898,7 @@ git commit -m "feat(achievement): グリッド表示状態判定ヘルパーを�
 ### Task 5: グリッド/ダイアログ用スタイル追加
 
 **Files:**
+
 - Modify: `src/app/appStyles.ts`（`achievementGrid` 周辺に追加）
 - Test: `src/app/components/__tests__/Dialog.test.tsx`（既存 createStyles 利用で間接検証、新規アサーション不要）
 
@@ -914,7 +947,7 @@ Expected: FAIL（スタイルキー未定義）
 `src/app/appStyles.ts` の `createStyles` 冒頭ローカル変数群（`const settingsWarning = '#a36100';` の直後あたり）に、テーマ別グレースケール色を定義:
 
 ```typescript
-    const grayscaleOverlayColor = theme.name === 'dark' ? 'rgba(0, 0, 0, 0.55)' : 'rgba(255, 255, 255, 0.55)';
+const grayscaleOverlayColor = theme.name === 'dark' ? 'rgba(0, 0, 0, 0.55)' : 'rgba(255, 255, 255, 0.55)';
 ```
 
 `StyleSheet.create({` 内の `achievementGrid` 定義の直後に、以下のキーを追加（アルファベット順を厳守する必要はないが既存に倣い `achievement` 接頭辞群へまとめる）:
@@ -1000,6 +1033,7 @@ git commit -m "style(achievement): グリッド/詳細ダイアログ用スタ�
 ### Task 6: AchievementDialog コンポーネント
 
 **Files:**
+
 - Create: `src/app/components/AchievementDialog.tsx`
 - Test: `src/app/components/__tests__/AchievementDialog.test.tsx`
 
@@ -1171,7 +1205,11 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
     <Dialog visible={item != null} styles={styles} theme={theme} onClose={onClose}>
       {item && (
         <>
-          <View ref={captureViewRef} collapsable={false} style={[styles.achievementModalActions, { alignItems: 'center', backgroundColor: theme.colors.background }]}>
+          <View
+            ref={captureViewRef}
+            collapsable={false}
+            style={[styles.achievementModalActions, { alignItems: 'center', backgroundColor: theme.colors.background }]}
+          >
             <Image source={item.definition.trophyImage} style={styles.achievementModalImage} />
             <Text style={styles.achievementModalTitle}>{item.definition.title}</Text>
             {item.unlockedAt && <Text style={styles.achievementDialogDate}>開放日: {new Date(item.unlockedAt).toLocaleDateString()}</Text>}
@@ -1185,7 +1223,7 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
               style={styles.achievementDialogShareButton}
             >
               <Feather name="share-2" size={18} color={styles.achievementDialogShareButtonText.color} />
-              <Text style={styles.achievementDialogShareButtonText}>  共有する</Text>
+              <Text style={styles.achievementDialogShareButtonText}> 共有する</Text>
             </Text>
           </View>
         </>
@@ -1198,12 +1236,17 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
 注: 共有ボタンは `Pressable` ではなく `Text`（onPress付き）を使うとアイコンとラベルのインライン配置が崩れるため、実装は `Pressable` でラップする方が望ましい。下記の確定版を使うこと:
 
 ```tsx
-          <View style={styles.achievementModalActions}>
-            <Pressable accessibilityLabel="実績を共有する" accessibilityRole="button" onPress={shareAchievementImage} style={styles.achievementDialogShareButton}>
-              <Feather name="share-2" size={18} color={styles.achievementDialogShareButtonText.color} />
-              <Text style={styles.achievementDialogShareButtonText}>共有する</Text>
-            </Pressable>
-          </View>
+<View style={styles.achievementModalActions}>
+  <Pressable
+    accessibilityLabel="実績を共有する"
+    accessibilityRole="button"
+    onPress={shareAchievementImage}
+    style={styles.achievementDialogShareButton}
+  >
+    <Feather name="share-2" size={18} color={styles.achievementDialogShareButtonText.color} />
+    <Text style={styles.achievementDialogShareButtonText}>共有する</Text>
+  </Pressable>
+</View>
 ```
 
 `Pressable` を import に追加（`import { Alert, Image, Pressable, Text, View } from 'react-native';`）。上のクラス本文では `Text` 版ブロックを使わず、この `Pressable` 版を採用する。
@@ -1225,6 +1268,7 @@ git commit -m "feat(achievement): 実績詳細ダイアログを追加する"
 ### Task 7: AchievementListScreen をグリッド3状態へ改修 + App 配線
 
 **Files:**
+
 - Modify: `src/app/components/AchievementListScreen.tsx`（全面改修、`getAchievementProgressLabel` は維持）
 - Modify: `src/app/App.tsx`（選択状態と AchievementDialog 配線）
 - Test: `src/app/components/__tests__/AchievementListScreen.test.ts`（既存維持・変更なし）、`src/app/components/__tests__/AchievementListScreenChrome.test.tsx`（拡張）
@@ -1371,11 +1415,7 @@ export function AchievementListScreen({ items, styles, theme, onBackToMap, onSel
                   const isUnlocked = state === 'unlocked';
                   const isHidden = state === 'hidden';
                   const title = isHidden ? '？？？' : item.definition.title;
-                  const progress = isUnlocked
-                    ? getAchievementProgressLabel(item)
-                    : isHidden
-                      ? '？？？'
-                      : getAchievementProgressLabel(item);
+                  const progress = isUnlocked ? getAchievementProgressLabel(item) : isHidden ? '？？？' : getAchievementProgressLabel(item);
 
                   const tile = (
                     <>
@@ -1467,27 +1507,29 @@ import type { AchievementListItem } from '../features/achievements/achievementRe
 state 宣言（`isAchievementDialogVisibleRef` 付近、コンポーネント本体内の useState 群）に追加:
 
 ```tsx
-  const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
+const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
 ```
 
 `AchievementListScreen` を描画している箇所（`src/app/App.tsx:1078`）の props に `onSelectAchievement` を追加:
 
 ```tsx
-          {screenMode === 'achievements' && (
-            <AchievementListScreen
-              items={achievementItems}
-              styles={styles}
-              theme={theme}
-              onBackToMap={openMap}
-              onSelectAchievement={setSelectedAchievement}
-            />
-          )}
+{
+  screenMode === 'achievements' && (
+    <AchievementListScreen
+      items={achievementItems}
+      styles={styles}
+      theme={theme}
+      onBackToMap={openMap}
+      onSelectAchievement={setSelectedAchievement}
+    />
+  );
+}
 ```
 
 `<AchievementUnlockModal ... />`（`src/app/App.tsx:1172` 付近）の直後に AchievementDialog を追加:
 
 ```tsx
-      <AchievementDialog item={selectedAchievement} styles={styles} theme={theme} onClose={() => setSelectedAchievement(null)} />
+<AchievementDialog item={selectedAchievement} styles={styles} theme={theme} onClose={() => setSelectedAchievement(null)} />
 ```
 
 `useState` が App.tsx で未 import の場合は `react` の import に追加（既存で `useState` を多用しているため通常は不要）。

@@ -15,6 +15,7 @@
 ### Task 1: プラットフォーム別タスクoptions
 
 **Files:**
+
 - Modify: `src/features/location/locationTrackingConfig.ts`
 - Test: `src/features/location/__tests__/locationTrackingConfig.test.ts`
 
@@ -48,6 +49,7 @@ git commit -m "fix(location): iOSの背景位置更新で距離フィルター�
 ### Task 2: ドキュメントと全体検証
 
 **Files:**
+
 - Modify: `docs/architecture.md`
 
 - [ ] **Step 1: iOS固有の監視設定をarchitectureへ追記する**

@@ -409,8 +409,7 @@ export const reportStyles = StyleSheet.create({
     marginHorizontal: 26,
     marginTop: 72,
   },
-  monthlyInlineShareText: {
-  },
+  monthlyInlineShareText: {},
   monthlyReportEndSpacer: {
     height: 24,
   },

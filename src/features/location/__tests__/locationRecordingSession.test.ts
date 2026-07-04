@@ -2,6 +2,8 @@ import type { LocationObject } from 'expo-location';
 
 import type { LocationPoint, NewLocationPoint } from '../../../types/gps';
 
+import { createLocationRecordingSession } from '../locationRecordingSession';
+
 const mockInitializeDatabase = jest.fn();
 const mockProcessAchievementsForSavedPoint = jest.fn();
 const mockGetLatestLocationPoint = jest.fn();
@@ -39,8 +41,6 @@ jest.mock('../locationSaveFilter', () => ({
 jest.mock('../visitedCellRepository', () => ({
   upsertVisitedCells: (...args: unknown[]) => mockUpsertVisitedCells(...args),
 }));
-
-import { createLocationRecordingSession } from '../locationRecordingSession';
 
 const latestPoint: LocationPoint = {
   id: 10,

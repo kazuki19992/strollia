@@ -27,10 +27,7 @@ const DISPLAY_CELL_SIZE_STAGES: DisplayCellSizeStage[] = [
  * @param config - Grid Overlay設定。
  * @returns 表示に使うセルサイズ。単位はm。
  */
-export function getDisplayCellSizeMeters(
-  region: RegionZoomLike,
-  config: GridOverlayConfig = GRID_OVERLAY_CONFIG,
-): number {
+export function getDisplayCellSizeMeters(region: RegionZoomLike, config: GridOverlayConfig = GRID_OVERLAY_CONFIG): number {
   const stageIndex = getDisplayCellSizeStageIndex(region);
 
   if (stageIndex < DISPLAY_CELL_SIZE_STAGES.length) {
@@ -127,12 +124,9 @@ export function aggregateVisitedCells(cells: GridCell[], displayCellSizeMeters: 
     existing.visitCount = (existing.visitCount ?? 0) + (cell.visitCount ?? 0);
   }
 
-  return [...aggregated.values()].sort((a, b) => (
-    a.cellSizeMeters - b.cellSizeMeters ||
-    a.y - b.y ||
-    a.x - b.x ||
-    a.cellId.localeCompare(b.cellId)
-  ));
+  return [...aggregated.values()].sort(
+    (a, b) => a.cellSizeMeters - b.cellSizeMeters || a.y - b.y || a.x - b.x || a.cellId.localeCompare(b.cellId),
+  );
 }
 
 function getLastDisplayCellSize(config: GridOverlayConfig): number {

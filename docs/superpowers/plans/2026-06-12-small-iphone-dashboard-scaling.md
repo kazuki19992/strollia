@@ -13,6 +13,7 @@
 ### Task 1: 小画面用倍率とメーター寸法を追加する
 
 **Files:**
+
 - Modify: `src/app/components/MapBottomDashboard.tsx`
 - Test: `src/app/components/__tests__/MapBottomDashboard.test.tsx`
 
@@ -21,11 +22,7 @@
 `MapBottomDashboard.test.tsx` に以下を追加する。
 
 ```tsx
-import {
-  getDashboardScale,
-  getScaledSpeedDialLayout,
-  SMALL_DASHBOARD_MIN_SCALE,
-} from '../MapBottomDashboard';
+import { getDashboardScale, getScaledSpeedDialLayout, SMALL_DASHBOARD_MIN_SCALE } from '../MapBottomDashboard';
 
 test('大きい画面ではダッシュボード倍率を1に保つ', () => {
   expect(getDashboardScale(430)).toBe(1);
@@ -92,6 +89,7 @@ Expected: PASS for the new pure function tests.
 ### Task 2: 小画面倍率をレンダリングへ適用する
 
 **Files:**
+
 - Modify: `src/app/components/MapBottomDashboard.tsx`
 - Test: `src/app/components/__tests__/MapBottomDashboard.test.tsx`
 
@@ -153,6 +151,7 @@ Expected: PASS.
 ### Task 3: 関連検証とコミット
 
 **Files:**
+
 - Modify: `src/app/components/MapBottomDashboard.tsx`
 - Modify: `src/app/components/__tests__/MapBottomDashboard.test.tsx`
 

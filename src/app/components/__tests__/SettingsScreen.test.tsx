@@ -6,6 +6,8 @@ import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '../../../f
 import { DEFAULT_USER_LOCATION_ICON_ID } from '../../../features/customization/customizationOptions';
 import { createStyles } from '../../appStyles';
 
+import { SettingsScreen, getSubscriptionStoreName } from '../SettingsScreen';
+
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
 
@@ -28,9 +30,6 @@ jest.mock('react-native-svg', () => {
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn().mockResolvedValue(true),
 }));
-
-
-import { SettingsScreen, getSubscriptionStoreName } from '../SettingsScreen';
 
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
@@ -205,7 +204,9 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'GPS記録中!');
-    const description = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'あなたの位置情報はすとろりあがしっかりと記録しています！\n冒険にでかけましょう！');
+    const description = renderer.root
+      .findAllByType(Text)
+      .find((node: any) => node.props.children === 'あなたの位置情報はすとろりあがしっかりと記録しています！\n冒険にでかけましょう！');
 
     expect(flattenStyle(title?.props.style).color).toBe('#ffffff');
     expect(flattenStyle(description?.props.style).color).toBe('#ffffff');
@@ -243,7 +244,9 @@ describe('設定画面 SettingsScreen', () => {
 
     const button = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenLocationSettings)[0];
     expect(button).toBeDefined();
-    act(() => { button.props.onPress(); });
+    act(() => {
+      button.props.onPress();
+    });
     expect(props.onOpenLocationSettings).toHaveBeenCalledTimes(1);
   });
 
@@ -269,7 +272,9 @@ describe('設定画面 SettingsScreen', () => {
       failedRenderer = ReactTestRenderer.create(<SettingsScreen {...failedProps} />);
     });
 
-    const permissionButton = permissionRenderer.root.findAll((node: any) => node.props.onPress === permissionProps.onRequestLocationPermission)[0];
+    const permissionButton = permissionRenderer.root.findAll(
+      (node: any) => node.props.onPress === permissionProps.onRequestLocationPermission,
+    )[0];
     const failedButton = failedRenderer.root.findAll((node: any) => node.props.onPress === failedProps.onStartRecording)[0];
     const permissionText = permissionRenderer.root.findAllByType(Text).find((node: any) => node.props.children === '続ける');
     const failedText = failedRenderer.root.findAllByType(Text).find((node: any) => node.props.children === 'GPSの記録を開始する');
@@ -287,7 +292,10 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...createProps()} />);
     });
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children).filter((text: unknown) => typeof text === 'string');
+    const texts = renderer.root
+      .findAllByType(Text)
+      .map((node: any) => node.props.children)
+      .filter((text: unknown) => typeof text === 'string');
 
     expect(texts.some((text: string) => text.startsWith('設定中:'))).toBe(false);
   });
@@ -351,9 +359,7 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    const adImage = renderer.root.findAllByType(Image).find(
-      (node: any) => node.props.accessibilityLabel === 'Strollia Plusの機能比較広告',
-    );
+    const adImage = renderer.root.findAllByType(Image).find((node: any) => node.props.accessibilityLabel === 'Strollia Plusの機能比較広告');
 
     expect(texts).toContain('一般ユーザー');
     expect(texts).not.toContain('退会する場合は${ストア名}のサブスク設定から行ってください。');
@@ -501,7 +507,9 @@ describe('設定画面 SettingsScreen', () => {
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
 
-    expect(texts).toContain('GPSログファイルの一般的な規格のGPXファイルでエクスポート/インポートが可能です。\nインポート時にデータが競合する場合は既存データを優先します。');
+    expect(texts).toContain(
+      'GPSログファイルの一般的な規格のGPXファイルでエクスポート/インポートが可能です。\nインポート時にデータが競合する場合は既存データを優先します。',
+    );
     expect(texts).toContain('GPXファイルのインポート');
   });
 
@@ -530,7 +538,9 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const buttons = [props.onExportAllLogs, props.onImportGpx, props.onDeleteAllData].map((handler) => renderer.root.findAll((node: any) => node.props.onPress === handler)[0]);
+    const buttons = [props.onExportAllLogs, props.onImportGpx, props.onDeleteAllData].map(
+      (handler) => renderer.root.findAll((node: any) => node.props.onPress === handler)[0],
+    );
 
     for (const button of buttons) {
       const content = button.findAll((node: any) => flattenStyle(node.props.style).width === '100%')[0];
@@ -547,8 +557,8 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const buttons = [props.onPurchaseMonthlyPremiumPackage, props.onPurchaseYearlyPremiumPackage, props.onRestorePremiumPurchases].flatMap((handler) =>
-      renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === handler),
+    const buttons = [props.onPurchaseMonthlyPremiumPackage, props.onPurchaseYearlyPremiumPackage, props.onRestorePremiumPurchases].flatMap(
+      (handler) => renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === handler),
     );
 
     expect(buttons).toHaveLength(3);
@@ -572,8 +582,12 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     const purchaseButtons = [
-      ...renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === props.onPurchaseMonthlyPremiumPackage),
-      ...renderer.root.findAll((node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === props.onPurchaseYearlyPremiumPackage),
+      ...renderer.root.findAll(
+        (node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === props.onPurchaseMonthlyPremiumPackage,
+      ),
+      ...renderer.root.findAll(
+        (node: any) => node.props.accessibilityRole === 'button' && node.props.onPress === props.onPurchaseYearlyPremiumPackage,
+      ),
     ];
 
     expect(purchaseButtons).toHaveLength(2);
@@ -593,9 +607,7 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    const licenseButton = renderer.root.findAll(
-      (node: any) => node.props.onPress === props.onOpenLicenseScreen,
-    )[0];
+    const licenseButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenLicenseScreen)[0];
 
     expect(texts).toContain('オープンソースライセンス');
 
@@ -628,9 +640,7 @@ describe('設定画面 SettingsScreen', () => {
 
     const termsButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenTermsOfService)[0];
     const privacyButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenPrivacyPolicy)[0];
-    const commercialButton = renderer.root.findAll(
-      (node: any) => node.props.onPress === props.onOpenSpecifiedCommercialTransactionAct,
-    )[0];
+    const commercialButton = renderer.root.findAll((node: any) => node.props.onPress === props.onOpenSpecifiedCommercialTransactionAct)[0];
 
     act(() => {
       termsButton.props.onPress();
@@ -651,9 +661,7 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const importButton = renderer.root.findAll(
-      (node: any) => node.props.onPress === props.onImportGpx,
-    )[0];
+    const importButton = renderer.root.findAll((node: any) => node.props.onPress === props.onImportGpx)[0];
 
     act(() => {
       importButton.props.onPress();
@@ -673,9 +681,7 @@ describe('設定画面 SettingsScreen', () => {
       renderer = ReactTestRenderer.create(<SettingsScreen {...props} />);
     });
 
-    const importButton = renderer.root.findAll(
-      (node: any) => node.props.onPress === props.onImportGpx,
-    )[0];
+    const importButton = renderer.root.findAll((node: any) => node.props.onPress === props.onImportGpx)[0];
 
     expect(importButton.props.disabled).toBe(true);
   });
@@ -760,7 +766,6 @@ describe('設定画面 SettingsScreen', () => {
     expect(texts).not.toContain('GPS記録中!');
     expect(texts).not.toContain('GPSの記録を開始する');
   });
-
 
   describe('Plus会員向けカスタマイズ', () => {
     test('Plus会員はアプリカラーセクションを表示する', async () => {
@@ -897,5 +902,4 @@ describe('設定画面 SettingsScreen', () => {
     const labels = renderer.root.findAll((node: any) => node.props.accessibilityLabel === 'サポート用IDをコピー');
     expect(labels).toHaveLength(0);
   });
-
 });

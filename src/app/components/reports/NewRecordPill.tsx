@@ -13,20 +13,23 @@ export type NewRecordPillProps = {
 export function NewRecordPill({ visible }: NewRecordPillProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
-  useEffect(function animateNewRecord(): () => void {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, { toValue: 1.035, duration: 1050, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 1050, useNativeDriver: true }),
-      ]),
-    );
+  useEffect(
+    function animateNewRecord(): () => void {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scale, { toValue: 1.035, duration: 1050, useNativeDriver: true }),
+          Animated.timing(scale, { toValue: 1, duration: 1050, useNativeDriver: true }),
+        ]),
+      );
 
-    if (visible) {
-      animation.start();
-    }
+      if (visible) {
+        animation.start();
+      }
 
-    return () => animation.stop();
-  }, [scale, visible]);
+      return () => animation.stop();
+    },
+    [scale, visible],
+  );
 
   if (!visible) {
     return null;

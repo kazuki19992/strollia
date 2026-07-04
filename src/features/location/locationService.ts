@@ -1,11 +1,7 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-import {
-  BACKGROUND_LOCATION_TASK_NAME,
-  getLocationTaskOptions,
-  hasCurrentLocationTaskOptions,
-} from './locationTrackingConfig';
+import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions, hasCurrentLocationTaskOptions } from './locationTrackingConfig';
 
 /** フォアグラウンド位置情報権限を確認し、必要ならOSダイアログで要求する。 */
 export async function ensureForegroundLocationPermission(): Promise<boolean> {
@@ -18,7 +14,6 @@ export async function ensureForegroundLocationPermission(): Promise<boolean> {
   const requested = await Location.requestForegroundPermissionsAsync();
   return requested.granted;
 }
-
 
 /** バックグラウンド位置情報権限を確認し、前提となるフォアグラウンド権限から順に要求する。 */
 export async function ensureBackgroundLocationPermission(): Promise<boolean> {
@@ -78,9 +73,7 @@ export async function updateBackgroundLocationTaskOptionsIfNeeded(): Promise<voi
     return;
   }
 
-  const currentOptions = await TaskManager.getTaskOptionsAsync<Location.LocationTaskOptions>(
-    BACKGROUND_LOCATION_TASK_NAME,
-  );
+  const currentOptions = await TaskManager.getTaskOptionsAsync<Location.LocationTaskOptions>(BACKGROUND_LOCATION_TASK_NAME);
 
   if (hasCurrentLocationTaskOptions(currentOptions)) {
     return;

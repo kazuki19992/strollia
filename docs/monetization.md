@@ -92,7 +92,6 @@ RevenueCat連携後も、GPSログや写真メタデータをRevenueCatへ送信
 
 RevenueCatへ送る情報は購入状態の管理に必要なアプリユーザーIDやストア購入情報に限定する。
 
-
 ## 7. カスタマイズ実装の編集ポイント
 
 ### 7.1 visited cell色を変更する場所

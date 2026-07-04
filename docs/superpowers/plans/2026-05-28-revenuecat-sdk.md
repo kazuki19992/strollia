@@ -26,6 +26,7 @@
 ## Task 1: Add RevenueCat Dependency
 
 **Files:**
+
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
@@ -59,6 +60,7 @@ git commit -m "build(premium): RevenueCat SDKを追加"
 ## Task 2: Add RevenueCat Config Helpers
 
 **Files:**
+
 - Create: `src/features/premium/revenueCatConfig.ts`
 - Modify: `src/features/premium/__tests__/revenueCatAccess.test.ts`
 
@@ -68,10 +70,7 @@ Append to `src/features/premium/__tests__/revenueCatAccess.test.ts`:
 
 ```typescript
 import { Platform } from 'react-native';
-import {
-  getRevenueCatApiKeyForPlatform,
-  getRevenueCatConfigureOptions,
-} from '../revenueCatConfig';
+import { getRevenueCatApiKeyForPlatform, getRevenueCatConfigureOptions } from '../revenueCatConfig';
 
 const originalPlatformOS = Platform.OS;
 const originalIosKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
@@ -90,42 +89,42 @@ function setEnvValue(key: string, value: string | undefined): void {
 Add inside the existing `describe('RevenueCat課金状態 revenueCatAccess', () => { ... })` block:
 
 ```typescript
-  afterEach(() => {
-    Platform.OS = originalPlatformOS;
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', originalIosKey);
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', originalAndroidKey);
-  });
+afterEach(() => {
+  Platform.OS = originalPlatformOS;
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', originalIosKey);
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', originalAndroidKey);
+});
 
-  it('iOSではRevenueCatのiOS APIキーを設定に使う', () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', 'goog_android_key');
+it('iOSではRevenueCatのiOS APIキーを設定に使う', () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', 'goog_android_key');
 
-    expect(getRevenueCatApiKeyForPlatform()).toBe('appl_ios_key');
-    expect(getRevenueCatConfigureOptions()).toEqual({ apiKey: 'appl_ios_key' });
-  });
+  expect(getRevenueCatApiKeyForPlatform()).toBe('appl_ios_key');
+  expect(getRevenueCatConfigureOptions()).toEqual({ apiKey: 'appl_ios_key' });
+});
 
-  it('AndroidではRevenueCatのAndroid APIキーを設定に使う', () => {
-    Platform.OS = 'android';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', 'goog_android_key');
+it('AndroidではRevenueCatのAndroid APIキーを設定に使う', () => {
+  Platform.OS = 'android';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', 'goog_android_key');
 
-    expect(getRevenueCatApiKeyForPlatform()).toBe('goog_android_key');
-    expect(getRevenueCatConfigureOptions()).toEqual({ apiKey: 'goog_android_key' });
-  });
+  expect(getRevenueCatApiKeyForPlatform()).toBe('goog_android_key');
+  expect(getRevenueCatConfigureOptions()).toEqual({ apiKey: 'goog_android_key' });
+});
 
-  it('APIキー未設定または未対応プラットフォームではRevenueCat設定を作らない', () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', undefined);
-    expect(getRevenueCatApiKeyForPlatform()).toBeNull();
-    expect(getRevenueCatConfigureOptions()).toBeNull();
+it('APIキー未設定または未対応プラットフォームではRevenueCat設定を作らない', () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', undefined);
+  expect(getRevenueCatApiKeyForPlatform()).toBeNull();
+  expect(getRevenueCatConfigureOptions()).toBeNull();
 
-    Platform.OS = 'web';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', 'goog_android_key');
-    expect(getRevenueCatApiKeyForPlatform()).toBeNull();
-    expect(getRevenueCatConfigureOptions()).toBeNull();
-  });
+  Platform.OS = 'web';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY', 'goog_android_key');
+  expect(getRevenueCatApiKeyForPlatform()).toBeNull();
+  expect(getRevenueCatConfigureOptions()).toBeNull();
+});
 ```
 
 - [ ] **Step 2: Verify RED**
@@ -196,6 +195,7 @@ git commit -m "feat(premium): RevenueCat APIキー設定を追加"
 ## Task 3: Add RevenueCat Client and CustomerInfo Resolution
 
 **Files:**
+
 - Create: `src/features/premium/revenueCatClient.ts`
 - Modify: `src/features/premium/revenueCatAccess.ts`
 - Modify: `src/features/premium/__tests__/revenueCatAccess.test.ts`
@@ -218,9 +218,7 @@ Add imports:
 
 ```typescript
 import Purchases from 'react-native-purchases';
-import {
-  createRevenueCatClient,
-} from '../revenueCatClient';
+import { createRevenueCatClient } from '../revenueCatClient';
 import { getPremiumAccessState } from '../revenueCatAccess';
 ```
 
@@ -229,62 +227,62 @@ import { getPremiumAccessState } from '../revenueCatAccess';
 Add inside the existing `describe` block:
 
 ```typescript
-  it('RevenueCat CustomerInfoにstrollia_plus entitlementがあればPlus有効にする', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    (Purchases.getCustomerInfo as jest.Mock).mockResolvedValue({
-      entitlements: {
-        active: {
-          [STROLLIA_PLUS_ENTITLEMENT_ID]: { identifier: STROLLIA_PLUS_ENTITLEMENT_ID },
-        },
+it('RevenueCat CustomerInfoにstrollia_plus entitlementがあればPlus有効にする', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  (Purchases.getCustomerInfo as jest.Mock).mockResolvedValue({
+    entitlements: {
+      active: {
+        [STROLLIA_PLUS_ENTITLEMENT_ID]: { identifier: STROLLIA_PLUS_ENTITLEMENT_ID },
       },
-    });
-
-    const client = createRevenueCatClient();
-
-    await expect(client.hasActiveEntitlement(STROLLIA_PLUS_ENTITLEMENT_ID)).resolves.toBe(true);
-    expect(Purchases.configure).toHaveBeenCalledWith({ apiKey: 'appl_ios_key' });
-    expect(Purchases.getCustomerInfo).toHaveBeenCalledTimes(1);
+    },
   });
 
-  it('RevenueCat CustomerInfoにentitlementがなければPlus無効にする', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    (Purchases.getCustomerInfo as jest.Mock).mockResolvedValue({
-      entitlements: { active: {} },
-    });
+  const client = createRevenueCatClient();
 
-    const client = createRevenueCatClient();
+  await expect(client.hasActiveEntitlement(STROLLIA_PLUS_ENTITLEMENT_ID)).resolves.toBe(true);
+  expect(Purchases.configure).toHaveBeenCalledWith({ apiKey: 'appl_ios_key' });
+  expect(Purchases.getCustomerInfo).toHaveBeenCalledTimes(1);
+});
 
-    await expect(client.hasActiveEntitlement(STROLLIA_PLUS_ENTITLEMENT_ID)).resolves.toBe(false);
+it('RevenueCat CustomerInfoにentitlementがなければPlus無効にする', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  (Purchases.getCustomerInfo as jest.Mock).mockResolvedValue({
+    entitlements: { active: {} },
   });
 
-  it('RevenueCat未設定時は既定の課金状態へフォールバックする', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', undefined);
+  const client = createRevenueCatClient();
 
-    await expect(getPremiumAccessState()).resolves.toEqual(getDefaultPremiumAccessState());
-    expect(Purchases.configure).not.toHaveBeenCalled();
-    expect(Purchases.getCustomerInfo).not.toHaveBeenCalled();
-  });
+  await expect(client.hasActiveEntitlement(STROLLIA_PLUS_ENTITLEMENT_ID)).resolves.toBe(false);
+});
 
-  it('RevenueCat取得失敗時は既定の課金状態へフォールバックする', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    (Purchases.getCustomerInfo as jest.Mock).mockRejectedValue(new Error('network failed'));
+it('RevenueCat未設定時は既定の課金状態へフォールバックする', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', undefined);
 
-    await expect(getPremiumAccessState()).resolves.toEqual(getDefaultPremiumAccessState());
-    expect(console.warn).toHaveBeenCalledWith('Failed to load RevenueCat premium state:', expect.any(Error));
-  });
+  await expect(getPremiumAccessState()).resolves.toEqual(getDefaultPremiumAccessState());
+  expect(Purchases.configure).not.toHaveBeenCalled();
+  expect(Purchases.getCustomerInfo).not.toHaveBeenCalled();
+});
+
+it('RevenueCat取得失敗時は既定の課金状態へフォールバックする', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  (Purchases.getCustomerInfo as jest.Mock).mockRejectedValue(new Error('network failed'));
+
+  await expect(getPremiumAccessState()).resolves.toEqual(getDefaultPremiumAccessState());
+  expect(console.warn).toHaveBeenCalledWith('Failed to load RevenueCat premium state:', expect.any(Error));
+});
 ```
 
 Update `beforeEach` in the test file to reset mocks:
 
 ```typescript
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 ```
 
 - [ ] **Step 3: Verify RED**
@@ -418,6 +416,7 @@ git commit -m "feat(premium): CustomerInfoからPlus状態を取得"
 ## Task 4: Wire Premium State Into App Initialization
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 
@@ -483,11 +482,11 @@ const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAc
 Inside the existing initialization `useEffect`, after saved settings are loaded and before `setIsReady(true)`, add:
 
 ```typescript
-        getPremiumAccessState()
-          .then(setPremiumAccessState)
-          .catch((error: unknown) => {
-            console.warn('Failed to refresh premium access state:', error);
-          });
+getPremiumAccessState()
+  .then(setPremiumAccessState)
+  .catch((error: unknown) => {
+    console.warn('Failed to refresh premium access state:', error);
+  });
 ```
 
 Do not await this call; premium state should refresh without blocking DB, location, or map readiness.
@@ -512,6 +511,7 @@ git commit -m "feat(premium): アプリ起動時にPlus状態を更新"
 ## Task 5: Update Settings Copy
 
 **Files:**
+
 - Modify: `src/app/components/SettingsScreen.tsx`
 - Modify: `src/app/components/__tests__/SettingsScreen.test.tsx`
 
@@ -585,6 +585,7 @@ git commit -m "docs(premium): Plus表示文言をSDK導入後に更新"
 ## Task 6: Update Docs and Todo
 
 **Files:**
+
 - Modify: `docs/monetization.md`
 - Modify: `docs/todo.md`
 
@@ -634,6 +635,7 @@ git commit -m "docs(premium): RevenueCat SDK連携方針を更新"
 ## Task 7: Final Verification
 
 **Files:**
+
 - Verify all modified files.
 
 - [ ] **Step 1: Run typecheck**

@@ -44,8 +44,16 @@ export function DailyLogShareSections({
           {isPlusActive && (
             <>
               {/* レポート未取得（読み込み中・失敗）の間は 0エリア と誤表示せずプレースホルダにする。 */}
-              <DataSummaryRow label="訪問したエリア数" value={dailyDetailReport ? `${dailyDetailReport.visitedAreaCount}エリア` : '—'} styles={styles} />
-              <DataSummaryRow label="新しく訪問したエリア数" value={dailyDetailReport ? `${dailyDetailReport.newAreaCount}エリア` : '—'} styles={styles} />
+              <DataSummaryRow
+                label="訪問したエリア数"
+                value={dailyDetailReport ? `${dailyDetailReport.visitedAreaCount}エリア` : '—'}
+                styles={styles}
+              />
+              <DataSummaryRow
+                label="新しく訪問したエリア数"
+                value={dailyDetailReport ? `${dailyDetailReport.newAreaCount}エリア` : '—'}
+                styles={styles}
+              />
             </>
           )}
         </View>

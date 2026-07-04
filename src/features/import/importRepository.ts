@@ -39,7 +39,12 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   return { importedPointCount, skippedPointCount };
 }
 
-async function insertImportedLocationPoint(point: NewLocationPoint, previousPoint: NewLocationPoint | null, now: string, txn: SQLite.SQLiteDatabase): Promise<boolean> {
+async function insertImportedLocationPoint(
+  point: NewLocationPoint,
+  previousPoint: NewLocationPoint | null,
+  now: string,
+  txn: SQLite.SQLiteDatabase,
+): Promise<boolean> {
   const segmentDistanceMeters = previousPoint?.localDate === point.localDate ? distanceMeters(previousPoint, point) : 0;
 
   const insertResult = await txn.runAsync(

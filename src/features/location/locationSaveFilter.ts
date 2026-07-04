@@ -109,5 +109,7 @@ export function estimateSaveSegmentSpeedMps(
 }
 
 function isRawStationaryDrift(point: NewLocationPoint, distance: number): boolean {
-  return point.speed != null && point.speed >= 0 && point.speed < RAW_STATIONARY_SPEED_MAX_MPS && distance < STATIONARY_DRIFT_DISTANCE_METERS;
+  return (
+    point.speed != null && point.speed >= 0 && point.speed < RAW_STATIONARY_SPEED_MAX_MPS && distance < STATIONARY_DRIFT_DISTANCE_METERS
+  );
 }

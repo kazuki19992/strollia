@@ -1,5 +1,10 @@
 import { db } from '../../../db/database';
-import { getLocationPointAdminAreaName, getLocationPointAdminAreaNames, upsertLocationPointAdminArea, upsertVisitedAdminArea } from '../adminAreaRepository';
+import {
+  getLocationPointAdminAreaName,
+  getLocationPointAdminAreaNames,
+  upsertLocationPointAdminArea,
+  upsertVisitedAdminArea,
+} from '../adminAreaRepository';
 
 type VisitedAdminAreaRow = {
   area_type: string;
@@ -30,73 +35,68 @@ const mockLocationPointAdminAreas = new Map<number, LocationPointAdminAreaRow>()
 
 jest.mock('../../../db/database', () => ({
   db: {
-    runAsync: jest.fn(
-      async (
-        sql: string,
-        ...params: (string | number | null)[]
-      ) => {
-        if (sql.includes('location_point_admin_areas')) {
-          const [
-            locationPointId,
-            recordedAt,
-            localDate,
-            prefectureName,
-            municipalityName,
-            normalizedPrefectureName,
-            normalizedMunicipalityName,
-            createdAt,
-          ] = params as [number, string, string, string, string | null, string, string | null, string];
-          mockLocationPointAdminAreas.set(locationPointId, {
-            location_point_id: locationPointId,
-            recorded_at: recordedAt,
-            local_date: localDate,
-            prefecture_name: prefectureName,
-            municipality_name: municipalityName,
-            normalized_prefecture_name: normalizedPrefectureName,
-            normalized_municipality_name: normalizedMunicipalityName,
-            created_at: createdAt,
-          });
-          return;
-        }
-
+    runAsync: jest.fn(async (sql: string, ...params: (string | number | null)[]) => {
+      if (sql.includes('location_point_admin_areas')) {
         const [
-          areaType,
-          areaCode,
+          locationPointId,
+          recordedAt,
+          localDate,
           prefectureName,
           municipalityName,
-          normalizedName,
-          firstVisitedAt,
-          lastVisitedAt,
-          firstLocationPointId,
+          normalizedPrefectureName,
+          normalizedMunicipalityName,
           createdAt,
-          updatedAt,
-        ] = params as [string, string | null, string, string | null, string, string, string, number | null, string, string];
-        const key = `${areaType}:${normalizedName}`;
-        const current = mockVisitedAdminAreas.get(key);
+        ] = params as [number, string, string, string, string | null, string, string | null, string];
+        mockLocationPointAdminAreas.set(locationPointId, {
+          location_point_id: locationPointId,
+          recorded_at: recordedAt,
+          local_date: localDate,
+          prefecture_name: prefectureName,
+          municipality_name: municipalityName,
+          normalized_prefecture_name: normalizedPrefectureName,
+          normalized_municipality_name: normalizedMunicipalityName,
+          created_at: createdAt,
+        });
+        return;
+      }
 
-        if (!current) {
-          mockVisitedAdminAreas.set(key, {
-            area_type: areaType,
-            area_code: areaCode,
-            prefecture_name: prefectureName,
-            municipality_name: municipalityName,
-            normalized_name: normalizedName,
-            first_visited_at: firstVisitedAt,
-            last_visited_at: lastVisitedAt,
-            first_location_point_id: firstLocationPointId,
-            created_at: createdAt,
-            updated_at: updatedAt,
-          });
-          return;
-        }
+      const [
+        areaType,
+        areaCode,
+        prefectureName,
+        municipalityName,
+        normalizedName,
+        firstVisitedAt,
+        lastVisitedAt,
+        firstLocationPointId,
+        createdAt,
+        updatedAt,
+      ] = params as [string, string | null, string, string | null, string, string, string, number | null, string, string];
+      const key = `${areaType}:${normalizedName}`;
+      const current = mockVisitedAdminAreas.get(key);
 
+      if (!current) {
         mockVisitedAdminAreas.set(key, {
-          ...current,
-          last_visited_at: lastVisitedAt > current.last_visited_at ? lastVisitedAt : current.last_visited_at,
+          area_type: areaType,
+          area_code: areaCode,
+          prefecture_name: prefectureName,
+          municipality_name: municipalityName,
+          normalized_name: normalizedName,
+          first_visited_at: firstVisitedAt,
+          last_visited_at: lastVisitedAt,
+          first_location_point_id: firstLocationPointId,
+          created_at: createdAt,
           updated_at: updatedAt,
         });
-      },
-    ),
+        return;
+      }
+
+      mockVisitedAdminAreas.set(key, {
+        ...current,
+        last_visited_at: lastVisitedAt > current.last_visited_at ? lastVisitedAt : current.last_visited_at,
+        updated_at: updatedAt,
+      });
+    }),
     getFirstAsync: jest.fn(async (sql: string, ...params: (string | number)[]) => {
       if (sql.includes('location_point_admin_areas')) {
         const row = mockLocationPointAdminAreas.get(params[0] as number) ?? null;
@@ -116,11 +116,13 @@ jest.mock('../../../db/database', () => ({
       params.flatMap((locationPointId) => {
         const row = mockLocationPointAdminAreas.get(locationPointId);
         return row
-          ? [{
-              locationPointId: row.location_point_id,
-              prefectureName: row.prefecture_name,
-              municipalityName: row.municipality_name,
-            }]
+          ? [
+              {
+                locationPointId: row.location_point_id,
+                prefectureName: row.prefecture_name,
+                municipalityName: row.municipality_name,
+              },
+            ]
           : [];
       }),
     ),
@@ -356,10 +358,12 @@ describe('GPSポイント行政区域履歴 upsertLocationPointAdminArea', () =>
       normalizedMunicipalityName: '東京都:千代田区',
     });
 
-    await expect(getLocationPointAdminAreaNames([111, 222, 111])).resolves.toEqual(new Map([
-      [111, '船橋市'],
-      [222, '千代田区'],
-    ]));
+    await expect(getLocationPointAdminAreaNames([111, 222, 111])).resolves.toEqual(
+      new Map([
+        [111, '船橋市'],
+        [222, '千代田区'],
+      ]),
+    );
     expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('location_point_id IN (?, ?)'), 111, 222);
   });
 });

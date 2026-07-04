@@ -13,6 +13,7 @@
 ## Task 1: 旧URI判定をストレージ層へ追加
 
 **Files:**
+
 - Modify: `src/features/customization/customIconStorage.ts`
 - Test: `src/features/customization/__tests__/customIconStorage.test.ts`
 
@@ -62,6 +63,7 @@ git commit -m "feat(icon): 旧カスタム画像参照の判定を追加"
 ## Task 2: 復旧不能な参照をOS標準へ原子的に戻す
 
 **Files:**
+
 - Modify: `src/app/App.tsx:70,720-760`
 - Test: `src/app/__tests__/AppMapReturn.test.tsx:1347-1369,1527-1541`
 
@@ -239,6 +241,7 @@ git commit -m "fix(icon): 復旧不能な画像参照をOS標準へ戻す"
 ## Task 3: 保存仕様を同期して全体検証する
 
 **Files:**
+
 - Modify: `docs/data-storage.md:166-178`
 
 - [ ] **Step 1: データ保存仕様を実装後の挙動へ更新する**

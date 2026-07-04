@@ -20,6 +20,7 @@
 ### Task 1: エリアページと画像比率対応をTDDで追加する
 
 **Files:**
+
 - Modify: `src/app/components/__tests__/FirstLaunchTutorialDialog.test.tsx:35-172`
 - Modify: `src/app/components/FirstLaunchTutorialDialog.tsx:8-97`
 - Add: `assets/tutorial/area-instruction.png`
@@ -54,7 +55,9 @@ test('次へを押すと画面下の項目、エリア、実績、安全注意�
   expect(visibleTexts()).toContain('エリアを広げよう');
   expect(visibleTexts()).toContain('3 / 6');
   expect(visibleTexts()).toContain('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。');
-  expect(visibleTexts()).toContain('歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。');
+  expect(visibleTexts()).toContain(
+    '歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。',
+  );
   expect(renderer!.root.findByType(Image).props.accessibilityLabel).toBe('地図上のエリアの説明');
 
   press('次へ');
@@ -110,9 +113,9 @@ test('補足画像ごとのアスペクト比を保って画像枠内に表示�
   });
 
   press('次へ');
-  const instructionImageFrame = renderer!.root.findAllByType(View).find(
-    (node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
-  );
+  const instructionImageFrame = renderer!.root
+    .findAllByType(View)
+    .find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
   act(() => {
     instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
   });
@@ -128,7 +131,6 @@ test('補足画像ごとのアスペクト比を保って画像枠内に表示�
   ]);
   expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ width: '100%' }));
   expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ alignSelf: 'stretch' }));
-
 });
 ```
 
@@ -147,9 +149,9 @@ test('補足画像の元サイズを取得できないときは既存画像比�
   });
 
   press('次へ');
-  const instructionImageFrame = renderer!.root.findAllByType(View).find(
-    (node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
-  );
+  const instructionImageFrame = renderer!.root
+    .findAllByType(View)
+    .find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
   act(() => {
     instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
   });
@@ -239,6 +241,7 @@ git commit -m "feat(tutorial): エリア説明ページを追加"
 ### Task 2: MVPドキュメントを更新する
 
 **Files:**
+
 - Modify: `docs/mvp.md:26`
 
 - [ ] **Step 1: チュートリアル説明へエリア案内を追記する**
@@ -269,6 +272,7 @@ git commit -m "docs(tutorial): エリア案内をMVP仕様へ追記"
 ### Task 3: 全体検証を行う
 
 **Files:**
+
 - Verify: `src/app/components/FirstLaunchTutorialDialog.tsx`
 - Verify: `src/app/components/__tests__/FirstLaunchTutorialDialog.test.tsx`
 - Verify: `docs/mvp.md`

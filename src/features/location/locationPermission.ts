@@ -28,10 +28,7 @@ export function canRequestLocationPermissionInApp(state: LocationPermissionState
 
 /** 現在のフォアグラウンド/バックグラウンド位置情報権限を取得する。 */
 export async function getLocationPermissionState(): Promise<LocationPermissionState> {
-  const [foreground, background] = await Promise.all([
-    Location.getForegroundPermissionsAsync(),
-    Location.getBackgroundPermissionsAsync(),
-  ]);
+  const [foreground, background] = await Promise.all([Location.getForegroundPermissionsAsync(), Location.getBackgroundPermissionsAsync()]);
 
   return {
     foregroundGranted: foreground.granted,

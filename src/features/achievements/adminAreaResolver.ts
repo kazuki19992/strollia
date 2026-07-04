@@ -1,7 +1,12 @@
 import * as Location from 'expo-location';
 
 import { NewLocationPoint } from '../../types/gps';
-import { LocationPointAdminAreaInput, VisitedAdminAreaInput, upsertLocationPointAdminArea, upsertVisitedAdminArea } from './adminAreaRepository';
+import {
+  LocationPointAdminAreaInput,
+  VisitedAdminAreaInput,
+  upsertLocationPointAdminArea,
+  upsertVisitedAdminArea,
+} from './adminAreaRepository';
 
 /** 逆ジオコーディング結果から訪問行政区域を作る。 */
 export function toVisitedAdminAreas(point: NewLocationPoint, address: Location.LocationGeocodedAddress): VisitedAdminAreaInput[] {

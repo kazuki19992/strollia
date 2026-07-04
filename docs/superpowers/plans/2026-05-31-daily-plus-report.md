@@ -49,6 +49,7 @@
 ## Task 1: Pure Daily Report Aggregation
 
 **Files:**
+
 - Create: `src/features/reports/dailyReport.ts`
 - Create: `src/features/reports/__tests__/dailyReport.test.ts`
 
@@ -215,6 +216,7 @@ git commit -m "feat(reports): 日別詳細レポート集計を追加"
 ## Task 2: Repository Queries for Daily Detail Data
 
 **Files:**
+
 - Modify: `src/features/location/visitedCellRepository.ts`
 - Modify: `src/features/location/__tests__/visitedCellRepository.test.ts`
 - Modify: `src/features/achievements/achievementRepository.ts`
@@ -300,11 +302,7 @@ it('指定日の解除済み実績を解除時刻順で取得する', async () =
 
   const unlocks = await getAchievementUnlocksByDate('2026-05-31');
 
-  expect(db.getAllAsync).toHaveBeenCalledWith(
-    expect.stringContaining('WHERE unlocked_at >= ?'),
-    from,
-    to,
-  );
+  expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE unlocked_at >= ?'), from, to);
   expect(unlocks).toEqual([
     expect.objectContaining({
       achievementId: 'distance-100',
@@ -376,6 +374,7 @@ git commit -m "feat(reports): 日別詳細用のエリアと実績取得を追�
 ## Task 3: Daily Log Card Plus UI
 
 **Files:**
+
 - Modify: `src/app/components/DailyLogCard.tsx`
 - Modify: `src/app/components/DailyLogsScreen.tsx`
 - Modify: `src/app/App.tsx`
@@ -473,9 +472,9 @@ jest.mock('../../../features/location/visitedCellRepository', () => ({
 }));
 
 jest.mock('../../../features/achievements/achievementRepository', () => ({
-  getAchievementUnlocksByDate: jest.fn().mockResolvedValue([
-    { achievementId: 'distance-100', unlockedAt: '2026-05-31T09:00:00.000Z', progressValue: 100000 },
-  ]),
+  getAchievementUnlocksByDate: jest
+    .fn()
+    .mockResolvedValue([{ achievementId: 'distance-100', unlockedAt: '2026-05-31T09:00:00.000Z', progressValue: 100000 }]),
 }));
 
 jest.mock('../../../features/achievements/achievementDefinitions', () => ({
@@ -511,14 +510,22 @@ describe('日別ログカード DailyLogCard', () => {
 
     await act(async () => {
       renderer = ReactTestRenderer.create(
-        <DailyLogCard log={log} styles={styles as never} theme={lightTheme} isPlusActive={false} onPresentPremiumPaywall={onPresentPremiumPaywall} />,
+        <DailyLogCard
+          log={log}
+          styles={styles as never}
+          theme={lightTheme}
+          isPlusActive={false}
+          onPresentPremiumPaywall={onPresentPremiumPaywall}
+        />,
       );
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
     expect(texts).toContain('Plusで詳細レポートを表示');
 
-    const button = renderer.root.findAllByType(Pressable).find((node: any) => node.props.accessibilityLabel === 'Strollia Plusで日別詳細レポートを見る');
+    const button = renderer.root
+      .findAllByType(Pressable)
+      .find((node: any) => node.props.accessibilityLabel === 'Strollia Plusで日別詳細レポートを見る');
     act(() => button.props.onPress());
 
     expect(onPresentPremiumPaywall).toHaveBeenCalledTimes(1);
@@ -586,20 +593,22 @@ export function DailyLogsScreen({ dailyLogs, styles, theme, isPlusActive, onPres
 Replace the daily logs screen render in `src/app/App.tsx`:
 
 ```tsx
-{screenMode === 'dailyLogs' && (
-  <DailyLogsScreen
-    dailyLogs={dailyLogs}
-    styles={styles}
-    theme={theme}
-    isPlusActive={premiumAccessState.isPlusActive}
-    onPresentPremiumPaywall={() => {
-      openPremiumPaywall().catch((error: unknown) => {
-        console.warn('Failed to open premium paywall:', error);
-      });
-    }}
-    onBackToMap={openMap}
-  />
-)}
+{
+  screenMode === 'dailyLogs' && (
+    <DailyLogsScreen
+      dailyLogs={dailyLogs}
+      styles={styles}
+      theme={theme}
+      isPlusActive={premiumAccessState.isPlusActive}
+      onPresentPremiumPaywall={() => {
+        openPremiumPaywall().catch((error: unknown) => {
+          console.warn('Failed to open premium paywall:', error);
+        });
+      }}
+      onBackToMap={openMap}
+    />
+  );
+}
 ```
 
 - [ ] **Step 6: Implement daily detail UI in `DailyLogCard`**
@@ -671,34 +680,36 @@ useEffect(() => {
 Add JSX below `dailyTime`:
 
 ```tsx
-{isPlusActive ? (
-  dailyDetailReport && (
-    <View style={styles.dailyDetailPanel}>
-      <View style={styles.dailyDetailRow}>
-        <Text style={styles.dailyDetailLabel}>訪問エリア</Text>
-        <Text style={styles.dailyDetailValue}>{dailyDetailReport.visitedAreaCount}</Text>
+{
+  isPlusActive ? (
+    dailyDetailReport && (
+      <View style={styles.dailyDetailPanel}>
+        <View style={styles.dailyDetailRow}>
+          <Text style={styles.dailyDetailLabel}>訪問エリア</Text>
+          <Text style={styles.dailyDetailValue}>{dailyDetailReport.visitedAreaCount}</Text>
+        </View>
+        <View style={styles.dailyDetailRow}>
+          <Text style={styles.dailyDetailLabel}>新規エリア</Text>
+          <Text style={styles.dailyDetailValue}>{dailyDetailReport.newAreaCount}</Text>
+        </View>
+        <View style={styles.dailyDetailRow}>
+          <Text style={styles.dailyDetailLabel}>解除した実績</Text>
+          <Text style={styles.dailyDetailValue}>{dailyDetailReport.unlockedAchievements.length}</Text>
+        </View>
       </View>
-      <View style={styles.dailyDetailRow}>
-        <Text style={styles.dailyDetailLabel}>新規エリア</Text>
-        <Text style={styles.dailyDetailValue}>{dailyDetailReport.newAreaCount}</Text>
-      </View>
-      <View style={styles.dailyDetailRow}>
-        <Text style={styles.dailyDetailLabel}>解除した実績</Text>
-        <Text style={styles.dailyDetailValue}>{dailyDetailReport.unlockedAchievements.length}</Text>
-      </View>
-    </View>
-  )
-) : (
-  <Pressable
-    accessibilityRole="button"
-    accessibilityLabel="Strollia Plusで日別詳細レポートを見る"
-    onPress={onPresentPremiumPaywall}
-    style={styles.dailyDetailLockedPanel}
-  >
-    <Text style={styles.dailyDetailLockedTitle}>Plusで詳細レポートを表示</Text>
-    <Text style={styles.dailyDetailLockedText}>訪問エリア、新規エリア、その日に解除した実績を確認できます。</Text>
-  </Pressable>
-)}
+    )
+  ) : (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Strollia Plusで日別詳細レポートを見る"
+      onPress={onPresentPremiumPaywall}
+      style={styles.dailyDetailLockedPanel}
+    >
+      <Text style={styles.dailyDetailLockedTitle}>Plusで詳細レポートを表示</Text>
+      <Text style={styles.dailyDetailLockedText}>訪問エリア、新規エリア、その日に解除した実績を確認できます。</Text>
+    </Pressable>
+  );
+}
 ```
 
 - [ ] **Step 7: Add styles**
@@ -767,6 +778,7 @@ git commit -m "feat(premium): 日別詳細レポートをPlus向けに表示"
 ## Task 4: Docs, Full Verification, and PR
 
 **Files:**
+
 - Modify: `docs/plus-features.md`
 - Modify: `docs/todo.md`
 

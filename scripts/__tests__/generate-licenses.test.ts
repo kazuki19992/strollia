@@ -1,9 +1,4 @@
-const {
-  decodeXmlEntities,
-  normalizeNpmLicenses,
-  readPlistStringValue,
-  splitPackageKey,
-} = require('../generate-licenses');
+const { decodeXmlEntities, normalizeNpmLicenses, readPlistStringValue, splitPackageKey } = require('../generate-licenses');
 
 describe('OSSライセンス生成スクリプト', () => {
   test('scope付きnpmパッケージ名とバージョンを分離する', () => {

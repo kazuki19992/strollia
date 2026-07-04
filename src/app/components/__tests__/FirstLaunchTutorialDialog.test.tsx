@@ -68,7 +68,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(visibleTexts()).toContain('エリアを広げよう');
     expect(visibleTexts()).toContain('3 / 6');
     expect(visibleTexts()).toContain('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。');
-    expect(visibleTexts()).toContain('歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。');
+    expect(visibleTexts()).toContain(
+      '歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。',
+    );
     expect(renderer!.root.findByType(Image).props.accessibilityLabel).toBe('地図上のエリアの説明');
 
     press('次へ');
@@ -103,9 +105,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     });
 
     press('次へ');
-    const instructionImageFrame = renderer!.root.findAllByType(View).find(
-      (node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
-    );
+    const instructionImageFrame = renderer!.root
+      .findAllByType(View)
+      .find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
     expect(instructionImageFrame).toBeTruthy();
     act(() => {
       instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
@@ -136,9 +138,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     });
 
     press('次へ');
-    const instructionImageFrame = renderer!.root.findAllByType(View).find(
-      (node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
-    );
+    const instructionImageFrame = renderer!.root
+      .findAllByType(View)
+      .find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
     expect(instructionImageFrame).toBeTruthy();
     act(() => {
       instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });

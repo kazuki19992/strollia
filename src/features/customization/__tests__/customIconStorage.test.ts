@@ -45,16 +45,11 @@ describe('カスタム画像の永続ファイル管理', () => {
   });
 
   it('画像を専用領域へコピーし相対的な管理参照と表示URIを返す', async () => {
-    await expect(
-      persistCustomIconImage('file:///picker/photo.PNG?edited=1', () => 'fixed-id'),
-    ).resolves.toEqual({
+    await expect(persistCustomIconImage('file:///picker/photo.PNG?edited=1', () => 'fixed-id')).resolves.toEqual({
       reference: 'managed:fixed-id.png',
       uri: 'file:///documents/strollia-custom-icons/fixed-id.png',
     });
-    expect(makeDirectoryAsync).toHaveBeenCalledWith(
-      'file:///documents/strollia-custom-icons/',
-      { intermediates: true },
-    );
+    expect(makeDirectoryAsync).toHaveBeenCalledWith('file:///documents/strollia-custom-icons/', { intermediates: true });
     expect(copyAsync).toHaveBeenCalledWith({
       from: 'file:///picker/photo.PNG?edited=1',
       to: 'file:///documents/strollia-custom-icons/fixed-id.png',
@@ -69,18 +64,14 @@ describe('カスタム画像の永続ファイル管理', () => {
   });
 
   it('クエリやフラグメント内の文字列を画像拡張子として扱わない', async () => {
-    await expect(
-      persistCustomIconImage('file:///picker/photo.jpeg?format=.png#preview.webp', () => 'image-id'),
-    ).resolves.toEqual({
+    await expect(persistCustomIconImage('file:///picker/photo.jpeg?format=.png#preview.webp', () => 'image-id')).resolves.toEqual({
       reference: 'managed:image-id.jpeg',
       uri: 'file:///documents/strollia-custom-icons/image-id.jpeg',
     });
   });
 
   it('パスに拡張子がなくクエリにだけ拡張子らしい文字列がある場合はjpgにする', async () => {
-    await expect(
-      persistCustomIconImage('file:///picker/photo?format=.png', () => 'image-id'),
-    ).resolves.toEqual({
+    await expect(persistCustomIconImage('file:///picker/photo?format=.png', () => 'image-id')).resolves.toEqual({
       reference: 'managed:image-id.jpg',
       uri: 'file:///documents/strollia-custom-icons/image-id.jpg',
     });
@@ -89,9 +80,9 @@ describe('カスタム画像の永続ファイル管理', () => {
   it('保存先が既に存在する場合は既存ファイルに触れずエラーにする', async () => {
     getInfoAsync.mockResolvedValue({ exists: true, isDirectory: false });
 
-    await expect(
-      persistCustomIconImage('file:///picker/photo.jpg', () => 'collision'),
-    ).rejects.toThrow('同じ保存先のカスタム画像が既に存在します。');
+    await expect(persistCustomIconImage('file:///picker/photo.jpg', () => 'collision')).rejects.toThrow(
+      '同じ保存先のカスタム画像が既に存在します。',
+    );
     expect(copyAsync).not.toHaveBeenCalled();
     expect(deleteAsync).not.toHaveBeenCalled();
   });
@@ -100,13 +91,8 @@ describe('カスタム画像の永続ファイル管理', () => {
     const copyError = new Error('copy failed');
     copyAsync.mockRejectedValue(copyError);
 
-    await expect(
-      persistCustomIconImage('file:///picker/photo.jpg', () => 'partial'),
-    ).rejects.toBe(copyError);
-    expect(deleteAsync).toHaveBeenCalledWith(
-      'file:///documents/strollia-custom-icons/partial.jpg',
-      { idempotent: true },
-    );
+    await expect(persistCustomIconImage('file:///picker/photo.jpg', () => 'partial')).rejects.toBe(copyError);
+    expect(deleteAsync).toHaveBeenCalledWith('file:///documents/strollia-custom-icons/partial.jpg', { idempotent: true });
   });
 
   it('部分ファイルの削除にも失敗した場合は警告してコピー元のエラーを保つ', async () => {
@@ -116,13 +102,8 @@ describe('カスタム画像の永続ファイル管理', () => {
     copyAsync.mockRejectedValue(copyError);
     deleteAsync.mockRejectedValue(cleanupError);
 
-    await expect(
-      persistCustomIconImage('file:///picker/photo.jpg', () => 'partial'),
-    ).rejects.toBe(copyError);
-    expect(warnSpy).toHaveBeenCalledWith(
-      'カスタム画像の部分ファイルを削除できませんでした。',
-      cleanupError,
-    );
+    await expect(persistCustomIconImage('file:///picker/photo.jpg', () => 'partial')).rejects.toBe(copyError);
+    expect(warnSpy).toHaveBeenCalledWith('カスタム画像の部分ファイルを削除できませんでした。', cleanupError);
 
     warnSpy.mockRestore();
   });
@@ -135,19 +116,13 @@ describe('カスタム画像の永続ファイル管理', () => {
       uri: 'file:///documents/strollia-custom-icons/saved.webp',
       migrated: false,
     });
-    expect(getInfoAsync).toHaveBeenCalledWith(
-      'file:///documents/strollia-custom-icons/saved.webp',
-    );
+    expect(getInfoAsync).toHaveBeenCalledWith('file:///documents/strollia-custom-icons/saved.webp');
   });
 
   it('読み取れる従来の絶対URIを専用領域へ移行する', async () => {
-    getInfoAsync
-      .mockResolvedValueOnce({ exists: true, isDirectory: false })
-      .mockResolvedValueOnce({ exists: false });
+    getInfoAsync.mockResolvedValueOnce({ exists: true, isDirectory: false }).mockResolvedValueOnce({ exists: false });
 
-    await expect(
-      resolveCustomIconReference('file:///legacy/custom.heic', () => 'migrated-id'),
-    ).resolves.toEqual({
+    await expect(resolveCustomIconReference('file:///legacy/custom.heic', () => 'migrated-id')).resolves.toEqual({
       reference: 'managed:migrated-id.heic',
       uri: 'file:///documents/strollia-custom-icons/migrated-id.heic',
       migrated: true,
@@ -160,9 +135,7 @@ describe('カスタム画像の永続ファイル管理', () => {
   });
 
   it('読み取れる従来URIの移行コピーに失敗した場合は旧URIを表示用に返す', async () => {
-    getInfoAsync
-      .mockResolvedValueOnce({ exists: true, isDirectory: false })
-      .mockResolvedValueOnce({ exists: false });
+    getInfoAsync.mockResolvedValueOnce({ exists: true, isDirectory: false }).mockResolvedValueOnce({ exists: false });
     copyAsync.mockRejectedValue(new Error('copy failed'));
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
@@ -193,19 +166,11 @@ describe('カスタム画像の永続ファイル管理', () => {
     await deleteManagedCustomIcon('file:///legacy/old.jpg');
 
     expect(deleteAsync).toHaveBeenCalledTimes(1);
-    expect(deleteAsync).toHaveBeenCalledWith(
-      'file:///documents/strollia-custom-icons/old.jpg',
-      { idempotent: true },
-    );
+    expect(deleteAsync).toHaveBeenCalledWith('file:///documents/strollia-custom-icons/old.jpg', { idempotent: true });
   });
 
   it('走査パスや管理形式に合わない参照はファイル操作せず拒否する', async () => {
-    const invalidReferences = [
-      'managed:../outside.jpg',
-      'managed:file',
-      'managed:file.exe',
-      'managed:file.',
-    ];
+    const invalidReferences = ['managed:../outside.jpg', 'managed:file', 'managed:file.exe', 'managed:file.'];
 
     for (const reference of invalidReferences) {
       await expect(resolveCustomIconReference(reference)).resolves.toBeNull();
@@ -222,8 +187,6 @@ describe('カスタム画像の永続ファイル管理', () => {
       value: null,
     });
 
-    await expect(persistCustomIconImage('file:///picker/photo.jpg')).rejects.toThrow(
-      'カスタム画像の保存先を利用できません。',
-    );
+    await expect(persistCustomIconImage('file:///picker/photo.jpg')).rejects.toThrow('カスタム画像の保存先を利用できません。');
   });
 });

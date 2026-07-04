@@ -51,10 +51,7 @@ export function TopToast({ visible, message, theme, durationMs = 4000, onHide }:
   }
 
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[styles.container, { backgroundColor: theme.colors.primary, opacity }]}
-    >
+    <Animated.View pointerEvents="none" style={[styles.container, { backgroundColor: theme.colors.primary, opacity }]}>
       <Text allowFontScaling={false} style={[styles.message, { color: theme.colors.primaryText }]}>
         {message}
       </Text>

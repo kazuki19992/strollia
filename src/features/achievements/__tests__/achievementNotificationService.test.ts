@@ -3,7 +3,12 @@ import { Platform } from 'react-native';
 
 import { getBooleanSetting, setSetting } from '../../settings/settingsRepository';
 import { markAchievementPushDelivered } from '../achievementRepository';
-import { ACHIEVEMENT_NOTIFICATION_CHANNEL_ID, requestAchievementNotificationPermissionOnFirstLaunch, notifyAchievementUnlocked, setupAchievementNotificationChannel } from '../achievementNotificationService';
+import {
+  ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
+  requestAchievementNotificationPermissionOnFirstLaunch,
+  notifyAchievementUnlocked,
+  setupAchievementNotificationChannel,
+} from '../achievementNotificationService';
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
@@ -88,11 +93,14 @@ describe('実績通知 achievementNotificationService', () => {
 
     await setupAchievementNotificationChannel();
 
-    expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(ACHIEVEMENT_NOTIFICATION_CHANNEL_ID, expect.objectContaining({
-      name: '実績',
-      vibrationPattern: [0, 1000],
-      enableVibrate: true,
-    }));
+    expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+      ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
+      expect.objectContaining({
+        name: '実績',
+        vibrationPattern: [0, 1000],
+        enableVibrate: true,
+      }),
+    );
   });
 
   it('通知未許可の場合は解除通知を送らない', async () => {

@@ -68,14 +68,25 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
     <Dialog visible={item != null} styles={styles} onClose={onClose}>
       {item && (
         <>
-          <View ref={captureViewRef} collapsable={false} style={[styles.achievementModalActions, { alignItems: 'center', backgroundColor: theme.colors.background }]}>
+          <View
+            ref={captureViewRef}
+            collapsable={false}
+            style={[styles.achievementModalActions, { alignItems: 'center', backgroundColor: theme.colors.background }]}
+          >
             <Image source={item.definition.trophyImage} style={styles.achievementModalImage} />
             <Text style={styles.achievementModalTitle}>{item.definition.title}</Text>
-            {item.unlockedAt && <Text style={styles.achievementDialogDate}>{`開放日: ${new Date(item.unlockedAt).toLocaleDateString()}`}</Text>}
+            {item.unlockedAt && (
+              <Text style={styles.achievementDialogDate}>{`開放日: ${new Date(item.unlockedAt).toLocaleDateString()}`}</Text>
+            )}
             <Text style={styles.achievementModalDescription}>{item.definition.description}</Text>
           </View>
           <View style={styles.achievementModalActions}>
-            <Pressable accessibilityLabel="実績を共有する" accessibilityRole="button" onPress={shareAchievementImage} style={styles.achievementDialogShareButton}>
+            <Pressable
+              accessibilityLabel="実績を共有する"
+              accessibilityRole="button"
+              onPress={shareAchievementImage}
+              style={styles.achievementDialogShareButton}
+            >
               <Feather name="share-2" size={18} color={styles.achievementDialogShareButtonText.color} />
               <Text style={styles.achievementDialogShareButtonText}>共有する</Text>
             </Pressable>

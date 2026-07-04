@@ -234,7 +234,9 @@ export function MapScreen({
           </Marker>
         )}
         {showPhotosOnMap &&
-          photoClusters.map((cluster) => <PhotoClusterMarker key={cluster.id} cluster={cluster} styles={styles} onPress={onPhotoClusterPress} />)}
+          photoClusters.map((cluster) => (
+            <PhotoClusterMarker key={cluster.id} cluster={cluster} styles={styles} onPress={onPhotoClusterPress} />
+          ))}
       </MapView>
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>

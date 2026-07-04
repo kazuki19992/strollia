@@ -13,18 +13,21 @@ export type MonthlyReportScrollIndicatorProps = {
 export function MonthlyReportScrollIndicator({ color }: MonthlyReportScrollIndicatorProps) {
   const offset = useRef(new Animated.Value(0)).current;
 
-  useEffect(function animateScrollIndicator(): () => void {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(offset, { toValue: 8, duration: 780, useNativeDriver: true }),
-        Animated.timing(offset, { toValue: 0, duration: 780, useNativeDriver: true }),
-      ]),
-    );
+  useEffect(
+    function animateScrollIndicator(): () => void {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(offset, { toValue: 8, duration: 780, useNativeDriver: true }),
+          Animated.timing(offset, { toValue: 0, duration: 780, useNativeDriver: true }),
+        ]),
+      );
 
-    animation.start();
+      animation.start();
 
-    return () => animation.stop();
-  }, [offset]);
+      return () => animation.stop();
+    },
+    [offset],
+  );
 
   return (
     <Animated.View style={[reportStyles.monthlyScrollIndicator, { transform: [{ translateY: offset }] }]}>

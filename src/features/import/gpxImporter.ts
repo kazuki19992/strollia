@@ -37,17 +37,19 @@ function toLocationPoint(trkpt: XmlNode): NewLocationPoint[] {
 
   const recordedAt = recordedAtDate.toISOString();
 
-  return [{
-    recordedAt,
-    localDate: toLocalDate(recordedAtDate),
-    latitude,
-    longitude,
-    altitude: toFiniteNumber(getTextValue(trkpt.ele)),
-    speed: null,
-    heading: null,
-    accuracy: null,
-    altitudeAccuracy: null,
-  }];
+  return [
+    {
+      recordedAt,
+      localDate: toLocalDate(recordedAtDate),
+      latitude,
+      longitude,
+      altitude: toFiniteNumber(getTextValue(trkpt.ele)),
+      speed: null,
+      heading: null,
+      accuracy: null,
+      altitudeAccuracy: null,
+    },
+  ];
 }
 
 /** 緯度は世界測地系の範囲に収まる数値だけを許可する。 */

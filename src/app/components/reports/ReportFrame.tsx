@@ -27,7 +27,10 @@ export function ReportFrame({ title, label, pageCount, pageIndex, children, onSh
       <View style={reportStyles.progressRow}>
         {Array.from({ length: pageCount }).map((_, index) => (
           <View key={index} style={reportStyles.progressBar}>
-            <View testID={`report-progress-fill-${index}`} style={[reportStyles.progressFill, { width: index <= pageIndex ? '100%' : '0%' }]} />
+            <View
+              testID={`report-progress-fill-${index}`}
+              style={[reportStyles.progressFill, { width: index <= pageIndex ? '100%' : '0%' }]}
+            />
           </View>
         ))}
       </View>
@@ -41,7 +44,13 @@ export function ReportFrame({ title, label, pageCount, pageIndex, children, onSh
         </View>
       </View>
       {children}
-      <ShareButton accessibilityLabel="レポートを共有" iconColor="#777777" iconSize={28} style={reportStyles.shareButton} onPress={onShare} />
+      <ShareButton
+        accessibilityLabel="レポートを共有"
+        iconColor="#777777"
+        iconSize={28}
+        style={reportStyles.shareButton}
+        onPress={onShare}
+      />
     </View>
   );
 }

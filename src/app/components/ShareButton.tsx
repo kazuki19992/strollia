@@ -23,7 +23,17 @@ export type ShareButtonProps = {
 };
 
 /** 共有アクションで共通利用するボタン。 */
-export function ShareButton({ accessibilityLabel, disabled = false, iconColor, iconSize = 24, label, style, textStyle, variant = label ? 'wide' : 'icon', onPress }: ShareButtonProps) {
+export function ShareButton({
+  accessibilityLabel,
+  disabled = false,
+  iconColor,
+  iconSize = 24,
+  label,
+  style,
+  textStyle,
+  variant = label ? 'wide' : 'icon',
+  onPress,
+}: ShareButtonProps) {
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}

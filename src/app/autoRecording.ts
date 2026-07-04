@@ -11,10 +11,6 @@ export type AutoRecordingDecisionInput = {
 };
 
 /** 権限許可後にGPS記録を自動開始すべきか返す。 */
-export function shouldStartRecordingAutomatically({
-  permissions,
-  isRecording,
-  isAutoStartInFlight,
-}: AutoRecordingDecisionInput): boolean {
+export function shouldStartRecordingAutomatically({ permissions, isRecording, isAutoStartInFlight }: AutoRecordingDecisionInput): boolean {
   return hasRequiredLocationPermission(permissions) && !isRecording && !isAutoStartInFlight;
 }

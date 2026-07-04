@@ -1,11 +1,11 @@
 import { NewLocationPoint } from '../../../types/gps';
 
+import { normalizeAdminAreaName, toLocationPointAdminArea, toVisitedAdminAreas } from '../adminAreaResolver';
+
 jest.mock('../adminAreaRepository', () => ({
   upsertLocationPointAdminArea: jest.fn(),
   upsertVisitedAdminArea: jest.fn(),
 }));
-
-import { normalizeAdminAreaName, toLocationPointAdminArea, toVisitedAdminAreas } from '../adminAreaResolver';
 
 const point: NewLocationPoint = {
   recordedAt: '2026-05-07T00:00:00.000Z',

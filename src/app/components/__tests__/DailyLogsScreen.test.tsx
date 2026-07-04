@@ -4,12 +4,14 @@ import { lightTheme } from '../../../theme/theme';
 import { DailyLogsScreen } from '../DailyLogsScreen';
 
 jest.mock('../../../features/achievements/adminAreaRepository', () => ({
-  getLocationPointAdminAreaNames: jest.fn().mockResolvedValue(new Map([
-    [10, '船橋市'],
-    [20, '船橋市'],
-    [30, '千代田区'],
-    [40, '渋谷区'],
-  ])),
+  getLocationPointAdminAreaNames: jest.fn().mockResolvedValue(
+    new Map([
+      [10, '船橋市'],
+      [20, '船橋市'],
+      [30, '千代田区'],
+      [40, '渋谷区'],
+    ]),
+  ),
 }));
 
 jest.mock('@expo/vector-icons', () => ({
@@ -114,7 +116,18 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(expect.arrayContaining(['2026年6月', '6月3日（水）', '千代田区 ▶ 渋谷区', '0.30km', '2026年5月', '5月31日（日）', '船橋市 ▶ 船橋市', '146.20km']));
+    expect(texts).toEqual(
+      expect.arrayContaining([
+        '2026年6月',
+        '6月3日（水）',
+        '千代田区 ▶ 渋谷区',
+        '0.30km',
+        '2026年5月',
+        '5月31日（日）',
+        '船橋市 ▶ 船橋市',
+        '146.20km',
+      ]),
+    );
 
     const button = renderer.root.findByProps({ accessibilityLabel: '5月31日（日）の記録を開く' });
     act(() => {

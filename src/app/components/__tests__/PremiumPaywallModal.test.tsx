@@ -35,7 +35,9 @@ const baseProps = {
 };
 
 describe('PremiumPaywallModal', () => {
-  beforeEach(() => { jest.clearAllMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   test('visible=true のとき Modal が表示される', async () => {
     let renderer: any;
@@ -69,13 +71,13 @@ describe('PremiumPaywallModal', () => {
     const onPurchase = jest.fn();
     let renderer: any;
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <PremiumPaywallModal {...baseProps} onPurchaseMonthlyPremiumPackage={onPurchase} />,
-      );
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} onPurchaseMonthlyPremiumPackage={onPurchase} />);
     });
     const pills = renderer.root.findAllByType(ActionPill);
     const monthlyPill = pills.find((p: any) => p.props.label?.includes('月額300円'));
-    act(() => { monthlyPill.props.onPress(); });
+    act(() => {
+      monthlyPill.props.onPress();
+    });
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
 
@@ -83,13 +85,13 @@ describe('PremiumPaywallModal', () => {
     const onPurchase = jest.fn();
     let renderer: any;
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <PremiumPaywallModal {...baseProps} onPurchaseYearlyPremiumPackage={onPurchase} />,
-      );
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} onPurchaseYearlyPremiumPackage={onPurchase} />);
     });
     const pills = renderer.root.findAllByType(ActionPill);
     const yearlyPill = pills.find((p: any) => p.props.label?.includes('年額3300円'));
-    act(() => { yearlyPill.props.onPress(); });
+    act(() => {
+      yearlyPill.props.onPress();
+    });
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
 
@@ -97,13 +99,13 @@ describe('PremiumPaywallModal', () => {
     const onRestore = jest.fn();
     let renderer: any;
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <PremiumPaywallModal {...baseProps} onRestorePremiumPurchases={onRestore} />,
-      );
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} onRestorePremiumPurchases={onRestore} />);
     });
     const pills = renderer.root.findAllByType(ActionPill);
     const restorePill = pills.find((p: any) => p.props.label?.includes('復元'));
-    act(() => { restorePill.props.onPress(); });
+    act(() => {
+      restorePill.props.onPress();
+    });
     expect(onRestore).toHaveBeenCalledTimes(1);
   });
 
@@ -123,18 +125,18 @@ describe('PremiumPaywallModal', () => {
       ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} />);
     });
 
-    expect(mockPlusAdImage).toHaveBeenCalledWith(expect.objectContaining({
-      accessibilityLabel: 'Strollia Plusの機能比較広告',
-      width: '100%',
-    }));
+    expect(mockPlusAdImage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessibilityLabel: 'Strollia Plusの機能比較広告',
+        width: '100%',
+      }),
+    );
   });
 
   test('isPurchasingPremiumPackage=true のとき購入ボタンが無効化される', async () => {
     let renderer: any;
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <PremiumPaywallModal {...baseProps} isPurchasingPremiumPackage={true} />,
-      );
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} isPurchasingPremiumPackage={true} />);
     });
     const pills = renderer.root.findAllByType(ActionPill);
     const buyPills = pills.filter((p: any) => p.props.label?.includes('購入処理中'));
@@ -144,9 +146,7 @@ describe('PremiumPaywallModal', () => {
   test('isLoadingPremiumOffering=true のとき商品情報読み込み中テキストを表示する', async () => {
     let renderer: any;
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <PremiumPaywallModal {...baseProps} isLoadingPremiumOffering={true} />,
-      );
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} isLoadingPremiumOffering={true} />);
     });
     const texts = renderer.root.findAllByType(Text).map((n: any) => n.props.children);
     expect(texts).toContain('商品情報を確認しています...');
@@ -155,9 +155,7 @@ describe('PremiumPaywallModal', () => {
   test('isRestoringPremiumPurchases=true のとき購入復元ボタンが無効化される', async () => {
     let renderer: any;
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <PremiumPaywallModal {...baseProps} isRestoringPremiumPurchases={true} />,
-      );
+      renderer = ReactTestRenderer.create(<PremiumPaywallModal {...baseProps} isRestoringPremiumPurchases={true} />);
     });
     const pills = renderer.root.findAllByType(ActionPill);
     const restorePill = pills.find((p: any) => p.props.label?.includes('復元'));

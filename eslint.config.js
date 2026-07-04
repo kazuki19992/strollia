@@ -32,15 +32,6 @@ module.exports = [
 
   // ignores: 生成物・ビルド成果物・worktree・外部ネイティブコード
   {
-    ignores: [
-      'src/app/generated/**',
-      'builds/**',
-      'android/**',
-      'ios/**',
-      '.worktrees/**',
-      'coverage/**',
-      'scripts/**',
-      '.expo/**',
-    ],
+    ignores: ['src/app/generated/**', 'builds/**', 'android/**', 'ios/**', '.worktrees/**', 'coverage/**', 'scripts/**', '.expo/**'],
   },
 ];

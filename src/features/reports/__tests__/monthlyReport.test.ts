@@ -1,4 +1,11 @@
-import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, getReportMonth, hasMonthlyReportData, isInReportMonth } from '../monthlyReport';
+import {
+  createMonthlyReport,
+  formatReportMonth,
+  getPreviousReportMonth,
+  getReportMonth,
+  hasMonthlyReportData,
+  isInReportMonth,
+} from '../monthlyReport';
 import { DailyLogSummary, LocationPoint } from '../../../types/gps';
 
 /**
@@ -55,11 +62,10 @@ describe('月次レポート集計 monthlyReport', () => {
   });
 
   it('保存済み日別距離から月次総移動距離を集計する', () => {
-    const report = createMonthlyReport(
-      [log('2026-04-01', 1000), log('2026-04-02', 2500), log('2026-05-01', 9999)],
-      [],
-      { year: 2026, month: 4 },
-    );
+    const report = createMonthlyReport([log('2026-04-01', 1000), log('2026-04-02', 2500), log('2026-05-01', 9999)], [], {
+      year: 2026,
+      month: 4,
+    });
 
     expect(report.label).toBe('2026-04');
     expect(report.totalDistanceMeters).toBe(3500);

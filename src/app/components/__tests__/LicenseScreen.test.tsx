@@ -70,7 +70,9 @@ describe('ライセンス画面 LicenseScreen', () => {
 
   test('生成済みOSSライセンスをライブラリ名だけのリストで表示する', () => {
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
+      renderer = ReactTestRenderer.create(
+        <LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
+      );
     });
 
     const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
@@ -87,7 +89,9 @@ describe('ライセンス画面 LicenseScreen', () => {
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
+      renderer = ReactTestRenderer.create(
+        <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
+      );
     });
 
     const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'ライセンス');
@@ -101,7 +105,9 @@ describe('ライセンス画面 LicenseScreen', () => {
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />);
+      renderer = ReactTestRenderer.create(
+        <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />,
+      );
     });
 
     const container = renderer.root.findByType(SafeAreaView);
@@ -121,7 +127,14 @@ describe('ライセンス画面 LicenseScreen', () => {
     const onOpenLicenseDetail = jest.fn();
 
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={onOpenLicenseDetail} />);
+      renderer = ReactTestRenderer.create(
+        <LicenseScreen
+          styles={styles as never}
+          theme={lightTheme}
+          onBackToSettings={jest.fn()}
+          onOpenLicenseDetail={onOpenLicenseDetail}
+        />,
+      );
     });
 
     const reactRow = renderer.root.findByProps({ accessibilityLabel: 'react のライセンス詳細を開く' });
@@ -138,7 +151,9 @@ describe('ライセンス画面 LicenseScreen', () => {
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<LicenseDetailScreen license={OSS_LICENSES[0]} styles={realStyles} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />);
+      renderer = ReactTestRenderer.create(
+        <LicenseDetailScreen license={OSS_LICENSES[0]} styles={realStyles} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />,
+      );
     });
 
     const container = renderer.root.findByType(SafeAreaView);

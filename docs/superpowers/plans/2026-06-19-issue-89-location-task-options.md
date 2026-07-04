@@ -24,6 +24,7 @@
 ### Task 1: タスクオプション一致判定
 
 **Files:**
+
 - Modify: `src/features/location/locationTrackingConfig.ts`
 - Test: `src/features/location/__tests__/locationTrackingConfig.test.ts`
 
@@ -37,31 +38,39 @@ it('Strolliaが管理する登録済みオプションがすべて一致する�
 });
 
 it('Dynamic Island表示設定が古いと最新ではないと判定する', () => {
-  expect(hasCurrentLocationTaskOptions({
-    ...getLocationTaskOptions(),
-    showsBackgroundLocationIndicator: true,
-  })).toBe(false);
+  expect(
+    hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      showsBackgroundLocationIndicator: true,
+    }),
+  ).toBe(false);
 });
 
 it('監視間隔またはforeground service設定が異なると最新ではないと判定する', () => {
-  expect(hasCurrentLocationTaskOptions({
-    ...getLocationTaskOptions(),
-    distanceInterval: 100,
-  })).toBe(false);
-  expect(hasCurrentLocationTaskOptions({
-    ...getLocationTaskOptions(),
-    foregroundService: {
-      ...getLocationTaskOptions().foregroundService!,
-      notificationBody: '古い通知文言',
-    },
-  })).toBe(false);
+  expect(
+    hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      distanceInterval: 100,
+    }),
+  ).toBe(false);
+  expect(
+    hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      foregroundService: {
+        ...getLocationTaskOptions().foregroundService!,
+        notificationBody: '古い通知文言',
+      },
+    }),
+  ).toBe(false);
 });
 
 it('Strolliaが管理しない余分なプロパティは一致判定へ影響しない', () => {
-  expect(hasCurrentLocationTaskOptions({
-    ...getLocationTaskOptions(),
-    deferredUpdatesDistance: 0,
-  })).toBe(true);
+  expect(
+    hasCurrentLocationTaskOptions({
+      ...getLocationTaskOptions(),
+      deferredUpdatesDistance: 0,
+    }),
+  ).toBe(true);
 });
 ```
 
@@ -81,25 +90,25 @@ Expected: `hasCurrentLocationTaskOptions` がexportされていないためFAIL�
 
 ```typescript
 /** 登録済みタスクにStrollia管理対象の最新オプションが反映済みか返す。 */
-export function hasCurrentLocationTaskOptions(
-  current: Location.LocationTaskOptions | null,
-): boolean {
+export function hasCurrentLocationTaskOptions(current: Location.LocationTaskOptions | null): boolean {
   if (!current) {
     return false;
   }
 
   const expected = getLocationTaskOptions();
 
-  return current.accuracy === expected.accuracy
-    && current.timeInterval === expected.timeInterval
-    && current.distanceInterval === expected.distanceInterval
-    && current.deferredUpdatesInterval === expected.deferredUpdatesInterval
-    && current.pausesUpdatesAutomatically === expected.pausesUpdatesAutomatically
-    && current.showsBackgroundLocationIndicator === expected.showsBackgroundLocationIndicator
-    && current.foregroundService?.notificationTitle === expected.foregroundService?.notificationTitle
-    && current.foregroundService?.notificationBody === expected.foregroundService?.notificationBody
-    && current.foregroundService?.notificationColor === expected.foregroundService?.notificationColor
-    && current.foregroundService?.killServiceOnDestroy === expected.foregroundService?.killServiceOnDestroy;
+  return (
+    current.accuracy === expected.accuracy &&
+    current.timeInterval === expected.timeInterval &&
+    current.distanceInterval === expected.distanceInterval &&
+    current.deferredUpdatesInterval === expected.deferredUpdatesInterval &&
+    current.pausesUpdatesAutomatically === expected.pausesUpdatesAutomatically &&
+    current.showsBackgroundLocationIndicator === expected.showsBackgroundLocationIndicator &&
+    current.foregroundService?.notificationTitle === expected.foregroundService?.notificationTitle &&
+    current.foregroundService?.notificationBody === expected.foregroundService?.notificationBody &&
+    current.foregroundService?.notificationColor === expected.foregroundService?.notificationColor &&
+    current.foregroundService?.killServiceOnDestroy === expected.foregroundService?.killServiceOnDestroy
+  );
 }
 ```
 
@@ -123,6 +132,7 @@ git commit -m "fix(location): タスク設定の更新要否を判定する"
 ### Task 2: 記録を停止しない条件付きタスク更新
 
 **Files:**
+
 - Modify: `src/features/location/locationService.ts`
 - Rename: `src/features/location/__tests__/refreshBackgroundLocationTaskRegistration.test.ts` → `src/features/location/__tests__/updateBackgroundLocationTaskOptionsIfNeeded.test.ts`
 - Modify: `src/app/App.tsx`
@@ -144,10 +154,7 @@ it('記録中で設定が古い場合は停止せず同名タスクへ最新設�
   await updateBackgroundLocationTaskOptionsIfNeeded();
 
   expect(mockedLocation.stopLocationUpdatesAsync).not.toHaveBeenCalled();
-  expect(mockedLocation.startLocationUpdatesAsync).toHaveBeenCalledWith(
-    BACKGROUND_LOCATION_TASK_NAME,
-    getLocationTaskOptions(),
-  );
+  expect(mockedLocation.startLocationUpdatesAsync).toHaveBeenCalledWith(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
 });
 
 it('記録中で設定が最新の場合はstartもstopも呼ばない', async () => {
@@ -212,9 +219,7 @@ export async function updateBackgroundLocationTaskOptionsIfNeeded(): Promise<voi
     return;
   }
 
-  const currentOptions = await TaskManager.getTaskOptionsAsync<Location.LocationTaskOptions>(
-    BACKGROUND_LOCATION_TASK_NAME,
-  );
+  const currentOptions = await TaskManager.getTaskOptionsAsync<Location.LocationTaskOptions>(BACKGROUND_LOCATION_TASK_NAME);
 
   if (hasCurrentLocationTaskOptions(currentOptions)) {
     return;
@@ -256,6 +261,7 @@ git commit -m "fix(location): 記録を止めずタスク設定を更新する"
 ### Task 3: バックグラウンド記録方針の同期
 
 **Files:**
+
 - Modify: `docs/architecture.md`
 
 - [ ] **Step 1: タスク設定更新方針を追記する**
@@ -289,6 +295,7 @@ git commit -m "docs(location): タスク設定の安全な更新方針を追記"
 ### Task 4: 最終検証
 
 **Files:**
+
 - Verify: `src/features/location/locationTrackingConfig.ts`
 - Verify: `src/features/location/locationService.ts`
 - Verify: `src/app/App.tsx`

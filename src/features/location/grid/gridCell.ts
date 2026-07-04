@@ -48,12 +48,7 @@ export type GridBounds = {
  * 取得済みのセル範囲内に収まる小さな移動では再取得を省くために使う。
  */
 export function isGridBoundsContained(outer: GridBounds, inner: GridBounds): boolean {
-  return (
-    outer.minX <= inner.minX &&
-    outer.maxX >= inner.maxX &&
-    outer.minY <= inner.minY &&
-    outer.maxY >= inner.maxY
-  );
+  return outer.minX <= inner.minX && outer.maxX >= inner.maxX && outer.minY <= inner.minY && outer.maxY >= inner.maxY;
 }
 
 /** 表示範囲からセル検索範囲を作るときのオプション。 */
@@ -104,10 +99,7 @@ function fromMercatorMeters(coordinate: MercatorCoordinate): LatLng {
  * @param cellSizeMeters - セルサイズ。省略時は基本100m。
  * @returns Web Mercator基準のセル。
  */
-export function coordinateToGridCell(
-  coordinate: LatLng,
-  cellSizeMeters = GRID_OVERLAY_CONFIG.baseCellSizeMeters,
-): GridCell {
+export function coordinateToGridCell(coordinate: LatLng, cellSizeMeters = GRID_OVERLAY_CONFIG.baseCellSizeMeters): GridCell {
   const mercator = toMercatorMeters(coordinate);
   const x = Math.floor(mercator.x / cellSizeMeters);
   const y = Math.floor(mercator.y / cellSizeMeters);

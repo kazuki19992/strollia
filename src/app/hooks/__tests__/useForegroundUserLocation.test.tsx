@@ -1,6 +1,8 @@
 import type { LocationObject } from 'expo-location';
 import type React from 'react';
 
+import { useForegroundUserLocation } from '../useForegroundUserLocation';
+
 const { act, create } = require('react-test-renderer') as {
   act: (callback: () => void | Promise<void>) => Promise<void>;
   create: (element: React.ReactElement) => {
@@ -29,8 +31,6 @@ jest.mock('expo-location', () => ({
   watchPositionAsync: (...args: unknown[]) => mockWatchPositionAsync(...args),
   getLastKnownPositionAsync: (...args: unknown[]) => mockGetLastKnownPositionAsync(...args),
 }));
-
-import { useForegroundUserLocation } from '../useForegroundUserLocation';
 
 function flushPromises(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
@@ -79,20 +79,14 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       await flushPromises();
     });
 
-    expect(mockWatchPositionAsync).toHaveBeenLastCalledWith(
-      { accuracy: 3, distanceInterval: 5, timeInterval: 2000 },
-      expect.any(Function),
-    );
+    expect(mockWatchPositionAsync).toHaveBeenLastCalledWith({ accuracy: 3, distanceInterval: 5, timeInterval: 2000 }, expect.any(Function));
 
     await act(async () => {
       renderer.update(<Harness enabled shouldPersist />);
       await flushPromises();
     });
 
-    expect(mockWatchPositionAsync).toHaveBeenLastCalledWith(
-      { accuracy: 6, distanceInterval: 5, timeInterval: 2000 },
-      expect.any(Function),
-    );
+    expect(mockWatchPositionAsync).toHaveBeenLastCalledWith({ accuracy: 6, distanceInterval: 5, timeInterval: 2000 }, expect.any(Function));
     expect(mockWatchPositionAsync).toHaveBeenCalledTimes(2);
   });
 
@@ -154,7 +148,12 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   test('連続した位置更新の保存を直列実行する', async () => {
     let resolveFirst: (() => void) | null = null;
     mockRecordLocations
-      .mockImplementationOnce(() => new Promise<void>((resolve) => { resolveFirst = resolve; }))
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
       .mockResolvedValueOnce(undefined);
     let watchCallback: ((location: LocationObject) => void) | null = null;
     mockWatchPositionAsync.mockImplementation((_options: unknown, callback: (location: LocationObject) => void) => {

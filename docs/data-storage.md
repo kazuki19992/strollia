@@ -38,35 +38,35 @@ React Native + Expo では `expo-sqlite` の利用を第一候補とする。`ex
 
 GPSで取得した位置情報を保存する中心テーブル。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `recorded_at` | TEXT | 取得日時。ISO 8601形式 |
-| `local_date` | TEXT | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
-| `latitude` | REAL | 緯度 |
-| `longitude` | REAL | 経度 |
-| `altitude` | REAL NULL | 高度 |
-| `speed` | REAL NULL | 速度 |
-| `heading` | REAL NULL | 方位 |
-| `accuracy` | REAL NULL | 水平方向の位置精度 |
-| `altitude_accuracy` | REAL NULL | 高度の精度 |
-| `source` | TEXT | 取得元。例: `expo-location` |
-| `created_at` | TEXT | DB保存日時 |
+| カラム              | 型        | 説明                                           |
+| ------------------- | --------- | ---------------------------------------------- |
+| `id`                | INTEGER   | 主キー                                         |
+| `recorded_at`       | TEXT      | 取得日時。ISO 8601形式                         |
+| `local_date`        | TEXT      | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
+| `latitude`          | REAL      | 緯度                                           |
+| `longitude`         | REAL      | 経度                                           |
+| `altitude`          | REAL NULL | 高度                                           |
+| `speed`             | REAL NULL | 速度                                           |
+| `heading`           | REAL NULL | 方位                                           |
+| `accuracy`          | REAL NULL | 水平方向の位置精度                             |
+| `altitude_accuracy` | REAL NULL | 高度の精度                                     |
+| `source`            | TEXT      | 取得元。例: `expo-location`                    |
+| `created_at`        | TEXT      | DB保存日時                                     |
 
 ### 4.2 `daily_logs`
 
 日単位の記録概要を保存するテーブル。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `local_date` | TEXT | 日付。例: `2026-05-04` |
-| `started_at` | TEXT NULL | その日の最初の記録時刻 |
-| `ended_at` | TEXT NULL | その日の最後の記録時刻 |
-| `point_count` | INTEGER | 記録点数 |
-| `distance_meters` | REAL NULL | 推定移動距離 |
-| `created_at` | TEXT | 作成日時 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム            | 型        | 説明                   |
+| ----------------- | --------- | ---------------------- |
+| `id`              | INTEGER   | 主キー                 |
+| `local_date`      | TEXT      | 日付。例: `2026-05-04` |
+| `started_at`      | TEXT NULL | その日の最初の記録時刻 |
+| `ended_at`        | TEXT NULL | その日の最後の記録時刻 |
+| `point_count`     | INTEGER   | 記録点数               |
+| `distance_meters` | REAL NULL | 推定移動距離           |
+| `created_at`      | TEXT      | 作成日時               |
+| `updated_at`      | TEXT      | 更新日時               |
 
 ### 4.3 `recording_sessions`
 
@@ -74,29 +74,29 @@ GPSで取得した位置情報を保存する中心テーブル。
 
 自動常時記録にする場合でも、アプリ起動、権限変更、バックグラウンドタスク再開などの境界をセッションとして扱えるようにする。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `started_at` | TEXT | セッション開始日時 |
-| `ended_at` | TEXT NULL | セッション終了日時 |
-| `status` | TEXT | `active`, `stopped`, `interrupted` など |
-| `reason` | TEXT NULL | 終了理由または中断理由 |
-| `created_at` | TEXT | 作成日時 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム       | 型        | 説明                                    |
+| ------------ | --------- | --------------------------------------- |
+| `id`         | INTEGER   | 主キー                                  |
+| `started_at` | TEXT      | セッション開始日時                      |
+| `ended_at`   | TEXT NULL | セッション終了日時                      |
+| `status`     | TEXT      | `active`, `stopped`, `interrupted` など |
+| `reason`     | TEXT NULL | 終了理由または中断理由                  |
+| `created_at` | TEXT      | 作成日時                                |
+| `updated_at` | TEXT      | 更新日時                                |
 
 ### 4.4 `export_history`
 
 GPX / KML エクスポート履歴を保存するテーブル。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `format` | TEXT | `gpx` または `kml` |
-| `range_from` | TEXT | 出力開始日時 |
-| `range_to` | TEXT | 出力終了日時 |
-| `file_name` | TEXT | 出力ファイル名 |
+| カラム        | 型      | 説明               |
+| ------------- | ------- | ------------------ |
+| `id`          | INTEGER | 主キー             |
+| `format`      | TEXT    | `gpx` または `kml` |
+| `range_from`  | TEXT    | 出力開始日時       |
+| `range_to`    | TEXT    | 出力終了日時       |
+| `file_name`   | TEXT    | 出力ファイル名     |
 | `point_count` | INTEGER | 出力対象の記録点数 |
-| `created_at` | TEXT | エクスポート日時 |
+| `created_at`  | TEXT    | エクスポート日時   |
 
 ### 4.5 `visited_cells`
 
@@ -104,18 +104,18 @@ GPX / KML エクスポート履歴を保存するテーブル。
 
 保存粒度は100mセルのみとし、表示時に200m、500m、1km、2km、5km、10km相当へ集約する。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `cell_id` | TEXT | 主キー。形式は `100:x:y` |
-| `cell_size_meters` | INTEGER | 保存セルサイズ。当面は100 |
-| `x` | INTEGER | Web Mercatorメートル座標をセルサイズで割ったX番号 |
-| `y` | INTEGER | Web Mercatorメートル座標をセルサイズで割ったY番号 |
-| `first_visited_at` | TEXT | 初回訪問日時 |
-| `last_visited_at` | TEXT | 最終訪問日時 |
-| `visit_count` | INTEGER | 訪問回数 |
-| `source` | TEXT | 取得元。例: `gps` |
-| `created_at` | TEXT | 作成日時 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム             | 型      | 説明                                              |
+| ------------------ | ------- | ------------------------------------------------- |
+| `cell_id`          | TEXT    | 主キー。形式は `100:x:y`                          |
+| `cell_size_meters` | INTEGER | 保存セルサイズ。当面は100                         |
+| `x`                | INTEGER | Web Mercatorメートル座標をセルサイズで割ったX番号 |
+| `y`                | INTEGER | Web Mercatorメートル座標をセルサイズで割ったY番号 |
+| `first_visited_at` | TEXT    | 初回訪問日時                                      |
+| `last_visited_at`  | TEXT    | 最終訪問日時                                      |
+| `visit_count`      | INTEGER | 訪問回数                                          |
+| `source`           | TEXT    | 取得元。例: `gps`                                 |
+| `created_at`       | TEXT    | 作成日時                                          |
+| `updated_at`       | TEXT    | 更新日時                                          |
 
 ### 4.6 `import_history`
 
@@ -123,16 +123,16 @@ GPX / KML インポート履歴を保存するテーブル。
 
 初期実装ではGPXのみインポート対象とする。既存の `recorded_at`、`latitude`、`longitude` と一致する点がある場合は既存データを優先し、GPX側の点はスキップする。KMLインポートは後続対応とする。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `format` | TEXT | `gpx` または `kml` |
-| `file_name` | TEXT | 取り込み元ファイル名 |
-| `range_from` | TEXT NULL | 取り込みデータの開始日時 |
-| `range_to` | TEXT NULL | 取り込みデータの終了日時 |
-| `imported_point_count` | INTEGER | 取り込んだ記録点数 |
-| `skipped_point_count` | INTEGER | 重複などでスキップした記録点数 |
-| `created_at` | TEXT | インポート日時 |
+| カラム                 | 型        | 説明                           |
+| ---------------------- | --------- | ------------------------------ |
+| `id`                   | INTEGER   | 主キー                         |
+| `format`               | TEXT      | `gpx` または `kml`             |
+| `file_name`            | TEXT      | 取り込み元ファイル名           |
+| `range_from`           | TEXT NULL | 取り込みデータの開始日時       |
+| `range_to`             | TEXT NULL | 取り込みデータの終了日時       |
+| `imported_point_count` | INTEGER   | 取り込んだ記録点数             |
+| `skipped_point_count`  | INTEGER   | 重複などでスキップした記録点数 |
+| `created_at`           | TEXT      | インポート日時                 |
 
 ### 4.7 `photo_assets`（任意機能）
 
@@ -140,28 +140,28 @@ GPX / KML インポート履歴を保存するテーブル。
 
 写真本体はDBに保存しない。ジオタグがない写真も保存しない。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `asset_id` | TEXT | 写真ライブラリ上のアセットID |
-| `taken_at` | TEXT NULL | 撮影日時 |
-| `latitude` | REAL | 緯度 |
-| `longitude` | REAL | 経度 |
-| `local_uri` | TEXT NULL | ローカル参照URI |
-| `thumbnail_uri` | TEXT NULL | サムネイルキャッシュURI |
-| `last_seen_at` | TEXT | 最終確認日時 |
-| `created_at` | TEXT | 作成日時 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム          | 型        | 説明                         |
+| --------------- | --------- | ---------------------------- |
+| `id`            | INTEGER   | 主キー                       |
+| `asset_id`      | TEXT      | 写真ライブラリ上のアセットID |
+| `taken_at`      | TEXT NULL | 撮影日時                     |
+| `latitude`      | REAL      | 緯度                         |
+| `longitude`     | REAL      | 経度                         |
+| `local_uri`     | TEXT NULL | ローカル参照URI              |
+| `thumbnail_uri` | TEXT NULL | サムネイルキャッシュURI      |
+| `last_seen_at`  | TEXT      | 最終確認日時                 |
+| `created_at`    | TEXT      | 作成日時                     |
+| `updated_at`    | TEXT      | 更新日時                     |
 
 ### 4.8 `app_settings`
 
 ユーザー設定を保存するテーブル。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `key` | TEXT | 設定キー |
-| `value` | TEXT | JSON文字列などで保存する値 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム       | 型   | 説明                       |
+| ------------ | ---- | -------------------------- |
+| `key`        | TEXT | 設定キー                   |
+| `value`      | TEXT | JSON文字列などで保存する値 |
+| `updated_at` | TEXT | 更新日時                   |
 
 #### カスタム現在地アイコン
 
@@ -183,19 +183,19 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 実績システムで都道府県・市区町村の訪問状態を判定するため、訪問済み行政区域を保存するテーブル。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `area_type` | TEXT | `prefecture` または `municipality` |
-| `area_code` | TEXT NULL | 行政区域コード。初期はNULL許容 |
-| `prefecture_name` | TEXT | 都道府県名 |
-| `municipality_name` | TEXT NULL | 市区町村名 |
-| `normalized_name` | TEXT | 重複判定用の正規化名 |
-| `first_visited_at` | TEXT | 初回訪問時刻 |
-| `last_visited_at` | TEXT | 最終訪問時刻 |
-| `first_location_point_id` | INTEGER NULL | 初回訪問の根拠GPSポイントID |
-| `created_at` | TEXT | 作成日時 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム                    | 型           | 説明                               |
+| ------------------------- | ------------ | ---------------------------------- |
+| `id`                      | INTEGER      | 主キー                             |
+| `area_type`               | TEXT         | `prefecture` または `municipality` |
+| `area_code`               | TEXT NULL    | 行政区域コード。初期はNULL許容     |
+| `prefecture_name`         | TEXT         | 都道府県名                         |
+| `municipality_name`       | TEXT NULL    | 市区町村名                         |
+| `normalized_name`         | TEXT         | 重複判定用の正規化名               |
+| `first_visited_at`        | TEXT         | 初回訪問時刻                       |
+| `last_visited_at`         | TEXT         | 最終訪問時刻                       |
+| `first_location_point_id` | INTEGER NULL | 初回訪問の根拠GPSポイントID        |
+| `created_at`              | TEXT         | 作成日時                           |
+| `updated_at`              | TEXT         | 更新日時                           |
 
 ### 4.10 `location_point_admin_areas`
 
@@ -203,17 +203,17 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 `visited_admin_areas` は実績判定向けの「訪問済みかどうか」を保持し、こちらはGPSポイント単位の期間集計に使う。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `location_point_id` | INTEGER | 根拠GPSポイントID。`location_points(id)` を参照し、1GPSポイントにつき1行のみ保存する |
-| `recorded_at` | TEXT | GPSポイントの記録時刻 |
-| `local_date` | TEXT | GPSポイントのローカル日付 |
-| `prefecture_name` | TEXT | 都道府県名 |
-| `municipality_name` | TEXT NULL | 市区町村名。取得できない場合はNULL |
-| `normalized_prefecture_name` | TEXT | 都道府県の重複判定用正規化名 |
-| `normalized_municipality_name` | TEXT NULL | 市区町村の重複判定用正規化名 |
-| `created_at` | TEXT | 作成日時 |
+| カラム                         | 型        | 説明                                                                                 |
+| ------------------------------ | --------- | ------------------------------------------------------------------------------------ |
+| `id`                           | INTEGER   | 主キー                                                                               |
+| `location_point_id`            | INTEGER   | 根拠GPSポイントID。`location_points(id)` を参照し、1GPSポイントにつき1行のみ保存する |
+| `recorded_at`                  | TEXT      | GPSポイントの記録時刻                                                                |
+| `local_date`                   | TEXT      | GPSポイントのローカル日付                                                            |
+| `prefecture_name`              | TEXT      | 都道府県名                                                                           |
+| `municipality_name`            | TEXT NULL | 市区町村名。取得できない場合はNULL                                                   |
+| `normalized_prefecture_name`   | TEXT      | 都道府県の重複判定用正規化名                                                         |
+| `normalized_municipality_name` | TEXT NULL | 市区町村の重複判定用正規化名                                                         |
+| `created_at`                   | TEXT      | 作成日時                                                                             |
 
 月次レポートの「よくいた都道府県」「一番よくいた市区町村」は、このテーブルの対象期間内GPSポイント数を集計して算出する。
 
@@ -221,25 +221,25 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 解除済み実績を保存するテーブル。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `achievement_id` | TEXT | 実績定義ID。主キー |
-| `unlocked_at` | TEXT | 解除日時 |
-| `progress_value` | REAL NULL | 解除時点の進捗値 |
-| `created_at` | TEXT | 作成日時 |
+| カラム           | 型        | 説明               |
+| ---------------- | --------- | ------------------ |
+| `achievement_id` | TEXT      | 実績定義ID。主キー |
+| `unlocked_at`    | TEXT      | 解除日時           |
+| `progress_value` | REAL NULL | 解除時点の進捗値   |
+| `created_at`     | TEXT      | 作成日時           |
 
 ### 4.12 `achievement_notification_queue`
 
 実績解除通知とフォアグラウンド演出を安全に扱うためのキュー。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `achievement_id` | TEXT | 通知対象の実績ID。同じ実績を重複キュー投入しないため `UNIQUE` 制約を付与する。再enqueue時は `INSERT OR IGNORE` で既存キューを優先し、エラーにせず無視する |
-| `queued_at` | TEXT | キュー追加日時 |
-| `delivered_push_at` | TEXT NULL | ローカル通知送信日時 |
-| `shown_in_app_at` | TEXT NULL | アプリ内演出表示日時 |
-| `created_at` | TEXT | 作成日時 |
+| カラム              | 型        | 説明                                                                                                                                                      |
+| ------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | INTEGER   | 主キー                                                                                                                                                    |
+| `achievement_id`    | TEXT      | 通知対象の実績ID。同じ実績を重複キュー投入しないため `UNIQUE` 制約を付与する。再enqueue時は `INSERT OR IGNORE` で既存キューを優先し、エラーにせず無視する |
+| `queued_at`         | TEXT      | キュー追加日時                                                                                                                                            |
+| `delivered_push_at` | TEXT NULL | ローカル通知送信日時                                                                                                                                      |
+| `shown_in_app_at`   | TEXT NULL | アプリ内演出表示日時                                                                                                                                      |
+| `created_at`        | TEXT      | 作成日時                                                                                                                                                  |
 
 ## 5. インデックス方針
 
@@ -360,7 +360,7 @@ GPSログは端末内に保存し、ユーザーの明示操作なしに外部�
 
 初期設定キーは以下とする。
 
-| キー | 型 | 説明 |
-| --- | --- | --- |
-| `keepScreenAwake` | boolean | アプリがフォアグラウンドの場合に画面ロックを抑止するか |
-| `appThemePreference` | string | 画面テーマ設定。`system` / `light` / `dark` のいずれか |
+| キー                 | 型      | 説明                                                   |
+| -------------------- | ------- | ------------------------------------------------------ |
+| `keepScreenAwake`    | boolean | アプリがフォアグラウンドの場合に画面ロックを抑止するか |
+| `appThemePreference` | string  | 画面テーマ設定。`system` / `light` / `dark` のいずれか |

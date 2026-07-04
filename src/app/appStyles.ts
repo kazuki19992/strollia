@@ -42,7 +42,6 @@ export function createStyles(theme: AppTheme) {
   const settingsWarning = '#a36100';
 
   return StyleSheet.create({
-
     achievementCard: {
       backgroundColor: colors.card,
       borderColor: colors.border,

@@ -43,11 +43,7 @@ export function AboutAppScreen({ styles, theme, onBackToSettings }: AboutAppScre
 
       <ScrollView contentContainerStyle={styles.aboutAppContent}>
         <View style={styles.aboutAppIconWrap}>
-          <Image
-            accessibilityLabel="すとろりあのアプリアイコン"
-            source={require('../../../assets/icon.png')}
-            style={styles.aboutAppIcon}
-          />
+          <Image accessibilityLabel="すとろりあのアプリアイコン" source={require('../../../assets/icon.png')} style={styles.aboutAppIcon} />
         </View>
 
         {ABOUT_APP_SECTIONS.map((section) => (

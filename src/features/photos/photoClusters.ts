@@ -103,11 +103,7 @@ export function getPhotoClusterRadiusMeters(region: Region | null): number {
  * @param clusterRadiusMeters - 同一クラスタとして扱う半径メートル。
  * @returns 同一表示クラスタとして扱える最寄りクラスタ。見つからない場合はnull。
  */
-function findNearestCluster(
-  photo: MapPhoto,
-  clusters: MutablePhotoCluster[],
-  clusterRadiusMeters: number,
-): MutablePhotoCluster | null {
+function findNearestCluster(photo: MapPhoto, clusters: MutablePhotoCluster[], clusterRadiusMeters: number): MutablePhotoCluster | null {
   let nearestCluster: MutablePhotoCluster | null = null;
   let nearestDistanceMeters = Number.POSITIVE_INFINITY;
 

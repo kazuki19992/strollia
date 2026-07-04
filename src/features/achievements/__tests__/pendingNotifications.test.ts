@@ -32,10 +32,7 @@ describe('実績解除キュー filterDismissedAchievementNotifications', () => 
   test('閉じた実績解除キューを除外する', () => {
     const notifications = [createNotification(1), createNotification(2), createNotification(3)];
 
-    expect(filterDismissedAchievementNotifications(notifications, new Set([2]))).toEqual([
-      createNotification(1),
-      createNotification(3),
-    ]);
+    expect(filterDismissedAchievementNotifications(notifications, new Set([2]))).toEqual([createNotification(1), createNotification(3)]);
   });
 
   test('閉じた実績解除キューがない場合は全件を返す', () => {

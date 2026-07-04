@@ -3,6 +3,7 @@ android/
 ios/
 builds/
 .worktrees/
+.claude/worktrees/
 .expo/
 coverage/
 package-lock.json

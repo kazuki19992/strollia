@@ -53,19 +53,21 @@ test(export): GPX生成のテストを追加
 
 ESLint 9 (flat config) + Prettier 3 を導入済み。
 
-| コマンド | 説明 |
-| --- | --- |
-| `npm run lint` | ESLint 全体チェック(error 0 が合格条件) |
-| `npm run lint:fix` | ESLint autofix を適用 |
-| `npm run format` | Prettier でフォーマット適用 |
-| `npm run format:check` | Prettier フォーマットチェック |
+| コマンド               | 説明                                    |
+| ---------------------- | --------------------------------------- |
+| `npm run lint`         | ESLint 全体チェック(error 0 が合格条件) |
+| `npm run lint:fix`     | ESLint autofix を適用                   |
+| `npm run format`       | Prettier でフォーマット適用             |
+| `npm run format:check` | Prettier フォーマットチェック           |
 
 **設定ファイル:**
+
 - `eslint.config.js` — flat config。`eslint-config-expo/flat` + `eslint-config-prettier` を展開
 - `.prettierrc` — `singleQuote: true, semi: true, printWidth: 140, trailingComma: "all"`
 - `.prettierignore` — 生成物・ビルド成果物・worktree などを除外
 
 **カスタムルール:**
+
 - `no-restricted-imports`: `@react-native-async-storage/async-storage` を error 禁止。設定は `settingsRepository` (SQLite `app_settings`) を使う
 - `react-hooks/exhaustive-deps`: 依存配列の変更は挙動変更になるため warn に留める。意図的に無効化する場合は `// eslint-disable-next-line react-hooks/exhaustive-deps -- 理由` コメントを付ける
 - `react-hooks/refs` / `react-hooks/set-state-in-effect`: react-hooks@7 の新規ルールで既存パターンに多数 warning が出るため warn に降格。後続のリファクタで個別対処する

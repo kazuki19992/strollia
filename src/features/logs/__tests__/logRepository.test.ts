@@ -2,11 +2,15 @@ import { db } from '../../../db/database';
 import { NewLocationPoint } from '../../../types/gps';
 import { deleteAllUserData, getDailyLogs, insertLocationPoint } from '../logRepository';
 
+const mockTxn = {
+  runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
+};
+
 jest.mock('../../../db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     getFirstAsync: jest.fn(),
-    withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
     runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
   },
 }));
@@ -38,8 +42,8 @@ describe('GPSポイント保存 insertLocationPoint', () => {
 
     await expect(insertLocationPoint(point(35.001, 139))).resolves.toBe(100);
 
-    expect(db.runAsync).toHaveBeenCalledTimes(2);
-    const dailySummaryArgs = (db.runAsync as jest.Mock).mock.calls[1];
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
+    const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
     expect(dailySummaryArgs[4]).toBeGreaterThan(100);
     expect(dailySummaryArgs[4]).toBeLessThan(120);
   });
@@ -83,13 +87,13 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
   it('GPSログ、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
     await deleteAllUserData();
 
-    expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM visited_cells');
-    expect(db.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_notification_queue');
-    expect(db.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');
-    expect(db.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM visited_admin_areas');
-    expect(db.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
-    expect(db.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_points');
-    expect(db.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM daily_logs');
+    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM visited_cells');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_notification_queue');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM visited_admin_areas');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_points');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM daily_logs');
   });
 });

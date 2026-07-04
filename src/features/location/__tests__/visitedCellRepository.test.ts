@@ -2,11 +2,15 @@ import { db } from '../../../db/database';
 import { coordinateToGridCell } from '../grid/gridCell';
 import { deleteAllVisitedCells, getVisitedCellsByIds, getVisitedCellsInBounds, upsertVisitedCells } from '../visitedCellRepository';
 
+const mockTxn = {
+  runAsync: jest.fn().mockResolvedValue({}),
+};
+
 jest.mock('../../../db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue({}),
-    withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
   },
 }));
 
@@ -40,8 +44,8 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     });
 
     expect(cells).toHaveLength(1);
-    expect(db.runAsync).toHaveBeenCalledTimes(2);
-    expect(db.runAsync).toHaveBeenCalledWith(
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
+    expect(mockTxn.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('WHEN excluded.last_visited_at > visited_cells.last_visited_at'),
       expect.anything(),
       expect.anything(),
@@ -82,8 +86,9 @@ describe('Visited Grid保存 visitedCellRepository', () => {
   it('upsertVisitedCellsは空配列入力時にDBへ書き込まない', async () => {
     await upsertVisitedCells([], '2026-05-23T00:00:00.000Z');
 
-    expect(db.withTransactionAsync).not.toHaveBeenCalled();
+    expect(db.withExclusiveTransactionAsync).not.toHaveBeenCalled();
     expect(db.runAsync).not.toHaveBeenCalled();
+    expect(mockTxn.runAsync).not.toHaveBeenCalled();
   });
 
   it('deleteAllVisitedCellsはvisited_cellsを全削除する', async () => {

@@ -23,8 +23,8 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<numb
   const segmentDistanceMeters = previousPoint ? distanceMeters(previousPoint, point) : 0;
   let insertedLocationPointId = 0;
 
-  await db.withTransactionAsync(async () => {
-    const result = await db.runAsync(
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    const result = await txn.runAsync(
       `INSERT INTO location_points (
         recorded_at,
         local_date,
@@ -51,7 +51,7 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<numb
     );
     insertedLocationPointId = result.lastInsertRowId;
 
-    await db.runAsync(
+    await txn.runAsync(
       `INSERT INTO daily_logs (
         local_date,
         started_at,
@@ -164,13 +164,13 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
 
 /** ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。 */
 export async function deleteAllUserData(): Promise<void> {
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM visited_cells');
-    await db.runAsync('DELETE FROM achievement_notification_queue');
-    await db.runAsync('DELETE FROM achievement_unlocks');
-    await db.runAsync('DELETE FROM visited_admin_areas');
-    await db.runAsync('DELETE FROM location_point_admin_areas');
-    await db.runAsync('DELETE FROM location_points');
-    await db.runAsync('DELETE FROM daily_logs');
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    await txn.runAsync('DELETE FROM visited_cells');
+    await txn.runAsync('DELETE FROM achievement_notification_queue');
+    await txn.runAsync('DELETE FROM achievement_unlocks');
+    await txn.runAsync('DELETE FROM visited_admin_areas');
+    await txn.runAsync('DELETE FROM location_point_admin_areas');
+    await txn.runAsync('DELETE FROM location_points');
+    await txn.runAsync('DELETE FROM daily_logs');
   });
 }

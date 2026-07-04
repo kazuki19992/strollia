@@ -1,11 +1,15 @@
 import { db } from '../../../db/database';
 import { evaluateAndStoreAchievementUnlocks, getAchievementProgress, getAchievementUnlocksByDate } from '../achievementRepository';
 
+const mockTxn = {
+  runAsync: jest.fn(),
+};
+
 jest.mock('../../../db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     getAllAsync: jest.fn(),
-    withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
     runAsync: jest.fn(),
   },
 }));
@@ -83,13 +87,13 @@ describe('実績リポジトリ achievementRepository', () => {
       .mockResolvedValueOnce({ logDays: 1 })
       .mockResolvedValueOnce({ count: 0 })
       .mockResolvedValueOnce({ count: 0 });
-    (db.runAsync as jest.Mock).mockResolvedValue({ changes: 1 });
+    mockTxn.runAsync.mockResolvedValue({ changes: 1 });
 
     const unlocked = await evaluateAndStoreAchievementUnlocks({ now: '2026-05-07T00:00:00.000Z' });
 
     expect(unlocked.map((definition) => definition.id)).toEqual(expect.arrayContaining(['distance-100', 'log-days-1']));
-    expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.runAsync).toHaveBeenCalledWith(
+    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT OR IGNORE INTO achievement_unlocks'),
       'distance-100',
       '2026-05-07T00:00:00.000Z',

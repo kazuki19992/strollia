@@ -74,11 +74,6 @@ import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAc
 import { getBooleanSetting, getStringSetting, setSetting } from '@/features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '@/features/photos/photoLibrary';
-import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '@/features/location/grid/gridAggregation';
-import { getGridBoundsForRegion, GridBounds, GridCellPolygonSource, isGridBoundsContained } from '@/features/location/grid/gridCell';
-import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
-import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '@/features/map/gridOverlay';
-import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
 import { shouldRequestReviewAfterAchievement } from '@/features/review/reviewPromptLogic';
 import { requestStoreReview } from '@/features/review/storeReview';
 import { DailyLogSummary, LocationPoint } from '@/types/gps';
@@ -116,6 +111,7 @@ import { toDisplaySpeedKmh } from './hooks/useRawLocationSpeed';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { usePremiumAccess } from './hooks/usePremiumAccess';
+import { useVisitedGridOverlay } from './hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from './hooks/useMonthlyReportNotificationResponse';
 import {
   useUserLocationIconSetting,
@@ -163,10 +159,6 @@ type FirstLaunchTutorialMode = 'firstLaunch' | 'replay';
 
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 const DailyLogStack = createNativeStackNavigator<DailyLogStackParamList>();
-/** 新規visited cellを塗るときのフェード時間。 */
-const VISITED_GRID_FADE_DURATION_MS = 500;
-/** visited cellフェード中の再描画間隔。 */
-const VISITED_GRID_FADE_FRAME_MS = 50;
 /** Android操作中のonRegionChangeを間引く間隔。エリア追従の速さとDB負荷のバランス。 */
 const REGION_CHANGE_THROTTLE_MS = 150;
 
@@ -258,15 +250,6 @@ export default function App() {
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   /** Android操作中のonRegionChangeをスロットルするための最終更新時刻。 */
   const regionChangeThrottleRef = useRef(0);
-  /** DBから取得して表示セルサイズへ集約したvisited cell。表示用フェードとは分けて保持する。 */
-  const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
-  const [visitedGridRefreshVersion, setVisitedGridRefreshVersion] = useState(0);
-  /** 新規visited cellの0.5秒フェードを進めるため、50ms間隔で表示セルを再計算する。 */
-  const [visitedGridFadeFrame, setVisitedGridFadeFrame] = useState(0);
-  const visitedGridDisplayCellSizeRef = useRef<number | null>(null);
-  /** 直近にvisited cellを取得したときの範囲・表示セルサイズ・データ版。取得済み範囲内の小移動では再取得を省く。 */
-  const lastVisitedGridFetchRef = useRef<{ bounds: GridBounds; cellSizeMeters: number; version: number } | null>(null);
-  const visitedGridFadeStartedAtRef = useRef(new Map<string, number>());
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
@@ -280,15 +263,11 @@ export default function App() {
   const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
   const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
   const gridOverlayRegion = visibleRegion ?? initialRegion;
-  const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
-  /** 集約済みvisited cellに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
-  const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
-    const now = Date.now();
-
-    return toVisitedGridOverlayCells(visitedGridSourceCells, gridOverlayOpacity, theme.colors.primary, GRID_OVERLAY_CONFIG, (cell) =>
-      getVisitedGridFadeProgress(cell.cellId, now),
-    );
-  }, [gridOverlayOpacity, theme.colors.primary, visitedGridFadeFrame, visitedGridSourceCells]);
+  const { visitedGridCells, gridOverlayOpacity, incrementVisitedGridRefreshVersion } = useVisitedGridOverlay({
+    isReady,
+    gridOverlayRegion,
+    themePrimaryColor: theme.colors.primary,
+  });
   const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
   const todayDistanceMeters = useMemo(() => {
     const today = toLocalDate(new Date());
@@ -373,35 +352,38 @@ export default function App() {
   }, [sentryScreenName]);
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
-  const refreshData = useCallback(async (options: { signal?: AbortSignal } = {}) => {
-    const { signal } = options;
-    const [logs, allPoints, recording, permissions] = await Promise.all([
-      getDailyLogs(),
-      getAllLocationPoints(),
-      isBackgroundLocationRecording(),
-      getLocationPermissionState(),
-    ]);
+  const refreshData = useCallback(
+    async (options: { signal?: AbortSignal } = {}) => {
+      const { signal } = options;
+      const [logs, allPoints, recording, permissions] = await Promise.all([
+        getDailyLogs(),
+        getAllLocationPoints(),
+        isBackgroundLocationRecording(),
+        getLocationPermissionState(),
+      ]);
 
-    if (signal?.aborted) {
+      if (signal?.aborted) {
+        return { logs, allPoints, recording, permissions };
+      }
+
+      setDailyLogs(logs);
+      setPoints(allPoints);
+      setIsRecording(recording);
+      setPermissionState(permissions);
+      incrementVisitedGridRefreshVersion();
+
+      getMonthlyAreaReport(getPreviousReportMonth())
+        .then((report) => {
+          if (!signal?.aborted) setMonthlyAreaReport(report);
+        })
+        .catch((error: unknown) => {
+          console.warn('Failed to refresh monthly area report:', error);
+        });
+
       return { logs, allPoints, recording, permissions };
-    }
-
-    setDailyLogs(logs);
-    setPoints(allPoints);
-    setIsRecording(recording);
-    setPermissionState(permissions);
-    setVisitedGridRefreshVersion((version) => version + 1);
-
-    getMonthlyAreaReport(getPreviousReportMonth())
-      .then((report) => {
-        if (!signal?.aborted) setMonthlyAreaReport(report);
-      })
-      .catch((error: unknown) => {
-        console.warn('Failed to refresh monthly area report:', error);
-      });
-
-    return { logs, allPoints, recording, permissions };
-  }, []);
+    },
+    [incrementVisitedGridRefreshVersion],
+  );
 
   /** 実績一覧と未表示の解除演出キューを再読み込みする。 */
   const refreshAchievementState = useCallback(
@@ -801,75 +783,6 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [appState, isReady, refreshDataAndEvaluateAchievementsIfDialogIdle]);
 
-  /**
-   * 表示範囲に含まれるvisited cellを読み込み、現在のズームに合う表示セルへ集約する。
-   */
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-
-    const bounds = getGridBoundsForRegion(gridOverlayRegion, { paddingRatio: GRID_OVERLAY_CONFIG.boundsPaddingRatio });
-    const displayCellSizeMeters = getStableDisplayCellSizeMeters(
-      gridOverlayRegion,
-      visitedGridDisplayCellSizeRef.current,
-      GRID_OVERLAY_CONFIG,
-    );
-    visitedGridDisplayCellSizeRef.current = displayCellSizeMeters;
-
-    // ジェスチャー中（特にAndroidの onRegionChange）に同じ範囲・表示セルサイズで
-    // SQLite取得を連発しないよう、取得済み範囲内かつデータ未更新なら再取得を省く。
-    const lastFetch = lastVisitedGridFetchRef.current;
-    const coveredByLastFetch =
-      lastFetch != null &&
-      lastFetch.version === visitedGridRefreshVersion &&
-      lastFetch.cellSizeMeters === displayCellSizeMeters &&
-      isGridBoundsContained(lastFetch.bounds, bounds);
-
-    if (coveredByLastFetch) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    getVisitedCellsInBounds(bounds)
-      .then((cells) => {
-        if (isCancelled) {
-          return;
-        }
-
-        lastVisitedGridFetchRef.current = { bounds, cellSizeMeters: displayCellSizeMeters, version: visitedGridRefreshVersion };
-        const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
-        syncVisitedGridFadeState(aggregatedCells);
-        setVisitedGridSourceCells(aggregatedCells);
-      })
-      .catch((error: unknown) => {
-        console.warn('Failed to refresh visited grid cells:', error);
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [gridOverlayRegion, isReady, visitedGridRefreshVersion]);
-
-  /**
-   * 新規visited cellのフェード中だけ短い間隔で再描画する。
-   */
-  useEffect(() => {
-    const now = Date.now();
-    const hasActiveFade = visitedGridSourceCells.some((cell) => getVisitedGridFadeProgress(cell.cellId, now) < 1);
-
-    if (!hasActiveFade) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setVisitedGridFadeFrame((frame) => frame + 1);
-    }, VISITED_GRID_FADE_FRAME_MS);
-
-    return () => clearTimeout(timeoutId);
-  }, [visitedGridFadeFrame, visitedGridSourceCells]);
-
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });
   useAchievementDialogEffects({
     activeAchievementNotification,
@@ -985,48 +898,6 @@ export default function App() {
   }, [screenMode, userCoordinate]);
 
   /**
-   * visited cellの初回描画時刻を同期し、表示から外れたセルのフェード状態を掃除する。
-   *
-   * @param cells - 次に描画するvisited cell。
-   * @returns なし。
-   */
-  function syncVisitedGridFadeState(cells: GridCellPolygonSource[]): void {
-    const now = Date.now();
-    const nextCellIds = new Set(cells.map((cell) => cell.cellId));
-
-    for (const cell of cells) {
-      if (!visitedGridFadeStartedAtRef.current.has(cell.cellId)) {
-        visitedGridFadeStartedAtRef.current.set(cell.cellId, now);
-      }
-    }
-
-    for (const cellId of visitedGridFadeStartedAtRef.current.keys()) {
-      if (!nextCellIds.has(cellId)) {
-        visitedGridFadeStartedAtRef.current.delete(cellId);
-      }
-    }
-
-    setVisitedGridFadeFrame((frame) => frame + 1);
-  }
-
-  /**
-   * 新規visited cellのフェード進捗を返す。
-   *
-   * @param cellId - 表示セルID。
-   * @param now - 現在時刻。単位はms。
-   * @returns 0から1のフェード進捗。
-   */
-  function getVisitedGridFadeProgress(cellId: string, now: number): number {
-    const startedAt = visitedGridFadeStartedAtRef.current.get(cellId);
-
-    if (!startedAt) {
-      return 1;
-    }
-
-    return Math.min(1, Math.max(0, (now - startedAt) / VISITED_GRID_FADE_DURATION_MS));
-  }
-
-  /**
    * 現在地更新を受け取り、追従中であれば地図中心も更新する。
    *
    * @param event - react-native-mapsから渡される現在地更新イベント。
@@ -1135,7 +1006,7 @@ export default function App() {
 
     const region = createUserCenteredRegion(coordinate);
     setVisibleRegion(region);
-    setVisitedGridRefreshVersion((version) => version + 1);
+    incrementVisitedGridRefreshVersion();
     mapRef.current?.animateToRegion(region, animated ? 500 : 250);
   }
 
@@ -1198,7 +1069,7 @@ export default function App() {
     if (shouldRestoreMapRegionOnMapOpen({ userCoordinate, isFollowingUserLocation }) && userCoordinate) {
       shouldRestoreMapRegionOnOpenRef.current = true;
       setVisibleRegion(createUserCenteredRegion(userCoordinate));
-      setVisitedGridRefreshVersion((version) => version + 1);
+      incrementVisitedGridRefreshVersion();
     }
     setScreenMode('map');
   }

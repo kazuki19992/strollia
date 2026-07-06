@@ -86,19 +86,7 @@ import {
   getAppColorPreset,
   isAppColorPresetId,
 } from '@/features/customization/colorPresets';
-import {
-  getDefaultPremiumAccessState,
-  getConfirmedPremiumAccessState,
-  getPremiumAccessState,
-  getPremiumOfferingSummary,
-  getRevenueCatAppUserId,
-  PremiumOfferingSummary,
-  PremiumPackagePlan,
-  presentPremiumCustomerCenter,
-  purchasePremiumPackage,
-  restorePremiumPurchases,
-  subscribePremiumAccessStateUpdates,
-} from '@/features/premium/revenueCatAccess';
+import { getDefaultPremiumAccessState, getConfirmedPremiumAccessState, getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAccess';
 import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '@/features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
@@ -144,6 +132,7 @@ import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
 import { toDisplaySpeedKmh } from './hooks/useRawLocationSpeed';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
+import { usePremiumAccess } from './hooks/usePremiumAccess';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { shouldStartRecordingAutomatically } from './autoRecording';
 import { getNextMapType } from './mapType';
@@ -208,9 +197,26 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
 /** Strolliaの画面状態、地図表示、端末API連携を束ねるルートコンポーネント。 */
 export default function App() {
   const colorScheme = useColorScheme();
-  const [premiumAccessState, setPremiumAccessState] = useState(getDefaultPremiumAccessState);
-  const [isPremiumAccessPendingForIcon, setIsPremiumAccessPendingForIcon] = useState(true);
-  const [revenueCatAppUserId, setRevenueCatAppUserId] = useState<string | null>(null);
+  const {
+    premiumAccessState,
+    setPremiumAccessState,
+    isPremiumAccessPendingForIcon,
+    revenueCatAppUserId,
+    premiumOfferingSummary,
+    isLoadingPremiumOffering,
+    isPurchasingPremiumPackage,
+    isPresentingPremiumCustomerCenter,
+    isRestoringPremiumPurchases,
+    isPremiumPaywallVisible,
+    snapshotPremiumAccessUpdateVersion,
+    initializePremiumAccess,
+    purchasePremiumPackageFromSettings,
+    restorePurchasesFromSettings,
+    openPremiumCustomerCenter,
+    openPremiumPaywall,
+    closePremiumPaywall,
+    showPremiumLockedMessage,
+  } = usePremiumAccess();
   const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
   const theme = useMemo(() => {
     const rawTheme = getAppTheme(colorScheme);
@@ -225,7 +231,6 @@ export default function App() {
   const isUpdatingPhotoSettingRef = useRef(false);
   const isImportingGpxRef = useRef(false);
   const isPickingCustomIconRef = useRef(false);
-  const premiumAccessUpdateVersionRef = useRef(0);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
@@ -308,15 +313,6 @@ export default function App() {
   const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
   const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
-  const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
-  const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
-  const [isPurchasingPremiumPackage, setIsPurchasingPremiumPackage] = useState(false);
-  const isPurchasingPremiumPackageRef = useRef(false);
-  const [isPresentingPremiumCustomerCenter, setIsPresentingPremiumCustomerCenter] = useState(false);
-  const isPresentingPremiumCustomerCenterRef = useRef(false);
-  const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
-  const [isPremiumPaywallVisible, setIsPremiumPaywallVisible] = useState(false);
-  const isPremiumPaywallVisibleRef = useRef(false);
   const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const userLocationIcon = useMemo(
     () =>
@@ -665,7 +661,7 @@ export default function App() {
   useEffect(() => {
     const initializationController = new AbortController();
     const { signal } = initializationController;
-    const initialPremiumAccessUpdateVersion = premiumAccessUpdateVersionRef.current;
+    const initialPremiumAccessUpdateVersion = snapshotPremiumAccessUpdateVersion();
     initializeDatabase()
       .then(async () => {
         await loadAppFonts().catch((error: unknown) => {
@@ -710,30 +706,12 @@ export default function App() {
         }
         setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
         setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
-        if (premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
-          setPremiumAccessState(initialPremiumAccessResult.state);
-          if (initialPremiumAccessResult.confirmed) {
-            setIsPremiumAccessPendingForIcon(false);
-          }
-          syncMonthlyReportNotification(initialPremiumAccessResult.state.isPlusActive).catch((error: unknown) => {
-            console.warn('Failed to sync monthly report notification:', error);
-          });
-        }
-        if (initialPremiumAccessResult.timedOut) {
-          initialPremiumAccessRequest
-            .then((state) => {
-              if (!signal.aborted && premiumAccessUpdateVersionRef.current === initialPremiumAccessUpdateVersion) {
-                setPremiumAccessState(state);
-                setIsPremiumAccessPendingForIcon(false);
-                syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
-                  console.warn('Failed to sync monthly report notification:', error);
-                });
-              }
-            })
-            .catch((error: unknown) => {
-              console.warn('Failed to refresh delayed premium access state:', error);
-            });
-        }
+        initializePremiumAccess({
+          initialVersion: initialPremiumAccessUpdateVersion,
+          initialPremiumAccessRequest,
+          result: initialPremiumAccessResult,
+          signal,
+        });
         setCustomIconReference(savedCustomIconImageUri);
         setHasCustomIconImageLoadFailed(false);
 
@@ -786,24 +764,6 @@ export default function App() {
           setCustomIconImageUri(resolvedCustomIcon?.uri ?? null);
         }
         setHasPromptedReview(savedReviewPrompted);
-        getRevenueCatAppUserId()
-          .then((appUserId) => {
-            if (!signal.aborted) setRevenueCatAppUserId(appUserId);
-          })
-          .catch((error: unknown) => {
-            console.warn('Failed to refresh RevenueCat app user id:', error);
-          });
-        setIsLoadingPremiumOffering(true);
-        getPremiumOfferingSummary()
-          .then((offering) => {
-            if (!signal.aborted) setPremiumOfferingSummary(offering);
-          })
-          .catch((error: unknown) => {
-            console.warn('Failed to refresh premium offering summary:', error);
-          })
-          .finally(() => {
-            if (!signal.aborted) setIsLoadingPremiumOffering(false);
-          });
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
         await setupMonthlyReportNotificationChannel().catch(() => undefined);
@@ -848,21 +808,7 @@ export default function App() {
     return () => {
       initializationController.abort();
     };
-  }, [refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
-
-  /** RevenueCat側のCustomerInfo更新に合わせてStrollia Plus状態を反映する。 */
-  useEffect(
-    () =>
-      subscribePremiumAccessStateUpdates((state) => {
-        premiumAccessUpdateVersionRef.current += 1;
-        setPremiumAccessState(state);
-        setIsPremiumAccessPendingForIcon(false);
-        syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
-          console.warn('Failed to sync monthly report notification:', error);
-        });
-      }),
-    [],
-  );
+  }, [initializePremiumAccess, refreshAchievementState, refreshData, snapshotPremiumAccessUpdateVersion, synchronizeLocationRecordingMode]);
 
   useEffect(() => {
     openMonthlyReportRef.current = openMonthlyReport;
@@ -1603,102 +1549,6 @@ export default function App() {
     setSetting(USER_LOCATION_ICON_SETTING_KEY, option.id).catch((error: unknown) => {
       Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
     });
-  }
-
-  /** 設定画面からRevenueCat Packageを直接購入し、Plus状態を更新する。 */
-  async function purchasePremiumPackageFromSettings(plan: PremiumPackagePlan): Promise<void> {
-    if (isPurchasingPremiumPackageRef.current) {
-      return;
-    }
-
-    isPurchasingPremiumPackageRef.current = true;
-    triggerSelectionHaptic();
-    setIsPurchasingPremiumPackage(true);
-
-    try {
-      const result = await purchasePremiumPackage(plan);
-      setPremiumAccessState(result.accessState);
-
-      if (result.status === 'purchased' && result.accessState.isPlusActive) {
-        Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
-        closePremiumPaywall();
-      } else if (result.status === 'error') {
-        Alert.alert('Strollia Plus', '購入を完了できませんでした。RevenueCatとストア設定を確認してください。');
-      }
-    } finally {
-      isPurchasingPremiumPackageRef.current = false;
-      setIsPurchasingPremiumPackage(false);
-    }
-  }
-
-  /** App StoreまたはGoogle Playの購入をRevenueCat経由で復元する。 */
-  async function restorePurchasesFromSettings(): Promise<void> {
-    if (isRestoringPremiumPurchases) {
-      return;
-    }
-
-    triggerSelectionHaptic();
-    setIsRestoringPremiumPurchases(true);
-
-    try {
-      const restoredState = await restorePremiumPurchases();
-      setPremiumAccessState(restoredState);
-      Alert.alert(
-        '購入の復元',
-        restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。',
-      );
-      if (restoredState.isPlusActive) {
-        closePremiumPaywall();
-      }
-    } finally {
-      setIsRestoringPremiumPurchases(false);
-    }
-  }
-
-  /** RevenueCat Customer Centerを表示する。 */
-  async function openPremiumCustomerCenter(): Promise<void> {
-    if (isPresentingPremiumCustomerCenterRef.current) {
-      return;
-    }
-
-    isPresentingPremiumCustomerCenterRef.current = true;
-    triggerSelectionHaptic();
-    setIsPresentingPremiumCustomerCenter(true);
-
-    try {
-      const didPresent = await presentPremiumCustomerCenter();
-
-      if (!didPresent) {
-        Alert.alert('Strollia Plus', 'サブスク管理画面を表示できませんでした。RevenueCatとストア設定を確認してください。');
-      }
-    } finally {
-      isPresentingPremiumCustomerCenterRef.current = false;
-      setIsPresentingPremiumCustomerCenter(false);
-    }
-  }
-
-  function openPremiumPaywall(): void {
-    if (isPremiumPaywallVisibleRef.current) {
-      return;
-    }
-    isPremiumPaywallVisibleRef.current = true;
-    setIsPremiumPaywallVisible(true);
-  }
-
-  function closePremiumPaywall(): void {
-    isPremiumPaywallVisibleRef.current = false;
-    setIsPremiumPaywallVisible(false);
-  }
-
-  /**
-   * Plus未加入時に有料項目を選んだ場合の案内を表示する。
-   *
-   * @param label - 選択しようとした項目名。
-   * @returns なし。
-   */
-  function showPremiumLockedMessage(label: string): void {
-    triggerSelectionHaptic();
-    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。設定画面の月払いまたは年払いから加入してください。`);
   }
 
   /** 初回チュートリアルを閉じ、初回表示時だけ次回以降は表示しないよう保存する。 */

@@ -1,10 +1,9 @@
 import { useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
-import { Alert, Image, Pressable, Text, View } from 'react-native';
-import * as Sharing from 'expo-sharing';
-import { captureRef } from 'react-native-view-shot';
+import { Image, Pressable, Text, View } from 'react-native';
 
 import { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { AppTheme } from '@/theme/theme';
 import { AppStyles } from '@/app/appStyles';
 import { Dialog } from './Dialog';
@@ -41,27 +40,13 @@ export function AchievementDialog({ item, styles, theme, onClose }: AchievementD
 
     setIsSharing(true);
 
-    try {
+    await shareViewAsPng(captureViewRef, {
+      dialogTitle: 'すとろりあ 実績',
+      errorFallbackMessage: '実績を共有できませんでした。',
       // キャプチャ前にレイアウトの反映を1フレーム待ち、描画が安定した状態で撮影する。
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
-        return;
-      }
-
-      const uri = await captureRef(captureViewRef.current, { format: 'png', quality: 1, result: 'tmpfile' });
-
-      await Sharing.shareAsync(uri, {
-        dialogTitle: 'すとろりあ 実績',
-        mimeType: 'image/png',
-        UTI: 'public.png',
-      });
-    } catch (error: unknown) {
-      Alert.alert('共有失敗', error instanceof Error ? error.message : '実績を共有できませんでした。');
-    } finally {
-      setIsSharing(false);
-    }
+      onBeforeCapture: () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+      onFinally: () => setIsSharing(false),
+    });
   }
 
   return (

@@ -2,8 +2,6 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import * as Sharing from 'expo-sharing';
-import { captureRef } from 'react-native-view-shot';
 
 import { getLocationPointAdminAreaName } from '@/features/achievements/adminAreaRepository';
 import { getAchievementDefinition } from '@/features/achievements/achievementDefinitions';
@@ -18,6 +16,7 @@ import {
   GIF_MIN_RANGE_MINUTES,
 } from '@/features/export/routeGifFrames';
 import { exportRouteGif } from '@/features/export/routeGifExporter';
+import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { createInitialRegion } from '@/features/map/routeMapper';
 import { createDailyDetailReport, DailyDetailReport } from '@/features/reports/dailyReport';
 import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';
@@ -259,49 +258,25 @@ export function DailyLogDetailScreen({
     shareAbortRef.current = false;
     setIsSharingDetail(true);
 
-    try {
-      // ポイントがある日だけ地図のタイル描画完了を待つ。空の日は MapView がマウントされず
-      // onMapLoaded が発火しないため、待つとフォールバックの数秒間ぶん無駄に待ってしまう。
-      if (dailyPoints.length > 0) {
-        await waitForShareMapReady();
-      }
-
-      // 画面を離れた／カードが消えたら、別画面をキャプチャせず中断する。
-      if (shareAbortRef.current || !shareCardRef.current) {
-        return;
-      }
-
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
-        return;
-      }
-
-      const uri = await captureRef(shareCardRef.current, {
-        format: 'png',
-        quality: 1,
-        result: 'tmpfile',
-      });
-
-      // キャプチャ中に画面を離れた／中断された場合は共有しない。
-      if (shareAbortRef.current || !isMountedRef.current) {
-        return;
-      }
-
-      await Sharing.shareAsync(uri, {
-        dialogTitle: `すとろりあ 日別記録 ${title.subtitle}${title.title}`,
-        mimeType: 'image/png',
-        UTI: 'public.png',
-      });
-    } catch (error: unknown) {
-      if (!shareAbortRef.current && isMountedRef.current) {
-        Alert.alert('共有失敗', error instanceof Error ? error.message : 'この日の記録を共有できませんでした。');
-      }
-    } finally {
-      shareMapReadyRef.current = null;
-      if (isMountedRef.current) {
-        setIsSharingDetail(false);
-      }
-    }
+    await shareViewAsPng(shareCardRef, {
+      dialogTitle: `すとろりあ 日別記録 ${title.subtitle}${title.title}`,
+      errorFallbackMessage: 'この日の記録を共有できませんでした。',
+      onBeforeCapture: async () => {
+        // ポイントがある日だけ地図のタイル描画完了を待つ。空の日は MapView がマウントされず
+        // onMapLoaded が発火しないため、待つとフォールバックの数秒間ぶん無駄に待ってしまう。
+        if (dailyPoints.length > 0) {
+          await waitForShareMapReady();
+        }
+      },
+      // 画面を離れた／中断された場合はキャプチャ・共有を行わない。
+      shouldAbort: () => shareAbortRef.current || !isMountedRef.current,
+      onFinally: () => {
+        shareMapReadyRef.current = null;
+        if (isMountedRef.current) {
+          setIsSharingDetail(false);
+        }
+      },
+    });
   }
 
   // 地図のタイル描画完了（onMapLoaded）を待つ。最初のコマが読み込み途中で撮られて

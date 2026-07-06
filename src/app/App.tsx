@@ -6,16 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Animated, SafeAreaView, Text, useColorScheme, View } from 'react-native';
 
-import { initializeDatabase } from '@/db/database';
-import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '@/config/developmentFlags';
+import { hasEnabledDevelopmentFlags } from '@/config/developmentFlags';
 import { PRIVACY_POLICY_URL, SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL, TERMS_OF_SERVICE_URL } from '@/config/legalLinks';
 import { updateSentryScreenContext, updateSentrySubscriptionContext, updateSentryUserContext } from '@/config/sentry';
-import {
-  initializeAchievementNotificationHandler,
-  setupAchievementNotificationChannel,
-} from '@/features/achievements/achievementNotificationService';
-import { setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
-import { evaluateAchievementsAndNotify } from '@/features/achievements/achievementService';
+import { syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
 import { shareGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
@@ -28,16 +22,13 @@ import {
 import { deleteAllUserData } from '@/features/logs/logRepository';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '@/features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
-import { DEFAULT_USER_LOCATION_ICON_ID } from '@/features/customization/customizationOptions';
 import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/customization/colorPresets';
-import { getDefaultPremiumAccessState, getConfirmedPremiumAccessState, getPremiumAccessState } from '@/features/premium/revenueCatAccess';
-import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAccess';
-import { getBooleanSetting, getStringSetting, setSetting } from '@/features/settings/settingsRepository';
+import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
+import { setSetting } from '@/features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
-import { loadAppFonts } from '@/theme/fonts';
 import { getAppTheme, applyColorPreset } from '@/theme/theme';
 import { createStyles } from './appStyles';
 import { ScreenMode } from './appTypes';
@@ -69,22 +60,14 @@ import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { usePremiumAccess } from './hooks/usePremiumAccess';
 import { useVisitedGridOverlay } from './hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from './hooks/useMonthlyReportNotificationResponse';
-import {
-  useUserLocationIconSetting,
-  USER_LOCATION_ICON_SETTING_KEY,
-  APP_COLOR_PRESET_SETTING_KEY,
-  CUSTOM_ICON_IMAGE_URI_SETTING_KEY,
-} from './hooks/useUserLocationIconSetting';
+import { useUserLocationIconSetting } from './hooks/useUserLocationIconSetting';
 import { useMapFollowState } from './hooks/useMapFollowState';
-import {
-  usePhotoMapCrashBreaker,
-  SHOW_PHOTOS_ON_MAP_SETTING_KEY,
-  SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY,
-} from './hooks/usePhotoMapCrashBreaker';
+import { usePhotoMapCrashBreaker } from './hooks/usePhotoMapCrashBreaker';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { resolveSentryScreenName } from './sentryScreen';
 import { useLocationRecordingSync } from './hooks/useLocationRecordingSync';
 import { useAchievementState } from './hooks/useAchievementState';
+import { useAppInitialization } from './hooks/useAppInitialization';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -403,122 +386,23 @@ export default function App() {
     await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
   }, []);
 
-  /**
-   * 初回起動時にDBと永続設定を読み込み、アプリを描画可能な状態へ進める。
-   */
-  useEffect(() => {
-    const initializationController = new AbortController();
-    const { signal } = initializationController;
-    const initialPremiumAccessUpdateVersion = snapshotPremiumAccessUpdateVersion();
-    initializeDatabase()
-      .then(async () => {
-        await loadAppFonts().catch((error: unknown) => {
-          console.warn('Failed to load app fonts:', error);
-        });
-        if (signal.aborted) return;
-        const initialPremiumAccessRequest = getConfirmedPremiumAccessState();
-        const [
-          savedKeepScreenAwake,
-          savedShowPhotosOnMap,
-          savedShowPhotosOnMapEnablePending,
-          savedUserLocationIcon,
-          savedAppColorPresetId,
-          savedCustomIconImageUri,
-          savedReviewPrompted,
-          savedFirstLaunchTutorialCompleted,
-          initialPremiumAccessResult,
-        ] = await Promise.all([
-          getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
-          getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
-          getBooleanSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false),
-          getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
-          getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
-          getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
-          getBooleanSetting('reviewPrompted', false),
-          getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
-          resolveInitialPremiumAccess(initialPremiumAccessRequest, getDefaultPremiumAccessState(), { signal }),
-        ]);
-        if (signal.aborted) return;
-        setKeepScreenAwake(savedKeepScreenAwake);
-        initializePhotoSetting({ savedShowPhotosOnMap, savedShowPhotosOnMapEnablePending });
-        if (savedShowPhotosOnMapEnablePending) {
-          await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
-          if (signal.aborted) return;
-          await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
-          if (signal.aborted) return;
-          setMessage('前回の写真表示で問題が発生した可能性があるため、写真表示をOFFに戻しました。');
-        }
-        initializePremiumAccess({
-          initialVersion: initialPremiumAccessUpdateVersion,
-          initialPremiumAccessRequest,
-          result: initialPremiumAccessResult,
-          signal,
-        });
-        await applySavedIconSettings({
-          savedUserLocationIcon,
-          savedAppColorPresetId,
-          savedCustomIconImageUri,
-          signal,
-        });
-        if (signal.aborted) return;
-        initializeAchievementReviewState(savedReviewPrompted);
-        initializeAchievementNotificationHandler();
-        await setupAchievementNotificationChannel().catch(() => undefined);
-        await setupMonthlyReportNotificationChannel().catch(() => undefined);
-        if (signal.aborted) return;
-        if (savedFirstLaunchTutorialCompleted) {
-          await requestAchievementNotificationPermissionIfNeeded();
-          if (signal.aborted) return;
-          initialPremiumAccessRequest
-            .then((state) => {
-              if (!signal.aborted) {
-                syncMonthlyReportNotification(state.isPlusActive).catch((error: unknown) => {
-                  console.warn('Failed to sync monthly report notification after permission:', error);
-                });
-              }
-            })
-            .catch(() => undefined);
-        }
-        const initialState = await refreshData({ signal });
-        if (signal.aborted) return;
-        if (isWhileInUseOnlyMode(initialState.permissions)) {
-          setIsWhileInUseToastVisible(true);
-        }
-        await synchronizeLocationRecordingMode(initialState, signal);
-        if (signal.aborted) return;
-        await evaluateAchievementsAndNotify({ resetBeforeEvaluate: shouldResetAchievementsOnLaunch() });
-        if (signal.aborted) return;
-        await refreshAchievementState(true, { signal });
-        if (signal.aborted) return;
-        if (!savedFirstLaunchTutorialCompleted) {
-          setFirstLaunchTutorialMode('firstLaunch');
-          setIsFirstLaunchTutorialVisible(true);
-        }
-      })
-      .catch((error: unknown) => {
-        if (signal.aborted) return;
-        setMessage(error instanceof Error ? error.message : 'DB初期化に失敗しました。');
-      })
-      .finally(() => {
-        if (!signal.aborted) setIsReady(true);
-      });
-
-    return () => {
-      initializationController.abort();
-    };
-  }, [
-    applySavedIconSettings,
-    initializeAchievementReviewState,
+  useAppInitialization({
     initializePremiumAccess,
+    applySavedIconSettings,
     initializePhotoSetting,
-    refreshAchievementState,
     refreshData,
-    requestAchievementNotificationPermissionIfNeeded,
-    setIsWhileInUseToastVisible,
-    setMessage,
-    snapshotPremiumAccessUpdateVersion,
     synchronizeLocationRecordingMode,
-  ]);
+    initializeAchievementReviewState,
+    refreshAchievementState,
+    requestAchievementNotificationPermissionIfNeeded,
+    snapshotPremiumAccessUpdateVersion,
+    setKeepScreenAwake,
+    setMessage,
+    setIsWhileInUseToastVisible,
+    setIsReady,
+    setFirstLaunchTutorialMode,
+    setIsFirstLaunchTutorialVisible,
+  });
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
 

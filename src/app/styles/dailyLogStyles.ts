@@ -157,30 +157,6 @@ export function createDailyLogStyles(theme: AppTheme) {
       color: colors.shareButtonText,
     },
 
-    // Share button base layout (from component migration)
-    shareButtonIcon: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    shareButtonLabel: {
-      fontSize: 18,
-      fontWeight: '400',
-      lineHeight: 24,
-    },
-    shareButtonWideBase: {
-      alignItems: 'center',
-      borderRadius: 999,
-      flexDirection: 'row',
-      gap: 14,
-      justifyContent: 'center',
-      minHeight: 66,
-      paddingHorizontal: 24,
-      shadowColor: '#000000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.18,
-      shadowRadius: 14,
-    },
-
     // Locked overlay (Plus gate blur overlay)
     lockedOverlay: {
       alignItems: 'center',

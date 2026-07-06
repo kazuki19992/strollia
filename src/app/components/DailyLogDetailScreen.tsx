@@ -3,12 +3,6 @@ import { BlurView } from 'expo-blur';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { getLocationPointAdminAreaName } from '@/features/achievements/adminAreaRepository';
-import { getAchievementDefinition } from '@/features/achievements/achievementDefinitions';
-import { getAchievementUnlocksByDate } from '@/features/achievements/achievementRepository';
-import { coordinateToGridCell } from '@/features/location/grid/gridCell';
-import { getVisitedCellsByIds } from '@/features/location/visitedCellRepository';
-import { getLocationPointsByDate } from '@/features/logs/logRepository';
 import {
   computeGifFrameMinutesInRange,
   resolveGifFrameStepMinutes,
@@ -18,23 +12,20 @@ import {
 import { exportRouteGif } from '@/features/export/routeGifExporter';
 import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { createInitialRegion } from '@/features/map/routeMapper';
-import { createDailyDetailReport, DailyDetailReport } from '@/features/reports/dailyReport';
 import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';
 import type { AppTheme } from '@/theme/theme';
 import type { DailyLogSummary, LocationPoint } from '@/types/gps';
 import {
-  computeRouteMaxEndMinutes,
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
   filterLocationPointsBetweenMinutes,
   filterLocationPointsUntilMinute,
   formatTimelineTimeLabel,
   formatTimelineTimeLabelPadded,
-  getCurrentMinutesOfDay,
   getPointMinutesOfDay,
-  getTodayLocalDate,
 } from '@/app/dailyRouteTimeline';
-import { formatDailyLogDetailTitle, formatDistanceKm, formatGifFrameDateLabel, formatRouteEndpoints } from '@/app/dailyLogDisplay';
+import { formatDailyLogDetailTitle, formatDistanceKm, formatGifFrameDateLabel } from '@/app/dailyLogDisplay';
+import { useDailyLogDetailData } from '@/app/hooks/useDailyLogDetailData';
 import { totalDistanceMeters } from '@/utils/distance';
 import type { AppStyles } from '@/app/appStyles';
 import { AchievementScroller } from './AchievementScroller';
@@ -82,16 +73,8 @@ export function DailyLogDetailScreen({
   onOpenPremiumPaywall,
 }: DailyLogDetailScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
-  const [dailyPoints, setDailyPoints] = useState<LocationPoint[]>([]);
-  const [dailyDetailReport, setDailyDetailReport] = useState<DailyDetailReport | null>(null);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(true);
-  const [routeEndpointsLabel, setRouteEndpointsLabel] = useState(formatRouteEndpoints());
-  const [routeMaxMinutes, setRouteMaxMinutes] = useState(() =>
-    computeRouteMaxEndMinutes(log.localDate, getTodayLocalDate(), getCurrentMinutesOfDay()),
-  );
-  const [routeEndMinutes, setRouteEndMinutes] = useState(() =>
-    computeRouteMaxEndMinutes(log.localDate, getTodayLocalDate(), getCurrentMinutesOfDay()),
-  );
+  const { dailyPoints, dailyDetailReport, isLoadingDetail, routeEndpointsLabel, routeMaxMinutes, routeEndMinutes, setRouteEndMinutes } =
+    useDailyLogDetailData(log);
   const [isSharingDetail, setIsSharingDetail] = useState(false);
   const [isSliderDragging, setIsSliderDragging] = useState(false);
   const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
@@ -144,59 +127,6 @@ export function DailyLogDetailScreen({
   );
   const gifFrameTimeLabel = formatTimelineTimeLabelPadded(gifFrameMinute);
   const gifFrameDateLabel = formatGifFrameDateLabel(log.localDate);
-
-  useEffect(() => {
-    let isCancelled = false;
-    const maxMinutes = computeRouteMaxEndMinutes(log.localDate, getTodayLocalDate(), getCurrentMinutesOfDay());
-    setRouteMaxMinutes(maxMinutes);
-
-    async function loadDetail(): Promise<void> {
-      setIsLoadingDetail(true);
-      setRouteEndMinutes(maxMinutes);
-
-      try {
-        const points = await getLocationPointsByDate(log.localDate);
-        const firstPoint = points[0] ?? null;
-        const lastPoint = points.at(-1) ?? null;
-        const cellIds = [...new Set(points.map((point) => coordinateToGridCell(point).cellId))];
-        const [visitedCells, achievementUnlocks, startArea, endArea] = await Promise.all([
-          getVisitedCellsByIds(cellIds),
-          getAchievementUnlocksByDate(log.localDate),
-          firstPoint ? getLocationPointAdminAreaName(firstPoint.id) : Promise.resolve(null),
-          lastPoint ? getLocationPointAdminAreaName(lastPoint.id) : Promise.resolve(null),
-        ]);
-        const unlockedAchievements = achievementUnlocks.flatMap((unlock) => {
-          const definition = getAchievementDefinition(unlock.achievementId);
-          return definition
-            ? [{ id: definition.id, title: definition.title, unlockedAt: unlock.unlockedAt, trophyImage: definition.trophyImage }]
-            : [];
-        });
-        const report = createDailyDetailReport({ localDate: log.localDate, points, visitedCells, unlockedAchievements });
-
-        if (!isCancelled) {
-          setDailyPoints(points);
-          setDailyDetailReport(report);
-          setRouteEndpointsLabel(formatRouteEndpoints(startArea?.areaName, endArea?.areaName));
-        }
-      } catch {
-        if (!isCancelled) {
-          setDailyPoints([]);
-          setDailyDetailReport(null);
-          setRouteEndpointsLabel(formatRouteEndpoints());
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoadingDetail(false);
-        }
-      }
-    }
-
-    loadDetail().catch(() => undefined);
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [log]);
 
   // 画面を離れたら、進行中の共有/GIF生成を中断する。
   // 待ち（地図ロード）を解決してループを巻き戻し、離脱後のキャプチャやアラートを抑止する。

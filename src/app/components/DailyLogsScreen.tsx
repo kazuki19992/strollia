@@ -2,7 +2,7 @@ import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
 import { groupDailyLogsByMonth } from '@/app/dailyLogDisplay';
-import { getLocationPointAdminAreaNames } from '@/features/achievements/adminAreaRepository';
+import { fetchAreaNamesByPointIds } from '@/features/logs/dailyLogsService';
 import { AppTheme } from '@/theme/theme';
 import { DailyLogSummary } from '@/types/gps';
 import { AppStyles } from '@/app/appStyles';
@@ -35,7 +35,7 @@ export function DailyLogsScreen({ dailyLogs, styles, theme, onBackToMap, onOpenD
       .filter((id): id is number => id !== null);
     let isCancelled = false;
 
-    getLocationPointAdminAreaNames(locationPointIds)
+    fetchAreaNamesByPointIds(locationPointIds)
       .then((nextAreaNameByPointId) => {
         if (!isCancelled) {
           setAreaNameByPointId(nextAreaNameByPointId);

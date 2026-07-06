@@ -169,7 +169,6 @@ export function useVisitedGridOverlay({
     return () => {
       isCancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [gridOverlayRegion, isReady, visitedGridRefreshVersion]);
 
   /**
@@ -188,18 +187,19 @@ export function useVisitedGridOverlay({
     }, VISITED_GRID_FADE_FRAME_MS);
 
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [visitedGridFadeFrame, visitedGridSourceCells]);
 
   const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
 
   /** 集約済みvisited cellに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
   const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
+    // eslint-disable-next-line react-hooks/purity -- フェード進捗は visitedGridFadeFrame の更新を契機に現在時刻で再計算する既存仕様
     const now = Date.now();
 
     return toVisitedGridOverlayCells(visitedGridSourceCells, gridOverlayOpacity, themePrimaryColor, GRID_OVERLAY_CONFIG, (cell) =>
       getVisitedGridFadeProgress(cell.cellId, now),
     );
+    // visitedGridFadeFrame はフェード中の再計算を強制するための意図的な依存(値自体は未使用)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [gridOverlayOpacity, themePrimaryColor, visitedGridFadeFrame, visitedGridSourceCells]);
 

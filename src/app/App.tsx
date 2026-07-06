@@ -183,14 +183,10 @@ export default function App() {
   // ref 経由で実装しているため空 deps で問題ない。
   // これらを useCallback で安定化しないと deps 変化で refreshData が毎レンダーで再生成され
   // effect が無限ループする。
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
   const stableIncrementVisitedGridRefreshVersion = useCallback(() => incrementVisitedGridRefreshVersionRef.current(), []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
   const stableEvaluateAchievementsIfDialogIdle = useCallback(() => evaluateAchievementsIfDialogIdleRef.current(), []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
   const stableRefreshAchievementState = useCallback(
     (...args: Parameters<typeof refreshAchievementStateRef.current>) => refreshAchievementStateRef.current(...args),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
     [],
   );
 

@@ -171,7 +171,6 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
         isUpdatingPhotoSettingRef.current = false;
         setIsUpdatingPhotoSetting(false);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [enableShowPhotosOnMapWithCrashBreaker, isMapReady, isReady, shouldRestorePhotosOnMapAfterMapReady]);
 
   /**
@@ -190,7 +189,6 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
     }, PHOTO_MAP_ENABLE_STABLE_DELAY_MS);
 
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [isLoadingPhotos, isMapReady, showPhotosOnMap]);
 
   /**

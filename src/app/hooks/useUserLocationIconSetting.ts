@@ -235,7 +235,6 @@ export function useUserLocationIconSetting(): UseUserLocationIconSettingResult {
     } finally {
       isPickingCustomIconRef.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [customIconReference]);
 
   /** 画像読込失敗時は保存設定を維持し、このセッションだけOS標準表示へ切り替える。 */

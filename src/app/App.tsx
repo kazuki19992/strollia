@@ -2,7 +2,6 @@ import * as Application from 'expo-application';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
-import * as Notifications from 'expo-notifications';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -133,6 +132,7 @@ import { toDisplaySpeedKmh } from './hooks/useRawLocationSpeed';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { usePremiumAccess } from './hooks/usePremiumAccess';
+import { useMonthlyReportNotificationResponse } from './hooks/useMonthlyReportNotificationResponse';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { shouldStartRecordingAutomatically } from './autoRecording';
 import { getNextMapType } from './mapType';
@@ -235,10 +235,6 @@ export default function App() {
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
-  const lastNotificationResponse = Notifications.useLastNotificationResponse();
-  const openMonthlyReportRef = useRef<() => void>(() => undefined);
-  const lastHandledNotificationIdRef = useRef<string | null>(null);
-  const isReadyRef = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
@@ -810,34 +806,7 @@ export default function App() {
     };
   }, [initializePremiumAccess, refreshAchievementState, refreshData, snapshotPremiumAccessUpdateVersion, synchronizeLocationRecordingMode]);
 
-  useEffect(() => {
-    openMonthlyReportRef.current = openMonthlyReport;
-  });
-  useEffect(() => {
-    isReadyRef.current = isReady;
-  }, [isReady]);
-
-  useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      if (!isMonthlyReportNotification(response.notification.request.content.data)) return;
-      if (!isReadyRef.current) return;
-      const id = response.notification.request.identifier;
-      if (lastHandledNotificationIdRef.current === id) return;
-      lastHandledNotificationIdRef.current = id;
-      openMonthlyReportRef.current();
-    });
-    return () => subscription.remove();
-  }, []);
-
-  useEffect(() => {
-    if (!isReady) return;
-    if (!lastNotificationResponse) return;
-    if (!isMonthlyReportNotification(lastNotificationResponse.notification.request.content.data)) return;
-    const id = lastNotificationResponse.notification.request.identifier;
-    if (lastHandledNotificationIdRef.current === id) return;
-    lastHandledNotificationIdRef.current = id;
-    openMonthlyReportRef.current();
-  }, [isReady, lastNotificationResponse]);
+  useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。

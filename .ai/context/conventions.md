@@ -25,7 +25,7 @@ test(export): GPX生成のテストを追加
 
 - 1ファイル1コンポーネント、named export、汎用的な名前(特定画面名に閉じない)
 - props 型は `XxxProps` として export し、各プロパティに日本語JSDocを付ける
-- 画面・共通部品は `styles: AppStyles` を受け取り、テーマ色が必要なら `theme: AppTheme` も受け取る。ローカル `StyleSheet.create` は原則作らず `src/app/appStyles.ts` に追加する
+- 画面・共通部品は `styles: AppStyles` を受け取り、テーマ色が必要なら `theme: AppTheme` も受け取る。ローカル `StyleSheet.create` は原則作らず `src/app/appStyles.ts` に追加する（**lintで強制される**: `src/app/components/**` 配下での `StyleSheet.create` は ESLint error。例外は `reports/reportStyles.ts` と、テーマ非依存の固定色を使う意図的な場合に限り `eslint-disable-next-line` コメントで理由を明記する）
 - 押下可能な要素には `accessibilityLabel` + `accessibilityRole` を必ず付ける
 - UIコンポーネント内でDB操作・端末APIを直接呼ばない。データと操作は props で受け取る
 
@@ -85,3 +85,4 @@ ESLint 9 (flat config) + Prettier 3 を導入済み。
 - `no-restricted-imports`: `@react-native-async-storage/async-storage` を error 禁止。設定は `settingsRepository` (SQLite `app_settings`) を使う
 - `react-hooks/exhaustive-deps`: 依存配列の変更は挙動変更になるため warn に留める。意図的に無効化する場合は `// eslint-disable-next-line react-hooks/exhaustive-deps -- 理由` コメントを付ける
 - `react-hooks/refs` / `react-hooks/set-state-in-effect`: react-hooks@7 の新規ルールで既存パターンに多数 warning が出るため warn に降格。後続のリファクタで個別対処する
+- `no-restricted-syntax` (components配下 files override): `StyleSheet.create` を error 禁止。`src/app/appStyles.ts` の `createStyles(theme)` へ集約する。`reports/reportStyles.ts` と意図的な自己完結スタイルは除外（理由コメント必須）

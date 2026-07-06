@@ -57,6 +57,28 @@ module.exports = [
     },
   },
 
+  // src/app/components/ 配下では StyleSheet.create を禁止する。
+  // スタイルは src/app/appStyles.ts の createStyles(theme) に集約すること。
+  // src/app/appStyles.ts と reports/reportStyles.ts は集約先のため対象外。
+  {
+    files: ['src/app/components/**/*.{ts,tsx}'],
+    ignores: ['src/app/components/reports/reportStyles.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.object.name='jest'][callee.property.name=/^(mock|doMock|unmock|requireActual|requireMock)$/] > Literal[value=/^\\.\\.\\//]",
+          message: 'jest.mock / jest.requireActual などのパスも @/ エイリアスを使う',
+        },
+        {
+          selector: "CallExpression[callee.object.name='StyleSheet'][callee.property.name='create']",
+          message: 'components配下でStyleSheet.createは使用禁止。スタイルはsrc/app/appStyles.tsのcreateStyles(theme)に集約してください。',
+        },
+      ],
+    },
+  },
+
   // ignores: 生成物・ビルド成果物・worktree・外部ネイティブコード
   {
     ignores: [

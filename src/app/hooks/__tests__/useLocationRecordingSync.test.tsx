@@ -20,6 +20,20 @@ import { shouldStartRecordingAutomatically } from '@/app/autoRecording';
 const ReactTestRenderer = require('react-test-renderer');
 const { act } = ReactTestRenderer;
 
+/**
+ * テスト中に生成した renderer の追跡リスト。
+ * フックは isReady: true で10秒intervalを起動するため、テスト終了時に
+ * 必ず unmount しないと open handle が残り Jest が exit code 1 になる。
+ */
+const activeRenderers: Array<{ unmount: () => void }> = [];
+
+/** renderer を生成して追跡する。afterEach で必ず unmount される。 */
+function createTrackedRenderer(element: React.ReactElement) {
+  const renderer = ReactTestRenderer.create(element);
+  activeRenderers.push(renderer);
+  return renderer;
+}
+
 jest.mock('@/features/location/locationService', () => ({
   isBackgroundLocationRecording: jest.fn().mockResolvedValue(false),
   startBackgroundLocationRecording: jest.fn().mockResolvedValue(undefined),
@@ -79,13 +93,22 @@ type HookProbeProps = {
   options?: Partial<UseLocationRecordingSyncOptions>;
 };
 
+/**
+ * HookProbe が渡すデフォルトのコールバックモック。
+ * レンダーごとに jest.fn() を生成すると refreshData の依存配列が毎回変わり、
+ * effect の再購読が繰り返されるため、モジュールレベルで参照を安定化する。
+ */
+const defaultIncrementVisitedGridRefreshVersion = jest.fn();
+const defaultEvaluateAchievementsIfDialogIdle = jest.fn<Promise<boolean>, []>().mockResolvedValue(false);
+const defaultRefreshAchievementState = jest.fn<Promise<void>, [boolean?, { signal?: AbortSignal }?]>().mockResolvedValue(undefined);
+
 /** フックを実行するための最小コンポーネント。 */
 function HookProbe({ onResult, options }: HookProbeProps) {
   const result = useLocationRecordingSync({
     isReady: true,
-    incrementVisitedGridRefreshVersion: jest.fn(),
-    evaluateAchievementsIfDialogIdle: jest.fn().mockResolvedValue(false),
-    refreshAchievementState: jest.fn().mockResolvedValue(undefined),
+    incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+    evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+    refreshAchievementState: defaultRefreshAchievementState,
     ...options,
   });
   onResult(result);
@@ -113,7 +136,23 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
     (startBackgroundLocationRecording as jest.Mock).mockResolvedValue(undefined);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // フックが起こした非同期処理(refreshDataの遊離Promise等)と、
+    // Reactスケジューラに積まれた継続(setImmediate)をすべてact内で流し切る。
+    // これを省くと teardown 後にスケジューラがレンダーを実行し、
+    // 「import a file after the Jest environment has been torn down」で exit code 1 になる。
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // 10秒intervalやAppState購読を確実に停止する
+    await act(async () => {
+      activeRenderers.forEach((renderer) => renderer.unmount());
+    });
+    activeRenderers.length = 0;
+    // unmount後に残ったスケジューラ継続も流し切ってから mock を復元する
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     jest.restoreAllMocks();
   });
 
@@ -122,7 +161,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.isRecording).toBe(false);
@@ -132,7 +171,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.autoStartStatus).toBe('checking');
@@ -142,7 +181,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.isLocationRecordingModeSynchronized).toBe(false);
@@ -152,7 +191,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.isWhileInUseToastVisible).toBe(false);
@@ -162,7 +201,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.message).toBe('起動後に自動でGPS記録を開始します。');
@@ -172,7 +211,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.dailyLogs).toEqual([]);
@@ -182,7 +221,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.points).toEqual([]);
@@ -192,7 +231,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       expect(result!.monthlyAreaReport).toBeNull();
@@ -204,7 +243,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -221,7 +260,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       const controller = new AbortController();
@@ -243,9 +282,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(
-          <HookProbe onResult={(r) => (result = r)} options={{ incrementVisitedGridRefreshVersion: mockIncrement }} />,
-        );
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} options={{ incrementVisitedGridRefreshVersion: mockIncrement }} />);
       });
 
       await act(async () => {
@@ -261,7 +298,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -276,7 +313,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -291,7 +328,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -306,7 +343,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -322,7 +359,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -336,7 +373,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -350,7 +387,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
@@ -366,7 +403,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       act(() => {
@@ -382,7 +419,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       let result: UseLocationRecordingSyncResult | undefined;
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
       });
 
       act(() => {
@@ -403,7 +440,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       });
 
       act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={() => undefined} />);
+        createTrackedRenderer(<HookProbe onResult={() => undefined} />);
       });
 
       const initialCallCount = (getDailyLogs as jest.Mock).mock.calls.length;
@@ -445,17 +482,12 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
       let result: UseLocationRecordingSyncResult | undefined;
-      let renderer: ReturnType<typeof ReactTestRenderer.create>;
       act(() => {
-        renderer = ReactTestRenderer.create(<HookProbeStable onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbeStable onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
         await result!.refreshDataAndEvaluateAchievementsIfDialogIdle();
-      });
-
-      act(() => {
-        renderer.unmount();
       });
 
       expect(getDailyLogs).toHaveBeenCalled();
@@ -467,17 +499,12 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
       let result: UseLocationRecordingSyncResult | undefined;
-      let renderer: ReturnType<typeof ReactTestRenderer.create>;
       act(() => {
-        renderer = ReactTestRenderer.create(<HookProbeStable onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbeStable onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
         await result!.refreshDataAndEvaluateAchievementsIfDialogIdle();
-      });
-
-      act(() => {
-        renderer.unmount();
       });
 
       expect(refreshRef.current).toHaveBeenCalledWith(true);
@@ -488,17 +515,12 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
       let result: UseLocationRecordingSyncResult | undefined;
-      let renderer: ReturnType<typeof ReactTestRenderer.create>;
       act(() => {
-        renderer = ReactTestRenderer.create(<HookProbeStable onResult={(r) => (result = r)} />);
+        createTrackedRenderer(<HookProbeStable onResult={(r) => (result = r)} />);
       });
 
       await act(async () => {
         await result!.refreshDataAndEvaluateAchievementsIfDialogIdle();
-      });
-
-      act(() => {
-        renderer.unmount();
       });
 
       expect(refreshRef.current).not.toHaveBeenCalled();

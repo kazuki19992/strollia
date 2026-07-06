@@ -4,20 +4,7 @@ import { NavigationContainer, NavigationIndependentTree } from '@react-navigatio
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  AppState,
-  AppStateStatus,
-  Linking,
-  Animated,
-  Pressable,
-  SafeAreaView,
-  Text,
-  useColorScheme,
-  View,
-  Share,
-} from 'react-native';
+import { ActivityIndicator, Alert, Linking, Animated, SafeAreaView, Text, useColorScheme, View, Share } from 'react-native';
 
 import { initializeDatabase } from '@/db/database';
 import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
@@ -29,11 +16,7 @@ import {
   requestAchievementNotificationPermissionOnFirstLaunch,
   setupAchievementNotificationChannel,
 } from '@/features/achievements/achievementNotificationService';
-import {
-  isMonthlyReportNotification,
-  setupMonthlyReportNotificationChannel,
-  syncMonthlyReportNotification,
-} from '@/features/reports/monthlyReportNotificationService';
+import { setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
 import {
   AchievementListItem,
   PendingAchievementNotification,
@@ -49,20 +32,11 @@ import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { importLocationPointsFromGpx } from '@/features/import/importRepository';
 import {
-  isBackgroundLocationRecording,
-  startBackgroundLocationRecording,
-  stopBackgroundLocationRecording,
-  updateBackgroundLocationTaskOptionsIfNeeded,
-} from '@/features/location/locationService';
-import {
-  canRequestLocationPermissionInApp,
-  getLocationPermissionState,
-  hasRequiredLocationPermission,
   isWhileInUseOnlyMode,
-  LocationPermissionState,
+  hasRequiredLocationPermission,
+  canRequestLocationPermissionInApp,
 } from '@/features/location/locationPermission';
-import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '@/features/logs/logRepository';
-import { getMonthlyAreaReport, MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
+import { deleteAllUserData } from '@/features/logs/logRepository';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '@/features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 import { DEFAULT_USER_LOCATION_ICON_ID } from '@/features/customization/customizationOptions';
@@ -74,12 +48,12 @@ import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import { shouldRequestReviewAfterAchievement } from '@/features/review/reviewPromptLogic';
 import { requestStoreReview } from '@/features/review/storeReview';
-import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
 import { loadAppFonts } from '@/theme/fonts';
 import { getAppTheme, applyColorPreset } from '@/theme/theme';
 import { createStyles } from './appStyles';
-import { AutoStartStatus, ScreenMode } from './appTypes';
+import { ScreenMode } from './appTypes';
 import { AchievementDialog } from './components/AchievementDialog';
 import { AchievementListScreen } from './components/AchievementListScreen';
 import { AboutAppScreen } from './components/AboutAppScreen';
@@ -121,8 +95,8 @@ import {
   SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY,
 } from './hooks/usePhotoMapCrashBreaker';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
-import { shouldStartRecordingAutomatically } from './autoRecording';
 import { resolveSentryScreenName } from './sentryScreen';
+import { useLocationRecordingSync } from './hooks/useLocationRecordingSync';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -151,13 +125,6 @@ type FirstLaunchTutorialMode = 'firstLaunch' | 'replay';
 
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 const DailyLogStack = createNativeStackNavigator<DailyLogStackParamList>();
-/** 権限状態を取得する前にUIが参照する安全な初期値。 */
-const EMPTY_PERMISSION_STATE: LocationPermissionState = {
-  foregroundGranted: false,
-  backgroundGranted: false,
-  canAskForeground: true,
-  canAskBackground: true,
-};
 
 /** Strolliaの画面状態、地図表示、端末API連携を束ねるルートコンポーネント。 */
 export default function App() {
@@ -200,22 +167,26 @@ export default function App() {
     return applyColorPreset(rawTheme, preset);
   }, [colorScheme, premiumAccessState.isPlusActive, selectedAppColorPresetId]);
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const autoStartInFlightRef = useRef(false);
   const isImportingGpxRef = useRef(false);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   /** useMapFollowState の centerOnCoordinate から呼ぶ incrementVisitedGridRefreshVersion の参照。 */
   const incrementVisitedGridRefreshVersionRef = useRef<() => void>(() => undefined);
+  /**
+   * useLocationRecordingSync へ渡す evaluateAchievementsIfDialogIdle の参照。
+   * フック呼び出し順序の循環を避けるため ref 経由で渡す。
+   */
+  const evaluateAchievementsIfDialogIdleRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
+  /**
+   * useLocationRecordingSync へ渡す refreshAchievementState の参照。
+   * フック呼び出し順序の循環を避けるため ref 経由で渡す。
+   */
+  const refreshAchievementStateRef = useRef<(showPendingNotifications?: boolean, options?: { signal?: AbortSignal }) => Promise<void>>(() =>
+    Promise.resolve(),
+  );
   const [isReady, setIsReady] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
   const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
-  const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
-  const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
-  const [points, setPoints] = useState<LocationPoint[]>([]);
-  const [message, setMessage] = useState('起動後に自動でGPS記録を開始します。');
-  const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
-  const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
@@ -223,8 +194,6 @@ export default function App() {
   const [achievementItems, setAchievementItems] = useState<AchievementListItem[]>([]);
   const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
-  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
-  const [isLocationRecordingModeSynchronized, setIsLocationRecordingModeSynchronized] = useState(false);
   const [dailyLogsSentryScreenName, setDailyLogsSentryScreenName] = useState('DailyLogs:DailyLogList');
   const [settingsSentryScreenName, setSettingsSentryScreenName] = useState('Settings:SettingsHome');
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
@@ -234,6 +203,47 @@ export default function App() {
   /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
+  // useLocationRecordingSync に渡す安定したコールバックラッパー。
+  // ref 経由で実装しているため空 deps で問題ない。
+  // これらを useCallback で安定化しないと deps 変化で refreshData が毎レンダーで再生成され
+  // effect が無限ループする。
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
+  const stableIncrementVisitedGridRefreshVersion = useCallback(() => incrementVisitedGridRefreshVersionRef.current(), []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
+  const stableEvaluateAchievementsIfDialogIdle = useCallback(() => evaluateAchievementsIfDialogIdleRef.current(), []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
+  const stableRefreshAchievementState = useCallback(
+    (...args: Parameters<typeof refreshAchievementStateRef.current>) => refreshAchievementStateRef.current(...args),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ref経由のため空deps で安定化
+    [],
+  );
+
+  const {
+    isRecording,
+    autoStartStatus,
+    permissionState,
+    isLocationRecordingModeSynchronized,
+    isWhileInUseToastVisible,
+    setIsWhileInUseToastVisible,
+    setMessage,
+    dailyLogs,
+    points,
+    monthlyAreaReport,
+    appState,
+    refreshData,
+    startRecording,
+    synchronizeLocationRecordingMode,
+    requestLocationPermission,
+    openLocationSettings,
+    refreshDataAndEvaluateAchievementsIfDialogIdle,
+  } = useLocationRecordingSync({
+    isReady,
+    // incrementVisitedGridRefreshVersion は useVisitedGridOverlay より後に確定するが、
+    // refreshData の呼び出しは初期化完了後のため、ref 経由で渡す。
+    incrementVisitedGridRefreshVersion: stableIncrementVisitedGridRefreshVersion,
+    evaluateAchievementsIfDialogIdle: stableEvaluateAchievementsIfDialogIdle,
+    refreshAchievementState: stableRefreshAchievementState,
+  });
   const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(points, dailyLogs);
   const userLocationIcon = useMemo(
     () =>
@@ -299,7 +309,6 @@ export default function App() {
   } = usePhotoMapCrashBreaker({ isReady, isMapReady });
   const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
-  const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
@@ -359,40 +368,6 @@ export default function App() {
     updateSentryScreenContext(sentryScreenName);
   }, [sentryScreenName]);
 
-  /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
-  const refreshData = useCallback(
-    async (options: { signal?: AbortSignal } = {}) => {
-      const { signal } = options;
-      const [logs, allPoints, recording, permissions] = await Promise.all([
-        getDailyLogs(),
-        getAllLocationPoints(),
-        isBackgroundLocationRecording(),
-        getLocationPermissionState(),
-      ]);
-
-      if (signal?.aborted) {
-        return { logs, allPoints, recording, permissions };
-      }
-
-      setDailyLogs(logs);
-      setPoints(allPoints);
-      setIsRecording(recording);
-      setPermissionState(permissions);
-      incrementVisitedGridRefreshVersion();
-
-      getMonthlyAreaReport(getPreviousReportMonth())
-        .then((report) => {
-          if (!signal?.aborted) setMonthlyAreaReport(report);
-        })
-        .catch((error: unknown) => {
-          console.warn('Failed to refresh monthly area report:', error);
-        });
-
-      return { logs, allPoints, recording, permissions };
-    },
-    [incrementVisitedGridRefreshVersion],
-  );
-
   /** 実績一覧と未表示の解除演出キューを再読み込みする。 */
   const refreshAchievementState = useCallback(
     async (showPendingNotifications = false, options: { signal?: AbortSignal } = {}): Promise<void> => {
@@ -417,6 +392,7 @@ export default function App() {
 
   /**
    * 実績解除ダイアログが出ていない時だけ実績を評価する。
+   * useLocationRecordingSync へ ref 経由で渡すためここで定義する。
    *
    * @returns 実績評価を実行した場合はtrue。
    */
@@ -430,112 +406,10 @@ export default function App() {
     return true;
   }, []);
 
-  /**
-   * GPSログを再読み込みし、実績解除ダイアログが出ていなければ実績評価まで進める。
-   *
-   * @returns なし。
-   */
-  const refreshDataAndEvaluateAchievementsIfDialogIdle = useCallback(async (): Promise<void> => {
-    await refreshData();
-    const didEvaluate = await evaluateAchievementsIfDialogIdle();
-
-    if (didEvaluate) {
-      await refreshAchievementState(true);
-    }
-  }, [evaluateAchievementsIfDialogIdle, refreshAchievementState, refreshData]);
-
-  /** GPSバックグラウンド記録を開始し、結果をユーザー向けメッセージへ反映する。 */
-  const startRecording = useCallback(
-    async (reason: 'auto' | 'manual' = 'manual', signal?: AbortSignal): Promise<void> => {
-      try {
-        await startBackgroundLocationRecording();
-        if (signal?.aborted) return;
-        const result = await refreshData({ signal });
-        if (signal?.aborted) return;
-        setMessage(reason === 'auto' ? 'GPS記録を自動開始しました。' : 'バックグラウンドGPS記録を開始しました。');
-        setAutoStartStatus(hasRequiredLocationPermission(result.permissions) ? 'recording' : 'needsPermission');
-      } catch (error: unknown) {
-        if (signal?.aborted) return;
-        await refreshData({ signal }).catch(() => undefined);
-        if (signal?.aborted) return;
-        setMessage(error instanceof Error ? error.message : 'GPS記録の開始に失敗しました。');
-        setAutoStartStatus('failed');
-      }
-    },
-    [refreshData],
-  );
-
-  /** 権限許可後に未記録ならGPS記録の自動開始を試みる。 */
-  const maybeStartRecordingAutomatically = useCallback(
-    async (state: { permissions: LocationPermissionState; recording: boolean }, signal?: AbortSignal): Promise<void> => {
-      if (signal?.aborted) return;
-      if (
-        !shouldStartRecordingAutomatically({
-          permissions: state.permissions,
-          isRecording: state.recording,
-          isAutoStartInFlight: autoStartInFlightRef.current,
-        })
-      ) {
-        if (!signal?.aborted) setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
-        return;
-      }
-
-      autoStartInFlightRef.current = true;
-
-      try {
-        await startRecording('auto', signal);
-      } finally {
-        autoStartInFlightRef.current = false;
-      }
-    },
-    [startRecording],
-  );
-
-  /** 権限状態に合わせ、背景タスクと前景限定記録の所有権を同期する。 */
-  const synchronizeLocationRecordingMode = useCallback(
-    async (state: { permissions: LocationPermissionState; recording: boolean }, signal?: AbortSignal): Promise<void> => {
-      if (signal?.aborted) return;
-      if (state.permissions.backgroundGranted) {
-        await updateBackgroundLocationTaskOptionsIfNeeded().catch((error: unknown) => {
-          console.warn('Failed to update background location task options:', error);
-        });
-        if (signal?.aborted) return;
-        await maybeStartRecordingAutomatically(state, signal);
-        if (signal?.aborted) return;
-        setIsLocationRecordingModeSynchronized(true);
-        return;
-      }
-
-      try {
-        await stopBackgroundLocationRecording();
-        if (signal?.aborted) return;
-        setIsRecording(false);
-        setAutoStartStatus('needsPermission');
-        setIsLocationRecordingModeSynchronized(true);
-      } catch (error: unknown) {
-        if (signal?.aborted) return;
-        // 停止確認前に前景保存を開始すると二重保存になり得るため、同期済みにしない。
-        setIsLocationRecordingModeSynchronized(false);
-        setMessage(error instanceof Error ? error.message : 'バックグラウンドGPS記録の停止に失敗しました。');
-      }
-    },
-    [maybeStartRecordingAutomatically],
-  );
-
-  /** 権限状態に応じてアプリ内要求またはOS設定画面への誘導を行う。 */
-  const requestLocationPermission = useCallback(async (): Promise<void> => {
-    if (shouldOpenSettingsForPermission) {
-      await Linking.openSettings();
-      return;
-    }
-
-    await startRecording('manual');
-  }, [shouldOpenSettingsForPermission, startRecording]);
-
-  /** OSの設定画面を開き、位置情報を「常に許可」へ変更できるよう誘導する。 */
-  const openLocationSettings = useCallback(async (): Promise<void> => {
-    await Linking.openSettings();
-  }, []);
+  // useLocationRecordingSync へ ref 経由で関数を渡す。
+  // フック呼び出し順序の循環を避けるため ref に同期する。
+  evaluateAchievementsIfDialogIdleRef.current = evaluateAchievementsIfDialogIdle;
+  refreshAchievementStateRef.current = refreshAchievementState;
 
   /** 全期間のGPSログをGPXとして共有する。 */
   const exportAllLogs = useCallback(async (): Promise<void> => {
@@ -565,7 +439,7 @@ export default function App() {
         },
       },
     ]);
-  }, [refreshAchievementState, refreshData]);
+  }, [refreshAchievementState, refreshData, setMessage]);
 
   /** 画面ON維持設定をUI状態とSQLiteの両方へ反映する。 */
   const updateKeepScreenAwake = useCallback(async (enabled: boolean): Promise<void> => {
@@ -679,57 +553,16 @@ export default function App() {
   }, [
     applySavedIconSettings,
     initializePremiumAccess,
+    initializePhotoSetting,
     refreshAchievementState,
     refreshData,
+    setIsWhileInUseToastVisible,
+    setMessage,
     snapshotPremiumAccessUpdateVersion,
     synchronizeLocationRecordingMode,
   ]);
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
-
-  /**
-   * フォアグラウンド復帰時にDBと権限状態を再同期する。
-   */
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
-      setAppState(state);
-      if (state === 'active') {
-        setIsLocationRecordingModeSynchronized(false);
-        refreshData()
-          .then(async (result) => {
-            await synchronizeLocationRecordingMode(result);
-          })
-          .then(evaluateAchievementsIfDialogIdle)
-          .then(async (didEvaluate) => {
-            if (didEvaluate) {
-              await refreshAchievementState(true);
-            }
-          })
-          .catch((error: unknown) => {
-            setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
-          });
-      }
-    });
-
-    return () => subscription.remove();
-  }, [evaluateAchievementsIfDialogIdle, refreshAchievementState, refreshData, synchronizeLocationRecordingMode]);
-
-  /**
-   * 更新ボタンを不要にするため、フォアグラウンド中は定期的にログを再読み込みする。
-   */
-  useEffect(() => {
-    if (!isReady || appState !== 'active') {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      refreshDataAndEvaluateAchievementsIfDialogIdle().catch((error: unknown) => {
-        setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
-      });
-    }, 10_000);
-
-    return () => clearInterval(intervalId);
-  }, [appState, isReady, refreshDataAndEvaluateAchievementsIfDialogIdle]);
 
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });
   useAchievementDialogEffects({

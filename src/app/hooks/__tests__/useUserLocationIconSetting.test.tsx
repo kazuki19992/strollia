@@ -3,7 +3,11 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 
 import { useUserLocationIconSetting, UseUserLocationIconSettingResult } from '@/app/hooks/useUserLocationIconSetting';
-import { resolveCustomIconReference, isLegacyCustomIconReference, deleteManagedCustomIcon } from '@/features/customization/customIconStorage';
+import {
+  resolveCustomIconReference,
+  isLegacyCustomIconReference,
+  deleteManagedCustomIcon,
+} from '@/features/customization/customIconStorage';
 import { replaceCustomIconSelection } from '@/features/customization/customIconSelection';
 import { setSetting, setSettings } from '@/features/settings/settingsRepository';
 import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';

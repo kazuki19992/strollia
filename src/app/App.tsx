@@ -4,29 +4,18 @@ import { NavigationContainer, NavigationIndependentTree } from '@react-navigatio
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Animated, SafeAreaView, Text, useColorScheme, View, Share } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Animated, SafeAreaView, Text, useColorScheme, View } from 'react-native';
 
 import { initializeDatabase } from '@/db/database';
-import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
 import { hasEnabledDevelopmentFlags, shouldResetAchievementsOnLaunch } from '@/config/developmentFlags';
 import { PRIVACY_POLICY_URL, SPECIFIED_COMMERCIAL_TRANSACTION_ACT_URL, TERMS_OF_SERVICE_URL } from '@/config/legalLinks';
 import { updateSentryScreenContext, updateSentrySubscriptionContext, updateSentryUserContext } from '@/config/sentry';
 import {
   initializeAchievementNotificationHandler,
-  requestAchievementNotificationPermissionOnFirstLaunch,
   setupAchievementNotificationChannel,
 } from '@/features/achievements/achievementNotificationService';
 import { setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
-import {
-  AchievementListItem,
-  PendingAchievementNotification,
-  getAchievementListItems,
-  getPendingInAppAchievementNotifications,
-  markAchievementShownInApp,
-} from '@/features/achievements/achievementRepository';
-import { canEvaluateAchievementsInForeground } from '@/features/achievements/achievementEvaluationGate';
 import { evaluateAchievementsAndNotify } from '@/features/achievements/achievementService';
-import { filterDismissedAchievementNotifications } from '@/features/achievements/pendingNotifications';
 import { shareGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
@@ -46,8 +35,6 @@ import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAc
 import { getBooleanSetting, getStringSetting, setSetting } from '@/features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
-import { shouldRequestReviewAfterAchievement } from '@/features/review/reviewPromptLogic';
-import { requestStoreReview } from '@/features/review/storeReview';
 import { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
 import { loadAppFonts } from '@/theme/fonts';
@@ -97,6 +84,7 @@ import {
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { resolveSentryScreenName } from './sentryScreen';
 import { useLocationRecordingSync } from './hooks/useLocationRecordingSync';
+import { useAchievementState } from './hooks/useAchievementState';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -104,7 +92,6 @@ const KEEP_AWAKE_TAG = 'strollia-foreground-map';
 const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
 /** 初回起動チュートリアル完了状態をSQLiteへ保存するキー。 */
 const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialCompleted';
-const REVIEW_PROMPTED_SETTING_KEY = 'reviewPrompted';
 /** 画面切り替えのちらつきを抑えるフェード時間。 */
 const SCREEN_TRANSITION_DURATION_MS = 180;
 
@@ -168,8 +155,6 @@ export default function App() {
   }, [colorScheme, premiumAccessState.isPlusActive, selectedAppColorPresetId]);
   const styles = useMemo(() => createStyles(theme), [theme]);
   const isImportingGpxRef = useRef(false);
-  const isAchievementDialogVisibleRef = useRef(false);
-  const wasAchievementEvaluationPausedRef = useRef(false);
   /** useMapFollowState の centerOnCoordinate から呼ぶ incrementVisitedGridRefreshVersion の参照。 */
   const incrementVisitedGridRefreshVersionRef = useRef<() => void>(() => undefined);
   /**
@@ -186,22 +171,30 @@ export default function App() {
   );
   const [isReady, setIsReady] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
-  const [selectedAchievement, setSelectedAchievement] = useState<AchievementListItem | null>(null);
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
-  const [achievementItems, setAchievementItems] = useState<AchievementListItem[]>([]);
-  const [pendingAchievementNotifications, setPendingAchievementNotifications] = useState<PendingAchievementNotification[]>([]);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [dailyLogsSentryScreenName, setDailyLogsSentryScreenName] = useState('DailyLogs:DailyLogList');
   const [settingsSentryScreenName, setSettingsSentryScreenName] = useState('Settings:SettingsHome');
-  const [hasPromptedReview, setHasPromptedReview] = useState(false);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
-  const hasRequestedAchievementNotificationPermissionRef = useRef(false);
-  /** 閉じた直後のDB再取得で同じ解除演出が戻ることを防ぐためのセッション内ガード。 */
-  const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
+
+  const {
+    selectedAchievement,
+    setSelectedAchievement,
+    achievementItems,
+    pendingAchievementNotifications,
+    isAchievementDialogVisibleRef,
+    wasAchievementEvaluationPausedRef,
+    refreshAchievementState,
+    evaluateAchievementsIfDialogIdle,
+    closeAchievementUnlockModal,
+    shareAchievementToX,
+    initializeAchievementReviewState,
+    requestAchievementNotificationPermissionIfNeeded,
+  } = useAchievementState();
 
   // useLocationRecordingSync に渡す安定したコールバックラッパー。
   // ref 経由で実装しているため空 deps で問題ない。
@@ -368,45 +361,8 @@ export default function App() {
     updateSentryScreenContext(sentryScreenName);
   }, [sentryScreenName]);
 
-  /** 実績一覧と未表示の解除演出キューを再読み込みする。 */
-  const refreshAchievementState = useCallback(
-    async (showPendingNotifications = false, options: { signal?: AbortSignal } = {}): Promise<void> => {
-      const { signal } = options;
-      const [items, pendingNotifications] = await Promise.all([
-        getAchievementListItems(),
-        showPendingNotifications ? getPendingInAppAchievementNotifications() : Promise.resolve([]),
-      ]);
-
-      if (signal?.aborted) return;
-
-      setAchievementItems(items);
-
-      if (showPendingNotifications) {
-        setPendingAchievementNotifications(
-          filterDismissedAchievementNotifications(pendingNotifications, dismissedAchievementQueueIdsRef.current),
-        );
-      }
-    },
-    [],
-  );
-
-  /**
-   * 実績解除ダイアログが出ていない時だけ実績を評価する。
-   * useLocationRecordingSync へ ref 経由で渡すためここで定義する。
-   *
-   * @returns 実績評価を実行した場合はtrue。
-   */
-  const evaluateAchievementsIfDialogIdle = useCallback(async (): Promise<boolean> => {
-    if (!canEvaluateAchievementsInForeground(isAchievementDialogVisibleRef.current)) {
-      wasAchievementEvaluationPausedRef.current = true;
-      return false;
-    }
-
-    await evaluateAchievementsAndNotify();
-    return true;
-  }, []);
-
-  // useLocationRecordingSync へ ref 経由で関数を渡す。
+  // useAchievementState の evaluateAchievementsIfDialogIdle / refreshAchievementState を
+  // useLocationRecordingSync へ ref 経由で渡す。
   // フック呼び出し順序の循環を避けるため ref に同期する。
   evaluateAchievementsIfDialogIdleRef.current = evaluateAchievementsIfDialogIdle;
   refreshAchievementStateRef.current = refreshAchievementState;
@@ -478,7 +434,7 @@ export default function App() {
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
           getStringSetting(APP_COLOR_PRESET_SETTING_KEY, DEFAULT_APP_COLOR_PRESET_ID),
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
-          getBooleanSetting(REVIEW_PROMPTED_SETTING_KEY, false),
+          getBooleanSetting('reviewPrompted', false),
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
           resolveInitialPremiumAccess(initialPremiumAccessRequest, getDefaultPremiumAccessState(), { signal }),
         ]);
@@ -505,7 +461,7 @@ export default function App() {
           signal,
         });
         if (signal.aborted) return;
-        setHasPromptedReview(savedReviewPrompted);
+        initializeAchievementReviewState(savedReviewPrompted);
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
         await setupMonthlyReportNotificationChannel().catch(() => undefined);
@@ -552,10 +508,12 @@ export default function App() {
     };
   }, [
     applySavedIconSettings,
+    initializeAchievementReviewState,
     initializePremiumAccess,
     initializePhotoSetting,
     refreshAchievementState,
     refreshData,
+    requestAchievementNotificationPermissionIfNeeded,
     setIsWhileInUseToastVisible,
     setMessage,
     snapshotPremiumAccessUpdateVersion,
@@ -703,48 +661,6 @@ export default function App() {
     mapFollowState.toggleMapType();
   }
 
-  /** 実績解除モーダルを閉じ、次の未表示実績があれば続けて表示する。 */
-  function closeAchievementUnlockModal(): void {
-    const current = activeAchievementNotification;
-
-    if (!current) {
-      return;
-    }
-
-    const hasPendingAfterClose = pendingAchievementNotifications.length > 1;
-
-    dismissedAchievementQueueIdsRef.current.add(current.queueId);
-    markAchievementShownInApp(current.queueId).catch(() => undefined);
-    setPendingAchievementNotifications((notifications) => notifications.slice(1));
-
-    if (
-      shouldRequestReviewAfterAchievement({
-        dismissedAchievementId: current.definition.id,
-        hasPendingNotifications: hasPendingAfterClose,
-        hasAlreadyPrompted: hasPromptedReview,
-      })
-    ) {
-      setHasPromptedReview(true);
-      setSetting(REVIEW_PROMPTED_SETTING_KEY, true).catch((error: unknown) => {
-        console.warn('Failed to persist review prompted flag:', error);
-      });
-      // ダイアログ退場アニメーション（約500ms）と被らないよう少し遅らせて要求する。
-      setTimeout(() => {
-        requestStoreReview().catch((error: unknown) => {
-          console.warn('Failed to request store review:', error);
-        });
-      }, 700);
-    }
-  }
-
-  /** OS標準共有シートへ実績共有文言を渡す。 */
-  function shareAchievementToX(achievement: AchievementDefinition): void {
-    triggerSelectionHaptic();
-    Share.share({ message: achievement.shareText }).catch((error: unknown) => {
-      Alert.alert('共有失敗', error instanceof Error ? error.message : '共有シートを開けませんでした。');
-    });
-  }
-
   /** GPXファイルを選択し、既存データ優先で端末内DBへ取り込む。 */
   async function importGpx(): Promise<void> {
     if (isImportingGpxRef.current) {
@@ -811,16 +727,6 @@ export default function App() {
       .catch((error: unknown) => {
         console.warn('Failed to request achievement notification permission:', error);
       });
-  }
-
-  /** 実績通知権限要求を同一セッションで重複実行しないよう呼び出す。 */
-  async function requestAchievementNotificationPermissionIfNeeded(): Promise<void> {
-    if (hasRequestedAchievementNotificationPermissionRef.current) {
-      return;
-    }
-
-    hasRequestedAchievementNotificationPermissionRef.current = true;
-    await requestAchievementNotificationPermissionOnFirstLaunch();
   }
 
   if (!isReady) {

@@ -1,6 +1,5 @@
 import * as Application from 'expo-application';
 import * as Haptics from 'expo-haptics';
-import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -68,26 +67,11 @@ import { deleteAllUserData, getAllLocationPoints, getDailyLogs } from '@/feature
 import { getMonthlyAreaReport, MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '@/features/reports/monthlyReport';
 import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
-import {
-  deleteManagedCustomIcon,
-  isLegacyCustomIconReference,
-  resolveCustomIconReference,
-} from '@/features/customization/customIconStorage';
-import { replaceCustomIconSelection } from '@/features/customization/customIconSelection';
-import {
-  DEFAULT_USER_LOCATION_ICON_ID,
-  getUserLocationIconOption,
-  UserLocationIconId,
-} from '@/features/customization/customizationOptions';
-import {
-  AppColorPresetId,
-  DEFAULT_APP_COLOR_PRESET_ID,
-  getAppColorPreset,
-  isAppColorPresetId,
-} from '@/features/customization/colorPresets';
+import { DEFAULT_USER_LOCATION_ICON_ID } from '@/features/customization/customizationOptions';
+import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getDefaultPremiumAccessState, getConfirmedPremiumAccessState, getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAccess';
-import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '@/features/settings/settingsRepository';
+import { getBooleanSetting, getStringSetting, setSetting } from '@/features/settings/settingsRepository';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import { MapPhoto, hasFullPhotoAccess } from '@/features/photos/photoLibrary';
 import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '@/features/location/grid/gridAggregation';
@@ -133,6 +117,12 @@ import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { usePremiumAccess } from './hooks/usePremiumAccess';
 import { useMonthlyReportNotificationResponse } from './hooks/useMonthlyReportNotificationResponse';
+import {
+  useUserLocationIconSetting,
+  USER_LOCATION_ICON_SETTING_KEY,
+  APP_COLOR_PRESET_SETTING_KEY,
+  CUSTOM_ICON_IMAGE_URI_SETTING_KEY,
+} from './hooks/useUserLocationIconSetting';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { shouldStartRecordingAutomatically } from './autoRecording';
 import { getNextMapType } from './mapType';
@@ -148,12 +138,6 @@ const KEEP_SCREEN_AWAKE_SETTING_KEY = 'keepScreenAwake';
 const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
 /** 写真表示を安全に有効化できたかを判定するための一時フラグ。 */
 const SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY = 'showPhotosOnMapEnablePending';
-/** 現在地アイコン設定をSQLiteへ保存するキー。 */
-const USER_LOCATION_ICON_SETTING_KEY = 'userLocationIcon';
-/** アプリカラープリセット設定をSQLiteへ保存するキー。 */
-const APP_COLOR_PRESET_SETTING_KEY = 'appColorPresetId';
-/** カスタムアイコン画像URIをSQLiteへ保存するキー。 */
-const CUSTOM_ICON_IMAGE_URI_SETTING_KEY = 'customIconImageUri';
 /** 初回起動チュートリアル完了状態をSQLiteへ保存するキー。 */
 const FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY = 'firstLaunchTutorialCompleted';
 const REVIEW_PROMPTED_SETTING_KEY = 'reviewPrompted';
@@ -217,7 +201,16 @@ export default function App() {
     closePremiumPaywall,
     showPremiumLockedMessage,
   } = usePremiumAccess();
-  const [selectedAppColorPresetId, setSelectedAppColorPresetId] = useState<AppColorPresetId>(DEFAULT_APP_COLOR_PRESET_ID);
+  const {
+    selectedAppColorPresetId,
+    selectedUserLocationIconId,
+    customIconImageUri,
+    hasCustomIconImageLoadFailed,
+    applySavedIconSettings,
+    updateAppColorPreset,
+    handleCustomIconLoadError,
+    updateUserLocationIcon,
+  } = useUserLocationIconSetting();
   const theme = useMemo(() => {
     const rawTheme = getAppTheme(colorScheme);
     const preset = premiumAccessState.isPlusActive
@@ -230,7 +223,6 @@ export default function App() {
   const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
   const isImportingGpxRef = useRef(false);
-  const isPickingCustomIconRef = useRef(false);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
@@ -277,10 +269,6 @@ export default function App() {
   const visitedGridFadeStartedAtRef = useRef(new Map<string, number>());
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
-  const [selectedUserLocationIconId, setSelectedUserLocationIconId] = useState<UserLocationIconId>(DEFAULT_USER_LOCATION_ICON_ID);
-  const [customIconReference, setCustomIconReference] = useState('');
-  const [customIconImageUri, setCustomIconImageUri] = useState<string | null>(null);
-  const [hasCustomIconImageLoadFailed, setHasCustomIconImageLoadFailed] = useState(false);
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
@@ -700,65 +688,19 @@ export default function App() {
           setShowPhotosOnMap(false);
           setShouldRestorePhotosOnMapAfterMapReady(savedShowPhotosOnMap);
         }
-        setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
-        setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
         initializePremiumAccess({
           initialVersion: initialPremiumAccessUpdateVersion,
           initialPremiumAccessRequest,
           result: initialPremiumAccessResult,
           signal,
         });
-        setCustomIconReference(savedCustomIconImageUri);
-        setHasCustomIconImageLoadFailed(false);
-
-        const resolvedCustomIcon = await resolveCustomIconReference(savedCustomIconImageUri).catch((error: unknown) => {
-          console.warn('Failed to resolve custom icon reference:', error);
-          return undefined;
+        await applySavedIconSettings({
+          savedUserLocationIcon,
+          savedAppColorPresetId,
+          savedCustomIconImageUri,
+          signal,
         });
-        if (signal.aborted) {
-          if (resolvedCustomIcon?.migrated) {
-            await deleteManagedCustomIcon(resolvedCustomIcon.reference).catch(() => undefined);
-          }
-          return;
-        }
-        if (resolvedCustomIcon === null && savedUserLocationIcon === 'custom') {
-          let didPersistReset = false;
-          try {
-            await setSettings([
-              { key: CUSTOM_ICON_IMAGE_URI_SETTING_KEY, value: '' },
-              { key: USER_LOCATION_ICON_SETTING_KEY, value: DEFAULT_USER_LOCATION_ICON_ID },
-            ]);
-            didPersistReset = true;
-          } catch (error: unknown) {
-            console.warn('Failed to reset missing custom icon reference:', error);
-          }
-          if (signal.aborted) return;
-          setSelectedUserLocationIconId(DEFAULT_USER_LOCATION_ICON_ID);
-          setCustomIconReference('');
-          setCustomIconImageUri(null);
-          if (didPersistReset && isLegacyCustomIconReference(savedCustomIconImageUri)) {
-            Alert.alert(
-              'カスタムアイコンを読み込めませんでした',
-              '保存されていた画像を読み込めなかったため、現在地アイコンをOS標準に戻しました。カスタムアイコンを使用する場合は、設定画面から画像を再設定してください。',
-            );
-          }
-        } else if (resolvedCustomIcon?.migrated) {
-          try {
-            await setSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, resolvedCustomIcon.reference);
-            if (signal.aborted) return;
-            setCustomIconReference(resolvedCustomIcon.reference);
-            setCustomIconImageUri(resolvedCustomIcon.uri);
-          } catch (error: unknown) {
-            await deleteManagedCustomIcon(resolvedCustomIcon.reference).catch((cleanupError: unknown) => {
-              console.warn('Failed to delete unpersisted migrated custom icon:', cleanupError);
-            });
-            if (signal.aborted) return;
-            console.warn('Failed to persist migrated custom icon reference:', error);
-            setCustomIconImageUri(savedCustomIconImageUri || null);
-          }
-        } else {
-          setCustomIconImageUri(resolvedCustomIcon?.uri ?? null);
-        }
+        if (signal.aborted) return;
         setHasPromptedReview(savedReviewPrompted);
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
@@ -804,7 +746,14 @@ export default function App() {
     return () => {
       initializationController.abort();
     };
-  }, [initializePremiumAccess, refreshAchievementState, refreshData, snapshotPremiumAccessUpdateVersion, synchronizeLocationRecordingMode]);
+  }, [
+    applySavedIconSettings,
+    initializePremiumAccess,
+    refreshAchievementState,
+    refreshData,
+    snapshotPremiumAccessUpdateVersion,
+    synchronizeLocationRecordingMode,
+  ]);
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
 
@@ -1419,107 +1368,6 @@ export default function App() {
     }
   }
 
-  /**
-   * アプリカラープリセットを保存して即時反映する。
-   *
-   * @param presetId - 保存するプリセットID。
-   * @returns なし。
-   */
-  function updateAppColorPreset(presetId: AppColorPresetId): void {
-    triggerSelectionHaptic();
-    setSelectedAppColorPresetId(presetId);
-    setSetting(APP_COLOR_PRESET_SETTING_KEY, presetId).catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : 'アプリカラーを保存できませんでした。');
-    });
-  }
-
-  /**
-   * フォトライブラリからカスタムアイコン画像を選択して保存する。
-   * システムの正方形クロップUIを使用する。
-   */
-  async function pickCustomIcon(): Promise<void> {
-    if (isPickingCustomIconRef.current) {
-      return;
-    }
-
-    isPickingCustomIconRef.current = true;
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (!permissionResult.granted) {
-        Alert.alert('権限が必要です', 'カスタムアイコンを設定するには写真へのアクセス権限が必要です。');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
-      });
-
-      if (result.canceled) {
-        return;
-      }
-
-      const replacement = await replaceCustomIconSelection({
-        sourceUri: result.assets[0].uri,
-        previousReference: customIconReference,
-        persistSelection: async (reference) => {
-          await setSettings([
-            { key: CUSTOM_ICON_IMAGE_URI_SETTING_KEY, value: reference },
-            { key: USER_LOCATION_ICON_SETTING_KEY, value: 'custom' },
-          ]);
-        },
-      });
-      setCustomIconReference(replacement.reference);
-      setCustomIconImageUri(replacement.uri);
-      setSelectedUserLocationIconId('custom');
-      setHasCustomIconImageLoadFailed(false);
-    } catch (error: unknown) {
-      const detail = error instanceof Error ? error.message : 'カスタムアイコンを保存できませんでした。';
-      const message = customIconReference
-        ? `新しい画像を設定できませんでした。以前の設定は保持されています。\n${detail}`
-        : `カスタムアイコンを設定できませんでした。\n${detail}`;
-      Alert.alert('設定失敗', message);
-    } finally {
-      isPickingCustomIconRef.current = false;
-    }
-  }
-
-  /** 画像読込失敗時は保存設定を維持し、このセッションだけOS標準表示へ切り替える。 */
-  function handleCustomIconLoadError(): void {
-    setHasCustomIconImageLoadFailed(true);
-  }
-
-  /**
-   * 現在地アイコンを保存して地図へ即時反映する。
-   *
-   * @param iconId - 保存する現在地アイコンID。
-   * @returns なし。
-   */
-  function updateUserLocationIcon(iconId: UserLocationIconId): void {
-    const option = getUserLocationIconOption(iconId);
-
-    if (option.premium && !premiumAccessState.isPlusActive) {
-      showPremiumLockedMessage(option.label);
-      return;
-    }
-
-    if (iconId === 'custom') {
-      pickCustomIcon().catch((error: unknown) => {
-        console.warn('pickCustomIcon failed:', error);
-      });
-      return;
-    }
-
-    triggerSelectionHaptic();
-    setSelectedUserLocationIconId(option.id);
-    setSetting(USER_LOCATION_ICON_SETTING_KEY, option.id).catch((error: unknown) => {
-      Alert.alert('設定保存失敗', error instanceof Error ? error.message : '現在地アイコンを保存できませんでした。');
-    });
-  }
-
   /** 初回チュートリアルを閉じ、初回表示時だけ次回以降は表示しないよう保存する。 */
   function completeFirstLaunchTutorial(): void {
     setIsFirstLaunchTutorialVisible(false);
@@ -1740,7 +1588,7 @@ export default function App() {
                       onUpdateShowPhotosOnMap={updateShowPhotosOnMap}
                       selectedAppColorPresetId={selectedAppColorPresetId}
                       onUpdateAppColorPreset={updateAppColorPreset}
-                      onUpdateUserLocationIcon={updateUserLocationIcon}
+                      onUpdateUserLocationIcon={(iconId) => updateUserLocationIcon(iconId, premiumAccessState, showPremiumLockedMessage)}
                       onOpenAboutAppScreen={() => navigation.navigate('AboutApp')}
                       onOpenFirstLaunchTutorial={openFirstLaunchTutorial}
                       onOpenFaqScreen={() => navigation.navigate('Faq')}

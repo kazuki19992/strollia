@@ -2245,6 +2245,58 @@ export function createStyles(theme: AppTheme) {
       paddingTop: 8,
       zIndex: 2,
     },
+
+    // TopToast
+    topToastContainer: {
+      borderRadius: 12,
+      elevation: 6,
+      left: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      position: 'absolute',
+      right: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      top: 60,
+      zIndex: 1000,
+    },
+    topToastMessage: {
+      fontSize: 14,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+
+    // ShareButton
+    shareButtonIcon: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    shareButtonLabel: {
+      fontSize: 18,
+      fontWeight: '400',
+      lineHeight: 24,
+    },
+    shareButtonWideBase: {
+      alignItems: 'center',
+      borderRadius: 999,
+      flexDirection: 'row',
+      gap: 14,
+      justifyContent: 'center',
+      minHeight: 66,
+      paddingHorizontal: 24,
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.18,
+      shadowRadius: 14,
+    },
+
+    // DailyLogDetailScreen — locked overlay (Plusロック時のブラー上に重ねるセンタリング層)
+    lockedOverlay: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
   });
 }
 

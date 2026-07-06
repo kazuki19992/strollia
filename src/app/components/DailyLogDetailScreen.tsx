@@ -382,7 +382,7 @@ export function DailyLogDetailScreen({
             </Text>
             <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
             <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={[StyleSheet.absoluteFill, lockedOverlayStyles.overlay]}>
+            <View style={[StyleSheet.absoluteFill, styles.lockedOverlay]}>
               <Text style={styles.dailyLogDetailPlusLabel}>Plusでくわしく！</Text>
             </View>
           </View>
@@ -536,10 +536,3 @@ export function DailyLogDetailScreen({
     </SafeAreaView>
   );
 }
-
-const lockedOverlayStyles = StyleSheet.create({
-  overlay: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

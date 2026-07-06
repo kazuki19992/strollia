@@ -1,5 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { Pressable, StyleProp, StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, Text, TextStyle, ViewStyle } from 'react-native';
+
+import type { AppStyles } from '@/app/appStyles';
 
 export type ShareButtonProps = {
   /** アクセシビリティ用ラベル。 */
@@ -12,6 +14,12 @@ export type ShareButtonProps = {
   iconSize?: number;
   /** ボタン内に表示するテキスト。未指定ならアイコンのみ。 */
   label?: string;
+  /**
+   * 画面共通スタイル。
+   * レポートなど appStyles を持たないコンテキストからも利用されるため省略可とする。
+   * 省略時はスタイルキーを使用せず、呼び出し元の style / textStyle prop でレイアウトを制御する。
+   */
+  styles?: AppStyles;
   /** ボタンスタイル。 */
   style?: StyleProp<ViewStyle>;
   /** ラベルスタイル。 */
@@ -29,6 +37,7 @@ export function ShareButton({
   iconColor,
   iconSize = 24,
   label,
+  styles,
   style,
   textStyle,
   variant = label ? 'wide' : 'icon',
@@ -40,35 +49,10 @@ export function ShareButton({
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      style={[variant === 'wide' ? shareButtonStyles.wide : shareButtonStyles.icon, style]}
+      style={[variant === 'wide' ? styles?.shareButtonWideBase : styles?.shareButtonIcon, style]}
     >
       <Feather name="share-2" size={iconSize} color={iconColor} />
-      {label ? <Text style={[shareButtonStyles.label, textStyle]}>{label}</Text> : null}
+      {label ? <Text style={[styles?.shareButtonLabel, textStyle]}>{label}</Text> : null}
     </Pressable>
   );
 }
-
-const shareButtonStyles = StyleSheet.create({
-  icon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontSize: 18,
-    fontWeight: '400',
-    lineHeight: 24,
-  },
-  wide: {
-    alignItems: 'center',
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 14,
-    justifyContent: 'center',
-    minHeight: 66,
-    paddingHorizontal: 24,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-  },
-});

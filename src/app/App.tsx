@@ -624,6 +624,7 @@ export default function App() {
       <TopToast
         visible={isWhileInUseToastVisible}
         message="アプリが起動している場合のみ記録します！"
+        styles={styles}
         theme={theme}
         onHide={() => setIsWhileInUseToastVisible(false)}
       />

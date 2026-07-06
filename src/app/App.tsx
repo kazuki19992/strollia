@@ -19,7 +19,6 @@ import {
   View,
   Share,
 } from 'react-native';
-import MapView, { Region, UserLocationChangeEvent } from 'react-native-maps';
 
 import { initializeDatabase } from '@/db/database';
 import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
@@ -78,7 +77,6 @@ import { shouldRequestReviewAfterAchievement } from '@/features/review/reviewPro
 import { requestStoreReview } from '@/features/review/storeReview';
 import { DailyLogSummary, LocationPoint } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
-import type { LatLng, MapType } from 'react-native-maps';
 import { loadAppFonts } from '@/theme/fonts';
 import { getAppTheme, applyColorPreset } from '@/theme/theme';
 import { createStyles } from './appStyles';
@@ -107,7 +105,6 @@ import { useForegroundUserLocation } from './hooks/useForegroundUserLocation';
 import { useKeepScreenAwake } from './hooks/useKeepScreenAwake';
 import { useMapRouteState } from './hooks/useMapRouteState';
 import { usePhotoMapOverlay } from './hooks/usePhotoMapOverlay';
-import { toDisplaySpeedKmh } from './hooks/useRawLocationSpeed';
 import { useScreenTransitionOpacity } from './hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from './hooks/useCurrentAreaName';
 import { usePremiumAccess } from './hooks/usePremiumAccess';
@@ -119,11 +116,9 @@ import {
   APP_COLOR_PRESET_SETTING_KEY,
   CUSTOM_ICON_IMAGE_URI_SETTING_KEY,
 } from './hooks/useUserLocationIconSetting';
+import { useMapFollowState } from './hooks/useMapFollowState';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from './deleteAllDataFlow';
 import { shouldStartRecordingAutomatically } from './autoRecording';
-import { getNextMapType } from './mapType';
-import { createUserCenteredRegion, isValidMapCoordinate, shouldRestoreMapRegionOnMapOpen } from './mapRegion';
-import { shouldApplyThrottledRegionChange } from './regionChangeThrottle';
 import { resolveSentryScreenName } from './sentryScreen';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
@@ -159,9 +154,6 @@ type FirstLaunchTutorialMode = 'firstLaunch' | 'replay';
 
 const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
 const DailyLogStack = createNativeStackNavigator<DailyLogStackParamList>();
-/** Android操作中のonRegionChangeを間引く間隔。エリア追従の速さとDB負荷のバランス。 */
-const REGION_CHANGE_THROTTLE_MS = 150;
-
 /** 権限状態を取得する前にUIが参照する安全な初期値。 */
 const EMPTY_PERMISSION_STATE: LocationPermissionState = {
   foregroundGranted: false,
@@ -211,13 +203,13 @@ export default function App() {
     return applyColorPreset(rawTheme, preset);
   }, [colorScheme, premiumAccessState.isPlusActive, selectedAppColorPresetId]);
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const mapRef = useRef<MapView | null>(null);
   const autoStartInFlightRef = useRef(false);
   const isUpdatingPhotoSettingRef = useRef(false);
   const isImportingGpxRef = useRef(false);
   const isAchievementDialogVisibleRef = useRef(false);
   const wasAchievementEvaluationPausedRef = useRef(false);
-  const shouldRestoreMapRegionOnOpenRef = useRef(false);
+  /** useMapFollowState の centerOnCoordinate から呼ぶ incrementVisitedGridRefreshVersion の参照。 */
+  const incrementVisitedGridRefreshVersionRef = useRef<() => void>(() => undefined);
   const [isReady, setIsReady] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [screenMode, setScreenMode] = useState<ScreenMode>('map');
@@ -242,16 +234,6 @@ export default function App() {
   const [isLocationRecordingModeSynchronized, setIsLocationRecordingModeSynchronized] = useState(false);
   const [dailyLogsSentryScreenName, setDailyLogsSentryScreenName] = useState('DailyLogs:DailyLogList');
   const [settingsSentryScreenName, setSettingsSentryScreenName] = useState('Settings:SettingsHome');
-  const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
-  const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
-  // ネイティブ地図の初期化完了フラグ。onMapReady前のanimateToRegionはネイティブ側で
-  // 無視されるため、カスタムアイコンの初回センタリングは準備完了を待ってから実行する。
-  const [isMapReady, setIsMapReady] = useState(false);
-  const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
-  /** Android操作中のonRegionChangeをスロットルするための最終更新時刻。 */
-  const regionChangeThrottleRef = useRef(0);
-  const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
-  const [mapType, setMapType] = useState<MapType>('standard');
   const [hasPromptedReview, setHasPromptedReview] = useState(false);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
@@ -260,23 +242,6 @@ export default function App() {
   const dismissedAchievementQueueIdsRef = useRef(new Set<number>());
 
   const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(points, dailyLogs);
-  const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
-  const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
-  const gridOverlayRegion = visibleRegion ?? initialRegion;
-  const { visitedGridCells, gridOverlayOpacity, incrementVisitedGridRefreshVersion } = useVisitedGridOverlay({
-    isReady,
-    gridOverlayRegion,
-    themePrimaryColor: theme.colors.primary,
-  });
-  const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
-  const todayDistanceMeters = useMemo(() => {
-    const today = toLocalDate(new Date());
-    return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
-  }, [dailyLogs]);
-  const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
-  const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
-  const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
-  const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const userLocationIcon = useMemo(
     () =>
       resolveUserLocationIcon(
@@ -292,6 +257,48 @@ export default function App() {
       selectedUserLocationIconId,
     ],
   );
+  const mapFollowState = useMapFollowState({
+    screenMode,
+    userLocationIcon,
+    incrementVisitedGridRefreshVersionRef,
+  });
+  const {
+    mapRef,
+    userCoordinate,
+    isFollowingUserLocation,
+    isMapReady,
+    visibleRegion,
+    currentSpeedKmh,
+    mapType,
+    handleUserLocationChange,
+    applyUserLocation,
+    handleMapPanDrag,
+    handleRegionChangeComplete,
+    handleRegionChange,
+    handleMapReady,
+    recenterOnUserLocation,
+  } = mapFollowState;
+  const gridOverlayRegion = visibleRegion ?? initialRegion;
+  const { visitedGridCells, gridOverlayOpacity, incrementVisitedGridRefreshVersion } = useVisitedGridOverlay({
+    isReady,
+    gridOverlayRegion,
+    themePrimaryColor: theme.colors.primary,
+  });
+  // incrementVisitedGridRefreshVersion を ref に同期。useMapFollowState の centerOnCoordinate から
+  // 参照するために使う。ref にすることで useVisitedGridOverlay より前に useMapFollowState を
+  // 呼べる（フック呼び出し順序の循環依存を回避するため）。
+  incrementVisitedGridRefreshVersionRef.current = incrementVisitedGridRefreshVersion;
+  const recenterButtonOpacity = useAnimatedBooleanOpacity(!isFollowingUserLocation, 500);
+  const currentAreaLabel = useCurrentAreaLabel({ userCoordinate, appState });
+  const screenTransitionOpacity = useScreenTransitionOpacity(screenMode, SCREEN_TRANSITION_DURATION_MS);
+  const todayDistanceMeters = useMemo(() => {
+    const today = toLocalDate(new Date());
+    return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
+  }, [dailyLogs]);
+  const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
+  const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
+  const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
+  const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
@@ -804,35 +811,6 @@ export default function App() {
     },
   });
 
-  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、このeffectが唯一の
-  // オーナーとして追従センタリングを担う（applyUserLocation側はOS標準時のみセンタリングする）。
-  // 追従中は現在地更新のたびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
-  //
-  // 起動直後は前景ウォッチの初回更新（getLastKnownPositionAsync）がネイティブ地図の初期化完了より
-  // 先に届くことがあり、その時点のanimateToRegionはネイティブ側で無視される。さらに静止中は
-  // watchPositionAsyncが再発火しないため再センタリングの機会がなく、広域initialRegionで固定されてしまう。
-  // これを防ぐためisMapReady（onMapReady）を待ってからセンタリングする。現在地が先に届いていれば
-  // 準備完了時に、準備完了が先なら現在地到着時に、いずれの順序でも確実にセンタリングが走る。
-  useEffect(() => {
-    if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
-      return;
-    }
-
-    if (!isMapReady || !isFollowingUserLocation || !userCoordinate) {
-      return;
-    }
-
-    centerOnCoordinate(userCoordinate, false);
-  }, [screenMode, userLocationIcon.useNativeUserLocation, isMapReady, isFollowingUserLocation, userCoordinate]);
-
-  // MapViewは地図画面でのみマウントされる。地図から離れたら準備完了フラグを倒し、再表示時の
-  // 新しいネイティブ地図がonMapReadyを発火するまでカスタムセンタリングを待たせる。
-  useEffect(() => {
-    if (screenMode !== 'map') {
-      setIsMapReady(false);
-    }
-  }, [screenMode]);
-
   /**
    * 保存済みの写真表示ONは、MapViewの準備完了後に初めて復元する。
    * 起動直後のネイティブ地図初期化中に写真マーカーを載せてクラッシュする経路を避けるため。
@@ -881,150 +859,6 @@ export default function App() {
   }, [isLoadingPhotos, isMapReady, showPhotosOnMap]);
 
   /**
-   * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
-   */
-  useEffect(() => {
-    if (screenMode !== 'map' || !shouldRestoreMapRegionOnOpenRef.current) {
-      return;
-    }
-
-    shouldRestoreMapRegionOnOpenRef.current = false;
-
-    if (!userCoordinate) {
-      return;
-    }
-
-    centerOnCoordinate(userCoordinate, false);
-  }, [screenMode, userCoordinate]);
-
-  /**
-   * 現在地更新を受け取り、追従中であれば地図中心も更新する。
-   *
-   * @param event - react-native-mapsから渡される現在地更新イベント。
-   * @returns なし。
-   */
-  function handleUserLocationChange(event: UserLocationChangeEvent): void {
-    const coordinate = event.nativeEvent.coordinate;
-
-    if (!coordinate) {
-      return;
-    }
-
-    applyUserLocation(coordinate.latitude, coordinate.longitude, coordinate.speed);
-  }
-
-  /**
-   * 緯度経度と速度から現在地・速度表示・追従を更新する。
-   * OS標準の位置イベントと前景ウォッチの両方から呼ばれる。
-   *
-   * @param latitude - 緯度。
-   * @param longitude - 経度。
-   * @param speed - m/s単位の速度。取得できない場合はnull/undefined。
-   * @returns なし。
-   */
-  function applyUserLocation(latitude: number, longitude: number, speed: number | null | undefined): void {
-    const nextCoordinate = { latitude, longitude };
-    if (!isValidMapCoordinate(nextCoordinate)) {
-      return;
-    }
-
-    setUserCoordinate(nextCoordinate);
-    const nextSpeedKmh = toDisplaySpeedKmh(speed ?? null);
-
-    if (nextSpeedKmh != null) {
-      setCurrentSpeedKmh(nextSpeedKmh);
-    }
-
-    // OS標準アイコン時のみここでセンタリングする。カスタムアイコン時は専用effectが
-    // 唯一のオーナーとして追従するため、ここで重複してanimateToRegionを呼ばない。
-    if (isFollowingUserLocation && userLocationIcon.useNativeUserLocation) {
-      centerOnCoordinate(nextCoordinate, false);
-    }
-  }
-
-  /**
-   * ユーザーが地図を動かしたら現在地追従を一時停止する。
-   *
-   * @returns なし。
-   */
-  function handleMapPanDrag(): void {
-    setIsFollowingUserLocation(false);
-  }
-
-  /**
-   * 表示範囲を保存する。追従再開は現在地ボタン押下に限定し、広域表示中の意図しない引き戻しを防ぐ。
-   *
-   * @param region - MapViewの現在表示範囲。
-   * @returns なし。
-   */
-  function handleRegionChangeComplete(region: Region): void {
-    regionChangeThrottleRef.current = Date.now();
-    setVisibleRegion(region);
-  }
-
-  /**
-   * 操作中の表示範囲更新（Androidのみ使用）。
-   *
-   * AndroidはonRegionChangeCompleteの発火が遅く、広域縮小時にエリア表示の追従が遅れて見えるため、
-   * 操作中もスロットルしながら表示範囲を更新してエリア集約を追従させる。
-   * visibleRegionはグリッド集約の計算にのみ使い地図カメラへは戻さないため、ジェスチャーは妨げない。
-   *
-   * @param region - MapViewの現在表示範囲。
-   * @returns なし。
-   */
-  function handleRegionChange(region: Region): void {
-    const now = Date.now();
-
-    if (!shouldApplyThrottledRegionChange(regionChangeThrottleRef.current, now, REGION_CHANGE_THROTTLE_MS)) {
-      return;
-    }
-
-    regionChangeThrottleRef.current = now;
-    setVisibleRegion(region);
-  }
-
-  /**
-   * ネイティブ地図の初期化完了を受けて、カスタムアイコンの初回センタリングを解禁する。
-   *
-   * @returns なし。
-   */
-  function handleMapReady(): void {
-    setIsMapReady(true);
-  }
-
-  /**
-   * 指定座標が画面中心になるよう地図を移動する。
-   *
-   * @param coordinate - 中心へ移動したい緯度経度。
-   * @param animated - アニメーション付きで移動するか。
-   * @returns なし。
-   */
-  function centerOnCoordinate(coordinate: LatLng, animated = true): void {
-    if (!isValidMapCoordinate(coordinate)) {
-      return;
-    }
-
-    const region = createUserCenteredRegion(coordinate);
-    setVisibleRegion(region);
-    incrementVisitedGridRefreshVersion();
-    mapRef.current?.animateToRegion(region, animated ? 500 : 250);
-  }
-
-  /**
-   * 現在地ボタン押下時に追従を再開して現在地へ戻す。
-   *
-   * @returns なし。
-   */
-  function recenterOnUserLocation(): void {
-    if (!userCoordinate) {
-      return;
-    }
-
-    setIsFollowingUserLocation(true);
-    centerOnCoordinate(userCoordinate);
-  }
-
-  /**
    * 写真マーカーの単体/複数タップを処理する。
    *
    * @param cluster - タップされた写真クラスタ。
@@ -1066,11 +900,7 @@ export default function App() {
   /** 地図画面へ戻る。 */
   function openMap(): void {
     triggerLightImpactHaptic();
-    if (shouldRestoreMapRegionOnMapOpen({ userCoordinate, isFollowingUserLocation }) && userCoordinate) {
-      shouldRestoreMapRegionOnOpenRef.current = true;
-      setVisibleRegion(createUserCenteredRegion(userCoordinate));
-      incrementVisitedGridRefreshVersion();
-    }
+    mapFollowState.prepareMapRegionRestore();
     setScreenMode('map');
   }
 
@@ -1143,7 +973,7 @@ export default function App() {
    */
   function toggleMapType(): void {
     triggerSelectionHaptic();
-    setMapType(getNextMapType);
+    mapFollowState.toggleMapType();
   }
 
   /** 実績解除モーダルを閉じ、次の未表示実績があれば続けて表示する。 */

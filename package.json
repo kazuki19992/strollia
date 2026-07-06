@@ -81,7 +81,8 @@
       "**/__tests__/**/*.test.tsx"
     ],
     "modulePathIgnorePatterns": [
-      "<rootDir>/.worktrees/"
+      "<rootDir>/.worktrees/",
+      "<rootDir>/.claude/worktrees/"
     ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"

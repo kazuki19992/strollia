@@ -22,7 +22,9 @@ Strollia (footspot) は Expo (React Native) 製のローカルファーストGPS
 ```text
 UIコンポーネント (src/app/components/)
   ↓ props でデータと操作を受け取る(DB・端末APIを直接呼ばない)
-App.tsx (src/app/App.tsx) — 状態管理・画面切替・サービス呼び出しのハブ
+App.tsx (src/app/App.tsx) — フックの結線とレンダリングのハブ
+  ↓ カスタムフックへ処理を委譲
+src/app/hooks/ — 責務別フック群(GPS記録・実績・初期化・地図等)
   ↓
 サービス / リポジトリ (src/features/*/)
   ↓
@@ -34,15 +36,15 @@ SQLite (src/db/database.ts)
 
 ## ディレクトリマップ
 
-| パス                               | 役割                                                      |
-| ---------------------------------- | --------------------------------------------------------- |
-| `src/app/App.tsx`                  | メインアプリ。全画面の状態と遷移を統括(大規模ファイル)    |
-| `src/app/appStyles.ts`             | 全画面共通の StyleSheet(`createStyles(theme)`)            |
-| `src/app/appText.ts`               | ユーザー向け文言定数                                      |
-| `src/app/components/`              | 画面・共通UIコンポーネント(1ファイル1コンポーネント)      |
-| `src/app/components/reports/`      | 月次レポート専用コンポーネントと `reportStyles.ts`        |
-| `src/app/hooks/`                   | カスタムフック(useForegroundUserLocation 等)              |
-| `src/app/generated/`               | 生成物(OSSライセンス。`npm run generate:licenses`)        |
+| パス                               | 役割                                                                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/app/App.tsx`                  | メインアプリ。フックの結線・props の橋渡し・レンダリングを担う                                                                                               |
+| `src/app/appStyles.ts`             | 全画面共通の StyleSheet(`createStyles(theme)`)                                                                                                               |
+| `src/app/appText.ts`               | ユーザー向け文言定数                                                                                                                                         |
+| `src/app/components/`              | 画面・共通UIコンポーネント(1ファイル1コンポーネント)                                                                                                         |
+| `src/app/components/reports/`      | 月次レポート専用コンポーネントと `reportStyles.ts`                                                                                                           |
+| `src/app/hooks/`                   | カスタムフック群。主要フック: `useAppInitialization`(起動初期化), `useLocationRecordingSync`(GPS記録同期), `useAchievementState`(実績), `usePremiumAccess`(課金), `useMapFollowState`(地図追従), `useVisitedGridOverlay`(訪問グリッド), `useUserLocationIconSetting`(アイコン), `usePhotoMapCrashBreaker`(写真表示) |
+| `src/app/generated/`               | 生成物(OSSライセンス。`npm run generate:licenses`)                                                                                                           |
 | `src/features/location/`           | GPS記録・権限・訪問セル                                   |
 | `src/features/logs/`               | 日別ログのDB操作                                          |
 | `src/features/achievements/`       | 実績の解除条件・通知                                      |

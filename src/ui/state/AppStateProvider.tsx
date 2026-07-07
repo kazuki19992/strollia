@@ -152,6 +152,8 @@ export type AppStateContextValue = {
   mapType: MapType;
   /** ルート座標列(地図描画用)。 */
   renderRouteCoordinates: RouteCoordinate[];
+  /** 地図の初期表示領域(起動時・全ルートフィット用)。 */
+  initialRegion: Region;
   /** 今日の移動距離(m)。 */
   todayDistanceMeters: number;
   /** 総移動距離(m)。 */
@@ -253,9 +255,9 @@ export type AppStateContextValue = {
 
   // カスタマイゼーション
   /** 選択されているカラープリセットID。 */
-  selectedAppColorPresetId: string;
+  selectedAppColorPresetId: AppColorPresetId;
   /** 選択されている現在地アイコンID。 */
-  selectedUserLocationIconId: string;
+  selectedUserLocationIconId: UserLocationIconId;
   /** 解決済みユーザー位置アイコン設定。 */
   userLocationIcon: ResolvedUserLocationIcon;
   /** カラープリセットを更新する。 */
@@ -933,6 +935,7 @@ export function AppStateProvider({ children, navigator }: AppStateProviderProps)
     currentSpeedKmh,
     mapType,
     renderRouteCoordinates,
+    initialRegion,
     todayDistanceMeters,
     distance,
     currentAreaLabel,

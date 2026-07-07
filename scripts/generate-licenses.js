@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const OUTPUT_PATH = path.join(PROJECT_ROOT, 'src/app/generated/ossLicenses.ts');
+const OUTPUT_PATH = path.join(PROJECT_ROOT, 'src/ui/generated/ossLicenses.ts');
 
 /** @typedef {{ id: string; name: string; version: string; licenses: string; repository: string | null; source: 'npm' | 'ios'; licenseText: string | null; noticeText: string | null }} OssLicenseEntry */
 

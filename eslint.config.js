@@ -57,12 +57,12 @@ module.exports = [
     },
   },
 
-  // src/app/components/ 配下では StyleSheet.create を禁止する。
-  // スタイルは src/app/appStyles.ts の createStyles(theme) に集約すること。
-  // src/app/appStyles.ts と reports/reportStyles.ts は集約先のため対象外。
+  // src/ui/components/ 配下では StyleSheet.create を禁止する。
+  // スタイルは src/ui/appStyles.ts の createStyles(theme) に集約すること。
+  // src/ui/appStyles.ts と reports/reportStyles.ts は集約先のため対象外。
   {
-    files: ['src/app/components/**/*.{ts,tsx}'],
-    ignores: ['src/app/components/reports/reportStyles.ts'],
+    files: ['src/ui/components/**/*.{ts,tsx}'],
+    ignores: ['src/ui/components/reports/reportStyles.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -73,7 +73,7 @@ module.exports = [
         },
         {
           selector: "CallExpression[callee.object.name='StyleSheet'][callee.property.name='create']",
-          message: 'components配下でStyleSheet.createは使用禁止。スタイルはsrc/app/appStyles.tsのcreateStyles(theme)に集約してください。',
+          message: 'components配下でStyleSheet.createは使用禁止。スタイルはsrc/ui/appStyles.tsのcreateStyles(theme)に集約してください。',
         },
       ],
     },
@@ -82,7 +82,7 @@ module.exports = [
   // ignores: 生成物・ビルド成果物・worktree・外部ネイティブコード
   {
     ignores: [
-      'src/app/generated/**',
+      'src/ui/generated/**',
       'builds/**',
       'android/**',
       'ios/**',

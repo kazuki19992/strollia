@@ -46,7 +46,7 @@ describe('設定リポジトリ settingsRepository', () => {
 
 ## UIコンポーネントテストの実例
 
-`react-test-renderer` + Expoモジュールのモック(実例: `src/app/__tests__/AppMapReturn.test.tsx`):
+`react-test-renderer` + Expoモジュールのモック(実例: `src/ui/__tests__/AppMapReturn.test.tsx`):
 
 ```typescript
 import ReactTestRenderer, { act } from 'react-test-renderer';

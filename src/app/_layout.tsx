@@ -167,12 +167,15 @@ function useRouterNavigator() {
  * - Sentry.wrap を適用する
  * - AppStateProvider でアプリ全体の状態を提供する
  * - Stack ナビゲーターとグローバルモーダル群を配置する
+ * - 現在パスから導出した ScreenMode を Provider へ渡し、
+ *   route と screenMode の単一ソースを維持する(ディープリンク直遷移でもズレない)
  */
 function RootLayout(): React.ReactElement {
   const navigator = useRouterNavigator();
+  const pathname = usePathname();
 
   return (
-    <AppStateProvider navigator={navigator}>
+    <AppStateProvider navigator={navigator} currentScreenMode={pathnameToScreenMode(pathname)}>
       <RootLayoutContent />
     </AppStateProvider>
   );

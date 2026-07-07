@@ -1,11 +1,17 @@
 import RootLayout from '@/app/_layout';
 
+/** usePathname スタブが返す現在パス。各テストで書き換える。 */
+let mockPathname = '/';
+
 // expo-router の Stack / usePathname / useRouter をスタブ化する
 jest.mock('expo-router', () => ({
   Stack: () => null,
-  usePathname: () => '/',
+  usePathname: () => mockPathname,
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
 }));
+
+/** AppStateProvider が受け取った props の記録。配線検証に使う。 */
+const mockProviderProps: Array<Record<string, unknown>> = [];
 
 // wrapWithSentry はコンポーネントをそのまま返すスタブ
 jest.mock('@/config/sentry', () => ({
@@ -17,7 +23,10 @@ jest.mock('@/config/sentry', () => ({
 jest.mock('@/ui/state/AppStateProvider', () => {
   const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
   return {
-    AppStateProvider: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
+    AppStateProvider: (props: { children: React.ReactNode } & Record<string, unknown>) => {
+      mockProviderProps.push(props);
+      return <View>{props.children}</View>;
+    },
     useAppState: () => ({
       isReady: true,
       styles: { container: {} },
@@ -64,6 +73,11 @@ const ReactTestRenderer = require('react-test-renderer'); // eslint-disable-line
 const { act } = ReactTestRenderer;
 
 describe('expo-router ルートレイアウト (_layout)', () => {
+  beforeEach(() => {
+    mockPathname = '/';
+    mockProviderProps.length = 0;
+  });
+
   test('default export が存在しレンダリングできること', async () => {
     let renderer: ReturnType<typeof ReactTestRenderer.create>;
     await act(async () => {
@@ -71,5 +85,27 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     });
 
     expect(renderer!.toJSON()).not.toBeNull();
+  });
+
+  test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', async () => {
+    mockPathname = '/settings/about';
+
+    await act(async () => {
+      ReactTestRenderer.create(<RootLayout />);
+    });
+
+    // navigator 経由の遷移では内部 state が更新されないため、
+    // パス由来の ScreenMode が単一ソースとして Provider へ渡ることを固定する
+    expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('settings');
+  });
+
+  test('地図(/)では currentScreenMode が map になる', async () => {
+    mockPathname = '/';
+
+    await act(async () => {
+      ReactTestRenderer.create(<RootLayout />);
+    });
+
+    expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('map');
   });
 });

@@ -352,6 +352,16 @@ type AppStateProviderProps = {
     /** 設定画面へ移動する。 */
     openSettings?: () => void;
   };
+  /**
+   * expo-router の現在パスから導出した ScreenMode。
+   *
+   * navigator 経由の遷移は router.push のみで内部 state を更新しないため、
+   * これを渡さないと screenMode が初期値 'map' のまま実際の route とズレ、
+   * 地図の isMapReady リセットや画面判定フックが同期しなくなる。
+   * 指定時は内部 state より優先する単一ソースとして扱う(ディープリンク直遷移にも追従)。
+   * 未指定時は内部の screenMode 切り替えで動作する(テスト互換モード)。
+   */
+  currentScreenMode?: ScreenMode;
 };
 
 /**
@@ -363,7 +373,7 @@ type AppStateProviderProps = {
  * navigator prop を渡すと画面遷移を expo-router の router.push 経由にできる。
  * 未指定時は内部の screenMode 切り替えで動作する(テスト互換モード)。
  */
-export function AppStateProvider({ children, navigator }: AppStateProviderProps): React.ReactElement {
+export function AppStateProvider({ children, navigator, currentScreenMode }: AppStateProviderProps): React.ReactElement {
   const colorScheme = useColorScheme();
   const {
     premiumAccessState,
@@ -419,7 +429,10 @@ export function AppStateProvider({ children, navigator }: AppStateProviderProps)
     Promise.resolve(),
   );
   const [isReady, setIsReady] = useState(false);
-  const [screenMode, setScreenMode] = useState<ScreenMode>('map');
+  const [internalScreenMode, setScreenMode] = useState<ScreenMode>('map');
+  // currentScreenMode(expo-routerのパス由来)が渡されていればそれを単一ソースとして優先する。
+  // 未指定時(テスト互換モード)のみ内部 state で画面を切り替える。
+  const screenMode = currentScreenMode ?? internalScreenMode;
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);

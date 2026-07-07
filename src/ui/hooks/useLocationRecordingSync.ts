@@ -141,6 +141,12 @@ export function useLocationRecordingSync({
   refreshAchievementState,
 }: UseLocationRecordingSyncOptions): UseLocationRecordingSyncResult {
   const autoStartInFlightRef = useRef(false);
+  /**
+   * AppState復帰チェーンと定期更新チェーンの並行実行を防ぐための AbortController。
+   * 新しいチェーンを開始するたびに前のチェーンを abort し、古い結果が state を上書きしないようにする。
+   * 手動の refreshData() 呼び出し（pull-to-refresh等）はスコープ外とし、abort しない。
+   */
+  const foregroundRefreshAbortControllerRef = useRef<AbortController | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
   const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
@@ -297,23 +303,33 @@ export function useLocationRecordingSync({
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。
+   * 前回のチェーンが実行中の場合は abort して新しいチェーンを優先する（後勝ち）。
    */
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       setAppState(state);
       if (state === 'active') {
+        foregroundRefreshAbortControllerRef.current?.abort();
+        const controller = new AbortController();
+        foregroundRefreshAbortControllerRef.current = controller;
+        const { signal } = controller;
+
         setIsLocationRecordingModeSynchronized(false);
-        refreshData()
+        refreshData({ signal })
           .then(async (result) => {
-            await synchronizeLocationRecordingMode(result);
+            if (signal.aborted) return;
+            await synchronizeLocationRecordingMode(result, signal);
           })
-          .then(evaluateAchievementsIfDialogIdle)
+          .then(async () => {
+            if (signal.aborted) return false;
+            return evaluateAchievementsIfDialogIdle();
+          })
           .then(async (didEvaluate) => {
-            if (didEvaluate) {
-              await refreshAchievementState(true);
-            }
+            if (signal.aborted || !didEvaluate) return;
+            await refreshAchievementState(true, { signal });
           })
           .catch((error: unknown) => {
+            if (signal.aborted) return;
             setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
           });
       }
@@ -324,6 +340,7 @@ export function useLocationRecordingSync({
 
   /**
    * 更新ボタンを不要にするため、フォアグラウンド中は定期的にログを再読み込みする。
+   * 前回のチェーンが実行中の場合は abort して新しいチェーンを優先する（後勝ち）。
    */
   useEffect(() => {
     if (!isReady || appState !== 'active') {
@@ -331,13 +348,28 @@ export function useLocationRecordingSync({
     }
 
     const intervalId = setInterval(() => {
-      refreshDataAndEvaluateAchievementsIfDialogIdle().catch((error: unknown) => {
-        setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
-      });
+      foregroundRefreshAbortControllerRef.current?.abort();
+      const controller = new AbortController();
+      foregroundRefreshAbortControllerRef.current = controller;
+      const { signal } = controller;
+
+      refreshData({ signal })
+        .then(async () => {
+          if (signal.aborted) return false;
+          return evaluateAchievementsIfDialogIdle();
+        })
+        .then(async (didEvaluate) => {
+          if (signal.aborted || !didEvaluate) return;
+          await refreshAchievementState(true, { signal });
+        })
+        .catch((error: unknown) => {
+          if (signal.aborted) return;
+          setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
+        });
     }, 10_000);
 
     return () => clearInterval(intervalId);
-  }, [appState, isReady, refreshDataAndEvaluateAchievementsIfDialogIdle]);
+  }, [appState, evaluateAchievementsIfDialogIdle, isReady, refreshAchievementState, refreshData]);
 
   return {
     isRecording,

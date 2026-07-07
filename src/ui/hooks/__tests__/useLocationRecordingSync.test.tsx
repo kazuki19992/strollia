@@ -453,6 +453,79 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
       expect((getDailyLogs as jest.Mock).mock.calls.length).toBeGreaterThan(initialCallCount);
     });
+
+    it('先行チェーンの実行中に後発チェーンが開始された場合、先行の signal が abort される', async () => {
+      // abort されると refreshData が signal.aborted を検知して setState をスキップするため、
+      // 先行チェーンの古い結果が後発チェーンの結果を上書きしないことを確認する。
+      const listeners: ((state: string) => void)[] = [];
+      jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, listener) => {
+        listeners.push(listener as (state: string) => void);
+        return { remove: jest.fn() };
+      });
+
+      // 先行チェーンの getDailyLogs を意図的に遅延させ、後発チェーンが先に完了できるようにする。
+      let resolveFirst: () => void = () => undefined;
+      const firstCallPromise = new Promise<void>((res) => {
+        resolveFirst = res;
+      });
+      let firstSignal: AbortSignal | undefined;
+
+      (getDailyLogs as jest.Mock)
+        .mockImplementationOnce(async () => {
+          // 先行呼び出し: signal を受け取ったあと手動解決まで待つ
+          await firstCallPromise;
+          return [];
+        })
+        .mockResolvedValue([]);
+
+      // getDailyLogs が signal を受け取れるよう、refreshData の signal を捕捉する。
+      // refreshData は getDailyLogs を直接呼ぶが signal は Promise.all 内で渡されないため、
+      // AbortController の abort 状態そのものを後発チェーン開始後に確認する。
+      const abortedStates: boolean[] = [];
+      const originalRefreshData = jest.fn();
+
+      let capturedController: AbortController | null = null;
+      // AbortController をフック内部で生成するため、window.AbortController をスパイして signal を捕捉する。
+      const OriginalAbortController = global.AbortController;
+      jest.spyOn(global, 'AbortController' as keyof typeof global).mockImplementation(function (
+        this: AbortController,
+      ): AbortController {
+        const controller = new OriginalAbortController();
+        capturedController = controller;
+        return controller;
+      });
+
+      act(() => {
+        createTrackedRenderer(<HookProbe onResult={() => undefined} />);
+      });
+
+      // 先行チェーン開始
+      act(() => {
+        listeners.forEach((l) => l('active'));
+      });
+
+      const controllerAfterFirst = capturedController;
+
+      // 後発チェーン開始（先行の getDailyLogs がまだ pending の状態で）
+      act(() => {
+        listeners.forEach((l) => l('active'));
+      });
+
+      // 後発チェーンが開始されると先行チェーンの AbortController が abort される
+      abortedStates.push(controllerAfterFirst?.signal.aborted ?? false);
+
+      // 先行チェーンを解決してクリーンアップ
+      resolveFirst();
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      void originalRefreshData;
+      void firstSignal;
+
+      // 後発チェーン開始時に先行チェーンの controller が abort されていることを確認する
+      expect(abortedStates[0]).toBe(true);
+    });
   });
 
   describe('refreshDataAndEvaluateAchievementsIfDialogIdle', () => {

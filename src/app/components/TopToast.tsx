@@ -11,8 +11,9 @@ export type TopToastProps = {
   message: string;
   /**
    * 画面共通スタイル。
-   * 省略した場合はスタイルキーを利用しないため、呼び出し元で backgroundColor / color を
-   * インラインスタイルで設定すること（テスト等で省略を許容する互換性確保のため省略可）。
+   * 配色は theme から常にインライン適用されるため、省略した場合に失われるのは
+   * topToastContainer / topToastMessage のレイアウト系スタイルのみ（テスト等で省略を許容するため省略可）。
+   * アプリ本体からは必ず渡すこと。
    */
   styles?: AppStyles;
   /** 配色に使うテーマ。 */

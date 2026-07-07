@@ -2,15 +2,7 @@ import { StyleSheet } from 'react-native';
 
 import type { AppTheme } from '@/theme/theme';
 
-/** #rrggbbの色をrgba表記へ変換する。 */
-function hexToRgba(hex: string, alpha: number): string {
-  const normalizedHex = hex.replace('#', '');
-  const red = Number.parseInt(normalizedHex.slice(0, 2), 16);
-  const green = Number.parseInt(normalizedHex.slice(2, 4), 16);
-  const blue = Number.parseInt(normalizedHex.slice(4, 6), 16);
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha.toFixed(2)})`;
-}
+import { getSettingsDerivedColors, hexToRgba } from './styleHelpers';
 
 /**
  * 実績・アンロックモーダル・チュートリアルダイアログ・コンフェッティ関連のスタイルを生成する。
@@ -239,7 +231,7 @@ export function createAchievementStyles(theme: AppTheme) {
       paddingRight: 24,
     },
     achievementScrollerEmpty: {
-      color: theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#767676',
+      color: getSettingsDerivedColors(theme).settingsMuted,
       fontSize: 14,
       fontWeight: '400',
       lineHeight: 20,

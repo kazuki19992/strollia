@@ -1,15 +1,7 @@
 import { getAppColorPreset } from '@/features/customization/colorPresets';
 import type { AppTheme } from '@/theme/theme';
 
-/** #rrggbbの色をrgba表記へ変換する。 */
-function hexToRgba(hex: string, alpha: number): string {
-  const normalizedHex = hex.replace('#', '');
-  const red = Number.parseInt(normalizedHex.slice(0, 2), 16);
-  const green = Number.parseInt(normalizedHex.slice(2, 4), 16);
-  const blue = Number.parseInt(normalizedHex.slice(4, 6), 16);
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha.toFixed(2)})`;
-}
+import { getSettingsDerivedColors, hexToRgba } from './styleHelpers';
 
 /**
  * 設定画面・共通ヘッダー・リスト行・フォーム項目・色プリセット・アバウト・ライセンス関連のスタイルを生成する。
@@ -24,9 +16,7 @@ export function createSettingsStyles(theme: AppTheme) {
   const matchaColors = theme.name === 'dark' ? matchaPreset.dark : matchaPreset.light;
   const plusBadgeColor = matchaColors.primary;
   const plusBadgeTextColor = matchaColors.primaryText;
-  const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
-  const settingsMuted = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#767676';
-  const settingsBorder = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.28)' : 'rgba(51, 51, 51, 0.20)';
+  const { settingsText, settingsMuted, settingsBorder } = getSettingsDerivedColors(theme);
   const settingsBackButtonText = theme.name === 'dark' ? '#333333' : settingsText;
   const selectionSurface = hexToRgba(colors.primary, 0.1);
   const settingsDanger = theme.name === 'dark' ? colors.danger : '#b0002f';

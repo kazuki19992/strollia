@@ -21,6 +21,7 @@ export type MapDisplayTypeButtonProps = {
 export function MapDisplayTypeButton({ icon, isSelected, label, onPress, styles }: MapDisplayTypeButtonProps) {
   return (
     <Pressable
+      accessibilityLabel={label}
       accessibilityRole="button"
       onPress={onPress}
       style={[styles.mapDisplayTypeButton, isSelected && styles.mapDisplayTypeButtonSelected]}

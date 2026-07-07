@@ -1,6 +1,8 @@
 import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
 import type { AppTheme } from '@/theme/theme';
 
+import { getSettingsDerivedColors } from './styleHelpers';
+
 /**
  * 日別ログ画面・ルートマップ・スライダー・GIF生成・共有カード関連のスタイルを生成する。
  *
@@ -8,9 +10,7 @@ import type { AppTheme } from '@/theme/theme';
  */
 export function createDailyLogStyles(theme: AppTheme) {
   const { colors } = theme;
-  const settingsText = theme.name === 'dark' ? '#ffffff' : '#333333';
-  const settingsMuted = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.62)' : '#767676';
-  const settingsBorder = theme.name === 'dark' ? 'rgba(255, 255, 255, 0.28)' : 'rgba(51, 51, 51, 0.20)';
+  const { settingsText, settingsMuted, settingsBorder } = getSettingsDerivedColors(theme);
   return {
     // Daily log list
     dailyEmptyCard: {

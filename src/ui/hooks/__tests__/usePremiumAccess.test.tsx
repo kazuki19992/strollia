@@ -379,6 +379,44 @@ describe('課金状態フック usePremiumAccess', () => {
 
       alertSpy.mockRestore();
     });
+
+    it('連打防止: 復元中(promise未解決)に再度呼んでも restorePremiumPurchases は1回しか呼ばれない', async () => {
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+      let resolveRestore: (value: typeof PLUS_INACTIVE_STATE) => void = () => undefined;
+      (restorePremiumPurchases as jest.Mock).mockReturnValue(
+        new Promise<typeof PLUS_INACTIVE_STATE>((res) => {
+          resolveRestore = res;
+        }),
+      );
+      let result: UsePremiumAccessResult | undefined;
+
+      act(() => {
+        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+      });
+
+      // 1回目呼び出し（promise 未解決のまま）
+      let firstCall: Promise<void>;
+      act(() => {
+        firstCall = result!.restorePurchasesFromSettings();
+      });
+
+      // 2回目呼び出し（1回目が pending 中）
+      act(() => {
+        result!.restorePurchasesFromSettings().catch(() => undefined);
+      });
+
+      // 1回目を解決する
+      resolveRestore(PLUS_INACTIVE_STATE);
+
+      await act(async () => {
+        await firstCall!;
+      });
+
+      // ref guard により restorePremiumPurchases は1回しか呼ばれない
+      expect(restorePremiumPurchases).toHaveBeenCalledTimes(1);
+
+      alertSpy.mockRestore();
+    });
   });
 
   describe('openPremiumCustomerCenter', () => {

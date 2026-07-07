@@ -157,7 +157,6 @@ function useRouterNavigator() {
       openMonthlyReport: () => router.push('/monthly-report'),
       openSettings: () => router.push('/settings'),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- router は参照安定
     [router],
   );
 }

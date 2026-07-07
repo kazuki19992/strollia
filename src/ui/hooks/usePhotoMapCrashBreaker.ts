@@ -98,6 +98,23 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
   }, []);
 
   /**
+   * 写真表示のUI状態と永続化キーをOFFへ巻き戻す。
+   *
+   * 有効化・復元の失敗時に「UIはONのままSQLiteはOFF」という乖離を残さないための
+   * 共通処理。巻き戻し自体の失敗はそれ以上回復できないため、診断できるよう
+   * ログに残すだけに留める。
+   */
+  const resetPhotoMapPersistedState = useCallback(async (): Promise<void> => {
+    setShowPhotosOnMap(false);
+    await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch((cleanupError: unknown) => {
+      console.warn('Failed to reset showPhotosOnMap setting after error:', cleanupError);
+    });
+    await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch((cleanupError: unknown) => {
+      console.warn('Failed to reset showPhotosOnMap pending flag after error:', cleanupError);
+    });
+  }, []);
+
+  /**
    * 写真表示設定を切り替える。初回ON時は写真ライブラリのフルアクセス権限を要求する。
    *
    * @param enabled - マップ上の写真表示を有効にするかどうか。
@@ -125,9 +142,7 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
 
         if (!hasFullPhotoAccess(permission)) {
           setShouldRestorePhotosOnMapAfterMapReady(false);
-          setShowPhotosOnMap(false);
-          await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
-          await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false);
+          await resetPhotoMapPersistedState();
           Alert.alert(
             '写真のフルアクセスが必要です',
             'マップ上に写真を表示するには、写真ライブラリへのフルアクセスを許可してください。限定アクセスではジオタグ付き写真を十分に読み取れません。',
@@ -139,16 +154,16 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
           await enableShowPhotosOnMapWithCrashBreaker();
         } catch (error: unknown) {
           console.warn('Failed to enable photo map overlay:', error);
-          setShowPhotosOnMap(false);
-          await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch(() => undefined);
-          await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch(() => undefined);
+          await resetPhotoMapPersistedState();
+          // サイレントにOFFへ戻すとユーザーが混乱するため、権限拒否時と同様に理由を通知する
+          Alert.alert('写真表示を有効化できませんでした', '設定の保存に失敗したため、写真表示をOFFに戻しました。');
         }
       } finally {
         isUpdatingPhotoSettingRef.current = false;
         setIsUpdatingPhotoSetting(false);
       }
     },
-    [enableShowPhotosOnMapWithCrashBreaker],
+    [enableShowPhotosOnMapWithCrashBreaker, resetPhotoMapPersistedState],
   );
 
   /**
@@ -170,15 +185,14 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
     enableShowPhotosOnMapWithCrashBreaker()
       .catch((error: unknown) => {
         console.warn('Failed to restore photo map overlay:', error);
-        setShowPhotosOnMap(false);
-        setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch(() => undefined);
-        setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch(() => undefined);
+        // resetPhotoMapPersistedState は内部で失敗をログに残すため fire-and-forget でよい
+        void resetPhotoMapPersistedState();
       })
       .finally(() => {
         isUpdatingPhotoSettingRef.current = false;
         setIsUpdatingPhotoSetting(false);
       });
-  }, [enableShowPhotosOnMapWithCrashBreaker, isMapReady, isReady, shouldRestorePhotosOnMapAfterMapReady]);
+  }, [enableShowPhotosOnMapWithCrashBreaker, isMapReady, isReady, resetPhotoMapPersistedState, shouldRestorePhotosOnMapAfterMapReady]);
 
   /**
    * 写真読み込みとマーカー描画が一定時間続いたら、前回クラッシュ判定用のpendingを解除する。

@@ -184,5 +184,27 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       // 2回目以降: catch ブロック内で setSetting(MAP, false) と setSetting(PENDING, false) を呼ぶ
       expect(setSetting).toHaveBeenCalledTimes(3);
     });
+
+    it('有効化に失敗してOFFへ巻き戻したとき、理由をAlertでユーザーへ通知する', async () => {
+      const { requestPermissionsAsync } = require('expo-media-library');
+      const { setSetting } = require('@/features/settings/settingsRepository');
+      const { Alert } = require('react-native');
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+      (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+      (setSetting as jest.Mock).mockRejectedValueOnce(new Error('SQLite error'));
+
+      let result: UsePhotoMapCrashBreakerResult | undefined;
+
+      act(() => {
+        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+      });
+
+      await act(async () => {
+        await result!.updateShowPhotosOnMap(true);
+      });
+
+      // サイレントにOFFへ戻すのではなく、巻き戻した理由をユーザーへ通知する
+      expect(alertSpy).toHaveBeenCalledWith('写真表示を有効化できませんでした', '設定の保存に失敗したため、写真表示をOFFに戻しました。');
+    });
   });
 });

@@ -622,7 +622,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   /** 画面ON維持設定をUI状態とSQLiteの両方へ反映する。 */
   const updateKeepScreenAwake = useCallback(async (enabled: boolean): Promise<void> => {
     setKeepScreenAwake(enabled);
-    await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
+    try {
+      await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
+    } catch (error: unknown) {
+      console.warn('Failed to persist keep screen awake setting:', error);
+    }
   }, []);
 
   useAppInitialization({

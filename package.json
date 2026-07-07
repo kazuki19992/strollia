@@ -72,6 +72,7 @@
     "jest-expo": "~54.0.17",
     "license-checker-rseidelsohn": "^4.4.2",
     "prettier": "^3.9.4",
+    "react-dom": "19.1.0",
     "react-native-svg-transformer": "^1.5.3",
     "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2"

@@ -141,6 +141,18 @@ export function useLocationRecordingSync({
   refreshAchievementState,
 }: UseLocationRecordingSyncOptions): UseLocationRecordingSyncResult {
   const autoStartInFlightRef = useRef(false);
+  /**
+   * AppState復帰時の「記録モード同期を含むチェーン」の AbortController。
+   * チェーン完了時に null へ戻すため、「non-null = 同期チェーン実行中」の判定にも使う。
+   *
+   * 定期更新用(intervalRefreshAbortControllerRef)と分けているのは、interval が
+   * 同期チェーンを abort すると synchronizeLocationRecordingMode が中断されたまま
+   * isLocationRecordingModeSynchronized が false で取り残され、前景限定記録の保存が
+   * 再開しなくなるため。手動の refreshData() 呼び出しはどちらのスコープにも含めない。
+   */
+  const appStateSyncAbortControllerRef = useRef<AbortController | null>(null);
+  /** 10秒間隔の定期更新チェーンの AbortController。interval 同士の後勝ちにのみ使う。 */
+  const intervalRefreshAbortControllerRef = useRef<AbortController | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [autoStartStatus, setAutoStartStatus] = useState<AutoStartStatus>('checking');
   const [permissionState, setPermissionState] = useState<LocationPermissionState>(EMPTY_PERMISSION_STATE);
@@ -297,24 +309,43 @@ export function useLocationRecordingSync({
 
   /**
    * フォアグラウンド復帰時にDBと権限状態を再同期する。
+   * 前回のチェーンが実行中の場合は abort して新しいチェーンを優先する（後勝ち）。
    */
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       setAppState(state);
       if (state === 'active') {
+        // 進行中のチェーン(前回の同期・定期更新)をすべて中断し、最新の同期チェーンを優先する
+        appStateSyncAbortControllerRef.current?.abort();
+        intervalRefreshAbortControllerRef.current?.abort();
+        const controller = new AbortController();
+        appStateSyncAbortControllerRef.current = controller;
+        const { signal } = controller;
+
         setIsLocationRecordingModeSynchronized(false);
-        refreshData()
+        refreshData({ signal })
           .then(async (result) => {
-            await synchronizeLocationRecordingMode(result);
+            if (signal.aborted) return;
+            await synchronizeLocationRecordingMode(result, signal);
           })
-          .then(evaluateAchievementsIfDialogIdle)
+          .then(async () => {
+            if (signal.aborted) return false;
+            return evaluateAchievementsIfDialogIdle();
+          })
           .then(async (didEvaluate) => {
-            if (didEvaluate) {
-              await refreshAchievementState(true);
-            }
+            if (signal.aborted || !didEvaluate) return;
+            await refreshAchievementState(true, { signal });
           })
           .catch((error: unknown) => {
+            if (signal.aborted) return;
             setMessage(error instanceof Error ? error.message : 'GPSログの再読み込みに失敗しました。');
+          })
+          .finally(() => {
+            // 自分が最新の同期チェーンである場合のみ「実行中」状態を解除する
+            // (より新しい同期チェーンに置き換えられている場合はそちらの管理に任せる)
+            if (appStateSyncAbortControllerRef.current === controller) {
+              appStateSyncAbortControllerRef.current = null;
+            }
           });
       }
     });
@@ -324,6 +355,8 @@ export function useLocationRecordingSync({
 
   /**
    * 更新ボタンを不要にするため、フォアグラウンド中は定期的にログを再読み込みする。
+   * 前回の定期更新チェーンが実行中の場合は abort して新しいチェーンを優先する（後勝ち）。
+   * AppState復帰の同期チェーンが実行中の間は発火をスキップし、同期を中断させない。
    */
   useEffect(() => {
     if (!isReady || appState !== 'active') {
@@ -331,13 +364,35 @@ export function useLocationRecordingSync({
     }
 
     const intervalId = setInterval(() => {
-      refreshDataAndEvaluateAchievementsIfDialogIdle().catch((error: unknown) => {
-        setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
-      });
+      // AppState復帰の記録モード同期チェーンが実行中の間はスキップする。
+      // 同期チェーンを abort すると isLocationRecordingModeSynchronized が false のまま
+      // 取り残され、前景限定記録の保存が再開しなくなるため。
+      if (appStateSyncAbortControllerRef.current !== null) {
+        return;
+      }
+
+      intervalRefreshAbortControllerRef.current?.abort();
+      const controller = new AbortController();
+      intervalRefreshAbortControllerRef.current = controller;
+      const { signal } = controller;
+
+      refreshData({ signal })
+        .then(async () => {
+          if (signal.aborted) return false;
+          return evaluateAchievementsIfDialogIdle();
+        })
+        .then(async (didEvaluate) => {
+          if (signal.aborted || !didEvaluate) return;
+          await refreshAchievementState(true, { signal });
+        })
+        .catch((error: unknown) => {
+          if (signal.aborted) return;
+          setMessage(error instanceof Error ? error.message : 'GPSログの自動更新に失敗しました。');
+        });
     }, 10_000);
 
     return () => clearInterval(intervalId);
-  }, [appState, isReady, refreshDataAndEvaluateAchievementsIfDialogIdle]);
+  }, [appState, evaluateAchievementsIfDialogIdle, isReady, refreshAchievementState, refreshData]);
 
   return {
     isRecording,

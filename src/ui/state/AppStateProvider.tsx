@@ -619,11 +619,23 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     ]);
   }, [refreshAchievementState, refreshData, setMessage]);
 
-  /** 画面ON維持設定をUI状態とSQLiteの両方へ反映する。 */
-  const updateKeepScreenAwake = useCallback(async (enabled: boolean): Promise<void> => {
-    setKeepScreenAwake(enabled);
-    await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
-  }, []);
+  /**
+   * 画面ON維持設定をUI状態とSQLiteの両方へ反映する。
+   * 永続化に失敗した場合はUI状態を元へ巻き戻し、UIとストレージの乖離を残さない。
+   */
+  const updateKeepScreenAwake = useCallback(
+    async (enabled: boolean): Promise<void> => {
+      const previousValue = keepScreenAwake;
+      setKeepScreenAwake(enabled);
+      try {
+        await setSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, enabled);
+      } catch (error: unknown) {
+        console.warn('Failed to persist keep screen awake setting:', error);
+        setKeepScreenAwake(previousValue);
+      }
+    },
+    [keepScreenAwake],
+  );
 
   useAppInitialization({
     initializePremiumAccess,

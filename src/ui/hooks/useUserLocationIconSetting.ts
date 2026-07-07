@@ -105,6 +105,10 @@ export function useUserLocationIconSetting(): UseUserLocationIconSettingResult {
    * 起動時に SQLite から読んだアイコン・カラー設定を解決してフック state へ反映する。
    * カスタムアイコン移行・参照消失時のリセットを含む。
    * App.tsx の初期化 effect から同じ位置・同じ順序で呼ぶ。
+   *
+   * 4つの初期 setState は resolveCustomIconReference の await が完了し signal.aborted を
+   * 確認した後に行う。abort されたまま state を反映すると、古い設定が画面に残る問題がある。
+   * 正常起動時は resolve 完了後(数十ms程度後)に UI へ反映される点が従来と異なる。
    */
   const applySavedIconSettings = useCallback(
     async ({
@@ -113,11 +117,6 @@ export function useUserLocationIconSetting(): UseUserLocationIconSettingResult {
       savedCustomIconImageUri,
       signal,
     }: ApplySavedIconSettingsParams): Promise<void> => {
-      setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
-      setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
-      setCustomIconReference(savedCustomIconImageUri);
-      setHasCustomIconImageLoadFailed(false);
-
       const resolvedCustomIcon = await resolveCustomIconReference(savedCustomIconImageUri).catch((error: unknown) => {
         console.warn('Failed to resolve custom icon reference:', error);
         return undefined;
@@ -128,6 +127,12 @@ export function useUserLocationIconSetting(): UseUserLocationIconSettingResult {
         }
         return;
       }
+
+      // resolve 完了後かつ abort でないことを確認してから保存設定を state へ反映する。
+      setSelectedUserLocationIconId(getUserLocationIconOption(savedUserLocationIcon as UserLocationIconId).id);
+      setSelectedAppColorPresetId(isAppColorPresetId(savedAppColorPresetId) ? savedAppColorPresetId : DEFAULT_APP_COLOR_PRESET_ID);
+      setCustomIconReference(savedCustomIconImageUri);
+      setHasCustomIconImageLoadFailed(false);
       if (resolvedCustomIcon === null && savedUserLocationIcon === 'custom') {
         let didPersistReset = false;
         try {

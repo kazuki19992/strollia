@@ -453,6 +453,118 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
       expect((getDailyLogs as jest.Mock).mock.calls.length).toBeGreaterThan(initialCallCount);
     });
+
+    it('先行チェーンの実行中に後発チェーンが開始された場合、先行の古い結果が state を上書きしない', async () => {
+      // abort により先行チェーンの refreshData は setState をスキップするため、
+      // 先行の古い dailyLogs が後発チェーンの新しい dailyLogs を上書きしないことを確認する。
+      const listeners: ((state: string) => void)[] = [];
+      jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, listener) => {
+        listeners.push(listener as (state: string) => void);
+        return { remove: jest.fn() };
+      });
+
+      const staleLogs = [{ localDate: '2026-01-01', distanceMeters: 100 }];
+      const freshLogs = [{ localDate: '2026-01-02', distanceMeters: 200 }];
+
+      // 先行チェーンの getDailyLogs を意図的に遅延させ、後発チェーン開始後に古い値で解決させる
+      let resolveFirst: (value: unknown[]) => void = () => undefined;
+      (getDailyLogs as jest.Mock)
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              resolveFirst = resolve;
+            }),
+        )
+        .mockResolvedValue(freshLogs);
+
+      let result: UseLocationRecordingSyncResult | undefined;
+      act(() => {
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
+      });
+
+      // 先行チェーン開始（getDailyLogs は pending のまま止まる）
+      act(() => {
+        listeners.forEach((l) => l('active'));
+      });
+
+      // 後発チェーン開始 → 先行チェーンの signal が abort される
+      await act(async () => {
+        listeners.forEach((l) => l('active'));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      // 後発チェーンの新しい結果が state に反映されている
+      expect(result!.dailyLogs).toEqual(freshLogs);
+
+      // 先行チェーンを「古い値」で遅延解決しても、abort 済みのため state を上書きしない
+      await act(async () => {
+        resolveFirst(staleLogs);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      expect(result!.dailyLogs).toEqual(freshLogs);
+    });
+
+    it('AppState復帰の同期チェーン実行中に interval が発火してもスキップされ、同期が最終的に完了する', async () => {
+      // interval が同期チェーンを abort すると isLocationRecordingModeSynchronized が
+      // false のまま取り残され、前景限定記録の保存が再開しないため、
+      // 同期チェーン実行中の interval 発火はスキップされることを確認する。
+      const listeners: ((state: string) => void)[] = [];
+      jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, listener) => {
+        listeners.push(listener as (state: string) => void);
+        return { remove: jest.fn() };
+      });
+
+      // setInterval を乗っ取り、コールバックを手動発火できるようにする
+      const intervalCallbacks: (() => void)[] = [];
+      jest.spyOn(global, 'setInterval').mockImplementation(((callback: () => void) => {
+        intervalCallbacks.push(callback);
+        return 0 as unknown as NodeJS.Timeout;
+      }) as typeof setInterval);
+      jest.spyOn(global, 'clearInterval').mockImplementation(() => undefined);
+
+      // 同期チェーンの getDailyLogs を pending にして「同期チェーン実行中」の状態を作る
+      let resolveSync: (value: unknown[]) => void = () => undefined;
+      (getDailyLogs as jest.Mock)
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              resolveSync = resolve;
+            }),
+        )
+        .mockResolvedValue([]);
+
+      let result: UseLocationRecordingSyncResult | undefined;
+      act(() => {
+        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
+      });
+
+      // 同期チェーン開始（getDailyLogs pending で実行中のまま）
+      act(() => {
+        listeners.forEach((l) => l('active'));
+      });
+      expect(getDailyLogs).toHaveBeenCalledTimes(1);
+
+      // 同期チェーン実行中に interval を発火 → スキップされ refreshData は呼ばれない
+      act(() => {
+        intervalCallbacks.forEach((callback) => callback());
+      });
+      expect(getDailyLogs).toHaveBeenCalledTimes(1);
+
+      // 同期チェーンを解決すると、中断されずに最後まで完了して同期フラグが true へ戻る
+      await act(async () => {
+        resolveSync([]);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(result!.isLocationRecordingModeSynchronized).toBe(true);
+
+      // 同期完了後の interval 発火は通常どおり実行される
+      await act(async () => {
+        intervalCallbacks.forEach((callback) => callback());
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect((getDailyLogs as jest.Mock).mock.calls.length).toBeGreaterThan(1);
+    });
   });
 
   describe('refreshDataAndEvaluateAchievementsIfDialogIdle', () => {

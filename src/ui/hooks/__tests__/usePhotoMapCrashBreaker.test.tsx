@@ -159,5 +159,52 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
 
       expect(result!.showPhotosOnMap).toBe(false);
     });
+
+    it('有効化中に setSetting が reject した場合、showPhotosOnMap が false に戻り設定キーがクリアされる', async () => {
+      const { requestPermissionsAsync } = require('expo-media-library');
+      const { setSetting } = require('@/features/settings/settingsRepository');
+      (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+      // pending フラグ保存(1回目)は reject させて enableShowPhotosOnMapWithCrashBreaker を失敗させる
+      (setSetting as jest.Mock).mockRejectedValueOnce(new Error('SQLite error'));
+
+      let result: UsePhotoMapCrashBreakerResult | undefined;
+
+      act(() => {
+        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+      });
+
+      await act(async () => {
+        await result!.updateShowPhotosOnMap(true);
+      });
+
+      // setSetting が reject しても showPhotosOnMap は false に戻る
+      expect(result!.showPhotosOnMap).toBe(false);
+      // エラー後の後始末として setSetting が呼ばれる（巻き戻し処理）
+      // 1回目: setSetting(PENDING, true) -> reject (enableCrashBreaker の最初の呼び出し)
+      // 2回目以降: catch ブロック内で setSetting(MAP, false) と setSetting(PENDING, false) を呼ぶ
+      expect(setSetting).toHaveBeenCalledTimes(3);
+    });
+
+    it('有効化に失敗してOFFへ巻き戻したとき、理由をAlertでユーザーへ通知する', async () => {
+      const { requestPermissionsAsync } = require('expo-media-library');
+      const { setSetting } = require('@/features/settings/settingsRepository');
+      const { Alert } = require('react-native');
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+      (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+      (setSetting as jest.Mock).mockRejectedValueOnce(new Error('SQLite error'));
+
+      let result: UsePhotoMapCrashBreakerResult | undefined;
+
+      act(() => {
+        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+      });
+
+      await act(async () => {
+        await result!.updateShowPhotosOnMap(true);
+      });
+
+      // サイレントにOFFへ戻すのではなく、巻き戻した理由をユーザーへ通知する
+      expect(alertSpy).toHaveBeenCalledWith('写真表示を有効化できませんでした', '設定の保存に失敗したため、写真表示をOFFに戻しました。');
+    });
   });
 });

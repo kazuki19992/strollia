@@ -100,6 +100,12 @@ export function usePremiumAccess(): UsePremiumAccessResult {
   const [isPresentingPremiumCustomerCenter, setIsPresentingPremiumCustomerCenter] = useState(false);
   const isPresentingPremiumCustomerCenterRef = useRef(false);
   const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
+  /**
+   * 購入復元の連打防止用 ref。
+   * state（isRestoringPremiumPurchases）ではなく ref を使うことで、
+   * 再レンダー前の同一ティック内での二重タップをガードできる。
+   */
+  const isRestoringPremiumPurchasesRef = useRef(false);
   const [isPremiumPaywallVisible, setIsPremiumPaywallVisible] = useState(false);
   const isPremiumPaywallVisibleRef = useRef(false);
   /**
@@ -233,10 +239,11 @@ export function usePremiumAccess(): UsePremiumAccessResult {
 
   /** App Store または Google Play の購入を RevenueCat 経由で復元する。 */
   const restorePurchasesFromSettings = useCallback(async (): Promise<void> => {
-    if (isRestoringPremiumPurchases) {
+    if (isRestoringPremiumPurchasesRef.current) {
       return;
     }
 
+    isRestoringPremiumPurchasesRef.current = true;
     triggerSelectionHaptic();
     setIsRestoringPremiumPurchases(true);
 
@@ -251,9 +258,10 @@ export function usePremiumAccess(): UsePremiumAccessResult {
         closePremiumPaywall();
       }
     } finally {
+      isRestoringPremiumPurchasesRef.current = false;
       setIsRestoringPremiumPurchases(false);
     }
-  }, [closePremiumPaywall, isRestoringPremiumPurchases]);
+  }, [closePremiumPaywall]);
 
   /** RevenueCat Customer Center を表示する。 */
   const openPremiumCustomerCenter = useCallback(async (): Promise<void> => {

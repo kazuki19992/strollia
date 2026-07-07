@@ -29,6 +29,20 @@ test(export): GPX生成のテストを追加
 - 押下可能な要素には `accessibilityLabel` + `accessibilityRole` を必ず付ける
 - UIコンポーネント内でDB操作・端末APIを直接呼ばない。データと操作は props で受け取る
 
+## 新画面の追加手順
+
+expo-router 移行後の新画面追加は以下の流れで行う。
+
+1. **ルートファイルを追加**: `src/app/` 配下に画面パスに対応するファイルを作る(例: `/foo` なら `src/app/foo.tsx`)
+   - ルートファイルは薄いラッパー。`useAppState()` で状態を取得し、画面コンポーネントへ props を渡すだけにする
+   - スタック内の子画面なら `_layout.tsx` に `Stack.Screen` を追加する必要はない(expo-router が自動検出)
+2. **画面コンポーネントを作成**: `src/ui/components/XxxScreen.tsx` に UI 実体を置く
+   - props はデータとコールバックのみ。DB・端末APIを直接呼ばない
+3. **状態・操作を AppStateProvider へ追加**: 新画面に必要な状態やコールバックを `AppStateContextValue` に追加し、`AppStateProvider` 内で実装する
+4. **ナビゲーション接続**: `src/app/_layout.tsx` の `useRouterNavigator` に `router.push('/foo')` を追加し、AppStateProvider の対応メソッドへ繋ぐ
+5. **Sentry 画面名マッパーを更新**: `src/ui/pathnameToScreenMode.ts` の `pathnameToScreenMode` / `pathnameToSettingsSentryScreenName` / `pathnameToDailyLogsSentryScreenName` に新パスを追加する
+6. **テストを追加**: `renderRouter('src/app')` でルートごとテストする(`.ai/context/testing.md` 参照)
+
 ## features/ 配下の構成
 
 - 機能ごとに `src/features/<feature>/` を作り、DB操作は `<feature>Repository.ts`(例: `settingsRepository.ts`)、外部サービス連携は `<service>Access.ts` / `<service>Client.ts`(例: `revenueCatAccess.ts`)と命名する

@@ -46,47 +46,82 @@ describe('設定リポジトリ settingsRepository', () => {
 
 ## UIコンポーネントテストの実例
 
-`react-test-renderer` + Expoモジュールのモック(実例: `src/ui/__tests__/AppMapReturn.test.tsx`):
+`expo-router/testing-library` の `renderRouter` + `screen.UNSAFE_getByProps` を使う(実例: `src/ui/__tests__/AppMapReturn.test.tsx`)。
 
 ```typescript
-import ReactTestRenderer, { act } from 'react-test-renderer';
-import { View } from 'react-native';
+import { act, cleanup, renderRouter, screen } from 'expo-router/testing-library';
+import { AppState } from 'react-native';
+import { getBooleanSetting, setSetting } from '@/features/settings/settingsRepository';
 
-jest.mock('expo-haptics', () => ({
-  impactAsync: jest.fn().mockResolvedValue(undefined),
-}));
-jest.mock('react-native-maps', () => ({
-  __esModule: true,
-  default: View,
-  Marker: View,
+jest.mock('@/config/sentry', () => ({
+  wrapWithSentry: (component: unknown) => component,
+  updateSentryScreenContext: jest.fn(),
+  updateSentrySubscriptionContext: jest.fn(),
+  updateSentryUserContext: jest.fn(),
 }));
 
-/** マイクロタスクを流し切って非同期stateの反映を待つ。 */
+jest.mock('react-native-maps', () => {
+  const { View } = require('react-native');
+  return { __esModule: true, default: View, Marker: View, Polygon: View, Polyline: View };
+});
+
+jest.mock('@/features/settings/settingsRepository', () => ({
+  getBooleanSetting: jest.fn().mockResolvedValue(false),
+  setSetting: jest.fn().mockResolvedValue(undefined),
+  setSettings: jest.fn().mockResolvedValue(undefined),
+}));
+
+// 他の依存モジュールも同様にモックする(expo-haptics, expo-location 等)
+
+/** マイクロタスクを繰り返し流し切って非同期 state の反映を待つ。 */
 const flushPromises = async () => {
   await act(async () => {
-    await Promise.resolve();
+    for (let index = 0; index < 5; index += 1) {
+      await Promise.resolve();
+    }
   });
 };
 
 describe('App 地図復帰時の表示範囲復元', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Object.defineProperty(AppState, 'currentState', { configurable: true, value: 'active', writable: true });
+  });
+
+  afterEach(() => {
+    cleanup();
+    jest.restoreAllMocks();
+  });
+
   test('別画面から地図へ戻ると現在地中心へ復元する', async () => {
-    let renderer: ReactTestRenderer.ReactTestRenderer;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     // accessibilityLabel でUI要素を特定する
-    const button = renderer!.root.findByProps({ accessibilityLabel: '現在地へ移動' });
+    await act(async () => {
+      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地へ戻る' }).props.onPress();
+    });
+    await act(async () => {
+      screen.UNSAFE_getByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
+    });
+    await act(async () => {
+      screen.UNSAFE_getByProps({ accessibilityLabel: '地図へ' }).props.onPress();
+    });
+    await flushPromises();
+
+    expect(mockAnimateToRegion).toHaveBeenCalled();
   });
 });
 ```
 
 ポイント:
 
+- `renderRouter('src/app')` でルート定義ごとレンダリングする。個別の画面コンポーネントではなくルーター全体をテストする
 - レンダリングと状態更新は必ず `act()` で包む
-- UI要素の特定は `findByProps({ accessibilityLabel: '...' })` を優先する(コンポーネントに accessibilityLabel を付ける規約とセット)
-- モックが必要な代表モジュール: `expo-haptics`, `expo-location`, `expo-notifications`, `react-native-maps`, `react-native-purchases`, DBリポジトリ関数
+- UI要素の特定は `screen.UNSAFE_getByProps({ accessibilityLabel: '...' })` を使う(コンポーネントに accessibilityLabel を付ける規約とセット)
+- テスト終了後は `cleanup()` と `jest.restoreAllMocks()` を `afterEach` で呼ぶ
+- `wrapWithSentry` は `(component) => component` でラップを外すモックが必要(expo-router のルートコンポーネントに適用されているため)
+- モックが必要な代表モジュール: `@/config/sentry`(wrapWithSentry), `expo-haptics`, `expo-location`, `expo-notifications`, `react-native-maps`, `react-native-purchases`, DBリポジトリ関数
 
 ## テストを書けない場合
 

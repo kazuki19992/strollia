@@ -8,20 +8,20 @@ Strollia は Expo + React Native + TypeScript で実装する。
 
 ## 2. 技術スタック
 
-| 領域                   | 候補                             | 用途                                                     |
-| ---------------------- | -------------------------------- | -------------------------------------------------------- |
-| アプリ基盤             | Expo                             | React Nativeアプリの開発・ビルド                         |
-| 言語                   | TypeScript                       | 型安全な実装                                             |
-| 位置情報               | `expo-location`                  | GPS取得、フォアグラウンド/バックグラウンド権限リクエスト |
-| ローカルDB             | `expo-sqlite`                    | GPSログ保存                                              |
-| マップ                 | `react-native-maps`              | GPSログの地図表示                                        |
-| ファイル               | `expo-file-system`               | GPXファイル作成                                          |
-| 共有                   | `expo-sharing`                   | GPXファイル共有                                          |
-| バックグラウンドタスク | `expo-task-manager`              | バックグラウンドGPS記録                                  |
-| 画面ON維持             | `expo-keep-awake`                | フォアグラウンド時の画面ロック抑止                       |
-| 写真                   | `expo-media-library`             | 将来の写真ジオタグ表示                                   |
-| 子ページ遷移           | `@react-navigation/native-stack` | iOS風の横スライド遷移と戻りジェスチャ                    |
-| OSSライセンス生成      | `license-checker-rseidelsohn`    | npm依存のライセンス一覧生成                              |
+| 領域                   | 候補                          | 用途                                                                            |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------- |
+| アプリ基盤             | Expo                          | React Nativeアプリの開発・ビルド                                                |
+| 言語                   | TypeScript                    | 型安全な実装                                                                    |
+| 位置情報               | `expo-location`               | GPS取得、フォアグラウンド/バックグラウンド権限リクエスト                        |
+| ローカルDB             | `expo-sqlite`                 | GPSログ保存                                                                     |
+| マップ                 | `react-native-maps`           | GPSログの地図表示                                                               |
+| ファイル               | `expo-file-system`            | GPXファイル作成                                                                 |
+| 共有                   | `expo-sharing`                | GPXファイル共有                                                                 |
+| バックグラウンドタスク | `expo-task-manager`           | バックグラウンドGPS記録                                                         |
+| 画面ON維持             | `expo-keep-awake`             | フォアグラウンド時の画面ロック抑止                                              |
+| 写真                   | `expo-media-library`          | 将来の写真ジオタグ表示                                                          |
+| ナビゲーション         | `expo-router`                 | ファイルベースルーティング。子スタックで横スライド遷移とiOSスワイプバックを使う |
+| OSSライセンス生成      | `license-checker-rseidelsohn` | npm依存のライセンス一覧生成                                                     |
 
 ## 3. ディレクトリ構成案
 

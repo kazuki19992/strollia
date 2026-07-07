@@ -107,7 +107,7 @@ visited cellの実際の反映は以下で行う。
 
 - `src/features/map/gridOverlay.ts`
 - `resolveVisitedGridCellColor`
-- `src/app/App.tsx` の Grid Overlay生成
+- `src/ui/state/AppStateProvider.tsx` の Grid Overlay生成(`useVisitedGridOverlay` 経由)
 
 ### 7.2 現在地アイコンを変更する場所
 
@@ -120,16 +120,16 @@ visited cellの実際の反映は以下で行う。
 
 独自Markerの描画は以下で行う。
 
-- `src/app/App.tsx`
+- `src/ui/components/MapScreen.tsx`
 - `userLocationIcon.customIconId` を使っている `Marker`
-- `src/app/appStyles.ts` の `customUserLocationMarker`
+- `src/ui/appStyles.ts` の `customUserLocationMarker`
 
 現在は `@expo/vector-icons` の `MaterialCommunityIcons` を使っている。画像アセットに差し替える場合は、例えば以下のように進める。
 
 1. `assets/user-location-icons/` を作成する
 2. `walker.png` や `compass.png` などの画像を配置する
 3. `USER_LOCATION_ICON_OPTIONS` に画像参照用の情報を追加する
-4. `App.tsx` の独自現在地 `Marker` 内を `Image` 表示へ差し替える
+4. `MapScreen.tsx` の独自現在地 `Marker` 内を `Image` 表示へ差し替える
 5. 対応するテストと仕様を更新する
 
 無料状態ではOS標準の現在地アイコンを使う。Plus無効時に有料アイコンが保存されていても、描画時にOS標準表示へフォールバックする。
@@ -143,7 +143,7 @@ visited cellの実際の反映は以下で行う。
 - `userLocationIcon`
 - `appThemePreference`
 
-保存処理と読み込み処理は `src/app/App.tsx` にある。文字列設定の読み込みは `src/features/settings/settingsRepository.ts` の `getStringSetting` を使う。
+保存処理と読み込み処理は `src/ui/state/AppStateProvider.tsx`(`useUserLocationIconSetting` フック経由)にある。文字列設定の読み込みは `src/features/settings/settingsRepository.ts` の `getStringSetting` を使う。
 
 ### 7.4 RevenueCat SDK連携
 

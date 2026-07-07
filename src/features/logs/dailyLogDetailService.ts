@@ -5,7 +5,7 @@ import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 import { getVisitedCellsByIds } from '@/features/location/visitedCellRepository';
 import { createDailyDetailReport, DailyDetailReport } from '@/features/reports/dailyReport';
 import type { LocationPoint } from '@/types/gps';
-import { formatRouteEndpoints } from '@/app/dailyLogDisplay';
+import { formatRouteEndpoints } from '@/ui/dailyLogDisplay';
 import { getLocationPointsByDate } from './logRepository';
 
 /** 日別詳細画面で必要なデータの集約結果。 */

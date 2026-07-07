@@ -22,6 +22,8 @@ export function ShareBranding({ style }: ShareBrandingProps) {
   );
 }
 
+// 共有画像用ブランディングは画像内で常に同じ見た目にするためテーマ非依存の固定色を使う意図的な自己完結スタイル。
+// eslint-disable-next-line no-restricted-syntax -- テーマ非依存の固定色（rgba(0,0,0,0.45) / #ffffff）を使うため appStyles への移動対象外
 const styles = StyleSheet.create({
   branding: {
     alignItems: 'center',

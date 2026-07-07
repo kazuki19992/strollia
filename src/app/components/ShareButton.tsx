@@ -48,6 +48,9 @@ export function ShareButton({
   );
 }
 
+// AppStyles を持たないレポート系(reportStyles)のコンテキストからも利用される汎用部品のため、
+// ベースレイアウトは自己完結させる(テーマ非依存の固定値のみ)。色は props で受け取る。
+// eslint-disable-next-line no-restricted-syntax -- 複数のスタイル文脈から使う共通部品の意図的な自己完結スタイル
 const shareButtonStyles = StyleSheet.create({
   icon: {
     alignItems: 'center',

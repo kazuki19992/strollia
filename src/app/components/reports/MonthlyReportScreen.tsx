@@ -1,9 +1,9 @@
 import { Feather } from '@expo/vector-icons';
-import * as Sharing from 'expo-sharing';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
-import { captureRef } from 'react-native-view-shot';
+
+import { shareViewAsPng } from '@/features/export/capturedViewShare';
 
 import { AchievementListItem } from '@/features/achievements/achievementRepository';
 import { MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
@@ -82,11 +82,6 @@ function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: Mont
   };
 }
 
-/** React Nativeの描画反映を1フレーム待つ。 */
-function waitForNextFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
-}
-
 /** スクロール型の月次レポート画面。 */
 export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAreaReport, theme, onBackToMap }: MonthlyReportScreenProps) {
   const { height } = useWindowDimensions();
@@ -118,30 +113,13 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
 
     setIsSharingReport(true);
 
-    try {
-      await waitForNextFrame();
-
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert('共有できません', 'この環境では共有シートを利用できません。');
-        return;
-      }
-
-      const uri = await captureRef(reportCaptureRef.current, {
-        format: 'png',
-        quality: 1,
-        result: 'tmpfile',
-      });
-
-      await Sharing.shareAsync(uri, {
-        dialogTitle: `すとろりあ 月次レポート ${report.label}`,
-        mimeType: 'image/png',
-        UTI: 'public.png',
-      });
-    } catch (error: unknown) {
-      Alert.alert('共有失敗', error instanceof Error ? error.message : 'レポート画像を共有できませんでした。');
-    } finally {
-      setIsSharingReport(false);
-    }
+    await shareViewAsPng(reportCaptureRef, {
+      dialogTitle: `すとろりあ 月次レポート ${report.label}`,
+      errorFallbackMessage: 'レポート画像を共有できませんでした。',
+      // キャプチャ前にReact Nativeの描画反映を1フレーム待つ。
+      onBeforeCapture: () => new Promise((resolve) => requestAnimationFrame(() => resolve())),
+      onFinally: () => setIsSharingReport(false),
+    });
   }
 
   return (

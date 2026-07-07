@@ -37,10 +37,7 @@ export default function SettingsRoute(): React.ReactElement {
       isPresentingPremiumCustomerCenter={s.isPresentingPremiumCustomerCenter}
       isRestoringPremiumPurchases={s.isRestoringPremiumPurchases}
       selectedUserLocationIconId={s.selectedUserLocationIconId}
-      onBackToMap={() => {
-        s.openMap();
-        router.back();
-      }}
+      onBackToMap={() => s.openMap()}
       onStartRecording={() => s.startRecording('manual')}
       onRequestLocationPermission={s.requestLocationPermission}
       onOpenLocationSettings={s.openLocationSettings}

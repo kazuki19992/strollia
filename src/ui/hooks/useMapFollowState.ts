@@ -136,6 +136,12 @@ export function useMapFollowState({
    * 地図へ戻ったときに MapView が再マウントされて広域 initialRegion へ戻ることを防ぐ。
    */
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
+  /**
+   * prepareMapRegionRestore を呼ぶたびにインクリメントするカウンター。
+   * expo-router 環境では screenMode が常に 'map' のままのため、このカウンターを
+   * effect の依存に加えることで地図復帰センタリングをトリガーする。
+   */
+  const [mapRestoreTrigger, setMapRestoreTrigger] = useState(0);
 
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
@@ -200,6 +206,9 @@ export function useMapFollowState({
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
+   *
+   * screenMode 変化（旧 AppCompatShell 経由）と mapRestoreTrigger 増分（expo-router 経由）
+   * の両方をトリガーとして受け付ける。
    */
   useEffect(() => {
     if (screenMode !== 'map' || !shouldRestoreMapRegionOnOpenRef.current) {
@@ -214,7 +223,7 @@ export function useMapFollowState({
 
     centerOnCoordinate(userCoordinate, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
-  }, [screenMode, userCoordinate]);
+  }, [screenMode, userCoordinate, mapRestoreTrigger]);
 
   /**
    * 現在地更新を受け取り、追従中であれば地図中心も更新する。
@@ -345,6 +354,9 @@ export function useMapFollowState({
       shouldRestoreMapRegionOnOpenRef.current = true;
       setVisibleRegion(createUserCenteredRegion(userCoordinate));
       incrementVisitedGridRefreshVersionRef.current();
+      // expo-router 環境では screenMode が 'map' のままのため、カウンターを
+      // インクリメントして restore effect を強制的にトリガーする。
+      setMapRestoreTrigger((prev) => prev + 1);
     }
   }
 

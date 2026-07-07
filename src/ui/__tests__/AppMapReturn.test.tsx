@@ -1,4 +1,4 @@
-import App from '@/ui/App';
+import { act, cleanup, renderRouter, screen } from 'expo-router/testing-library';
 import { createUserCenteredRegion } from '@/ui/mapRegion';
 import { Alert, AppState, Pressable, Text } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -62,6 +62,7 @@ jest.mock('expo-status-bar', () => ({
 }));
 
 jest.mock('@/config/sentry', () => ({
+  wrapWithSentry: (component: unknown) => component,
   updateSentryScreenContext: jest.fn(),
   updateSentrySubscriptionContext: jest.fn(),
   updateSentryUserContext: jest.fn(),
@@ -304,6 +305,12 @@ jest.mock('@/ui/components/LicenseScreen', () => ({
   },
 }));
 
+jest.mock('@/ui/generated/ossLicenses', () => ({
+  OSS_LICENSES: [{ id: 'react@19.1.0', name: 'react', license: 'MIT', licenseText: '', version: '19.1.0', homepage: '' }],
+}));
+jest.mock('@/ui/components/TopToast', () => ({ TopToast: () => null }));
+jest.mock('@/ui/components/AchievementDialog', () => ({ AchievementDialog: () => null }));
+
 jest.mock('@/ui/hooks/useAchievementDialogEffects', () => ({
   useAchievementDialogEffects: jest.fn(),
 }));
@@ -496,8 +503,6 @@ jest.mock('@/features/location/grid/gridCell', () => ({
   isGridBoundsContained: jest.fn(() => false),
 }));
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 const flushPromises = async () => {
   await act(async () => {
@@ -508,8 +513,6 @@ const flushPromises = async () => {
 };
 
 describe('App 地図復帰時の表示範囲復元', () => {
-  let renderer: any;
-
   beforeEach(() => {
     jest.clearAllMocks();
     Object.defineProperty(AppState, 'currentState', { configurable: true, value: 'active', writable: true });
@@ -555,12 +558,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   afterEach(() => {
-    if (renderer) {
-      act(() => {
-        renderer.unmount();
-      });
-      renderer = null;
-    }
+    cleanup();
     jest.useRealTimers();
     jest.restoreAllMocks();
   });
@@ -568,25 +566,23 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('別画面から地図へ戻ると現在地中心へ復元しvisited grid取得範囲も同期する', async () => {
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '現在地へ戻る' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地へ戻る' }).props.onPress();
     });
 
     const callsBeforeReturn = mockAnimateToRegion.mock.calls.length;
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '地図へ' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '地図へ' }).props.onPress();
     });
     await flushPromises();
 
@@ -605,21 +601,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (isGridBoundsContained as jest.Mock).mockReturnValue(true);
 
     try {
-      await act(async () => {
-        renderer = ReactTestRenderer.create(<App />);
-      });
+      renderRouter('src/app');
       await flushPromises();
 
       // 同じ範囲へ一度移動して直近取得状態を確定させる。
       await act(async () => {
-        renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+        screen.UNSAFE_getByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
       });
       await flushPromises();
       const callsAfterFirst = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
       // 同じ範囲へ再移動 → 取得済み範囲内なので再取得しない（呼び出し回数が増えない）。
       await act(async () => {
-        renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+        screen.UNSAFE_getByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
       });
       await flushPromises();
 
@@ -650,12 +644,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       });
     (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(false);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
-    expect(renderer).toBeTruthy();
+    expect(screen.toJSON()).toBeTruthy();
     expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -669,12 +661,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('すでに記録中なら起動後に記録開始を重複実行しない', async () => {
     (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
-    expect(renderer).toBeTruthy();
+    expect(screen.toJSON()).toBeTruthy();
     expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
   });
 
@@ -687,9 +677,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(stopBackgroundLocationRecording).toHaveBeenCalledTimes(1);
@@ -698,9 +686,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('常時許可では権限取得後に背景タスク設定を更新し、OS標準アイコンの前景監視を開始しない', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect((getLocationPermissionState as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
@@ -717,9 +703,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(updateBackgroundLocationTaskOptionsIfNeeded).toHaveBeenCalledTimes(1);
@@ -741,9 +725,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       canAskBackground: false,
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
 
@@ -773,27 +755,21 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (stopBackgroundLocationRecording as jest.Mock).mockRejectedValueOnce(new Error('stop failed'));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
   });
 
   test('起動後にRevenueCat由来のPlus状態を読み込む', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(getPremiumAccessState).toHaveBeenCalledTimes(1);
   });
 
   test('起動後にRevenueCat Offeringを読み込む', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
@@ -802,26 +778,22 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('起動時にRevenueCat App User IDを取得し設定画面へ渡す', async () => {
     (getRevenueCatAppUserId as jest.Mock).mockResolvedValueOnce('$RCAnonymousID:abc123');
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(getRevenueCatAppUserId).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     expect(mockLatestSettingsScreenProps.revenueCatAppUserId).toBe('$RCAnonymousID:abc123');
   });
 
   test('初回チュートリアル未完了の場合は初回チュートリアルを表示する', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
-    expect(renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
   });
 
   test('前回の写真表示有効化が未完了なら起動時に写真表示を自動OFFへ戻す', async () => {
@@ -839,9 +811,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(false);
@@ -861,9 +831,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(false);
@@ -906,9 +874,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve();
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
@@ -933,28 +899,24 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('初回チュートリアル完了時に表示済み設定を保存する', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
     });
 
     expect(setSetting).toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
   });
 
   test('初回チュートリアル未完了の場合は通知権限要求を完了後まで遅らせる', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(requestAchievementNotificationPermissionOnFirstLaunch).not.toHaveBeenCalled();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
     });
     await flushPromises();
 
@@ -970,12 +932,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
-    expect(renderer.root.findAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
+    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
   });
 
   test('初回チュートリアル完了済みの場合は起動時に通知権限要求を実行する', async () => {
@@ -987,9 +947,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(requestAchievementNotificationPermissionOnFirstLaunch).toHaveBeenCalledTimes(1);
@@ -1004,21 +962,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
-    expect(renderer.root.findAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
+    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
     });
 
-    expect(renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
     expect(mockLatestFirstLaunchTutorialProps.completionButtonLabel).toBe('閉じる');
   });
 
@@ -1031,21 +987,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     jest.clearAllMocks();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
     });
     await flushPromises();
 
@@ -1054,29 +1008,24 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('起動時にRevenueCat CustomerInfo更新を購読しアンマウント時に解除する', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    const renderResult = renderRouter('src/app');
     await flushPromises();
 
     expect(subscribePremiumAccessStateUpdates).toHaveBeenCalledTimes(1);
 
     act(() => {
-      renderer.unmount();
+      renderResult.unmount();
     });
-    renderer = null;
 
     expect(mockPremiumUnsubscribe).toHaveBeenCalledTimes(1);
   });
 
   test('RevenueCat CustomerInfo更新でPlus状態を画面へ反映する', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(true);
 
@@ -1104,9 +1053,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: id === 'custom' && plus ? uri : null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///documents/strollia-custom-icons/saved.jpg');
@@ -1130,9 +1077,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: id === 'custom' && plus ? uri : null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///saved.jpg');
 
@@ -1153,9 +1098,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
@@ -1179,9 +1122,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     expect(mockLatestMapScreenProps).toBeNull();
 
@@ -1195,7 +1136,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
 
@@ -1215,9 +1156,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
@@ -1229,7 +1168,6 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   test('Plus初期取得待機中にアンマウントするとタイマーと残りの起動処理を中止する', async () => {
     jest.useFakeTimers();
-    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
     let resolvePremium!: (value: { isPlusActive: boolean; entitlementId: string }) => void;
     (getPremiumAccessState as jest.Mock).mockReturnValue(
       new Promise((resolve) => {
@@ -1237,18 +1175,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    // renderRouter が内部で jest.useFakeTimers() を呼び直すため、
+    // clearTimeoutSpy はその後に設定する必要がある。
+    const renderResult = renderRouter('src/app');
+    const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
     await flushPromises();
     expect(jest.getTimerCount()).toBeGreaterThan(0);
 
     act(() => {
-      renderer.unmount();
+      renderResult.unmount();
     });
-    renderer = null;
-    expect(clearTimeoutSpy).toHaveBeenCalled();
+    // アンマウント後の非同期AbortError伝播を待つ
     await flushPromises();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
 
     await act(async () => {
       resolvePremium({ isPlusActive: true, entitlementId: 'strollia_plus' });
@@ -1266,16 +1205,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    const renderResult = renderRouter('src/app');
     await flushPromises();
     expect(getDailyLogs).toHaveBeenCalled();
 
     act(() => {
-      renderer.unmount();
+      renderResult.unmount();
     });
-    renderer = null;
     jest.clearAllMocks();
     await act(async () => {
       resolveLogs([]);
@@ -1297,16 +1233,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    const renderResult = renderRouter('src/app');
     await flushPromises();
     expect(startBackgroundLocationRecording).toHaveBeenCalledTimes(1);
 
     act(() => {
-      renderer.unmount();
+      renderResult.unmount();
     });
-    renderer = null;
     jest.clearAllMocks();
     await act(async () => {
       resolveStart();
@@ -1331,17 +1264,14 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    const renderResult = renderRouter('src/app');
     await flushPromises();
     expect(getAchievementListItems).toHaveBeenCalled();
     expect(getPendingInAppAchievementNotifications).toHaveBeenCalled();
 
     act(() => {
-      renderer.unmount();
+      renderResult.unmount();
     });
-    renderer = null;
     jest.clearAllMocks();
     await act(async () => {
       resolveItems([]);
@@ -1377,9 +1307,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: id === 'custom' && plus ? uri : null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
@@ -1412,9 +1340,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
@@ -1446,9 +1372,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
@@ -1481,9 +1405,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     act(() => {
       mockPremiumCustomerInfoUpdate?.({ isPlusActive: true, entitlementId: 'strollia_plus' });
@@ -1513,9 +1435,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: uri,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     jest.clearAllMocks();
     await act(async () => {
@@ -1544,15 +1464,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: false, assets: [{ uri: 'file:///crop.jpg' }] });
     const alertSpy = jest.spyOn(Alert, 'alert');
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
     });
     await flushPromises();
 
@@ -1583,15 +1501,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (replaceCustomIconSelection as jest.Mock).mockRejectedValue(new Error('保存失敗'));
     const alertSpy = jest.spyOn(Alert, 'alert');
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
     });
     await flushPromises();
 
@@ -1605,15 +1521,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (replaceCustomIconSelection as jest.Mock).mockRejectedValue(new Error('保存失敗'));
     const alertSpy = jest.spyOn(Alert, 'alert');
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
     });
     await flushPromises();
 
@@ -1628,16 +1542,14 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
     act(() => {
-      renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
-      renderer.root.findByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
     });
 
     expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalledTimes(1);
@@ -1657,9 +1569,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       migrated: true,
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(setSetting).toHaveBeenCalledWith('customIconImageUri', 'managed:migrated.jpg');
@@ -1685,9 +1595,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: uri,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:migrated.jpg');
@@ -1712,9 +1620,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: uri,
     }));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///legacy.jpg');
@@ -1738,16 +1644,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (setSetting as jest.Mock).mockImplementation((key: string) => (key === 'customIconImageUri' ? migrationSave : Promise.resolve()));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    const renderResult = renderRouter('src/app');
     await flushPromises();
     expect(setSetting).toHaveBeenCalledWith('customIconImageUri', 'managed:migrated.jpg');
 
     act(() => {
-      renderer.unmount();
+      renderResult.unmount();
     });
-    renderer = null;
     jest.clearAllMocks();
     rejectMigration(new Error('DB失敗'));
     await flushPromises();
@@ -1767,12 +1670,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     expect(setSettings).toHaveBeenCalledWith([
@@ -1795,9 +1696,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(setSettings).toHaveBeenCalledWith([
@@ -1816,9 +1715,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(setSettings).toHaveBeenCalledWith([
@@ -1835,9 +1732,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (resolveCustomIconReference as jest.Mock).mockRejectedValue(new Error('一時エラー'));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     expect(setSettings).not.toHaveBeenCalled();
@@ -1853,12 +1748,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
     (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
@@ -1876,12 +1769,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
@@ -1891,35 +1782,33 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'OSSライセンス' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'OSSライセンス' }).props.onPress();
     });
 
-    expect(renderer.root.findByProps({ accessibilityLabel: 'OSSライセンス' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: 'OSSライセンス' })).toBeTruthy();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'react のライセンス詳細を開く' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'react のライセンス詳細を開く' }).props.onPress();
     });
 
-    expect(renderer.root.findByProps({ accessibilityLabel: 'react のライセンス詳細を開く' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: 'react のライセンス詳細を開く' })).toBeTruthy();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'ライセンス一覧へ戻る' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: 'ライセンス一覧へ戻る' }).props.onPress();
     });
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定画面へ戻る' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定画面へ戻る' }).props.onPress();
     });
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
@@ -1938,25 +1827,23 @@ describe('App 地図復帰時の表示範囲復元', () => {
       },
     ]);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '日別詳細を開く' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細を開く' }).props.onPress();
     });
 
-    expect(renderer.root.findByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' })).toBeTruthy();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' }).props.onPress();
     });
 
-    expect(renderer.root.findByProps({ accessibilityLabel: '日別詳細を開く' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細を開く' })).toBeTruthy();
   });
 
   test('GPXインポート押下直後に実績反映範囲の注意を表示してからファイル選択を開く', async () => {
@@ -1969,13 +1856,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return null;
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     await act(async () => {
@@ -2009,16 +1894,14 @@ describe('App 地図復帰時の表示範囲復元', () => {
     );
 
     // 退場アニメーション中は中身が残るため、表示状態は Dialog の visible プロップで判定する。
-    const isImportDialogVisible = () => renderer.root.findByType(GpxImportProgressDialog).props.visible;
+    const isImportDialogVisible = () => screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible;
 
     try {
-      await act(async () => {
-        renderer = ReactTestRenderer.create(<App />);
-      });
+      renderRouter('src/app');
       await flushPromises();
 
       await act(async () => {
-        renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+        screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
       });
 
       // 取り込み開始前はダイアログは出ていない。
@@ -2052,13 +1935,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
       accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     await act(async () => {
@@ -2076,13 +1957,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
       accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     await act(async () => {
@@ -2098,13 +1977,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     await act(async () => {
@@ -2120,13 +1997,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('設定画面からRevenueCat Customer Centerを表示する', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     await act(async () => {
@@ -2144,13 +2019,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     await act(async () => {
@@ -2167,13 +2040,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (presentPremiumCustomerCenter as jest.Mock).mockResolvedValueOnce(false);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '設定' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
     });
 
     await act(async () => {
@@ -2195,63 +2066,57 @@ describe('App 地図復帰時の表示範囲復元', () => {
       accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
     });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
     });
     await flushPromises();
 
     // ペイウォールが開いていることを確認
-    expect(renderer.root.findByProps({ accessibilityLabel: '月払いで購入' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '月払いで購入' })).toBeTruthy();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '月払いで購入' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '月払いで購入' }).props.onPress();
     });
     await flushPromises();
 
     // 購入成功後にペイウォールが閉じる
-    expect(renderer.root.findAllByProps({ accessibilityLabel: '月払いで購入' })).toHaveLength(0);
+    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '月払いで購入' })).toHaveLength(0);
   });
 
   test('ペイウォールで復元が成功するとダイアログが閉じる', async () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: false, entitlementId: 'strollia_plus' });
     (restorePremiumPurchases as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
     });
     await flushPromises();
 
-    expect(renderer.root.findByProps({ accessibilityLabel: '購入を復元' })).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '購入を復元' })).toBeTruthy();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '購入を復元' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '購入を復元' }).props.onPress();
     });
     await flushPromises();
 
     // 復元成功後にペイウォールが閉じる
-    expect(renderer.root.findAllByProps({ accessibilityLabel: '購入を復元' })).toHaveLength(0);
+    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '購入を復元' })).toHaveLength(0);
   });
 
   test('月次レポートボタンは無料ユーザーにペイウォールを表示する', async () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: false, entitlementId: 'strollia_plus' });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
     });
     await flushPromises();
 
@@ -2283,13 +2148,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
       .mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' }) // 起動時
       .mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' }); // ボタン押下時
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
     });
     await flushPromises();
 
@@ -2300,13 +2163,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
     });
     await flushPromises();
 
@@ -2318,13 +2179,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
     });
     await flushPromises();
 
@@ -2335,38 +2194,34 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '地図をドラッグ' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '地図をドラッグ' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
   });
 
   test('不正な現在地座標ではMapKitへRegionを渡さない', async () => {
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '不正な現在地更新' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '不正な現在地更新' }).props.onPress();
     });
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();

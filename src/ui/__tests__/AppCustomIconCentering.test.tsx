@@ -1,4 +1,4 @@
-import App from '@/ui/App';
+import { act, cleanup, renderRouter, screen } from 'expo-router/testing-library';
 import { createUserCenteredRegion } from '@/ui/mapRegion';
 
 const mockAnimateToRegion = jest.fn();
@@ -25,7 +25,7 @@ jest.mock('expo-location', () => ({
 }));
 
 jest.mock('@expo/vector-icons', () => {
-  const { Text } = require('react-native');
+  const { Text } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
 
   return {
     AntDesign: Text,
@@ -37,7 +37,7 @@ jest.mock('@expo/vector-icons', () => {
 });
 
 jest.mock('react-native-maps', () => {
-  const { View } = require('react-native');
+  const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
 
   return {
     __esModule: true,
@@ -52,7 +52,7 @@ jest.mock('react-native-maps', () => {
 // センタリングが地図準備完了後にだけ起きることを検証できるようにする。
 jest.mock('@/ui/components/MapScreen', () => ({
   MapScreen: (props: any) => {
-    const { Pressable, Text } = require('react-native');
+    const { Pressable, Text } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
 
     mockLatestMapScreenProps = props;
     props.mapRef.current = { animateToRegion: mockAnimateToRegion };
@@ -80,15 +80,18 @@ jest.mock('@/ui/components/MapScreen', () => ({
 }));
 
 jest.mock('@/ui/components/DailyLogsScreen', () => ({ DailyLogsScreen: () => null }));
-jest.mock('@/ui/components/PremiumPaywallModal', () => ({ PremiumPaywallModal: () => null }));
 jest.mock('@/ui/components/DailyLogDetailScreen', () => ({ DailyLogDetailScreen: () => null }));
 jest.mock('@/ui/components/AchievementListScreen', () => ({ AchievementListScreen: () => null }));
 jest.mock('@/ui/components/AchievementUnlockModal', () => ({ AchievementUnlockModal: () => null }));
+jest.mock('@/ui/components/AchievementDialog', () => ({ AchievementDialog: () => null }));
 jest.mock('@/ui/components/FirstLaunchTutorialDialog', () => ({ FirstLaunchTutorialDialog: () => null }));
 jest.mock('@/ui/components/PhotoPreviewModals', () => ({ PhotoPreviewModals: () => null }));
 jest.mock('@/ui/components/reports/MonthlyReportScreen', () => ({ MonthlyReportScreen: () => null }));
 jest.mock('@/ui/components/SettingsScreen', () => ({ SettingsScreen: () => null }));
 jest.mock('@/ui/components/LicenseScreen', () => ({ LicenseScreen: () => null, LicenseDetailScreen: () => null }));
+jest.mock('@/ui/components/PremiumPaywallModal', () => ({ PremiumPaywallModal: () => null }));
+jest.mock('@/ui/components/TopToast', () => ({ TopToast: () => null }));
+jest.mock('@/ui/components/GpxImportProgressDialog', () => ({ GpxImportProgressDialog: () => null }));
 
 jest.mock('@/ui/hooks/useAchievementDialogEffects', () => ({ useAchievementDialogEffects: jest.fn() }));
 jest.mock('@/ui/hooks/useKeepScreenAwake', () => ({ useKeepScreenAwake: jest.fn() }));
@@ -110,6 +113,12 @@ jest.mock('@/theme/fonts', () => ({
 jest.mock('@/config/developmentFlags', () => ({
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
+}));
+jest.mock('@/config/sentry', () => ({
+  wrapWithSentry: (component: unknown) => component,
+  updateSentryScreenContext: jest.fn(),
+  updateSentrySubscriptionContext: jest.fn(),
+  updateSentryUserContext: jest.fn(),
 }));
 jest.mock('@/features/settings/settingsRepository', () => ({
   getBooleanSetting: jest.fn().mockResolvedValue(true),
@@ -201,9 +210,7 @@ jest.mock('@/features/location/grid/gridCell', () => ({
   isGridBoundsContained: jest.fn(() => false),
 }));
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
+/** マイクロタスクを流し切って非同期stateの反映を待つ。 */
 const flushPromises = async () => {
   await act(async () => {
     for (let index = 0; index < 5; index += 1) {
@@ -213,8 +220,6 @@ const flushPromises = async () => {
 };
 
 describe('App カスタムアイコン時の起動センタリング', () => {
-  let renderer: any;
-
   beforeEach(() => {
     jest.clearAllMocks();
     mockLatestMapScreenProps = null;
@@ -222,33 +227,26 @@ describe('App カスタムアイコン時の起動センタリング', () => {
   });
 
   afterEach(() => {
-    if (renderer) {
-      act(() => {
-        renderer.unmount();
-      });
-      renderer = null;
-    }
+    cleanup();
     jest.restoreAllMocks();
   });
 
   test('カスタムアイコン時は地図準備完了まで現在地センタリングを遅延し、準備完了後に現在地へ寄せる', async () => {
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
+    renderRouter('src/app');
     await flushPromises();
 
     // 地図準備完了前に現在地が届いてもセンタリングしない（animateToRegionはネイティブ未準備でドロップされるため）。
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
     });
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();
 
     // 地図準備完了後に現在地へセンタリングする。
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '地図準備完了' }).props.onPress();
+      screen.UNSAFE_getByProps({ accessibilityLabel: '地図準備完了' }).props.onPress();
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);

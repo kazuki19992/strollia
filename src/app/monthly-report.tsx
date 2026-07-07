@@ -1,5 +1,3 @@
-import { useRouter } from 'expo-router';
-
 import { MonthlyReportScreen } from '@/ui/components/reports/MonthlyReportScreen';
 import { useAppState } from '@/ui/state/AppStateProvider';
 
@@ -11,7 +9,6 @@ import { useAppState } from '@/ui/state/AppStateProvider';
  */
 export default function MonthlyReportRoute(): React.ReactElement {
   const s = useAppState();
-  const router = useRouter();
 
   return (
     <MonthlyReportScreen
@@ -20,10 +17,7 @@ export default function MonthlyReportRoute(): React.ReactElement {
       achievements={s.achievementItems}
       monthlyAreaReport={s.monthlyAreaReport}
       theme={s.theme}
-      onBackToMap={() => {
-        s.openMap();
-        router.back();
-      }}
+      onBackToMap={() => s.openMap()}
     />
   );
 }

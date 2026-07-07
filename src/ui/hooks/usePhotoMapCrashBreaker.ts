@@ -135,7 +135,14 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
           return;
         }
 
-        await enableShowPhotosOnMapWithCrashBreaker();
+        try {
+          await enableShowPhotosOnMapWithCrashBreaker();
+        } catch (error: unknown) {
+          console.warn('Failed to enable photo map overlay:', error);
+          setShowPhotosOnMap(false);
+          await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false).catch(() => undefined);
+          await setSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false).catch(() => undefined);
+        }
       } finally {
         isUpdatingPhotoSettingRef.current = false;
         setIsUpdatingPhotoSetting(false);

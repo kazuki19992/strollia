@@ -416,6 +416,36 @@ describe('現在地アイコン・カラープリセット設定フック useUse
       // 中断後は customIconImageUri が null のまま
       expect(result!.customIconImageUri).toBeNull();
     });
+
+    it('resolve中に abort された場合、保存設定が selectedUserLocationIconId / selectedAppColorPresetId に反映されない', async () => {
+      // 修正前は resolveCustomIconReference の await 前に setState を呼んでいたため、
+      // abort 後も保存設定が state に残っていた。修正後は resolve 完了後にのみ setState を呼ぶ。
+      let result: UseUserLocationIconSettingResult | undefined;
+      const controller = new AbortController();
+
+      act(() => {
+        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
+      });
+
+      // resolve 中（await 中）に abort する
+      (resolveCustomIconReference as jest.Mock).mockImplementation(async () => {
+        controller.abort();
+        return null;
+      });
+
+      await act(async () => {
+        await result!.applySavedIconSettings({
+          savedUserLocationIcon: 'walker',
+          savedAppColorPresetId: 'sakura',
+          savedCustomIconImageUri: '',
+          signal: controller.signal,
+        });
+      });
+
+      // abort されたため保存設定が state に反映されない（初期値のまま）
+      expect(result!.selectedUserLocationIconId).toBe('default');
+      expect(result!.selectedAppColorPresetId).toBe('matcha');
+    });
   });
 
   describe('pickCustomIcon', () => {

@@ -503,7 +503,6 @@ jest.mock('@/features/location/grid/gridCell', () => ({
   isGridBoundsContained: jest.fn(() => false),
 }));
 
-
 const flushPromises = async () => {
   await act(async () => {
     for (let index = 0; index < 5; index += 1) {

@@ -5,7 +5,7 @@ import { Alert, Animated, Linking, useColorScheme } from 'react-native';
 import type MapView from 'react-native-maps';
 import type { LatLng, MapType, Region, UserLocationChangeEvent } from 'react-native-maps';
 
-import { updateSentryScreenContext, updateSentrySubscriptionContext, updateSentryUserContext } from '@/config/sentry';
+import { updateSentrySubscriptionContext, updateSentryUserContext } from '@/config/sentry';
 import { syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
 import { shareGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
@@ -46,7 +46,6 @@ import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSettin
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
-import { resolveSentryScreenName } from '@/ui/sentryScreen';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
@@ -314,12 +313,6 @@ export type AppStateContextValue = {
   openSettings: () => void;
   /** 設定からチュートリアルを再表示する。 */
   openFirstLaunchTutorial: () => void;
-
-  // 旧 NavigationContainer 互換 Sentry 画面名更新
-  /** 日別記録スタックの Sentry 画面名を更新する。 */
-  setDailyLogsSentryScreenName: (name: string) => void;
-  /** 設定スタックの Sentry 画面名を更新する。 */
-  setSettingsSentryScreenName: (name: string) => void;
 };
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
@@ -432,8 +425,6 @@ export function AppStateProvider({ children, navigator }: AppStateProviderProps)
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
-  const [dailyLogsSentryScreenName, setDailyLogsSentryScreenName] = useState('DailyLogs:DailyLogList');
-  const [settingsSentryScreenName, setSettingsSentryScreenName] = useState('Settings:SettingsHome');
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
 
@@ -563,32 +554,6 @@ export function AppStateProvider({ children, navigator }: AppStateProviderProps)
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
   /**
-   * Sentryへ送る現在画面名を、前面表示を優先して解決する。
-   * 日別記録/設定の子画面は各NavigationContainerの状態を `DailyLogs:*` / `Settings:*` として使う。
-   */
-  const sentryScreenName = useMemo(
-    () =>
-      resolveSentryScreenName({
-        dailyLogsScreenName: dailyLogsSentryScreenName,
-        firstLaunchTutorialMode,
-        isFirstLaunchTutorialVisible,
-        isPhotoPreviewVisible: Boolean(selectedPhoto || selectedPhotoCluster),
-        isPremiumPaywallVisible,
-        screenMode,
-        settingsScreenName: settingsSentryScreenName,
-      }),
-    [
-      dailyLogsSentryScreenName,
-      firstLaunchTutorialMode,
-      isFirstLaunchTutorialVisible,
-      isPremiumPaywallVisible,
-      screenMode,
-      selectedPhoto,
-      selectedPhotoCluster,
-      settingsSentryScreenName,
-    ],
-  );
-
   /**
    * RevenueCat App User IDをSentryのユーザーコンテキストへ反映する。
    * クラッシュレポートをSupport IDで問い合わせられるようにするために必要。
@@ -604,14 +569,6 @@ export function AppStateProvider({ children, navigator }: AppStateProviderProps)
   useEffect(() => {
     updateSentrySubscriptionContext(premiumAccessState);
   }, [premiumAccessState]);
-
-  /**
-   * 現在画面名をSentryへ反映する。
-   * どの画面で例外が起きたかをStackTrace以外からも追えるようにするために必要。
-   */
-  useEffect(() => {
-    updateSentryScreenContext(sentryScreenName);
-  }, [sentryScreenName]);
 
   // useAchievementState の evaluateAchievementsIfDialogIdle / refreshAchievementState を
   // useLocationRecordingSync へ ref 経由で渡す。
@@ -1006,8 +963,6 @@ export function AppStateProvider({ children, navigator }: AppStateProviderProps)
     openMonthlyReport,
     openSettings,
     openFirstLaunchTutorial,
-    setDailyLogsSentryScreenName,
-    setSettingsSentryScreenName,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

@@ -1,9 +1,10 @@
 import RootLayout from '@/app/_layout';
 
-// expo-router の Stack と usePathname をスタブ化する
+// expo-router の Stack / usePathname / useRouter をスタブ化する
 jest.mock('expo-router', () => ({
   Stack: () => null,
   usePathname: () => '/',
+  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
 }));
 
 // wrapWithSentry はコンポーネントをそのまま返すスタブ

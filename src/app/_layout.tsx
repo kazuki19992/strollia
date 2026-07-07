@@ -1,5 +1,5 @@
-import { Stack, usePathname } from 'expo-router';
-import { useEffect } from 'react';
+import { Stack, usePathname, useRouter } from 'expo-router';
+import { useEffect, useMemo } from 'react';
 
 import { wrapWithSentry } from '@/config/sentry';
 import { updateSentryScreenContext } from '@/config/sentry';
@@ -142,6 +142,27 @@ function RootLayoutContent(): React.ReactElement {
 }
 
 /**
+ * expo-router ルートのナビゲーターを生成するフック。
+ *
+ * AppStateProvider の navigator prop に渡し、openMap/openDailyLogs 等の
+ * ナビゲーションコールバックを expo-router の router.push 経由にする。
+ */
+function useRouterNavigator() {
+  const router = useRouter();
+  return useMemo(
+    () => ({
+      openMap: () => router.back(),
+      openDailyLogs: () => router.push('/daily-logs'),
+      openAchievements: () => router.push('/achievements'),
+      openMonthlyReport: () => router.push('/monthly-report'),
+      openSettings: () => router.push('/settings'),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router は参照安定
+    [router],
+  );
+}
+
+/**
  * expo-router のルートレイアウト。
  *
  * - Sentry.wrap を適用する
@@ -149,8 +170,10 @@ function RootLayoutContent(): React.ReactElement {
  * - Stack ナビゲーターとグローバルモーダル群を配置する
  */
 function RootLayout(): React.ReactElement {
+  const navigator = useRouterNavigator();
+
   return (
-    <AppStateProvider>
+    <AppStateProvider navigator={navigator}>
       <RootLayoutContent />
     </AppStateProvider>
   );

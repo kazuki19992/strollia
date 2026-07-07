@@ -1,5 +1,4 @@
-import { useRouter } from 'expo-router';
-import { ActivityIndicator, SafeAreaView, Text, View, Animated } from 'react-native';
+import { ActivityIndicator, Animated, SafeAreaView, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { MapScreen } from '@/ui/components/MapScreen';
@@ -13,11 +12,10 @@ const SCREEN_FADE_MS = 180;
  * expo-router の地図画面ルート(/)。
  *
  * AppStateProvider から状態・操作を取得し MapScreen を描画する。
- * ルート間ナビゲーションは useRouter を経由する。
+ * 画面遷移は AppStateProvider に渡された navigator(useRouterNavigator) 経由で行われる。
  */
 export default function MapRoute(): React.ReactElement {
   const s = useAppState();
-  const router = useRouter();
   const fadeOpacity = useScreenTransitionOpacity('map', SCREEN_FADE_MS);
 
   if (!s.isReady) {
@@ -78,15 +76,12 @@ export default function MapRoute(): React.ReactElement {
           onRegionChangeComplete={s.handleRegionChangeComplete}
           onRegionChange={s.handleRegionChange}
           onPhotoClusterPress={s.handlePhotoClusterPress}
-          onOpenDailyLogs={() => router.push('/daily-logs')}
-          onOpenAchievements={() => {
-            s.openAchievements();
-            router.push('/achievements');
-          }}
+          onOpenDailyLogs={s.openDailyLogs}
+          onOpenAchievements={s.openAchievements}
           onOpenMonthlyReport={s.openMonthlyReport}
           onToggleMapType={s.toggleMapType}
           onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
-          onOpenSettings={() => router.push('/settings')}
+          onOpenSettings={s.openSettings}
           onRequestLocationPermission={s.requestLocationPermission}
           onRecenterOnUserLocation={s.recenterOnUserLocation}
         />

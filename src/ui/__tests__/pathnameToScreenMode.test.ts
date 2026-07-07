@@ -1,8 +1,4 @@
-import {
-  pathnameToScreenMode,
-  pathnameToSettingsSentryScreenName,
-  pathnameToDailyLogsSentryScreenName,
-} from '@/ui/pathnameToScreenMode';
+import { pathnameToScreenMode, pathnameToSettingsSentryScreenName, pathnameToDailyLogsSentryScreenName } from '@/ui/pathnameToScreenMode';
 
 describe('pathnameToScreenMode', () => {
   it('ルートパス "/" は map を返す', () => {

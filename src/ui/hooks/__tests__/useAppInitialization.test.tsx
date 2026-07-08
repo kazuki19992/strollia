@@ -1,3 +1,5 @@
+import { act, renderHook } from '@testing-library/react-native';
+
 import { useAppInitialization, UseAppInitializationOptions } from '@/ui/hooks/useAppInitialization';
 import { initializeDatabase } from '@/db/database';
 import { loadAppFonts } from '@/theme/fonts';
@@ -12,9 +14,6 @@ import { setupMonthlyReportNotificationChannel } from '@/features/reports/monthl
 import { evaluateAchievementsAndNotify } from '@/features/achievements/achievementService';
 import { isWhileInUseOnlyMode } from '@/features/location/locationPermission';
 import { shouldResetAchievementsOnLaunch } from '@/config/developmentFlags';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 jest.mock('@/db/database', () => ({
   initializeDatabase: jest.fn().mockResolvedValue(undefined),
@@ -100,12 +99,6 @@ function makeOptions(overrides: Partial<UseAppInitializationOptions> = {}): UseA
   };
 }
 
-/** フックを実行するための最小コンポーネント。 */
-function HookProbe({ options }: { options: UseAppInitializationOptions }) {
-  useAppInitialization(options);
-  return null;
-}
-
 /** テスト間で安定した非同期フラッシュ。 */
 const flushPromises = async () => {
   await act(async () => {
@@ -153,10 +146,13 @@ describe('起動初期化フック useAppInitialization', () => {
         }),
       });
 
+      renderHook(() => useAppInitialization(options));
+
       await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
+        for (let i = 0; i < 10; i += 1) {
+          await Promise.resolve();
+        }
       });
-      await flushPromises();
 
       const dbIndex = callOrder.indexOf('initializeDatabase');
       const fontsIndex = callOrder.indexOf('loadAppFonts');
@@ -187,9 +183,7 @@ describe('起動初期化フック useAppInitialization', () => {
         callOrder.push('evaluateAchievementsAndNotify');
       });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       const refreshDataIndex = callOrder.indexOf('refreshData');
@@ -209,9 +203,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsReady = jest.fn();
       const options = makeOptions({ setIsReady });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setIsReady).toHaveBeenCalledWith(true);
@@ -223,9 +215,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsReady = jest.fn();
       const options = makeOptions({ setMessage, setIsReady });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setMessage).toHaveBeenCalledWith('DB初期化失敗');
@@ -241,9 +231,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setKeepScreenAwake = jest.fn();
       const options = makeOptions({ setKeepScreenAwake });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setKeepScreenAwake).toHaveBeenCalledWith(true);
@@ -253,9 +241,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const initializeAchievementReviewState = jest.fn();
       const options = makeOptions({ initializeAchievementReviewState });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(initializeAchievementReviewState).toHaveBeenCalled();
@@ -268,9 +254,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsWhileInUseToastVisible = jest.fn();
       const options = makeOptions({ setIsWhileInUseToastVisible });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setIsWhileInUseToastVisible).toHaveBeenCalledWith(true);
@@ -286,9 +270,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setFirstLaunchTutorialMode = jest.fn();
       const options = makeOptions({ setIsFirstLaunchTutorialVisible, setFirstLaunchTutorialMode });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setFirstLaunchTutorialMode).toHaveBeenCalledWith('firstLaunch');
@@ -302,9 +284,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsFirstLaunchTutorialVisible = jest.fn();
       const options = makeOptions({ setIsFirstLaunchTutorialVisible });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setIsFirstLaunchTutorialVisible).not.toHaveBeenCalled();
@@ -317,9 +297,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const requestAchievementNotificationPermissionIfNeeded = jest.fn().mockResolvedValue(undefined);
       const options = makeOptions({ requestAchievementNotificationPermissionIfNeeded });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(requestAchievementNotificationPermissionIfNeeded).toHaveBeenCalled();
@@ -334,9 +312,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setMessage = jest.fn();
       const options = makeOptions({ setMessage });
 
-      await act(async () => {
-        ReactTestRenderer.create(<HookProbe options={options} />);
-      });
+      renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setSetting).toHaveBeenCalledWith('showPhotosOnMap', false);

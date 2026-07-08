@@ -17,9 +17,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   test('逆ジオコーディング結果から下部ダッシュボード用の地域名を返す', async () => {
     (Location.reverseGeocodeAsync as jest.Mock).mockResolvedValue([{ city: '千代田区', district: '神田' }]);
 
-    const { result } = renderHook(() =>
-      useCurrentAreaLabel({ userCoordinate: TEST_COORDINATE, appState: 'active' }),
-    );
+    const { result } = renderHook(() => useCurrentAreaLabel({ userCoordinate: TEST_COORDINATE, appState: 'active' }));
 
     await act(async () => {
       await Promise.resolve();
@@ -31,9 +29,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   test('逆ジオコーディング結果から市区町村名を返す', async () => {
     (Location.reverseGeocodeAsync as jest.Mock).mockResolvedValue([{ city: '渋谷区' }]);
 
-    const { result } = renderHook(() =>
-      useCurrentAreaName({ userCoordinate: TEST_COORDINATE, appState: 'active' }),
-    );
+    const { result } = renderHook(() => useCurrentAreaName({ userCoordinate: TEST_COORDINATE, appState: 'active' }));
 
     await act(async () => {
       await Promise.resolve();
@@ -46,9 +42,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   test('起動直後に地域ラベル取得に失敗した場合は取得中…を表示する', async () => {
     (Location.reverseGeocodeAsync as jest.Mock).mockRejectedValue(new Error('reverse geocode failed'));
 
-    const { result } = renderHook(() =>
-      useCurrentAreaLabel({ userCoordinate: TEST_COORDINATE, appState: 'active' }),
-    );
+    const { result } = renderHook(() => useCurrentAreaLabel({ userCoordinate: TEST_COORDINATE, appState: 'active' }));
 
     await act(async () => {
       await Promise.resolve();
@@ -63,8 +57,7 @@ describe('現在地地域名hook useCurrentAreaName', () => {
       .mockRejectedValueOnce(new Error('reverse geocode failed'));
 
     const { result, rerender } = renderHook(
-      ({ userCoordinate }: { userCoordinate: typeof TEST_COORDINATE }) =>
-        useCurrentAreaLabel({ userCoordinate, appState: 'active' }),
+      ({ userCoordinate }: { userCoordinate: typeof TEST_COORDINATE }) => useCurrentAreaLabel({ userCoordinate, appState: 'active' }),
       { initialProps: { userCoordinate: { latitude: 35, longitude: 139 } } },
     );
 
@@ -87,18 +80,14 @@ describe('現在地地域名hook useCurrentAreaName', () => {
   });
 
   test('アプリが非アクティブなら地域ラベルの逆ジオコーディングを呼ばない', () => {
-    const { result } = renderHook(() =>
-      useCurrentAreaLabel({ userCoordinate: TEST_COORDINATE, appState: 'background' }),
-    );
+    const { result } = renderHook(() => useCurrentAreaLabel({ userCoordinate: TEST_COORDINATE, appState: 'background' }));
 
     expect(Location.reverseGeocodeAsync).not.toHaveBeenCalled();
     expect(result.current).toEqual({ primary: '現在地を確認中', secondary: null });
   });
 
   test('現在地座標がなければ地域名の逆ジオコーディングを呼ばない', () => {
-    const { result } = renderHook(() =>
-      useCurrentAreaName({ userCoordinate: null, appState: 'active' }),
-    );
+    const { result } = renderHook(() => useCurrentAreaName({ userCoordinate: null, appState: 'active' }));
 
     expect(Location.reverseGeocodeAsync).not.toHaveBeenCalled();
     expect(result.current).toBe('現在地を確認中');

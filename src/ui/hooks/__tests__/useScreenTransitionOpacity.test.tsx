@@ -32,9 +32,12 @@ describe('画面遷移フェードhook useScreenTransitionOpacity', () => {
   });
 
   it('screenKey が変わると Animated.timing が再度呼ばれる', () => {
-    const { rerender } = renderHook(({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs), {
-      initialProps: { screenKey: 'map', durationMs: 300 },
-    });
+    const { rerender } = renderHook(
+      ({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs),
+      {
+        initialProps: { screenKey: 'map', durationMs: 300 },
+      },
+    );
 
     act(() => {
       rerender({ screenKey: 'settings', durationMs: 300 });
@@ -44,9 +47,12 @@ describe('画面遷移フェードhook useScreenTransitionOpacity', () => {
   });
 
   it('screenKey と durationMs が同じ再レンダーでは追加のアニメーションが呼ばれない', () => {
-    const { rerender } = renderHook(({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs), {
-      initialProps: { screenKey: 'map', durationMs: 300 },
-    });
+    const { rerender } = renderHook(
+      ({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs),
+      {
+        initialProps: { screenKey: 'map', durationMs: 300 },
+      },
+    );
 
     // effect の依存配列 [durationMs, opacity, screenKey] がすべて同じなら再実行されない
     act(() => {
@@ -57,9 +63,12 @@ describe('画面遷移フェードhook useScreenTransitionOpacity', () => {
   });
 
   it('durationMs が変わると Animated.timing が再度呼ばれる（依存配列に含まれるため）', () => {
-    const { rerender } = renderHook(({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs), {
-      initialProps: { screenKey: 'map', durationMs: 300 },
-    });
+    const { rerender } = renderHook(
+      ({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs),
+      {
+        initialProps: { screenKey: 'map', durationMs: 300 },
+      },
+    );
 
     act(() => {
       rerender({ screenKey: 'map', durationMs: 500 });

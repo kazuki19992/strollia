@@ -25,9 +25,12 @@ describe('メニューアニメーション useMenuAnimation', () => {
   });
 
   it('isMenuOpen=true に変えると isMenuVisible=true になる', () => {
-    const { result, rerender } = renderHook(({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs), {
-      initialProps: { isMenuOpen: false, durationMs: 200 },
-    });
+    const { result, rerender } = renderHook(
+      ({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs),
+      {
+        initialProps: { isMenuOpen: false, durationMs: 200 },
+      },
+    );
 
     act(() => {
       rerender({ isMenuOpen: true, durationMs: 200 });
@@ -37,9 +40,12 @@ describe('メニューアニメーション useMenuAnimation', () => {
   });
 
   it('isMenuOpen 変化時に Animated.timing が呼ばれる', () => {
-    const { rerender } = renderHook(({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs), {
-      initialProps: { isMenuOpen: false, durationMs: 300 },
-    });
+    const { rerender } = renderHook(
+      ({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs),
+      {
+        initialProps: { isMenuOpen: false, durationMs: 300 },
+      },
+    );
 
     act(() => {
       rerender({ isMenuOpen: true, durationMs: 300 });
@@ -49,9 +55,12 @@ describe('メニューアニメーション useMenuAnimation', () => {
   });
 
   it('resetMenuImmediately を呼ぶと isMenuVisible=false になる', () => {
-    const { result, rerender } = renderHook(({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs), {
-      initialProps: { isMenuOpen: true, durationMs: 200 },
-    });
+    const { result, rerender } = renderHook(
+      ({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs),
+      {
+        initialProps: { isMenuOpen: true, durationMs: 200 },
+      },
+    );
 
     act(() => {
       result.current.resetMenuImmediately();

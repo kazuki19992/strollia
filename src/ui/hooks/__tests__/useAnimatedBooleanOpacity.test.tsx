@@ -44,9 +44,12 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
   });
 
   it('visibleとdurationMsに応じたフェードアニメーションを開始する', () => {
-    const { rerender } = renderHook(({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs), {
-      initialProps: { visible: false, durationMs: 250 },
-    });
+    const { rerender } = renderHook(
+      ({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs),
+      {
+        initialProps: { visible: false, durationMs: 250 },
+      },
+    );
 
     expect(Animated.timing).toHaveBeenLastCalledWith(expect.any(Animated.Value), {
       toValue: 0,
@@ -64,9 +67,12 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
   });
 
   it('visible変更時は前回アニメーションを停止してから次のアニメーションを開始する', () => {
-    const { rerender } = renderHook(({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs), {
-      initialProps: { visible: false, durationMs: 250 },
-    });
+    const { rerender } = renderHook(
+      ({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs),
+      {
+        initialProps: { visible: false, durationMs: 250 },
+      },
+    );
 
     const firstAnimation = animations[0];
 

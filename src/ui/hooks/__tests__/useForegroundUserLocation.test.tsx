@@ -30,7 +30,7 @@ function flushPromises(): Promise<void> {
 
 type HarnessProps = {
   enabled: boolean;
-  shouldPersist?: boolean;
+  shouldPersist: boolean;
   onLocation?: (lat: number, lng: number, speed: number | null) => void;
   onError?: (error: unknown) => void;
 };
@@ -218,9 +218,12 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   });
 
   test('無効化時とアンマウント時にウォッチを解除する', async () => {
-    const { rerender, unmount } = renderHook(({ enabled }: { enabled: boolean }) => useForegroundUserLocation({ enabled, shouldPersist: false }), {
-      initialProps: { enabled: true },
-    });
+    const { rerender, unmount } = renderHook(
+      ({ enabled }: { enabled: boolean }) => useForegroundUserLocation({ enabled, shouldPersist: false }),
+      {
+        initialProps: { enabled: true },
+      },
+    );
 
     await act(async () => {
       await flushPromises();

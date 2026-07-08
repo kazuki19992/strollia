@@ -76,9 +76,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
   describe('isReady が true の場合', () => {
     it('isReady が true のときは getVisitedCellsInBounds を呼ぶ', async () => {
-      renderHook(() =>
-        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }),
-      );
+      renderHook(() => useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }));
 
       await act(async () => {
         await Promise.resolve();

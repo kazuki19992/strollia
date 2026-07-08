@@ -1,26 +1,5 @@
+import { renderHook } from '@testing-library/react-native';
 import { useAutoFitInitialRoute } from '@/ui/hooks/useAutoFitInitialRoute';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
-type HookProbeProps = {
-  mapRef: Parameters<typeof useAutoFitInitialRoute>[0];
-};
-
-/** hookの地図フィット副作用を実行するための最小コンポーネント。 */
-function HookProbe({ mapRef }: HookProbeProps) {
-  useAutoFitInitialRoute(
-    mapRef,
-    'map',
-    [
-      { latitude: 35, longitude: 139 },
-      { latitude: 36, longitude: 140 },
-    ],
-    null,
-  );
-
-  return null;
-}
 
 describe('初期ルートフィットhook useAutoFitInitialRoute', () => {
   test('地図画面で現在地未取得かつルートが複数点ある場合は地図をフィットする', () => {
@@ -31,9 +10,17 @@ describe('初期ルートフィットhook useAutoFitInitialRoute', () => {
       },
     } as unknown as Parameters<typeof useAutoFitInitialRoute>[0];
 
-    act(() => {
-      ReactTestRenderer.create(<HookProbe mapRef={mapRef} />);
-    });
+    renderHook(() =>
+      useAutoFitInitialRoute(
+        mapRef,
+        'map',
+        [
+          { latitude: 35, longitude: 139 },
+          { latitude: 36, longitude: 140 },
+        ],
+        null,
+      ),
+    );
 
     expect(fitToCoordinates).toHaveBeenCalledTimes(1);
   });

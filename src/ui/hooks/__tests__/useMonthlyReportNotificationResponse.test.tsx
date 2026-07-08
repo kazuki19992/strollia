@@ -1,3 +1,4 @@
+import { act, renderHook } from '@testing-library/react-native';
 import * as Notifications from 'expo-notifications';
 
 import {
@@ -5,9 +6,6 @@ import {
   UseMonthlyReportNotificationResponseArgs,
 } from '@/ui/hooks/useMonthlyReportNotificationResponse';
 import { isMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 jest.mock('expo-notifications', () => ({
   useLastNotificationResponse: jest.fn(() => null),
@@ -32,12 +30,6 @@ function makeNotificationResponse(id: string) {
   } as unknown as Notifications.NotificationResponse;
 }
 
-/** hookを実行するための最小コンポーネント。 */
-function HookProbe(props: UseMonthlyReportNotificationResponseArgs) {
-  useMonthlyReportNotificationResponse(props);
-  return null;
-}
-
 describe('月次レポート通知応答 useMonthlyReportNotificationResponse', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -48,9 +40,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
 
   describe('addNotificationResponseReceivedListener の購読', () => {
     it('マウント時に addNotificationResponseReceivedListener を呼ぶ', () => {
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady={false} onOpenMonthlyReport={jest.fn()} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport: jest.fn() }));
 
       expect(Notifications.addNotificationResponseReceivedListener).toHaveBeenCalledTimes(1);
     });
@@ -59,13 +49,10 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       const removeMock = jest.fn();
       (Notifications.addNotificationResponseReceivedListener as jest.Mock).mockReturnValue({ remove: removeMock });
 
-      let renderer: ReturnType<typeof ReactTestRenderer.create>;
-      act(() => {
-        renderer = ReactTestRenderer.create(<HookProbe isReady={false} onOpenMonthlyReport={jest.fn()} />);
-      });
+      const { unmount } = renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport: jest.fn() }));
 
       act(() => {
-        renderer.unmount();
+        unmount();
       });
 
       expect(removeMock).toHaveBeenCalledTimes(1);
@@ -79,10 +66,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       act(() => {
         listener!(makeNotificationResponse('notif-1'));
@@ -99,10 +83,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady={false} onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport }));
 
       act(() => {
         listener!(makeNotificationResponse('notif-1'));
@@ -121,10 +102,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       act(() => {
         listener!(makeNotificationResponse('notif-1'));
@@ -141,10 +119,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       act(() => {
         listener!(makeNotificationResponse('notif-dup'));
@@ -161,10 +136,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).toHaveBeenCalledTimes(1);
     });
@@ -174,10 +146,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady={false} onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
@@ -187,16 +156,15 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-      let renderer: ReturnType<typeof ReactTestRenderer.create>;
-
-      act(() => {
-        renderer = ReactTestRenderer.create(<HookProbe isReady={false} onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      const { rerender } = renderHook(
+        ({ isReady }: { isReady: boolean }) => useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport }),
+        { initialProps: { isReady: false } },
+      );
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
 
       act(() => {
-        renderer.update(<HookProbe isReady onOpenMonthlyReport={onOpenMonthlyReport} />);
+        rerender({ isReady: true });
       });
 
       expect(onOpenMonthlyReport).toHaveBeenCalledTimes(1);
@@ -206,10 +174,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(null);
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
@@ -220,10 +185,7 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-
-      act(() => {
-        ReactTestRenderer.create(<HookProbe isReady onOpenMonthlyReport={onOpenMonthlyReport} />);
-      });
+      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
@@ -239,14 +201,15 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
 
       const firstCallback = jest.fn();
       const secondCallback = jest.fn();
-      let renderer: ReturnType<typeof ReactTestRenderer.create>;
+
+      const { rerender } = renderHook(
+        ({ onOpenMonthlyReport }: { onOpenMonthlyReport: jest.Mock }) =>
+          useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }),
+        { initialProps: { onOpenMonthlyReport: firstCallback } },
+      );
 
       act(() => {
-        renderer = ReactTestRenderer.create(<HookProbe isReady onOpenMonthlyReport={firstCallback} />);
-      });
-
-      act(() => {
-        renderer.update(<HookProbe isReady onOpenMonthlyReport={secondCallback} />);
+        rerender({ onOpenMonthlyReport: secondCallback });
       });
 
       act(() => {

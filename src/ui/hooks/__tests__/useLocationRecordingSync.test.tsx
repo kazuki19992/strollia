@@ -1,4 +1,5 @@
 import React from 'react';
+import { act, renderHook } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 
 import {
@@ -16,23 +17,6 @@ import { getLocationPermissionState, hasRequiredLocationPermission } from '@/fea
 import { getDailyLogs, getAllLocationPoints } from '@/features/logs/logRepository';
 import { getMonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { shouldStartRecordingAutomatically } from '@/ui/autoRecording';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
-/**
- * テスト中に生成した renderer の追跡リスト。
- * フックは isReady: true で10秒intervalを起動するため、テスト終了時に
- * 必ず unmount しないと open handle が残り Jest が exit code 1 になる。
- */
-const activeRenderers: Array<{ unmount: () => void }> = [];
-
-/** renderer を生成して追跡する。afterEach で必ず unmount される。 */
-function createTrackedRenderer(element: React.ReactElement) {
-  const renderer = ReactTestRenderer.create(element);
-  activeRenderers.push(renderer);
-  return renderer;
-}
 
 jest.mock('@/features/location/locationService', () => ({
   isBackgroundLocationRecording: jest.fn().mockResolvedValue(false),
@@ -86,13 +70,6 @@ const FOREGROUND_ONLY_PERMISSION_STATE = {
   canAskBackground: true,
 };
 
-type HookProbeProps = {
-  /** フックの戻り値をテストへ渡すコールバック。 */
-  onResult: (result: UseLocationRecordingSyncResult) => void;
-  /** フックに渡すオプション。 */
-  options?: Partial<UseLocationRecordingSyncOptions>;
-};
-
 /**
  * HookProbe が渡すデフォルトのコールバックモック。
  * レンダーごとに jest.fn() を生成すると refreshData の依存配列が毎回変わり、
@@ -101,19 +78,6 @@ type HookProbeProps = {
 const defaultIncrementVisitedGridRefreshVersion = jest.fn();
 const defaultEvaluateAchievementsIfDialogIdle = jest.fn<Promise<boolean>, []>().mockResolvedValue(false);
 const defaultRefreshAchievementState = jest.fn<Promise<void>, [boolean?, { signal?: AbortSignal }?]>().mockResolvedValue(undefined);
-
-/** フックを実行するための最小コンポーネント。 */
-function HookProbe({ onResult, options }: HookProbeProps) {
-  const result = useLocationRecordingSync({
-    isReady: true,
-    incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
-    evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
-    refreshAchievementState: defaultRefreshAchievementState,
-    ...options,
-  });
-  onResult(result);
-  return null;
-}
 
 describe('GPS記録同期フック useLocationRecordingSync', () => {
   beforeEach(() => {
@@ -141,14 +105,11 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
     // Reactスケジューラに積まれた継続(setImmediate)をすべてact内で流し切る。
     // これを省くと teardown 後にスケジューラがレンダーを実行し、
     // 「import a file after the Jest environment has been torn down」で exit code 1 になる。
+    // RTL の自動 cleanup (unmount) は afterEach の最後に走るため、
+    // この afterEach 内のフラッシュは cleanup より前に実行される。
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    // 10秒intervalやAppState購読を確実に停止する
-    await act(async () => {
-      activeRenderers.forEach((renderer) => renderer.unmount());
-    });
-    activeRenderers.length = 0;
     // unmount後に残ったスケジューラ継続も流し切ってから mock を復元する
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -158,96 +119,123 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
   describe('初期状態', () => {
     it('初期 isRecording は false になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.isRecording).toBe(false);
+      expect(result.current.isRecording).toBe(false);
     });
 
     it('初期 autoStartStatus は checking になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.autoStartStatus).toBe('checking');
+      expect(result.current.autoStartStatus).toBe('checking');
     });
 
     it('初期 isLocationRecordingModeSynchronized は false になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.isLocationRecordingModeSynchronized).toBe(false);
+      expect(result.current.isLocationRecordingModeSynchronized).toBe(false);
     });
 
     it('初期 isWhileInUseToastVisible は false になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.isWhileInUseToastVisible).toBe(false);
+      expect(result.current.isWhileInUseToastVisible).toBe(false);
     });
 
     it('初期 message は「起動後に自動でGPS記録を開始します。」になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.message).toBe('起動後に自動でGPS記録を開始します。');
+      expect(result.current.message).toBe('起動後に自動でGPS記録を開始します。');
     });
 
     it('初期 dailyLogs は空配列になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.dailyLogs).toEqual([]);
+      expect(result.current.dailyLogs).toEqual([]);
     });
 
     it('初期 points は空配列になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.points).toEqual([]);
+      expect(result.current.points).toEqual([]);
     });
 
     it('初期 monthlyAreaReport は null になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.monthlyAreaReport).toBeNull();
+      expect(result.current.monthlyAreaReport).toBeNull();
     });
   });
 
   describe('refreshData — DB・権限状態の再読み込み', () => {
     it('getDailyLogs・getAllLocationPoints・isBackgroundLocationRecording・getLocationPermissionState をまとめて呼ぶ', async () => {
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.refreshData();
+        await result.current.refreshData();
       });
 
       expect(getDailyLogs).toHaveBeenCalled();
@@ -257,11 +245,14 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
     });
 
     it('signal が abort 済みのとき state を更新せず返却値だけを返す', async () => {
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       const controller = new AbortController();
       controller.abort();
@@ -269,7 +260,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       // abort 済み signal を渡して refreshData を呼んでもクラッシュしない
       let returnValue: Awaited<ReturnType<UseLocationRecordingSyncResult['refreshData']>> | undefined;
       await act(async () => {
-        returnValue = await result!.refreshData({ signal: controller.signal });
+        returnValue = await result.current.refreshData({ signal: controller.signal });
       });
 
       // 返却値には読み込んだデータが入る（state は更新しないが値は返す）
@@ -279,14 +270,17 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
     it('refreshData が完了すると incrementVisitedGridRefreshVersion が呼ばれる', async () => {
       const mockIncrement = jest.fn();
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} options={{ incrementVisitedGridRefreshVersion: mockIncrement }} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: mockIncrement,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.refreshData();
+        await result.current.refreshData();
       });
 
       expect(mockIncrement).toHaveBeenCalled();
@@ -295,14 +289,17 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
   describe('startRecording — GPS記録開始', () => {
     it('startBackgroundLocationRecording を呼ぶ', async () => {
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.startRecording('manual');
+        await result.current.startRecording('manual');
       });
 
       expect(startBackgroundLocationRecording).toHaveBeenCalled();
@@ -310,123 +307,147 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
     it('reason が auto のとき message に「GPS記録を自動開始しました。」が設定される', async () => {
       (hasRequiredLocationPermission as jest.Mock).mockReturnValue(true);
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.startRecording('auto');
+        await result.current.startRecording('auto');
       });
 
-      expect(result!.message).toBe('GPS記録を自動開始しました。');
+      expect(result.current.message).toBe('GPS記録を自動開始しました。');
     });
 
     it('reason が manual のとき message に「バックグラウンドGPS記録を開始しました。」が設定される', async () => {
       (hasRequiredLocationPermission as jest.Mock).mockReturnValue(true);
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.startRecording('manual');
+        await result.current.startRecording('manual');
       });
 
-      expect(result!.message).toBe('バックグラウンドGPS記録を開始しました。');
+      expect(result.current.message).toBe('バックグラウンドGPS記録を開始しました。');
     });
 
     it('startBackgroundLocationRecording が失敗したとき autoStartStatus が failed になる', async () => {
       (startBackgroundLocationRecording as jest.Mock).mockRejectedValue(new Error('GPS start failed'));
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.startRecording('manual');
+        await result.current.startRecording('manual');
       });
 
-      expect(result!.autoStartStatus).toBe('failed');
+      expect(result.current.autoStartStatus).toBe('failed');
     });
   });
 
   describe('synchronizeLocationRecordingMode — 記録モード同期', () => {
     it('バックグラウンド権限ありのとき updateBackgroundLocationTaskOptionsIfNeeded を呼ぶ', async () => {
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.synchronizeLocationRecordingMode({ permissions: GRANTED_PERMISSION_STATE, recording: false });
+        await result.current.synchronizeLocationRecordingMode({ permissions: GRANTED_PERMISSION_STATE, recording: false });
       });
 
       expect(updateBackgroundLocationTaskOptionsIfNeeded).toHaveBeenCalled();
     });
 
     it('バックグラウンド権限なしのとき stopBackgroundLocationRecording を呼ぶ', async () => {
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.synchronizeLocationRecordingMode({ permissions: FOREGROUND_ONLY_PERMISSION_STATE, recording: false });
+        await result.current.synchronizeLocationRecordingMode({ permissions: FOREGROUND_ONLY_PERMISSION_STATE, recording: false });
       });
 
       expect(stopBackgroundLocationRecording).toHaveBeenCalled();
     });
 
     it('バックグラウンド権限なしで同期完了後 isLocationRecordingModeSynchronized が true になる', async () => {
-      let result: UseLocationRecordingSyncResult | undefined;
-
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       await act(async () => {
-        await result!.synchronizeLocationRecordingMode({ permissions: FOREGROUND_ONLY_PERMISSION_STATE, recording: false });
+        await result.current.synchronizeLocationRecordingMode({ permissions: FOREGROUND_ONLY_PERMISSION_STATE, recording: false });
       });
 
-      expect(result!.isLocationRecordingModeSynchronized).toBe(true);
+      expect(result.current.isLocationRecordingModeSynchronized).toBe(true);
     });
   });
 
   describe('setMessage — メッセージ更新', () => {
     it('setMessage を呼ぶと message が更新される', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
+        result.current.setMessage('テストメッセージ');
       });
 
-      act(() => {
-        result!.setMessage('テストメッセージ');
-      });
-
-      expect(result!.message).toBe('テストメッセージ');
+      expect(result.current.message).toBe('テストメッセージ');
     });
   });
 
   describe('setIsWhileInUseToastVisible — トースト表示更新', () => {
     it('setIsWhileInUseToastVisible(true) を呼ぶと isWhileInUseToastVisible が true になる', () => {
-      let result: UseLocationRecordingSyncResult | undefined;
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
+        result.current.setIsWhileInUseToastVisible(true);
       });
 
-      act(() => {
-        result!.setIsWhileInUseToastVisible(true);
-      });
-
-      expect(result!.isWhileInUseToastVisible).toBe(true);
+      expect(result.current.isWhileInUseToastVisible).toBe(true);
     });
   });
 
@@ -439,9 +460,14 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         return { remove: jest.fn() };
       });
 
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={() => undefined} />);
-      });
+      renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       const initialCallCount = (getDailyLogs as jest.Mock).mock.calls.length;
 
@@ -477,10 +503,14 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         )
         .mockResolvedValue(freshLogs);
 
-      let result: UseLocationRecordingSyncResult | undefined;
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       // 先行チェーン開始（getDailyLogs は pending のまま止まる）
       act(() => {
@@ -494,7 +524,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       });
 
       // 後発チェーンの新しい結果が state に反映されている
-      expect(result!.dailyLogs).toEqual(freshLogs);
+      expect(result.current.dailyLogs).toEqual(freshLogs);
 
       // 先行チェーンを「古い値」で遅延解決しても、abort 済みのため state を上書きしない
       await act(async () => {
@@ -502,7 +532,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
-      expect(result!.dailyLogs).toEqual(freshLogs);
+      expect(result.current.dailyLogs).toEqual(freshLogs);
     });
 
     it('AppState復帰の同期チェーン実行中に interval が発火してもスキップされ、同期が最終的に完了する', async () => {
@@ -534,10 +564,14 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         )
         .mockResolvedValue([]);
 
-      let result: UseLocationRecordingSyncResult | undefined;
-      act(() => {
-        createTrackedRenderer(<HookProbe onResult={(r) => (result = r)} />);
-      });
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
 
       // 同期チェーン開始（getDailyLogs pending で実行中のまま）
       act(() => {
@@ -556,7 +590,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         resolveSync([]);
         await new Promise((resolve) => setTimeout(resolve, 0));
       });
-      expect(result!.isLocationRecordingModeSynchronized).toBe(true);
+      expect(result.current.isLocationRecordingModeSynchronized).toBe(true);
 
       // 同期完了後の interval 発火は通常どおり実行される
       await act(async () => {
@@ -569,37 +603,30 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
   describe('refreshDataAndEvaluateAchievementsIfDialogIdle', () => {
     // フックに渡すコールバックは毎レンダーで再生成されると deps 変化が無限ループになるため、
-    // ref 経由で安定化した HookProbeStable を使う。
+    // ref 経由で安定化した useCallback を使う。
     // ここで生成した mock を各テストで入れ替えることで検証する。
     const evaluateRef = { current: jest.fn<Promise<boolean>, []>().mockResolvedValue(false) };
     const refreshRef = { current: jest.fn<Promise<void>, [boolean?, { signal?: AbortSignal }?]>().mockResolvedValue(undefined) };
     const incrementRef = { current: jest.fn() };
 
-    function HookProbeStable({ onResult }: { onResult: (r: UseLocationRecordingSyncResult) => void }) {
-      const stableEvaluate = React.useCallback(() => evaluateRef.current(), []);
-      const stableRefresh = React.useCallback((...args: Parameters<typeof refreshRef.current>) => refreshRef.current(...args), []);
-      const stableIncrement = React.useCallback(() => incrementRef.current(), []);
-      const r = useLocationRecordingSync({
-        isReady: true,
-        incrementVisitedGridRefreshVersion: stableIncrement,
-        evaluateAchievementsIfDialogIdle: stableEvaluate,
-        refreshAchievementState: stableRefresh,
-      });
-      onResult(r);
-      return null;
-    }
-
     it('refreshData と evaluateAchievementsIfDialogIdle を順番に呼ぶ', async () => {
       evaluateRef.current = jest.fn().mockResolvedValue(false);
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
-      let result: UseLocationRecordingSyncResult | undefined;
-      act(() => {
-        createTrackedRenderer(<HookProbeStable onResult={(r) => (result = r)} />);
+      const { result } = renderHook(() => {
+        const stableEvaluate = React.useCallback(() => evaluateRef.current(), []);
+        const stableRefresh = React.useCallback((...args: Parameters<typeof refreshRef.current>) => refreshRef.current(...args), []);
+        const stableIncrement = React.useCallback(() => incrementRef.current(), []);
+        return useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: stableIncrement,
+          evaluateAchievementsIfDialogIdle: stableEvaluate,
+          refreshAchievementState: stableRefresh,
+        });
       });
 
       await act(async () => {
-        await result!.refreshDataAndEvaluateAchievementsIfDialogIdle();
+        await result.current.refreshDataAndEvaluateAchievementsIfDialogIdle();
       });
 
       expect(getDailyLogs).toHaveBeenCalled();
@@ -610,13 +637,20 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       evaluateRef.current = jest.fn().mockResolvedValue(true);
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
-      let result: UseLocationRecordingSyncResult | undefined;
-      act(() => {
-        createTrackedRenderer(<HookProbeStable onResult={(r) => (result = r)} />);
+      const { result } = renderHook(() => {
+        const stableEvaluate = React.useCallback(() => evaluateRef.current(), []);
+        const stableRefresh = React.useCallback((...args: Parameters<typeof refreshRef.current>) => refreshRef.current(...args), []);
+        const stableIncrement = React.useCallback(() => incrementRef.current(), []);
+        return useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: stableIncrement,
+          evaluateAchievementsIfDialogIdle: stableEvaluate,
+          refreshAchievementState: stableRefresh,
+        });
       });
 
       await act(async () => {
-        await result!.refreshDataAndEvaluateAchievementsIfDialogIdle();
+        await result.current.refreshDataAndEvaluateAchievementsIfDialogIdle();
       });
 
       expect(refreshRef.current).toHaveBeenCalledWith(true);
@@ -626,13 +660,20 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       evaluateRef.current = jest.fn().mockResolvedValue(false);
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
-      let result: UseLocationRecordingSyncResult | undefined;
-      act(() => {
-        createTrackedRenderer(<HookProbeStable onResult={(r) => (result = r)} />);
+      const { result } = renderHook(() => {
+        const stableEvaluate = React.useCallback(() => evaluateRef.current(), []);
+        const stableRefresh = React.useCallback((...args: Parameters<typeof refreshRef.current>) => refreshRef.current(...args), []);
+        const stableIncrement = React.useCallback(() => incrementRef.current(), []);
+        return useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: stableIncrement,
+          evaluateAchievementsIfDialogIdle: stableEvaluate,
+          refreshAchievementState: stableRefresh,
+        });
       });
 
       await act(async () => {
-        await result!.refreshDataAndEvaluateAchievementsIfDialogIdle();
+        await result.current.refreshDataAndEvaluateAchievementsIfDialogIdle();
       });
 
       expect(refreshRef.current).not.toHaveBeenCalled();

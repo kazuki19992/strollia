@@ -1,14 +1,6 @@
+import { act, renderHook } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import { useAnimatedBooleanOpacity } from '@/ui/hooks/useAnimatedBooleanOpacity';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
-type HookProbeProps = {
-  visible: boolean;
-  durationMs: number;
-  onValue: (value: Animated.Value) => void;
-};
 
 type MockAnimation = {
   start: jest.Mock;
@@ -18,14 +10,6 @@ type MockAnimation = {
 type InspectableAnimatedValue = Animated.Value & {
   __getValue: () => number;
 };
-
-/** hookが返したAnimated.Valueをテストへ渡すための最小コンポーネント。 */
-function HookProbe({ visible, durationMs, onValue }: HookProbeProps) {
-  const opacity = useAnimatedBooleanOpacity(visible, durationMs);
-  onValue(opacity);
-
-  return null;
-}
 
 describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
   let animations: MockAnimation[];
@@ -48,30 +32,20 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
   });
 
   it('visible=trueの場合は初期値1で開始する', () => {
-    let opacity: Animated.Value;
+    const { result } = renderHook(() => useAnimatedBooleanOpacity(true, 500));
 
-    act(() => {
-      ReactTestRenderer.create(<HookProbe visible durationMs={500} onValue={(value) => (opacity = value)} />);
-    });
-
-    expect((opacity! as InspectableAnimatedValue).__getValue()).toBe(1);
+    expect((result.current as InspectableAnimatedValue).__getValue()).toBe(1);
   });
 
   it('visible=falseの場合は初期値0で開始する', () => {
-    let opacity: Animated.Value;
+    const { result } = renderHook(() => useAnimatedBooleanOpacity(false, 500));
 
-    act(() => {
-      ReactTestRenderer.create(<HookProbe visible={false} durationMs={500} onValue={(value) => (opacity = value)} />);
-    });
-
-    expect((opacity! as InspectableAnimatedValue).__getValue()).toBe(0);
+    expect((result.current as InspectableAnimatedValue).__getValue()).toBe(0);
   });
 
   it('visibleとdurationMsに応じたフェードアニメーションを開始する', () => {
-    let renderer: { update: (element: React.ReactElement) => void };
-
-    act(() => {
-      renderer = ReactTestRenderer.create(<HookProbe visible={false} durationMs={250} onValue={jest.fn()} />);
+    const { rerender } = renderHook(({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs), {
+      initialProps: { visible: false, durationMs: 250 },
     });
 
     expect(Animated.timing).toHaveBeenLastCalledWith(expect.any(Animated.Value), {
@@ -80,9 +54,7 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
       useNativeDriver: true,
     });
 
-    act(() => {
-      renderer.update(<HookProbe visible durationMs={600} onValue={jest.fn()} />);
-    });
+    rerender({ visible: true, durationMs: 600 });
 
     expect(Animated.timing).toHaveBeenLastCalledWith(expect.any(Animated.Value), {
       toValue: 1,
@@ -92,15 +64,14 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
   });
 
   it('visible変更時は前回アニメーションを停止してから次のアニメーションを開始する', () => {
-    let renderer: { update: (element: React.ReactElement) => void };
-
-    act(() => {
-      renderer = ReactTestRenderer.create(<HookProbe visible={false} durationMs={250} onValue={jest.fn()} />);
+    const { rerender } = renderHook(({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs), {
+      initialProps: { visible: false, durationMs: 250 },
     });
+
     const firstAnimation = animations[0];
 
     act(() => {
-      renderer.update(<HookProbe visible durationMs={250} onValue={jest.fn()} />);
+      rerender({ visible: true, durationMs: 250 });
     });
 
     expect(firstAnimation.stop).toHaveBeenCalledTimes(1);

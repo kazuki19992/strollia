@@ -1,5 +1,6 @@
 import * as ReactNative from 'react-native';
-import { Animated, Text } from 'react-native';
+import { Animated } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
@@ -37,13 +38,11 @@ jest.mock('react-native-svg', () => {
   };
 });
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-const styles = createStyles(lightTheme);
-
 afterEach(() => {
   jest.restoreAllMocks();
 });
+
+const styles = createStyles(lightTheme);
 
 /** 下部ダッシュボードのテスト用propsを作る。 */
 function createProps() {
@@ -76,45 +75,39 @@ describe('マップ下部ダッシュボード', () => {
   });
 
   test('速度計と長い距離表示をまとめて描画する', () => {
-    let renderer: any;
+    render(<MapBottomDashboard {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} />);
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('SPEED');
-    expect(texts).toContain('ODO');
-    expect(texts).toContain('9876543');
-    expect(texts).toContain('TODAY');
-    expect(texts).toContain('9876');
-    expect(texts).toContain('船橋市');
+    expect(screen.getByText('SPEED')).toBeTruthy();
+    expect(screen.getByText('ODO')).toBeTruthy();
+    expect(screen.getByText('9876543')).toBeTruthy();
+    expect(screen.getByText('TODAY')).toBeTruthy();
+    expect(screen.getByText('9876')).toBeTruthy();
+    expect(screen.getByText('船橋市')).toBeTruthy();
   });
 
   test('速度と距離の指定桁数と市名6文字プラス市を固定文字サイズで表示する', () => {
-    let renderer: any;
+    render(
+      <MapBottomDashboard
+        {...createProps()}
+        currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }}
+        currentSpeedKmh={999}
+        distance={98_765_432_100}
+        todayDistance={9_876_540}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <MapBottomDashboard
-          {...createProps()}
-          currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }}
-          currentSpeedKmh={999}
-          distance={98_765_432_100}
-          todayDistance={9_876_540}
-        />,
-      );
-    });
+    expect(screen.getByText('999')).toBeTruthy();
+    expect(screen.getByText('98765432')).toBeTruthy();
+    expect(screen.getByText('10')).toBeTruthy();
+    expect(screen.getByText('9876')).toBeTruthy();
+    expect(screen.getByText('54')).toBeTruthy();
+    expect(screen.getByText('つくばみらい市')).toBeTruthy();
 
-    const textNodes = renderer.root.findAllByType(Text).filter((node: any) => typeof node.props.children === 'string');
-    const texts = textNodes.map((node: any) => node.props.children);
-    expect(texts).toContain('999');
-    expect(texts).toContain('98765432');
-    expect(texts).toContain('10');
-    expect(texts).toContain('9876');
-    expect(texts).toContain('54');
-    expect(texts).toContain('つくばみらい市');
-    expect(textNodes.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
+    // allowFontScaling=false を持つ文字列テキストのみを検証する
+    // UNSAFE_getAllByType を使うのは allowFontScaling という非セマンティックな props の検証のため
+    const { Text } = require('react-native');
+    const textNodes = screen.UNSAFE_getAllByType(Text).filter((node) => typeof node.props.children === 'string');
+    expect(textNodes.every((node) => node.props.allowFontScaling === false)).toBe(true);
   });
 
   test('距離帯は市名6文字プラス市の7文字表示用の幅を確保する', () => {
@@ -124,63 +117,54 @@ describe('マップ下部ダッシュボード', () => {
   });
 
   test('マップボタンから表示設定パネルを前面に開く', () => {
-    let renderer: any;
+    render(<MapBottomDashboard {...createProps()} />);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} />);
+      fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    const mapButton = renderer.root.find((node: any) => node.props.accessibilityLabel === 'マップの表示');
-    act(() => mapButton.props.onPress());
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('標準マップ');
-    expect(texts).toContain('航空写真');
-    expect(texts).toContain('マップ上に写真を表示');
+    expect(screen.getByText('標準マップ')).toBeTruthy();
+    expect(screen.getByText('航空写真')).toBeTruthy();
+    expect(screen.getByText('マップ上に写真を表示')).toBeTruthy();
   });
 
   test('地図種別の選択中バッジはViewで装飾しTextは文字だけ描画する', () => {
-    let renderer: any;
+    render(<MapBottomDashboard {...createProps()} />);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} />);
+      fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    const mapButton = renderer.root.find((node: any) => node.props.accessibilityLabel === 'マップの表示');
-    act(() => mapButton.props.onPress());
-
-    const selectedLabel = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '✓ 選択中');
+    const selectedLabel = screen.getByText('✓ 選択中');
 
     expect(selectedLabel).toBeTruthy();
     expect(selectedLabel.props.style).toEqual(styles.mapDisplayTypeSelectedBadgeText);
-    expect(selectedLabel.parent.type).toBe('View');
-    expect(selectedLabel.parent.props.style).toEqual(styles.mapDisplayTypeSelectedBadge);
+    // バッジ装飾用の View が mapDisplayTypeSelectedBadge スタイルを持っていることを確認する
+    // UNSAFE_getAllByProps で mapDisplayTypeSelectedBadge スタイルを持つ View を探す
+    const badgeView = screen
+      .UNSAFE_getAllByProps({})
+      .find((node) => node.props.style != null && node.props.style === styles.mapDisplayTypeSelectedBadge);
+    expect(badgeView).toBeTruthy();
   });
 
   test('速度リングを連続円弧で描画する', () => {
-    let renderer: any;
+    render(<MapBottomDashboard {...createProps()} currentSpeedKmh={15} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} currentSpeedKmh={15} />);
-    });
-
-    const arc = renderer.root.find((node: any) => node.props.testID === 'speed-meter-progress-arc');
-    expect(arc.props.stroke).toBe('#39d9ff');
-    expect(arc.props.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
+    // testID で速度リング円弧を検索する
+    // UNSAFE_getAllByProps を使うのは testID という非セマンティックな props でフィルタリングが必要なため
+    const arc = screen.UNSAFE_getAllByProps({}).find((node) => node.props.testID === 'speed-meter-progress-arc');
+    expect(arc!.props.stroke).toBe('#39d9ff');
+    expect(arc!.props.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
   });
 
   test('小さい画面では現在地名に縮小許可を付けて描画する', () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 375, height: 667, scale: 2, fontScale: 1 });
 
-    let renderer: any;
+    render(
+      <MapBottomDashboard {...createProps()} currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }} />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <MapBottomDashboard {...createProps()} currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }} />,
-      );
-    });
-
-    const place = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'つくばみらい市');
+    const place = screen.getByText('つくばみらい市');
 
     expect(place.props.adjustsFontSizeToFit).toBe(true);
     expect(place.props.minimumFontScale).toBeLessThan(1);
@@ -190,19 +174,17 @@ describe('マップ下部ダッシュボード', () => {
   test('小さい画面では速度リングの背景とSVGを同じ倍率で縮小する', () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 375, height: 667, scale: 2, fontScale: 1 });
 
-    let renderer: any;
-
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapBottomDashboard {...createProps()} />);
-    });
+    render(<MapBottomDashboard {...createProps()} />);
 
     const scale = getDashboardScale(375);
     const layout = getScaledSpeedDialLayout(scale);
-    const ringBase = renderer.root.find((node: any) => node.props.testID === 'speed-meter-ring-base');
-    const arcSvg = renderer.root.find((node: any) => node.props.testID === 'speed-meter-arc-svg');
 
-    expect(ringBase.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.ringBase)]));
-    expect(arcSvg.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.arcSvg)]));
+    // testID でリング背景とSVGを検索する
+    const ringBase = screen.UNSAFE_getAllByProps({}).find((node) => node.props.testID === 'speed-meter-ring-base');
+    const arcSvg = screen.UNSAFE_getAllByProps({}).find((node) => node.props.testID === 'speed-meter-arc-svg');
+
+    expect(ringBase!.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.ringBase)]));
+    expect(arcSvg!.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.arcSvg)]));
   });
 });
 

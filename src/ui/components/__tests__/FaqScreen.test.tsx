@@ -1,4 +1,4 @@
-import { SafeAreaView, Text } from 'react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
@@ -12,23 +12,12 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
 describe('よくある質問画面 FaqScreen', () => {
-  let renderer: any;
-
   beforeEach(() => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    renderer = null;
   });
 
   afterEach(() => {
-    if (renderer) {
-      act(() => {
-        renderer.unmount();
-      });
-    }
     jest.restoreAllMocks();
   });
 
@@ -36,17 +25,14 @@ describe('よくある質問画面 FaqScreen', () => {
     const styles = createStyles(lightTheme);
     const onBackToSettings = jest.fn();
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={onBackToSettings} />);
-    });
+    render(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={onBackToSettings} />);
 
-    const container = renderer.root.findByType(SafeAreaView);
-    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'よくある質問');
-    const backButton = renderer.root.findByProps({ accessibilityLabel: '設定へ戻る' });
+    // SafeAreaView のスタイル確認
+    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
+    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    const title = screen.getByText('よくある質問');
 
-    act(() => {
-      backButton.props.onPress();
-    });
+    fireEvent.press(screen.getByLabelText('設定へ戻る'));
 
     expect(container.props.style).toBe(styles.appScreen);
     expect(title).toBeTruthy();
@@ -56,16 +42,12 @@ describe('よくある質問画面 FaqScreen', () => {
   test('5項目の質問タイトルをすべて表示する', () => {
     const styles = createStyles(lightTheme);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={jest.fn()} />);
-    });
+    render(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={jest.fn()} />);
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-
-    expect(texts).toContain('止まっているのに距離や軌跡が記録されることがあります');
-    expect(texts).toContain('アプリを閉じても記録されますか？');
-    expect(texts).toContain('GPXファイルとは何ですか？');
-    expect(texts).toContain('記録したデータはサーバーに送られますか？');
-    expect(texts).toContain('機種変更するとデータはどうなりますか？');
+    expect(screen.getByText('止まっているのに距離や軌跡が記録されることがあります')).toBeTruthy();
+    expect(screen.getByText('アプリを閉じても記録されますか？')).toBeTruthy();
+    expect(screen.getByText('GPXファイルとは何ですか？')).toBeTruthy();
+    expect(screen.getByText('記録したデータはサーバーに送られますか？')).toBeTruthy();
+    expect(screen.getByText('機種変更するとデータはどうなりますか？')).toBeTruthy();
   });
 });

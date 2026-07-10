@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { createStyles } from '@/ui/appStyles';
 import { lightTheme } from '@/theme/theme';
@@ -12,85 +12,67 @@ jest.mock('@expo/vector-icons', () => {
 
 jest.mock('@/ui/components/ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
 
-const { act, create } = require('react-test-renderer') as {
-  act: (callback: () => void) => void;
-  create: (element: ReactNode) => { root: any; update: (element: ReactNode) => void; unmount: () => void };
-};
-
 const styles = createStyles(lightTheme);
 const areaInstructionImage = require('../../../../assets/tutorial/area-instruction.png');
 
-let renderer: { root: any; update: (element: ReactNode) => void; unmount: () => void } | null = null;
-
-function visibleTexts(): unknown[] {
-  return renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
-}
-
+/** 指定ラベルのボタンを押す。 */
 function press(label: string): void {
-  const button = renderer!.root.findByProps({ accessibilityLabel: label });
   act(() => {
-    button.props.onPress();
+    fireEvent.press(screen.getByLabelText(label));
   });
 }
 
 describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
   afterEach(() => {
-    act(() => {
-      renderer?.unmount();
-    });
     jest.restoreAllMocks();
-    renderer = null;
   });
 
   test('最初にアプリ説明を表示する', () => {
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
 
-    expect(visibleTexts()).toContain('すとろりあへようこそ');
-    expect(visibleTexts()).toContain('1 / 6');
-    expect(visibleTexts()).toContain('すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。');
-    expect(visibleTexts()).toContain('記録したデータは、あなたの明示操作なしに外部へ送信しません。');
+    expect(screen.getByText('すとろりあへようこそ')).toBeTruthy();
+    expect(screen.getByText('1 / 6')).toBeTruthy();
+    expect(screen.getByText('すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。')).toBeTruthy();
+    expect(screen.getByText('記録したデータは、あなたの明示操作なしに外部へ送信しません。')).toBeTruthy();
   });
 
   test('次へを押すと画面下の項目、エリア、実績、安全注意、権限案内の順に進む', () => {
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
 
     press('次へ');
-    expect(visibleTexts()).toContain('画面下の項目');
-    expect(visibleTexts()).toContain('2 / 6');
-    const instructionImage = renderer!.root.findByType(Image);
+    expect(screen.getByText('画面下の項目')).toBeTruthy();
+    expect(screen.getByText('2 / 6')).toBeTruthy();
+    // Image の accessibilityLabel で確認する
+    const instructionImage = screen.getByLabelText('マップ画面の要素説明');
     expect(instructionImage.props.accessibilityLabel).toBe('マップ画面の要素説明');
 
     press('次へ');
-    expect(visibleTexts()).toContain('エリアを広げよう');
-    expect(visibleTexts()).toContain('3 / 6');
-    expect(visibleTexts()).toContain('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。');
-    expect(visibleTexts()).toContain(
-      '歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。',
-    );
-    expect(renderer!.root.findByType(Image).props.accessibilityLabel).toBe('地図上のエリアの説明');
+    expect(screen.getByText('エリアを広げよう')).toBeTruthy();
+    expect(screen.getByText('3 / 6')).toBeTruthy();
+    expect(screen.getByText('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。')).toBeTruthy();
+    expect(
+      screen.getByText('歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。'),
+    ).toBeTruthy();
+    expect(screen.getByLabelText('地図上のエリアの説明')).toBeTruthy();
 
     press('次へ');
-    expect(visibleTexts()).toContain('実績を集める');
-    expect(visibleTexts()).toContain('4 / 6');
+    expect(screen.getByText('実績を集める')).toBeTruthy();
+    expect(screen.getByText('4 / 6')).toBeTruthy();
 
     press('次へ');
-    expect(visibleTexts()).toContain('さいごに');
-    expect(visibleTexts()).toContain('5 / 6');
-    expect(visibleTexts()).toContain('安全に楽しくおさんぽするために、次のことを守りましょう。');
-    expect(visibleTexts()).toContain('立入禁止の場所や私有地に入らない');
-    expect(visibleTexts()).toContain('交通ルールを守り、まわりに注意する');
-    expect(visibleTexts()).toContain('危険な場所には近づかない、入らない');
-    expect(visibleTexts()).toContain('体調が悪くなったら無理に続けない');
+    expect(screen.getByText('さいごに')).toBeTruthy();
+    expect(screen.getByText('5 / 6')).toBeTruthy();
+    expect(screen.getByText('安全に楽しくおさんぽするために、次のことを守りましょう。')).toBeTruthy();
+    expect(screen.getByText('立入禁止の場所や私有地に入らない')).toBeTruthy();
+    expect(screen.getByText('交通ルールを守り、まわりに注意する')).toBeTruthy();
+    expect(screen.getByText('危険な場所には近づかない、入らない')).toBeTruthy();
+    expect(screen.getByText('体調が悪くなったら無理に続けない')).toBeTruthy();
 
     press('次へ');
-    expect(visibleTexts()).toContain('位置情報を確認してはじめる');
-    expect(visibleTexts()).toContain('6 / 6');
-    expect(visibleTexts()).toContain('GPSログの記録には位置情報の常時許可が必要です。');
-    expect(visibleTexts()).toContain('チュートリアルを閉じたあと、地図上に表示される位置情報の案内パネルから続けられます。');
+    expect(screen.getByText('位置情報を確認してはじめる')).toBeTruthy();
+    expect(screen.getByText('6 / 6')).toBeTruthy();
+    expect(screen.getByText('GPSログの記録には位置情報の常時許可が必要です。')).toBeTruthy();
+    expect(screen.getByText('チュートリアルを閉じたあと、地図上に表示される位置情報の案内パネルから続けられます。')).toBeTruthy();
   });
 
   test('補足画像ごとのアスペクト比を保って画像枠内に表示する', () => {
@@ -100,25 +82,30 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       }
       return { width: 453, height: 279, scale: 1, uri: 'home-screen-instruction.png' };
     });
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
 
     press('次へ');
-    const instructionImageFrame = renderer!.root
-      .findAllByType(View)
-      .find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
+
+    // instructionImageFrame の View を UNSAFE_getAllByType で探す
+    // onLayout を持つ特定スタイルの View を検索するため UNSAFE を使う
+    const instructionImageFrame = screen.UNSAFE_getAllByType(View).find(
+      (node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
+    );
     expect(instructionImageFrame).toBeTruthy();
     act(() => {
       instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
     });
-    expect(renderer!.root.findByType(Image).props.style).toEqual([
+
+    // Image の style を確認する
+    const instructionImage = screen.getByLabelText('マップ画面の要素説明');
+    expect(instructionImage.props.style).toEqual([
       styles.firstLaunchTutorialInstructionImage,
       { width: 268, height: 268 / (453 / 279) },
     ]);
 
     press('次へ');
-    expect(renderer!.root.findByType(Image).props.style).toEqual([
+    const areaImage = screen.getByLabelText('地図上のエリアの説明');
+    expect(areaImage.props.style).toEqual([
       styles.firstLaunchTutorialInstructionImage,
       { width: 268, height: 268 / (903 / 540) },
     ]);
@@ -133,20 +120,21 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       scale: 1,
       uri: 'invalid-instruction.png',
     });
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
 
     press('次へ');
-    const instructionImageFrame = renderer!.root
-      .findAllByType(View)
-      .find((node: any) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
+
+    // instructionImageFrame の View を UNSAFE_getAllByType で探す
+    const instructionImageFrame = screen.UNSAFE_getAllByType(View).find(
+      (node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
+    );
     expect(instructionImageFrame).toBeTruthy();
     act(() => {
       instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
     });
 
-    expect(renderer!.root.findByType(Image).props.style).toEqual([
+    const instructionImage = screen.getByLabelText('マップ画面の要素説明');
+    expect(instructionImage.props.style).toEqual([
       styles.firstLaunchTutorialInstructionImage,
       { width: 268, height: 268 / (453 / 279) },
     ]);
@@ -154,9 +142,7 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
   test('最後のボタンで onComplete を呼ぶ', () => {
     const onComplete = jest.fn();
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
 
     press('次へ');
     press('次へ');
@@ -170,16 +156,14 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
   test('完了ボタンの文言を再表示用に変更できる', () => {
     const onComplete = jest.fn();
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible completionButtonLabel="閉じる" styles={styles} onComplete={onComplete} />);
-    });
+    render(<FirstLaunchTutorialDialog visible completionButtonLabel="閉じる" styles={styles} onComplete={onComplete} />);
 
     press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
-    expect(visibleTexts()).toContain('閉じる');
+    expect(screen.getByText('閉じる')).toBeTruthy();
     press('チュートリアルを閉じる');
 
     expect(onComplete).toHaveBeenCalledTimes(1);
@@ -187,47 +171,40 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
   test('再表示したときは最初の説明から始まる', () => {
     const onComplete = jest.fn();
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
-    });
+    const { rerender } = render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
 
     press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
-    expect(visibleTexts()).toContain('6 / 6');
+    expect(screen.getByText('6 / 6')).toBeTruthy();
 
     act(() => {
-      renderer!.update(<FirstLaunchTutorialDialog visible={false} styles={styles} onComplete={onComplete} />);
+      rerender(<FirstLaunchTutorialDialog visible={false} styles={styles} onComplete={onComplete} />);
     });
     act(() => {
-      renderer!.update(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
+      rerender(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
     });
 
-    expect(visibleTexts()).toContain('1 / 6');
-    expect(visibleTexts()).toContain('すとろりあへようこそ');
+    expect(screen.getByText('1 / 6')).toBeTruthy();
+    expect(screen.getByText('すとろりあへようこそ')).toBeTruthy();
   });
 
   test('閉じるボタンで onComplete を呼ぶ', () => {
     const onComplete = jest.fn();
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
 
-    const closeButton = renderer!.root.findByProps({ accessibilityLabel: '閉じる' });
     act(() => {
-      closeButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('閉じる'));
     });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
   test('スワイプヒントを表示しない', () => {
-    act(() => {
-      renderer = create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
 
-    expect(visibleTexts()).not.toContain('スワイプで閉じる');
+    expect(screen.queryByText('スワイプで閉じる')).toBeNull();
   });
 });

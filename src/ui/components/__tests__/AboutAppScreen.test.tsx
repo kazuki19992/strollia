@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -35,7 +35,7 @@ describe('このアプリについて画面 AboutAppScreen', () => {
 
     // SafeAreaView のスタイル確認
     // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    const container = screen.UNSAFE_getByType(SafeAreaView);
     const title = screen.getByText('このアプリについて');
     // Image の accessibilityLabel で確認する
     const icon = screen.getByLabelText('すとろりあのアプリアイコン');

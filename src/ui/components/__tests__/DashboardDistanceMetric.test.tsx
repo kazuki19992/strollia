@@ -1,3 +1,4 @@
+import { Text } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 import { createStyles } from '@/ui/appStyles';
@@ -41,7 +42,6 @@ describe('DashboardDistanceMetric', () => {
 
     // allowFontScaling=false を持つ Text ノードを全て取得して確認する
     // UNSAFE_getAllByType を使うのは allowFontScaling という非セマンティックな props の検証のため
-    const { Text } = require('react-native');
     const textNodes = screen.UNSAFE_getAllByType(Text);
     expect(textNodes.every((node) => node.props.allowFontScaling === false)).toBe(true);
   });

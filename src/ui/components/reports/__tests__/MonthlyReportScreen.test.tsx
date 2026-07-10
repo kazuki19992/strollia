@@ -1,4 +1,4 @@
-import { Alert, Text } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
@@ -89,9 +89,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('レポートを閉じる'));
-    });
+    fireEvent.press(screen.getByLabelText('レポートを閉じる'));
 
     expect(onBackToMap).toHaveBeenCalledTimes(1);
   });
@@ -161,9 +159,9 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    // UNSAFE_getAllByProps を使うのは style.backgroundColor という非セマンティックな props でコンテナを検索するため
+    // UNSAFE_getAllByType(View) でViewに絞ってから style.backgroundColor で対象コンテナを特定する
     const container = screen
-      .UNSAFE_getAllByProps({})
+      .UNSAFE_getAllByType(View)
       .find(
         (node) =>
           Array.isArray(node.props.style) &&

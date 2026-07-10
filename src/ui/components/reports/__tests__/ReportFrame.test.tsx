@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 
 import { ReportFrame } from '@/ui/components/reports/ReportFrame';
 
@@ -33,9 +33,7 @@ describe('レポート共通枠 ReportFrame', () => {
       </ReportFrame>,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('レポートを共有'));
-    });
+    fireEvent.press(screen.getByLabelText('レポートを共有'));
 
     expect(onShare).toHaveBeenCalledTimes(1);
   });

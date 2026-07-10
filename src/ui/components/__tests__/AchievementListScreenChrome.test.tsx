@@ -1,3 +1,4 @@
+import { SafeAreaView } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import type { AchievementListItem } from '@/features/achievements/achievementRepository';
@@ -26,7 +27,7 @@ describe('実績画面 AchievementListScreen の画面共通UI', () => {
 
     // SafeAreaView のスタイル確認
     // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    const container = screen.UNSAFE_getByType(SafeAreaView);
     const backButton = screen.getByLabelText('地図へ戻る');
 
     expect(container.props.style).toBe(styles.appScreen);

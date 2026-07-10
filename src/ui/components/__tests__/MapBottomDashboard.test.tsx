@@ -1,5 +1,5 @@
 import * as ReactNative from 'react-native';
-import { Animated } from 'react-native';
+import { Animated, Text } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -105,7 +105,6 @@ describe('マップ下部ダッシュボード', () => {
 
     // allowFontScaling=false を持つ文字列テキストのみを検証する
     // UNSAFE_getAllByType を使うのは allowFontScaling という非セマンティックな props の検証のため
-    const { Text } = require('react-native');
     const textNodes = screen.UNSAFE_getAllByType(Text).filter((node) => typeof node.props.children === 'string');
     expect(textNodes.every((node) => node.props.allowFontScaling === false)).toBe(true);
   });
@@ -152,9 +151,9 @@ describe('マップ下部ダッシュボード', () => {
 
     // testID で速度リング円弧を検索する
     // UNSAFE_getAllByProps を使うのは testID という非セマンティックな props でフィルタリングが必要なため
-    const arc = screen.UNSAFE_getAllByProps({}).find((node) => node.props.testID === 'speed-meter-progress-arc');
-    expect(arc!.props.stroke).toBe('#39d9ff');
-    expect(arc!.props.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
+    const arc = screen.UNSAFE_getAllByProps({ testID: 'speed-meter-progress-arc' })[0];
+    expect(arc.props.stroke).toBe('#39d9ff');
+    expect(arc.props.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
   });
 
   test('小さい画面では現在地名に縮小許可を付けて描画する', () => {
@@ -178,11 +177,11 @@ describe('マップ下部ダッシュボード', () => {
     const layout = getScaledSpeedDialLayout(scale);
 
     // testID でリング背景とSVGを検索する
-    const ringBase = screen.UNSAFE_getAllByProps({}).find((node) => node.props.testID === 'speed-meter-ring-base');
-    const arcSvg = screen.UNSAFE_getAllByProps({}).find((node) => node.props.testID === 'speed-meter-arc-svg');
+    const ringBase = screen.UNSAFE_getAllByProps({ testID: 'speed-meter-ring-base' })[0];
+    const arcSvg = screen.UNSAFE_getAllByProps({ testID: 'speed-meter-arc-svg' })[0];
 
-    expect(ringBase!.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.ringBase)]));
-    expect(arcSvg!.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.arcSvg)]));
+    expect(ringBase.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.ringBase)]));
+    expect(arcSvg.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.arcSvg)]));
   });
 });
 

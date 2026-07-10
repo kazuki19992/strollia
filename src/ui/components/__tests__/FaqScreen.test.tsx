@@ -1,3 +1,4 @@
+import { SafeAreaView } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -29,7 +30,7 @@ describe('よくある質問画面 FaqScreen', () => {
 
     // SafeAreaView のスタイル確認
     // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    const container = screen.UNSAFE_getByType(SafeAreaView);
     const title = screen.getByText('よくある質問');
 
     fireEvent.press(screen.getByLabelText('設定へ戻る'));

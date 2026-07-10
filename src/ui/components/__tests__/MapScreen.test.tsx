@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, Animated } from 'react-native';
+import { Image, Platform, StyleSheet, Text, Animated } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
@@ -91,6 +91,11 @@ function createProps() {
     onRecenterOnUserLocation: jest.fn(),
     onCustomIconError: jest.fn(),
   };
+}
+
+/** テスト中のツリーから MapView 要素を取得する共有ヘルパー。 */
+function getMapView() {
+  return screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
 }
 
 describe('地図画面 MapScreen', () => {
@@ -266,14 +271,14 @@ describe('地図画面 MapScreen', () => {
     const { rerender } = render(<MapScreen {...props} />);
 
     // UNSAFE_getAllByProps を使うのは MapView という非セマンティックな型を props で検索するため
-    const mapViewBefore = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+    const mapViewBefore = getMapView();
     const firstMapPadding = mapViewBefore!.props.mapPadding;
 
     act(() => {
       rerender(<MapScreen {...props} gridOverlayOpacity={0.4} />);
     });
 
-    const mapViewAfter = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+    const mapViewAfter = getMapView();
     expect(mapViewBefore!.props.legalLabelInsets).toBeUndefined();
     expect(firstMapPadding).toEqual({ bottom: 128, left: 0, right: 0, top: 8 });
     expect(mapViewAfter!.props.legalLabelInsets).toBeUndefined();
@@ -290,7 +295,7 @@ describe('地図画面 MapScreen', () => {
     );
 
     // UNSAFE_getAllByProps を使うのは MapView の showsUserLocation という非セマンティックな props を検証するため
-    const mapView = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+    const mapView = getMapView();
     expect(mapView!.props.showsUserLocation).toBe(false);
   });
 
@@ -298,7 +303,7 @@ describe('地図画面 MapScreen', () => {
     render(<MapScreen {...createProps()} userLocationIcon={{ useNativeUserLocation: true, customIconId: null, customImageUri: null }} />);
 
     // UNSAFE_getAllByProps を使うのは MapView の showsUserLocation という非セマンティックな props を検証するため
-    const mapView = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+    const mapView = getMapView();
     expect(mapView!.props.showsUserLocation).toBe(true);
   });
 
@@ -306,19 +311,18 @@ describe('地図画面 MapScreen', () => {
     render(<MapScreen {...createProps()} />);
 
     // UNSAFE_getAllByProps を使うのは MapView の showsMyLocationButton という非セマンティックな props を検証するため
-    const mapView = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+    const mapView = getMapView();
     expect(mapView!.props.showsMyLocationButton).toBe(false);
   });
 
   test('Androidでは操作中のonRegionChangeでも表示範囲を更新する（エリア拡大の追従を速くするため）', () => {
-    const { Platform } = require('react-native');
     const osReplaced = jest.replaceProperty(Platform, 'OS', 'android');
     const props = createProps();
 
     try {
       render(<MapScreen {...props} />);
       // UNSAFE_getAllByProps を使うのは MapView の onRegionChange という非セマンティックな props を検証するため
-      const mapView = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+      const mapView = getMapView();
       expect(mapView!.props.onRegionChange).toBe(props.onRegionChange);
     } finally {
       osReplaced.restore();
@@ -326,13 +330,12 @@ describe('地図画面 MapScreen', () => {
   });
 
   test('iOSでは操作中のonRegionChangeは渡さない（既存挙動を維持しiOSに影響を与えない）', () => {
-    const { Platform } = require('react-native');
     const osReplaced = jest.replaceProperty(Platform, 'OS', 'ios');
 
     try {
       render(<MapScreen {...createProps()} />);
       // UNSAFE_getAllByProps を使うのは MapView の onRegionChange という非セマンティックな props を検証するため
-      const mapView = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+      const mapView = getMapView();
       expect(mapView!.props.onRegionChange).toBeUndefined();
     } finally {
       osReplaced.restore();

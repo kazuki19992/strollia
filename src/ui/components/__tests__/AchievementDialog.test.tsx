@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import type { AchievementListItem } from '@/features/achievements/achievementRepository';
 import { createStyles } from '@/ui/appStyles';
@@ -24,11 +24,6 @@ jest.mock('react-native-view-shot', () => ({
   captureRef: (...args: unknown[]) => mockCaptureRef(...args),
 }));
 
-const { act, create } = require('react-test-renderer') as {
-  act: (callback: () => void | Promise<void>) => Promise<void>;
-  create: (element: React.ReactElement) => { root: any; unmount: () => void };
-};
-
 const styles = createStyles(lightTheme);
 
 const item: AchievementListItem = {
@@ -50,26 +45,26 @@ const item: AchievementListItem = {
 
 describe('実績詳細ダイアログ AchievementDialog', () => {
   test('実績名・開放日・説明を表示する', async () => {
-    let renderer: any;
+    render(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+
     await act(async () => {
-      renderer = create(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+      await Promise.resolve();
     });
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('7日記録');
-    expect(texts).toContain('GPSログを7日分記録する');
-    expect(texts).toContain(`開放日: ${new Date(item.unlockedAt as string).toLocaleDateString()}`);
+    expect(screen.getByText('7日記録')).toBeTruthy();
+    expect(screen.getByText('GPSログを7日分記録する')).toBeTruthy();
+    expect(screen.getByText(`開放日: ${new Date(item.unlockedAt as string).toLocaleDateString()}`)).toBeTruthy();
   });
 
   test('共有ボタンを押すと captureRef と shareAsync を呼ぶ', async () => {
-    let renderer: any;
+    render(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+
     await act(async () => {
-      renderer = create(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+      await Promise.resolve();
     });
 
-    const shareButton = renderer.root.findByProps({ accessibilityLabel: '実績を共有する' });
     await act(async () => {
-      await shareButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('実績を共有する'));
     });
 
     expect(mockCaptureRef).toHaveBeenCalled();
@@ -77,12 +72,12 @@ describe('実績詳細ダイアログ AchievementDialog', () => {
   });
 
   test('item が null のとき本文を描画しない', async () => {
-    let renderer: any;
+    render(<AchievementDialog item={null} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+
     await act(async () => {
-      renderer = create(<AchievementDialog item={null} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+      await Promise.resolve();
     });
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).not.toContain('7日記録');
+    expect(screen.queryByText('7日記録')).toBeNull();
   });
 });

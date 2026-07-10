@@ -1,9 +1,8 @@
 import { LayoutAnimation } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { animateDialogResize } from '@/ui/components/Dialog';
 import { FirstLaunchTutorialDialog } from '@/ui/components/FirstLaunchTutorialDialog';
-
-const ReactTestRenderer = require('react-test-renderer');
 
 jest.mock('@expo/vector-icons', () => ({ MaterialCommunityIcons: 'Icon' }));
 jest.mock('@/ui/components/ConfettiOverlay', () => ({ ConfettiOverlay: () => null }));
@@ -38,13 +37,10 @@ describe('FirstLaunchTutorialDialog のサイズ変化アニメーション', ()
   it('「次へ」でステップを変える直前にリサイズアニメーションを設定する', () => {
     const spy = jest.spyOn(LayoutAnimation, 'configureNext').mockImplementation(() => undefined);
 
-    let tree: any;
-    ReactTestRenderer.act(() => {
-      tree = ReactTestRenderer.create(<FirstLaunchTutorialDialog visible styles={styles} onComplete={() => undefined} />);
-    });
+    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={() => undefined} />);
 
-    ReactTestRenderer.act(() => {
-      tree.root.findByProps({ accessibilityLabel: '次へ' }).props.onPress();
+    act(() => {
+      fireEvent.press(screen.getByLabelText('次へ'));
     });
 
     expect(spy).toHaveBeenCalled();

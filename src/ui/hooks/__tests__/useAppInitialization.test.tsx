@@ -148,11 +148,7 @@ describe('起動初期化フック useAppInitialization', () => {
 
       renderHook(() => useAppInitialization(options));
 
-      await act(async () => {
-        for (let i = 0; i < 10; i += 1) {
-          await Promise.resolve();
-        }
-      });
+      await flushPromises();
 
       const dbIndex = callOrder.indexOf('initializeDatabase');
       const fontsIndex = callOrder.indexOf('loadAppFonts');

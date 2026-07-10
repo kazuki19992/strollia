@@ -329,19 +329,27 @@ describe('現在地アイコン・カラープリセット設定フック useUse
       const { result } = renderHook(() => useUserLocationIconSetting());
       const controller = new AbortController();
 
-      // resolve 中（await 中）に abort する
-      (resolveCustomIconReference as jest.Mock).mockImplementation(async () => {
-        controller.abort();
-        return null;
-      });
+      // resolve を pending のまま保持し、in-flight 中に abort されたことを再現する。
+      // resolve完了前に setState する回帰が入っても検出できるよう、実際に非同期を挟む。
+      let resolveReference: (value: null) => void = () => undefined;
+      (resolveCustomIconReference as jest.Mock).mockImplementation(
+        () =>
+          new Promise<null>((resolve) => {
+            resolveReference = resolve;
+          }),
+      );
 
       await act(async () => {
-        await result.current.applySavedIconSettings({
+        const promise = result.current.applySavedIconSettings({
           savedUserLocationIcon: 'walker',
           savedAppColorPresetId: 'sakura',
           savedCustomIconImageUri: '',
           signal: controller.signal,
         });
+        // pending 中に abort し、その後 resolve して applySavedIconSettings を完了させる
+        controller.abort();
+        resolveReference(null);
+        await promise;
       });
 
       // abort されたため保存設定が state に反映されない（初期値のまま）

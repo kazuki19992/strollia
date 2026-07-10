@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useRef } from 'react';
 import { useMapFollowState, UseMapFollowStateResult } from '@/ui/hooks/useMapFollowState';
 import type { ResolvedUserLocationIcon } from '@/features/customization/customizationResolver';
+import type { ScreenMode } from '@/ui/appTypes';
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
@@ -22,82 +23,52 @@ const NATIVE_USER_LOCATION_ICON = {
   customImageUri: null,
 } as const;
 
+/** useMapFollowState を既定値でレンダリングするヘルパー。テストごとの冗長な incrementRef 定義を集約する。 */
+function renderMapFollowState(overrides: { screenMode?: ScreenMode; userLocationIcon?: ResolvedUserLocationIcon } = {}) {
+  return renderHook(() => {
+    const incrementRef = useRef<() => void>(() => undefined);
+    return useMapFollowState({
+      screenMode: overrides.screenMode ?? 'map',
+      userLocationIcon: overrides.userLocationIcon ?? NATIVE_USER_LOCATION_ICON,
+      incrementVisitedGridRefreshVersionRef: incrementRef,
+    });
+  });
+}
+
 describe('地図追従・センタリングフック useMapFollowState', () => {
   describe('初期状態', () => {
     it('初期 isFollowingUserLocation は true（追従ON）になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       expect(result.current.isFollowingUserLocation).toBe(true);
     });
 
     it('初期 userCoordinate は null になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       expect(result.current.userCoordinate).toBeNull();
     });
 
     it('初期 isMapReady は false になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       expect(result.current.isMapReady).toBe(false);
     });
 
     it('初期 visibleRegion は null になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       expect(result.current.visibleRegion).toBeNull();
     });
 
     it('初期 currentSpeedKmh は 0 になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       expect(result.current.currentSpeedKmh).toBe(0);
     });
 
     it('初期 mapType は standard になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       expect(result.current.mapType).toBe('standard');
     });
@@ -105,14 +76,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
 
   describe('handleMapPanDrag — ドラッグで追従 OFF', () => {
     it('ドラッグ操作後は isFollowingUserLocation が false になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       act(() => {
         result.current.handleMapPanDrag();
@@ -159,14 +123,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
     });
 
     it('userCoordinate が null のときは recenterOnUserLocation を呼んでも追従状態は変わらない', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       // ドラッグで追従 OFF
       act(() => {
@@ -217,14 +174,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
 
   describe('applyUserLocation — 現在地と速度の更新', () => {
     it('有効な緯度経度で userCoordinate が更新される', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
@@ -234,14 +184,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
     });
 
     it('速度が渡された場合は currentSpeedKmh が更新される', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       // 10 m/s = 36 km/h
       act(() => {
@@ -252,14 +195,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
     });
 
     it('無効な座標（NaN）は無視される', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       act(() => {
         result.current.applyUserLocation(NaN, 139.767125, null);
@@ -271,14 +207,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
 
   describe('handleMapReady', () => {
     it('handleMapReady 呼び出し後は isMapReady が true になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       act(() => {
         result.current.handleMapReady();
@@ -318,14 +247,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
 
   describe('handleRegionChangeComplete — 表示範囲の保存', () => {
     it('表示範囲が更新される', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
@@ -339,14 +261,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
 
   describe('toggleMapType — 地図種別の切り替え', () => {
     it('初期状態から toggleMapType を呼ぶと hybrid になる', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       act(() => {
         result.current.toggleMapType();
@@ -356,14 +271,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
     });
 
     it('再度 toggleMapType を呼ぶと standard に戻る', () => {
-      const { result } = renderHook(() => {
-        const incrementRef = useRef<() => void>(() => undefined);
-        return useMapFollowState({
-          screenMode: 'map',
-          userLocationIcon: NATIVE_USER_LOCATION_ICON,
-          incrementVisitedGridRefreshVersionRef: incrementRef,
-        });
-      });
+      const { result } = renderMapFollowState();
 
       act(() => {
         result.current.toggleMapType();

@@ -16,9 +16,9 @@ describe('DashboardDistanceMetric', () => {
 
     // ODOスタイルが適用されているコンテナを確認する
     // スタイル配列にスタイルオブジェクトが含まれているかは UNSAFE_getAllByProps で検証する
-    const container = screen.UNSAFE_getAllByProps({}).find(
-      (node) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardOdometerMetric),
-    );
+    const container = screen
+      .UNSAFE_getAllByProps({})
+      .find((node) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardOdometerMetric));
     expect(container).toBeTruthy();
   });
 
@@ -30,9 +30,9 @@ describe('DashboardDistanceMetric', () => {
     expect(screen.getByText('54')).toBeTruthy();
 
     // TODAYスタイルが適用されているコンテナを確認する
-    const container = screen.UNSAFE_getAllByProps({}).find(
-      (node) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardTodayMetric),
-    );
+    const container = screen
+      .UNSAFE_getAllByProps({})
+      .find((node) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardTodayMetric));
     expect(container).toBeTruthy();
   });
 

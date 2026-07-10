@@ -59,9 +59,7 @@ describe('ライセンス画面 LicenseScreen', () => {
   });
 
   test('生成済みOSSライセンスをライブラリ名だけのリストで表示する', () => {
-    render(
-      <LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
-    );
+    render(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
 
     expect(screen.getByText('ライセンス')).toBeTruthy();
     expect(screen.getByText('react')).toBeTruthy();
@@ -74,9 +72,7 @@ describe('ライセンス画面 LicenseScreen', () => {
   test('画面タイトルは中央配置の共通ヘッダーで表示する', () => {
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    render(
-      <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
-    );
+    render(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
 
     const title = screen.getByText('ライセンス');
 
@@ -88,9 +84,7 @@ describe('ライセンス画面 LicenseScreen', () => {
     const onBackToSettings = jest.fn();
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    render(
-      <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />,
-    );
+    render(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />);
 
     // SafeAreaView のスタイル確認
     // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
@@ -110,12 +104,7 @@ describe('ライセンス画面 LicenseScreen', () => {
     const onOpenLicenseDetail = jest.fn();
 
     render(
-      <LicenseScreen
-        styles={styles as never}
-        theme={lightTheme}
-        onBackToSettings={jest.fn()}
-        onOpenLicenseDetail={onOpenLicenseDetail}
-      />,
+      <LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={onOpenLicenseDetail} />,
     );
 
     act(() => {

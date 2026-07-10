@@ -51,7 +51,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(screen.getByText('3 / 6')).toBeTruthy();
     expect(screen.getByText('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。')).toBeTruthy();
     expect(
-      screen.getByText('歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。'),
+      screen.getByText(
+        '歩いた場所がエリアとして記録され、地図に少しずつ広がっていきます。いろいろな道を歩いて、自分だけの地図を育てていきましょう。',
+      ),
     ).toBeTruthy();
     expect(screen.getByLabelText('地図上のエリアの説明')).toBeTruthy();
 
@@ -88,9 +90,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
     // instructionImageFrame の View を UNSAFE_getAllByType で探す
     // onLayout を持つ特定スタイルの View を検索するため UNSAFE を使う
-    const instructionImageFrame = screen.UNSAFE_getAllByType(View).find(
-      (node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
-    );
+    const instructionImageFrame = screen
+      .UNSAFE_getAllByType(View)
+      .find((node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
     expect(instructionImageFrame).toBeTruthy();
     act(() => {
       instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
@@ -98,17 +100,11 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
     // Image の style を確認する
     const instructionImage = screen.getByLabelText('マップ画面の要素説明');
-    expect(instructionImage.props.style).toEqual([
-      styles.firstLaunchTutorialInstructionImage,
-      { width: 268, height: 268 / (453 / 279) },
-    ]);
+    expect(instructionImage.props.style).toEqual([styles.firstLaunchTutorialInstructionImage, { width: 268, height: 268 / (453 / 279) }]);
 
     press('次へ');
     const areaImage = screen.getByLabelText('地図上のエリアの説明');
-    expect(areaImage.props.style).toEqual([
-      styles.firstLaunchTutorialInstructionImage,
-      { width: 268, height: 268 / (903 / 540) },
-    ]);
+    expect(areaImage.props.style).toEqual([styles.firstLaunchTutorialInstructionImage, { width: 268, height: 268 / (903 / 540) }]);
     expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ width: '100%' }));
     expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ alignSelf: 'stretch' }));
   });
@@ -125,19 +121,16 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     press('次へ');
 
     // instructionImageFrame の View を UNSAFE_getAllByType で探す
-    const instructionImageFrame = screen.UNSAFE_getAllByType(View).find(
-      (node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame,
-    );
+    const instructionImageFrame = screen
+      .UNSAFE_getAllByType(View)
+      .find((node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
     expect(instructionImageFrame).toBeTruthy();
     act(() => {
       instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
     });
 
     const instructionImage = screen.getByLabelText('マップ画面の要素説明');
-    expect(instructionImage.props.style).toEqual([
-      styles.firstLaunchTutorialInstructionImage,
-      { width: 268, height: 268 / (453 / 279) },
-    ]);
+    expect(instructionImage.props.style).toEqual([styles.firstLaunchTutorialInstructionImage, { width: 268, height: 268 / (453 / 279) }]);
   });
 
   test('最後のボタンで onComplete を呼ぶ', () => {

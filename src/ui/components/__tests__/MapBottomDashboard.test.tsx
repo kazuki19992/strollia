@@ -160,9 +160,7 @@ describe('マップ下部ダッシュボード', () => {
   test('小さい画面では現在地名に縮小許可を付けて描画する', () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 375, height: 667, scale: 2, fontScale: 1 });
 
-    render(
-      <MapBottomDashboard {...createProps()} currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }} />,
-    );
+    render(<MapBottomDashboard {...createProps()} currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }} />);
 
     const place = screen.getByText('つくばみらい市');
 

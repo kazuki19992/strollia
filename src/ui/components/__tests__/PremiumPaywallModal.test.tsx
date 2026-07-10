@@ -187,9 +187,7 @@ describe('PremiumPaywallModal', () => {
     // UNSAFE_getAllByType を使うのは特定の文字列を含むテキストを検索するため
     const { Text } = require('react-native');
     const textNodes = screen.UNSAFE_getAllByType(Text);
-    const disclosure = textNodes
-      .map((node) => node.props.children)
-      .find((t: any) => typeof t === 'string' && t.includes('自動更新'));
+    const disclosure = textNodes.map((node) => node.props.children).find((t: any) => typeof t === 'string' && t.includes('自動更新'));
     expect(disclosure).toBeDefined();
     expect(disclosure).toContain('自動的に更新');
     expect(disclosure).toContain('解約');

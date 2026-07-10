@@ -1,59 +1,48 @@
-import { Text } from 'react-native';
+import { render, screen } from '@testing-library/react-native';
 
 import { createStyles } from '@/ui/appStyles';
 import { lightTheme } from '@/theme/theme';
 import { DashboardDistanceMetric } from '@/ui/components/DashboardDistanceMetric';
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 const styles = createStyles(lightTheme);
 
 describe('DashboardDistanceMetric', () => {
   test('ODOラベルとdashboardOdometerMetricスタイルで描画する', () => {
-    let renderer: any;
+    render(<DashboardDistanceMetric label="ODO" parts={['1234', '56']} scale={1} styles={styles} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<DashboardDistanceMetric label="ODO" parts={['1234', '56']} scale={1} styles={styles} />);
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('ODO');
-    expect(texts).toContain('1234');
-    expect(texts).toContain('56');
+    expect(screen.getByText('ODO')).toBeTruthy();
+    expect(screen.getByText('1234')).toBeTruthy();
+    expect(screen.getByText('56')).toBeTruthy();
 
     // ODOスタイルが適用されているコンテナを確認する
-    const container = renderer.root.findAll(
-      (node: any) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardOdometerMetric),
+    // スタイル配列にスタイルオブジェクトが含まれているかは UNSAFE_getAllByProps で検証する
+    const container = screen.UNSAFE_getAllByProps({}).find(
+      (node) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardOdometerMetric),
     );
-    expect(container.length).toBeGreaterThan(0);
+    expect(container).toBeTruthy();
   });
 
   test('TODAYラベルとdashboardTodayMetricスタイルで描画する', () => {
-    let renderer: any;
+    render(<DashboardDistanceMetric label="TODAY" parts={['9876', '54']} scale={1} styles={styles} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<DashboardDistanceMetric label="TODAY" parts={['9876', '54']} scale={1} styles={styles} />);
-    });
+    expect(screen.getByText('TODAY')).toBeTruthy();
+    expect(screen.getByText('9876')).toBeTruthy();
+    expect(screen.getByText('54')).toBeTruthy();
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('TODAY');
-    expect(texts).toContain('9876');
-    expect(texts).toContain('54');
-
-    const container = renderer.root.findAll(
-      (node: any) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardTodayMetric),
+    // TODAYスタイルが適用されているコンテナを確認する
+    const container = screen.UNSAFE_getAllByProps({}).find(
+      (node) => Array.isArray(node.props.style) && node.props.style.includes(styles.dashboardTodayMetric),
     );
-    expect(container.length).toBeGreaterThan(0);
+    expect(container).toBeTruthy();
   });
 
   test('allowFontScaling=falseで全テキストを固定フォントサイズにする', () => {
-    let renderer: any;
+    render(<DashboardDistanceMetric label="ODO" parts={['0', '00']} scale={1} styles={styles} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<DashboardDistanceMetric label="ODO" parts={['0', '00']} scale={1} styles={styles} />);
-    });
-
-    const textNodes = renderer.root.findAllByType(Text);
-    expect(textNodes.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
+    // allowFontScaling=false を持つ Text ノードを全て取得して確認する
+    // UNSAFE_getAllByType を使うのは allowFontScaling という非セマンティックな props の検証のため
+    const { Text } = require('react-native');
+    const textNodes = screen.UNSAFE_getAllByType(Text);
+    expect(textNodes.every((node) => node.props.allowFontScaling === false)).toBe(true);
   });
 });

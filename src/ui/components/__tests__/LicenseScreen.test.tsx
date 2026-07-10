@@ -1,4 +1,5 @@
-import { SafeAreaView, StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { LicenseDetailScreen, LicenseScreen } from '@/ui/components/LicenseScreen';
@@ -36,9 +37,6 @@ jest.mock('@/ui/generated/ossLicenses', () => ({
   OSS_LICENSES_GENERATED_AT: '2026-06-01T00:00:00.000Z',
 }));
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
 const styles = new Proxy(
   {},
   {
@@ -52,95 +50,76 @@ function flattenStyle(style: unknown): Record<string, unknown> {
 }
 
 describe('ライセンス画面 LicenseScreen', () => {
-  let renderer: any;
-
   beforeEach(() => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    renderer = null;
   });
 
   afterEach(() => {
-    if (renderer) {
-      act(() => {
-        renderer.unmount();
-      });
-    }
     jest.restoreAllMocks();
   });
 
   test('生成済みOSSライセンスをライブラリ名だけのリストで表示する', () => {
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
-      );
-    });
+    render(
+      <LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
+    );
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-
-    expect(texts).toContain('ライセンス');
-    expect(texts).toContain('react');
-    expect(texts).toContain('expo');
-    expect(texts).not.toContain('19.1.0');
-    expect(texts).not.toContain('MIT');
-    expect(texts).not.toContain('MIT License text');
+    expect(screen.getByText('ライセンス')).toBeTruthy();
+    expect(screen.getByText('react')).toBeTruthy();
+    expect(screen.getByText('expo')).toBeTruthy();
+    expect(screen.queryByText('19.1.0')).toBeNull();
+    expect(screen.queryByText('MIT')).toBeNull();
+    expect(screen.queryByText('MIT License text')).toBeNull();
   });
 
   test('画面タイトルは中央配置の共通ヘッダーで表示する', () => {
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
-      );
-    });
+    render(
+      <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
+    );
 
-    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'ライセンス');
+    const title = screen.getByText('ライセンス');
 
-    expect(flattenStyle(title?.props.style).position).toBe('absolute');
-    expect(flattenStyle(title?.props.style).textAlign).toBe('center');
+    expect(flattenStyle(title.props.style).position).toBe('absolute');
+    expect(flattenStyle(title.props.style).textAlign).toBe('center');
   });
 
   test('設定ボタンで設定画面に戻る', () => {
     const onBackToSettings = jest.fn();
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />,
-      );
-    });
+    render(
+      <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />,
+    );
 
-    const container = renderer.root.findByType(SafeAreaView);
-    const backButton = renderer.root.findByProps({ accessibilityLabel: '設定へ戻る' });
-    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === 'ライセンス');
+    // SafeAreaView のスタイル確認
+    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
+    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    const title = screen.getByText('ライセンス');
 
     act(() => {
-      backButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('設定へ戻る'));
     });
 
     expect(container.props.style).toBe(realStyles.appScreen);
-    expect(flattenStyle(title?.props.style).position).toBe('absolute');
+    expect(flattenStyle(title.props.style).position).toBe('absolute');
     expect(onBackToSettings).toHaveBeenCalledTimes(1);
   });
 
   test('リスト項目をタップすると選択したライセンス詳細へ遷移する', () => {
     const onOpenLicenseDetail = jest.fn();
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <LicenseScreen
-          styles={styles as never}
-          theme={lightTheme}
-          onBackToSettings={jest.fn()}
-          onOpenLicenseDetail={onOpenLicenseDetail}
-        />,
-      );
-    });
-
-    const reactRow = renderer.root.findByProps({ accessibilityLabel: 'react のライセンス詳細を開く' });
+    render(
+      <LicenseScreen
+        styles={styles as never}
+        theme={lightTheme}
+        onBackToSettings={jest.fn()}
+        onOpenLicenseDetail={onOpenLicenseDetail}
+      />,
+    );
 
     act(() => {
-      reactRow.props.onPress();
+      fireEvent.press(screen.getByLabelText('react のライセンス詳細を開く'));
     });
 
     expect(onOpenLicenseDetail).toHaveBeenCalledWith(OSS_LICENSES[0]);
@@ -150,29 +129,27 @@ describe('ライセンス画面 LicenseScreen', () => {
     const onBackToLicenseList = jest.fn();
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <LicenseDetailScreen license={OSS_LICENSES[0]} styles={realStyles} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />,
-      );
-    });
+    render(
+      <LicenseDetailScreen license={OSS_LICENSES[0]} styles={realStyles} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />,
+    );
 
-    const container = renderer.root.findByType(SafeAreaView);
-    const title = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '詳細');
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('react');
-    expect(texts).toContain('19.1.0');
-    expect(texts).toContain('MIT');
-    expect(texts).toContain('https://github.com/facebook/react');
-    expect(texts).toContain('MIT License text');
+    // SafeAreaView のスタイル確認
+    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
+    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    const title = screen.getByText('詳細');
 
-    const backButton = renderer.root.findByProps({ accessibilityLabel: 'ライセンスへ戻る' });
+    expect(screen.getByText('react')).toBeTruthy();
+    expect(screen.getByText('19.1.0')).toBeTruthy();
+    expect(screen.getByText('MIT')).toBeTruthy();
+    expect(screen.getByText('https://github.com/facebook/react')).toBeTruthy();
+    expect(screen.getByText('MIT License text')).toBeTruthy();
 
     act(() => {
-      backButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('ライセンスへ戻る'));
     });
 
     expect(container.props.style).toBe(realStyles.appScreen);
-    expect(flattenStyle(title?.props.style).position).toBe('absolute');
+    expect(flattenStyle(title.props.style).position).toBe('absolute');
     expect(onBackToLicenseList).toHaveBeenCalledTimes(1);
   });
 });

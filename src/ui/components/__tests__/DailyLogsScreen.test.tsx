@@ -1,4 +1,4 @@
-import { SafeAreaView, Text } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { DailyLogsScreen } from '@/ui/components/DailyLogsScreen';
@@ -18,9 +18,6 @@ jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
 }));
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
 const styles = new Proxy({}, { get: (_target, prop) => prop });
 
 describe('日別ログ画面 DailyLogsScreen', () => {
@@ -33,48 +30,45 @@ describe('日別ログ画面 DailyLogsScreen', () => {
   });
 
   test('日別ログがない場合は空状態を表示する', async () => {
-    let renderer: any;
+    render(
+      <DailyLogsScreen
+        dailyLogs={[]}
+        styles={styles as never}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onOpenDailyLogDetail={jest.fn()}
+      />,
+    );
 
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <DailyLogsScreen
-          dailyLogs={[]}
-          styles={styles as never}
-          theme={lightTheme}
-          onBackToMap={jest.fn()}
-          onOpenDailyLogDetail={jest.fn()}
-        />,
-      );
       await Promise.resolve();
     });
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-
-    expect(texts).toContain('日別ログはまだありません');
+    expect(screen.getByText('日別ログはまだありません')).toBeTruthy();
   });
 
   test('設定画面と同じ背景と共通ヘッダーで表示する', async () => {
-    let renderer: any;
+    render(
+      <DailyLogsScreen
+        dailyLogs={[]}
+        styles={styles as never}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onOpenDailyLogDetail={jest.fn()}
+      />,
+    );
 
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <DailyLogsScreen
-          dailyLogs={[]}
-          styles={styles as never}
-          theme={lightTheme}
-          onBackToMap={jest.fn()}
-          onOpenDailyLogDetail={jest.fn()}
-        />,
-      );
       await Promise.resolve();
     });
 
-    const container = renderer.root.findByType(SafeAreaView);
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });
+    // SafeAreaView のスタイル確認
+    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
+    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    const backButton = screen.getByLabelText('地図へ戻る');
 
     expect(container.props.style).toBe('appScreen');
-    expect(texts).toContain('日ごとの記録');
+    expect(screen.getByText('日ごとの記録')).toBeTruthy();
     expect(backButton.props.style).toBe('appHeaderBackButton');
   });
 
@@ -89,49 +83,43 @@ describe('日別ログ画面 DailyLogsScreen', () => {
       startLocationPointId: 10,
       endLocationPointId: 20,
     };
-    let renderer: any;
+
+    render(
+      <DailyLogsScreen
+        dailyLogs={[
+          {
+            localDate: '2026-06-03',
+            pointCount: 1,
+            startedAt: '2026-06-03T00:00:00.000Z',
+            endedAt: '2026-06-03T00:01:00.000Z',
+            distanceMeters: 300,
+            startLocationPointId: 30,
+            endLocationPointId: 40,
+          },
+          log,
+        ]}
+        styles={styles as never}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onOpenDailyLogDetail={onOpenDailyLogDetail}
+      />,
+    );
 
     await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <DailyLogsScreen
-          dailyLogs={[
-            {
-              localDate: '2026-06-03',
-              pointCount: 1,
-              startedAt: '2026-06-03T00:00:00.000Z',
-              endedAt: '2026-06-03T00:01:00.000Z',
-              distanceMeters: 300,
-              startLocationPointId: 30,
-              endLocationPointId: 40,
-            },
-            log,
-          ]}
-          styles={styles as never}
-          theme={lightTheme}
-          onBackToMap={jest.fn()}
-          onOpenDailyLogDetail={onOpenDailyLogDetail}
-        />,
-      );
       await Promise.resolve();
     });
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toEqual(
-      expect.arrayContaining([
-        '2026年6月',
-        '6月3日（水）',
-        '千代田区 ▶ 渋谷区',
-        '0.30km',
-        '2026年5月',
-        '5月31日（日）',
-        '船橋市 ▶ 船橋市',
-        '146.20km',
-      ]),
-    );
+    expect(screen.getByText('2026年6月')).toBeTruthy();
+    expect(screen.getByText('6月3日（水）')).toBeTruthy();
+    expect(screen.getByText('千代田区 ▶ 渋谷区')).toBeTruthy();
+    expect(screen.getByText('0.30km')).toBeTruthy();
+    expect(screen.getByText('2026年5月')).toBeTruthy();
+    expect(screen.getByText('5月31日（日）')).toBeTruthy();
+    expect(screen.getByText('船橋市 ▶ 船橋市')).toBeTruthy();
+    expect(screen.getByText('146.20km')).toBeTruthy();
 
-    const button = renderer.root.findByProps({ accessibilityLabel: '5月31日（日）の記録を開く' });
     act(() => {
-      button.props.onPress();
+      fireEvent.press(screen.getByLabelText('5月31日（日）の記録を開く'));
     });
 
     expect(onOpenDailyLogDetail).toHaveBeenCalledWith(log);

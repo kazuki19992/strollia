@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { render, screen } from '@testing-library/react-native';
 
 import { AchievementListItem } from '@/features/achievements/achievementRepository';
 import { MonthlyReport } from '@/features/reports/monthlyReport';
@@ -8,9 +8,6 @@ jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
   return { Feather: Text };
 });
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 const report: MonthlyReport = {
   month: { year: 2026, month: 4 },
@@ -42,47 +39,38 @@ function achievement(id: string, title: string, unlockedAt: string | null): Achi
 
 describe('実績ハイライトレポート AchievementHighlightReportPage', () => {
   it('対象月の実績がない場合は空状態を表示する', () => {
-    let renderer: any;
+    render(
+      <AchievementHighlightReportPage
+        report={report}
+        achievements={[achievement('a', '3月実績', '2026-03-01T00:00:00.000Z')]}
+        pageCount={4}
+        pageIndex={0}
+        onShare={jest.fn()}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <AchievementHighlightReportPage
-          report={report}
-          achievements={[achievement('a', '3月実績', '2026-03-01T00:00:00.000Z')]}
-          pageCount={4}
-          pageIndex={0}
-          onShare={jest.fn()}
-        />,
-      );
-    });
-
-    expect(renderer.root.findAllByType(Text).map((node: any) => node.props.children)).toContain('今月はまだ実績達成なし');
+    expect(screen.getByText('今月はまだ実績達成なし')).toBeTruthy();
   });
 
   it('対象月の実績は先頭3件だけ表示する', () => {
-    let renderer: any;
+    render(
+      <AchievementHighlightReportPage
+        report={report}
+        achievements={[
+          achievement('a', '100km移動した', '2026-04-01T00:00:00.000Z'),
+          achievement('b', '200km移動した', '2026-04-02T00:00:00.000Z'),
+          achievement('c', '300km移動した', '2026-04-03T00:00:00.000Z'),
+          achievement('d', '400km移動した', '2026-04-04T00:00:00.000Z'),
+        ]}
+        pageCount={4}
+        pageIndex={0}
+        onShare={jest.fn()}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <AchievementHighlightReportPage
-          report={report}
-          achievements={[
-            achievement('a', '100km移動した', '2026-04-01T00:00:00.000Z'),
-            achievement('b', '200km移動した', '2026-04-02T00:00:00.000Z'),
-            achievement('c', '300km移動した', '2026-04-03T00:00:00.000Z'),
-            achievement('d', '400km移動した', '2026-04-04T00:00:00.000Z'),
-          ]}
-          pageCount={4}
-          pageIndex={0}
-          onShare={jest.fn()}
-        />,
-      );
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('100km移動した');
-    expect(texts).toContain('200km移動した');
-    expect(texts).toContain('300km移動した');
-    expect(texts).not.toContain('400km移動した');
+    expect(screen.getByText('100km移動した')).toBeTruthy();
+    expect(screen.getByText('200km移動した')).toBeTruthy();
+    expect(screen.getByText('300km移動した')).toBeTruthy();
+    expect(screen.queryByText('400km移動した')).toBeNull();
   });
 });

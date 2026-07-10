@@ -1,9 +1,7 @@
 import { Animated } from 'react-native';
+import { render, act } from '@testing-library/react-native';
 
 import { MonthlyReportScrollIndicator } from '@/ui/components/reports/MonthlyReportScrollIndicator';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 describe('月次レポートスクロール誘導 MonthlyReportScrollIndicator', () => {
   let loopAnimation: { start: jest.Mock; stop: jest.Mock };
@@ -19,15 +17,11 @@ describe('月次レポートスクロール誘導 MonthlyReportScrollIndicator',
   });
 
   it('マウント時にループアニメーションを開始し、アンマウント時に停止する', () => {
-    let renderer: any;
-
-    act(() => {
-      renderer = ReactTestRenderer.create(<MonthlyReportScrollIndicator color="#ffffff" />);
-    });
+    const { unmount } = render(<MonthlyReportScrollIndicator color="#ffffff" />);
 
     expect(loopAnimation.start).toHaveBeenCalledTimes(1);
 
-    act(() => renderer.unmount());
+    act(() => unmount());
 
     expect(loopAnimation.stop).toHaveBeenCalledTimes(1);
   });

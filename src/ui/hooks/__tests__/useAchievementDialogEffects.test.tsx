@@ -1,3 +1,4 @@
+import { act, renderHook } from '@testing-library/react-native';
 import { MutableRefObject } from 'react';
 import { Vibration } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -5,9 +6,6 @@ import * as Haptics from 'expo-haptics';
 import { useAchievementDialogEffects, UseAchievementDialogEffectsArgs } from '@/ui/hooks/useAchievementDialogEffects';
 import { PendingAchievementNotification } from '@/features/achievements/achievementRepository';
 import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn().mockResolvedValue(undefined),
@@ -38,12 +36,6 @@ function makeNotification(): PendingAchievementNotification {
   };
 }
 
-/** hookを実行するための最小コンポーネント。 */
-function HookProbe(props: UseAchievementDialogEffectsArgs) {
-  useAchievementDialogEffects(props);
-  return null;
-}
-
 describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -60,19 +52,17 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      act(() => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={makeNotification()}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={jest.fn().mockResolvedValue(undefined)}
-            setMessage={jest.fn()}
-          />,
-        );
-      });
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: makeNotification(),
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: jest.fn().mockResolvedValue(undefined),
+          setMessage: jest.fn(),
+        }),
+      );
 
       expect(isAchievementDialogVisibleRef.current).toBe(true);
     });
@@ -81,19 +71,17 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: true };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      act(() => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={null}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={jest.fn().mockResolvedValue(undefined)}
-            setMessage={jest.fn()}
-          />,
-        );
-      });
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: null,
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: jest.fn().mockResolvedValue(undefined),
+          setMessage: jest.fn(),
+        }),
+      );
 
       expect(isAchievementDialogVisibleRef.current).toBe(false);
     });
@@ -104,19 +92,17 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      act(() => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={makeNotification()}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={jest.fn().mockResolvedValue(undefined)}
-            setMessage={jest.fn()}
-          />,
-        );
-      });
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: makeNotification(),
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: jest.fn().mockResolvedValue(undefined),
+          setMessage: jest.fn(),
+        }),
+      );
 
       expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);
     });
@@ -125,19 +111,17 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      act(() => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={makeNotification()}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={jest.fn().mockResolvedValue(undefined)}
-            setMessage={jest.fn()}
-          />,
-        );
-      });
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: makeNotification(),
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: jest.fn().mockResolvedValue(undefined),
+          setMessage: jest.fn(),
+        }),
+      );
 
       expect(Vibration.vibrate).toHaveBeenCalledWith(1000);
     });
@@ -146,19 +130,17 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      act(() => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={null}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={jest.fn().mockResolvedValue(undefined)}
-            setMessage={jest.fn()}
-          />,
-        );
-      });
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: null,
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: jest.fn().mockResolvedValue(undefined),
+          setMessage: jest.fn(),
+        }),
+      );
 
       expect(Haptics.notificationAsync).not.toHaveBeenCalled();
     });
@@ -170,18 +152,19 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: true };
       const refreshData = jest.fn().mockResolvedValue(undefined);
 
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: null,
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: refreshData,
+          setMessage: jest.fn(),
+        }),
+      );
+
       await act(async () => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={null}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={refreshData}
-            setMessage={jest.fn()}
-          />,
-        );
         await Promise.resolve();
       });
 
@@ -193,18 +176,19 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: true };
       const refreshData = jest.fn().mockResolvedValue(undefined);
 
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: makeNotification(),
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: refreshData,
+          setMessage: jest.fn(),
+        }),
+      );
+
       await act(async () => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={makeNotification()}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={refreshData}
-            setMessage={jest.fn()}
-          />,
-        );
         await Promise.resolve();
       });
 
@@ -216,18 +200,19 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: true };
       const refreshData = jest.fn().mockResolvedValue(undefined);
 
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: null,
+          isReady: false,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: refreshData,
+          setMessage: jest.fn(),
+        }),
+      );
+
       await act(async () => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={null}
-            isReady={false}
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={refreshData}
-            setMessage={jest.fn()}
-          />,
-        );
         await Promise.resolve();
       });
 
@@ -240,18 +225,19 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const setMessage = jest.fn();
       const refreshData = jest.fn().mockRejectedValue(new Error('load failed'));
 
+      renderHook(() =>
+        useAchievementDialogEffects({
+          activeAchievementNotification: null,
+          isReady: true,
+          appState: 'active',
+          isAchievementDialogVisibleRef,
+          wasAchievementEvaluationPausedRef,
+          refreshDataAndEvaluateAchievementsIfDialogIdle: refreshData,
+          setMessage,
+        }),
+      );
+
       await act(async () => {
-        ReactTestRenderer.create(
-          <HookProbe
-            activeAchievementNotification={null}
-            isReady
-            appState="active"
-            isAchievementDialogVisibleRef={isAchievementDialogVisibleRef}
-            wasAchievementEvaluationPausedRef={wasAchievementEvaluationPausedRef}
-            refreshDataAndEvaluateAchievementsIfDialogIdle={refreshData}
-            setMessage={setMessage}
-          />,
-        );
         await Promise.resolve();
       });
 

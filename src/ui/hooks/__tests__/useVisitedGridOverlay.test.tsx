@@ -1,8 +1,7 @@
+import { act, renderHook } from '@testing-library/react-native';
+
 import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
 import { useVisitedGridOverlay, UseVisitedGridOverlayResult } from '@/ui/hooks/useVisitedGridOverlay';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 jest.mock('@/features/location/visitedCellRepository', () => ({
   getVisitedCellsInBounds: jest.fn().mockResolvedValue([]),
@@ -28,20 +27,6 @@ const TEST_REGION = {
   longitudeDelta: 0.01,
 };
 
-type HookProbeProps = {
-  /** フックの戻り値をテストへ渡すコールバック。 */
-  onResult: (result: UseVisitedGridOverlayResult) => void;
-  /** isReady の値。 */
-  isReady?: boolean;
-};
-
-/** フックを実行するための最小コンポーネント。 */
-function HookProbe({ onResult, isReady = true }: HookProbeProps) {
-  const result = useVisitedGridOverlay({ isReady, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' });
-  onResult(result);
-  return null;
-}
-
 describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -50,54 +35,50 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
   describe('初期状態', () => {
     it('初期 visitedGridCells は空配列になる', () => {
-      let result: UseVisitedGridOverlayResult | undefined;
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }),
+      );
 
-      act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(result!.visitedGridCells).toEqual([]);
+      expect(result.current.visitedGridCells).toEqual([]);
     });
 
     it('gridOverlayOpacity は数値で返される', () => {
-      let result: UseVisitedGridOverlayResult | undefined;
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }),
+      );
 
-      act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(typeof result!.gridOverlayOpacity).toBe('number');
+      expect(typeof result.current.gridOverlayOpacity).toBe('number');
     });
 
     it('incrementVisitedGridRefreshVersion は関数として返される', () => {
-      let result: UseVisitedGridOverlayResult | undefined;
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }),
+      );
 
-      act(() => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
-      });
-
-      expect(typeof result!.incrementVisitedGridRefreshVersion).toBe('function');
+      expect(typeof result.current.incrementVisitedGridRefreshVersion).toBe('function');
     });
   });
 
   describe('isReady が false の場合', () => {
     it('isReady が false のときは getVisitedCellsInBounds を呼ばない', async () => {
-      let result: UseVisitedGridOverlayResult | undefined;
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: false, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }),
+      );
 
       await act(async () => {
-        ReactTestRenderer.create(<HookProbe isReady={false} onResult={(r) => (result = r)} />);
         await Promise.resolve();
       });
 
       expect(getVisitedCellsInBounds).not.toHaveBeenCalled();
-      expect(result!.visitedGridCells).toEqual([]);
+      expect(result.current.visitedGridCells).toEqual([]);
     });
   });
 
   describe('isReady が true の場合', () => {
     it('isReady が true のときは getVisitedCellsInBounds を呼ぶ', async () => {
+      renderHook(() => useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }));
+
       await act(async () => {
-        ReactTestRenderer.create(<HookProbe isReady={true} onResult={() => undefined} />);
         await Promise.resolve();
       });
 
@@ -107,17 +88,18 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
   describe('incrementVisitedGridRefreshVersion', () => {
     it('呼び出すと getVisitedCellsInBounds が再度呼ばれる', async () => {
-      let result: UseVisitedGridOverlayResult | undefined;
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: '#1f7a5c' }),
+      );
 
       await act(async () => {
-        ReactTestRenderer.create(<HookProbe onResult={(r) => (result = r)} />);
         await Promise.resolve();
       });
 
       const callCountBefore = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
       await act(async () => {
-        result!.incrementVisitedGridRefreshVersion();
+        result.current.incrementVisitedGridRefreshVersion();
         await Promise.resolve();
       });
 

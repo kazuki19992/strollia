@@ -1,15 +1,7 @@
+import { act, renderHook } from '@testing-library/react-native';
 import type { LocationObject } from 'expo-location';
-import type React from 'react';
 
 import { useForegroundUserLocation } from '@/ui/hooks/useForegroundUserLocation';
-
-const { act, create } = require('react-test-renderer') as {
-  act: (callback: () => void | Promise<void>) => Promise<void>;
-  create: (element: React.ReactElement) => {
-    update: (element: React.ReactElement) => void;
-    unmount: () => void;
-  };
-};
 
 const mockEnsureForegroundLocationPermission = jest.fn();
 const mockWatchPositionAsync = jest.fn();
@@ -38,15 +30,10 @@ function flushPromises(): Promise<void> {
 
 type HarnessProps = {
   enabled: boolean;
-  shouldPersist?: boolean;
+  shouldPersist: boolean;
   onLocation?: (lat: number, lng: number, speed: number | null) => void;
   onError?: (error: unknown) => void;
 };
-
-function Harness({ enabled, shouldPersist = false, onLocation, onError }: HarnessProps) {
-  useForegroundUserLocation({ enabled, shouldPersist, onLocation, onError });
-  return null;
-}
 
 const watchedLocation = {
   timestamp: 1,
@@ -64,8 +51,9 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   });
 
   test('enabled=falseのときウォッチを開始しない', async () => {
+    renderHook(() => useForegroundUserLocation({ enabled: false, shouldPersist: false }));
+
     await act(async () => {
-      create(<Harness enabled={false} />);
       await flushPromises();
     });
 
@@ -73,16 +61,18 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   });
 
   test('表示専用ではBalanced、保存時はHighでウォッチを1つ開始する', async () => {
-    let renderer: ReturnType<typeof create>;
+    const { rerender } = renderHook(({ enabled, shouldPersist }: HarnessProps) => useForegroundUserLocation({ enabled, shouldPersist }), {
+      initialProps: { enabled: true, shouldPersist: false },
+    });
+
     await act(async () => {
-      renderer = create(<Harness enabled />);
       await flushPromises();
     });
 
     expect(mockWatchPositionAsync).toHaveBeenLastCalledWith({ accuracy: 3, distanceInterval: 5, timeInterval: 2000 }, expect.any(Function));
 
     await act(async () => {
-      renderer.update(<Harness enabled shouldPersist />);
+      rerender({ enabled: true, shouldPersist: true });
       await flushPromises();
     });
 
@@ -94,8 +84,9 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
     const onLocation = jest.fn();
     mockGetLastKnownPositionAsync.mockResolvedValue(watchedLocation);
 
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onLocation }));
+
     await act(async () => {
-      create(<Harness enabled shouldPersist onLocation={onLocation} />);
       await flushPromises();
     });
 
@@ -112,8 +103,9 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onLocation }));
+
     await act(async () => {
-      create(<Harness enabled shouldPersist onLocation={onLocation} />);
       await flushPromises();
     });
     await act(async () => {
@@ -133,8 +125,9 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
+
     await act(async () => {
-      create(<Harness enabled shouldPersist />);
       await flushPromises();
     });
     await act(async () => {
@@ -161,8 +154,9 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
+
     await act(async () => {
-      create(<Harness enabled shouldPersist />);
       await flushPromises();
     });
     await act(async () => {
@@ -194,8 +188,9 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onError }));
+
     await act(async () => {
-      create(<Harness enabled shouldPersist onError={onError} />);
       await flushPromises();
     });
     await act(async () => {
@@ -213,8 +208,9 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   test('権限が無い場合はウォッチを開始しない', async () => {
     mockEnsureForegroundLocationPermission.mockResolvedValue(false);
 
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: false }));
+
     await act(async () => {
-      create(<Harness enabled />);
       await flushPromises();
     });
 
@@ -222,24 +218,31 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   });
 
   test('無効化時とアンマウント時にウォッチを解除する', async () => {
-    let renderer: ReturnType<typeof create>;
+    const { rerender, unmount } = renderHook(
+      ({ enabled }: { enabled: boolean }) => useForegroundUserLocation({ enabled, shouldPersist: false }),
+      {
+        initialProps: { enabled: true },
+      },
+    );
+
     await act(async () => {
-      renderer = create(<Harness enabled />);
       await flushPromises();
     });
+
     await act(async () => {
-      renderer.update(<Harness enabled={false} />);
+      rerender({ enabled: false });
       await flushPromises();
     });
 
     expect(mockRemove).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      renderer.update(<Harness enabled />);
+      rerender({ enabled: true });
       await flushPromises();
     });
+
     await act(async () => {
-      renderer.unmount();
+      unmount();
       await flushPromises();
     });
 

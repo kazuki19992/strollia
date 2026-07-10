@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { act, renderHook } from '@testing-library/react-native';
 
 import { useDailyLogDetailData, DailyLogDetailDataState } from '@/ui/hooks/useDailyLogDetailData';
 
@@ -13,9 +13,6 @@ jest.mock('@/ui/dailyRouteTimeline', () => ({
 }));
 
 import { fetchDailyLogDetailData } from '@/features/logs/dailyLogDetailService';
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 const baseLog = {
   localDate: '2026-05-31',
@@ -50,17 +47,6 @@ const mockReport = {
   unlockedAchievements: [],
 };
 
-/** フックの戻り値をテストに渡すプローブコンポーネント。 */
-function HookProbe({ log, onState }: { log: typeof baseLog; onState: (state: DailyLogDetailDataState) => void }) {
-  const state = useDailyLogDetailData(log);
-
-  useEffect(() => {
-    onState(state);
-  });
-
-  return null;
-}
-
 describe('useDailyLogDetailData フック', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -74,13 +60,10 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '-- ▶ --',
       });
 
-      const states: DailyLogDetailDataState[] = [];
-      act(() => {
-        ReactTestRenderer.create(<HookProbe log={baseLog} onState={(s) => states.push(s)} />);
-      });
+      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
 
       // 最初のレンダリング（非同期が完了する前）の状態
-      expect(states[0].isLoadingDetail).toBe(true);
+      expect(result.current.isLoadingDetail).toBe(true);
     });
 
     it('dailyPoints の初期値は空配列', () => {
@@ -90,12 +73,9 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '-- ▶ --',
       });
 
-      const states: DailyLogDetailDataState[] = [];
-      act(() => {
-        ReactTestRenderer.create(<HookProbe log={baseLog} onState={(s) => states.push(s)} />);
-      });
+      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
 
-      expect(states[0].dailyPoints).toEqual([]);
+      expect(result.current.dailyPoints).toEqual([]);
     });
   });
 
@@ -107,17 +87,16 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '船橋市 ▶ 船橋市',
       });
 
-      const states: DailyLogDetailDataState[] = [];
+      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
+
       await act(async () => {
-        ReactTestRenderer.create(<HookProbe log={baseLog} onState={(s) => states.push(s)} />);
         await Promise.resolve();
       });
 
-      const lastState = states[states.length - 1];
-      expect(lastState.isLoadingDetail).toBe(false);
-      expect(lastState.dailyPoints).toEqual(mockPoints);
-      expect(lastState.dailyDetailReport).toEqual(mockReport);
-      expect(lastState.routeEndpointsLabel).toBe('船橋市 ▶ 船橋市');
+      expect(result.current.isLoadingDetail).toBe(false);
+      expect(result.current.dailyPoints).toEqual(mockPoints);
+      expect(result.current.dailyDetailReport).toEqual(mockReport);
+      expect(result.current.routeEndpointsLabel).toBe('船橋市 ▶ 船橋市');
     });
 
     it('fetchDailyLogDetailData を log.localDate で呼ぶ', async () => {
@@ -127,8 +106,9 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '-- ▶ --',
       });
 
+      renderHook(() => useDailyLogDetailData(baseLog));
+
       await act(async () => {
-        ReactTestRenderer.create(<HookProbe log={baseLog} onState={() => undefined} />);
         await Promise.resolve();
       });
 
@@ -140,16 +120,15 @@ describe('useDailyLogDetailData フック', () => {
     it('fetchDailyLogDetailData がエラーを投げると dailyPoints が空配列にリセットされる', async () => {
       (fetchDailyLogDetailData as jest.Mock).mockRejectedValue(new Error('DB エラー'));
 
-      const states: DailyLogDetailDataState[] = [];
+      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
+
       await act(async () => {
-        ReactTestRenderer.create(<HookProbe log={baseLog} onState={(s) => states.push(s)} />);
         await Promise.resolve();
       });
 
-      const lastState = states[states.length - 1];
-      expect(lastState.isLoadingDetail).toBe(false);
-      expect(lastState.dailyPoints).toEqual([]);
-      expect(lastState.dailyDetailReport).toBeNull();
+      expect(result.current.isLoadingDetail).toBe(false);
+      expect(result.current.dailyPoints).toEqual([]);
+      expect(result.current.dailyDetailReport).toBeNull();
     });
   });
 
@@ -161,16 +140,18 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '-- ▶ --',
       });
 
-      let renderer: any;
+      const { rerender } = renderHook(({ log }: { log: typeof baseLog }) => useDailyLogDetailData(log), {
+        initialProps: { log: baseLog },
+      });
+
       await act(async () => {
-        renderer = ReactTestRenderer.create(<HookProbe log={baseLog} onState={() => undefined} />);
         await Promise.resolve();
       });
 
       expect(fetchDailyLogDetailData).toHaveBeenCalledTimes(1);
 
       await act(async () => {
-        renderer.update(<HookProbe log={{ ...baseLog, distanceMeters: 2000 }} onState={() => undefined} />);
+        rerender({ log: { ...baseLog, distanceMeters: 2000 } });
         await Promise.resolve();
       });
 

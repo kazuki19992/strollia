@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View, Animated } from 'react-native';
+import { Image, Platform, StyleSheet, Text, Animated } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
 import { lightTheme } from '@/theme/theme';
@@ -44,9 +45,6 @@ jest.mock('react-native-maps', () => {
 jest.mock('@/ui/components/PhotoClusterMarker', () => ({
   PhotoClusterMarker: () => null,
 }));
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 const styles = createStyles(lightTheme);
 
@@ -95,6 +93,11 @@ function createProps() {
   };
 }
 
+/** テスト中のツリーから MapView 要素を取得する共有ヘルパー。 */
+function getMapView() {
+  return screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+}
+
 describe('地図画面 MapScreen', () => {
   beforeEach(() => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -105,42 +108,29 @@ describe('地図画面 MapScreen', () => {
   });
 
   test('上部ステータスやメニューを地図上に表示しない', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('千代田区');
-    expect(texts).toContain('神田');
-    expect(texts).not.toContain('🚶 徒歩で移動中...');
-    expect(texts).not.toContain('メニュー');
+    expect(screen.getByText('千代田区')).toBeTruthy();
+    expect(screen.getByText('神田')).toBeTruthy();
+    expect(screen.queryByText('🚶 徒歩で移動中...')).toBeNull();
+    expect(screen.queryByText('メニュー')).toBeNull();
   });
 
   test('記録状態とスピードメーターを表示する', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-
-    expect(texts).toContain('SPEED');
-    expect(texts).toContain('ODO');
+    expect(screen.getByText('SPEED')).toBeTruthy();
+    expect(screen.getByText('ODO')).toBeTruthy();
   });
 
   test('ODOメーターの数値に7セグフォントを使う', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    const distanceText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '1');
-    const dotText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '.');
-    const decimalText = renderer.root.findAllByType(Text).find((node: any) => node.props.children === '23');
+    // UNSAFE_getAllByType を使うのは fontFamily という非セマンティックな props を検証するため
+    const allTexts = screen.UNSAFE_getAllByType(Text);
+    const distanceText = allTexts.find((node) => node.props.children === '1');
+    const dotText = allTexts.find((node) => node.props.children === '.');
+    const decimalText = allTexts.find((node) => node.props.children === '23');
 
     expect(distanceText).toBeDefined();
     expect(dotText).toBeDefined();
@@ -154,19 +144,14 @@ describe('地図画面 MapScreen', () => {
   });
 
   test('下部ダッシュボードに今日の距離と操作ボタンを表示する', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('TODAY');
-    expect(texts).toContain('0');
-    expect(texts).toContain('.');
-    expect(texts).toContain('46');
-    expect(renderer.root.findAll((node: any) => node.props.accessibilityLabel === '日ごとの記録').length).toBeGreaterThan(0);
-    expect(renderer.root.findAll((node: any) => node.props.accessibilityLabel === 'マップの表示').length).toBeGreaterThan(0);
+    expect(screen.getByText('TODAY')).toBeTruthy();
+    expect(screen.getByText('0')).toBeTruthy();
+    expect(screen.getAllByText('.').length).toBeGreaterThan(0);
+    expect(screen.getByText('46')).toBeTruthy();
+    expect(screen.getByLabelText('日ごとの記録')).toBeTruthy();
+    expect(screen.getByLabelText('マップの表示')).toBeTruthy();
   });
 
   test('下部距離帯はODOへ広い幅を割り当てる', () => {
@@ -184,127 +169,98 @@ describe('地図画面 MapScreen', () => {
   });
 
   test('地図オーバーレイの文言はシステム文字サイズで拡大しない', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} hasRequiredPermission={false} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} hasRequiredPermission={false} />);
-    });
-
-    const overlayTexts = renderer.root
-      .findAllByType(Text)
-      .filter((node: any) => ['まだ足あとがありません', '位置情報の常時許可が必要です', '続ける'].includes(node.props.children));
+    // UNSAFE_getAllByType を使うのは allowFontScaling という非セマンティックな props を検証するため
+    const overlayTexts = screen
+      .UNSAFE_getAllByType(Text)
+      .filter((node) => ['まだ足あとがありません', '位置情報の常時許可が必要です', '続ける'].includes(node.props.children as string));
     expect(overlayTexts).toHaveLength(3);
-    expect(overlayTexts.every((node: any) => node.props.allowFontScaling === false)).toBe(true);
+    expect(overlayTexts.every((node) => node.props.allowFontScaling === false)).toBe(true);
   });
 
   test('アプリ起動中のみ記録モードでは権限エラーパネルを表示しない', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={true} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={true} />);
-    });
-
-    const permissionTexts = renderer.root.findAllByType(Text).filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
-    expect(permissionTexts).toHaveLength(0);
+    expect(screen.queryByText('位置情報の常時許可が必要です')).toBeNull();
   });
 
   test('権限が無くアプリ起動中のみ記録モードでもない場合は権限エラーパネルを表示する', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={false} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} hasRequiredPermission={false} isWhileInUseOnlyMode={false} />);
-    });
-
-    const permissionTexts = renderer.root.findAllByType(Text).filter((node: any) => node.props.children === '位置情報の常時許可が必要です');
-    expect(permissionTexts).toHaveLength(1);
+    expect(screen.getByText('位置情報の常時許可が必要です')).toBeTruthy();
   });
 
   test('レポート操作にはHistoryアイコンを使う', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    expect(renderer.root.findAll((node: any) => node.props.name === 'history').length).toBeGreaterThan(0);
+    // UNSAFE_getAllByProps を使うのは name という非セマンティックな props でアイコンを検索するため
+    const historyIcons = screen.UNSAFE_getAllByProps({ name: 'history' });
+    expect(historyIcons.length).toBeGreaterThan(0);
   });
 
   test('マップ表示ボタンから写真表示設定を開く', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
+      fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    const mapDisplayButton = renderer.root.findAll((node: any) => node.props.accessibilityLabel === 'マップの表示')[0];
-    act(() => mapDisplayButton.props.onPress());
-
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('標準マップ');
-    expect(texts).toContain('航空写真');
-    expect(texts).toContain('マップ上に写真を表示');
+    expect(screen.getByText('標準マップ')).toBeTruthy();
+    expect(screen.getByText('航空写真')).toBeTruthy();
+    expect(screen.getByText('マップ上に写真を表示')).toBeTruthy();
   });
+
   test('現在地アイコンは常に白で表示する', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    const navigationIcon = renderer.root.findAll((node: any) => node.props.name === 'navigation')[0];
-    expect(navigationIcon.props.color).toBe('#ffffff');
+    // UNSAFE_getAllByProps を使うのは color という非セマンティックな props でアイコンを検索するため
+    const navigationIcons = screen.UNSAFE_getAllByProps({ name: 'navigation' });
+    expect(navigationIcons[0].props.color).toBe('#ffffff');
   });
 
   test('下部レポートボタンを押すと月次レポートを開く', () => {
     const props = createProps();
-    let renderer: any;
+    render(<MapScreen {...props} />);
 
     act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+      fireEvent.press(screen.getByLabelText('レポートを見る'));
     });
-
-    const reportButton = renderer.root.find((node: any) => node.props.accessibilityLabel === 'レポートを見る');
-    act(() => reportButton.props.onPress());
 
     expect(props.onOpenMonthlyReport).toHaveBeenCalledTimes(1);
   });
 
   test('メインマップではPolylineを描画しない', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    const polylines = renderer.root.findAll((node: any) => Array.isArray(node.props.coordinates));
+    // UNSAFE_getAllByProps を使うのは coordinates という非セマンティックな props で Polyline を検索するため
+    const polylines = screen.UNSAFE_getAllByProps({}).filter((node) => Array.isArray(node.props.coordinates));
     expect(polylines).toHaveLength(0);
   });
 
   test('visited grid overlayをPolygonで描く', () => {
-    const props = {
-      ...createProps(),
-      visitedGridCells: [
-        {
-          id: '100:1:2:1x1',
-          coordinates: [
-            { latitude: 35, longitude: 139 },
-            { latitude: 35, longitude: 139.001 },
-            { latitude: 35.001, longitude: 139.001 },
-            { latitude: 35.001, longitude: 139 },
-          ],
-          fillColor: 'rgba(0, 150, 136, 0.3)',
-          strokeColor: 'rgba(0, 150, 136, 0)',
-          strokeWidth: 0,
-        },
-      ],
-    };
-    let renderer: any;
+    render(
+      <MapScreen
+        {...createProps()}
+        visitedGridCells={[
+          {
+            id: '100:1:2:1x1',
+            coordinates: [
+              { latitude: 35, longitude: 139 },
+              { latitude: 35, longitude: 139.001 },
+              { latitude: 35.001, longitude: 139.001 },
+              { latitude: 35.001, longitude: 139 },
+            ],
+            fillColor: 'rgba(0, 150, 136, 0.3)',
+            strokeColor: 'rgba(0, 150, 136, 0)',
+            strokeWidth: 0,
+          },
+        ]}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
-    });
-
-    const gridCells = renderer.root.findAll((node: any) => node.props.testID === 'visited-grid-cell' && node.props.fillColor);
+    // UNSAFE_getAllByProps を使うのは testID という非セマンティックな props でグリッドセルを検索するため
+    const gridCells = screen.UNSAFE_getAllByProps({ testID: 'visited-grid-cell' }).filter((node) => node.props.fillColor);
     expect(gridCells.length).toBeGreaterThan(0);
     expect(gridCells[0].props.fillColor).toBe('rgba(0, 150, 136, 0.3)');
     expect(gridCells[0].props.strokeWidth).toBe(0);
@@ -312,132 +268,107 @@ describe('地図画面 MapScreen', () => {
 
   test('Apple MapsのLegal位置指定はデフォルトに任せmapPaddingだけ再描画で同じ参照を使う', () => {
     const props = createProps();
-    let renderer: any;
+    const { rerender } = render(<MapScreen {...props} />);
+
+    // UNSAFE_getAllByProps を使うのは MapView という非セマンティックな型を props で検索するため
+    const mapViewBefore = getMapView();
+    const firstMapPadding = mapViewBefore!.props.mapPadding;
 
     act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
+      rerender(<MapScreen {...props} gridOverlayOpacity={0.4} />);
     });
 
-    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
-    const firstMapPadding = mapView.props.mapPadding;
-
-    act(() => {
-      renderer.update(<MapScreen {...props} gridOverlayOpacity={0.4} />);
-    });
-
-    const rerenderedMapView = renderer.root.find((node: any) => node.type === 'MapView');
-    expect(mapView.props.legalLabelInsets).toBeUndefined();
+    const mapViewAfter = getMapView();
+    expect(mapViewBefore!.props.legalLabelInsets).toBeUndefined();
     expect(firstMapPadding).toEqual({ bottom: 128, left: 0, right: 0, top: 8 });
-    expect(rerenderedMapView.props.legalLabelInsets).toBeUndefined();
-    expect(rerenderedMapView.props.mapPadding).toBe(firstMapPadding);
+    expect(mapViewAfter!.props.legalLabelInsets).toBeUndefined();
+    expect(mapViewAfter!.props.mapPadding).toBe(firstMapPadding);
   });
 
   test('カスタムアイコン時はOS標準の現在地ドットを隠す', () => {
-    const props = {
-      ...createProps(),
-      userLocationIcon: { useNativeUserLocation: false, customIconId: 'walker' as const, customImageUri: null },
-      userCoordinate: { latitude: 35, longitude: 139 },
-    };
-    let renderer: any;
+    render(
+      <MapScreen
+        {...createProps()}
+        userLocationIcon={{ useNativeUserLocation: false, customIconId: 'walker' as const, customImageUri: null }}
+        userCoordinate={{ latitude: 35, longitude: 139 }}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
-    });
-
-    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
-    expect(mapView.props.showsUserLocation).toBe(false);
+    // UNSAFE_getAllByProps を使うのは MapView の showsUserLocation という非セマンティックな props を検証するため
+    const mapView = getMapView();
+    expect(mapView!.props.showsUserLocation).toBe(false);
   });
 
   test('OS標準アイコン時はOS標準の現在地ドットを表示する', () => {
-    const props = {
-      ...createProps(),
-      userLocationIcon: { useNativeUserLocation: true, customIconId: null, customImageUri: null },
-    };
-    let renderer: any;
+    render(<MapScreen {...createProps()} userLocationIcon={{ useNativeUserLocation: true, customIconId: null, customImageUri: null }} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
-    });
-
-    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
-    expect(mapView.props.showsUserLocation).toBe(true);
+    // UNSAFE_getAllByProps を使うのは MapView の showsUserLocation という非セマンティックな props を検証するため
+    const mapView = getMapView();
+    expect(mapView!.props.showsUserLocation).toBe(true);
   });
 
   test('OS標準の現在地ボタン(Android)は非表示にする（アプリ独自の現在地ボタンを使うため）', () => {
-    let renderer: any;
+    render(<MapScreen {...createProps()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-    });
-
-    const mapView = renderer.root.find((node: any) => node.type === 'MapView');
-    expect(mapView.props.showsMyLocationButton).toBe(false);
+    // UNSAFE_getAllByProps を使うのは MapView の showsMyLocationButton という非セマンティックな props を検証するため
+    const mapView = getMapView();
+    expect(mapView!.props.showsMyLocationButton).toBe(false);
   });
 
   test('Androidでは操作中のonRegionChangeでも表示範囲を更新する（エリア拡大の追従を速くするため）', () => {
-    const { Platform } = require('react-native');
     const osReplaced = jest.replaceProperty(Platform, 'OS', 'android');
     const props = createProps();
-    let renderer: any;
 
     try {
-      act(() => {
-        renderer = ReactTestRenderer.create(<MapScreen {...props} />);
-      });
-      const mapView = renderer.root.find((node: any) => node.type === 'MapView');
-      expect(mapView.props.onRegionChange).toBe(props.onRegionChange);
+      render(<MapScreen {...props} />);
+      // UNSAFE_getAllByProps を使うのは MapView の onRegionChange という非セマンティックな props を検証するため
+      const mapView = getMapView();
+      expect(mapView!.props.onRegionChange).toBe(props.onRegionChange);
     } finally {
       osReplaced.restore();
     }
   });
 
   test('iOSでは操作中のonRegionChangeは渡さない（既存挙動を維持しiOSに影響を与えない）', () => {
-    const { Platform } = require('react-native');
     const osReplaced = jest.replaceProperty(Platform, 'OS', 'ios');
-    let renderer: any;
 
     try {
-      act(() => {
-        renderer = ReactTestRenderer.create(<MapScreen {...createProps()} />);
-      });
-      const mapView = renderer.root.find((node: any) => node.type === 'MapView');
-      expect(mapView.props.onRegionChange).toBeUndefined();
+      render(<MapScreen {...createProps()} />);
+      // UNSAFE_getAllByProps を使うのは MapView の onRegionChange という非セマンティックな props を検証するため
+      const mapView = getMapView();
+      expect(mapView!.props.onRegionChange).toBeUndefined();
     } finally {
       osReplaced.restore();
     }
   });
 
   test('customImageUri があるとき Image コンポーネントで円表示する', () => {
-    const props = {
-      ...createProps(),
-      userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
-      userCoordinate: { latitude: 35, longitude: 139 },
-    };
-    let renderer: any;
+    render(
+      <MapScreen
+        {...createProps()}
+        userLocationIcon={{ useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' }}
+        userCoordinate={{ latitude: 35, longitude: 139 }}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
-    });
-
-    const image = renderer.root.findByType(Image);
+    // UNSAFE_getByType を使うのは Image という型で要素を検索するため
+    const image = screen.UNSAFE_getByType(Image);
     expect(image.props.source).toEqual({ uri: 'file:///tmp/icon.png' });
   });
 
   test('カスタム画像エラー時に onCustomIconError を呼ぶ', () => {
     const onCustomIconError = jest.fn();
-    const props = {
-      ...createProps(),
-      userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
-      userCoordinate: { latitude: 35, longitude: 139 },
-      onCustomIconError,
-    };
-    let renderer: any;
+    render(
+      <MapScreen
+        {...createProps()}
+        userLocationIcon={{ useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' }}
+        userCoordinate={{ latitude: 35, longitude: 139 }}
+        onCustomIconError={onCustomIconError}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
-    });
-
-    const image = renderer.root.findByType(Image);
+    // UNSAFE_getByType を使うのは Image という型で要素を検索するため
+    const image = screen.UNSAFE_getByType(Image);
     act(() => {
       image.props.onError();
     });
@@ -446,27 +377,26 @@ describe('地図画面 MapScreen', () => {
   });
 
   test('カスタム画像マーカーは初回tracksViewChangesがtrueで画像ロード後にfalseになる', () => {
-    const props = {
-      ...createProps(),
-      userLocationIcon: { useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' },
-      userCoordinate: { latitude: 35, longitude: 139 },
-    };
-    let renderer: any;
+    render(
+      <MapScreen
+        {...createProps()}
+        userLocationIcon={{ useNativeUserLocation: false, customIconId: null, customImageUri: 'file:///tmp/icon.png' }}
+        userCoordinate={{ latitude: 35, longitude: 139 }}
+      />,
+    );
 
-    act(() => {
-      renderer = ReactTestRenderer.create(<MapScreen {...props} />);
-    });
+    // UNSAFE_getAllByProps を使うのは Marker の tracksViewChanges という非セマンティックな props を検証するため
+    const marker = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'Marker');
+    expect(marker!.props.tracksViewChanges).toBe(true);
 
-    const marker = renderer.root.find((node: any) => node.type === 'Marker');
-    expect(marker.props.tracksViewChanges).toBe(true);
-
-    const image = renderer.root.findByType(Image);
+    // UNSAFE_getByType を使うのは Image という型で要素を検索するため
+    const image = screen.UNSAFE_getByType(Image);
     act(() => {
       image.props.onLoad();
     });
 
-    const updatedMarker = renderer.root.find((node: any) => node.type === 'Marker');
-    expect(updatedMarker.props.tracksViewChanges).toBe(false);
+    const updatedMarker = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'Marker');
+    expect(updatedMarker!.props.tracksViewChanges).toBe(false);
   });
 });
 

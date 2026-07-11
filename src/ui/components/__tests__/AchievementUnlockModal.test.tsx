@@ -1,3 +1,5 @@
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
+
 import { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
 import { createStyles } from '@/ui/appStyles';
 import { darkTheme, lightTheme } from '@/theme/theme';
@@ -11,11 +13,6 @@ jest.mock('@expo/vector-icons', () => {
     MaterialCommunityIcons: Text,
   };
 });
-
-const { act, create } = require('react-test-renderer') as {
-  act: (callback: () => void) => void;
-  create: (element: React.ReactElement) => { root: any; unmount: () => void };
-};
 
 jest.mock('@/ui/components/ConfettiOverlay', () => ({
   ConfettiOverlay: () => null,
@@ -36,34 +33,20 @@ const achievement = {
 
 const styles = createStyles(lightTheme);
 
-let renderer: { root: any; unmount: () => void } | null = null;
-
 describe('実績解除ダイアログ AchievementUnlockModal', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
 
   afterEach(() => {
-    act(() => {
-      renderer?.unmount();
-    });
-    renderer = null;
     jest.useRealTimers();
   });
 
   test('10秒経過すると自動で閉じる', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <AchievementUnlockModal
-          achievement={achievement}
-          animationKey="1:odo-1"
-          styles={styles}
-          onShareToX={jest.fn()}
-          onClose={onClose}
-        />,
-      );
-    });
+    render(
+      <AchievementUnlockModal achievement={achievement} animationKey="1:odo-1" styles={styles} onShareToX={jest.fn()} onClose={onClose} />,
+    );
 
     expect(onClose).not.toHaveBeenCalled();
 
@@ -77,21 +60,12 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
   test('共有ボタンを押すと onShareToX を呼び自動クローズが止まる', () => {
     const onShareToX = jest.fn();
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <AchievementUnlockModal
-          achievement={achievement}
-          animationKey="1:odo-1"
-          styles={styles}
-          onShareToX={onShareToX}
-          onClose={onClose}
-        />,
-      );
-    });
+    render(
+      <AchievementUnlockModal achievement={achievement} animationKey="1:odo-1" styles={styles} onShareToX={onShareToX} onClose={onClose} />,
+    );
 
-    const shareButton = renderer!.root.findByProps({ accessibilityLabel: 'ともだちに自慢する' });
     act(() => {
-      shareButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('ともだちに自慢する'));
     });
 
     expect(onShareToX).toHaveBeenCalledWith(achievement);

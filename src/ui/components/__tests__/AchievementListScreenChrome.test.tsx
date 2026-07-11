@@ -1,4 +1,5 @@
-import { SafeAreaView, Text } from 'react-native';
+import { SafeAreaView } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import type { AchievementListItem } from '@/features/achievements/achievementRepository';
 import { createStyles } from '@/ui/appStyles';
@@ -9,9 +10,6 @@ jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,
   Feather: require('react-native').Text,
 }));
-
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 
 const styles = createStyles(lightTheme);
 
@@ -25,20 +23,15 @@ describe('実績画面 AchievementListScreen の画面共通UI', () => {
   });
 
   test('設定画面と同じ背景と共通ヘッダーで表示する', () => {
-    let renderer: any;
+    render(<AchievementListScreen items={[]} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <AchievementListScreen items={[]} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
-      );
-    });
-
-    const container = renderer.root.findByType(SafeAreaView);
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    const backButton = renderer.root.findByProps({ accessibilityLabel: '地図へ戻る' });
+    // SafeAreaView のスタイル確認
+    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
+    const container = screen.UNSAFE_getByType(SafeAreaView);
+    const backButton = screen.getByLabelText('地図へ戻る');
 
     expect(container.props.style).toBe(styles.appScreen);
-    expect(texts).toContain('実績');
+    expect(screen.getByText('実績')).toBeTruthy();
     expect(backButton.props.style).toBe(styles.appHeaderBackButton);
   });
 });
@@ -68,47 +61,35 @@ describe('実績グリッドの3状態表示', () => {
 
   test('解除済みタップで onSelectAchievement を呼ぶ', () => {
     const onSelectAchievement = jest.fn();
-    let renderer: any;
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <AchievementListScreen
-          items={items}
-          styles={styles}
-          theme={lightTheme}
-          onBackToMap={jest.fn()}
-          onSelectAchievement={onSelectAchievement}
-        />,
-      );
-    });
+    render(
+      <AchievementListScreen
+        items={items}
+        styles={styles}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onSelectAchievement={onSelectAchievement}
+      />,
+    );
 
-    const tile = renderer.root.findByProps({ accessibilityLabel: 'd1タイトル の詳細を見る' });
     act(() => {
-      tile.props.onPress();
+      fireEvent.press(screen.getByLabelText('d1タイトル の詳細を見る'));
     });
     expect(onSelectAchievement).toHaveBeenCalledWith(items[0]);
   });
 
   test('それ以降の実績はタイトルと進捗を伏せ字にする', () => {
-    let renderer: any;
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <AchievementListScreen items={items} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
-      );
-    });
+    render(
+      <AchievementListScreen items={items} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
+    );
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('？？？');
+    expect(screen.getAllByText('？？？').length).toBeGreaterThan(0);
   });
 
   test('次の実績はタイトルを表示し進捗ラベルを出す', () => {
-    let renderer: any;
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <AchievementListScreen items={items} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
-      );
-    });
+    render(
+      <AchievementListScreen items={items} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
+    );
 
-    const texts = renderer.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('d2タイトル');
+    expect(screen.getByText('d2タイトル')).toBeTruthy();
   });
 });

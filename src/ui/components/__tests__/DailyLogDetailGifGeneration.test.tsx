@@ -1,3 +1,5 @@
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
+
 import { lightTheme } from '@/theme/theme';
 import { DailyLogDetailScreen } from '@/ui/components/DailyLogDetailScreen';
 import { GifFrameRenderer } from '@/ui/components/GifFrameRenderer';
@@ -100,9 +102,6 @@ jest.mock('react-native-maps', () => {
   };
 });
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
-
 /** requestAnimationFrame の連鎖を消化する。 */
 async function flushAnimationFrames(): Promise<void> {
   for (let i = 0; i < 4; i += 1) {
@@ -123,7 +122,6 @@ const log = {
   endLocationPointId: 2,
 };
 const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
-let renderer: any = null;
 
 describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   beforeEach(() => {
@@ -132,44 +130,34 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   });
 
   afterEach(() => {
-    if (renderer) {
-      act(() => {
-        renderer.unmount();
-      });
-      renderer = null;
-    }
     jest.restoreAllMocks();
   });
 
   test('GIF出力ボタンを押すと初回フレームでデッドロックせず生成・共有まで完了する', async () => {
     const Sharing = require('expo-sharing');
 
-    await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen
-          log={log}
-          styles={styles as never}
-          theme={lightTheme}
-          premiumAccessState={plusAccessState}
-          onBackToDailyLogs={jest.fn()}
-          onOpenPremiumPaywall={jest.fn()}
-        />,
-      );
-    });
+    const { unmount } = render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />,
+    );
 
     // 詳細データ読み込み完了を待つ
     await act(async () => {});
 
     // GIFボタンを押すと、まず区間指定ダイアログが開く。
-    const gifButton = renderer.root.findByProps({ accessibilityLabel: '移動記録をGIFで出力' });
     await act(async () => {
-      gifButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
     });
 
     // 区間指定ダイアログの「この範囲で出力」を押すと生成が始まる（区間は初期値＝記録全体）。
-    const exportButton = renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' });
     await act(async () => {
-      exportButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
 
     // isGeneratingGif が true になった際に走る useEffect の RAF を先に消化しておく。
@@ -181,7 +169,8 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
     // 画面外の GifFrameRenderer がマウントされ、地図のタイル描画完了を発火させる
     await act(async () => {
-      renderer.root.findByType(GifFrameRenderer).props.onMapLoaded();
+      // UNSAFE_getByType を使うのは GifFrameRenderer という型で要素を取得するため
+      screen.UNSAFE_getByType(GifFrameRenderer).props.onMapLoaded();
     });
 
     // RAF駆動のフレーム解決を上限付きで進め、生成完了まで待つ
@@ -195,35 +184,35 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     }
 
     expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/strollia-2026-05-31.gif', expect.objectContaining({ mimeType: 'image/gif' }));
+
+    unmount();
   });
 
   it('生成中にキャンセルすると共有せず区間選択へ戻る', async () => {
     const Sharing = require('expo-sharing');
-    await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen
-          log={log}
-          styles={styles as never}
-          theme={lightTheme}
-          premiumAccessState={plusAccessState}
-          onBackToDailyLogs={jest.fn()}
-          onOpenPremiumPaywall={jest.fn()}
-        />,
-      );
-    });
+    const { unmount } = render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />,
+    );
     await act(async () => {});
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '移動記録をGIFで出力' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
     });
     // 「この範囲で出力」を押すと生成が始まり、地図のタイル描画完了待ち（onMapLoaded前）で停止する。
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
 
     // 生成中（キャンセルボタンが出ている）状態でキャンセルする。
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'GIF生成をキャンセル' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('GIF生成をキャンセル'));
     });
     await act(async () => {
       await flushAnimationFrames();
@@ -231,42 +220,43 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
     // 共有されず、区間選択（「この範囲で出力」）へ戻っている。
     expect(Sharing.shareAsync).not.toHaveBeenCalled();
-    expect(renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' })).toBeTruthy();
+    expect(screen.getByLabelText('この範囲で出力')).toBeTruthy();
+
+    unmount();
   });
 
   it('キャンセル直後に再度生成しても、前のループを待ってから生成・共有できる', async () => {
     const Sharing = require('expo-sharing');
-    await act(async () => {
-      renderer = ReactTestRenderer.create(
-        <DailyLogDetailScreen
-          log={log}
-          styles={styles as never}
-          theme={lightTheme}
-          premiumAccessState={plusAccessState}
-          onBackToDailyLogs={jest.fn()}
-          onOpenPremiumPaywall={jest.fn()}
-        />,
-      );
-    });
+    const { unmount } = render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />,
+    );
     await act(async () => {});
 
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: '移動記録をGIFで出力' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
     });
     // 1回目の出力 → 地図ロード待ちで停止 → キャンセル。
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'GIF生成をキャンセル' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('GIF生成をキャンセル'));
     });
 
     // 2回目の出力。前のループ完了を待ってから新しい生成が走る。
     await act(async () => {
-      renderer.root.findByProps({ accessibilityLabel: 'この範囲で出力' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
     await act(async () => {
-      renderer.root.findByType(GifFrameRenderer).props.onMapLoaded();
+      // UNSAFE_getByType を使うのは GifFrameRenderer という型で要素を取得するため
+      screen.UNSAFE_getByType(GifFrameRenderer).props.onMapLoaded();
     });
     for (let i = 0; i < 50; i += 1) {
       if (Sharing.shareAsync.mock.calls.length > 0) {
@@ -279,5 +269,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
     expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
     expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/strollia-2026-05-31.gif', expect.objectContaining({ mimeType: 'image/gif' }));
+
+    unmount();
   });
 });

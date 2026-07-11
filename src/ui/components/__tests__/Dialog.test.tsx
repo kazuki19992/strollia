@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { PanResponder, Text } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { createStyles } from '@/ui/appStyles';
 import { lightTheme } from '@/theme/theme';
@@ -18,14 +19,7 @@ jest.mock('@/ui/components/ConfettiOverlay', () => ({
   },
 }));
 
-const { act, create } = require('react-test-renderer') as {
-  act: (callback: () => void) => void;
-  create: (element: ReactNode) => { root: any; unmount: () => void };
-};
-
 const styles = createStyles(lightTheme);
-
-let renderer: { root: any; unmount: () => void } | null = null;
 
 describe('汎用ダイアログ Dialog', () => {
   beforeEach(() => {
@@ -34,22 +28,16 @@ describe('汎用ダイアログ Dialog', () => {
   });
 
   afterEach(() => {
-    act(() => {
-      renderer?.unmount();
-    });
-    renderer = null;
     jest.useRealTimers();
   });
 
   test('autoClose=true のとき10秒経過で onClose を呼ぶ', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <Dialog visible autoClose animationKey="k1" styles={styles} onClose={onClose}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible autoClose animationKey="k1" styles={styles} onClose={onClose}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
 
     expect(onClose).not.toHaveBeenCalled();
     act(() => {
@@ -60,13 +48,11 @@ describe('汎用ダイアログ Dialog', () => {
 
   test('autoClose=false のときは時間経過しても onClose を呼ばない', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <Dialog visible styles={styles} onClose={onClose}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible styles={styles} onClose={onClose}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
 
     act(() => {
       jest.advanceTimersByTime(10_000);
@@ -76,94 +62,78 @@ describe('汎用ダイアログ Dialog', () => {
 
   test('showConfetti=false のとき ConfettiOverlay を active=false で描画する', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <Dialog visible styles={styles} onClose={onClose}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible styles={styles} onClose={onClose}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
 
     expect(mockConfetti).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
   });
 
   test('閉じるボタンを押すと onClose を呼ぶ', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <Dialog visible styles={styles} onClose={onClose}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible styles={styles} onClose={onClose}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
 
-    const closeButton = renderer!.root.findByProps({ accessibilityLabel: '閉じる' });
     act(() => {
-      closeButton.props.onPress();
+      fireEvent.press(screen.getByLabelText('閉じる'));
     });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test('swipeToClose 既定時はスワイプヒントを表示する', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <Dialog visible styles={styles} onClose={onClose}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible styles={styles} onClose={onClose}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
 
-    const texts = renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).toContain('スワイプで閉じる');
+    expect(screen.getByText('スワイプで閉じる')).toBeTruthy();
   });
 
   test('swipeToClose=false のときヒントを表示しない', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
 
-    const texts = renderer!.root.findAllByType(Text).map((node: any) => node.props.children);
-    expect(texts).not.toContain('スワイプで閉じる');
+    expect(screen.queryByText('スワイプで閉じる')).toBeNull();
   });
 
   test('swipeToClose=false のときスワイプ追従用のPanResponderを作らない', () => {
     const createSpy = jest.spyOn(PanResponder, 'create');
     const onClose = jest.fn();
 
-    act(() => {
-      renderer = create(
-        <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
 
     expect(createSpy).not.toHaveBeenCalled();
   });
 
   test('render-prop の pauseAutoClose を呼ぶと自動クローズが止まる', () => {
     const onClose = jest.fn();
-    act(() => {
-      renderer = create(
-        <Dialog visible autoClose styles={styles} onClose={onClose}>
-          {({ pauseAutoClose }) => (
-            <Text accessibilityLabel="pause" onPress={pauseAutoClose}>
-              共有
-            </Text>
-          )}
-        </Dialog>,
-      );
-    });
+    render(
+      <Dialog visible autoClose styles={styles} onClose={onClose}>
+        {({ pauseAutoClose }) => (
+          <Text accessibilityLabel="pause" onPress={pauseAutoClose}>
+            共有
+          </Text>
+        )}
+      </Dialog>,
+    );
 
-    const pauseNode = renderer!.root.findByProps({ accessibilityLabel: 'pause' });
     act(() => {
-      pauseNode.props.onPress();
+      fireEvent.press(screen.getByLabelText('pause'));
     });
     act(() => {
       jest.advanceTimersByTime(10_000);
@@ -182,30 +152,20 @@ describe('Dialog dismissible', () => {
   });
 
   it('dismissible=false のとき閉じるボタンを描画しない', () => {
-    const ReactTestRenderer = require('react-test-renderer');
-    let tree: any;
-    ReactTestRenderer.act(() => {
-      tree = ReactTestRenderer.create(
-        <Dialog visible dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
-    const closeButtons = tree!.root.findAll((node: any) => node.props.accessibilityLabel === '閉じる');
-    expect(closeButtons).toHaveLength(0);
+    render(
+      <Dialog visible dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
+    expect(screen.queryByLabelText('閉じる')).toBeNull();
   });
 
   it('dismissible 既定（true）では閉じるボタンを描画する', () => {
-    const ReactTestRenderer = require('react-test-renderer');
-    let tree: any;
-    ReactTestRenderer.act(() => {
-      tree = ReactTestRenderer.create(
-        <Dialog visible swipeToClose={false} styles={styles} onClose={() => undefined}>
-          <Text>本文</Text>
-        </Dialog>,
-      );
-    });
-    const closeButtons = tree!.root.findAll((node: any) => node.props.accessibilityLabel === '閉じる');
-    expect(closeButtons.length).toBeGreaterThan(0);
+    render(
+      <Dialog visible swipeToClose={false} styles={styles} onClose={() => undefined}>
+        <Text>本文</Text>
+      </Dialog>,
+    );
+    expect(screen.getByLabelText('閉じる')).toBeTruthy();
   });
 });

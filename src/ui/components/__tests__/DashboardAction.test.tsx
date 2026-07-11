@@ -1,4 +1,5 @@
 import { Text } from 'react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 
 import { createStyles } from '@/ui/appStyles';
 import { lightTheme } from '@/theme/theme';
@@ -10,37 +11,23 @@ jest.mock('@expo/vector-icons', () => {
   return { Feather: Text };
 });
 
-const ReactTestRenderer = require('react-test-renderer');
-const { act } = ReactTestRenderer;
 const styles = createStyles(lightTheme);
 
 describe('DashboardAction', () => {
   test('アクセシビリティラベルとロールを付与して描画する', () => {
-    let renderer: any;
+    render(<DashboardAction icon={<Text>icon</Text>} label="日ごとの記録" scale={1} styles={styles} onPress={jest.fn()} />);
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <DashboardAction icon={<Text>icon</Text>} label="日ごとの記録" scale={1} styles={styles} onPress={jest.fn()} />,
-      );
-    });
-
-    const pressable = renderer.root.find((node: any) => node.props.accessibilityLabel === '日ごとの記録');
+    const pressable = screen.getByLabelText('日ごとの記録');
     expect(pressable).toBeTruthy();
     expect(pressable.props.accessibilityRole).toBe('button');
   });
 
   test('onPressを呼び出す', () => {
     const onPress = jest.fn();
-    let renderer: any;
 
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <DashboardAction icon={<Text>icon</Text>} label="設定" scale={1} styles={styles} onPress={onPress} />,
-      );
-    });
+    render(<DashboardAction icon={<Text>icon</Text>} label="設定" scale={1} styles={styles} onPress={onPress} />);
 
-    const pressable = renderer.root.find((node: any) => node.props.accessibilityLabel === '設定');
-    act(() => pressable.props.onPress());
+    fireEvent.press(screen.getByLabelText('設定'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

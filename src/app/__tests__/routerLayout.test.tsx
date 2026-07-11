@@ -1,3 +1,4 @@
+import { render, screen } from '@testing-library/react-native';
 import RootLayout from '@/app/_layout';
 
 /** usePathname スタブが返す現在パス。各テストで書き換える。 */
@@ -69,42 +70,32 @@ jest.mock('@/ui/components/FirstLaunchTutorialDialog', () => ({ FirstLaunchTutor
 jest.mock('@/ui/components/PhotoPreviewModals', () => ({ PhotoPreviewModals: () => null }));
 jest.mock('@/ui/components/GpxImportProgressDialog', () => ({ GpxImportProgressDialog: () => null }));
 
-const ReactTestRenderer = require('react-test-renderer'); // eslint-disable-line @typescript-eslint/no-require-imports
-const { act } = ReactTestRenderer;
-
 describe('expo-router ルートレイアウト (_layout)', () => {
   beforeEach(() => {
     mockPathname = '/';
     mockProviderProps.length = 0;
   });
 
-  test('default export が存在しレンダリングできること', async () => {
-    let renderer: ReturnType<typeof ReactTestRenderer.create>;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<RootLayout />);
-    });
+  test('default export が存在しレンダリングできること', () => {
+    render(<RootLayout />);
 
-    expect(renderer!.toJSON()).not.toBeNull();
+    expect(screen.toJSON()).not.toBeNull();
   });
 
-  test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', async () => {
+  test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', () => {
     mockPathname = '/settings/about';
 
-    await act(async () => {
-      ReactTestRenderer.create(<RootLayout />);
-    });
+    render(<RootLayout />);
 
     // navigator 経由の遷移では内部 state が更新されないため、
     // パス由来の ScreenMode が単一ソースとして Provider へ渡ることを固定する
     expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('settings');
   });
 
-  test('地図(/)では currentScreenMode が map になる', async () => {
+  test('地図(/)では currentScreenMode が map になる', () => {
     mockPathname = '/';
 
-    await act(async () => {
-      ReactTestRenderer.create(<RootLayout />);
-    });
+    render(<RootLayout />);
 
     expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('map');
   });

@@ -1,4 +1,4 @@
-import { act, cleanup, renderRouter, screen } from 'expo-router/testing-library';
+import { act, cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { createUserCenteredRegion } from '@/ui/mapRegion';
 import { Alert, AppState, Pressable, Text } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -569,19 +569,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('現在地更新'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地へ戻る' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('現在地へ戻る'));
     });
 
     const callsBeforeReturn = mockAnimateToRegion.mock.calls.length;
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('日ごとの記録'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '地図へ' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('地図へ'));
     });
     await flushPromises();
 
@@ -605,14 +605,14 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
       // 同じ範囲へ一度移動して直近取得状態を確定させる。
       await act(async () => {
-        screen.UNSAFE_getByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+        fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
       });
       await flushPromises();
       const callsAfterFirst = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
       // 同じ範囲へ再移動 → 取得済み範囲内なので再取得しない（呼び出し回数が増えない）。
       await act(async () => {
-        screen.UNSAFE_getByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+        fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
       });
       await flushPromises();
 
@@ -783,7 +783,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(getRevenueCatAppUserId).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     expect(mockLatestSettingsScreenProps.revenueCatAppUserId).toBe('$RCAnonymousID:abc123');
   });
@@ -792,7 +792,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
 
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+    expect(screen.getByLabelText('初回チュートリアルを完了')).toBeTruthy();
   });
 
   test('前回の写真表示有効化が未完了なら起動時に写真表示を自動OFFへ戻す', async () => {
@@ -902,7 +902,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     });
 
     expect(setSetting).toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
@@ -915,7 +915,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(requestAchievementNotificationPermissionOnFirstLaunch).not.toHaveBeenCalled();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     });
     await flushPromises();
 
@@ -934,7 +934,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
 
-    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
+    expect(screen.queryAllByLabelText('初回チュートリアルを完了')).toHaveLength(0);
   });
 
   test('初回チュートリアル完了済みの場合は起動時に通知権限要求を実行する', async () => {
@@ -964,16 +964,16 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
 
-    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toHaveLength(0);
+    expect(screen.queryAllByLabelText('初回チュートリアルを完了')).toHaveLength(0);
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('チュートリアルを開く'));
     });
 
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' })).toBeTruthy();
+    expect(screen.getByLabelText('初回チュートリアルを完了')).toBeTruthy();
     expect(mockLatestFirstLaunchTutorialProps.completionButtonLabel).toBe('閉じる');
   });
 
@@ -992,13 +992,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     jest.clearAllMocks();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'チュートリアルを開く' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('チュートリアルを開く'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '初回チュートリアルを完了' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     });
     await flushPromises();
 
@@ -1024,7 +1024,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(true);
 
@@ -1135,7 +1135,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
 
@@ -1466,10 +1466,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     });
     await flushPromises();
 
@@ -1503,10 +1503,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     });
     await flushPromises();
 
@@ -1523,10 +1523,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     });
     await flushPromises();
 
@@ -1544,11 +1544,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
     act(() => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'カスタムアイコンを選ぶ' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
+      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     });
 
     expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalledTimes(1);
@@ -1672,7 +1672,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     expect(setSettings).toHaveBeenCalledWith([
@@ -1750,7 +1750,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
@@ -1771,7 +1771,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     renderRouter('src/app');
     await flushPromises();
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
@@ -1785,29 +1785,32 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'OSSライセンス' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('OSSライセンス'));
     });
 
+    // UNSAFE_getByProps を使うのは画面遷移後に前画面が aria-hidden になるため。
+    // 前画面のボタンが DOM に残っていることを確認するには aria-hidden を透過するクエリが必要。
     expect(screen.UNSAFE_getByProps({ accessibilityLabel: 'OSSライセンス' })).toBeTruthy();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'react のライセンス詳細を開く' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('react のライセンス詳細を開く'));
     });
 
+    // UNSAFE_getByProps を使うのは同上の理由による。
     expect(screen.UNSAFE_getByProps({ accessibilityLabel: 'react のライセンス詳細を開く' })).toBeTruthy();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: 'ライセンス一覧へ戻る' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('ライセンス一覧へ戻る'));
     });
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定画面へ戻る' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定画面へ戻る'));
     });
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
@@ -1830,19 +1833,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '日ごとの記録' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('日ごとの記録'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細を開く' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('日別詳細を開く'));
     });
 
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' })).toBeTruthy();
+    expect(screen.getByLabelText('日別詳細から一覧へ戻る')).toBeTruthy();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細から一覧へ戻る' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('日別詳細から一覧へ戻る'));
     });
 
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '日別詳細を開く' })).toBeTruthy();
+    expect(screen.getByLabelText('日別詳細を開く')).toBeTruthy();
   });
 
   test('GPXインポート押下直後に実績反映範囲の注意を表示してからファイル選択を開く', async () => {
@@ -1859,7 +1862,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     await act(async () => {
@@ -1900,7 +1903,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       await flushPromises();
 
       await act(async () => {
-        screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+        fireEvent.press(screen.getByLabelText('設定'));
       });
 
       // 取り込み開始前はダイアログは出ていない。
@@ -1938,7 +1941,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     await act(async () => {
@@ -1960,7 +1963,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     await act(async () => {
@@ -1980,7 +1983,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     await act(async () => {
@@ -2000,7 +2003,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     await act(async () => {
@@ -2022,7 +2025,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     await act(async () => {
@@ -2043,7 +2046,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '設定' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('設定'));
     });
 
     await act(async () => {
@@ -2069,20 +2072,20 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('月次レポート'));
     });
     await flushPromises();
 
     // ペイウォールが開いていることを確認
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '月払いで購入' })).toBeTruthy();
+    expect(screen.getByLabelText('月払いで購入')).toBeTruthy();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '月払いで購入' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('月払いで購入'));
     });
     await flushPromises();
 
     // 購入成功後にペイウォールが閉じる
-    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '月払いで購入' })).toHaveLength(0);
+    expect(screen.queryAllByLabelText('月払いで購入')).toHaveLength(0);
   });
 
   test('ペイウォールで復元が成功するとダイアログが閉じる', async () => {
@@ -2093,19 +2096,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('月次レポート'));
     });
     await flushPromises();
 
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: '購入を復元' })).toBeTruthy();
+    expect(screen.getByLabelText('購入を復元')).toBeTruthy();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '購入を復元' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('購入を復元'));
     });
     await flushPromises();
 
     // 復元成功後にペイウォールが閉じる
-    expect(screen.UNSAFE_queryAllByProps({ accessibilityLabel: '購入を復元' })).toHaveLength(0);
+    expect(screen.queryAllByLabelText('購入を復元')).toHaveLength(0);
   });
 
   test('月次レポートボタンは無料ユーザーにペイウォールを表示する', async () => {
@@ -2115,7 +2118,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('月次レポート'));
     });
     await flushPromises();
 
@@ -2151,7 +2154,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('月次レポート'));
     });
     await flushPromises();
 
@@ -2166,7 +2169,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('月次レポート'));
     });
     await flushPromises();
 
@@ -2182,7 +2185,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '月次レポート' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('月次レポート'));
     });
     await flushPromises();
 
@@ -2197,19 +2200,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('現在地更新'));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '地図をドラッグ' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('地図をドラッグ'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地中心へ地図移動' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
     });
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('現在地更新'));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
@@ -2220,7 +2223,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '不正な現在地更新' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('不正な現在地更新'));
     });
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();

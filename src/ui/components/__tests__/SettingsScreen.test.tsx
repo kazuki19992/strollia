@@ -210,9 +210,8 @@ describe('設定画面 SettingsScreen', () => {
     // 「位置情報の許可が必要です」エラーパネルは出さない
     expect(screen.queryByText('位置情報の許可が必要です')).toBeNull();
 
-    // UNSAFE_getAllByProps を使うのは onPress を直接参照で検索するため（accessibilityLabel が付いていないボタン）
     act(() => {
-      screen.UNSAFE_getAllByProps({ onPress: props.onOpenLocationSettings })[0].props.onPress();
+      fireEvent.press(screen.getByLabelText('位置情報設定を開く'));
     });
     expect(props.onOpenLocationSettings).toHaveBeenCalledTimes(1);
   });
@@ -233,19 +232,16 @@ describe('設定画面 SettingsScreen', () => {
     };
 
     const { unmount: unmount1 } = render(<SettingsScreen {...permissionProps} />);
-    // UNSAFE_getAllByProps を使うのは onPress と style という非セマンティックな props でボタンを検索するため
-    const permissionButton = screen
-      .UNSAFE_getAllByProps({})
-      .find((node) => node.props.onPress === permissionProps.onRequestLocationPermission);
+    const permissionButton = screen.getByLabelText('位置情報の許可を求める');
     const permissionText = screen.UNSAFE_getAllByType(Text).find((node) => node.props.children === '続ける');
-    expect(flattenStyle(permissionButton?.props.style).backgroundColor).toBe('#ffffff');
+    expect(flattenStyle(permissionButton.props.style).backgroundColor).toBe('#ffffff');
     expect(flattenStyle(permissionText?.props.style).color).toBe('#b0002f');
     unmount1();
 
     render(<SettingsScreen {...failedProps} />);
-    const failedButton = screen.UNSAFE_getAllByProps({}).find((node) => node.props.onPress === failedProps.onStartRecording);
+    const failedButton = screen.getByLabelText('GPSの記録を開始する');
     const failedText = screen.UNSAFE_getAllByType(Text).find((node) => node.props.children === 'GPSの記録を開始する');
-    expect(flattenStyle(failedButton?.props.style).backgroundColor).toBe('#ffffff');
+    expect(flattenStyle(failedButton.props.style).backgroundColor).toBe('#ffffff');
     expect(flattenStyle(failedText?.props.style).color).toBe('#a36100');
   });
 
@@ -381,7 +377,11 @@ describe('設定画面 SettingsScreen', () => {
     };
     render(<SettingsScreen {...props} />);
 
-    // UNSAFE_getAllByProps を使うのは onPress と disabled という非セマンティックな props でボタンを検索するため
+    // UNSAFE_getAllByProps を使うのは以下の理由による:
+    // 1. isPurchasingPremiumPackage=true のとき月払い・年払い両方のラベルが「購入処理中...」になり
+    //    getByLabelText で一意に識別できない
+    // 2. disabled は Pressable の内部 accessibilityState にマッピングされるため
+    //    getByLabelText で取得した要素の props.disabled が undefined になる
     const monthlyButton = screen.UNSAFE_getAllByProps({ onPress: props.onPurchaseMonthlyPremiumPackage })[0];
     const yearlyButton = screen.UNSAFE_getAllByProps({ onPress: props.onPurchaseYearlyPremiumPackage })[0];
 
@@ -396,7 +396,9 @@ describe('設定画面 SettingsScreen', () => {
     };
     render(<SettingsScreen {...props} />);
 
-    // UNSAFE_getAllByProps を使うのは onPress と disabled という非セマンティックな props でボタンを検索するため
+    // UNSAFE_getAllByProps を使うのは disabled という非セマンティックな props を検証するため。
+    // getByLabelText はホスト要素を返すが disabled は Pressable の内部 accessibilityState に
+    // マッピングされるため、props.disabled が undefined になりアサーションが通らない。
     const restoreButton = screen.UNSAFE_getAllByProps({ onPress: props.onRestorePremiumPurchases })[0];
 
     expect(restoreButton.props.disabled).toBe(true);
@@ -417,9 +419,8 @@ describe('設定画面 SettingsScreen', () => {
     const props = createProps();
     render(<SettingsScreen {...props} />);
 
-    // UNSAFE_getAllByProps を使うのは onPress を持つ要素のアイコン name という非セマンティックな props を検証するため
-    const exportButton = screen.UNSAFE_getAllByProps({ onPress: props.onExportAllLogs })[0];
-    const importButton = screen.UNSAFE_getAllByProps({ onPress: props.onImportGpx })[0];
+    const exportButton = screen.getByLabelText('GPXファイルのエクスポート');
+    const importButton = screen.getByLabelText('GPXファイルのインポート');
     // アイコンは Feather (Text) で name prop を持つ
     const exportIcon = exportButton.findAll((node: { props: { name?: string } }) => node.props.name != null)[0];
     const importIcon = importButton.findAll((node: { props: { name?: string } }) => node.props.name != null)[0];
@@ -432,9 +433,8 @@ describe('設定画面 SettingsScreen', () => {
     const props = { ...createProps(), styles: createStyles(lightTheme) };
     render(<SettingsScreen {...props} />);
 
-    // UNSAFE_getAllByProps を使うのは onPress と style という非セマンティックな props でボタンを検索するため
-    const buttons = [props.onExportAllLogs, props.onImportGpx, props.onDeleteAllData].map(
-      (handler) => screen.UNSAFE_getAllByProps({ onPress: handler })[0],
+    const buttons = ['GPXファイルのエクスポート', 'GPXファイルのインポート', 'すべてのデータの削除'].map((label) =>
+      screen.getByLabelText(label),
     );
 
     for (const button of buttons) {
@@ -447,9 +447,8 @@ describe('設定画面 SettingsScreen', () => {
     const props = { ...createProps(), styles: createStyles(lightTheme) };
     render(<SettingsScreen {...props} />);
 
-    // UNSAFE_getAllByProps を使うのは accessibilityRole と onPress という非セマンティックな props でボタンを検索するため
-    const buttons = [props.onPurchaseMonthlyPremiumPackage, props.onPurchaseYearlyPremiumPackage, props.onRestorePremiumPurchases].flatMap(
-      (handler) => screen.UNSAFE_getAllByProps({ accessibilityRole: 'button', onPress: handler }),
+    const buttons = ['月額300円ではじめる！', '年額3300円ではじめる！', 'Strollia Plusの購入を復元する'].map((label) =>
+      screen.getByLabelText(label),
     );
 
     expect(buttons).toHaveLength(3);
@@ -468,11 +467,7 @@ describe('設定画面 SettingsScreen', () => {
     const props = createProps();
     render(<SettingsScreen {...props} />);
 
-    // UNSAFE_getAllByProps を使うのは accessibilityRole と onPress という非セマンティックな props でボタンを検索するため
-    const purchaseButtons = [
-      ...screen.UNSAFE_getAllByProps({ accessibilityRole: 'button', onPress: props.onPurchaseMonthlyPremiumPackage }),
-      ...screen.UNSAFE_getAllByProps({ accessibilityRole: 'button', onPress: props.onPurchaseYearlyPremiumPackage }),
-    ];
+    const purchaseButtons = ['月額300円ではじめる！', '年額3300円ではじめる！'].map((label) => screen.getByLabelText(label));
 
     expect(purchaseButtons).toHaveLength(2);
     for (const button of purchaseButtons) {
@@ -511,15 +506,12 @@ describe('設定画面 SettingsScreen', () => {
     expect(privacyIndex).toBeGreaterThan(termsIndex);
     expect(commercialIndex).toBeGreaterThan(privacyIndex);
 
-    // UNSAFE_getAllByProps を使うのは onPress を持つ要素を検索するため（利用規約は複数表示されうる）
-    const termsButtons = screen.UNSAFE_getAllByProps({ onPress: props.onOpenTermsOfService });
-    const privacyButtons = screen.UNSAFE_getAllByProps({ onPress: props.onOpenPrivacyPolicy });
-    const commercialButtons = screen.UNSAFE_getAllByProps({ onPress: props.onOpenSpecifiedCommercialTransactionAct });
-
+    // 利用規約・プライバシーポリシーはサブスク導線とアプリ情報の2か所に表示されるため、
+    // 各セクションで異なる accessibilityLabel を使って区別する。
     act(() => {
-      termsButtons[0].props.onPress();
-      privacyButtons[0].props.onPress();
-      commercialButtons[0].props.onPress();
+      fireEvent.press(screen.getByLabelText('利用規約を開く'));
+      fireEvent.press(screen.getByLabelText('プライバシーポリシーを開く'));
+      fireEvent.press(screen.getByLabelText('特商法に基づく表記'));
     });
 
     expect(props.onOpenTermsOfService).toHaveBeenCalledTimes(1);
@@ -545,7 +537,9 @@ describe('設定画面 SettingsScreen', () => {
     };
     render(<SettingsScreen {...props} />);
 
-    // UNSAFE_getAllByProps を使うのは onPress と disabled という非セマンティックな props でボタンを検索するため
+    // UNSAFE_getAllByProps を使うのは disabled という非セマンティックな props を検証するため。
+    // getByLabelText はホスト要素を返すが disabled は Pressable の内部 accessibilityState に
+    // マッピングされるため、props.disabled が undefined になりアサーションが通らない。
     const importButton = screen.UNSAFE_getAllByProps({ onPress: props.onImportGpx })[0];
 
     expect(importButton.props.disabled).toBe(true);

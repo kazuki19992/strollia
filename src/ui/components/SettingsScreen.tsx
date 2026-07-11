@@ -521,7 +521,12 @@ function GpsStatusPanel({
         <Text style={styles.settingsGpsPanelText}>
           {'アプリを画面に表示しているときのみ記録します。\n常に記録したいときは設定画面で変更してください。'}
         </Text>
-        <Pressable accessibilityRole="button" onPress={onOpenLocationSettings} style={styles.settingsGpsPanelButton}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="位置情報設定を開く"
+          onPress={onOpenLocationSettings}
+          style={styles.settingsGpsPanelButton}
+        >
           <Text style={styles.settingsGpsPanelButtonWarningText}>設定を開く</Text>
         </Pressable>
       </View>
@@ -533,7 +538,12 @@ function GpsStatusPanel({
       <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelDanger]}>
         <Text style={styles.settingsGpsPanelTitle}>位置情報の許可が必要です</Text>
         <Text style={styles.settingsGpsPanelText}>GPSログの記録には位置情報の常時許可が必要です。</Text>
-        <Pressable accessibilityRole="button" onPress={onRequestLocationPermission} style={styles.settingsGpsPanelButton}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="位置情報の許可を求める"
+          onPress={onRequestLocationPermission}
+          style={styles.settingsGpsPanelButton}
+        >
           <Text style={styles.settingsGpsPanelButtonDangerText}>{shouldOpenSettingsForPermission ? '設定を開く' : '続ける'}</Text>
         </Pressable>
       </View>
@@ -545,7 +555,12 @@ function GpsStatusPanel({
       <View style={[styles.settingsGpsPanel, styles.settingsGpsPanelWithAction, styles.settingsGpsPanelWarning]}>
         <Text style={styles.settingsGpsPanelTitle}>冒険をはじめましょう!</Text>
         <Text style={styles.settingsGpsPanelText}>ボタンを押して記録をはじめましょう!</Text>
-        <Pressable accessibilityRole="button" onPress={onStartRecording} style={styles.settingsGpsPanelButton}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="GPSの記録を開始する"
+          onPress={onStartRecording}
+          style={styles.settingsGpsPanelButton}
+        >
           <Text style={styles.settingsGpsPanelButtonWarningText}>GPSの記録を開始する</Text>
         </Pressable>
       </View>

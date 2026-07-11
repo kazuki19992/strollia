@@ -15,37 +15,17 @@ export type OssLicenseEntry = {
   noticeText: string | null;
 };
 
-export const OSS_LICENSES_GENERATED_AT = "2026-06-16T08:49:36.907Z";
+export const OSS_LICENSES_GENERATED_AT = "2026-07-11T10:02:55.430Z";
 
 export const OSS_LICENSES: OssLicenseEntry[] = [
   {
-    "id": "npm:@0no-co/graphql.web@1.2.0",
-    "name": "@0no-co/graphql.web",
-    "version": "1.2.0",
+    "id": "npm:@adobe/css-tools@4.5.0",
+    "name": "@adobe/css-tools",
+    "version": "4.5.0",
     "licenses": "MIT",
-    "repository": "https://github.com/0no-co/graphql.web",
+    "repository": "https://github.com/adobe/css-tools",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 0no.co\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@babel/code-frame@7.10.4",
-    "name": "@babel/code-frame",
-    "version": "7.10.4",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@babel/code-frame@7.29.0",
-    "name": "@babel/code-frame",
-    "version": "7.29.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "(The MIT License)\n\nCopyright (c) 2012 TJ Holowaychuk <tj@vision-media.ca>\nCopyright (c) 2022 Jean-Philippe Zolesio <holblin@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -69,9 +49,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/core@7.29.0",
+    "id": "npm:@babel/core@7.29.7",
     "name": "@babel/core",
-    "version": "7.29.0",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -269,23 +249,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/helpers@7.29.2",
+    "id": "npm:@babel/helpers@7.29.7",
     "name": "@babel/helpers",
-    "version": "7.29.2",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\nCopyright (c) 2014-present, Facebook, Inc. (ONLY ./src/helpers/regenerator* files)\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@babel/highlight@7.25.9",
-    "name": "@babel/highlight",
-    "version": "7.25.9",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -399,9 +369,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-syntax-import-attributes@7.28.6",
+    "id": "npm:@babel/plugin-syntax-import-attributes@7.29.7",
     "name": "@babel/plugin-syntax-import-attributes",
-    "version": "7.28.6",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -599,16 +569,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-computed-properties@7.29.7",
-    "name": "@babel/plugin-transform-computed-properties",
-    "version": "7.29.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:@babel/plugin-transform-destructuring@7.29.7",
     "name": "@babel/plugin-transform-destructuring",
     "version": "7.29.7",
@@ -649,26 +609,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-function-name@7.29.7",
-    "name": "@babel/plugin-transform-function-name",
-    "version": "7.29.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@babel/plugin-transform-literals@7.29.7",
-    "name": "@babel/plugin-transform-literals",
-    "version": "7.29.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:@babel/plugin-transform-logical-assignment-operators@7.29.7",
     "name": "@babel/plugin-transform-logical-assignment-operators",
     "version": "7.29.7",
@@ -701,16 +641,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
   {
     "id": "npm:@babel/plugin-transform-nullish-coalescing-operator@7.29.7",
     "name": "@babel/plugin-transform-nullish-coalescing-operator",
-    "version": "7.29.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@babel/plugin-transform-numeric-separator@7.29.7",
-    "name": "@babel/plugin-transform-numeric-separator",
     "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
@@ -869,18 +799,8 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/plugin-transform-spread@7.29.7",
-    "name": "@babel/plugin-transform-spread",
-    "version": "7.29.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@babel/plugin-transform-sticky-regex@7.29.7",
-    "name": "@babel/plugin-transform-sticky-regex",
+    "id": "npm:@babel/plugin-transform-template-literals@7.29.7",
+    "name": "@babel/plugin-transform-template-literals",
     "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
@@ -909,16 +829,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/preset-react@7.29.7",
-    "name": "@babel/preset-react",
-    "version": "7.29.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:@babel/preset-typescript@7.29.7",
     "name": "@babel/preset-typescript",
     "version": "7.29.7",
@@ -929,9 +839,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@babel/runtime@7.29.2",
+    "id": "npm:@babel/runtime@7.29.7",
     "name": "@babel/runtime",
-    "version": "7.29.2",
+    "version": "7.29.7",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -942,16 +852,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "id": "npm:@babel/template@7.29.7",
     "name": "@babel/template",
     "version": "7.29.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/babel/babel",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2014-present Sebastian McKenzie and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@babel/traverse@7.29.0",
-    "name": "@babel/traverse",
-    "version": "7.29.0",
     "licenses": "MIT",
     "repository": "https://github.com/babel/babel",
     "source": "npm",
@@ -979,13 +879,33 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/cli@54.0.25",
+    "id": "npm:@bcoe/v8-coverage@0.2.3",
+    "name": "@bcoe/v8-coverage",
+    "version": "0.2.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/demurgos/v8-coverage",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright © 2015-2017 Charles Samborski\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo-google-fonts/material-symbols@0.4.38",
+    "name": "@expo-google-fonts/material-symbols",
+    "version": "0.4.38",
+    "licenses": "MIT AND Apache-2.0",
+    "repository": "https://github.com/expo/google-fonts",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2020 Expo\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/cli@57.0.6",
     "name": "@expo/cli",
-    "version": "54.0.25",
+    "version": "57.0.6",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<!-- Title -->\n\n<p align=\"center\">\n  <a href=\"https://expo.dev/\">\n    <img alt=\"Expo CLI\" src=\"../../../.github/resources/cli-banner.svg\">\n  </a>\n</p>\n\n<p align=\"center\">The fastest way to build and run universal React Native apps for Android, iOS, and the web</p>\n\n<p align=\"center\">\n  <a aria-label=\"expo documentation\" href=\"https://docs.expo.dev/more/expo-cli/\">📚 Read the Documentation</a>\n  &ensp;•&ensp;\n  <a aria-label=\"expo documentation\" href=\"https://expo.dev/blog\">Learn more on our blog</a>\n  &ensp;•&ensp;\n  <a aria-label=\"Contribute to Expo CLI\" href=\"#contributing\">Contribute to Expo CLI</a>\n</p>\n\n<p align=\"center\">\n  <a aria-label=\"Join the Expo Discord\" href=\"https://discord.gg/4gtbPAdpaE\" target=\"_blank\">\n    <img alt=\"Discord\" src=\"https://img.shields.io/discord/695411232856997968.svg?style=for-the-badge&color=5865F2&logo=discord&logoColor=FFFFFF\" />\n  </a>\n</p>\n\n<p align=\"center\">\n  <a aria-label=\"Follow @expo on X\" href=\"https://x.com/intent/follow?screen_name=expo\" target=\"_blank\">\n    <img alt=\"Expo on X\" src=\"https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white\" target=\"_blank\" />\n  </a>&nbsp;\n  <a aria-label=\"Follow @expo on GitHub\" href=\"https://github.com/expo\" target=\"_blank\">\n    <img alt=\"Expo on GitHub\" src=\"https://img.shields.io/badge/GitHub-222222?style=for-the-badge&logo=github&logoColor=white\" target=\"_blank\" />\n  </a>&nbsp;\n  <a aria-label=\"Follow @expo on Reddit\" href=\"https://www.reddit.com/r/expo/\" target=\"_blank\">\n    <img alt=\"Expo on Reddit\" src=\"https://img.shields.io/badge/Reddit-FF4500?style=for-the-badge&logo=reddit&logoColor=white\" target=\"_blank\" />\n  </a>&nbsp;\n  <a aria-label=\"Follow @expo on Bluesky\" href=\"https://bsky.app/profile/expo.dev\" target=\"_blank\">\n    <img alt=\"Expo on LinkedIn\" src=\"https://img.shields.io/badge/Bluesky-1DA1F2?style=for-the-badge&logo=bluesky&logoColor=white\" target=\"_blank\" />\n  </a>&nbsp;\n  <a aria-label=\"Follow @expo on LinkedIn\" href=\"https://www.linkedin.com/company/expo-dev\" target=\"_blank\">\n    <img alt=\"Expo on LinkedIn\" src=\"https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=LinkedIn&logoColor=white\" target=\"_blank\" />\n  </a>\n\n  <p align=\"center\">⭐️ Be sure to star the Expo GitHub repo if you enjoy using the project! ⭐️</p>\n</p>\n\n---\n\nThe `@expo/cli` package is a CLI binary that should be used via the `expo` package, like `npx expo start` (or `npx expo` for short).\n\n```\nnpx expo\n```\n\n> ⭐️ Be sure to star the Expo GitHub repo if you enjoy using the project!\n\n## Design\n\nThis CLI has the following purposes:\n\n- Be a minimal interface for starting a local development server that emulates a production EAS Updates server. The development server is the proxy between a native runtime (Expo Go, Dev Client) and a JS Bundler (Metro, Webpack).\n  - To accomplish secure manifest signing for the web, like AsyncStorage or Permissions where both require https/SSL, we need an authenticated Expo account. This is the only reason we include the authentication commands `login`, `logout`, `whoami`, `register`. Standard web CLIs don't have authentication commands because they either don't set up https or they use emulation via packages like `devcert`.\n- Orchestrating various native tools like Xcode, `Simulator.app`, Android Studio, ADB, etc. to make native builds as painless as possible. `run:ios`, `run:android` commands.\n- Implementing a versioned `prebuild` command that can reliably work with a project for long periods of time. Prebuild is like a bundler for native code, it generates the **android** and **ios** folders based on the project Expo config (**app.json**).\n  - `npx expo config` is auxiliary to `npx expo prebuild` and used for debugging/introspection.\n- Installing versioned libraries with `npx expo install` this is a minimal utility born out of pure necessity since versioning in React Native is hard to get right.\n\n# Contributing\n\nTo develop the CLI run (defaults to watch mode):\n\n```\nyarn build\n```\n\nWe highly recommend setting up an alias for the Expo CLI so you can try it in projects all around your computer. Open your **.zshrc** or other config file and add:\n\n```\nalias nexpo=\"/path/to/expo/packages/@expo/cli/build/bin/cli\"\n```\n\nThen use it with `nexpo` like `nexpo config`. You can also set up a debug version:\n\n```\nalias expo-inspect=\"node --inspect /path/to/expo/packages/@expo/cli/build/bin/cli\"\n```\n\nThen you can run it and visit `chrome://inspect/#devices` in Chrome, and press **\"Open dedicated DevTools for Node\"** to get a debugger attached to your process. When debugging the CLI, you'll want to disable workers whenever possible, this will make all code run on the same thread, this is mostly applicable to the `start` command, i.e. `expo-inspect start --max-workers 0`.\n\n## Format\n\n- Be sure to update the [`CHANGELOG.md`](./CHANGELOG.md) with changes for every PR. You only need to add the message, our GitHub bot will automatically suggest adding your name and PR number to the diff.\n- End `async` functions with `Async` like `runAsync`. This is just how we format functions at Expo.\n- When throwing errors, always opt for `CommandError` instead of `Error` -- this helps with debugging and making the experience feel more coherent.\n- Utilize the unified `Log` module instead of `console.log`.\n- When logging with variables, utilize the following format `Something happened (foo: bar, baz: foz)`.\n  - Avoid other formats like `Something happened: bar, foz` or `Something happened: foo=bar, baz=foz`.\n- Main UI components like command names (`expo start`), arguments (`--port`), and `--help` messages should be modified internally, by the Expo team to ensure the developer experience is unified across Expo tooling. External contributions modifying these core aspects may be rejected.\n- Use the `profile` utility method with the `EXPO_PROFILE=1` environment variable to measure execution time.\n- Avoid globals and singletons as these make testing harder and less predictable. The only global we have (at the time of writing this) is the `isOffline` boolean.\n\n## Environment\n\n- Always be cautious of the transitive size of dependencies. [packagephobia](https://packagephobia.now.sh/) is a great resource for determining if a package is lean. Try to minimize adding dependencies to the CLI.\n- We build the CLI using `taskr` + `swc`, this is partially inspired by Next.js' local CLI.\n- The build pipeline will inline the CLI version as an environment variable that is accessible anywhere in the CLI codebase. You can access it via `process.env.__EXPO_VERSION` instead of reading the local `package.json` at runtime.\n- Unlike the legacy global Expo CLI, this CLI is shipped with `expo` meaning the SDK Version is always present.\n  - Reduce SDK specific tasks since only one SDK should be accounted for in a single version of `@expo/cli`.\n  - The `@expo/config` method `getConfig` does not need the `skipSDKVersionRequirement` in any case since `expo` should always be installed. Ex: `getConfig('...', { skipSDKVersionRequirement: true });` shouldn't be used.\n- Also unlike the global Expo CLI we can assume that node modules are always installed since this CLI should be used via a project's local **node_modules** folder.\n  - This means we can't perform operations that upgrade the `expo` package as these may kill the running process. Features that need this pattern (like `expo upgrade`) should live in standalone global tools.\n\n## Testing\n\nThere are two testing scripts:\n\n- `yarn test`: Controlled unit and integration tests.\n- `yarn test:e2e`: End to end testing for CLI commands. This requires the files to be built with `yarn build`.\n\n---\n\n- You can target a specific set of tests with the `--watch` flag. Example: `yarn test --watch config`.\n- We use backticks for `it` blocks. Example <code>it(`works`)</code>.\n- If a pull request is fully self-contained to the `packages/@expo/cli/` folder (i.e. no `yarn.lock` modifications, etc.) then most native CI tests will be skipped, making CI pass faster in PRs.\n\n### Unit Testing Guidelines\n\n- Use `nock` for network requests.\n- No top level `describe` blocks that wrap all the tests in a file.\n- When testing a function, pass the function to the `describe` block instead of a stringified function name:\n  - `describe(foobar, () => {})` instead of `describe('foobar', () => {})`\n- Use virtual `fs` via `memfs` whenever possible.\n- We have a lot of global module [**mocks**](./e2e/setup.ts) already in place, consider them when writing tests.\n- GitHub Copilot can make writing tests a little less tedious.\n\n### E2E Testing Guidelines\n\n- E2E tests should be resilient and reliable, be sure to give them plenty of time for network requests.\n- When testing locally you had to have [Bun installed](https://bun.sh/docs/installation).\n- When testing locally you should attempt to reuse node modules for faster results. In the `npx expo prebuild` and `npx expo start` commands for instance, we utilize a helper method that will default to reusing a project + **node_modules** when run locally. This can be [toggled off](https://github.com/expo/expo/blob/11a5a4d27b7e1c8e4d6ddf0401397d789d89f52a/packages/%40expo/cli/e2e/__tests__/utils.ts#L174) to bootstrap a fresh project every time.\n- When bootstrapping test projects, utilize the temporary folder `os.tmpdir()` as this folder is automatically cleaned up when the computer restarts.\n\n## Coming from Expo CLI\n\n> TL;DR: `expo-cli` was 'make it work', whereas `@expo/cli` is 'make it right, make it fast'.\n\nThe legacy global `expo-cli` package was deprecated in favor of this versioned `@expo/cli` package for the following reasons:\n\n- `expo-cli` was too big and took way too long to install. This made CI frustrating to set up since you needed to also target global node modules for caching.\n- `expo-cli` worked for almost all versions of the `expo` package, meaning it was getting more complex with every release.\n- `expo-cli` combined service commands (like the legacy `build`, `submit`, `publish`) with project-level commands like `expo start`. We've since divided services into `eas-cli` and project commands into `npx expo` (`@expo/cli`). This structure is more optimal/faster for developers since they can install/update commands when they need them.\n- This CLI utilizes more Node.js standard features like `$EDITOR` instead of the custom `$EXPO_EDITOR` environment variable. Also transitioning away from `$EXPO_DEBUG` and more towards `$DEBUG=expo:*`. These types of changes make Expo CLI play nicer with existing tooling.\n- The DevTools UI has been deprecated to reduce the net installation size, minimize complexity, and make room for future debugging UIs (Hermes/v8 Chrome debugger).\n- The `expo start:web` and `expo web` commands have been rolled into `npx expo start` as we now lazily load platforms until the device requests them.\n- Other missing or beta features from `expo-cli` may still be getting migrated over to this new CLI. For a more comprehensive breakdown see the [start command PR](https://github.com/expo/expo/pull/16160).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -999,9 +919,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/config@12.0.13",
+    "id": "npm:@expo/config@57.0.3",
     "name": "@expo/config",
-    "version": "12.0.13",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1009,9 +929,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/config-plugins@54.0.4",
+    "id": "npm:@expo/config-plugins@57.0.3",
     "name": "@expo/config-plugins",
-    "version": "54.0.4",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1019,9 +939,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/config-types@54.0.10",
+    "id": "npm:@expo/config-types@57.0.1",
     "name": "@expo/config-types",
-    "version": "54.0.10",
+    "version": "57.0.1",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1039,9 +959,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/devtools@0.1.8",
+    "id": "npm:@expo/devtools@57.0.0",
     "name": "@expo/devtools",
-    "version": "0.1.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1049,9 +969,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/env@2.0.11",
+    "id": "npm:@expo/dom-webview@57.0.0",
+    "name": "@expo/dom-webview",
+    "version": "57.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/env@2.4.1",
     "name": "@expo/env",
-    "version": "2.0.11",
+    "version": "2.4.1",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1059,9 +989,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/fingerprint@0.15.5",
+    "id": "npm:@expo/expo-modules-macros-plugin@0.3.0",
+    "name": "@expo/expo-modules-macros-plugin",
+    "version": "0.3.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo-modules-macros-plugin",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/fingerprint@0.20.3",
     "name": "@expo/fingerprint",
-    "version": "0.15.5",
+    "version": "0.20.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1069,9 +1009,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/image-utils@0.8.13",
+    "id": "npm:@expo/image-utils@0.11.1",
     "name": "@expo/image-utils",
-    "version": "0.8.13",
+    "version": "0.11.1",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1079,9 +1019,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/json-file@10.0.13",
+    "id": "npm:@expo/inline-modules@0.1.2",
+    "name": "@expo/inline-modules",
+    "version": "0.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/json-file@11.0.0",
     "name": "@expo/json-file",
-    "version": "10.0.13",
+    "version": "11.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1089,9 +1039,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/json-file@10.0.16",
-    "name": "@expo/json-file",
-    "version": "10.0.16",
+    "id": "npm:@expo/local-build-cache-provider@57.0.2",
+    "name": "@expo/local-build-cache-provider",
+    "version": "57.0.2",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1099,19 +1049,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/json-file@10.2.0",
-    "name": "@expo/json-file",
-    "version": "10.2.0",
+    "id": "npm:@expo/log-box@57.0.0",
+    "name": "@expo/log-box",
+    "version": "57.0.0",
     "licenses": "MIT",
-    "repository": "https://github.com/expo/expo",
+    "repository": null,
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:@expo/metro@54.2.0",
+    "id": "npm:@expo/metro@56.0.0",
     "name": "@expo/metro",
-    "version": "54.2.0",
+    "version": "56.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo-metro",
     "source": "npm",
@@ -1119,9 +1069,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/metro-config@54.0.16",
+    "id": "npm:@expo/metro-config@57.0.3",
     "name": "@expo/metro-config",
-    "version": "54.0.16",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1129,9 +1079,29 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/osascript@2.6.0",
+    "id": "npm:@expo/metro-file-map@57.0.0",
+    "name": "@expo/metro-file-map",
+    "version": "57.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/metro-runtime@57.0.3",
+    "name": "@expo/metro-runtime",
+    "version": "57.0.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/osascript@2.7.0",
     "name": "@expo/osascript",
-    "version": "2.6.0",
+    "version": "2.7.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1139,9 +1109,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/package-manager@1.12.1",
+    "id": "npm:@expo/package-manager@1.13.0",
     "name": "@expo/package-manager",
-    "version": "1.12.1",
+    "version": "1.13.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1149,19 +1119,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/plist@0.4.9",
+    "id": "npm:@expo/plist@0.8.0",
     "name": "@expo/plist",
-    "version": "0.4.9",
-    "licenses": "MIT",
-    "repository": "https://github.com/expo/expo",
-    "source": "npm",
-    "licenseText": "<!-- Title -->\n<h1 align=\"center\">\n👋 Welcome to <br><code>@expo/plist</code>\n</h1>\n\n<p align=\"center\">A macOS Plist parser/builder for Node.js and browsers.</p>\n\nForked from this [repo](https://github.com/TooTallNate/plist.js).",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@expo/prebuild-config@54.0.8",
-    "name": "@expo/prebuild-config",
-    "version": "54.0.8",
+    "version": "0.8.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1169,9 +1129,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/require-utils@55.0.4",
+    "id": "npm:@expo/prebuild-config@57.0.5",
+    "name": "@expo/prebuild-config",
+    "version": "57.0.5",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/require-utils@57.0.1",
     "name": "@expo/require-utils",
-    "version": "55.0.4",
+    "version": "57.0.1",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1179,9 +1149,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/schema-utils@0.1.8",
+    "id": "npm:@expo/router-server@57.0.2",
+    "name": "@expo/router-server",
+    "version": "57.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@expo/schema-utils@57.0.1",
     "name": "@expo/schema-utils",
-    "version": "0.1.8",
+    "version": "57.0.1",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
@@ -1219,6 +1199,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:@expo/ui@57.0.4",
+    "name": "@expo/ui",
+    "version": "57.0.4",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "# @expo/ui\n\nA collection of UI components by Expo.",
+    "noticeText": null
+  },
+  {
     "id": "npm:@expo/vector-icons@15.1.1",
     "name": "@expo/vector-icons",
     "version": "15.1.1",
@@ -1229,9 +1219,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@expo/ws-tunnel@1.0.6",
+    "id": "npm:@expo/ws-tunnel@2.0.0",
     "name": "@expo/ws-tunnel",
-    "version": "1.0.6",
+    "version": "2.0.0",
     "licenses": "MIT",
     "repository": null,
     "source": "npm",
@@ -1246,26 +1236,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/expo/expo-cli",
     "source": "npm",
     "licenseText": "# @expo/xcpretty\n\nThis can be used to parse and format xcodebuild logs.\nThe default error and warning format matches that of other tools in the Expo ecosystem.\n\n```ts\nimport { Formatter } from '@expo/xcpretty';\n\nconst formatter = new Formatter({ projectRoot: '/' });\n\nconst lines = formatter.pipe('xcodebuild log results...');\n\nfor (const line of lines) {\n  console.log(line);\n}\n```",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@ide/backoff@1.0.0",
-    "name": "@ide/backoff",
-    "version": "1.0.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/ide/backoff",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2019 James Ide\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@isaacs/fs-minipass@4.0.1",
-    "name": "@isaacs/fs-minipass",
-    "version": "4.0.1",
-    "licenses": "ISC",
-    "repository": "https://github.com/npm/fs-minipass",
-    "source": "npm",
-    "licenseText": "The ISC License\n\nCopyright (c) Isaac Z. Schlueter and Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
     "noticeText": null
   },
   {
@@ -1299,6 +1269,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:@jest/console@29.7.0",
+    "name": "@jest/console",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/core@29.7.0",
+    "name": "@jest/core",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:@jest/create-cache-key-function@29.7.0",
     "name": "@jest/create-cache-key-function",
     "version": "29.7.0",
@@ -1309,8 +1299,38 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:@jest/diff-sequences@30.4.0",
+    "name": "@jest/diff-sequences",
+    "version": "30.4.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\nCopyright Contributors to the Jest project.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:@jest/environment@29.7.0",
     "name": "@jest/environment",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/expect@29.7.0",
+    "name": "@jest/expect",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/expect-utils@29.7.0",
+    "name": "@jest/expect-utils",
     "version": "29.7.0",
     "licenses": "MIT",
     "repository": "https://github.com/jestjs/jest",
@@ -1329,9 +1349,79 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:@jest/get-type@30.1.0",
+    "name": "@jest/get-type",
+    "version": "30.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\nCopyright Contributors to the Jest project.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/globals@29.7.0",
+    "name": "@jest/globals",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/reporters@29.7.0",
+    "name": "@jest/reporters",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:@jest/schemas@29.6.3",
     "name": "@jest/schemas",
     "version": "29.6.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/schemas@30.4.1",
+    "name": "@jest/schemas",
+    "version": "30.4.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\nCopyright Contributors to the Jest project.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/source-map@29.6.3",
+    "name": "@jest/source-map",
+    "version": "29.6.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/test-result@29.7.0",
+    "name": "@jest/test-result",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@jest/test-sequencer@29.7.0",
+    "name": "@jest/test-sequencer",
+    "version": "29.7.0",
     "licenses": "MIT",
     "repository": "https://github.com/jestjs/jest",
     "source": "npm",
@@ -1419,13 +1509,223 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@nodable/entities@2.1.0",
+    "id": "npm:@nodable/entities@2.2.0",
     "name": "@nodable/entities",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "licenses": "MIT",
     "repository": "https://github.com/nodable/val-parsers",
     "source": "npm",
     "licenseText": "# @nodable/entities\n\nFast, zero-dependency XML/HTML entity encoder and decoder for Node.js.\n\n## Install\n\n```bash\nnpm install @nodable/entities\n```\n\n## Quick start\n\n```js\nimport { EntityEncoder, EntityDecoder, ALL_ENTITIES } from '@nodable/entities';\n\n// Encode: plain text → entity references\nconst enc = new EntityEncoder();\nenc.encode('Hello © 2024 & <stuff>');\n// → 'Hello &copy; 2024 &amp; &lt;stuff&gt;'\n\n// Decode: entity references → plain text\nconst dec = new EntityDecoder({ namedEntities: ALL_ENTITIES });\ndec.decode('Hello &copy; 2024 &amp; &lt;stuff&gt;');\n// → 'Hello © 2024 & <stuff>'\n```\n\n## Performance\n\n|  | encode | decode |\n|---|---|---|\n| `entities` (npm) | 3.65 M req/s | 1.76 M req/s |\n| `@nodable/entities` | 3.33 M req/s | **5.19 M req/s** |\n\n## Documentation\n\n- [EntityEncoder](docs/EntityEncoder.md) — options, API, recipes\n- [EntityDecoder](docs/EntityDecoder.md) — options, API, security limits, entity sets\n\n## License\n\nMIT",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/primitive@1.1.5",
+    "name": "@radix-ui/primitive",
+    "version": "1.1.5",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-collection@1.1.12",
+    "name": "@radix-ui/react-collection",
+    "version": "1.1.12",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-compose-refs@1.1.3",
+    "name": "@radix-ui/react-compose-refs",
+    "version": "1.1.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-context@1.2.0",
+    "name": "@radix-ui/react-context",
+    "version": "1.2.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-dialog@1.1.19",
+    "name": "@radix-ui/react-dialog",
+    "version": "1.1.19",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-direction@1.1.2",
+    "name": "@radix-ui/react-direction",
+    "version": "1.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-dismissable-layer@1.1.15",
+    "name": "@radix-ui/react-dismissable-layer",
+    "version": "1.1.15",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-focus-guards@1.1.4",
+    "name": "@radix-ui/react-focus-guards",
+    "version": "1.1.4",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-focus-scope@1.1.12",
+    "name": "@radix-ui/react-focus-scope",
+    "version": "1.1.12",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-id@1.1.2",
+    "name": "@radix-ui/react-id",
+    "version": "1.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-portal@1.1.13",
+    "name": "@radix-ui/react-portal",
+    "version": "1.1.13",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-presence@1.1.7",
+    "name": "@radix-ui/react-presence",
+    "version": "1.1.7",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-primitive@2.1.7",
+    "name": "@radix-ui/react-primitive",
+    "version": "2.1.7",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-roving-focus@1.1.15",
+    "name": "@radix-ui/react-roving-focus",
+    "version": "1.1.15",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-slot@1.3.0",
+    "name": "@radix-ui/react-slot",
+    "version": "1.3.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-tabs@1.1.17",
+    "name": "@radix-ui/react-tabs",
+    "version": "1.1.17",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-use-callback-ref@1.1.2",
+    "name": "@radix-ui/react-use-callback-ref",
+    "version": "1.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-use-controllable-state@1.2.3",
+    "name": "@radix-ui/react-use-controllable-state",
+    "version": "1.2.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-use-effect-event@0.0.3",
+    "name": "@radix-ui/react-use-effect-event",
+    "version": "0.0.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-use-is-hydrated@0.1.1",
+    "name": "@radix-ui/react-use-is-hydrated",
+    "version": "0.1.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@radix-ui/react-use-layout-effect@1.1.2",
+    "name": "@radix-ui/react-use-layout-effect",
+    "version": "1.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/radix-ui/primitives",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2022 WorkOS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -1439,9 +1739,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/assets-registry@0.81.5",
+    "id": "npm:@react-native-masked-view/masked-view@0.3.2",
+    "name": "@react-native-masked-view/masked-view",
+    "version": "0.3.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/react-native-masked-view/masked-view",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2015-present, Facebook, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@react-native/assets-registry@0.86.0",
     "name": "@react-native/assets-registry",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1449,9 +1759,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/babel-plugin-codegen@0.81.5",
+    "id": "npm:@react-native/babel-plugin-codegen@0.86.0",
     "name": "@react-native/babel-plugin-codegen",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1459,9 +1769,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/babel-preset@0.81.5",
+    "id": "npm:@react-native/babel-preset@0.86.0",
     "name": "@react-native/babel-preset",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1469,9 +1779,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/codegen@0.81.5",
+    "id": "npm:@react-native/codegen@0.86.0",
     "name": "@react-native/codegen",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1479,9 +1789,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/community-cli-plugin@0.81.5",
+    "id": "npm:@react-native/community-cli-plugin@0.86.0",
     "name": "@react-native/community-cli-plugin",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1489,9 +1799,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/debugger-frontend@0.81.5",
+    "id": "npm:@react-native/debugger-frontend@0.86.0",
     "name": "@react-native/debugger-frontend",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "BSD-3-Clause",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1499,19 +1809,29 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/dev-middleware@0.81.5",
-    "name": "@react-native/dev-middleware",
-    "version": "0.81.5",
+    "id": "npm:@react-native/debugger-shell@0.86.0",
+    "name": "@react-native/debugger-shell",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
-    "licenseText": "# @react-native/dev-middleware\n\n![npm package](https://img.shields.io/npm/v/@react-native/dev-middleware?color=brightgreen&label=npm%20package)\n\nDev server middleware supporting core React Native development features. This package is preconfigured in all React Native projects.\n\n## Usage\n\nMiddleware can be attached to a dev server (e.g. [Metro](https://facebook.github.io/metro/docs/getting-started)) using the `createDevMiddleware` API.\n\n```js\nimport { createDevMiddleware } from '@react-native/dev-middleware';\n\nfunction myDevServerImpl(args) {\n  ...\n\n  const {middleware, websocketEndpoints} = createDevMiddleware({\n    projectRoot: metroConfig.projectRoot,\n    serverBaseUrl: `http://${args.host}:${args.port}`,\n    logger,\n  });\n\n  await Metro.runServer(metroConfig, {\n    host: args.host,\n    ...,\n    unstable_extraMiddleware: [\n      middleware,\n      // Optionally extend with additional HTTP middleware\n    ],\n    websocketEndpoints: {\n      ...websocketEndpoints,\n      // Optionally extend with additional WebSocket endpoints\n    },\n  });\n}\n```\n\n## Included middleware\n\n`@react-native/dev-middleware` is designed for integrators such as [`@expo/dev-server`](https://www.npmjs.com/package/@expo/dev-server) and [`@react-native/community-cli-plugin`](https://github.com/facebook/react-native/tree/main/packages/community-cli-plugin). It provides a common default implementation for core React Native dev server responsibilities.\n\nWe intend to keep this to a narrow set of functionality, based around:\n\n- **Debugging** — The [Chrome DevTools protocol (CDP)](https://chromedevtools.github.io/devtools-protocol/) endpoints supported by React Native, including the Inspector Proxy, which facilitates connections with multiple devices.\n- **Dev actions** — Endpoints implementing core [Dev Menu](https://reactnative.dev/docs/debugging#accessing-the-dev-menu) actions, e.g. reloading the app, opening the debugger frontend.\n\n### HTTP endpoints\n\n<small>`DevMiddlewareAPI.middleware`</small>\n\nThese are exposed as a [`connect`](https://www.npmjs.com/package/connect) middleware handler, assignable to `Metro.runServer` or other compatible HTTP servers.\n\n#### GET `/json/list`, `/json` ([CDP](https://chromedevtools.github.io/devtools-protocol/#endpoints))\n\nReturns the list of available WebSocket targets for all connected React Native app sessions.\n\n#### GET `/json/version` ([CDP](https://chromedevtools.github.io/devtools-protocol/#endpoints))\n\nReturns version metadata used by Chrome DevTools.\n\n#### GET `/debugger-frontend`\n\nSubpaths of this endpoint are reserved to serve the JavaScript debugger frontend.\n\n#### POST `/open-debugger`\n\nOpen the JavaScript debugger for a given CDP target. Must be provided with one of the following query params:\n\n- `device`‌ — An ID unique to a combination of device and app, stable across installs. Implemented by `getInspectorDeviceId` on each native platform.\n- `target` — The target page ID as returned by `/json/list` for the current dev server session.\n- `appId` (deprecated, legacy only) — The application bundle identifier to match (non-unique across multiple connected devices). This param will only match legacy Hermes debugger targets.\n\n<details>\n<summary>Example</summary>\n\n    curl -X POST 'http://localhost:8081/open-debugger?target=<targetId>'\n</details>\n\n### WebSocket endpoints\n\n<small>`DevMiddlewareAPI.websocketEndpoints`</small>\n\n#### `/inspector/device`\n\nWebSocket handler for registering device connections.\n\n#### `/inspector/debug`\n\nWebSocket handler that proxies CDP messages to/from the corresponding device.\n\n## Contributing\n\nChanges to this package can be made locally and tested against the `rn-tester` app, per the [Contributing guide](https://reactnative.dev/contributing/overview#contributing-code). During development, this package is automatically run from source with no build step.",
+    "licenseText": "# @react-native/debugger-shell\n\n![npm package](https://img.shields.io/npm/v/@react-native/debugger-shell?color=brightgreen&label=npm%20package)\n\nExperimental Electron-based shell for React Native DevTools. This package is not part of React Native's public API.\n\n## Why Electron?\n\nThe React Native DevTools frontend is based on Chrome DevTools, which is a web app, but is not particularly portable: it's designed to run in Chromium, and Chromium only. Prior to `@react-native/debugger-shell`, we would run it in [hosted mode](https://chromium.googlesource.com/devtools/devtools-frontend/+/main/docs/get_the_code.md#running-in-hosted-mode) in an instance of Chrome or Edge.\n\nRelying on hosted mode presents a variety of UX issues in the debugging workflow, such as the need to ask developers to install a particular browser before they can debug in React Native, and the inability to foreground/reuse existing debugger windows when relaunching the debugger for the same app. In order to address these issues effectively, we fundamentally need to leave the browser sandbox and run the debugger in a shell we can bundle with React Native, and whose behavior we can control.\n\nElectron is a tried-and-tested framework for the *specific* task of embedding a Chromium browser in a portable, customized shell. As a rule we'll hold a high bar for performance and reliability, and we'll only add features to the shell if they are strictly necessary to complement the DevTools frontend's built-in capabilities.",
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/gradle-plugin@0.81.5",
+    "id": "npm:@react-native/dev-middleware@0.86.0",
+    "name": "@react-native/dev-middleware",
+    "version": "0.86.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react-native",
+    "source": "npm",
+    "licenseText": "# @react-native/dev-middleware\n\n![npm package](https://img.shields.io/npm/v/@react-native/dev-middleware?color=brightgreen&label=npm%20package)\n\nDev server middleware supporting core React Native development features. This package is preconfigured in all React Native projects.\n\n## Usage\n\nMiddleware can be attached to a dev server (e.g. [Metro](https://facebook.github.io/metro/docs/getting-started)) using the `createDevMiddleware` API.\n\n```js\nimport { createDevMiddleware } from '@react-native/dev-middleware';\n\nfunction myDevServerImpl(args) {\n  ...\n\n  const {middleware, websocketEndpoints} = createDevMiddleware({\n    projectRoot: metroConfig.projectRoot,\n    serverBaseUrl: new URL(`http://${args.host}:${args.port}`),\n    logger,\n  });\n\n  await Metro.runServer(metroConfig, {\n    host: args.host,\n    ...,\n    unstable_extraMiddleware: [\n      middleware,\n      // Optionally extend with additional HTTP middleware\n    ],\n    websocketEndpoints: {\n      ...websocketEndpoints,\n      // Optionally extend with additional WebSocket endpoints\n    },\n  });\n}\n```\n\n## Included middleware\n\n`@react-native/dev-middleware` is designed for integrators such as [`@expo/dev-server`](https://www.npmjs.com/package/@expo/dev-server) and [`@react-native/community-cli-plugin`](https://github.com/facebook/react-native/tree/main/packages/community-cli-plugin). It provides a common default implementation for core React Native dev server responsibilities.\n\nWe intend to keep this to a narrow set of functionality, based around:\n\n- **Debugging** — The [Chrome DevTools protocol (CDP)](https://chromedevtools.github.io/devtools-protocol/) endpoints supported by React Native, including the Inspector Proxy, which facilitates connections with multiple devices.\n- **Dev actions** — Endpoints implementing core [Dev Menu](https://reactnative.dev/docs/debugging#accessing-the-dev-menu) actions, e.g. reloading the app, opening the debugger frontend.\n\n### HTTP endpoints\n\n<small>`DevMiddlewareAPI.middleware`</small>\n\nThese are exposed as a [`connect`](https://www.npmjs.com/package/connect) middleware handler, assignable to `Metro.runServer` or other compatible HTTP servers.\n\n#### GET `/json/list`, `/json` ([CDP](https://chromedevtools.github.io/devtools-protocol/#endpoints))\n\nReturns the list of available WebSocket targets for all connected React Native app sessions.\n\n#### GET `/json/version` ([CDP](https://chromedevtools.github.io/devtools-protocol/#endpoints))\n\nReturns version metadata used by Chrome DevTools.\n\n#### GET `/debugger-frontend`\n\nSubpaths of this endpoint are reserved to serve the JavaScript debugger frontend.\n\n#### POST `/open-debugger`\n\nOpen the JavaScript debugger for a given CDP target. Must be provided with one of the following query params:\n\n- `device`‌ — An ID unique to a combination of device and app, stable across installs. Implemented by `getInspectorDeviceId` on each native platform.\n- `target` — The target page ID as returned by `/json/list` for the current dev server session.\n- `appId` (deprecated, legacy only) — The application bundle identifier to match (non-unique across multiple connected devices). This param will only match legacy Hermes debugger targets.\n\n<details>\n<summary>Example</summary>\n\n    curl -X POST 'http://localhost:8081/open-debugger?target=<targetId>'\n</details>\n\n### WebSocket endpoints\n\n<small>`DevMiddlewareAPI.websocketEndpoints`</small>\n\n#### `/inspector/device`\n\nWebSocket handler for registering device connections.\n\n#### `/inspector/debug`\n\nWebSocket handler that proxies CDP messages to/from the corresponding device.\n\n## Experimental features\n\nReact Native frameworks may pass an `unstable_experiments` option to `createDevMiddleware` to configure experimental features. Note that these features might not work correctly, and they may change or be removed in the future without notice. Some of the experiment flags available are documented below.\n\n### `unstable_experiments.enableStandaloneFuseboxShell`\n\nEnables launching the debugger frontend in a standalone app shell (provided by the `@react-native/debugger-shell` package) rather than in a browser window. Since React Native 0.83 this defaults to `true`, and may be disabled by explicitly passing `false`.\n\nThe shell is powered by a separate binary that is downloaded and cached in the background (immediately after the call to `createDevMiddleware`). If there is a problem downloading or invoking this binary for the first time, the debugger frontend will revert to launching in a browser window until the next time `createDevMiddleware` is called (typically, on the next dev server start).\n\n## Contributing\n\nChanges to this package can be made locally and tested against the `rn-tester` app, per the [Contributing guide](https://reactnative.dev/contributing/overview#contributing-code). During development, this package is automatically run from source with no build step.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@react-native/gradle-plugin@0.86.0",
     "name": "@react-native/gradle-plugin",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1519,9 +1839,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/js-polyfills@0.81.5",
+    "id": "npm:@react-native/jest-preset@0.86.0",
+    "name": "@react-native/jest-preset",
+    "version": "0.86.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react-native",
+    "source": "npm",
+    "licenseText": "# @react-native/jest-preset\n\nJest preset for [React Native](https://reactnative.dev) apps.\n\n## Usage\n\n### Installation\n\nInstall `@react-native/jest-preset` in your app:\n\nwith `npm`:\n\n```sh\nnpm i @react-native/jest-preset --save-dev\n```\n\nor with `yarn`:\n\n```sh\nyarn add -D @react-native/jest-preset\n```\n\n### Configuring Jest\n\nThen, create a file called `jest.config.js` in your project's root directory. Then load this preset:\n\n```\nmodule.exports = {\n  preset: '@react-native/jest-preset',\n};\n```\n\nYou can further customize your Jest configuration by specifying other options. See [Jest's `jest.config.js` documentation](https://jestjs.io/docs/configuration) to learn more.\n\n### Migration Note\n\nThis Jest preset used to be part of the core `react-native` package and accessible at `react-native/jest-preset.js`. As long as `@react-native/jest-preset` is installed, `react-native/jest-preset.js` will be aliased to this package and continue to work but is deprecated.\n\nFollow the installation instructions above to migrate to `@react-native/jest-preset` and change `preset: 'react-native'` to `preset: '@react-native/jest-preset` to migrate.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@react-native/js-polyfills@0.86.0",
     "name": "@react-native/js-polyfills",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1529,9 +1859,29 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/normalize-colors@0.81.5",
+    "id": "npm:@react-native/metro-babel-transformer@0.86.0",
+    "name": "@react-native/metro-babel-transformer",
+    "version": "0.86.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react-native",
+    "source": "npm",
+    "licenseText": null,
+    "noticeText": null
+  },
+  {
+    "id": "npm:@react-native/metro-config@0.86.0",
+    "name": "@react-native/metro-config",
+    "version": "0.86.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react-native",
+    "source": "npm",
+    "licenseText": "# @react-native/metro-config\n\n[![Version][version-badge]][package]\n\n## Installation\n\n```\nyarn add --dev @react-native/js-polyfills metro-config @react-native/metro-babel-transformer metro-runtime @react-native/metro-config\n```\n\n*Note: We're using `yarn` to install deps. Feel free to change commands to use `npm` 3+ and `npx` if you like*\n\n[version-badge]: https://img.shields.io/npm/v/@react-native/metro-config?style=flat-square\n[package]: https://www.npmjs.com/package/@react-native/metro-config\n\n## Testing\n\nTo run the tests in this package, run the following commands from the React Native root folder:\n\n1. `yarn` to install the dependencies. You just need to run this once\n2. `yarn jest packages/metro-config`.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@react-native/normalize-colors@0.86.0",
     "name": "@react-native/normalize-colors",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1539,9 +1889,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-native/virtualized-lists@0.81.5",
+    "id": "npm:@react-native/virtualized-lists@0.86.0",
     "name": "@react-native/virtualized-lists",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -1549,59 +1899,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@react-navigation/core@7.17.5",
-    "name": "@react-navigation/core",
-    "version": "7.17.5",
-    "licenses": "MIT",
-    "repository": "https://github.com/react-navigation/react-navigation",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2017 React Navigation Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@react-navigation/elements@2.9.19",
-    "name": "@react-navigation/elements",
-    "version": "2.9.19",
-    "licenses": "MIT",
-    "repository": "https://github.com/react-navigation/react-navigation",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2017 React Navigation Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@react-navigation/native@7.2.5",
-    "name": "@react-navigation/native",
-    "version": "7.2.5",
-    "licenses": "MIT",
-    "repository": "https://github.com/react-navigation/react-navigation",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2017 React Navigation Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@react-navigation/native-stack@7.16.0",
-    "name": "@react-navigation/native-stack",
-    "version": "7.16.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/react-navigation/react-navigation",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2017 React Navigation Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@react-navigation/routers@7.5.5",
-    "name": "@react-navigation/routers",
-    "version": "7.5.5",
-    "licenses": "MIT",
-    "repository": "https://github.com/react-navigation/react-navigation",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2017 React Navigation Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@revenuecat/purchases-js@1.41.1",
+    "id": "npm:@revenuecat/purchases-js@1.47.0",
     "name": "@revenuecat/purchases-js",
-    "version": "1.41.1",
+    "version": "1.47.0",
     "licenses": "MIT",
     "repository": "https://github.com/RevenueCat/purchases-js",
     "source": "npm",
@@ -1609,9 +1909,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@revenuecat/purchases-js-hybrid-mappings@18.8.0",
+    "id": "npm:@revenuecat/purchases-js-hybrid-mappings@18.19.0",
     "name": "@revenuecat/purchases-js-hybrid-mappings",
-    "version": "18.8.0",
+    "version": "18.19.0",
     "licenses": "MIT",
     "repository": "https://github.com/RevenueCat/purchases-hybrid-common",
     "source": "npm",
@@ -1619,9 +1919,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@revenuecat/purchases-typescript-internal@18.8.0",
+    "id": "npm:@revenuecat/purchases-typescript-internal@18.19.0",
     "name": "@revenuecat/purchases-typescript-internal",
-    "version": "18.8.0",
+    "version": "18.19.0",
     "licenses": "MIT",
     "repository": "https://github.com/RevenueCat/purchases-hybrid-common",
     "source": "npm",
@@ -1629,9 +1929,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry-internal/browser-utils@10.57.0",
+    "id": "npm:@sentry-internal/browser-utils@10.37.0",
     "name": "@sentry-internal/browser-utils",
-    "version": "10.57.0",
+    "version": "10.37.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript",
     "source": "npm",
@@ -1639,9 +1939,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry-internal/feedback@10.57.0",
+    "id": "npm:@sentry-internal/feedback@10.37.0",
     "name": "@sentry-internal/feedback",
-    "version": "10.57.0",
+    "version": "10.37.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript",
     "source": "npm",
@@ -1649,9 +1949,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry-internal/replay@10.57.0",
+    "id": "npm:@sentry-internal/replay@10.37.0",
     "name": "@sentry-internal/replay",
-    "version": "10.57.0",
+    "version": "10.37.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript",
     "source": "npm",
@@ -1659,9 +1959,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry-internal/replay-canvas@10.57.0",
+    "id": "npm:@sentry-internal/replay-canvas@10.37.0",
     "name": "@sentry-internal/replay-canvas",
-    "version": "10.57.0",
+    "version": "10.37.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript",
     "source": "npm",
@@ -1669,9 +1969,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry/babel-plugin-component-annotate@5.3.0",
+    "id": "npm:@sentry/babel-plugin-component-annotate@4.8.0",
     "name": "@sentry/babel-plugin-component-annotate",
-    "version": "5.3.0",
+    "version": "4.8.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript-bundler-plugins",
     "source": "npm",
@@ -1679,9 +1979,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry/browser@10.57.0",
+    "id": "npm:@sentry/browser@10.37.0",
     "name": "@sentry/browser",
-    "version": "10.57.0",
+    "version": "10.37.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript",
     "source": "npm",
@@ -1689,9 +1989,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry/cli@3.5.0",
+    "id": "npm:@sentry/cli@2.58.4",
     "name": "@sentry/cli",
-    "version": "3.5.0",
+    "version": "2.58.4",
     "licenses": "FSL-1.1-MIT",
     "repository": "https://github.com/getsentry/sentry-cli",
     "source": "npm",
@@ -1699,9 +1999,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry/cli-darwin@3.5.0",
+    "id": "npm:@sentry/cli-darwin@2.58.4",
     "name": "@sentry/cli-darwin",
-    "version": "3.5.0",
+    "version": "2.58.4",
     "licenses": "FSL-1.1-MIT",
     "repository": "https://github.com/getsentry/sentry-cli",
     "source": "npm",
@@ -1709,9 +2009,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry/core@10.57.0",
+    "id": "npm:@sentry/core@10.37.0",
     "name": "@sentry/core",
-    "version": "10.57.0",
+    "version": "10.37.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript",
     "source": "npm",
@@ -1719,19 +2019,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry/expo-upload-sourcemaps@8.14.0",
-    "name": "@sentry/expo-upload-sourcemaps",
-    "version": "8.14.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/getsentry/sentry-react-native",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2017-2026 Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@sentry/react@10.57.0",
+    "id": "npm:@sentry/react@10.37.0",
     "name": "@sentry/react",
-    "version": "10.57.0",
+    "version": "10.37.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-javascript",
     "source": "npm",
@@ -1739,13 +2029,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@sentry/react-native@8.14.0",
+    "id": "npm:@sentry/react-native@7.11.0",
     "name": "@sentry/react-native",
-    "version": "8.14.0",
+    "version": "7.11.0",
     "licenses": "MIT",
     "repository": "https://github.com/getsentry/sentry-react-native",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2017-2024 Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sentry/types@10.37.0",
+    "name": "@sentry/types",
+    "version": "10.37.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/getsentry/sentry-javascript",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2019 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -1756,6 +2056,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/sinclairzx81/typebox-legacy",
     "source": "npm",
     "licenseText": "TypeBox: JSON Schema Type Builder with Static Type Resolution for TypeScript \n\nThe MIT License (MIT)\n\nCopyright (c) 2017-2023 Haydn Paterson (sinclair) <haydn.developer@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@sinclair/typebox@0.34.51",
+    "name": "@sinclair/typebox",
+    "version": "0.34.51",
+    "licenses": "MIT",
+    "repository": "https://github.com/sinclairzx81/sinclair-typebox",
+    "source": "npm",
+    "licenseText": "TypeBox\n\nJson Schema Type Builder with Static Type Resolution for TypeScript \n\nThe MIT License (MIT)\n\nCopyright (c) 2017-2026 Haydn Paterson\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -1776,6 +2086,56 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/sinonjs/fake-timers",
     "source": "npm",
     "licenseText": "Copyright (c) 2010-2014, Christian Johansen, christian@cjohansen.no. All rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\n3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@testing-library/dom@10.4.1",
+    "name": "@testing-library/dom",
+    "version": "10.4.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/testing-library/dom-testing-library",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\nCopyright (c) 2017 Kent C. Dodds\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@testing-library/jest-dom@6.9.1",
+    "name": "@testing-library/jest-dom",
+    "version": "6.9.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/testing-library/jest-dom",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\nCopyright (c) 2017 Kent C. Dodds\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@testing-library/react-native@13.3.3",
+    "name": "@testing-library/react-native",
+    "version": "13.3.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/callstack/react-native-testing-library",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2018 Callstack and Rally Health\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@testing-library/user-event@14.6.1",
+    "name": "@testing-library/user-event",
+    "version": "14.6.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/testing-library/user-event",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\nCopyright (c) 2020 Giorgio Polvara\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@types/aria-query@5.0.4",
+    "name": "@types/aria-query",
+    "version": "5.0.4",
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "source": "npm",
+    "licenseText": "MIT License\n\n    Copyright (c) Microsoft Corporation.\n\n    Permission is hereby granted, free of charge, to any person obtaining a copy\n    of this software and associated documentation files (the \"Software\"), to deal\n    in the Software without restriction, including without limitation the rights\n    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the Software, and to permit persons to whom the Software is\n    furnished to do so, subject to the following conditions:\n\n    The above copyright notice and this permission notice shall be included in all\n    copies or substantial portions of the Software.\n\n    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n    SOFTWARE",
     "noticeText": null
   },
   {
@@ -1869,9 +2229,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@types/node@25.6.0",
+    "id": "npm:@types/node@26.1.1",
     "name": "@types/node",
-    "version": "25.6.0",
+    "version": "26.1.1",
     "licenses": "MIT",
     "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
     "source": "npm",
@@ -1879,9 +2239,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@types/react@19.1.17",
+    "id": "npm:@types/react@19.2.17",
     "name": "@types/react",
-    "version": "19.1.17",
+    "version": "19.2.17",
+    "licenses": "MIT",
+    "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
+    "source": "npm",
+    "licenseText": "MIT License\n\n    Copyright (c) Microsoft Corporation.\n\n    Permission is hereby granted, free of charge, to any person obtaining a copy\n    of this software and associated documentation files (the \"Software\"), to deal\n    in the Software without restriction, including without limitation the rights\n    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the Software, and to permit persons to whom the Software is\n    furnished to do so, subject to the following conditions:\n\n    The above copyright notice and this permission notice shall be included in all\n    copies or substantial portions of the Software.\n\n    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n    SOFTWARE",
+    "noticeText": null
+  },
+  {
+    "id": "npm:@types/react-test-renderer@19.1.0",
+    "name": "@types/react-test-renderer",
+    "version": "19.1.0",
     "licenses": "MIT",
     "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped",
     "source": "npm",
@@ -1919,33 +2289,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:@ungap/structured-clone@1.3.0",
+    "id": "npm:@ungap/structured-clone@1.3.3",
     "name": "@ungap/structured-clone",
-    "version": "1.3.0",
+    "version": "1.3.3",
     "licenses": "ISC",
     "repository": "https://github.com/ungap/structured-clone",
     "source": "npm",
     "licenseText": "ISC License\n\nCopyright (c) 2021, Andrea Giammarchi, @WebReflection\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY\nAND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE\nOR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR\nPERFORMANCE OF THIS SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@urql/core@5.2.0",
-    "name": "@urql/core",
-    "version": "5.2.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/urql-graphql/urql",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2018–2020 Formidable,\nCopyright (c) urql GraphQL Team and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:@urql/exchange-retry@1.3.2",
-    "name": "@urql/exchange-retry",
-    "version": "1.3.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/urql-graphql/urql",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2018–2020 Formidable,\nCopyright (c) urql GraphQL Team and other contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -1989,13 +2339,33 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:acorn@8.16.0",
+    "id": "npm:accepts@2.0.0",
+    "name": "accepts",
+    "version": "2.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jshttp/accepts",
+    "source": "npm",
+    "licenseText": "(The MIT License)\n\nCopyright (c) 2014 Jonathan Ong <me@jongleberry.com>\nCopyright (c) 2015 Douglas Christopher Wilson <doug@somethingdoug.com>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:acorn@8.17.0",
     "name": "acorn",
-    "version": "8.16.0",
+    "version": "8.17.0",
     "licenses": "MIT",
     "repository": "https://github.com/acornjs/acorn",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (C) 2012-2022 by various contributors (see AUTHORS)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:agent-base@6.0.2",
+    "name": "agent-base",
+    "version": "6.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/TooTallNate/node-agent-base",
+    "source": "npm",
+    "licenseText": "agent-base\n==========\n### Turn a function into an [`http.Agent`][http.Agent] instance\n[![Build Status](https://github.com/TooTallNate/node-agent-base/workflows/Node%20CI/badge.svg)](https://github.com/TooTallNate/node-agent-base/actions?workflow=Node+CI)\n\nThis module provides an `http.Agent` generator. That is, you pass it an async\ncallback function, and it returns a new `http.Agent` instance that will invoke the\ngiven callback function when sending outbound HTTP requests.\n\n#### Some subclasses:\n\nHere's some more interesting uses of `agent-base`.\nSend a pull request to list yours!\n\n * [`http-proxy-agent`][http-proxy-agent]: An HTTP(s) proxy `http.Agent` implementation for HTTP endpoints\n * [`https-proxy-agent`][https-proxy-agent]: An HTTP(s) proxy `http.Agent` implementation for HTTPS endpoints\n * [`pac-proxy-agent`][pac-proxy-agent]: A PAC file proxy `http.Agent` implementation for HTTP and HTTPS\n * [`socks-proxy-agent`][socks-proxy-agent]: A SOCKS proxy `http.Agent` implementation for HTTP and HTTPS\n\n\nInstallation\n------------\n\nInstall with `npm`:\n\n``` bash\n$ npm install agent-base\n```\n\n\nExample\n-------\n\nHere's a minimal example that creates a new `net.Socket` connection to the server\nfor every HTTP request (i.e. the equivalent of `agent: false` option):\n\n```js\nvar net = require('net');\nvar tls = require('tls');\nvar url = require('url');\nvar http = require('http');\nvar agent = require('agent-base');\n\nvar endpoint = 'http://nodejs.org/api/';\nvar parsed = url.parse(endpoint);\n\n// This is the important part!\nparsed.agent = agent(function (req, opts) {\n  var socket;\n  // `secureEndpoint` is true when using the https module\n  if (opts.secureEndpoint) {\n    socket = tls.connect(opts);\n  } else {\n    socket = net.connect(opts);\n  }\n  return socket;\n});\n\n// Everything else works just like normal...\nhttp.get(parsed, function (res) {\n  console.log('\"response\" event!', res.headers);\n  res.pipe(process.stdout);\n});\n```\n\nReturning a Promise or using an `async` function is also supported:\n\n```js\nagent(async function (req, opts) {\n  await sleep(1000);\n  // etc…\n});\n```\n\nReturn another `http.Agent` instance to \"pass through\" the responsibility\nfor that HTTP request to that agent:\n\n```js\nagent(function (req, opts) {\n  return opts.secureEndpoint ? https.globalAgent : http.globalAgent;\n});\n```\n\n\nAPI\n---\n\n## Agent(Function callback[, Object options]) → [http.Agent][]\n\nCreates a base `http.Agent` that will execute the callback function `callback`\nfor every HTTP request that it is used as the `agent` for. The callback function\nis responsible for creating a `stream.Duplex` instance of some kind that will be\nused as the underlying socket in the HTTP request.\n\nThe `options` object accepts the following properties:\n\n  * `timeout` - Number - Timeout for the `callback()` function in milliseconds. Defaults to Infinity (optional).\n\nThe callback function should have the following signature:\n\n### callback(http.ClientRequest req, Object options, Function cb) → undefined\n\nThe ClientRequest `req` can be accessed to read request headers and\nand the path, etc. The `options` object contains the options passed\nto the `http.request()`/`https.request()` function call, and is formatted\nto be directly passed to `net.connect()`/`tls.connect()`, or however\nelse you want a Socket to be created. Pass the created socket to\nthe callback function `cb` once created, and the HTTP request will\ncontinue to proceed.\n\nIf the `https` module is used to invoke the HTTP request, then the\n`secureEndpoint` property on `options` _will be set to `true`_.\n\n\nLicense\n-------\n\n(The MIT License)\n\nCopyright (c) 2013 Nathan Rajlich &lt;nathan@tootallnate.net&gt;\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n[http-proxy-agent]: https://github.com/TooTallNate/node-http-proxy-agent\n[https-proxy-agent]: https://github.com/TooTallNate/node-https-proxy-agent\n[pac-proxy-agent]: https://github.com/TooTallNate/node-pac-proxy-agent\n[socks-proxy-agent]: https://github.com/TooTallNate/node-socks-proxy-agent\n[http.Agent]: https://nodejs.org/api/http.html#http_class_http_agent",
     "noticeText": null
   },
   {
@@ -2009,13 +2379,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:ajv@8.20.0",
-    "name": "ajv",
-    "version": "8.20.0",
+    "id": "npm:agent-cli-detector@0.1.2",
+    "name": "agent-cli-detector",
+    "version": "0.1.2",
     "licenses": "MIT",
-    "repository": "https://github.com/ajv-validator/ajv",
+    "repository": null,
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-2021 Evgeny Poberezkin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) 2026 David Mokos\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -2089,16 +2459,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:any-promise@1.3.0",
-    "name": "any-promise",
-    "version": "1.3.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/kevinbeaty/any-promise",
-    "source": "npm",
-    "licenseText": "Copyright (C) 2014-2016 Kevin Beaty\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:anymatch@3.1.3",
     "name": "anymatch",
     "version": "3.1.3",
@@ -2106,6 +2466,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/micromatch/anymatch",
     "source": "npm",
     "licenseText": "The ISC License\n\nCopyright (c) 2019 Elan Shanker, Paul Miller (https://paulmillr.com)\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:anynum@1.0.1",
+    "name": "anynum",
+    "version": "1.0.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/NaturalIntelligence/anynum",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2026 Natural Intelligence\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -2139,6 +2509,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:aria-hidden@1.2.6",
+    "name": "aria-hidden",
+    "version": "1.2.6",
+    "licenses": "MIT",
+    "repository": "https://github.com/theKashey/aria-hidden",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Anton Korzunov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:aria-query@5.3.0",
+    "name": "aria-query",
+    "version": "5.3.0",
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/A11yance/aria-query",
+    "source": "npm",
+    "licenseText": "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n1. Definitions.\n\n\"License\" shall mean the terms and conditions for use, reproduction,\nand distribution as defined by Sections 1 through 9 of this document.\n\n\"Licensor\" shall mean the copyright owner or entity authorized by\nthe copyright owner that is granting the License.\n\n\"Legal Entity\" shall mean the union of the acting entity and all\nother entities that control, are controlled by, or are under common\ncontrol with that entity. For the purposes of this definition,\n\"control\" means (i) the power, direct or indirect, to cause the\ndirection or management of such entity, whether by contract or\notherwise, or (ii) ownership of fifty percent (50%) or more of the\noutstanding shares, or (iii) beneficial ownership of such entity.\n\n\"You\" (or \"Your\") shall mean an individual or Legal Entity\nexercising permissions granted by this License.\n\n\"Source\" form shall mean the preferred form for making modifications,\nincluding but not limited to software source code, documentation\nsource, and configuration files.\n\n\"Object\" form shall mean any form resulting from mechanical\ntransformation or translation of a Source form, including but\nnot limited to compiled object code, generated documentation,\nand conversions to other media types.\n\n\"Work\" shall mean the work of authorship, whether in Source or\nObject form, made available under the License, as indicated by a\ncopyright notice that is included in or attached to the work\n(an example is provided in the Appendix below).\n\n\"Derivative Works\" shall mean any work, whether in Source or Object\nform, that is based on (or derived from) the Work and for which the\neditorial revisions, annotations, elaborations, or other modifications\nrepresent, as a whole, an original work of authorship. For the purposes\nof this License, Derivative Works shall not include works that remain\nseparable from, or merely link (or bind by name) to the interfaces of,\nthe Work and Derivative Works thereof.\n\n\"Contribution\" shall mean any work of authorship, including\nthe original version of the Work and any modifications or additions\nto that Work or Derivative Works thereof, that is intentionally\nsubmitted to Licensor for inclusion in the Work by the copyright owner\nor by an individual or Legal Entity authorized to submit on behalf of\nthe copyright owner. For the purposes of this definition, \"submitted\"\nmeans any form of electronic, verbal, or written communication sent\nto the Licensor or its representatives, including but not limited to\ncommunication on electronic mailing lists, source code control systems,\nand issue tracking systems that are managed by, or on behalf of, the\nLicensor for the purpose of discussing and improving the Work, but\nexcluding communication that is conspicuously marked or otherwise\ndesignated in writing by the copyright owner as \"Not a Contribution.\"\n\n\"Contributor\" shall mean Licensor and any individual or Legal Entity\non behalf of whom a Contribution has been received by Licensor and\nsubsequently incorporated within the Work.\n\n2. Grant of Copyright License. Subject to the terms and conditions of\nthis License, each Contributor hereby grants to You a perpetual,\nworldwide, non-exclusive, no-charge, royalty-free, irrevocable\ncopyright license to reproduce, prepare Derivative Works of,\npublicly display, publicly perform, sublicense, and distribute the\nWork and such Derivative Works in Source or Object form.\n\n3. Grant of Patent License. Subject to the terms and conditions of\nthis License, each Contributor hereby grants to You a perpetual,\nworldwide, non-exclusive, no-charge, royalty-free, irrevocable\n(except as stated in this section) patent license to make, have made,\nuse, offer to sell, sell, import, and otherwise transfer the Work,\nwhere such license applies only to those patent claims licensable\nby such Contributor that are necessarily infringed by their\nContribution(s) alone or by combination of their Contribution(s)\nwith the Work to which such Contribution(s) was submitted. If You\ninstitute patent litigation against any entity (including a\ncross-claim or counterclaim in a lawsuit) alleging that the Work\nor a Contribution incorporated within the Work constitutes direct\nor contributory patent infringement, then any patent licenses\ngranted to You under this License for that Work shall terminate\nas of the date such litigation is filed.\n\n4. Redistribution. You may reproduce and distribute copies of the\nWork or Derivative Works thereof in any medium, with or without\nmodifications, and in Source or Object form, provided that You\nmeet the following conditions:\n\n(a) You must give any other recipients of the Work or\nDerivative Works a copy of this License; and\n\n(b) You must cause any modified files to carry prominent notices\nstating that You changed the files; and\n\n(c) You must retain, in the Source form of any Derivative Works\nthat You distribute, all copyright, patent, trademark, and\nattribution notices from the Source form of the Work,\nexcluding those notices that do not pertain to any part of\nthe Derivative Works; and\n\n(d) If the Work includes a \"NOTICE\" text file as part of its\ndistribution, then any Derivative Works that You distribute must\ninclude a readable copy of the attribution notices contained\nwithin such NOTICE file, excluding those notices that do not\npertain to any part of the Derivative Works, in at least one\nof the following places: within a NOTICE text file distributed\nas part of the Derivative Works; within the Source form or\ndocumentation, if provided along with the Derivative Works; or,\nwithin a display generated by the Derivative Works, if and\nwherever such third-party notices normally appear. The contents\nof the NOTICE file are for informational purposes only and\ndo not modify the License. You may add Your own attribution\nnotices within Derivative Works that You distribute, alongside\nor as an addendum to the NOTICE text from the Work, provided\nthat such additional attribution notices cannot be construed\nas modifying the License.\n\nYou may add Your own copyright statement to Your modifications and\nmay provide additional or different license terms and conditions\nfor use, reproduction, or distribution of Your modifications, or\nfor any such Derivative Works as a whole, provided Your use,\nreproduction, and distribution of the Work otherwise complies with\nthe conditions stated in this License.\n\n5. Submission of Contributions. Unless You explicitly state otherwise,\nany Contribution intentionally submitted for inclusion in the Work\nby You to the Licensor shall be under the terms and conditions of\nthis License, without any additional terms or conditions.\nNotwithstanding the above, nothing herein shall supersede or modify\nthe terms of any separate license agreement you may have executed\nwith Licensor regarding such Contributions.\n\n6. Trademarks. This License does not grant permission to use the trade\nnames, trademarks, service marks, or product names of the Licensor,\nexcept as required for reasonable and customary use in describing the\norigin of the Work and reproducing the content of the NOTICE file.\n\n7. Disclaimer of Warranty. Unless required by applicable law or\nagreed to in writing, Licensor provides the Work (and each\nContributor provides its Contributions) on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\nimplied, including, without limitation, any warranties or conditions\nof TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\nPARTICULAR PURPOSE. You are solely responsible for determining the\nappropriateness of using or redistributing the Work and assume any\nrisks associated with Your exercise of permissions under this License.\n\n8. Limitation of Liability. In no event and under no legal theory,\nwhether in tort (including negligence), contract, or otherwise,\nunless required by applicable law (such as deliberate and grossly\nnegligent acts) or agreed to in writing, shall any Contributor be\nliable to You for damages, including any direct, indirect, special,\nincidental, or consequential damages of any character arising as a\nresult of this License or out of the use or inability to use the\nWork (including but not limited to damages for loss of goodwill,\nwork stoppage, computer failure or malfunction, or any and all\nother commercial damages or losses), even if such Contributor\nhas been advised of the possibility of such damages.\n\n9. Accepting Warranty or Additional Liability. While redistributing\nthe Work or Derivative Works thereof, You may choose to offer,\nand charge a fee for, acceptance of support, warranty, indemnity,\nor other liability obligations and/or rights consistent with this\nLicense. However, in accepting such obligations, You may act only\non Your own behalf and on Your sole responsibility, not on behalf\nof any other Contributor, and only if You agree to indemnify,\ndefend, and hold each Contributor harmless for any liability\nincurred by, or claims asserted against, such Contributor by reason\nof your accepting any such warranty or additional liability.\n\nEND OF TERMS AND CONDITIONS\n\nAPPENDIX: How to apply the Apache License to your work.\n\nTo apply the Apache License to your work, attach the following\nboilerplate notice, with the fields enclosed by brackets \"{}\"\nreplaced with your own identifying information. (Don't include\nthe brackets!)  The text should be enclosed in the appropriate\ncomment syntax for the file format. We also recommend that a\nfile or class name and description of purpose be included on the\nsame \"printed page\" as the copyright notice for easier\nidentification within third-party archives.\n\nCopyright 2020 A11yance\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\nhttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.",
+    "noticeText": null
+  },
+  {
     "id": "npm:asap@2.0.6",
     "name": "asap",
     "version": "2.0.6",
@@ -2146,36 +2536,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/kriskowal/asap",
     "source": "npm",
     "licenseText": "Copyright 2009–2014 Contributors. All rights reserved.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including without limitation the\nrights to use, copy, modify, merge, publish, distribute, sublicense, and/or\nsell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS\nIN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:assert@2.1.0",
-    "name": "assert",
-    "version": "2.1.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/browserify/commonjs-assert",
-    "source": "npm",
-    "licenseText": "Copyright Joyent, Inc. and other Node contributors. All rights reserved.\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including without limitation the\nrights to use, copy, modify, merge, publish, distribute, sublicense, and/or\nsell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS\nIN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:async-limiter@1.0.1",
-    "name": "async-limiter",
-    "version": "1.0.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/strml/async-limiter",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\nCopyright (c) 2017 Samuel Reed <samuel.trace.reed@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:available-typed-arrays@1.0.7",
-    "name": "available-typed-arrays",
-    "version": "1.0.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/available-typed-arrays",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2020 Inspect JS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -2269,9 +2629,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:babel-plugin-syntax-hermes-parser@0.29.1",
+    "id": "npm:babel-plugin-syntax-hermes-parser@0.36.0",
     "name": "babel-plugin-syntax-hermes-parser",
-    "version": "0.29.1",
+    "version": "0.36.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/hermes",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:babel-plugin-syntax-hermes-parser@0.36.1",
+    "name": "babel-plugin-syntax-hermes-parser",
+    "version": "0.36.1",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/hermes",
     "source": "npm",
@@ -2299,13 +2669,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:babel-preset-expo@54.0.11",
+    "id": "npm:babel-preset-expo@57.0.2",
     "name": "babel-preset-expo",
-    "version": "54.0.11",
+    "version": "57.0.2",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# babel-preset-expo\n\nThis preset extends the default React Native preset (`@react-native/babel-preset`) and adds support for tree shaking, bundle splitting, React Server Components, Hermes compilation, advanced dead-code elimination, reanimated, Expo DOM components, server-side rendering, and more...\n\nYou can use this preset in any React Native project as a drop-in replacement for `@react-native/babel-preset`.\n\nIf you have problems with the code in this repository, please file issues & bug reports\nat https://github.com/expo/expo.\n\n## Expo Bundler Spec Compliance\n\nA bundler must follow these requirements if they are to be considered spec compliant for use with a **universal React** (Expo) project.\n\n## Options\n\n### `react-compiler`\n\nSettings to pass to `babel-plugin-react-compiler`. Set as `false` to disable the plugin. As of SDK 51, you must also enable `experiments.reactCompiler: true` in the `app.json`.\n\n```js\n[\n  'babel-preset-expo',\n  {\n    'react-compiler': {\n      sources: (filename) => {\n        // Match file names to include in the React Compiler.\n        return filename.includes('src/path/to/dir');\n      },\n    },\n  },\n];\n```\n\n### `minifyTypeofWindow`\n\nSet `minifyTypeofWindow: true` to transform `typeof window` checks in your code, e.g. `if (typeof window === 'object')` -> `if (true)` in clients. This is useful when you're using libraries that mock the window object on native or in the server.\n\n```js\n[\n  'babel-preset-expo',\n  {\n    // If your native app doesn't polyfill `window` then setting this to `false` can reduce bundle size.\n    native: {\n      minifyTypeofWindow: true,\n    },\n  },\n];\n```\n\nDefaults to `true` for server environments, and `false` for client environments to support legacy browser polyfills and web workers.\n\n### `reanimated`\n\n`boolean`, defaults to `true`. Set `reanimated: false` to disable adding the `react-native-reanimated/plugin` when `react-native-reanimated` is installed.\n\n### `worklets`\n\n`boolean`, `boolean`, defaults to `true`. Set `worklets: false` to disable adding the `react-native-worklets/plugin` when `react-native-worklets` is installed. Applies only when using standalone `react-native-worklets` or `react-native-reanimated 4`.\n\n### [`jsxRuntime`](https://babeljs.io/docs/en/babel-plugin-transform-react-jsx#runtime)\n\n`classic | automatic`, defaults to `automatic`\n\n- `automatic` automatically convert JSX to JS without the need to `import React from 'react'` in every file. Be sure to follow the rest of the [setup guide](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#how-to-upgrade-to-the-new-jsx-transform) after enabling this, otherwise ESLint and other tools will throw warnings.\n- `classic` does not automatically import anything, React must imported into every file that uses JSX syntax.\n\n```js\n[\n  'babel-preset-expo',\n  {\n    jsxRuntime: 'classic',\n  },\n];\n```\n\nThis property is passed down to [`@babel/plugin-transform-react-jsx`](https://babeljs.io/docs/en/babel-plugin-transform-react-jsx). This flag does nothing when `useTransformReactJSXExperimental` is set to `true` because `@babel/plugin-transform-react-jsx` is omitted.\n\n### [`jsxImportSource`](https://babeljs.io/docs/en/babel-plugin-transform-react-jsx#importsource)\n\n`string`, defaults to `react`\n\nThis option allows specifying a custom import source for importing functions.\n\n```js\n[\n  'babel-preset-expo',\n  {\n    jsxRuntime: 'automatic',\n    jsxImportSource: 'react',\n  },\n];\n```\n\nThis property is passed down to [`@babel/plugin-transform-react-jsx`](https://babeljs.io/docs/en/babel-plugin-transform-react-jsx). This options does nothing when `jsxRuntime` is not set to `automatic`.\n\n### [`lazyImports`](https://babeljs.io/docs/en/babel-plugin-transform-modules-commonjs#lazy)\n\nChanges Babel's compiled `import` statements to be lazily evaluated when their imported bindings are used for the first time.\n\n_Note:_ this option has an effect only when the `disableImportExportTransform` option is set to `false`. On Android and iOS, `disableImportExportTransform` defaults to `false`, and on web it defaults to `true` to allow for tree shaking.\n\nThis can improve the initial load time of your app because evaluating dependencies up front is sometimes entirely un-necessary, particularly when the dependencies have no side effects.\n\nThe value of `lazyImports` has a few possible effects:\n\n- `null` - [@react-native/babel-preset](https://github.com/facebook/react-native/tree/main/packages/react-native-babel-preset) will handle it. (Learn more about it here: https://github.com/facebook/metro/commit/23e3503dde5f914f3e642ef214f508d0a699851d)\n- `false` - No lazy initialization of any imported module.\n- `true` - Lazy-init all imported modules except local imports (e.g., `./foo`), certain Expo packages that have side effects, and the two cases mentioned [here](https://babeljs.io/docs/en/babel-plugin-transform-modules-commonjs#lazy).\n- `Array<string>` - [babel-plugin-transform-modules-commonjs](https://babeljs.io/docs/en/babel-plugin-transform-modules-commonjs#lazy) will handle it.\n- `(string) => boolean` - [babel-plugin-transform-modules-commonjs](https://babeljs.io/docs/en/babel-plugin-transform-modules-commonjs#lazy) will handle it.\n\n  If you choose to do this, you can also access the list of Expo packages that have side effects by using `const lazyImportsBlacklist = require('babel-preset-expo/lazy-imports-blacklist');` which returns a `Set`.\n\n**default:** `null`\n\n```js\n[\n    'babel-preset-expo',\n    {\n        lazyImports: true\n    }\n],\n```\n\n### `disableImportExportTransform`\n\nPass `true` to disable the transform that converts import/export to `module.exports`. Avoid setting this property directly. If you're using Metro, set `experimentalImportSupport: true` instead to ensure the entire pipeline is configured correctly.\n\n```js\n// metro.config.js\n\nconfig.transformer.getTransformOptions = async () => ({\n  transform: {\n    // Setting this to `true` will automatically toggle `disableImportExportTransform` in `babel-preset-expo`.\n    experimentalImportSupport: true,\n  },\n});\n```\n\nIf `undefined` (default), this will be set automatically via `caller.supportsStaticESM` which is set by the bundler.\n\n```js\n[\n    'babel-preset-expo',\n    {\n        disableImportExportTransform: true\n    }\n],\n```\n\n### `unstable_transformProfile`\n\nChanges the engine preset in `@react-native/babel-preset` based on the JavaScript engine that is being targeted. In Expo SDK 50 and greater, this is automatically set based on the [`jsEngine`](https://docs.expo.dev/versions/latest/config/app/#jsengine) option in your `app.json`.\n\n### `unstable_transformImportMeta`\n\nEnable that transform that converts `import.meta` to `globalThis.__ExpoImportMetaRegistry`, defaults to `false` in client bundles and `true` for server bundles.\n\n> **Note:** Use this option at your own risk. If the JavaScript engine supports `import.meta` natively, this transformation may interfere with the native implementation.\n\n### `enableBabelRuntime`\n\nPassed to `@react-native/babel-preset`.\n\n### `disableFlowStripTypesTransform`\n\nPassed to `@react-native/babel-preset`.\n\n## Platform-specific options\n\nAll options can be passed in the platform-specific objects `native` and `web` to provide different settings on different platforms. For example, if you'd like to only apply `disableImportExportTransform` on web, use the following:\n\n```js\n[\n  'babel-preset-expo',\n  {\n    // Default value:\n    disableImportExportTransform: false,\n\n    web: {\n      // Web-specific value:\n      disableImportExportTransform: true,\n    },\n  },\n];\n```\n\nPlatform-specific options have higher priority over top-level options.\n\n### Babel Loader\n\nThe Babel loading mechanism must include the following properties on its `caller`.\n\n#### platform\n\nA `platform` property denoting the target platform. If the `platform` is not defined, it will default to using `web` when the `bundler` is `webpack` -- this is temporary and will throw an error in the future.\n\n| Value     | Description             |\n| --------- | ----------------------- |\n| `ios`     | Runs on iOS devices     |\n| `android` | Runs on Android devices |\n| `web`     | Runs in web browsers    |\n\n#### bundler\n\nA `bundler` property denoting the name of the bundler that is being used to create the JavaScript bundle.\nIf the `bundler` is not defined, it will default to checking if a `babel-loader` is used, if so then `webpack` will be used, otherwise it will default to `metro`.\n\n| Value     | Description                      |\n| --------- | -------------------------------- |\n| `metro`   | Bundling with [Metro][metro]     |\n| `webpack` | Bundling with [Webpack][webpack] |\n\n[metro]: https://facebook.github.io/metro/\n[webpack]: https://webpack.js.org/",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -2369,23 +2739,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:baseline-browser-mapping@2.10.27",
+    "id": "npm:baseline-browser-mapping@2.10.42",
     "name": "baseline-browser-mapping",
-    "version": "2.10.27",
+    "version": "2.10.42",
     "licenses": "Apache-2.0",
     "repository": "https://github.com/web-platform-dx/baseline-browser-mapping",
     "source": "npm",
     "licenseText": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright [yyyy] [name of copyright owner]\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:better-opn@3.0.2",
-    "name": "better-opn",
-    "version": "3.0.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/ExiaSR/better-opn",
-    "source": "npm",
-    "licenseText": "Copyright 2018 Michael Lin <linzichunzf@hotmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -2429,9 +2789,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:brace-expansion@1.1.14",
+    "id": "npm:brace-expansion@1.1.16",
     "name": "brace-expansion",
-    "version": "1.1.14",
+    "version": "1.1.16",
     "licenses": "MIT",
     "repository": "https://github.com/juliangruber/brace-expansion",
     "source": "npm",
@@ -2439,19 +2799,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:brace-expansion@2.1.1",
+    "id": "npm:brace-expansion@5.0.7",
     "name": "brace-expansion",
-    "version": "2.1.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/juliangruber/brace-expansion",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2013 Julian Gruber <julian@juliangruber.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:brace-expansion@5.0.5",
-    "name": "brace-expansion",
-    "version": "5.0.5",
+    "version": "5.0.7",
     "licenses": "MIT",
     "repository": "https://github.com/juliangruber/brace-expansion",
     "source": "npm",
@@ -2469,9 +2819,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:browserslist@4.28.2",
+    "id": "npm:browserslist@4.28.5",
     "name": "browserslist",
-    "version": "4.28.2",
+    "version": "4.28.5",
     "licenses": "MIT",
     "repository": "https://github.com/browserslist/browserslist",
     "source": "npm",
@@ -2486,16 +2836,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/facebook/watchman",
     "source": "npm",
     "licenseText": "# BSER Binary Serialization\n\nBSER is a binary serialization scheme that can be used as an alternative to JSON.\nBSER uses a framed encoding that makes it simpler to use to stream a sequence of\nencoded values.\n\nIt is intended to be used for local-IPC only and strings are represented as binary\nwith no specific encoding; this matches the convention employed by most operating\nsystem filename storage.\n\nFor more details about the serialization scheme see\n[Watchman's docs](https://facebook.github.io/watchman/docs/bser.html).\n\n## API\n\n```js\nvar bser = require('bser');\n```\n\n### bser.loadFromBuffer\n\nThe is the synchronous decoder; given an input string or buffer,\ndecodes a single value and returns it.  Throws an error if the\ninput is invalid.\n\n```js\nvar obj = bser.loadFromBuffer(buf);\n```\n\n### bser.dumpToBuffer\n\nSynchronously encodes a value as BSER.\n\n```js\nvar encoded = bser.dumpToBuffer(['hello']);\nconsole.log(bser.loadFromBuffer(encoded)); // ['hello']\n```\n\n### BunserBuf\n\nThe asynchronous decoder API is implemented in the BunserBuf object.\nYou may incrementally append data to this object and it will emit the\ndecoded values via its `value` event.\n\n```js\nvar bunser = new bser.BunserBuf();\n\nbunser.on('value', function(obj) {\n  console.log(obj);\n});\n```\n\nThen in your socket `data` event:\n\n```js\nbunser.append(buf);\n```\n\n## Example\n\nRead BSER from socket:\n\n```js\nvar bunser = new bser.BunserBuf();\n\nbunser.on('value', function(obj) {\n  console.log('data from socket', obj);\n});\n\nvar socket = net.connect('/socket');\n\nsocket.on('data', function(buf) {\n  bunser.append(buf);\n});\n```\n\nWrite BSER to socket:\n\n```js\nsocket.write(bser.dumpToBuffer(obj));\n```",
-    "noticeText": null
-  },
-  {
-    "id": "npm:buffer@5.7.1",
-    "name": "buffer",
-    "version": "5.7.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/feross/buffer",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) Feross Aboukhadijeh, and other contributors.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -2519,33 +2859,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:call-bind@1.0.9",
-    "name": "call-bind",
-    "version": "1.0.9",
+    "id": "npm:callsites@3.1.0",
+    "name": "callsites",
+    "version": "3.1.0",
     "licenses": "MIT",
-    "repository": "https://github.com/ljharb/call-bind",
+    "repository": "https://github.com/sindresorhus/callsites",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2020 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:call-bind-apply-helpers@1.0.2",
-    "name": "call-bind-apply-helpers",
-    "version": "1.0.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/call-bind-apply-helpers",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2024 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:call-bound@1.0.4",
-    "name": "call-bound",
-    "version": "1.0.4",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/call-bound",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2024 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -2569,9 +2889,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:caniuse-lite@1.0.30001791",
+    "id": "npm:caniuse-lite@1.0.30001803",
     "name": "caniuse-lite",
-    "version": "1.0.30001791",
+    "version": "1.0.30001803",
     "licenses": "CC-BY-4.0",
     "repository": "https://github.com/browserslist/caniuse-lite",
     "source": "npm",
@@ -2599,13 +2919,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:chownr@3.0.0",
-    "name": "chownr",
-    "version": "3.0.0",
-    "licenses": "BlueOak-1.0.0",
-    "repository": "https://github.com/isaacs/chownr",
+    "id": "npm:char-regex@1.0.2",
+    "name": "char-regex",
+    "version": "1.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/Richienb/char-regex",
     "source": "npm",
-    "licenseText": "All packages under `src/` are licensed according to the terms in\ntheir respective `LICENSE` or `LICENSE.md` files.\n\nThe remainder of this project is licensed under the Blue Oak\nModel License, as follows:\n\n-----\n\n# Blue Oak Model License\n\nVersion 1.0.0\n\n## Purpose\n\nThis license gives everyone as much permission to work with\nthis software as possible, while protecting contributors\nfrom liability.\n\n## Acceptance\n\nIn order to receive this license, you must agree to its\nrules.  The rules of this license are both obligations\nunder that agreement and conditions to your license.\nYou must not do anything with this software that triggers\na rule that you cannot or will not follow.\n\n## Copyright\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe that contributor's\ncopyright in it.\n\n## Notices\n\nYou must ensure that everyone who gets a copy of\nany part of this software from you, with or without\nchanges, also gets the text of this license or a link to\n<https://blueoakcouncil.org/license/1.0.0>.\n\n## Excuse\n\nIf anyone notifies you in writing that you have not\ncomplied with [Notices](#notices), you can keep your\nlicense by taking all practical steps to comply within 30\ndays after the notice.  If you do not do so, your license\nends immediately.\n\n## Patent\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe any patent claims\nthey can license or become able to license.\n\n## Reliability\n\nNo contributor can revoke this license.\n\n## No Liability\n\n***As far as the law allows, this software comes as is,\nwithout any warranty or condition, and no contributor\nwill be liable to anyone for any damages related to this\nsoftware or this license, under any kind of legal claim.***",
+    "licenseText": "MIT License\r\n\r\nCopyright (c) 2019 Richie Bendall\r\n\r\nPermission is hereby granted, free of charge, to any person obtaining a copy\r\nof this software and associated documentation files (the \"Software\"), to deal\r\nin the Software without restriction, including without limitation the rights\r\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\r\ncopies of the Software, and to permit persons to whom the Software is\r\nfurnished to do so, subject to the following conditions:\r\n\r\nThe above copyright notice and this permission notice shall be included in all\r\ncopies or substantial portions of the Software.\r\n\r\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\r\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\r\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\r\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\r\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\r\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\r\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -2619,9 +2939,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:chromium-edge-launcher@0.2.0",
+    "id": "npm:chromium-edge-launcher@0.3.0",
     "name": "chromium-edge-launcher",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "licenses": "Apache-2.0",
     "repository": "https://github.com/cezaraugusto/chromium-edge-launcher",
     "source": "npm",
@@ -2646,6 +2966,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/watson/ci-info",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2016 Thomas Watson Steen\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:cjs-module-lexer@1.4.3",
+    "name": "cjs-module-lexer",
+    "version": "1.4.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/nodejs/cjs-module-lexer",
+    "source": "npm",
+    "licenseText": "MIT License\n-----------\n\nCopyright (C) 2018-2020 Guy Bedford\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -2679,6 +3009,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:client-only@0.0.1",
+    "name": "client-only",
+    "version": "0.0.1",
+    "licenses": "MIT",
+    "repository": null,
+    "source": "npm",
+    "licenseText": null,
+    "noticeText": null
+  },
+  {
     "id": "npm:cliui@8.0.1",
     "name": "cliui",
     "version": "8.0.1",
@@ -2696,6 +3036,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/pvorb/node-clone",
     "source": "npm",
     "licenseText": "Copyright © 2011-2015 Paul Vorbach <paul@vorba.ch>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the “Software”), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:co@4.6.0",
+    "name": "co",
+    "version": "4.6.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/tj/co",
+    "source": "npm",
+    "licenseText": "(The MIT License)\n\nCopyright (c) 2014 TJ Holowaychuk &lt;tj@vision-media.ca&gt;\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:collect-v8-coverage@1.0.3",
+    "name": "collect-v8-coverage",
+    "version": "1.0.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/SimenB/collect-v8-coverage",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2019 Simen Bekkhus\n\nPermission is hereby granted, free of charge, to any person obtaining a\ncopy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be included\nin all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -2772,16 +3132,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "id": "npm:commander@2.20.3",
     "name": "commander",
     "version": "2.20.3",
-    "licenses": "MIT",
-    "repository": "https://github.com/tj/commander.js",
-    "source": "npm",
-    "licenseText": "(The MIT License)\n\nCopyright (c) 2011 TJ Holowaychuk <tj@vision-media.ca>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:commander@4.1.1",
-    "name": "commander",
-    "version": "4.1.1",
     "licenses": "MIT",
     "repository": "https://github.com/tj/commander.js",
     "source": "npm",
@@ -2869,6 +3219,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:create-jest@29.7.0",
+    "name": "create-jest",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:cross-spawn@7.0.6",
     "name": "cross-spawn",
     "version": "7.0.6",
@@ -2916,6 +3276,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/fb55/css-what",
     "source": "npm",
     "licenseText": "Copyright (c) Felix Böhm\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\nRedistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\nRedistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\nTHIS IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS,\nEVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:css.escape@1.5.1",
+    "name": "css.escape",
+    "version": "1.5.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/mathiasbynens/CSS.escape",
+    "source": "npm",
+    "licenseText": "Copyright Mathias Bynens <https://mathiasbynens.be/>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -2969,13 +3339,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:deep-extend@0.6.0",
-    "name": "deep-extend",
-    "version": "0.6.0",
+    "id": "npm:dedent@1.7.2",
+    "name": "dedent",
+    "version": "1.7.2",
     "licenses": "MIT",
-    "repository": "https://github.com/unclechu/node-deep-extend",
+    "repository": "https://github.com/dmnd/dedent",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2013-2018, Viacheslav Lotsmanov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "# MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -2999,36 +3369,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:define-data-property@1.1.4",
-    "name": "define-data-property",
-    "version": "1.1.4",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/define-data-property",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2023 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:define-lazy-prop@2.0.0",
-    "name": "define-lazy-prop",
-    "version": "2.0.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/sindresorhus/define-lazy-prop",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:define-properties@1.2.1",
-    "name": "define-properties",
-    "version": "1.2.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/define-properties",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (C) 2015 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:depd@2.0.0",
     "name": "depd",
     "version": "2.0.0",
@@ -3036,6 +3376,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/dougwilson/nodejs-depd",
     "source": "npm",
     "licenseText": "(The MIT License)\n\nCopyright (c) 2014-2018 Douglas Christopher Wilson\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:dequal@2.0.3",
+    "name": "dequal",
+    "version": "2.0.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/lukeed/dequal",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -3056,6 +3406,66 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/lovell/detect-libc",
     "source": "npm",
     "licenseText": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"{}\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright {yyyy} {name of copyright owner}\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:detect-newline@3.1.0",
+    "name": "detect-newline",
+    "version": "3.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/detect-newline",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:detect-node-es@1.1.0",
+    "name": "detect-node-es",
+    "version": "1.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/thekashey/detect-node",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Ilya Kantor\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:diff-sequences@29.6.3",
+    "name": "diff-sequences",
+    "version": "29.6.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:dnssd-advertise@1.1.6",
+    "name": "dnssd-advertise",
+    "version": "1.1.6",
+    "licenses": "MIT",
+    "repository": "https://github.com/kitten/dnssd-advertise",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Phil Pluckthun,\nCopyright (c) 650 Industries, Inc. (aka Expo),\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:dom-accessibility-api@0.5.16",
+    "name": "dom-accessibility-api",
+    "version": "0.5.16",
+    "licenses": "MIT",
+    "repository": "https://github.com/eps1lon/dom-accessibility-api",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2020 Sebastian Silbermann\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:dom-accessibility-api@0.6.3",
+    "name": "dom-accessibility-api",
+    "version": "0.6.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/eps1lon/dom-accessibility-api",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2020 Sebastian Silbermann\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -3099,36 +3509,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:dotenv@16.4.7",
-    "name": "dotenv",
-    "version": "16.4.7",
-    "licenses": "BSD-2-Clause",
-    "repository": "https://github.com/motdotla/dotenv",
-    "source": "npm",
-    "licenseText": "Copyright (c) 2015, Scott Motte\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:dotenv-expand@11.0.7",
-    "name": "dotenv-expand",
-    "version": "11.0.7",
-    "licenses": "BSD-2-Clause",
-    "repository": "https://github.com/motdotla/dotenv-expand",
-    "source": "npm",
-    "licenseText": "Copyright (c) 2016, Scott Motte\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:dunder-proto@1.0.1",
-    "name": "dunder-proto",
-    "version": "1.0.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/es-shims/dunder-proto",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2024 ECMAScript Shims\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:ee-first@1.1.1",
     "name": "ee-first",
     "version": "1.1.1",
@@ -3139,13 +3519,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:electron-to-chromium@1.5.349",
+    "id": "npm:electron-to-chromium@1.5.389",
     "name": "electron-to-chromium",
-    "version": "1.5.349",
+    "version": "1.5.389",
     "licenses": "ISC",
     "repository": "https://github.com/Kilian/electron-to-chromium",
     "source": "npm",
     "licenseText": "Copyright 2018 Kilian Valkhof\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:emittery@0.13.1",
+    "name": "emittery",
+    "version": "0.13.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/emittery",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -3189,13 +3579,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:env-editor@0.4.2",
-    "name": "env-editor",
-    "version": "0.4.2",
+    "id": "npm:error-ex@1.3.4",
+    "name": "error-ex",
+    "version": "1.3.4",
     "licenses": "MIT",
-    "repository": "https://github.com/sindresorhus/env-editor",
+    "repository": "https://github.com/qix-/node-error-ex",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015 JD Ballard\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -3209,31 +3599,11 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:es-define-property@1.0.1",
-    "name": "es-define-property",
-    "version": "1.0.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/es-define-property",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2024 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:es-errors@1.3.0",
     "name": "es-errors",
     "version": "1.3.0",
     "licenses": "MIT",
     "repository": "https://github.com/ljharb/es-errors",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2024 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:es-object-atoms@1.1.1",
-    "name": "es-object-atoms",
-    "version": "1.1.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/es-object-atoms",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) 2024 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
@@ -3319,313 +3689,403 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:expo@54.0.35",
+    "id": "npm:execa@5.1.1",
+    "name": "execa",
+    "version": "5.1.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/execa",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:exit@0.1.2",
+    "name": "exit",
+    "version": "0.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/cowboy/node-exit",
+    "source": "npm",
+    "licenseText": "Copyright (c) 2013 \"Cowboy\" Ben Alman\n\nPermission is hereby granted, free of charge, to any person\nobtaining a copy of this software and associated documentation\nfiles (the \"Software\"), to deal in the Software without\nrestriction, including without limitation the rights to use,\ncopy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the\nSoftware is furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES\nOF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\nHOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\nWHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR\nOTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expect@29.7.0",
+    "name": "expect",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo@57.0.4",
     "name": "expo",
-    "version": "54.0.35",
+    "version": "57.0.4",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo\n\nThe `expo` package is a single package you can install in any React Native app to begin using Expo modules. [API Reference](https://docs.expo.dev/versions/latest/sdk/expo/).\n\n- includes core infrastructure for Expo modules: `expo-modules-core` and `expo-modules-autolinking`.\n- bundles a minimal set of Expo modules that are required by nearly every app, such as `expo-asset`.\n- provides [`@expo/cli`](https://github.com/expo/expo/blob/main/packages/%40expo/cli/README.md), a small CLI that provides a clean interface around both bundlers (such as Metro and Webpack) and native build tools (Xcode, Simulator.app, Android Studio, ADB, etc.), can generate native projects with `npx expo prebuild`, and aligns compatible package versions with `npx expo install`.\n- exposes a JavaScript module that configures an app at runtime as needed to use `expo-font` and to function in Expo Go (optional, only if applicable).\n\n\nSee [CONTRIBUTING](./CONTRIBUTING.md) for instructions on working on this package.",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-application@7.0.8",
+    "id": "npm:expo-application@57.0.0",
     "name": "expo-application",
-    "version": "7.0.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-application\n\nGets native application information such as its ID, app name, and build version at runtime.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/application/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/application/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](#https://docs.expo.dev/versions/latest/sdk/application/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-application\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-asset@12.0.13",
+    "id": "npm:expo-asset@57.0.3",
     "name": "expo-asset",
-    "version": "12.0.13",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-asset\n\nAn Expo universal module to download assets and pass them into other APIs\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/asset/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/asset/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/asset/). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-asset\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-blur@15.0.8",
+    "id": "npm:expo-blur@57.0.0",
     "name": "expo-blur",
-    "version": "15.0.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/blur-view/\">\n    <img\n      src=\"../../.github/resources/expo-blur.svg\"\n      alt=\"expo-blur\"\n      height=\"64\" />\n  </a>\n</p>\n\nA component that renders a native blur view on iOS and falls back to a semi-transparent view on Android. A common usage of this is for navigation bars, tab bars, and modals.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/blur-view/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/blur-view/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/blur-view/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-blur\n```\n\n### Configure for Android\n\n> [!note]\n> This package only supports iOS. On Android, a plain `View` with a translucent background will be rendered.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-clipboard@8.0.8",
+    "id": "npm:expo-clipboard@57.0.0",
     "name": "expo-clipboard",
-    "version": "8.0.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/clipboard/\">\n    <img\n      src=\"../../.github/resources/expo-clipboard.svg\"\n      alt=\"expo-clipboard\"\n      height=\"64\" />\n  </a>\n</p>\n\n`expo-clipboard` provides an interface for getting and setting Clipboard content on Android, iOS, and Web.\n\n## API documentation\n\nPlease refer to the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/clipboard/).\n\n\n## Installation in bare React Native projects\n\nFor bare React Native projects, ensure you've [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/).\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-clipboard\n```\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the library.\n\n### Configure for Android\n\nNo additional set up necessary.\n\n## Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-constants@18.0.13",
+    "id": "npm:expo-constants@57.0.3",
     "name": "expo-constants",
-    "version": "18.0.13",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-constants\n\nProvides system information that remains constant throughout the lifetime of your app.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/constants/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/constants/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/constants/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-constants\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-dev-client@6.0.21",
+    "id": "npm:expo-dev-client@57.0.5",
     "name": "expo-dev-client",
-    "version": "6.0.21",
+    "version": "57.0.5",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/dev-client/\">\n    <img\n      src=\"../../.github/resources/expo-dev-client.svg\"\n      alt=\"expo-dev-client\"\n      height=\"64\" />\n  </a>\n</p>\n\n`expo-dev-client` adds various useful development tools to your debug builds:\n\n- A configurable launcher UI, so you can launch updates (such as from [PR previews](https://docs.expo.dev/develop/development-builds/development-workflows#pr-previews)) and switch between development servers without needing to recompile the native app\n- Improved debugging tools (such as support for [inspecting network requests](https://docs.expo.dev/debugging/tools/#inspecting-network-requests))\n- [A powerful and extensible developer menu UI](https://docs.expo.dev/debugging/tools#developer-menu)\n\nExpo documentation refers to debug builds that include `expo-dev-client` as [development builds](https://docs.expo.dev/develop/development-builds/introduction/).\n\n## Documentation\n\nYou can find more information in the [Expo documentation](https://docs.expo.dev/versions/latest/sdk/dev-client).\n\n## Issues\n\nIf you encounter any issues using this package in your project, please [report your issue here](https://github.com/expo/expo/issues/new?template=dev_client_bug_report.yml).\n\n## Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-dev-launcher@6.0.21",
+    "id": "npm:expo-dev-launcher@57.0.5",
     "name": "expo-dev-launcher",
-    "version": "6.0.21",
+    "version": "57.0.5",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-dev-launcher\n\n`expo-dev-launcher` is an npm package installable in any Expo or React Native project. Once installed, any Debug builds of your application will gain the ability to load projects from Expo CLI. Release builds of your application will not change other than the addition of a few header files. This package is intended to be included in your project through [`expo-dev-client`](https://docs.expo.dev/versions/latest/sdk/dev-client/).\n\n## Documentation\n\nYou can find more information in the [Expo documentation](https://docs.expo.dev/develop/development-builds/introduction).\n\n## Contributing\n\nThe `expo-dev-launcher` repository consists of two different parts, the exported package, which includes the native functions, located in the `android`, `ios` and `src` folders and the Dev Launcher interface, located under the `bundle` folder.\n\nLocal development is usually done through `bare-expo`.\n\n### Making JavaScript changes inside the `bundle` folder\n\nTo update the JavaScript code inside the `bundle` folder, you need to run the `dev-launcher` bundler locally.\n\n1. Navigate to the `dev-launcher` package: `cd packages/expo-dev-launcher`\n2. Start the Metro bundler: `yarn start`\n3. Adjust the dev-launcher URL to point to your local bundler\n\n<details>\n\n#### On Android\n\nOpen [DevLauncherController.kt](/packages/expo-dev-launcher/android/src/debug/java/expo/modules/devlauncher/DevLauncherController.kt) and update the `DEV_LAUNCHER_HOST` value to your bundler URL.\n\nE.g.\n\n```diff\n- private val DEV_LAUNCHER_HOST: String? = null\n+ private val DEV_LAUNCHER_HOST: String? = \"10.0.2.2:8090\";\n```\n\n#### On iOS\n\n3.1. Open another terminal window and navigate to the `ios` folder inside `bare-expo`\n\n3.2. Export the `EX_DEV_LAUNCHER_URL` variable in your shell before running `pod install`.\n\nE.g.\n\n```\nexport EX_DEV_LAUNCHER_URL=http://localhost:8090\n```\n\nThis will cause the controller to see if the `expo-launcher` packager is running, and if so, use that instead of the prebuilt bundle.\n\n3.3. Run `pod install`\n\n</details>\n\n4. Recompile `bare-expo`\n5. Play with your changes on a simulator or device\n6. Once you've made all the necessary changes run `yarn bundle` to update the embedded bundle",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-dev-menu@7.0.19",
+    "id": "npm:expo-dev-menu@57.0.5",
     "name": "expo-dev-menu",
-    "version": "7.0.19",
+    "version": "57.0.5",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# 📦 expo-dev-menu\n\nExpo/React Native module to add developer menu to Debug builds of your application. This package is intended to be included in your project through [`expo-dev-client`](https://docs.expo.dev/develop/development-builds/introduction/#what-is-an-expo-dev-client).\n\n## Documentation\n\nYou can find more information in the [Expo documentation](https://docs.expo.dev/develop/development-builds/introduction).\n\n## Contributing\n\nThe `expo-dev-menu` repository consists of two different parts, the exported package, which includes the native functions, located in the `android`, `ios` and `src` folders and the Dev Menu interface, located under the `app` folder.\n\nLocal development is usually done through [`bare-expo`](/apps/bare-expo).\n\nFirst, make sure to `yarn` and `yarn start` in `expo-dev-menu` which will add the port for the dev menu packager to [`dev-menu-packager-host`](./assets/dev-menu-packager-host). This is bundled into the native code in `bare-expo` so it needs to be done first. When done with local development, you need to reset the contents of `dev-menu-packager-host`!\n\n### Making JavaScript changes inside the `app` folder\n\nTo update the JavaScript code inside the `app` folder, you need to run the `dev-menu` bundler locally.\n\n1. Navigate to the `dev-menu` package: `cd packages/expo-dev-menu`\n2. Start the Metro bundler: `yarn start`\n3. To use your local bundler on Android, open [DevMenuManager.kt](/packages/expo-dev-menu/android/src/debug/java/expo/modules/devmenu/DevMenuManager.kt) and set `useDeveloperSupport` to `true`.\n\n```diff\n- val useDeveloperSupport = false\n+ val useDeveloperSupport = true\n```\n\n4. Play with your changes on a simulator or device through `bare-expo`\n5. Once you've made all the necessary changes run `yarn bundle:prod:ios && yarn bundle:prod:android` to update the embedded bundle",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-dev-menu-interface@2.0.0",
+    "id": "npm:expo-dev-menu-interface@57.0.0",
     "name": "expo-dev-menu-interface",
-    "version": "2.0.0",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-dev-menu-interface\n\nInterface for `expo-dev-menu`.\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](#api-documentation). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpm install expo-dev-menu-interface\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-document-picker@14.0.8",
+    "id": "npm:expo-document-picker@57.0.0",
     "name": "expo-document-picker",
-    "version": "14.0.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/document-picker/\">\n    <img\n      src=\"../../.github/resources/expo-document-picker.svg\"\n      alt=\"expo-document-picker\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to the system's UI for selecting documents from the available providers on the user's device.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/document-picker/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/document-picker/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/document-picker/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```bash\nnpx expo install expo-document-picker\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n### Plugin\n\nYou can change the `com.apple.developer.icloud-container-environment` entitlement using the `iCloudContainerEnvironment` property.\n\n`app.json`\n\n```json\n{\n  \"ios\": {\n    \"usesIcloudStorage\": true,\n    \"bundleIdentifier\": \"com.yourname.yourapp\"\n  },\n  \"plugins\": [\"expo-document-picker\"]\n}\n```\n\n> Running `npx expo prebuild` will generate the [native project locally](https://docs.expo.dev/workflow/customizing/) with the applied changes in your iOS Entitlements file.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-file-system@19.0.23",
+    "id": "npm:expo-file-system@57.0.0",
     "name": "expo-file-system",
-    "version": "19.0.23",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/filesystem/\">\n    <img\n      src=\"../../.github/resources/expo-file-system.svg\"\n      alt=\"expo-file-system\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to the local file system on the device.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/filesystem/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/filesystem/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/filesystem/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n## Installation in bare Android React Native project\n\nThis module requires permissions to interact with the filesystem and create resumable downloads. The `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE` and `INTERNET` permissions are automatically added.\n\n```xml\n<!-- Added permissions -->\n<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\n<uses-permission android:name=\"android.permission.INTERNET\" />\n```\n\n## Installation in bare iOS React Native project\n\nNo additional set up necessary.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-font@14.0.12",
+    "id": "npm:expo-font@57.0.0",
     "name": "expo-font",
-    "version": "14.0.12",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/font/\">\n    <img\n      src=\"../../.github/resources/expo-font.svg\"\n      alt=\"expo-font\"\n      height=\"64\" />\n  </a>\n</p>\n\nLoad fonts at runtime and use them in React Native components.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/font/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/font/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/font/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-font\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-haptics@15.0.8",
+    "id": "npm:expo-glass-effect@57.0.0",
+    "name": "expo-glass-effect",
+    "version": "57.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-haptics@57.0.0",
     "name": "expo-haptics",
-    "version": "15.0.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/haptics/\">\n    <img\n      src=\"../../.github/resources/expo-haptics.svg\"\n      alt=\"expo-haptics\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to the system's haptics engine on iOS, vibration effects on Android, and Web Vibration API on web.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/haptics/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/haptics/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/haptics/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-haptics\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\nThis module requires permission to control vibration on the device, it's added automatically.\n\n```xml\n<!-- Added permissions -->\n<uses-permission android:name=\"android.permission.VIBRATE\" />\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-image-loader@6.0.0",
+    "id": "npm:expo-image-loader@57.0.0",
     "name": "expo-image-loader",
-    "version": "6.0.0",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-image-loader\n\nProvides image loader\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](#api-documentation). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpm install expo-image-loader\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-image-picker@17.0.11",
+    "id": "npm:expo-image-picker@57.0.2",
     "name": "expo-image-picker",
-    "version": "17.0.11",
+    "version": "57.0.2",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/imagepicker/\">\n    <img\n      src=\"../../.github/resources/expo-image-picker.svg\"\n      alt=\"expo-image-picker\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to the system's UI for selecting images and videos from the phone's library or taking a photo with the camera.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/imagepicker/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/imagepicker/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/imagepicker/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-image-picker\n```\n\n### Configure for Android\n\n> This is only required for usage in bare React Native apps.\n\nThis package automatically adds the `CAMERA`, `READ_EXTERNAL_STORAGE`, and `WRITE_EXTERNAL_STORAGE` permissions. They are used when picking images from the camera directly, or from the camera roll.\n\n```xml\n<!-- Added permissions -->\n<uses-permission android:name=\"android.permission.CAMERA\" />\n<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\n```\n\n### Configure for iOS\n\n> This is only required for usage in bare React Native apps.\n\nAdd `NSPhotoLibraryUsageDescription`, `NSCameraUsageDescription`, and `NSMicrophoneUsageDescription` keys to your `Info.plist`:\n\n```xml\n<key>NSPhotoLibraryUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to save photos</string>\n<key>NSCameraUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to access your camera</string>\n<key>NSMicrophoneUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to use your microphone</string>\n```\n\nRun `npx pod-install` after installing the npm package.\n\n## Config Plugin\n\n> This plugin is applied automatically in EAS Build, only add the config plugin if you want to pass in extra properties.\n\nAfter installing this npm package, add the [config plugin](https://docs.expo.dev/config-plugins/introduction) to the [`plugins`](https://docs.expo.io/versions/latest/config/app/#plugins) array of your `app.json` or `app.config.js`:\n\n```json\n{\n  \"expo\": {\n    \"plugins\": [\"expo-image-picker\"]\n  }\n}\n```\n\nNext, rebuild your app as described in the [\"Adding custom native code\"](https://docs.expo.dev/workflow/customizing/) guide.\n\n### API\n\nThe plugin provides props for extra customization. Every time you change the props or plugins, you'll need to rebuild (and `prebuild`) the native app. If no extra properties are added, defaults will be used.\n\n- `photosPermission` (_string | false_): Sets the iOS `NSPhotoLibraryUsageDescription` permission message to the `Info.plist`. Setting `false` will skip adding the permission on iOS and **does not** skip the permission on Android. Defaults to `Allow $(PRODUCT_NAME) to access your photos`.\n- `cameraPermission` (_string | false_): Sets the iOS `NSCameraUsageDescription` permission message to the `Info.plist`. Setting `false` will skip adding the permission on iOS and **does not** skip the permission on Android. Defaults to `Allow $(PRODUCT_NAME) to access your camera`.\n- `microphonePermission` (_string | false_): Sets the iOS `NSCameraUsageDescription` permission message to the `Info.plist`. Setting `false` will skip adding the permission on iOS and skips adding the `android.permission.RECORD_AUDIO` Android permission. Defaults to `Allow $(PRODUCT_NAME) to access your photos`.\n\n### Example\n\n```json\n{\n  \"expo\": {\n    \"plugins\": [\n      [\n        \"expo-image-picker\",\n        {\n          \"photosPermission\": \"custom photos permission\",\n          \"cameraPermission\": \"Allow $(PRODUCT_NAME) to open the camera\",\n\n          \"//\": \"Disables the microphone permission\",\n          \"microphonePermission\": false\n        }\n      ]\n    ]\n  }\n}\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-json-utils@0.15.0",
+    "id": "npm:expo-json-utils@57.0.0",
     "name": "expo-json-utils",
-    "version": "0.15.0",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-json-utils\n\nUtilities for reading JSONObjects (Android) and NSDictionaries (iOS) for React Native and Expo apps.\n\n## Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-keep-awake@15.0.8",
+    "id": "npm:expo-keep-awake@57.0.0",
     "name": "expo-keep-awake",
-    "version": "15.0.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/keep-awake/\">\n    <img\n      src=\"../../.github/resources/expo-keep-awake.svg\"\n      alt=\"expo-keep-awake\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides a React component that prevents the screen sleeping when rendered. It also exposes static methods to control the behavior imperatively.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/keep-awake/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/keep-awake/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/keep-awake/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-keep-awake\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-location@19.0.8",
+    "id": "npm:expo-linking@57.0.2",
+    "name": "expo-linking",
+    "version": "57.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-location@57.0.2",
     "name": "expo-location",
-    "version": "19.0.8",
+    "version": "57.0.2",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/location/\">\n    <img\n      src=\"../../.github/resources/expo-location.svg\"\n      alt=\"expo-location\"\n      height=\"64\" />\n  </a>\n</p>\n\nAllows reading geolocation information from the device. Your app can poll for the current location or subscribe to location update events.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/location/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/location/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/location/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-location\n```\n\n### Configure for Android\n\nThis module requires the permissions for approximate and exact device location. It also needs the foreground service permission to subscribe to location updates, while the app is in use. These permissions are automatically added.\n\n```xml\n<!-- Added permissions -->\n<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />\n<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\n\n<!-- Optional permissions -->\n<uses-permission android:name=\"android.permission.FOREGROUND_SERVICE\" />\n<uses-permission android:name=\"android.permission.FOREGROUND_SERVICE_LOCATION\" />\n<uses-permission android:name=\"android.permission.ACCESS_BACKGROUND_LOCATION\" />\n```\n\n> [!note]\n> On Android, you have to [submit your app for review and request access to use the background location permission](https://support.google.com/googleplay/android-developer/answer/9799150?hl=en) or [foreground location permissions](https://support.google.com/googleplay/android-developer/answer/13392821?hl=en).\n\n### Configure for iOS\n\nAdd `NSLocationAlwaysAndWhenInUseUsageDescription`, `NSLocationAlwaysUsageDescription` and `NSLocationWhenInUseUsageDescription` keys to your `Info.plist`:\n\n```xml\n<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>\n<string>Allow $(PRODUCT_NAME) to use your location</string>\n<key>NSLocationAlwaysUsageDescription</key>\n<string>Allow $(PRODUCT_NAME) to use your location</string>\n<key>NSLocationWhenInUseUsageDescription</key>\n<string>Allow $(PRODUCT_NAME) to use your location</string>\n```\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-manifests@1.0.11",
+    "id": "npm:expo-manifests@57.0.0",
     "name": "expo-manifests",
-    "version": "1.0.11",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-manifests\n\nCode to parse and use Expo and Expo Updates manifests.\n\n## Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-media-library@18.2.1",
+    "id": "npm:expo-media-library@57.0.1",
     "name": "expo-media-library",
-    "version": "18.2.1",
+    "version": "57.0.1",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/media-library/\">\n    <img\n      src=\"../../.github/resources/expo-media-library.svg\"\n      alt=\"expo-media-library\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to user's media library.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/media-library/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/media-library/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/media-library/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-media-library\n```\n\n### Configure for Android\n\nThis package automatically adds the `READ_EXTERNAL_STORAGE` and `WRITE_EXTERNAL_STORAGE` permissions. They are used when accessing the user's images or videos.\n\n```xml\n<!-- Added permissions -->\n<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\n```\n\nIf you'd like to access asset location (latitude and longitude EXIF tags), you have to add `ACCESS_MEDIA_LOCATION` permission to the `AndroidManifest.xml`:\n\n```xml\n<!-- Add this to AndroidManifest.xml -->\n<uses-permission android:name=\"android.permission.ACCESS_MEDIA_LOCATION\" />\n```\n\nStarting with Android 10, the concept of [scoped storage](https://developer.android.com/training/data-storage#scoped-storage) is introduced. Currently, to make `expo-media-library` working with that change, you have to add `android:requestLegacyExternalStorage=\"true\"` to `AndroidManifest.xml`:\n\n```xml\n<manifest ... >\n  <application android:requestLegacyExternalStorage=\"true\" ... >\n    ...\n  </application>\n</manifest>\n```\n\n### Configure for iOS\n\nAdd `NSPhotoLibraryUsageDescription`, and `NSPhotoLibraryAddUsageDescription` keys to your `Info.plist`:\n\n```xml\n<key>NSPhotoLibraryUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to access your photos</string>\n<key>NSPhotoLibraryAddUsageDescription</key>\n<string>Give $(PRODUCT_NAME) permission to save photos</string>\n```\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-modules-autolinking@3.0.26",
+    "id": "npm:expo-modules-autolinking@57.0.5",
     "name": "expo-modules-autolinking",
-    "version": "3.0.26",
+    "version": "57.0.5",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/modules/autolinking/\">\n    <img\n      src=\"../../.github/resources/expo-modules-autolinking.svg\"\n      alt=\"expo-modules-autolinking\"\n      height=\"64\" />\n  </a>\n</p>\n\nScripts that autolink Expo modules.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/modules/autolinking/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](#api-documentation). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpm install expo-modules-autolinking\n```\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-modules-core@3.0.30",
+    "id": "npm:expo-modules-core@57.0.3",
     "name": "expo-modules-core",
-    "version": "3.0.30",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/modules/\">\n    <img\n      src=\"../../.github/resources/expo-modules-core.svg\"\n      alt=\"expo-modules-core\"\n      height=\"64\" />\n  </a>\n</p>\n\nThe core of Expo Modules architecture.\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](#api-documentation). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpm install expo-modules-core\n```\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n### Configure for Android\n\nNo additional set up necessary.\n\n# Importing native dependencies - autolinking\n\nMany React Native libraries come with platform-specific (native) code. This native code has to be linked into the project and, in some cases, configured further. These actions require some modifications to the native project files. One of the steps that has to be done with the native configuration is to enable the autolinking mechanism that takes care of including any supported module's native code into the project. The following configuration is required:\n\n### iOS\n\n> Caution! After you have made the following changes you will need to run `pod install` again.\n\n```ruby\n# Podfile\n\nrequire File.join(File.dirname(`node --print \"require.resolve('react-native/package.json')\"`), \"scripts/react_native_pods\")\nrequire File.join(File.dirname(`node --print \"require.resolve('expo-modules-core/package.json')\"`), \"cocoapods.rb\")\nrequire File.join(File.dirname(`node --print \"require.resolve('expo-modules-core/package.json')\"`), \"scripts/autolinking\")\n\n#  ...\n\ntarget \"TargetName\" do\n  use_unimodules!\n  config = use_native_modules!\n  use_react_native!(:path => config[\"reactNativePath\"])\n\n  # ...\nend\n```\n\n### Android\n\n```groovy\n// app/build.gradle\n\napply from: new File([\"node\", \"--print\", \"require.resolve('expo-modules-core/package.json')\"].execute(null, rootDir).text.trim(), \"../gradle.groovy\")\napply from: new File([\"node\", \"--print\", \"require.resolve('react-native/package.json')\"].execute(null, rootDir).text.trim(), \"../react.gradle\")\napply from: new File([\"node\", \"--print\", \"require.resolve('expo-updates/package.json')\"].execute(null, rootDir).text.trim(), \"../scripts/create-manifest-android.gradle\")\n\n// ...\n\napply from: new File([\"node\", \"--print\", \"require.resolve('@react-native-community/cli-platform-android/package.json')\"].execute(null, rootDir).text.trim(), \"../native_modules.gradle\");\napplyNativeModulesAppBuildGradle(project)\n```\n\n```groovy\n// settings.gradle\n\napply from: new File([\"node\", \"--print\", \"require.resolve('expo-modules-core/package.json')\"].execute(null, rootDir).text.trim(), \"../gradle.groovy\");\nincludeUnimodulesProjects()\n\napply from: new File([\"node\", \"--print\", \"require.resolve('@react-native-community/cli-platform-android/package.json')\"].execute(null, rootDir).text.trim(), \"../native_modules.gradle\");\napplyNativeModulesSettingsGradle(settings)\n```\n\n### Explanation\n\nThe scripts that are referenced in Gradle and Cocoapods are usually found the related package inside the project's `node_modules` directory. In the case of monorepos (such as Yarn workspaces) the project directory may not contain `node_modules` at all; instead, the modules are likely to be located at the root of the repository. In order to ensure that both cases are supported, we take advantage of the Node dependency resolution strategy. We invoke a subprocess that spawns the simple JavaScript snippet that tries to locate the desired npm package containing the script we need.\n\n- On iOS, we use [`` ` ` `` (backtick)](https://stackoverflow.com/questions/3159945/running-command-line-commands-within-ruby-script) ([alternative reference](https://ruby-doc.org/core-3.0.2/Kernel.html#method-i-60)).\n- On Android, we use [String[]#execute](<http://docs.groovy-lang.org/latest/html/groovy-jdk/java/lang/String[].html#execute()>) to obtain the results from the subprocess' stdout.\n\nThe Node process that is spawned runs [`require.resolve`](https://nodejs.org/dist/latest-v14.x/docs/api/modules.html#modules_require_resolve_request_options) to obtain the path to a module's `package.json`(if you look for the module location using solely module name, you'll be given the path to the file pointed by the `main` attribute from the `package.json` and we need to know the location of the module's root directory). We then assemble the path to the desired script and execute it.\n\nYou can read more about the scripts and libraries used in the examples above in their official READMEs.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-notifications@0.32.17",
+    "id": "npm:expo-modules-jsi@57.0.1",
+    "name": "expo-modules-jsi",
+    "version": "57.0.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-notifications@57.0.3",
     "name": "expo-notifications",
-    "version": "0.32.17",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/notifications/\">\n    <img\n      src=\"../../.github/resources/expo-notifications.svg\"\n      alt=\"expo-notifications\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides an API to fetch push notification tokens and to present, schedule, receive and respond to notifications.\n\n## Features\n\n- 📣 schedule a one-off notification for a specific date, or some time from now,\n- 🔁 schedule a notification repeating in some time interval (or a calendar date match on iOS),\n- 1️⃣ get and set application badge icon number,\n- 📲 fetch a native device push token so you can send push notifications with FCM and APNS,\n- 😎 fetch an Expo push token so you can send push notifications with Expo,\n- 📬 listen to incoming notifications in the foreground and background,\n- 👆 listen to interactions with notifications (tapping or dismissing),\n- 🎛 handle notifications when the app is in foreground,\n- 🔕 imperatively dismiss notifications from Notification Center/tray,\n- 🗂 create, update, delete Android notification channels,\n- 🎨 set custom icon and color for notifications on Android.\n\n# Guides\n\nPlease refer to our [notification guides](https://docs.expo.dev/push-notifications/overview/).\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/notifications/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/notifications/)",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-server@1.0.7",
+    "id": "npm:expo-router@57.0.4",
+    "name": "expo-router",
+    "version": "57.0.4",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "# expo-router\n\nCheck out the [Expo Router documentation](https://docs.expo.dev/routing/introduction/) for more information.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-server@57.0.0",
     "name": "expo-server",
-    "version": "1.0.7",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "Server API for Expo Router projects",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-sharing@14.0.8",
+    "id": "npm:expo-sharing@57.0.3",
     "name": "expo-sharing",
-    "version": "14.0.8",
+    "version": "57.0.3",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/sharing/\">\n    <img\n      src=\"../../.github/resources/expo-sharing.svg\"\n      alt=\"expo-sharing\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides a way to share files directly with other compatible applications.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/sharing/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/sharing/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/sharing/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-sharing\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-sqlite@16.0.10",
+    "id": "npm:expo-splash-screen@57.0.2",
+    "name": "expo-splash-screen",
+    "version": "57.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-sqlite@57.0.0",
     "name": "expo-sqlite",
-    "version": "16.0.10",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/sqlite/\">\n    <img\n      src=\"../../.github/resources/expo-sqlite.svg\"\n      alt=\"expo-sqlite\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides access to a database using SQLite (https://www.sqlite.org/). The database is persisted across restarts of your app.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/sqlite/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/sqlite/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/sqlite/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-sqlite\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).\n\n### Updating bundled SQLite3\n\nTo update bundled SQLite3 and SQLCipher source code under [`vendor/`](https://github.com/expo/expo/tree/main/packages/expo-sqlite/vendor), you can use the helper scripts:\n\n```sh\n# You should clone expo/expo git repository first\n$ cd packages/expo-sqlite\n\n# Download and build sqlite3.[ch]\n# For example, to use sqlite 3.45.3 and sqlcipher 4.6.0\n$ ./scripts/prepare_sqlite.ts vendor/sqlite3 3.45.3\n$ ./scripts/prepare_sqlite.ts vendor/sqlcipher 4.6.0 --sqlcipher\n\n# Replace sqlite3 symbols to prevent conflict with iOS system sqlite3\n$ ./scripts/replace_symbols.ts vendor/sqlite3\n$ ./scripts/replace_symbols.ts vendor/sqlcipher\n```",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-status-bar@3.0.9",
+    "id": "npm:expo-status-bar@57.0.0",
     "name": "expo-status-bar",
-    "version": "3.0.9",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/status-bar/\">\n    <img\n      src=\"../../.github/resources/expo-status-bar.svg\"\n      alt=\"expo-status-bar\"\n      height=\"64\" />\n  </a>\n</p>\n\nProvides the same interface as the React Native [StatusBar API](https://reactnative.dev/docs/statusbar), but with slightly different defaults to work great in Expo environments.\n\n- Default to `translucent={true}` on Android.\n- The `style=\"auto\"` maps to a dark status bar when in light mode and a light status bar when in dark moded. `style=\"inverted\"` inverts this behavior.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/status-bar/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/status-bar/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/status-bar/). If you follow the link and there is no documentation available then this library is not yet usable within managed projects &mdash; it is likely to be included in an upcoming Expo SDK release.\n\nPlease refer to the [React Native StatusBar API documentation](https://reactnative.dev/docs/statusbar).\n\n# Installation in bare React Native projects\n\n```\nnpm install expo-status-bar\n```\n\n### Configure for Android\n\nNo additional setup necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-store-review@9.0.9",
+    "id": "npm:expo-store-review@57.0.0",
     "name": "expo-store-review",
-    "version": "9.0.9",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "<p>\n  <a href=\"https://docs.expo.dev/versions/latest/sdk/storereview/\">\n    <img\n      src=\"../../.github/resources/expo-store-review.svg\"\n      alt=\"expo-store-review\"\n      height=\"64\" />\n  </a>\n</p>\n\n`expo-store-review` allows users rate your application inside App Store and Google Play Store.\n\n# API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/storereview/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/storereview/)\n\n# Installation in managed Expo projects\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/storereview/).\n\n# Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your dependencies\n\n```\nnpx expo install expo-store-review\n```\n\n### Configure for Android\n\nNo additional set up necessary.\n\n### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\n# Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-task-manager@14.0.9",
+    "id": "npm:expo-symbols@57.0.0",
+    "name": "expo-symbols",
+    "version": "57.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/expo/expo",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:expo-task-manager@57.0.2",
     "name": "expo-task-manager",
-    "version": "14.0.9",
+    "version": "57.0.2",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-task-manager\n\nExpo universal module for TaskManager API.\n\n## API documentation\n\n- [Documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/task-manager/)\n- [Documentation for the main branch](https://docs.expo.dev/versions/unversioned/sdk/task-manager/)\n\n## Installation\n\nFor [managed](https://docs.expo.dev/archive/managed-vs-bare/) Expo projects, please follow the installation instructions in the [API documentation for the latest stable release](https://docs.expo.dev/versions/latest/sdk/task-manager/).\n\n## Installation in bare React Native projects\n\nFor bare React Native projects, you must ensure that you have [installed and configured the `expo` package](https://docs.expo.dev/bare/installing-expo-modules/) before continuing.\n\n### Add the package to your npm dependencies\n\n```\nnpx expo install expo-task-manager\n```\n\n#### Configure for Android\n\nNo additional set up necessary.\n\n#### Configure for iOS\n\nRun `npx pod-install` after installing the npm package.\n\nTo use `TaskManager` API in standalone, detached and bare apps on iOS, your app has to include background mode in the `Info.plist` file. See [background tasks configuration guide](https://docs.expo.dev/versions/latest/sdk/task-manager/#configuration-for-standalone-apps) for more details.\n\n# Contributing\n\nContributions are welcome! Please refer to the guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:expo-updates-interface@2.0.0",
+    "id": "npm:expo-updates-interface@57.0.0",
     "name": "expo-updates-interface",
-    "version": "2.0.0",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# expo-updates-interface\n\nNative interface for modules that optionally depend on expo-updates, e.g. expo-dev-launcher.\n\n## API documentation\n\n## Installation in managed Expo projects\n\n## Installation in bare React Native projects\n\n## Contributing\n\nContributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -3659,19 +4119,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:fast-uri@3.1.0",
-    "name": "fast-uri",
-    "version": "3.1.0",
-    "licenses": "BSD-3-Clause",
-    "repository": "https://github.com/fastify/fast-uri",
-    "source": "npm",
-    "licenseText": "Copyright (c) 2011-2021, Gary Court until https://github.com/garycourt/uri-js/commit/a1acf730b4bba3f1097c9f52e7d9d3aba8cdcaae\nCopyright (c) 2021-present The Fastify team\nAll rights reserved.\n\nThe Fastify team members are listed at https://github.com/fastify/fastify#team.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * The names of any contributors may not be used to endorse or promote\n      products derived from this software without specific prior written\n      permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS AND CONTRIBUTORS BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n                                  *   *   *\n\nThe complete list of contributors can be found at:\n- https://github.com/garycourt/uri-js/graphs/contributors",
-    "noticeText": null
-  },
-  {
-    "id": "npm:fast-xml-builder@1.2.0",
+    "id": "npm:fast-xml-builder@1.2.1",
     "name": "fast-xml-builder",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "licenses": "MIT",
     "repository": "https://github.com/NaturalIntelligence/fast-xml-builder",
     "source": "npm",
@@ -3679,13 +4129,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:fast-xml-parser@5.8.0",
+    "id": "npm:fast-xml-parser@5.9.3",
     "name": "fast-xml-parser",
-    "version": "5.8.0",
+    "version": "5.9.3",
     "licenses": "MIT",
     "repository": "https://github.com/NaturalIntelligence/fast-xml-parser",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) 2017 Amit Kumar Gupta\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:fb-dotslash@0.5.8",
+    "name": "fb-dotslash",
+    "version": "0.5.8",
+    "licenses": "(MIT OR Apache-2.0)",
+    "repository": "https://github.com/facebook/dotslash",
+    "source": "npm",
+    "licenseText": "# DotSlash: simplified executable deployment\n\n[DotSlash](https://dotslash-cli.com/docs/) (`dotslash`) is a command-line tool that lets you represent a set of\nplatform-specific, heavyweight executables with an equivalent small,\neasy-to-read text file. In turn, this makes it efficient to store executables in\nsource control without hurting repository size. This paves the way for checking\nbuild toolchains and other tools directly into the repo, reducing dependencies\non the host environment and thereby facilitating reproducible builds.\n\nThe `fb-dotslash` npm package allows you to use DotSlash in your Node.js projects without having to install DotSlash globally. This is particularly useful for package authors, who have traditionally needed to either include binaries for _all_ platforms or manage their own download and caching in a postinstall script.\n\n## Using DotSlash in an npm package\n\nFirst, you'll need to write a [DotSlash file](https://dotslash-cli.com/docs/dotslash-file/) that describes the binary you want to distribute.\n\nIf your npm package declares `fb-dotslash` as a dependency, any commands executed as part of `npm run` and `npm exec` will have `dotslash` available on the `PATH`. This means you can, for example, directly reference DotSlash files in your `package.json` scripts with no further setup:\n\n```json\n{\n  \"name\": \"my-package\",\n  \"scripts\": {\n    \"foo\": \"path/to/dotslash/file\"\n  },\n  \"dependencies\": {\n    \"fb-dotslash\": \"^0.5.8\"\n  }\n}\n```\n\nIf you need to use `dotslash` in some other context, you can use `require('fb-dotslash')` to get the path to the DotSlash executable appropriate for the current platform:\n\n```js\nconst dotslash = require('fb-dotslash');\nconst {spawnSync} = require('child_process');\nspawnSync(dotslash, ['path/to/dotslash/file'], {stdio: 'inherit']);\n```\n\n## License\n\nDotSlash is licensed under both the MIT license and Apache-2.0 license; the\nexact terms can be found in the [LICENSE-MIT](https://github.com/facebook/dotslash/blob/main/LICENSE-MIT) and\n[LICENSE-APACHE](https://github.com/facebook/dotslash/blob/main/LICENSE-APACHE) files, respectively.",
     "noticeText": null
   },
   {
@@ -3706,6 +4166,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/thecodrr/fdir",
     "source": "npm",
     "licenseText": "Copyright 2023 Abdullah Atta\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:fetch-nodeshim@0.4.10",
+    "name": "fetch-nodeshim",
+    "version": "0.4.10",
+    "licenses": "MIT",
+    "repository": "https://github.com/kitten/fetch-nodeshim",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Phil Pluckthun,\nCopyright (c) 650 Industries, Inc. (aka Expo),\nCopyright (c) 2016 - 2020 Node Fetch Team,\nCopyright (c) Remix Software Inc. 2020-2021,\nCopyright (c) Shopify Inc. 2022-2024\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -3769,26 +4239,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:for-each@0.3.5",
-    "name": "for-each",
-    "version": "0.3.5",
-    "licenses": "MIT",
-    "repository": "https://github.com/Raynos/for-each",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2012 Raynos.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:freeport-async@2.0.0",
-    "name": "freeport-async",
-    "version": "2.0.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/expo/freeport-async",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015 650 Industries\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:fresh@0.5.2",
     "name": "fresh",
     "version": "0.5.2",
@@ -3829,16 +4279,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:generator-function@2.0.1",
-    "name": "generator-function",
-    "version": "2.0.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/TimothyGu/generator-function",
-    "source": "npm",
-    "licenseText": "Copyright (c) 2015 Tiancheng “Timothy” Gu\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:gensync@1.0.0-beta.2",
     "name": "gensync",
     "version": "1.0.0-beta.2",
@@ -3859,13 +4299,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:get-intrinsic@1.3.0",
-    "name": "get-intrinsic",
-    "version": "1.3.0",
+    "id": "npm:get-nonce@1.0.1",
+    "name": "get-nonce",
+    "version": "1.0.1",
     "licenses": "MIT",
-    "repository": "https://github.com/ljharb/get-intrinsic",
+    "repository": "https://github.com/theKashey/get-nonce",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2020 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) 2020 Anton Korzunov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -3879,13 +4319,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:get-proto@1.0.1",
-    "name": "get-proto",
-    "version": "1.0.1",
+    "id": "npm:get-stream@6.0.1",
+    "name": "get-stream",
+    "version": "6.0.1",
     "licenses": "MIT",
-    "repository": "https://github.com/ljharb/get-proto",
+    "repository": "https://github.com/sindresorhus/get-stream",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2025 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -3929,16 +4369,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:gopd@1.2.0",
-    "name": "gopd",
-    "version": "1.2.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/gopd",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2022 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:graceful-fs@4.2.11",
     "name": "graceful-fs",
     "version": "4.2.11",
@@ -3969,39 +4399,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:has-property-descriptors@1.0.2",
-    "name": "has-property-descriptors",
-    "version": "1.0.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/has-property-descriptors",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2022 Inspect JS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:has-symbols@1.1.0",
-    "name": "has-symbols",
-    "version": "1.1.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/has-symbols",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2016 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:has-tostringtag@1.0.2",
-    "name": "has-tostringtag",
-    "version": "1.0.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/has-tostringtag",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2021 Inspect JS\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:hasown@2.0.3",
+    "id": "npm:hasown@2.0.4",
     "name": "hasown",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "licenses": "MIT",
     "repository": "https://github.com/inspect-js/hasOwn",
     "source": "npm",
@@ -4009,9 +4409,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:hermes-estree@0.29.1",
+    "id": "npm:hermes-compiler@250829098.0.14",
+    "name": "hermes-compiler",
+    "version": "250829098.0.14",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/hermes",
+    "source": "npm",
+    "licenseText": null,
+    "noticeText": null
+  },
+  {
+    "id": "npm:hermes-estree@0.35.0",
     "name": "hermes-estree",
-    "version": "0.29.1",
+    "version": "0.35.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/hermes",
     "source": "npm",
@@ -4019,9 +4429,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:hermes-estree@0.32.0",
+    "id": "npm:hermes-estree@0.36.0",
     "name": "hermes-estree",
-    "version": "0.32.0",
+    "version": "0.36.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/hermes",
     "source": "npm",
@@ -4029,9 +4439,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:hermes-parser@0.29.1",
-    "name": "hermes-parser",
-    "version": "0.29.1",
+    "id": "npm:hermes-estree@0.36.1",
+    "name": "hermes-estree",
+    "version": "0.36.1",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/hermes",
     "source": "npm",
@@ -4039,9 +4449,29 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:hermes-parser@0.32.0",
+    "id": "npm:hermes-parser@0.35.0",
     "name": "hermes-parser",
-    "version": "0.32.0",
+    "version": "0.35.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/hermes",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:hermes-parser@0.36.0",
+    "name": "hermes-parser",
+    "version": "0.36.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/hermes",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:hermes-parser@0.36.1",
+    "name": "hermes-parser",
+    "version": "0.36.1",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/hermes",
     "source": "npm",
@@ -4056,6 +4486,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/npm/hosted-git-info",
     "source": "npm",
     "licenseText": "Copyright (c) 2015, Rebecca Turner\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR\nOTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR\nPERFORMANCE OF THIS SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:html-escaper@2.0.2",
+    "name": "html-escaper",
+    "version": "2.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/WebReflection/html-escaper",
+    "source": "npm",
+    "licenseText": "Copyright (C) 2017-present by Andrea Giammarchi - @WebReflection\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -4079,6 +4519,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:https-proxy-agent@5.0.1",
+    "name": "https-proxy-agent",
+    "version": "5.0.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/TooTallNate/node-https-proxy-agent",
+    "source": "npm",
+    "licenseText": "https-proxy-agent\n================\n### An HTTP(s) proxy `http.Agent` implementation for HTTPS\n[![Build Status](https://github.com/TooTallNate/node-https-proxy-agent/workflows/Node%20CI/badge.svg)](https://github.com/TooTallNate/node-https-proxy-agent/actions?workflow=Node+CI)\n\nThis module provides an `http.Agent` implementation that connects to a specified\nHTTP or HTTPS proxy server, and can be used with the built-in `https` module.\n\nSpecifically, this `Agent` implementation connects to an intermediary \"proxy\"\nserver and issues the [CONNECT HTTP method][CONNECT], which tells the proxy to\nopen a direct TCP connection to the destination server.\n\nSince this agent implements the CONNECT HTTP method, it also works with other\nprotocols that use this method when connecting over proxies (i.e. WebSockets).\nSee the \"Examples\" section below for more.\n\n\nInstallation\n------------\n\nInstall with `npm`:\n\n``` bash\n$ npm install https-proxy-agent\n```\n\n\nExamples\n--------\n\n#### `https` module example\n\n``` js\nvar url = require('url');\nvar https = require('https');\nvar HttpsProxyAgent = require('https-proxy-agent');\n\n// HTTP/HTTPS proxy to connect to\nvar proxy = process.env.http_proxy || 'http://168.63.76.32:3128';\nconsole.log('using proxy server %j', proxy);\n\n// HTTPS endpoint for the proxy to connect to\nvar endpoint = process.argv[2] || 'https://graph.facebook.com/tootallnate';\nconsole.log('attempting to GET %j', endpoint);\nvar options = url.parse(endpoint);\n\n// create an instance of the `HttpsProxyAgent` class with the proxy server information\nvar agent = new HttpsProxyAgent(proxy);\noptions.agent = agent;\n\nhttps.get(options, function (res) {\n  console.log('\"response\" event!', res.headers);\n  res.pipe(process.stdout);\n});\n```\n\n#### `ws` WebSocket connection example\n\n``` js\nvar url = require('url');\nvar WebSocket = require('ws');\nvar HttpsProxyAgent = require('https-proxy-agent');\n\n// HTTP/HTTPS proxy to connect to\nvar proxy = process.env.http_proxy || 'http://168.63.76.32:3128';\nconsole.log('using proxy server %j', proxy);\n\n// WebSocket endpoint for the proxy to connect to\nvar endpoint = process.argv[2] || 'ws://echo.websocket.org';\nvar parsed = url.parse(endpoint);\nconsole.log('attempting to connect to WebSocket %j', endpoint);\n\n// create an instance of the `HttpsProxyAgent` class with the proxy server information\nvar options = url.parse(proxy);\n\nvar agent = new HttpsProxyAgent(options);\n\n// finally, initiate the WebSocket connection\nvar socket = new WebSocket(endpoint, { agent: agent });\n\nsocket.on('open', function () {\n  console.log('\"open\" event!');\n  socket.send('hello world');\n});\n\nsocket.on('message', function (data, flags) {\n  console.log('\"message\" event! %j %j', data, flags);\n  socket.close();\n});\n```\n\nAPI\n---\n\n### new HttpsProxyAgent(Object options)\n\nThe `HttpsProxyAgent` class implements an `http.Agent` subclass that connects\nto the specified \"HTTP(s) proxy server\" in order to proxy HTTPS and/or WebSocket\nrequests. This is achieved by using the [HTTP `CONNECT` method][CONNECT].\n\nThe `options` argument may either be a string URI of the proxy server to use, or an\n\"options\" object with more specific properties:\n\n  * `host` - String - Proxy host to connect to (may use `hostname` as well). Required.\n  * `port` - Number - Proxy port to connect to. Required.\n  * `protocol` - String - If `https:`, then use TLS to connect to the proxy.\n  * `headers` - Object - Additional HTTP headers to be sent on the HTTP CONNECT method.\n  * Any other options given are passed to the `net.connect()`/`tls.connect()` functions.\n\n\nLicense\n-------\n\n(The MIT License)\n\nCopyright (c) 2013 Nathan Rajlich &lt;nathan@tootallnate.net&gt;\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n[CONNECT]: http://en.wikipedia.org/wiki/HTTP_tunnel#HTTP_CONNECT_Tunneling",
+    "noticeText": null
+  },
+  {
     "id": "npm:https-proxy-agent@7.0.6",
     "name": "https-proxy-agent",
     "version": "7.0.6",
@@ -4089,13 +4539,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:ieee754@1.2.1",
-    "name": "ieee754",
-    "version": "1.2.1",
-    "licenses": "BSD-3-Clause",
-    "repository": "https://github.com/feross/ieee754",
+    "id": "npm:human-signals@2.1.0",
+    "name": "human-signals",
+    "version": "2.1.0",
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/ehmicky/human-signals",
     "source": "npm",
-    "licenseText": "Copyright 2008 Fair Oaks Labs, Inc.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\n3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "licenseText": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright 2019 ehmicky <ehmicky@gmail.com>\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.",
     "noticeText": null
   },
   {
@@ -4119,6 +4569,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:import-local@3.2.0",
+    "name": "import-local",
+    "version": "3.2.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/import-local",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:imurmurhash@0.1.4",
     "name": "imurmurhash",
     "version": "0.1.4",
@@ -4126,6 +4586,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/jensyt/imurmurhash-js",
     "source": "npm",
     "licenseText": "iMurmurHash.js\n==============\n\nAn incremental implementation of the MurmurHash3 (32-bit) hashing algorithm for JavaScript based on [Gary Court's implementation](https://github.com/garycourt/murmurhash-js) with [kazuyukitanimura's modifications](https://github.com/kazuyukitanimura/murmurhash-js).\n\nThis version works significantly faster than the non-incremental version if you need to hash many small strings into a single hash, since string concatenation (to build the single string to pass the non-incremental version) is fairly costly. In one case tested, using the incremental version was about 50% faster than concatenating 5-10 strings and then hashing.\n\nInstallation\n------------\n\nTo use iMurmurHash in the browser, [download the latest version](https://raw.github.com/jensyt/imurmurhash-js/master/imurmurhash.min.js) and include it as a script on your site.\n\n```html\n<script type=\"text/javascript\" src=\"/scripts/imurmurhash.min.js\"></script>\n<script>\n// Your code here, access iMurmurHash using the global object MurmurHash3\n</script>\n```\n\n---\n\nTo use iMurmurHash in Node.js, install the module using NPM:\n\n```bash\nnpm install imurmurhash\n```\n\nThen simply include it in your scripts:\n\n```javascript\nMurmurHash3 = require('imurmurhash');\n```\n\nQuick Example\n-------------\n\n```javascript\n// Create the initial hash\nvar hashState = MurmurHash3('string');\n\n// Incrementally add text\nhashState.hash('more strings');\nhashState.hash('even more strings');\n\n// All calls can be chained if desired\nhashState.hash('and').hash('some').hash('more');\n\n// Get a result\nhashState.result();\n// returns 0xe4ccfe6b\n```\n\nFunctions\n---------\n\n### MurmurHash3 ([string], [seed])\nGet a hash state object, optionally initialized with the given _string_ and _seed_. _Seed_ must be a positive integer if provided. Calling this function without the `new` keyword will return a cached state object that has been reset. This is safe to use as long as the object is only used from a single thread and no other hashes are created while operating on this one. If this constraint cannot be met, you can use `new` to create a new state object. For example:\n\n```javascript\n// Use the cached object, calling the function again will return the same\n// object (but reset, so the current state would be lost)\nhashState = MurmurHash3();\n...\n\n// Create a new object that can be safely used however you wish. Calling the\n// function again will simply return a new state object, and no state loss\n// will occur, at the cost of creating more objects.\nhashState = new MurmurHash3();\n```\n\nBoth methods can be mixed however you like if you have different use cases.\n\n---\n\n### MurmurHash3.prototype.hash (string)\nIncrementally add _string_ to the hash. This can be called as many times as you want for the hash state object, including after a call to `result()`. Returns `this` so calls can be chained.\n\n---\n\n### MurmurHash3.prototype.result ()\nGet the result of the hash as a 32-bit positive integer. This performs the tail and finalizer portions of the algorithm, but does not store the result in the state object. This means that it is perfectly safe to get results and then continue adding strings via `hash`.\n\n```javascript\n// Do the whole string at once\nMurmurHash3('this is a test string').result();\n// 0x70529328\n\n// Do part of the string, get a result, then the other part\nvar m = MurmurHash3('this is a');\nm.result();\n// 0xbfc4f834\nm.hash(' test string').result();\n// 0x70529328 (same as above)\n```\n\n---\n\n### MurmurHash3.prototype.reset ([seed])\nReset the state object for reuse, optionally using the given _seed_ (defaults to 0 like the constructor). Returns `this` so calls can be chained.\n\n---\n\nLicense (MIT)\n-------------\nCopyright (c) 2013 Gary Court, Jens Taylor\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:indent-string@4.0.0",
+    "name": "indent-string",
+    "version": "4.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/indent-string",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -4149,16 +4619,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:ini@1.3.8",
-    "name": "ini",
-    "version": "1.3.8",
-    "licenses": "ISC",
-    "repository": "https://github.com/isaacs/ini",
-    "source": "npm",
-    "licenseText": "The ISC License\n\nCopyright (c) Isaac Z. Schlueter and Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:invariant@2.2.4",
     "name": "invariant",
     "version": "2.2.4",
@@ -4169,13 +4629,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:is-arguments@1.2.0",
-    "name": "is-arguments",
-    "version": "1.2.0",
+    "id": "npm:is-arrayish@0.2.1",
+    "name": "is-arrayish",
+    "version": "0.2.1",
     "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/is-arguments",
+    "repository": "https://github.com/qix-/node-is-arrayish",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015 JD Ballard\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -4189,19 +4649,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:is-callable@1.2.7",
-    "name": "is-callable",
-    "version": "1.2.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/is-callable",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:is-core-module@2.16.1",
+    "id": "npm:is-core-module@2.16.2",
     "name": "is-core-module",
-    "version": "2.16.1",
+    "version": "2.16.2",
     "licenses": "MIT",
     "repository": "https://github.com/inspect-js/is-core-module",
     "source": "npm",
@@ -4229,23 +4679,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:is-generator-function@1.1.2",
-    "name": "is-generator-function",
-    "version": "1.1.2",
+    "id": "npm:is-generator-fn@2.1.0",
+    "name": "is-generator-fn",
+    "version": "2.1.0",
     "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/is-generator-function",
+    "repository": "https://github.com/sindresorhus/is-generator-fn",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:is-nan@1.3.2",
-    "name": "is-nan",
-    "version": "1.3.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/es-shims/is-nan",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -4259,23 +4699,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:is-regex@1.2.1",
-    "name": "is-regex",
-    "version": "1.2.1",
+    "id": "npm:is-stream@2.0.1",
+    "name": "is-stream",
+    "version": "2.0.1",
     "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/is-regex",
+    "repository": "https://github.com/sindresorhus/is-stream",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:is-typed-array@1.1.15",
-    "name": "is-typed-array",
-    "version": "1.1.15",
+    "id": "npm:is-unsafe@1.0.1",
+    "name": "is-unsafe",
+    "version": "1.0.1",
     "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/is-typed-array",
+    "repository": "https://github.com/NaturalIntelligence/is-unsafe",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) 2026 Natural Intelligence\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -4319,6 +4759,136 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:istanbul-lib-instrument@6.0.3",
+    "name": "istanbul-lib-instrument",
+    "version": "6.0.3",
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/istanbuljs/istanbuljs",
+    "source": "npm",
+    "licenseText": "Copyright 2012-2015 Yahoo! Inc.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * Neither the name of the Yahoo! Inc. nor the\n      names of its contributors may be used to endorse or promote products\n      derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL YAHOO! INC. BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:istanbul-lib-report@3.0.1",
+    "name": "istanbul-lib-report",
+    "version": "3.0.1",
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/istanbuljs/istanbuljs",
+    "source": "npm",
+    "licenseText": "Copyright 2012-2015 Yahoo! Inc.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * Neither the name of the Yahoo! Inc. nor the\n      names of its contributors may be used to endorse or promote products\n      derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL YAHOO! INC. BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:istanbul-lib-source-maps@4.0.1",
+    "name": "istanbul-lib-source-maps",
+    "version": "4.0.1",
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/istanbuljs/istanbuljs",
+    "source": "npm",
+    "licenseText": "Copyright 2015 Yahoo! Inc.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * Neither the name of the Yahoo! Inc. nor the\n      names of its contributors may be used to endorse or promote products\n      derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL YAHOO! INC. BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:istanbul-reports@3.2.0",
+    "name": "istanbul-reports",
+    "version": "3.2.0",
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/istanbuljs/istanbuljs",
+    "source": "npm",
+    "licenseText": "Copyright 2012-2015 Yahoo! Inc.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n    * Redistributions of source code must retain the above copyright\n      notice, this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright\n      notice, this list of conditions and the following disclaimer in the\n      documentation and/or other materials provided with the distribution.\n    * Neither the name of the Yahoo! Inc. nor the\n      names of its contributors may be used to endorse or promote products\n      derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL YAHOO! INC. BE LIABLE FOR ANY\nDIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND\nON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest@29.7.0",
+    "name": "jest",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-changed-files@29.7.0",
+    "name": "jest-changed-files",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-circus@29.7.0",
+    "name": "jest-circus",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-cli@29.7.0",
+    "name": "jest-cli",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-config@29.7.0",
+    "name": "jest-config",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-diff@29.7.0",
+    "name": "jest-diff",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-diff@30.4.1",
+    "name": "jest-diff",
+    "version": "30.4.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\nCopyright Contributors to the Jest project.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-docblock@29.7.0",
+    "name": "jest-docblock",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-each@29.7.0",
+    "name": "jest-each",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:jest-environment-node@29.7.0",
     "name": "jest-environment-node",
     "version": "29.7.0",
@@ -4349,6 +4919,36 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:jest-leak-detector@29.7.0",
+    "name": "jest-leak-detector",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-matcher-utils@29.7.0",
+    "name": "jest-matcher-utils",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-matcher-utils@30.4.1",
+    "name": "jest-matcher-utils",
+    "version": "30.4.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\nCopyright Contributors to the Jest project.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:jest-message-util@29.7.0",
     "name": "jest-message-util",
     "version": "29.7.0",
@@ -4369,9 +4969,69 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:jest-pnp-resolver@1.2.3",
+    "name": "jest-pnp-resolver",
+    "version": "1.2.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/arcanis/jest-pnp-resolver",
+    "source": "npm",
+    "licenseText": "# <img src=\"https://github.com/facebook/jest/blob/master/website/static/img/jest.png\" height=\"40\" align=\"right\" /> [Plug'n'Play](https://github.com/yarnpkg/rfcs/pull/101) resolver for Jest\n\n[![npm version](https://img.shields.io/npm/v/jest-pnp-resolver.svg)](https://www.npmjs.com/package/jest-pnp-resolver)\n[![node version](https://img.shields.io/node/v/jest-pnp-resolver.svg)](https://www.npmjs.com/package/jest-pnp-resolver)\n\n*This plugin is also available for Rollup ([rollup-plugin-pnp-resolve](https://github.com/arcanis/rollup-plugin-pnp-resolve)), TypeScript ([ts-pnp](https://github.com/arcanis/ts-pnp)), and Webpack ([pnp-webpack-plugin](https://github.com/arcanis/pnp-webpack-plugin))*\n\n## Installation\n\n```\nyarn add -D jest-pnp-resolver\n```\n\n## Usage\n\nAs of `jest@^24.4.0` you don't need to manually add this package anymore. The default resolver will already use PnP.\n\nSimply add the resolver to your configuration. For example, a minimal `jest.config.js` would be as such:\n\n```js\nmodule.exports = {\n  resolver: require.resolve(`jest-pnp-resolver`)\n};\n```\n\n## License (MIT)\n\n> **Copyright © 2016 Maël Nison**\n>\n> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n>\n> The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n>\n> THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:jest-regex-util@29.6.3",
     "name": "jest-regex-util",
     "version": "29.6.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-resolve@29.7.0",
+    "name": "jest-resolve",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-resolve-dependencies@29.7.0",
+    "name": "jest-resolve-dependencies",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-runner@29.7.0",
+    "name": "jest-runner",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-runtime@29.7.0",
+    "name": "jest-runtime",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-snapshot@29.7.0",
+    "name": "jest-snapshot",
+    "version": "29.7.0",
     "licenses": "MIT",
     "repository": "https://github.com/jestjs/jest",
     "source": "npm",
@@ -4391,6 +5051,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
   {
     "id": "npm:jest-validate@29.7.0",
     "name": "jest-validate",
+    "version": "29.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:jest-watcher@29.7.0",
+    "name": "jest-watcher",
     "version": "29.7.0",
     "licenses": "MIT",
     "repository": "https://github.com/jestjs/jest",
@@ -4429,9 +5099,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:js-yaml@3.14.2",
+    "id": "npm:js-yaml@3.15.0",
     "name": "js-yaml",
-    "version": "3.14.2",
+    "version": "3.15.0",
     "licenses": "MIT",
     "repository": "https://github.com/nodeca/js-yaml",
     "source": "npm",
@@ -4439,9 +5109,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:js-yaml@4.2.0",
+    "id": "npm:js-yaml@4.3.0",
     "name": "js-yaml",
-    "version": "4.2.0",
+    "version": "4.3.0",
     "licenses": "MIT",
     "repository": "https://github.com/nodeca/js-yaml",
     "source": "npm",
@@ -4469,13 +5139,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:json-schema-traverse@1.0.0",
-    "name": "json-schema-traverse",
-    "version": "1.0.0",
+    "id": "npm:json-parse-even-better-errors@2.3.1",
+    "name": "json-parse-even-better-errors",
+    "version": "2.3.1",
     "licenses": "MIT",
-    "repository": "https://github.com/epoberezkin/json-schema-traverse",
+    "repository": "https://github.com/npm/json-parse-even-better-errors",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2017 Evgeny Poberezkin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "licenseText": "Copyright 2017 Kat Marchán\nCopyright npm, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a\ncopy of this software and associated documentation files (the \"Software\"),\nto deal in the Software without restriction, including without limitation\nthe rights to use, copy, modify, merge, publish, distribute, sublicense,\nand/or sell copies of the Software, and to permit persons to whom the\nSoftware is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n\n---\n\nThis library is a fork of 'better-json-errors' by Kat Marchán, extended and\ndistributed under the terms of the MIT license above.",
     "noticeText": null
   },
   {
@@ -4619,9 +5289,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:lru-cache@11.3.5",
+    "id": "npm:lru-cache@11.5.2",
     "name": "lru-cache",
-    "version": "11.3.5",
+    "version": "11.5.2",
     "licenses": "BlueOak-1.0.0",
     "repository": "https://github.com/isaacs/node-lru-cache",
     "source": "npm",
@@ -4636,6 +5306,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/isaacs/node-lru-cache",
     "source": "npm",
     "licenseText": "The ISC License\n\nCopyright (c) Isaac Z. Schlueter and Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:lz-string@1.5.0",
+    "name": "lz-string",
+    "version": "1.5.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/pieroxy/lz-string",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2013 pieroxy\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:make-dir@4.0.0",
+    "name": "make-dir",
+    "version": "4.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/make-dir",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -4656,16 +5346,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/nolanlawson/marky",
     "source": "npm",
     "licenseText": "Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n1. Definitions.\n\n    \"License\" shall mean the terms and conditions for use, reproduction, and\n    distribution as defined by Sections 1 through 9 of this document.\n\n    \"Licensor\" shall mean the copyright owner or entity authorized by the\n    copyright owner that is granting the License.\n\n    \"Legal Entity\" shall mean the union of the acting entity and all other\n    entities that control, are controlled by, or are under common control with\n    that entity. For the purposes of this definition, \"control\" means (i) the\n    power, direct or indirect, to cause the direction or management of such\n    entity, whether by contract or otherwise, or (ii) ownership of\n    fifty percent (50%) or more of the outstanding shares, or (iii) beneficial\n    ownership of such entity.\n\n    \"You\" (or \"Your\") shall mean an individual or Legal Entity exercising\n    permissions granted by this License.\n\n    \"Source\" form shall mean the preferred form for making modifications,\n    including but not limited to software source code, documentation source,\n    and configuration files.\n\n    \"Object\" form shall mean any form resulting from mechanical transformation\n    or translation of a Source form, including but not limited to compiled\n    object code, generated documentation, and conversions to\n    other media types.\n\n    \"Work\" shall mean the work of authorship, whether in Source or Object\n    form, made available under the License, as indicated by a copyright notice\n    that is included in or attached to the work (an example is provided in the\n    Appendix below).\n\n    \"Derivative Works\" shall mean any work, whether in Source or Object form,\n    that is based on (or derived from) the Work and for which the editorial\n    revisions, annotations, elaborations, or other modifications represent,\n    as a whole, an original work of authorship. For the purposes of this\n    License, Derivative Works shall not include works that remain separable\n    from, or merely link (or bind by name) to the interfaces of, the Work and\n    Derivative Works thereof.\n\n    \"Contribution\" shall mean any work of authorship, including the original\n    version of the Work and any modifications or additions to that Work or\n    Derivative Works thereof, that is intentionally submitted to Licensor for\n    inclusion in the Work by the copyright owner or by an individual or\n    Legal Entity authorized to submit on behalf of the copyright owner.\n    For the purposes of this definition, \"submitted\" means any form of\n    electronic, verbal, or written communication sent to the Licensor or its\n    representatives, including but not limited to communication on electronic\n    mailing lists, source code control systems, and issue tracking systems\n    that are managed by, or on behalf of, the Licensor for the purpose of\n    discussing and improving the Work, but excluding communication that is\n    conspicuously marked or otherwise designated in writing by the copyright\n    owner as \"Not a Contribution.\"\n\n    \"Contributor\" shall mean Licensor and any individual or Legal Entity on\n    behalf of whom a Contribution has been received by Licensor and\n    subsequently incorporated within the Work.\n\n2. Grant of Copyright License.\n\n    Subject to the terms and conditions of this License, each Contributor\n    hereby grants to You a perpetual, worldwide, non-exclusive, no-charge,\n    royalty-free, irrevocable copyright license to reproduce, prepare\n    Derivative Works of, publicly display, publicly perform, sublicense,\n    and distribute the Work and such Derivative Works in\n    Source or Object form.\n\n3. Grant of Patent License.\n\n    Subject to the terms and conditions of this License, each Contributor\n    hereby grants to You a perpetual, worldwide, non-exclusive, no-charge,\n    royalty-free, irrevocable (except as stated in this section) patent\n    license to make, have made, use, offer to sell, sell, import, and\n    otherwise transfer the Work, where such license applies only to those\n    patent claims licensable by such Contributor that are necessarily\n    infringed by their Contribution(s) alone or by combination of their\n    Contribution(s) with the Work to which such Contribution(s) was submitted.\n    If You institute patent litigation against any entity (including a\n    cross-claim or counterclaim in a lawsuit) alleging that the Work or a\n    Contribution incorporated within the Work constitutes direct or\n    contributory patent infringement, then any patent licenses granted to\n    You under this License for that Work shall terminate as of the date such\n    litigation is filed.\n\n4. Redistribution.\n\n    You may reproduce and distribute copies of the Work or Derivative Works\n    thereof in any medium, with or without modifications, and in Source or\n    Object form, provided that You meet the following conditions:\n\n    1. You must give any other recipients of the Work or Derivative Works a\n    copy of this License; and\n\n    2. You must cause any modified files to carry prominent notices stating\n    that You changed the files; and\n\n    3. You must retain, in the Source form of any Derivative Works that You\n    distribute, all copyright, patent, trademark, and attribution notices from\n    the Source form of the Work, excluding those notices that do not pertain\n    to any part of the Derivative Works; and\n\n    4. If the Work includes a \"NOTICE\" text file as part of its distribution,\n    then any Derivative Works that You distribute must include a readable copy\n    of the attribution notices contained within such NOTICE file, excluding\n    those notices that do not pertain to any part of the Derivative Works,\n    in at least one of the following places: within a NOTICE text file\n    distributed as part of the Derivative Works; within the Source form or\n    documentation, if provided along with the Derivative Works; or, within a\n    display generated by the Derivative Works, if and wherever such\n    third-party notices normally appear. The contents of the NOTICE file are\n    for informational purposes only and do not modify the License.\n    You may add Your own attribution notices within Derivative Works that You\n    distribute, alongside or as an addendum to the NOTICE text from the Work,\n    provided that such additional attribution notices cannot be construed\n    as modifying the License.\n\n    You may add Your own copyright statement to Your modifications and may\n    provide additional or different license terms and conditions for use,\n    reproduction, or distribution of Your modifications, or for any such\n    Derivative Works as a whole, provided Your use, reproduction, and\n    distribution of the Work otherwise complies with the conditions\n    stated in this License.\n\n5. Submission of Contributions.\n\n    Unless You explicitly state otherwise, any Contribution intentionally\n    submitted for inclusion in the Work by You to the Licensor shall be under\n    the terms and conditions of this License, without any additional\n    terms or conditions. Notwithstanding the above, nothing herein shall\n    supersede or modify the terms of any separate license agreement you may\n    have executed with Licensor regarding such Contributions.\n\n6. Trademarks.\n\n    This License does not grant permission to use the trade names, trademarks,\n    service marks, or product names of the Licensor, except as required for\n    reasonable and customary use in describing the origin of the Work and\n    reproducing the content of the NOTICE file.\n\n7. Disclaimer of Warranty.\n\n    Unless required by applicable law or agreed to in writing, Licensor\n    provides the Work (and each Contributor provides its Contributions)\n    on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,\n    either express or implied, including, without limitation, any warranties\n    or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS\n    FOR A PARTICULAR PURPOSE. You are solely responsible for determining the\n    appropriateness of using or redistributing the Work and assume any risks\n    associated with Your exercise of permissions under this License.\n\n8. Limitation of Liability.\n\n    In no event and under no legal theory, whether in tort\n    (including negligence), contract, or otherwise, unless required by\n    applicable law (such as deliberate and grossly negligent acts) or agreed\n    to in writing, shall any Contributor be liable to You for damages,\n    including any direct, indirect, special, incidental, or consequential\n    damages of any character arising as a result of this License or out of\n    the use or inability to use the Work (including but not limited to damages\n    for loss of goodwill, work stoppage, computer failure or malfunction,\n    or any and all other commercial damages or losses), even if such\n    Contributor has been advised of the possibility of such damages.\n\n9. Accepting Warranty or Additional Liability.\n\n    While redistributing the Work or Derivative Works thereof, You may choose\n    to offer, and charge a fee for, acceptance of support, warranty,\n    indemnity, or other liability obligations and/or rights consistent with\n    this License. However, in accepting such obligations, You may act only\n    on Your own behalf and on Your sole responsibility, not on behalf of any\n    other Contributor, and only if You agree to indemnify, defend, and hold\n    each Contributor harmless for any liability incurred by, or claims\n    asserted against, such Contributor by reason of your accepting any such\n    warranty or additional liability.\n\nEND OF TERMS AND CONDITIONS\n\nAPPENDIX: How to apply the Apache License to your work\n\n    To apply the Apache License to your work, attach the following boilerplate\n    notice, with the fields enclosed by brackets \"[]\" replaced with your own\n    identifying information. (Don't include the brackets!) The text should be\n    enclosed in the appropriate comment syntax for the file format. We also\n    recommend that a file or class name and description of purpose be included\n    on the same \"printed page\" as the copyright notice for easier\n    identification within third-party archives.\n\n        Copyright 2016 Nolan Lawson\n\n\n        Licensed under the Apache License, Version 2.0 (the \"License\");\n        you may not use this file except in compliance with the License.\n        You may obtain a copy of the License at\n\n        http://www.apache.org/licenses/LICENSE-2.0\n\n        Unless required by applicable law or agreed to in writing, software\n        distributed under the License is distributed on an \"AS IS\" BASIS,\n        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express\n        or implied. See the License for the specific language governing\n        permissions and limitations under the License.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:math-intrinsics@1.1.0",
-    "name": "math-intrinsics",
-    "version": "1.1.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/es-shims/math-intrinsics",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2024 ECMAScript Shims\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -4699,9 +5379,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro@0.83.3",
+    "id": "npm:metro@0.84.4",
     "name": "metro",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4709,9 +5389,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-babel-transformer@0.83.3",
+    "id": "npm:metro-babel-transformer@0.84.4",
     "name": "metro-babel-transformer",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4719,9 +5399,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-cache@0.83.3",
+    "id": "npm:metro-cache@0.84.4",
     "name": "metro-cache",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4729,9 +5409,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-cache-key@0.83.3",
+    "id": "npm:metro-cache-key@0.84.4",
     "name": "metro-cache-key",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4739,9 +5419,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-config@0.83.3",
+    "id": "npm:metro-config@0.84.4",
     "name": "metro-config",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4749,9 +5429,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-core@0.83.3",
+    "id": "npm:metro-core@0.84.4",
     "name": "metro-core",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4759,9 +5439,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-file-map@0.83.3",
+    "id": "npm:metro-file-map@0.84.4",
     "name": "metro-file-map",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4769,9 +5449,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-minify-terser@0.83.3",
+    "id": "npm:metro-minify-terser@0.84.4",
     "name": "metro-minify-terser",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4779,9 +5459,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-resolver@0.83.3",
+    "id": "npm:metro-resolver@0.84.4",
     "name": "metro-resolver",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4789,9 +5469,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-runtime@0.83.3",
+    "id": "npm:metro-runtime@0.84.4",
     "name": "metro-runtime",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4799,9 +5479,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-source-map@0.83.3",
+    "id": "npm:metro-source-map@0.84.4",
     "name": "metro-source-map",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4809,9 +5489,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-symbolicate@0.83.3",
+    "id": "npm:metro-symbolicate@0.84.4",
     "name": "metro-symbolicate",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4819,9 +5499,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-transform-plugins@0.83.3",
+    "id": "npm:metro-transform-plugins@0.84.4",
     "name": "metro-transform-plugins",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4829,9 +5509,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:metro-transform-worker@0.83.3",
+    "id": "npm:metro-transform-worker@0.84.4",
     "name": "metro-transform-worker",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
@@ -4869,9 +5549,29 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:mime-db@1.54.0",
+    "name": "mime-db",
+    "version": "1.54.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/jshttp/mime-db",
+    "source": "npm",
+    "licenseText": "(The MIT License)\n\nCopyright (c) 2014 Jonathan Ong <me@jongleberry.com>\nCopyright (c) 2015-2022 Douglas Christopher Wilson <doug@somethingdoug.com>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:mime-types@2.1.35",
     "name": "mime-types",
     "version": "2.1.35",
+    "licenses": "MIT",
+    "repository": "https://github.com/jshttp/mime-types",
+    "source": "npm",
+    "licenseText": "(The MIT License)\n\nCopyright (c) 2014 Jonathan Ong <me@jongleberry.com>\nCopyright (c) 2015 Douglas Christopher Wilson <doug@somethingdoug.com>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:mime-types@3.0.2",
+    "name": "mime-types",
+    "version": "3.0.2",
     "licenses": "MIT",
     "repository": "https://github.com/jshttp/mime-types",
     "source": "npm",
@@ -4886,6 +5586,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/sindresorhus/mimic-fn",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:mimic-fn@2.1.0",
+    "name": "mimic-fn",
+    "version": "2.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/mimic-fn",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:min-indent@1.0.1",
+    "name": "min-indent",
+    "version": "1.0.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/thejameskyle/min-indent",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com), James Kyle <me@thejameskyle.com> (thejameskyle.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -4909,26 +5629,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:minimatch@9.0.9",
-    "name": "minimatch",
-    "version": "9.0.9",
-    "licenses": "ISC",
-    "repository": "https://github.com/isaacs/minimatch",
-    "source": "npm",
-    "licenseText": "The ISC License\n\nCopyright (c) 2011-2023 Isaac Z. Schlueter and Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:minimist@1.2.8",
-    "name": "minimist",
-    "version": "1.2.8",
-    "licenses": "MIT",
-    "repository": "https://github.com/minimistjs/minimist",
-    "source": "npm",
-    "licenseText": "This software is released under the MIT license:\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:minipass@7.1.3",
     "name": "minipass",
     "version": "7.1.3",
@@ -4936,16 +5636,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/isaacs/minipass",
     "source": "npm",
     "licenseText": "# Blue Oak Model License\n\nVersion 1.0.0\n\n## Purpose\n\nThis license gives everyone as much permission to work with\nthis software as possible, while protecting contributors\nfrom liability.\n\n## Acceptance\n\nIn order to receive this license, you must agree to its\nrules.  The rules of this license are both obligations\nunder that agreement and conditions to your license.\nYou must not do anything with this software that triggers\na rule that you cannot or will not follow.\n\n## Copyright\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe that contributor's\ncopyright in it.\n\n## Notices\n\nYou must ensure that everyone who gets a copy of\nany part of this software from you, with or without\nchanges, also gets the text of this license or a link to\n<https://blueoakcouncil.org/license/1.0.0>.\n\n## Excuse\n\nIf anyone notifies you in writing that you have not\ncomplied with [Notices](#notices), you can keep your\nlicense by taking all practical steps to comply within 30\ndays after the notice.  If you do not do so, your license\nends immediately.\n\n## Patent\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe any patent claims\nthey can license or become able to license.\n\n## Reliability\n\nNo contributor can revoke this license.\n\n## No Liability\n\n***As far as the law allows, this software comes as is,\nwithout any warranty or condition, and no contributor\nwill be liable to anyone for any damages related to this\nsoftware or this license, under any kind of legal claim.***",
-    "noticeText": null
-  },
-  {
-    "id": "npm:minizlib@3.1.0",
-    "name": "minizlib",
-    "version": "3.1.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/isaacs/minizlib",
-    "source": "npm",
-    "licenseText": "Minizlib was created by Isaac Z. Schlueter.\nIt is a derivative work of the Node.js project.\n\n\"\"\"\nCopyright (c) 2017-2023 Isaac Z. Schlueter and Contributors\nCopyright (c) 2017-2023 Node.js contributors. All rights reserved.\nCopyright (c) 2017-2023 Joyent, Inc. and other Node contributors. All rights reserved.\n\nPermission is hereby granted, free of charge, to any person obtaining a\ncopy of this software and associated documentation files (the \"Software\"),\nto deal in the Software without restriction, including without limitation\nthe rights to use, copy, modify, merge, publish, distribute, sublicense,\nand/or sell copies of the Software, and to permit persons to whom the\nSoftware is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\nOR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\"\"\"",
     "noticeText": null
   },
   {
@@ -4979,23 +5669,33 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:mz@2.7.0",
-    "name": "mz",
-    "version": "2.7.0",
+    "id": "npm:multitars@1.0.0",
+    "name": "multitars",
+    "version": "1.0.0",
     "licenses": "MIT",
-    "repository": "https://github.com/normalize/mz",
+    "repository": "https://github.com/kitten/multitars",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014-2016 Jonathan Ong me@jongleberry.com and Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Phil Pluckthun,\nCopyright (c) 650 Industries, Inc. (aka Expo),\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:nanoid@3.3.12",
+    "id": "npm:nanoid@3.3.15",
     "name": "nanoid",
-    "version": "3.3.12",
+    "version": "3.3.15",
     "licenses": "MIT",
     "repository": "https://github.com/ai/nanoid",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright 2017 Andrey Sitnik <andrey@sitnik.ru>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:natural-compare@1.4.0",
+    "name": "natural-compare",
+    "version": "1.4.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/litejs/natural-compare-lite",
+    "source": "npm",
+    "licenseText": "[Build]:    http://img.shields.io/travis/litejs/natural-compare-lite.png\n[Coverage]: http://img.shields.io/coveralls/litejs/natural-compare-lite.png\n[1]: https://travis-ci.org/litejs/natural-compare-lite\n[2]: https://coveralls.io/r/litejs/natural-compare-lite\n[npm package]: https://npmjs.org/package/natural-compare-lite\n[GitHub repo]: https://github.com/litejs/natural-compare-lite\n\n\n\n    @version    1.4.0\n    @date       2015-10-26\n    @stability  3 - Stable\n\n\nNatural Compare &ndash; [![Build][]][1] [![Coverage][]][2]\n===============\n\nCompare strings containing a mix of letters and numbers\nin the way a human being would in sort order.\nThis is described as a \"natural ordering\".\n\n```text\nStandard sorting:   Natural order sorting:\n    img1.png            img1.png\n    img10.png           img2.png\n    img12.png           img10.png\n    img2.png            img12.png\n```\n\nString.naturalCompare returns a number indicating\nwhether a reference string comes before or after or is the same\nas the given string in sort order.\nUse it with builtin sort() function.\n\n\n\n### Installation\n\n- In browser\n\n```html\n<script src=min.natural-compare.js></script>\n```\n\n- In node.js: `npm install natural-compare-lite`\n\n```javascript\nrequire(\"natural-compare-lite\")\n```\n\n### Usage\n\n```javascript\n// Simple case sensitive example\nvar a = [\"z1.doc\", \"z10.doc\", \"z17.doc\", \"z2.doc\", \"z23.doc\", \"z3.doc\"];\na.sort(String.naturalCompare);\n// [\"z1.doc\", \"z2.doc\", \"z3.doc\", \"z10.doc\", \"z17.doc\", \"z23.doc\"]\n\n// Use wrapper function for case insensitivity\na.sort(function(a, b){\n  return String.naturalCompare(a.toLowerCase(), b.toLowerCase());\n})\n\n// In most cases we want to sort an array of objects\nvar a = [ {\"street\":\"350 5th Ave\", \"room\":\"A-1021\"}\n        , {\"street\":\"350 5th Ave\", \"room\":\"A-21046-b\"} ];\n\n// sort by street, then by room\na.sort(function(a, b){\n  return String.naturalCompare(a.street, b.street) || String.naturalCompare(a.room, b.room);\n})\n\n// When text transformation is needed (eg toLowerCase()),\n// it is best for performance to keep\n// transformed key in that object.\n// There are no need to do text transformation\n// on each comparision when sorting.\nvar a = [ {\"make\":\"Audi\", \"model\":\"A6\"}\n        , {\"make\":\"Kia\",  \"model\":\"Rio\"} ];\n\n// sort by make, then by model\na.map(function(car){\n  car.sort_key = (car.make + \" \" + car.model).toLowerCase();\n})\na.sort(function(a, b){\n  return String.naturalCompare(a.sort_key, b.sort_key);\n})\n```\n\n- Works well with dates in ISO format eg \"Rev 2012-07-26.doc\".\n\n\n### Custom alphabet\n\nIt is possible to configure a custom alphabet\nto achieve a desired order.\n\n```javascript\n// Estonian alphabet\nString.alphabet = \"ABDEFGHIJKLMNOPRSŠZŽTUVÕÄÖÜXYabdefghijklmnoprsšzžtuvõäöüxy\"\n[\"t\", \"z\", \"x\", \"õ\"].sort(String.naturalCompare)\n// [\"z\", \"t\", \"õ\", \"x\"]\n\n// Russian alphabet\nString.alphabet = \"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя\"\n[\"Ё\", \"А\", \"Б\"].sort(String.naturalCompare)\n// [\"А\", \"Б\", \"Ё\"]\n```\n\n\nExternal links\n--------------\n\n-   [GitHub repo][https://github.com/litejs/natural-compare-lite]\n-   [jsperf test](http://jsperf.com/natural-sort-2/12)\n\n\nLicence\n-------\n\nCopyright (c) 2012-2015 Lauri Rooden &lt;lauri@rooden.ee&gt;  \n[The MIT License](http://lauri.rooden.ee/mit-license.txt)",
     "noticeText": null
   },
   {
@@ -5019,13 +5719,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:nested-error-stacks@2.0.1",
-    "name": "nested-error-stacks",
-    "version": "2.0.1",
+    "id": "npm:negotiator@1.0.0",
+    "name": "negotiator",
+    "version": "1.0.0",
     "licenses": "MIT",
-    "repository": "https://github.com/mdlavin/nested-error-stacks",
+    "repository": "https://github.com/jshttp/negotiator",
     "source": "npm",
-    "licenseText": "Copyright (c) 2014 Matt Lavin <matt.lavin@gmail.com>\n\nPermission is hereby granted, free of charge, to any person\nobtaining a copy of this software and associated documentation\nfiles (the \"Software\"), to deal in the Software without\nrestriction, including without limitation the rights to use,\ncopy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the\nSoftware is furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES\nOF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\nHOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\nWHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR\nOTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "(The MIT License)\n\nCopyright (c) 2012-2014 Federico Romero\nCopyright (c) 2012-2014 Isaac Z. Schlueter\nCopyright (c) 2014-2015 Douglas Christopher Wilson\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:node-fetch@2.7.0",
+    "name": "node-fetch",
+    "version": "2.7.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/bitinn/node-fetch",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2016 David Frank\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -5049,9 +5759,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:node-releases@2.0.38",
+    "id": "npm:node-releases@2.0.51",
     "name": "node-releases",
-    "version": "2.0.38",
+    "version": "2.0.51",
     "licenses": "MIT",
     "repository": "https://github.com/chicoxyzzy/node-releases",
     "source": "npm",
@@ -5079,6 +5789,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:npm-run-path@4.0.1",
+    "name": "npm-run-path",
+    "version": "4.0.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/npm-run-path",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:nth-check@2.1.1",
     "name": "nth-check",
     "version": "2.1.1",
@@ -5099,53 +5819,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:ob1@0.83.3",
+    "id": "npm:ob1@0.84.4",
     "name": "ob1",
-    "version": "0.83.3",
+    "version": "0.84.4",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/metro",
     "source": "npm",
     "licenseText": "# ob1\n\nA small library for working with 0- and 1-based offsets in a type-checked way.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:object-assign@4.1.1",
-    "name": "object-assign",
-    "version": "4.1.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/sindresorhus/object-assign",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:object-is@1.1.6",
-    "name": "object-is",
-    "version": "1.1.6",
-    "licenses": "MIT",
-    "repository": "https://github.com/es-shims/object-is",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:object-keys@1.1.1",
-    "name": "object-keys",
-    "version": "1.1.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/object-keys",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (C) 2013 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:object.assign@4.1.7",
-    "name": "object.assign",
-    "version": "4.1.7",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/object.assign",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -5199,19 +5879,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:open@7.4.2",
-    "name": "open",
-    "version": "7.4.2",
+    "id": "npm:onetime@5.1.2",
+    "name": "onetime",
+    "version": "5.1.2",
     "licenses": "MIT",
-    "repository": "https://github.com/sindresorhus/open",
+    "repository": "https://github.com/sindresorhus/onetime",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:open@8.4.2",
+    "id": "npm:open@7.4.2",
     "name": "open",
-    "version": "8.4.2",
+    "version": "7.4.2",
     "licenses": "MIT",
     "repository": "https://github.com/sindresorhus/open",
     "source": "npm",
@@ -5279,6 +5959,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:parse-json@5.2.0",
+    "name": "parse-json",
+    "version": "5.2.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/parse-json",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:parse-png@2.1.0",
     "name": "parse-png",
     "version": "2.1.0",
@@ -5309,9 +5999,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:path-expression-matcher@1.5.0",
+    "id": "npm:path-expression-matcher@1.6.2",
     "name": "path-expression-matcher",
-    "version": "1.5.0",
+    "version": "1.6.2",
     "licenses": "MIT",
     "repository": "https://github.com/NaturalIntelligence/path-expression-matcher",
     "source": "npm",
@@ -5379,9 +6069,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:picomatch@4.0.4",
+    "id": "npm:picomatch@4.0.5",
     "name": "picomatch",
-    "version": "4.0.4",
+    "version": "4.0.5",
     "licenses": "MIT",
     "repository": "https://github.com/micromatch/picomatch",
     "source": "npm",
@@ -5396,6 +6086,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/danez/pirates",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) 2016-2018 Ari Porad\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:pkg-dir@4.2.0",
+    "name": "pkg-dir",
+    "version": "4.2.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/pkg-dir",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -5419,33 +6119,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:possible-typed-array-names@1.1.0",
-    "name": "possible-typed-array-names",
-    "version": "1.1.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/possible-typed-array-names",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2024 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:postcss@8.4.49",
+    "id": "npm:postcss@8.5.16",
     "name": "postcss",
-    "version": "8.4.49",
+    "version": "8.5.16",
     "licenses": "MIT",
     "repository": "https://github.com/postcss/postcss",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright 2013 Andrey Sitnik <andrey@sitnik.ru>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "The MIT License (MIT)\n\nCopyright 2013 Andrey Sitnik <andrey@sitnik.es>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:pretty-bytes@5.6.0",
-    "name": "pretty-bytes",
-    "version": "5.6.0",
+    "id": "npm:pretty-format@27.5.1",
+    "name": "pretty-format",
+    "version": "27.5.1",
     "licenses": "MIT",
-    "repository": "https://github.com/sindresorhus/pretty-bytes",
+    "repository": "https://github.com/facebook/jest",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Facebook, Inc. and its affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -5456,6 +6146,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/jestjs/jest",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:pretty-format@30.4.1",
+    "name": "pretty-format",
+    "version": "30.4.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/jestjs/jest",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\nCopyright Contributors to the Jest project.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -5509,23 +6209,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:punycode@2.3.1",
-    "name": "punycode",
-    "version": "2.3.1",
+    "id": "npm:pure-rand@6.1.0",
+    "name": "pure-rand",
+    "version": "6.1.0",
     "licenses": "MIT",
-    "repository": "https://github.com/mathiasbynens/punycode.js",
+    "repository": "https://github.com/dubzzz/pure-rand",
     "source": "npm",
-    "licenseText": "Copyright Mathias Bynens <https://mathiasbynens.be/>\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:qrcode-terminal@0.11.0",
-    "name": "qrcode-terminal",
-    "version": "0.11.0",
-    "licenses": "Apache 2.0",
-    "repository": "https://github.com/gtanner/qrcode-terminal",
-    "source": "npm",
-    "licenseText": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright [yyyy] [name of copyright owner]\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n\n==============================================================\nThis product also include the following software:\n==============================================================\n\n QRCode for JavaScript\n\n Copyright (c) 2009 Kazuhiko Arase\n\n URL: http://www.d-project.com/\n\n Licensed under the MIT license:\n   http://www.opensource.org/licenses/mit-license.php\n\n The word \"QR Code\" is registered trademark of \n DENSO WAVE INCORPORATED\n   http://www.denso-wave.com/qrcode/faqpatent-e.html\n\nLocated in ./vendor/QRCode\n- project has been modified to work in Node and some refactoring was done for code cleanup",
+    "licenseText": "MIT License\n\nCopyright (c) 2018 Nicolas DUBIEN\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -5559,19 +6249,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:rc@1.2.8",
-    "name": "rc",
-    "version": "1.2.8",
-    "licenses": "(BSD-2-Clause OR MIT OR Apache-2.0)",
-    "repository": "https://github.com/dominictarr/rc",
-    "source": "npm",
-    "licenseText": "Apache License, Version 2.0\n\nCopyright (c) 2011 Dominic Tarr\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:react@19.1.0",
+    "id": "npm:react@19.2.3",
     "name": "react",
-    "version": "19.1.0",
+    "version": "19.2.3",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react",
     "source": "npm",
@@ -5589,6 +6269,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:react-dom@19.2.3",
+    "name": "react-dom",
+    "version": "19.2.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-fast-compare@3.2.2",
+    "name": "react-fast-compare",
+    "version": "3.2.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/FormidableLabs/react-fast-compare",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2018 Formidable Labs\nCopyright (c) 2017 Evgeny Poberezkin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:react-freeze@1.0.4",
     "name": "react-freeze",
     "version": "1.0.4",
@@ -5596,6 +6296,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/software-mansion/react-freeze",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2021 Software Mansion\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-is@17.0.2",
+    "name": "react-is",
+    "version": "17.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Facebook, Inc. and its affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -5619,9 +6329,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native@0.81.5",
+    "id": "npm:react-native@0.86.0",
     "name": "react-native",
-    "version": "0.81.5",
+    "version": "0.86.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react-native",
     "source": "npm",
@@ -5639,6 +6349,26 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:react-native-drawer-layout@4.2.7",
+    "name": "react-native-drawer-layout",
+    "version": "4.2.7",
+    "licenses": "MIT",
+    "repository": "https://github.com/react-navigation/react-navigation",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 React Native Community\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-native-gesture-handler@3.0.2",
+    "name": "react-native-gesture-handler",
+    "version": "3.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/software-mansion/react-native-gesture-handler",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2016 Software Mansion <swmansion.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:react-native-is-edge-to-edge@1.3.1",
     "name": "react-native-is-edge-to-edge",
     "version": "1.3.1",
@@ -5649,9 +6379,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native-maps@1.20.1",
+    "id": "npm:react-native-maps@1.27.2",
     "name": "react-native-maps",
-    "version": "1.20.1",
+    "version": "1.27.2",
     "licenses": "MIT",
     "repository": "https://github.com/react-native-maps/react-native-maps",
     "source": "npm",
@@ -5659,9 +6389,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native-purchases@10.2.0",
+    "id": "npm:react-native-purchases@10.4.2",
     "name": "react-native-purchases",
-    "version": "10.2.0",
+    "version": "10.4.2",
     "licenses": "MIT",
     "repository": "https://github.com/revenuecat/react-native-purchases",
     "source": "npm",
@@ -5669,9 +6399,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native-purchases-ui@10.2.0",
+    "id": "npm:react-native-purchases-ui@10.4.2",
     "name": "react-native-purchases-ui",
-    "version": "10.2.0",
+    "version": "10.4.2",
     "licenses": "MIT",
     "repository": "https://github.com/revenuecat/react-native-purchases",
     "source": "npm",
@@ -5679,9 +6409,19 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native-safe-area-context@5.6.2",
+    "id": "npm:react-native-reanimated@4.5.1",
+    "name": "react-native-reanimated",
+    "version": "4.5.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/software-mansion/react-native-reanimated",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2016 Software Mansion <swmansion.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-native-safe-area-context@5.7.0",
     "name": "react-native-safe-area-context",
-    "version": "5.6.2",
+    "version": "5.7.0",
     "licenses": "MIT",
     "repository": "https://github.com/AppAndFlow/react-native-safe-area-context",
     "source": "npm",
@@ -5689,9 +6429,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native-screens@4.16.0",
+    "id": "npm:react-native-screens@4.25.2",
     "name": "react-native-screens",
-    "version": "4.16.0",
+    "version": "4.25.2",
     "licenses": "MIT",
     "repository": "https://github.com/software-mansion/react-native-screens",
     "source": "npm",
@@ -5699,9 +6439,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native-svg@15.12.1",
+    "id": "npm:react-native-svg@15.15.4",
     "name": "react-native-svg",
-    "version": "15.12.1",
+    "version": "15.15.4",
     "licenses": "MIT",
     "repository": "https://github.com/react-native-community/react-native-svg",
     "source": "npm",
@@ -5709,13 +6449,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:react-native-view-shot@4.0.3",
+    "id": "npm:react-native-view-shot@5.1.0",
     "name": "react-native-view-shot",
-    "version": "4.0.3",
+    "version": "5.1.0",
     "licenses": "MIT",
     "repository": "https://github.com/gre/react-native-view-shot",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2016 Gaëtan Renaudeau\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-native-worklets@0.10.2",
+    "name": "react-native-worklets",
+    "version": "0.10.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/software-mansion/react-native-reanimated",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2024 nobody\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -5726,6 +6476,56 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/facebook/react",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) Facebook, Inc. and its affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-remove-scroll@2.7.2",
+    "name": "react-remove-scroll",
+    "version": "2.7.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/theKashey/react-remove-scroll",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Anton Korzunov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-remove-scroll-bar@2.3.8",
+    "name": "react-remove-scroll-bar",
+    "version": "2.3.8",
+    "licenses": "MIT",
+    "repository": "https://github.com/theKashey/react-remove-scroll-bar",
+    "source": "npm",
+    "licenseText": "<h1>react-remove-scroll-bar</h1>\n\n[![npm](https://img.shields.io/npm/v/react-remove-scroll-bar.svg)](https://www.npmjs.com/package/react-remove-scroll-bar)\n[![bundle size](https://badgen.net/bundlephobia/minzip/react-remove-scroll-bar)](https://bundlephobia.com/result?p=react-remove-scroll-bar)\n[![downloads](https://badgen.net/npm/dm/react-remove-scroll-bar)](https://www.npmtrends.com/react-remove-scroll-bar)\n\n<hr />\n\n> v1+ for React 15, v2+ requires React 16.8+\n\nRemoves scroll bar (by setting `overflow: hidden` on body), and preserves the scroll bar \"gap\".\n\nRead - it just makes scroll bar invisible.\n\nDoes nothing if scroll bar does not consume any space.\n\n# Usage\n\n```js\nimport {RemoveScrollBar} from 'react-remove-scroll-bar';\n\n<RemoveScrollBar /> -> no scroll bar\n```\n\n### The Right Border\nTo prevent content jumps __position:fixed__ elements with `right:0`  should have additional classname applied.\nIt will just provide a _non-zero_ right, when it needed, to maintain the right \"gap\".\n```js\nimport {zeroRightClassName,fullWidthClassName, noScrollbarsClassName} from 'react-remove-scroll-bar';\n\n// to set `right:0` on an element\n<div className={zeroRightClassName} />\n\n// to set `width:100%` on an element\n<div className={fullWidthClassName} />\n\n// to remove scrollbar from an element\n<div className={noScrollbarsClassName} />\n\n```\n\n# Size\n500b after compression (excluding tslib).\n\n# Scroll-Locky\nAll code is a result of a [react-scroll-locky](https://github.com/theKashey/react-scroll-locky) refactoring.\n\n# Article\nThere is a medium article about preventing the body scroll - [How to fight the <body> scroll](https://medium.com/@antonkorzunov/how-to-fight-the-body-scroll-2b00267b37ac)\n\n# License\nMIT",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-style-singleton@2.2.3",
+    "name": "react-style-singleton",
+    "version": "2.2.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/theKashey/react-style-singleton",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Anton Korzunov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:react-test-renderer@19.2.3",
+    "name": "react-test-renderer",
+    "version": "19.2.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:redent@3.0.0",
+    "name": "redent",
+    "version": "3.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/redent",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -5779,9 +6579,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:regjsparser@0.13.1",
+    "id": "npm:regjsparser@0.13.2",
     "name": "regjsparser",
-    "version": "0.13.1",
+    "version": "0.13.2",
     "licenses": "BSD-2-Clause",
     "repository": "https://github.com/jviereck/regjsparser",
     "source": "npm",
@@ -5799,26 +6599,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:require-from-string@2.0.2",
-    "name": "require-from-string",
-    "version": "2.0.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/floatdrop/require-from-string",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) Vsevolod Strukchinsky <floatdrop@gmail.com> (github.com/floatdrop)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:requireg@0.2.2",
-    "name": "requireg",
-    "version": "0.2.2",
-    "licenses": "MIT",
-    "repository": "https://github.com/h2non/requireg",
-    "source": "npm",
-    "licenseText": "Copyright 2013 Tomas Aparicio\nAll rights reserved.\n\nPermission is hereby granted, free of charge, to any person\nobtaining a copy of this software and associated documentation\nfiles (the \"Software\"), to deal in the Software without\nrestriction, including without limitation the rights to use,\ncopy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the\nSoftware is furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES\nOF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\nHOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\nWHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR\nOTHER DEALINGS IN THE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:resolve@1.22.12",
     "name": "resolve",
     "version": "1.22.12",
@@ -5829,13 +6609,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:resolve@1.7.1",
-    "name": "resolve",
-    "version": "1.7.1",
+    "id": "npm:resolve-cwd@3.0.0",
+    "name": "resolve-cwd",
+    "version": "3.0.0",
     "licenses": "MIT",
-    "repository": "https://github.com/browserify/resolve",
+    "repository": "https://github.com/sindresorhus/resolve-cwd",
     "source": "npm",
-    "licenseText": "This software is released under the MIT license:\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -5879,16 +6659,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:rimraf@3.0.2",
-    "name": "rimraf",
-    "version": "3.0.2",
-    "licenses": "ISC",
-    "repository": "https://github.com/isaacs/rimraf",
-    "source": "npm",
-    "licenseText": "The ISC License\n\nCopyright (c) Isaac Z. Schlueter and Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:rn-color-matrices@4.1.0",
     "name": "rn-color-matrices",
     "version": "4.1.0",
@@ -5909,16 +6679,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:safe-regex-test@1.1.0",
-    "name": "safe-regex-test",
-    "version": "1.1.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/ljharb/safe-regex-test",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 2022 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:sax@1.6.0",
     "name": "sax",
     "version": "1.6.0",
@@ -5929,9 +6689,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:scheduler@0.26.0",
+    "id": "npm:scheduler@0.27.0",
     "name": "scheduler",
-    "version": "0.26.0",
+    "version": "0.27.0",
     "licenses": "MIT",
     "repository": "https://github.com/facebook/react",
     "source": "npm",
@@ -5949,9 +6709,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:semver@7.7.4",
+    "id": "npm:semver@7.8.5",
     "name": "semver",
-    "version": "7.7.4",
+    "version": "7.8.5",
     "licenses": "ISC",
     "repository": "https://github.com/npm/node-semver",
     "source": "npm",
@@ -5989,13 +6749,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:set-function-length@1.2.2",
-    "name": "set-function-length",
-    "version": "1.2.2",
+    "id": "npm:server-only@0.0.1",
+    "name": "server-only",
+    "version": "0.0.1",
     "licenses": "MIT",
-    "repository": "https://github.com/ljharb/set-function-length",
+    "repository": null,
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) Jordan Harband and contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "licenseText": null,
     "noticeText": null
   },
   {
@@ -6019,6 +6779,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:shallowequal@1.1.0",
+    "name": "shallowequal",
+    "version": "1.1.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/dashed/shallowequal",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Alberto Leal <mailforalberto@gmail.com> (github.com/dashed)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:shebang-command@2.0.0",
     "name": "shebang-command",
     "version": "2.0.0",
@@ -6039,9 +6809,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:shell-quote@1.8.3",
+    "id": "npm:shell-quote@1.10.0",
     "name": "shell-quote",
-    "version": "1.8.3",
+    "version": "1.10.0",
     "licenses": "MIT",
     "repository": "https://github.com/ljharb/shell-quote",
     "source": "npm",
@@ -6139,6 +6909,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:source-map-support@0.5.13",
+    "name": "source-map-support",
+    "version": "0.5.13",
+    "licenses": "MIT",
+    "repository": "https://github.com/evanw/node-source-map-support",
+    "source": "npm",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Evan Wallace\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:source-map-support@0.5.21",
     "name": "source-map-support",
     "version": "0.5.21",
@@ -6199,6 +6979,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:standard-navigation@0.0.5",
+    "name": "standard-navigation",
+    "version": "0.0.5",
+    "licenses": "MIT",
+    "repository": "https://github.com/react-navigation/standard-navigation",
+    "source": "npm",
+    "licenseText": "# Standard Navigation\n\nA standard API for creating navigators that can work with multiple navigation libraries, such as React Navigation and Expo Router.\n\nThis package only contains minimal helpers and types. The actual implementation of integrating with this API should live in respective libraries (e.g. React Navigation, Expo Router, etc.).\n\n## API\n\n```tsx\nimport * as React from 'react';\nimport { createStandardNavigator } from 'standard-navigation';\n\ntype MyNavigatorOptions = {\n  title?: string;\n};\n\ntype MyNavigatorEventMap = {\n  tabPress: {\n    data: { isAlreadyFocused: boolean };\n    canPreventDefault: true;\n  };\n};\n\ntype MyNavigatorProps = {\n  className?: string;\n};\n\nconst MyStandardNavigator = createStandardNavigator<\n  MyNavigatorOptions,\n  MyNavigatorEventMap,\n  MyNavigatorProps\n>(({ state, descriptors, actions, emitter, className }) => {\n  return (\n    <div className={className}>\n      {state.routes.map((route, index) => (\n        <React.Activity\n          key={route.key}\n          mode={state.index === index ? 'visible' : 'hidden'}\n        >\n          {descriptors[route.key].render()}\n        </React.Activity>\n      ))}\n      {state.routes.map((route, index) => (\n        <a\n          href={route.href}\n          key={route.key}\n          onClick={(e) => {\n            e.preventDefault();\n\n            const event = emitter.emit({\n              type: 'tabPress',\n              target: route.key,\n              canPreventDefault: true,\n              data: {\n                isAlreadyFocused: state.index === index,\n              },\n            });\n\n            if (event.defaultPrevented) {\n              return;\n            }\n\n            actions.navigate(route.name, route.params);\n          }}\n        >\n          {descriptors[route.key].options.title}\n        </a>\n      ))}\n    </div>\n  );\n});\n```\n\nA navigator is created by calling `createStandardNavigator` with a function. It can be typed with three generics:\n\n- `NavigatorOptions`: The options for each route descriptor.\n- `NavigatorEventMap`: The events that can be emitted by the navigator.\n- `NavigatorProps`: Additional props accepted by the navigator content.\n\nIt returns an object as follows:\n\n```ts\n{\n  type: 'standard',\n  version: 1,\n  NavigatorContent: React.ComponentType,\n}\n```\n\nThis object can be used by helpers exported from libraries like React Navigation and Expo Router to create navigators to use in those libraries. Refer to the documentation of those libraries for more details on how to use this API with them.\n\nThe callback function receives an object with the following properties:\n\n### `state`\n\nThe current navigation state:\n\n- `index`: The index of the currently focused route in `routes`.\n- `routes`: An array of route objects, each containing the following properties:\n  - `key`: A unique key for the route.\n  - `name`: The name of the route.\n  - `params`: An optional object of params for the route.\n  - `href`: An href for the route, used for web navigation, or `undefined` if unavailable.\n\n### `descriptors`\n\nAn object mapping each route's `key` to a descriptor for that route:\n\n- `options`: The options for the route, e.g. `title`.\n- `render`: A function that returns the React element to render for the route.\n\n### `actions`\n\nAn object of navigation actions that the navigator can perform:\n\n- `navigate`: Navigates to a route. Accepts `name` and `params` to navigate by route name and params.\n- `back`: Goes back to the previous route in history.\n\n### `emitter`\n\nAn event emitter that can be used to emit events. Calling `emit` accepts an object with the following properties:\n\n- `type`: The type of the event (e.g. `tabPress`).\n- `target`: An optional key of the route which is the target of the event.\n- `canPreventDefault`: When the event allows preventing the default action, set this to `true` to enable `event.preventDefault()` on the returned event.\n- `data`: Data associated with the event. This is optional when the event's data type includes `undefined`.\n\nThe returned event object contains a `defaultPrevented` boolean (when `canPreventDefault` is `true`) which can be used to check whether `event.preventDefault()` was called by a listener.",
+    "noticeText": null
+  },
+  {
     "id": "npm:statuses@1.5.0",
     "name": "statuses",
     "version": "1.5.0",
@@ -6239,6 +7029,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:string-length@4.0.2",
+    "name": "string-length",
+    "version": "4.0.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/string-length",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:string-width@4.2.3",
     "name": "string-width",
     "version": "4.2.3",
@@ -6269,19 +7069,49 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:strip-json-comments@2.0.1",
-    "name": "strip-json-comments",
-    "version": "2.0.1",
+    "id": "npm:strip-bom@4.0.0",
+    "name": "strip-bom",
+    "version": "4.0.0",
     "licenses": "MIT",
-    "repository": "https://github.com/sindresorhus/strip-json-comments",
+    "repository": "https://github.com/sindresorhus/strip-bom",
     "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
-    "id": "npm:strnum@2.3.0",
+    "id": "npm:strip-final-newline@2.0.0",
+    "name": "strip-final-newline",
+    "version": "2.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/strip-final-newline",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:strip-indent@3.0.0",
+    "name": "strip-indent",
+    "version": "3.0.0",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/strip-indent",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:strip-json-comments@3.1.1",
+    "name": "strip-json-comments",
+    "version": "3.1.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/strip-json-comments",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:strnum@2.4.1",
     "name": "strnum",
-    "version": "2.3.0",
+    "version": "2.4.1",
     "licenses": "MIT",
     "repository": "https://github.com/NaturalIntelligence/strnum",
     "source": "npm",
@@ -6296,16 +7126,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/evert/structured-header",
     "source": "npm",
     "licenseText": "Structured Headers parser for Javascript\n========================================\n\nThis library is a parser and serializer for the [Structured Headers][1]\nspecification, a.k.a. \"Structured Field Values for HTTP\" (RFC8941).\n\nThis specification defines a standard serialization for complex HTTP header\nvalues, including lists (arrays), dictionaries (maps) and also numbers,\nbooleans, and binary data.\n\nThe library is written in Typescript, and the examples in this document are\ntoo, but plain Javascript is also fully supported.\n\nCompatibility\n-------------\n\nThis package has 2725 unittests, the vast majority are supplied from the\nofficial [HTTP WG test suite][2].\n\nHowever, there are 2 differences in the serializer:\n\n1. Javascript can't differentiate between `1.0` and `1`. As a result we're\n   skipping the tests that require a serialiation output of `1.0`.\n2. Javascript rounds slightly different from the spec. The tests suggest that\n   `0.0025` should round to the nearest event number (`0.002`), but Javascript\n   rounds to `0.003`.\n\nNo fix is planned for #1, because there's no reasonably way to fix this\nwithout wrapping every number in a custom class, and this will negatively\nimpact the developer experience. We do intend to fix #2 in the future with a\ncustom rounding algorithm.\n\nThis library emits and expects the _exact_ data structures as they are\nsuggested by the RFC. The result of this is that the returned types can be\na bit complex.\n\nIn the future we intend to loosen the required types for the serializer, and\nadd new helper functions that give you simpler structures _if_ you don't need\ncertain features for a header (such as `Parameters`).\n\nLet us know what you would like to see here!\n\nInstallation\n------------\n\nUsing npm:\n\n```\nnpm install structured-headers\n```\n\nAPI\n---\n\n### Parsing an item\n\nThe following are examples of `item` headers:\n\nParsed as string\n\n```\n# Parsed as string\nHeader: \"foo\"\n\n# A simple string, called a 'Token' in the spec\nHeader: foo\n\n# Parsed as number\nHeader: 5\nHeader: -10\nHeader: 5.01415\n\n# Parsed into boolean\nHeader: ?1\nHeader: ?0\n\n# Binaries are base64 encoded\nHeader: :RE0gbWUgZm9yIGEgZnJlZSBjb29raWU=:\n\n# Items can have parameters\nHeader: \"Hello world\"; a=\"5\"\n```\n\n\nTo parse these header values, use the `parseItem`:\n\n```typescript\nimport { parseItem } from 'structured-headers';\n\nconsole.log(\n  parseItem(header)\n);\n```\n\nparseItem returns a tuple (array with 2 items), the first item is the value,\nthe second is a `Map` object with parameters.\n\nThe type is roughly:\n\n```typescript\n\n// The raw value\ntype BareItem = number | string | Token | ByteSequence | boolean;\n\n// The return type of parseItem\ntype Item = [\n  BareItem,\n  Map<string, BareItem>\n];\n```\n\n### Parsing a list\n\nA list is an array of items. Some examples:\n\n```\n# A simple list\nHeader: 5, \"foo\", bar, ?1\n\n# Each element can have parameters\nHeader: sometoken; param1; param2=hi, 42\n\n# A list can also contain lists itself. These are called 'inner lists' and\n# use parenthesis\nHeader: sometoken, (innerlistitem1 innerlistitem2), (anotherlist)\n```\n\n\nTo parse these:\n\n```typescript\nimport { parseList } from 'structured-headers';\n\nconsole.log(\n  parseList(header)\n);\n```\n\n`parseList` returns an array with each member. The return type is:\n\n```typescript\ntype InnerList = [Item[], Parameters];\ntype List = (InnerList|Item)[];\n```\n\n### Parsing a dictionary\n\nA dictionary is a key->value object. Examples:\n\n```\n# A simple dictionary\nHeader: fn=\"evert\", ln=\"pot\", coffee=?1\n\n# Each item may have parameters too\nHeader: foo=123; q=1, bar=123, q=0.5\n\n# A dictionary value may be an inner list again\nHeader: foo=(1 2 3)\n```\n\nTo parse dictionaries:\n\n```typescript\nimport { parseDictionary } from 'structured-headers';\n\nconsole.log(\n  parseDictionary(header)\n);\n```\n\nThe return type for `parseDictionary` is a `Map`.\n\n```typescript\ntype Dictionary = Map<string, Item|InnerList>;\n```\n\n\n### Serializing\n\nThe serialiser functions work the exact same way, but in opposite direction.\nThey all return strings.\n\nCurrently the serializes expect the *exact type* that the parsers return, but\nthe intention is to loosen the types for serialization, so it's a bit more\nergnomic to call. Want this? Let me know by opening an issue.\n\n\n```javascript\nimport {\n  serializeDictionary,\n  serializeList,\n  serializeItem\n} from 'structured-headers';\n\n\n// Returns \"foo\", \"bar\"\nserializeList([\n  ['foo', new Map()],\n  ['bar', new Map()],\n]);\n\n// Returns a=1, b=?0\nsh.serializeDictionary(new Map([\n  ['a', [1, new Map()]],\n  ['b', [false, new Map()]],\n]));\n\n// Returns 42\nserializeItem([42, new Map()]);\n\n// Returns 5.5\nserializeItem([5.5, new Map()]);\n\n// Returns \"hello world\"\nserializeItem([\"hello world\", new Map()]);\n\n// Returns ?1\nserializeItem([true, new Map()]);\n\n// Returns a base-64 representation like: *aGVsbG8=*\nserializeItem([new ByteSequence('aGVsbG8='), new Map()]);\n```\n\nBrowser support\n---------------\n\nThere is a minified version of this library in the `browser/` directory. This minified\nfile will expose a global variable called 'structuredHeader' which contains the rest\nof the api.\n\n\n[1]: https://datatracker.ietf.org/doc/html/rfc8941\n[2]: https://github.com/httpwg/structured-field-tests",
-    "noticeText": null
-  },
-  {
-    "id": "npm:sucrase@3.35.1",
-    "name": "sucrase",
-    "version": "3.35.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/alangpierce/sucrase",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2012-2018 various contributors (see AUTHORS)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -6359,16 +7179,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:tar@7.5.16",
-    "name": "tar",
-    "version": "7.5.16",
-    "licenses": "BlueOak-1.0.0",
-    "repository": "https://github.com/isaacs/node-tar",
-    "source": "npm",
-    "licenseText": "# Blue Oak Model License\n\nVersion 1.0.0\n\n## Purpose\n\nThis license gives everyone as much permission to work with\nthis software as possible, while protecting contributors\nfrom liability.\n\n## Acceptance\n\nIn order to receive this license, you must agree to its\nrules.  The rules of this license are both obligations\nunder that agreement and conditions to your license.\nYou must not do anything with this software that triggers\na rule that you cannot or will not follow.\n\n## Copyright\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe that contributor's\ncopyright in it.\n\n## Notices\n\nYou must ensure that everyone who gets a copy of\nany part of this software from you, with or without\nchanges, also gets the text of this license or a link to\n<https://blueoakcouncil.org/license/1.0.0>.\n\n## Excuse\n\nIf anyone notifies you in writing that you have not\ncomplied with [Notices](#notices), you can keep your\nlicense by taking all practical steps to comply within 30\ndays after the notice.  If you do not do so, your license\nends immediately.\n\n## Patent\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe any patent claims\nthey can license or become able to license.\n\n## Reliability\n\nNo contributor can revoke this license.\n\n## No Liability\n\n***As far as the law allows, this software comes as is,\nwithout any warranty or condition, and no contributor\nwill be liable to anyone for any damages related to this\nsoftware or this license, under any kind of legal claim.***",
-    "noticeText": null
-  },
-  {
     "id": "npm:terminal-link@2.1.1",
     "name": "terminal-link",
     "version": "2.1.1",
@@ -6379,9 +7189,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:terser@5.46.2",
+    "id": "npm:terser@5.49.0",
     "name": "terser",
-    "version": "5.46.2",
+    "version": "5.49.0",
     "licenses": "BSD-2-Clause",
     "repository": "https://github.com/terser/terser",
     "source": "npm",
@@ -6409,26 +7219,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:thenify@3.3.1",
-    "name": "thenify",
-    "version": "3.3.1",
-    "licenses": "MIT",
-    "repository": "https://github.com/thenables/thenify",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014-2016 Jonathan Ong me@jongleberry.com and contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:thenify-all@1.6.0",
-    "name": "thenify-all",
-    "version": "1.6.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/thenables/thenify-all",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2014 Jonathan Ong me@jongleberry.com\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
-    "noticeText": null
-  },
-  {
     "id": "npm:throat@5.0.0",
     "name": "throat",
     "version": "5.0.0",
@@ -6439,9 +7229,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:tinyglobby@0.2.16",
+    "id": "npm:tinyglobby@0.2.17",
     "name": "tinyglobby",
-    "version": "0.2.16",
+    "version": "0.2.17",
     "licenses": "MIT",
     "repository": "https://github.com/SuperchupuDev/tinyglobby",
     "source": "npm",
@@ -6479,13 +7269,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:ts-interface-checker@0.1.13",
-    "name": "ts-interface-checker",
-    "version": "0.1.13",
-    "licenses": "Apache-2.0",
-    "repository": "https://github.com/gristlabs/ts-interface-checker",
+    "id": "npm:toqr@0.1.1",
+    "name": "toqr",
+    "version": "0.1.1",
+    "licenses": "MIT",
+    "repository": "https://github.com/kitten/toqr",
     "source": "npm",
-    "licenseText": "Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"{}\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright {yyyy} {name of copyright owner}\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.",
+    "licenseText": "MIT License\n\nCopyright (c) Phil Pluckthun,\nCopyright (c) 650 Industries, Inc. (aka Expo),\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:tr46@0.0.3",
+    "name": "tr46",
+    "version": "0.0.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/Sebmaster/tr46.js",
+    "source": "npm",
+    "licenseText": null,
     "noticeText": null
   },
   {
@@ -6496,6 +7296,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/iyegoroff/ts-tiny-invariant",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) 2019-2022 iyegoroff\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:tslib@2.8.1",
+    "name": "tslib",
+    "version": "2.8.1",
+    "licenses": "0BSD",
+    "repository": "https://github.com/Microsoft/tslib",
+    "source": "npm",
+    "licenseText": "Copyright (c) Microsoft Corporation.\r\n\r\nPermission to use, copy, modify, and/or distribute this software for any\r\npurpose with or without fee is hereby granted.\r\n\r\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\r\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY\r\nAND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\r\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\r\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR\r\nOTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR\r\nPERFORMANCE OF THIS SOFTWARE.",
     "noticeText": null
   },
   {
@@ -6529,9 +7339,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:typescript@5.9.3",
+    "id": "npm:typescript@6.0.3",
     "name": "typescript",
-    "version": "5.9.3",
+    "version": "6.0.3",
     "licenses": "Apache-2.0",
     "repository": "https://github.com/microsoft/TypeScript",
     "source": "npm",
@@ -6539,19 +7349,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:undici@6.26.0",
-    "name": "undici",
-    "version": "6.26.0",
-    "licenses": "MIT",
-    "repository": "https://github.com/nodejs/undici",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) Matteo Collina and Undici contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:undici-types@7.19.2",
+    "id": "npm:undici-types@8.3.0",
     "name": "undici-types",
-    "version": "7.19.2",
+    "version": "8.3.0",
     "licenses": "MIT",
     "repository": "https://github.com/nodejs/undici",
     "source": "npm",
@@ -6599,13 +7399,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:unimodules-app-loader@6.0.8",
+    "id": "npm:unimodules-app-loader@57.0.0",
     "name": "unimodules-app-loader",
-    "version": "6.0.8",
+    "version": "57.0.0",
     "licenses": "MIT",
     "repository": "https://github.com/expo/expo",
     "source": "npm",
-    "licenseText": "# unimodules-app-loader\n\nThis module is to be used only by `expo-task-manager`, `unimodules-react-native-adapter` and Expo Client to run Expo applications in background.\n\n# API documentation\n\n# Installation in managed Expo projects\n\n# Installation in bare React Native projects\n\n# Contributing",
+    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -6639,6 +7439,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:use-callback-ref@1.3.3",
+    "name": "use-callback-ref",
+    "version": "1.3.3",
+    "licenses": "MIT",
+    "repository": "https://github.com/theKashey/use-callback-ref",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Anton Korzunov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:use-latest-callback@0.2.6",
     "name": "use-latest-callback",
     "version": "0.2.6",
@@ -6649,23 +7459,13 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:use-sync-external-store@1.6.0",
-    "name": "use-sync-external-store",
-    "version": "1.6.0",
+    "id": "npm:use-sidecar@1.1.3",
+    "name": "use-sidecar",
+    "version": "1.1.3",
     "licenses": "MIT",
-    "repository": "https://github.com/facebook/react",
+    "repository": "https://github.com/theKashey/use-sidecar",
     "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:util@0.12.5",
-    "name": "util",
-    "version": "0.12.5",
-    "licenses": "MIT",
-    "repository": "https://github.com/browserify/node-util",
-    "source": "npm",
-    "licenseText": "Copyright Joyent, Inc. and other Node contributors. All rights reserved.\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including without limitation the\nrights to use, copy, modify, merge, publish, distribute, sublicense, and/or\nsell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\nFROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS\nIN THE SOFTWARE.",
+    "licenseText": "MIT License\n\nCopyright (c) 2017 Anton Korzunov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -6699,6 +7499,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
+    "id": "npm:v8-to-istanbul@9.3.0",
+    "name": "v8-to-istanbul",
+    "version": "9.3.0",
+    "licenses": "ISC",
+    "repository": "https://github.com/istanbuljs/v8-to-istanbul",
+    "source": "npm",
+    "licenseText": "Copyright (c) 2017, Contributors\n\nPermission to use, copy, modify, and/or distribute this software\nfor any purpose with or without fee is hereby granted, provided\nthat the above copyright notice and this permission notice\nappear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES\nOF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE\nLIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES\nOR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,\nWHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,\nARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
+    "noticeText": null
+  },
+  {
     "id": "npm:validate-npm-package-name@5.0.1",
     "name": "validate-npm-package-name",
     "version": "5.0.1",
@@ -6716,6 +7526,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/jshttp/vary",
     "source": "npm",
     "licenseText": "(The MIT License)\n\nCopyright (c) 2014-2017 Douglas Christopher Wilson\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n'Software'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:vaul@1.1.2",
+    "name": "vaul",
+    "version": "1.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/emilkowalski/vaul",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2023 Emil Kowalski\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
     "noticeText": null
   },
   {
@@ -6759,9 +7579,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:webidl-conversions@5.0.0",
+    "id": "npm:webidl-conversions@3.0.1",
     "name": "webidl-conversions",
-    "version": "5.0.0",
+    "version": "3.0.1",
     "licenses": "BSD-2-Clause",
     "repository": "https://github.com/jsdom/webidl-conversions",
     "source": "npm",
@@ -6779,13 +7599,23 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:whatwg-url-without-unicode@8.0.0-3",
-    "name": "whatwg-url-without-unicode",
-    "version": "8.0.0-3",
+    "id": "npm:whatwg-url@5.0.0",
+    "name": "whatwg-url",
+    "version": "5.0.0",
     "licenses": "MIT",
-    "repository": "https://github.com/charpeni/whatwg-url",
+    "repository": "https://github.com/jsdom/whatwg-url",
     "source": "npm",
     "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015–2016 Sebastian Mayr\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:whatwg-url-minimum@0.1.2",
+    "name": "whatwg-url-minimum",
+    "version": "0.1.2",
+    "licenses": "MIT",
+    "repository": "https://github.com/kitten/whatwg-url-minimum",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) Phil Pluckthun,\nCopyright (c) 650 Industries, Inc. (aka Expo),\nCopyright (c) Sebastian Mayr\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -6796,26 +7626,6 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/isaacs/node-which",
     "source": "npm",
     "licenseText": "The ISC License\n\nCopyright (c) Isaac Z. Schlueter and Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR\nIN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:which-typed-array@1.1.20",
-    "name": "which-typed-array",
-    "version": "1.1.20",
-    "licenses": "MIT",
-    "repository": "https://github.com/inspect-js/which-typed-array",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2015 Jordan Harband\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:wonka@6.3.6",
-    "name": "wonka",
-    "version": "6.3.6",
-    "licenses": "MIT",
-    "repository": "https://github.com/0no-co/wonka",
-    "source": "npm",
-    "licenseText": "MIT License\n\nCopyright (c) 0no.co\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   },
   {
@@ -6849,19 +7659,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:ws@6.2.3",
+    "id": "npm:ws@7.5.11",
     "name": "ws",
-    "version": "6.2.3",
-    "licenses": "MIT",
-    "repository": "https://github.com/websockets/ws",
-    "source": "npm",
-    "licenseText": "The MIT License (MIT)\n\nCopyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-    "noticeText": null
-  },
-  {
-    "id": "npm:ws@7.5.10",
-    "name": "ws",
-    "version": "7.5.10",
+    "version": "7.5.11",
     "licenses": "MIT",
     "repository": "https://github.com/websockets/ws",
     "source": "npm",
@@ -6949,19 +7749,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:yallist@5.0.0",
-    "name": "yallist",
-    "version": "5.0.0",
-    "licenses": "BlueOak-1.0.0",
-    "repository": "https://github.com/isaacs/yallist",
-    "source": "npm",
-    "licenseText": "All packages under `src/` are licensed according to the terms in\ntheir respective `LICENSE` or `LICENSE.md` files.\n\nThe remainder of this project is licensed under the Blue Oak\nModel License, as follows:\n\n-----\n\n# Blue Oak Model License\n\nVersion 1.0.0\n\n## Purpose\n\nThis license gives everyone as much permission to work with\nthis software as possible, while protecting contributors\nfrom liability.\n\n## Acceptance\n\nIn order to receive this license, you must agree to its\nrules.  The rules of this license are both obligations\nunder that agreement and conditions to your license.\nYou must not do anything with this software that triggers\na rule that you cannot or will not follow.\n\n## Copyright\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe that contributor's\ncopyright in it.\n\n## Notices\n\nYou must ensure that everyone who gets a copy of\nany part of this software from you, with or without\nchanges, also gets the text of this license or a link to\n<https://blueoakcouncil.org/license/1.0.0>.\n\n## Excuse\n\nIf anyone notifies you in writing that you have not\ncomplied with [Notices](#notices), you can keep your\nlicense by taking all practical steps to comply within 30\ndays after the notice.  If you do not do so, your license\nends immediately.\n\n## Patent\n\nEach contributor licenses you to do everything with this\nsoftware that would otherwise infringe any patent claims\nthey can license or become able to license.\n\n## Reliability\n\nNo contributor can revoke this license.\n\n## No Liability\n\n***As far as the law allows, this software comes as is,\nwithout any warranty or condition, and no contributor\nwill be liable to anyone for any damages related to this\nsoftware or this license, under any kind of legal claim.***",
-    "noticeText": null
-  },
-  {
-    "id": "npm:yaml@2.8.4",
+    "id": "npm:yaml@2.9.0",
     "name": "yaml",
-    "version": "2.8.4",
+    "version": "2.9.0",
     "licenses": "ISC",
     "repository": "https://github.com/eemeli/yaml",
     "source": "npm",
@@ -6969,9 +7759,9 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "noticeText": null
   },
   {
-    "id": "npm:yargs@17.7.2",
+    "id": "npm:yargs@17.7.3",
     "name": "yargs",
-    "version": "17.7.2",
+    "version": "17.7.3",
     "licenses": "MIT",
     "repository": "https://github.com/yargs/yargs",
     "source": "npm",
@@ -6996,6 +7786,16 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/sindresorhus/yocto-queue",
     "source": "npm",
     "licenseText": "MIT License\n\nCopyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
+    "noticeText": null
+  },
+  {
+    "id": "npm:zod@3.25.76",
+    "name": "zod",
+    "version": "3.25.76",
+    "licenses": "MIT",
+    "repository": "https://github.com/colinhacks/zod",
+    "source": "npm",
+    "licenseText": "MIT License\n\nCopyright (c) 2025 Colin McDonnell\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
     "noticeText": null
   }
 ];

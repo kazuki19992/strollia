@@ -100,3 +100,4 @@ ESLint 9 (flat config) + Prettier 3 を導入済み。
 - `react-hooks/exhaustive-deps`: 依存配列の変更は挙動変更になるため warn に留める。意図的に無効化する場合は `// eslint-disable-next-line react-hooks/exhaustive-deps -- 理由` コメントを付ける
 - `react-hooks/refs` / `react-hooks/set-state-in-effect`: react-hooks@7 の新規ルールで既存パターンに多数 warning が出るため warn に降格。後続のリファクタで個別対処する
 - `no-restricted-syntax` (components配下 files override): `StyleSheet.create` を error 禁止。`src/ui/appStyles.ts` の `createStyles(theme)` へ集約する。`reports/reportStyles.ts` と意図的な自己完結スタイルは除外（理由コメント必須）
+- `no-restricted-imports` / `no-restricted-syntax`: `react-test-renderer` の直接 import / require を error 禁止。テストは `@testing-library/react-native` または `expo-router/testing-library` を使う

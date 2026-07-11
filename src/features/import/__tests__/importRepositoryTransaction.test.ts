@@ -1,4 +1,4 @@
-import { db } from '@/db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 import { importLocationPointsFromGpx } from '@/features/import/importRepository';
 
 let mockActiveTransactionDepth = 0;
@@ -25,18 +25,19 @@ jest.mock('@/db/database', () => {
         mockActiveTransactionDepth -= 1;
       }
     }),
-    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => {
-      mockActiveTransactionDepth += 1;
-
-      try {
-        await callback(mockTxn);
-      } finally {
-        mockActiveTransactionDepth -= 1;
-      }
-    }),
   };
 
-  return { db: mockDb };
+  const mockWithExclusiveTransaction = jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => {
+    mockActiveTransactionDepth += 1;
+
+    try {
+      await callback(mockTxn);
+    } finally {
+      mockActiveTransactionDepth -= 1;
+    }
+  });
+
+  return { db: mockDb, withExclusiveTransaction: mockWithExclusiveTransaction };
 });
 
 const point = {
@@ -68,7 +69,7 @@ describe('GPXインポート保存 transaction境界', () => {
   it('並行するDB操作に割り込まれないよう排他トランザクションを使用する', async () => {
     await importLocationPointsFromGpx([point], 'strollia-all.gpx');
 
-    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
     expect(db.withTransactionAsync).not.toHaveBeenCalled();
   });
 

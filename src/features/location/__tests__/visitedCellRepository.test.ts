@@ -1,4 +1,4 @@
-import { db } from '@/db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 import {
   deleteAllVisitedCells,
@@ -15,8 +15,8 @@ jest.mock('@/db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue({}),
-    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
   },
+  withExclusiveTransaction: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
 }));
 
 describe('Visited Grid保存 visitedCellRepository', () => {
@@ -91,7 +91,7 @@ describe('Visited Grid保存 visitedCellRepository', () => {
   it('upsertVisitedCellsは空配列入力時にDBへ書き込まない', async () => {
     await upsertVisitedCells([], '2026-05-23T00:00:00.000Z');
 
-    expect(db.withExclusiveTransactionAsync).not.toHaveBeenCalled();
+    expect(withExclusiveTransaction).not.toHaveBeenCalled();
     expect(db.runAsync).not.toHaveBeenCalled();
     expect(mockTxn.runAsync).not.toHaveBeenCalled();
   });

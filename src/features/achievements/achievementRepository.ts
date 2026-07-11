@@ -1,4 +1,4 @@
-import { db } from '@/db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 import { LocationPoint } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
 import { totalDistanceMeters } from '@/utils/distance';
@@ -156,7 +156,7 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
     return [];
   }
 
-  await db.withExclusiveTransactionAsync(async (txn) => {
+  await withExclusiveTransaction(async (txn) => {
     for (const definition of newlyUnlocked) {
       const progressValue = getProgressValueForCondition(definition.condition, progress);
 
@@ -186,7 +186,7 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
 
 /** 開発中の動作確認用に解除済み実績と通知キューを削除する。 */
 export async function resetAchievementUnlocksForDevelopment(): Promise<void> {
-  await db.withExclusiveTransactionAsync(async (txn) => {
+  await withExclusiveTransaction(async (txn) => {
     await txn.runAsync('DELETE FROM achievement_notification_queue');
     await txn.runAsync('DELETE FROM achievement_unlocks');
   });

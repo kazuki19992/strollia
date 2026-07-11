@@ -22,10 +22,11 @@ jest.mock('expo-sqlite', () => ({
     execAsync: jest.fn().mockResolvedValue(undefined),
     getAllAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue(undefined),
+    withExclusiveTransactionAsync: jest.fn(),
   })),
 }));
 
-import { db, initializeDatabase } from '@/db/database';
+import { db, initializeDatabase, withExclusiveTransaction } from '@/db/database';
 
 describe('database initializeDatabase マイグレーション', () => {
   beforeEach(() => {
@@ -134,6 +135,39 @@ describe('database initializeDatabase マイグレーション', () => {
 
       const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
       expect(firstCall).toContain('PRAGMA journal_mode = WAL');
+    });
+
+    it('PRAGMA busy_timeout が含まれる(バックグラウンド記録との書き込み競合で即 SQLITE_BUSY にしない)', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(firstCall).toContain('PRAGMA busy_timeout = 5000');
+    });
+  });
+
+  describe('withExclusiveTransaction(busy_timeout付き排他トランザクション)', () => {
+    it('トランザクション先頭でbusy_timeoutを設定してからtaskを実行する(新規接続にPRAGMAが引き継がれないため)', async () => {
+      const mockTxn = { execAsync: jest.fn().mockResolvedValue(undefined), runAsync: jest.fn() };
+      (db.withExclusiveTransactionAsync as jest.Mock).mockImplementation(async (callback) => callback(mockTxn));
+      const task = jest.fn().mockResolvedValue(undefined);
+
+      await withExclusiveTransaction(task);
+
+      expect(mockTxn.execAsync).toHaveBeenCalledWith('PRAGMA busy_timeout = 5000');
+      expect(task).toHaveBeenCalledWith(mockTxn);
+      // busy_timeout の設定は task 実行より先であること
+      const pragmaOrder = mockTxn.execAsync.mock.invocationCallOrder[0];
+      const taskOrder = task.mock.invocationCallOrder[0];
+      expect(pragmaOrder).toBeLessThan(taskOrder);
+    });
+
+    it('task内のエラーは呼び出し元へ伝播する', async () => {
+      const mockTxn = { execAsync: jest.fn().mockResolvedValue(undefined) };
+      (db.withExclusiveTransactionAsync as jest.Mock).mockImplementation(async (callback) => callback(mockTxn));
+
+      await expect(withExclusiveTransaction(async () => Promise.reject(new Error('書き込み失敗')))).rejects.toThrow('書き込み失敗');
     });
   });
 

@@ -1,4 +1,4 @@
-import { db } from '@/db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 import { NewLocationPoint } from '@/types/gps';
 import { deleteAllUserData, getDailyLogs, insertLocationPoint } from '@/features/logs/logRepository';
 
@@ -10,9 +10,9 @@ jest.mock('@/db/database', () => ({
   db: {
     getAllAsync: jest.fn(),
     getFirstAsync: jest.fn(),
-    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
     runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
   },
+  withExclusiveTransaction: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
 }));
 
 function point(latitude: number, longitude: number): NewLocationPoint {
@@ -87,7 +87,7 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
   it('GPSログ、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
     await deleteAllUserData();
 
-    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM visited_cells');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_notification_queue');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');

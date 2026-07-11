@@ -1,4 +1,4 @@
-import { db } from '@/db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 import { DailyLogSummary, LocationPoint, NewLocationPoint } from '@/types/gps';
 import { distanceMeters } from '@/utils/distance';
 
@@ -23,7 +23,7 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<numb
   const segmentDistanceMeters = previousPoint ? distanceMeters(previousPoint, point) : 0;
   let insertedLocationPointId = 0;
 
-  await db.withExclusiveTransactionAsync(async (txn) => {
+  await withExclusiveTransaction(async (txn) => {
     const result = await txn.runAsync(
       `INSERT INTO location_points (
         recorded_at,
@@ -163,7 +163,7 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
 
 /** ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。 */
 export async function deleteAllUserData(): Promise<void> {
-  await db.withExclusiveTransactionAsync(async (txn) => {
+  await withExclusiveTransaction(async (txn) => {
     await txn.runAsync('DELETE FROM visited_cells');
     await txn.runAsync('DELETE FROM achievement_notification_queue');
     await txn.runAsync('DELETE FROM achievement_unlocks');

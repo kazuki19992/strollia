@@ -3,6 +3,27 @@ import * as SQLite from 'expo-sqlite';
 /** アプリ内に永続化されるStrollia用SQLite接続。 */
 export const db = SQLite.openDatabaseSync('strollia.db');
 
+/** ロック競合時に即エラーにせず書き込みを待つ時間(ミリ秒)。 */
+const BUSY_TIMEOUT_MS = 5000;
+
+/** 排他トランザクション内で使うDBランナー。expo-sqliteがtaskへ渡すTransactionの型。 */
+export type ExclusiveTransaction = Parameters<Parameters<typeof db.withExclusiveTransactionAsync>[0]>[0];
+
+/**
+ * busy_timeout付きの排他トランザクションを実行する。
+ *
+ * expo-sqliteの `withExclusiveTransactionAsync` は内部で新しいDB接続を開くため、
+ * バックグラウンドGPS記録(メイン接続)とフォアグラウンドの書き込みが別接続同士で
+ * 競合すると即 SQLITE_BUSY(database is locked)になる。busy_timeoutは接続ごとの
+ * 設定でメイン接続側のPRAGMAが引き継がれないため、トランザクション先頭で毎回設定する。
+ */
+export async function withExclusiveTransaction(task: (txn: ExclusiveTransaction) => Promise<void>): Promise<void> {
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    await txn.execAsync(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+    await task(txn);
+  });
+}
+
 /**
  * アプリ起動時に必要なテーブルとインデックスを作成する。
  *
@@ -12,6 +33,7 @@ export async function initializeDatabase(): Promise<void> {
   await db.execAsync(`
     PRAGMA foreign_keys = ON;
     PRAGMA journal_mode = WAL;
+    PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS};
 
     CREATE TABLE IF NOT EXISTS location_points (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

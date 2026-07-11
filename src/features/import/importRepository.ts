@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-import { db } from '@/db/database';
+import { withExclusiveTransaction } from '@/db/database';
 import { NewLocationPoint } from '@/types/gps';
 import { distanceMeters } from '@/utils/distance';
 import { getVisitedCellsForLocationPoint } from '@/features/location/grid/gridInterpolation';
@@ -31,7 +31,7 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   let skippedPointCount = 0;
   let previousImportedPoint: NewLocationPoint | null = null;
 
-  await db.withExclusiveTransactionAsync(async (txn) => {
+  await withExclusiveTransaction(async (txn) => {
     for (const point of sortedPoints) {
       const wasInserted = await insertImportedLocationPoint(point, previousImportedPoint, now, txn);
       if (!wasInserted) {

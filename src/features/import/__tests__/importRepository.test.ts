@@ -17,7 +17,7 @@ jest.mock('@/db/database', () => {
   };
   mockDb.withExclusiveTransactionAsync.mockImplementation(async (callback: (txn: MockDatabase) => Promise<void>) => callback(mockDb));
 
-  return { db: mockDb };
+  return { db: mockDb, withExclusiveTransaction: mockDb.withExclusiveTransactionAsync };
 });
 
 jest.mock('@/features/location/visitedCellRepository', () => ({

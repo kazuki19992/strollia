@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { usePhotoMapCrashBreaker, UsePhotoMapCrashBreakerResult } from '@/ui/hooks/usePhotoMapCrashBreaker';
 
-jest.mock('expo-media-library', () => ({
+jest.mock('expo-media-library/legacy', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),
 }));
 
@@ -85,7 +85,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('写真ライブラリのフルアクセスが許可されているとき true を渡すと showPhotosOnMap が true になる', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library');
+      const { requestPermissionsAsync } = require('expo-media-library/legacy');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
@@ -98,7 +98,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('写真ライブラリのアクセスが限定的なとき true を渡しても showPhotosOnMap は false のまま', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library');
+      const { requestPermissionsAsync } = require('expo-media-library/legacy');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
@@ -111,7 +111,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('有効化中に setSetting が reject した場合、showPhotosOnMap が false に戻り設定キーがクリアされる', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library');
+      const { requestPermissionsAsync } = require('expo-media-library/legacy');
       const { setSetting } = require('@/features/settings/settingsRepository');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
       // pending フラグ保存(1回目)は reject させて enableShowPhotosOnMapWithCrashBreaker を失敗させる
@@ -132,7 +132,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('有効化に失敗してOFFへ巻き戻したとき、理由をAlertでユーザーへ通知する', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library');
+      const { requestPermissionsAsync } = require('expo-media-library/legacy');
       const { setSetting } = require('@/features/settings/settingsRepository');
       const { Alert } = require('react-native');
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);

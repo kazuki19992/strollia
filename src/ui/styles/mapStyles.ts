@@ -20,7 +20,7 @@ export function createMapStyles(theme: AppTheme) {
       flex: 1,
     },
     map: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     topBar: {
       alignItems: 'flex-start',
@@ -123,7 +123,7 @@ export function createMapStyles(theme: AppTheme) {
       zIndex: 3,
     },
     menuScrim: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(45, 36, 22, 0.24)',
       zIndex: 1,
     },
@@ -164,7 +164,7 @@ export function createMapStyles(theme: AppTheme) {
       zIndex: 10,
     },
     mapDisplayPanelScrim: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0, 0, 0, 0.32)',
       zIndex: 1,
     },
@@ -265,7 +265,7 @@ export function createMapStyles(theme: AppTheme) {
       fontWeight: '900',
     },
     locationPanelBackground: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       flexDirection: 'row',
     },
     locationPanelFade: {

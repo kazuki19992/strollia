@@ -1,3 +1,4 @@
+import { render, screen } from '@testing-library/react-native';
 import AppEntry from '@/app/index';
 
 // expo-router のフックをスタブ化する
@@ -72,16 +73,13 @@ jest.mock('@/ui/components/MapScreen', () => ({
   MapScreen: () => null,
 }));
 
-const ReactTestRenderer = require('react-test-renderer'); // eslint-disable-line @typescript-eslint/no-require-imports
-const { act } = ReactTestRenderer;
+// expo-status-bar をスタブ化する
+jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 
 describe('expo-router エントリポイント (index)', () => {
-  test('default export が存在しレンダリングできること', async () => {
-    let renderer: ReturnType<typeof ReactTestRenderer.create>;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<AppEntry />);
-    });
+  test('default export が存在しレンダリングできること', () => {
+    render(<AppEntry />);
 
-    expect(renderer!.toJSON()).not.toBeNull();
+    expect(screen.toJSON()).not.toBeNull();
   });
 });

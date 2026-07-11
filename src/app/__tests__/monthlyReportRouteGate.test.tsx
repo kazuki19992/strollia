@@ -1,3 +1,4 @@
+import { render, screen } from '@testing-library/react-native';
 import MonthlyReportRoute from '@/app/monthly-report';
 
 /**
@@ -32,35 +33,26 @@ jest.mock('@/ui/components/reports/MonthlyReportScreen', () => {
   };
 });
 
-const ReactTestRenderer = require('react-test-renderer'); // eslint-disable-line @typescript-eslint/no-require-imports
-const { act } = ReactTestRenderer;
-
 describe('月次レポートルートのPlusゲート (/monthly-report 直接遷移)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test('Plus未加入のときは MonthlyReportScreen を描画せず地図(/)へリダイレクトする', async () => {
+  test('Plus未加入のときは MonthlyReportScreen を描画せず地図(/)へリダイレクトする', () => {
     mockState.premiumAccessState = { isPlusActive: false };
 
-    let renderer: ReturnType<typeof ReactTestRenderer.create>;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<MonthlyReportRoute />);
-    });
+    render(<MonthlyReportRoute />);
 
-    expect(renderer!.root.findAllByProps({ testID: 'monthly-report-screen' })).toHaveLength(0);
-    expect(renderer!.root.findByProps({ accessibilityLabel: 'redirect:/' })).toBeTruthy();
+    expect(screen.queryAllByTestId('monthly-report-screen')).toHaveLength(0);
+    expect(screen.getByLabelText('redirect:/')).toBeTruthy();
   });
 
-  test('Plus加入済みのときは MonthlyReportScreen を描画しリダイレクトしない', async () => {
+  test('Plus加入済みのときは MonthlyReportScreen を描画しリダイレクトしない', () => {
     mockState.premiumAccessState = { isPlusActive: true };
 
-    let renderer: ReturnType<typeof ReactTestRenderer.create>;
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<MonthlyReportRoute />);
-    });
+    render(<MonthlyReportRoute />);
 
-    expect(renderer!.root.findAllByProps({ testID: 'monthly-report-screen' }).length).toBeGreaterThan(0);
-    expect(renderer!.root.findAllByProps({ testID: 'redirect' })).toHaveLength(0);
+    expect(screen.getAllByTestId('monthly-report-screen').length).toBeGreaterThan(0);
+    expect(screen.queryAllByTestId('redirect')).toHaveLength(0);
   });
 });

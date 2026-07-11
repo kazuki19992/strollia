@@ -15,14 +15,25 @@ export type GpxImportResult = {
 };
 
 /**
+ * 1トランザクションで取り込むポイント数。
+ *
+ * 全ポイントを1つの排他トランザクションで処理すると、大きなGPXでは書き込みロックを
+ * 数秒以上保持し、バックグラウンドGPS記録の書き込みが busy_timeout を超えて
+ * SQLITE_BUSY(database is locked)で失敗する。チャンク間でロックを解放し、
+ * 記録中でもインポートできるよう分割する。
+ */
+const IMPORT_TRANSACTION_CHUNK_SIZE = 500;
+
+/**
  * GPX 由来の GPS ポイントを既存データ優先で SQLite へ取り込む。
  *
  * - ポイントは `recorded_at` 昇順にソートしてから挿入する。
  * - `INSERT OR IGNORE` で既存ポイント（同じ recorded_at / latitude / longitude）はスキップする。
  * - 日別ログ（daily_logs）と訪問セル（visited_cells）も同一トランザクション内で更新する。
- * - インポート履歴（import_history）に記録を残す。
- * - すべての操作は排他トランザクション（withExclusiveTransactionAsync）で囲み、
- *   途中失敗時にロールバックする。
+ * - インポート履歴（import_history）は最後のチャンクのトランザクション内で記録する。
+ * - 排他トランザクションは {@link IMPORT_TRANSACTION_CHUNK_SIZE} 件ごとに分割する。
+ *   途中失敗時はそのチャンクだけロールバックされ、取り込み済みチャンクは残るが、
+ *   `INSERT OR IGNORE` により再インポートで重複せず安全にリトライできる。
  */
 export async function importLocationPointsFromGpx(points: NewLocationPoint[], fileName: string): Promise<GpxImportResult> {
   const sortedPoints = [...points].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
@@ -31,22 +42,31 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   let skippedPointCount = 0;
   let previousImportedPoint: NewLocationPoint | null = null;
 
-  await withExclusiveTransaction(async (txn) => {
-    for (const point of sortedPoints) {
-      const wasInserted = await insertImportedLocationPoint(point, previousImportedPoint, now, txn);
-      if (!wasInserted) {
-        skippedPointCount += 1;
-        continue;
+  const chunkCount = Math.max(1, Math.ceil(sortedPoints.length / IMPORT_TRANSACTION_CHUNK_SIZE));
+
+  for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
+    const chunk = sortedPoints.slice(chunkIndex * IMPORT_TRANSACTION_CHUNK_SIZE, (chunkIndex + 1) * IMPORT_TRANSACTION_CHUNK_SIZE);
+    const isLastChunk = chunkIndex === chunkCount - 1;
+
+    await withExclusiveTransaction(async (txn) => {
+      for (const point of chunk) {
+        const wasInserted = await insertImportedLocationPoint(point, previousImportedPoint, now, txn);
+        if (!wasInserted) {
+          skippedPointCount += 1;
+          continue;
+        }
+
+        const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
+        await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
+        previousImportedPoint = point;
+        importedPointCount += 1;
       }
 
-      const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
-      await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
-      previousImportedPoint = point;
-      importedPointCount += 1;
-    }
-
-    await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
-  });
+      if (isLastChunk) {
+        await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
+      }
+    });
+  }
 
   return { importedPointCount, skippedPointCount };
 }

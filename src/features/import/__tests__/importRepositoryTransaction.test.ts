@@ -79,4 +79,34 @@ describe('GPXインポート保存 transaction境界', () => {
     expect(mockTxn.runAsync).toHaveBeenCalled();
     expect(db.runAsync).not.toHaveBeenCalled();
   });
+
+  it('500件を超えるポイントはトランザクションを分割する(バックグラウンドGPS記録の書き込みを長時間ブロックしないため)', async () => {
+    const manyPoints = Array.from({ length: 501 }, (_, index) => ({
+      ...point,
+      recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
+    }));
+
+    await expect(importLocationPointsFromGpx(manyPoints, 'strollia-all.gpx')).resolves.toEqual({
+      importedPointCount: 501,
+      skippedPointCount: 0,
+    });
+
+    // 501件 = 500 + 1 で2トランザクションに分割される
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(2);
+
+    // インポート履歴は最後のチャンクで1回だけ記録する
+    const historyInsertCalls = mockTxn.runAsync.mock.calls.filter((call) => String(call[0]).includes('import_history'));
+    expect(historyInsertCalls).toHaveLength(1);
+  });
+
+  it('500件以下のポイントは1トランザクションで取り込む', async () => {
+    const fewPoints = Array.from({ length: 500 }, (_, index) => ({
+      ...point,
+      recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
+    }));
+
+    await importLocationPointsFromGpx(fewPoints, 'strollia-all.gpx');
+
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
+  });
 });

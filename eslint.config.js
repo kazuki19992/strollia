@@ -20,6 +20,10 @@ module.exports = [
               name: '@react-native-async-storage/async-storage',
               message: '設定は settingsRepository (SQLite app_settings) を使う',
             },
+            {
+              name: 'react-test-renderer',
+              message: 'react-test-renderer の直接 import は禁止。@testing-library/react-native または expo-router/testing-library を使う',
+            },
           ],
           patterns: [
             {
@@ -40,6 +44,12 @@ module.exports = [
           selector:
             "CallExpression[callee.object.name='jest'][callee.property.name=/^(mock|doMock|unmock|requireActual|requireMock)$/] > Literal[value=/^\\.\\.\\//]",
           message: 'jest.mock / jest.requireActual などのパスも @/ エイリアスを使う',
+        },
+        {
+          // require('react-test-renderer') 形式の直接参照を禁止する。
+          // import 文は no-restricted-imports で捕捉するが、require 呼び出しはこちらで検出する。
+          selector: "CallExpression[callee.name='require'] > Literal[value='react-test-renderer']",
+          message: 'react-test-renderer の直接 require は禁止。@testing-library/react-native または expo-router/testing-library を使う',
         },
       ],
 

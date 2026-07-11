@@ -1,6 +1,24 @@
 const expoConfig = require('eslint-config-expo/flat');
 const prettierConfig = require('eslint-config-prettier');
 
+// no-restricted-syntax の共通セレクタ。
+// flat config の override は同ルールを「上書き」するため、全 override に同じセレクタを含める必要がある。
+const COMMON_RESTRICTED_SYNTAX = [
+  {
+    // jest.mock / jest.requireActual 等のパス文字列は no-restricted-imports の対象外のため、
+    // no-restricted-syntax で ../ 始まりのパスを検出して @/ エイリアスへ誘導する
+    selector:
+      "CallExpression[callee.object.name='jest'][callee.property.name=/^(mock|doMock|unmock|requireActual|requireMock)$/] > Literal[value=/^\\.\\.\\//]",
+    message: 'jest.mock / jest.requireActual などのパスも @/ エイリアスを使う',
+  },
+  {
+    // require('react-test-renderer') 形式の直接参照を禁止する。
+    // import 文は no-restricted-imports で捕捉するが、require 呼び出しはこちらで検出する。
+    selector: "CallExpression[callee.name='require'] > Literal[value='react-test-renderer']",
+    message: 'react-test-renderer の直接 require は禁止。@testing-library/react-native または expo-router/testing-library を使う',
+  },
+];
+
 module.exports = [
   // eslint-config-expo の flat config を展開
   ...expoConfig,
@@ -36,22 +54,7 @@ module.exports = [
         },
       ],
 
-      // jest.mock / jest.requireActual 等のパス文字列は no-restricted-imports の対象外のため、
-      // no-restricted-syntax で ../ 始まりのパスを検出して @/ エイリアスへ誘導する
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            "CallExpression[callee.object.name='jest'][callee.property.name=/^(mock|doMock|unmock|requireActual|requireMock)$/] > Literal[value=/^\\.\\.\\//]",
-          message: 'jest.mock / jest.requireActual などのパスも @/ エイリアスを使う',
-        },
-        {
-          // require('react-test-renderer') 形式の直接参照を禁止する。
-          // import 文は no-restricted-imports で捕捉するが、require 呼び出しはこちらで検出する。
-          selector: "CallExpression[callee.name='require'] > Literal[value='react-test-renderer']",
-          message: 'react-test-renderer の直接 require は禁止。@testing-library/react-native または expo-router/testing-library を使う',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...COMMON_RESTRICTED_SYNTAX],
 
       // react-hooks/exhaustive-deps は依存配列の自動変更=挙動変更になるため warn に留める。
       // 個別に意図的に無効化する場合は eslint-disable-next-line コメントで理由を明記する。
@@ -70,17 +73,14 @@ module.exports = [
   // src/ui/components/ 配下では StyleSheet.create を禁止する。
   // スタイルは src/ui/appStyles.ts の createStyles(theme) に集約すること。
   // src/ui/appStyles.ts と reports/reportStyles.ts は集約先のため対象外。
+  // COMMON_RESTRICTED_SYNTAX を展開して全共通禁止セレクタを維持する。
   {
     files: ['src/ui/components/**/*.{ts,tsx}'],
     ignores: ['src/ui/components/reports/reportStyles.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',
-        {
-          selector:
-            "CallExpression[callee.object.name='jest'][callee.property.name=/^(mock|doMock|unmock|requireActual|requireMock)$/] > Literal[value=/^\\.\\.\\//]",
-          message: 'jest.mock / jest.requireActual などのパスも @/ エイリアスを使う',
-        },
+        ...COMMON_RESTRICTED_SYNTAX,
         {
           selector: "CallExpression[callee.object.name='StyleSheet'][callee.property.name='create']",
           message: 'components配下でStyleSheet.createは使用禁止。スタイルはsrc/ui/appStyles.tsのcreateStyles(theme)に集約してください。',

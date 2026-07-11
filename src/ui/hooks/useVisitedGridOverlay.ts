@@ -193,7 +193,7 @@ export function useVisitedGridOverlay({
 
   /** 集約済みvisited cellに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
   const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
-    // eslint-disable-next-line react-hooks/purity -- フェード進捗は visitedGridFadeFrame の更新を契機に現在時刻で再計算する既存仕様
+    // フェード進捗は visitedGridFadeFrame の更新を契機に現在時刻で再計算する既存仕様
     const now = Date.now();
 
     return toVisitedGridOverlayCells(visitedGridSourceCells, gridOverlayOpacity, themePrimaryColor, GRID_OVERLAY_CONFIG, (cell) =>

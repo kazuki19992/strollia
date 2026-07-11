@@ -105,7 +105,6 @@
           "organization": "kushida-software"
         }
       ],
-      "./plugins/withFmtCxx17",
       "expo-sqlite",
       [
         "expo-notifications",

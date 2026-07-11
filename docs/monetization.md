@@ -176,7 +176,7 @@ iOSからAndroidのようにストアをまたぐ復元は、匿名App User ID�
 
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 
-Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnative module登録に失敗する可能性があるため、課金導入時点では `app.json` の `newArchEnabled` を `false` にする。RevenueCat側でExpo SDK 54 New Architecture対応が確認できたら、development buildで購入・復元を再検証したうえで有効化を検討する。
+Expo SDK 55以降はNew Architecture専用であり、`newArchEnabled` オプション自体が廃止された。SDK 57 / React Native 0.86 への移行時(2026-07-11)に調査した結果、react-native-purchases 10.4系はNew Architecture対応済み(React Native Directory登録・公式サンプルのRN 0.86動作実績あり)と確認したため、New Architectureで運用する。移行時はdevelopment buildで購入・復元を再検証すること。
 
 ### 7.5 RevenueCat / Store実設定チェックリスト
 
@@ -186,7 +186,6 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 - RevenueCatでcurrent offeringに月額/年額packageを紐づける
 - RevenueCat Customer Centerを必要なサポート導線に合わせて設定する
 - iOS/AndroidのPublic SDK API keyを環境変数へ設定する
-- `app.json` の `newArchEnabled` が `false` であることを確認する
 - Expo development buildで月払い購入、年払い購入、復元、Customer Center表示を確認する
 
 ## 8. Plus機能ロードマップ

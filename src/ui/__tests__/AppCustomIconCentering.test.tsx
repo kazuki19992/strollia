@@ -1,4 +1,4 @@
-import { act, cleanup, renderRouter, screen } from 'expo-router/testing-library';
+import { act, cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { createUserCenteredRegion } from '@/ui/mapRegion';
 
 const mockAnimateToRegion = jest.fn();
@@ -239,14 +239,14 @@ describe('App カスタムアイコン時の起動センタリング', () => {
 
     // 地図準備完了前に現在地が届いてもセンタリングしない（animateToRegionはネイティブ未準備でドロップされるため）。
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '現在地更新' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('現在地更新'));
     });
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();
 
     // 地図準備完了後に現在地へセンタリングする。
     await act(async () => {
-      screen.UNSAFE_getByProps({ accessibilityLabel: '地図準備完了' }).props.onPress();
+      fireEvent.press(screen.getByLabelText('地図準備完了'));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);

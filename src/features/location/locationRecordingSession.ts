@@ -48,21 +48,32 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
       const locationsToProcess = pendingLocations.length > 0 ? [...pendingLocations, ...locations] : locations;
 
       const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
+      /** 保存を完了した位置情報の数。途中失敗時に未確定分をバッファへ戻すために追跡する。 */
+      let processedCount = 0;
 
-      for (const location of locationsToProcess) {
-        const point = toLocationPoint(location);
-        const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, point);
+      try {
+        for (const location of locationsToProcess) {
+          const point = toLocationPoint(location);
+          const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, point);
 
-        if (visitedCells.length > 0) {
-          await upsertVisitedCells(visitedCells, point.recordedAt);
-          previousVisitedCellPoint = point;
+          if (visitedCells.length > 0) {
+            await upsertVisitedCells(visitedCells, point.recordedAt);
+            previousVisitedCellPoint = point;
+          }
+
+          if (shouldSaveLocationPoint(point, previousSavedPoint)) {
+            const locationPointId = await insertLocationPoint(point);
+            savedPoints.push({ point, locationPointId });
+            previousSavedPoint = point;
+          }
+
+          processedCount += 1;
         }
-
-        if (shouldSaveLocationPoint(point, previousSavedPoint)) {
-          const locationPointId = await insertLocationPoint(point);
-          savedPoints.push({ point, locationPointId });
-          previousSavedPoint = point;
-        }
+      } catch (error: unknown) {
+        // 保存が成功するまで位置情報を失わないよう、未確定分(処理中に失敗した点を含む)を
+        // バッファへ戻して次の記録時に受信順を保って再試行する。
+        requeueLocationsToBuffer(locationsToProcess.slice(processedCount));
+        throw error;
       }
 
       // GPSポイントを確定してから、逆ジオコーディングを含む実績処理を行う。

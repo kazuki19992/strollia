@@ -24,12 +24,34 @@ export async function withExclusiveTransaction(task: (txn: ExclusiveTransaction)
   });
 }
 
+/** initializeDatabase の実行を1回にまとめるためのメモ化Promise。 */
+let initializeDatabasePromise: Promise<void> | null = null;
+
 /**
  * アプリ起動時に必要なテーブルとインデックスを作成する。
  *
  * SQLiteには軽量な永続化だけを任せ、スキーマ更新はこの関数に集約する。
+ *
+ * バックグラウンドGPSタスクなど複数の経路から毎回呼ばれるが、マイグレーションの
+ * UPDATE や DDL は書き込みロックを取得するため、プロセス内で1回だけ実行する。
+ * 失敗した場合はメモをクリアし、次回呼び出しで再試行する。
  */
-export async function initializeDatabase(): Promise<void> {
+export function initializeDatabase(): Promise<void> {
+  initializeDatabasePromise ??= runDatabaseInitialization().catch((error: unknown) => {
+    initializeDatabasePromise = null;
+    throw error;
+  });
+
+  return initializeDatabasePromise;
+}
+
+/** テスト用: initializeDatabase のメモ化状態を初期化する。 */
+export function resetDatabaseInitializationForTest(): void {
+  initializeDatabasePromise = null;
+}
+
+/** スキーマ作成・マイグレーションの実体。 */
+async function runDatabaseInitialization(): Promise<void> {
   await db.execAsync(`
     PRAGMA foreign_keys = ON;
     PRAGMA journal_mode = WAL;

@@ -26,16 +26,36 @@ jest.mock('expo-sqlite', () => ({
   })),
 }));
 
-import { db, initializeDatabase, withExclusiveTransaction } from '@/db/database';
+import { db, initializeDatabase, resetDatabaseInitializationForTest, withExclusiveTransaction } from '@/db/database';
 
 describe('database initializeDatabase マイグレーション', () => {
   beforeEach(() => {
+    // initializeDatabase はプロセス内1回にメモ化されるため、各テスト前に状態を初期化する
+    resetDatabaseInitializationForTest();
     // db は openDatabaseSync が返すモックオブジェクト。各テスト前に mock 状態をクリアする
     (db.execAsync as jest.Mock).mockClear();
     (db.execAsync as jest.Mock).mockResolvedValue(undefined);
     (db.getAllAsync as jest.Mock).mockClear();
     (db.runAsync as jest.Mock).mockClear();
     (db.runAsync as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  it('2回呼んでも初期化処理は1回だけ実行される(バックグラウンドタスクから毎回呼ばれるため)', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+    await initializeDatabase();
+    const execCallCount = (db.execAsync as jest.Mock).mock.calls.length;
+    await initializeDatabase();
+
+    expect((db.execAsync as jest.Mock).mock.calls.length).toBe(execCallCount);
+  });
+
+  it('初期化に失敗した場合は次回呼び出しで再試行する', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+    (db.execAsync as jest.Mock).mockRejectedValueOnce(new Error('disk I/O error'));
+
+    await expect(initializeDatabase()).rejects.toThrow('disk I/O error');
+    await expect(initializeDatabase()).resolves.toBeUndefined();
   });
 
   it('db が存在する（openDatabaseSync が "strollia.db" で呼ばれた結果として取得済み）', () => {

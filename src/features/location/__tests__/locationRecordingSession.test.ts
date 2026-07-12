@@ -235,4 +235,26 @@ describe('GPXインポート優先モードのバッファリング', () => {
     expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(1, firstPoint);
     expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(2, secondPoint);
   });
+
+  it('flush中の保存失敗ではrecordLocations側だけがバッファへ戻し、二重復元しない', async () => {
+    mockToLocationPoint.mockReset();
+    mockInsertLocationPoint.mockReset();
+    // flush時: firstの保存で失敗 → recordLocations が未確定分としてバッファへ戻す
+    // 次の記録時: バッファ分のfirstを1回だけ再処理する(二重に戻っていれば2回処理される)
+    mockToLocationPoint.mockReturnValueOnce(firstPoint).mockReturnValueOnce(firstPoint).mockReturnValueOnce(secondPoint);
+    mockInsertLocationPoint.mockRejectedValueOnce(new Error('database is locked')).mockResolvedValue(11);
+    const session = await createLocationRecordingSession();
+    beginGpxImportPriority();
+    await session.recordLocations([firstLocation]);
+
+    await expect(flushLocationsBufferedDuringGpxImport()).rejects.toThrow('database is locked');
+
+    await session.recordLocations([secondLocation]);
+
+    // first は1回だけ再処理される(insert: flushでの失敗1回 + 再試行1回 + second 1回 = 3回)
+    expect(mockToLocationPoint).toHaveBeenCalledTimes(3);
+    expect(mockInsertLocationPoint).toHaveBeenCalledTimes(3);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(2, firstPoint);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(3, secondPoint);
+  });
 });

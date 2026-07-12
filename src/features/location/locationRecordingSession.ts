@@ -93,9 +93,12 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
  * インポートの成否にかかわらず必ず呼ぶこと(finally推奨)。呼ばないと
  * 位置情報がバッファに残ったまま以後の記録も退避され続ける。
  *
- * 取り込みに失敗した場合は退避分をバッファへ戻してから例外を投げる。
- * 戻した分は次の位置情報受信時(recordLocations)に自動的に回収されるため、
- * 位置情報が失われることはない。
+ * 取り込みに失敗した場合も位置情報は失われない:
+ * - セッション生成の失敗: 退避分をこの関数がバッファへ戻す
+ * - 保存処理の途中失敗: recordLocations 自身が未確定分だけをバッファへ戻す
+ *   (この関数では戻さない。両方で戻すと同じ位置情報が二重にバッファへ入り、
+ *   次回再処理で重複保存や daily_logs の重複加算につながるため)
+ * 戻した分は次の位置情報受信時(recordLocations)に受信順を保って回収される。
  */
 export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
   const drained = endGpxImportPriorityAndDrain();
@@ -104,12 +107,14 @@ export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
     return;
   }
 
+  let session: LocationRecordingSession;
   try {
-    const session = await createLocationRecordingSession();
-    await session.recordLocations(drained);
+    session = await createLocationRecordingSession();
   } catch (error: unknown) {
-    // 位置情報を失わないよう退避分を戻す。次の記録時に受信順を保って回収される
+    // recordLocations へ渡る前の失敗はここで戻す(渡った後の失敗は recordLocations が戻す)
     requeueLocationsToBuffer(drained);
     throw error;
   }
+
+  await session.recordLocations(drained);
 }

@@ -21,8 +21,20 @@ export type GpxImportResult = {
  * 数秒以上保持し、バックグラウンドGPS記録の書き込みが busy_timeout を超えて
  * SQLITE_BUSY(database is locked)で失敗する。チャンク間でロックを解放し、
  * 記録中でもインポートできるよう分割する。
+ *
+ * 1ポイントの取り込みは複数のSQL文(JS↔ネイティブ往復)を伴うため、
+ * 1チャンクの所要時間が busy_timeout(5秒)より十分短くなるサイズにする。
  */
-const IMPORT_TRANSACTION_CHUNK_SIZE = 500;
+export const IMPORT_TRANSACTION_CHUNK_SIZE = 100;
+
+/**
+ * チャンク間でロックを解放して待機する時間(ミリ秒)。
+ *
+ * ロック解放直後に次チャンクのBEGINが走ると、busy_timeout で待機中の
+ * バックグラウンドGPS記録の書き込みがロックを取得できないまま
+ * 待ち続ける可能性があるため、明示的に書き込みの隙間を作る。
+ */
+const INTER_CHUNK_DELAY_MS = 50;
 
 /**
  * GPX 由来の GPS ポイントを既存データ優先で SQLite へ取り込む。
@@ -47,6 +59,11 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
     const chunk = sortedPoints.slice(chunkIndex * IMPORT_TRANSACTION_CHUNK_SIZE, (chunkIndex + 1) * IMPORT_TRANSACTION_CHUNK_SIZE);
     const isLastChunk = chunkIndex === chunkCount - 1;
+
+    if (chunkIndex > 0) {
+      // 待機中のバックグラウンド書き込みへ書き込みの隙間を譲る
+      await new Promise<void>((resolve) => setTimeout(resolve, INTER_CHUNK_DELAY_MS));
+    }
 
     await withExclusiveTransaction(async (txn) => {
       for (const point of chunk) {

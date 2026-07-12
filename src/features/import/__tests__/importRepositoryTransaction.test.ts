@@ -1,5 +1,5 @@
 import { db, withExclusiveTransaction } from '@/db/database';
-import { importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { IMPORT_TRANSACTION_CHUNK_SIZE, importLocationPointsFromGpx } from '@/features/import/importRepository';
 
 let mockActiveTransactionDepth = 0;
 
@@ -80,18 +80,18 @@ describe('GPXインポート保存 transaction境界', () => {
     expect(db.runAsync).not.toHaveBeenCalled();
   });
 
-  it('500件を超えるポイントはトランザクションを分割する(バックグラウンドGPS記録の書き込みを長時間ブロックしないため)', async () => {
-    const manyPoints = Array.from({ length: 501 }, (_, index) => ({
+  it('チャンクサイズを超えるポイントはトランザクションを分割する(バックグラウンドGPS記録の書き込みを長時間ブロックしないため)', async () => {
+    const manyPoints = Array.from({ length: IMPORT_TRANSACTION_CHUNK_SIZE + 1 }, (_, index) => ({
       ...point,
       recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
     }));
 
     await expect(importLocationPointsFromGpx(manyPoints, 'strollia-all.gpx')).resolves.toEqual({
-      importedPointCount: 501,
+      importedPointCount: IMPORT_TRANSACTION_CHUNK_SIZE + 1,
       skippedPointCount: 0,
     });
 
-    // 501件 = 500 + 1 で2トランザクションに分割される
+    // チャンクサイズ + 1 件で2トランザクションに分割される
     expect(withExclusiveTransaction).toHaveBeenCalledTimes(2);
 
     // インポート履歴は最後のチャンクで1回だけ記録する
@@ -99,8 +99,8 @@ describe('GPXインポート保存 transaction境界', () => {
     expect(historyInsertCalls).toHaveLength(1);
   });
 
-  it('500件以下のポイントは1トランザクションで取り込む', async () => {
-    const fewPoints = Array.from({ length: 500 }, (_, index) => ({
+  it('チャンクサイズ以下のポイントは1トランザクションで取り込む', async () => {
+    const fewPoints = Array.from({ length: IMPORT_TRANSACTION_CHUNK_SIZE }, (_, index) => ({
       ...point,
       recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
     }));

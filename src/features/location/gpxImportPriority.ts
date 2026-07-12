@@ -42,6 +42,25 @@ export function endGpxImportPriorityAndDrain(): Location.LocationObject[] {
   return drained;
 }
 
+/**
+ * 取り出し済みの位置情報をバッファの先頭へ戻す。
+ * flush(取り込み)が失敗した場合に位置情報を失わないための復元経路。
+ * 戻した分は次の位置情報受信時に受信順を保ってまとめて処理される。
+ */
+export function requeueLocationsToBuffer(locations: Location.LocationObject[]): void {
+  bufferedLocations = [...locations, ...bufferedLocations];
+}
+
+/**
+ * バッファに残っている位置情報を取り出す(優先モードの状態は変更しない)。
+ * flush失敗後の残留分を、次の通常記録時に回収するために使う。
+ */
+export function drainBufferedLocations(): Location.LocationObject[] {
+  const drained = bufferedLocations;
+  bufferedLocations = [];
+  return drained;
+}
+
 /** テスト用: モジュール状態を初期化する。 */
 export function resetGpxImportPriorityForTest(): void {
   isImportPriorityActive = false;

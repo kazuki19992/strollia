@@ -23,8 +23,10 @@ let lastGeocodeResult: {
   latitude: number;
   longitude: number;
   address: Location.LocationGeocodedAddress;
-  geocodedAtMs: number;
 } | null = null;
+
+/** 直近にAPIを呼び出した時刻(ミリ秒エポック)。空結果の呼び出しも最短間隔の対象にするため成功キャッシュと別に持つ。 */
+let lastGeocodeAttemptAtMs = 0;
 
 /** レート制限エラー後のクールダウン終了時刻(ミリ秒エポック)。 */
 let geocodeCooldownUntilMs = 0;
@@ -32,20 +34,35 @@ let geocodeCooldownUntilMs = 0;
 /** テスト用: スロットリング状態を初期化する。 */
 export function resetGeocodeThrottleForTest(): void {
   lastGeocodeResult = null;
+  lastGeocodeAttemptAtMs = 0;
   geocodeCooldownUntilMs = 0;
 }
 
-/** OSジオコーダのレート制限エラーか判定する。 */
+/**
+ * OSジオコーダのレート制限エラーか判定する。
+ *
+ * expo-location はレート制限に安定したエラー型を公開していないため、
+ * エラーコード(CodedError)とメッセージの両方からスロットリング系の文言を検出する。
+ */
 function isGeocodeRateLimitError(error: unknown): boolean {
-  return error instanceof Error && /rate limit/i.test(error.message);
+  const throttlePattern = /rate.?limit|too.?many.?requests|throttl/i;
+
+  if (typeof error === 'object' && error !== null) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === 'string' && throttlePattern.test(code)) {
+      return true;
+    }
+  }
+
+  return error instanceof Error && throttlePattern.test(error.message);
 }
 
 /**
  * レート制限を避けながらGPSポイントの住所を解決する。
  *
  * - 直近の結果から {@link GEOCODE_REUSE_DISTANCE_METERS} 以内ならAPIを呼ばず再利用する
- * - 前回呼び出しから {@link GEOCODE_MIN_INTERVAL_MS} 未満、またはクールダウン中は
- *   解決をスキップする(誤った行政区域を記録しないため、遠い地点の結果は再利用しない)
+ * - 前回API呼び出し(空結果を含む)から {@link GEOCODE_MIN_INTERVAL_MS} 未満、または
+ *   クールダウン中は解決をスキップする(誤った行政区域を記録しないため、遠い地点の結果は再利用しない)
  * - レート制限エラーを受けたら {@link GEOCODE_RATE_LIMIT_COOLDOWN_MS} のクールダウンに入る
  */
 async function resolveAddressThrottled(point: NewLocationPoint): Promise<Location.LocationGeocodedAddress | null> {
@@ -59,16 +76,18 @@ async function resolveAddressThrottled(point: NewLocationPoint): Promise<Locatio
     return null;
   }
 
-  if (lastGeocodeResult && nowMs - lastGeocodeResult.geocodedAtMs < GEOCODE_MIN_INTERVAL_MS) {
+  if (nowMs - lastGeocodeAttemptAtMs < GEOCODE_MIN_INTERVAL_MS) {
     return null;
   }
+
+  lastGeocodeAttemptAtMs = nowMs;
 
   try {
     const addresses = await Location.reverseGeocodeAsync({ latitude: point.latitude, longitude: point.longitude });
     const address = addresses[0] ?? null;
 
     if (address) {
-      lastGeocodeResult = { latitude: point.latitude, longitude: point.longitude, address, geocodedAtMs: nowMs };
+      lastGeocodeResult = { latitude: point.latitude, longitude: point.longitude, address };
     }
 
     return address;

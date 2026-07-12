@@ -15,6 +15,30 @@ export type GpxImportResult = {
 };
 
 /**
+ * チャンク分割インポートの途中失敗を表すエラー。
+ *
+ * 失敗したチャンクより前のチャンクはコミット済みでDBに残るため、
+ * 呼び出し元がUI表示やデータ再読込を部分取り込みの実態に合わせられるよう、
+ * 失敗時点までの取り込み件数を保持する。
+ */
+export class GpxImportInterruptedError extends Error {
+  /** 失敗までに取り込み済みのポイント数。 */
+  readonly importedPointCount: number;
+  /** 失敗までに既存データ優先でスキップしたポイント数。 */
+  readonly skippedPointCount: number;
+  /** 元の失敗原因。 */
+  readonly cause: unknown;
+
+  constructor(importedPointCount: number, skippedPointCount: number, cause: unknown) {
+    super('GPXインポートが途中で失敗しました');
+    this.name = 'GpxImportInterruptedError';
+    this.importedPointCount = importedPointCount;
+    this.skippedPointCount = skippedPointCount;
+    this.cause = cause;
+  }
+}
+
+/**
  * 1トランザクションで取り込むポイント数。
  *
  * 全ポイントを1つの排他トランザクションで処理すると、大きなGPXでは書き込みロックを
@@ -44,7 +68,8 @@ const INTER_CHUNK_DELAY_MS = 50;
  * - 日別ログ（daily_logs）と訪問セル（visited_cells）も同一トランザクション内で更新する。
  * - インポート履歴（import_history）は最後のチャンクのトランザクション内で記録する。
  * - 排他トランザクションは {@link IMPORT_TRANSACTION_CHUNK_SIZE} 件ごとに分割する。
- *   途中失敗時はそのチャンクだけロールバックされ、取り込み済みチャンクは残るが、
+ *   途中失敗時はそのチャンクだけロールバックされ、取り込み済みチャンクは残る。
+ *   その場合は取り込み済み件数を含む {@link GpxImportInterruptedError} を投げる。
  *   `INSERT OR IGNORE` により再インポートで重複せず安全にリトライできる。
  */
 export async function importLocationPointsFromGpx(points: NewLocationPoint[], fileName: string): Promise<GpxImportResult> {
@@ -65,40 +90,50 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
       await new Promise<void>((resolve) => setTimeout(resolve, INTER_CHUNK_DELAY_MS));
     }
 
-    await withExclusiveTransaction(async (txn) => {
-      // 高頻度で実行する2文はプリペアドステートメントを使い回し、SQL解析のオーバーヘッドを減らす。
-      // チャンクの所要時間を短縮することで、書き込みロックの保持時間も短くなる。
-      const insertPointStatement = await txn.prepareAsync(INSERT_LOCATION_POINT_SQL);
-      const upsertDailyLogStatement = await txn.prepareAsync(UPSERT_DAILY_LOG_SQL);
+    // チャンク開始時点の件数。失敗チャンクはロールバックされるため、この時点の値が取り込み済みの実態になる
+    const importedCountBeforeChunk = importedPointCount;
+    const skippedCountBeforeChunk = skippedPointCount;
 
-      try {
-        for (const point of chunk) {
-          const wasInserted = await insertImportedLocationPoint(
-            point,
-            previousImportedPoint,
-            now,
-            insertPointStatement,
-            upsertDailyLogStatement,
-          );
-          if (!wasInserted) {
-            skippedPointCount += 1;
-            continue;
+    try {
+      await withExclusiveTransaction(async (txn) => {
+        // 高頻度で実行する2文はプリペアドステートメントを使い回し、SQL解析のオーバーヘッドを減らす。
+        // チャンクの所要時間を短縮することで、書き込みロックの保持時間も短くなる。
+        const insertPointStatement = await txn.prepareAsync(INSERT_LOCATION_POINT_SQL);
+        const upsertDailyLogStatement = await txn.prepareAsync(UPSERT_DAILY_LOG_SQL);
+
+        try {
+          for (const point of chunk) {
+            const wasInserted = await insertImportedLocationPoint(
+              point,
+              previousImportedPoint,
+              now,
+              insertPointStatement,
+              upsertDailyLogStatement,
+            );
+            if (!wasInserted) {
+              skippedPointCount += 1;
+              continue;
+            }
+
+            const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
+            await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
+            previousImportedPoint = point;
+            importedPointCount += 1;
           }
 
-          const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
-          await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
-          previousImportedPoint = point;
-          importedPointCount += 1;
+          if (isLastChunk) {
+            await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
+          }
+        } finally {
+          await insertPointStatement.finalizeAsync();
+          await upsertDailyLogStatement.finalizeAsync();
         }
-
-        if (isLastChunk) {
-          await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
-        }
-      } finally {
-        await insertPointStatement.finalizeAsync();
-        await upsertDailyLogStatement.finalizeAsync();
-      }
-    });
+      });
+    } catch (error: unknown) {
+      // 失敗チャンクはロールバック済み。呼び出し元がUIとデータ再読込を実態に合わせられるよう、
+      // 取り込み済み件数を添えて伝える
+      throw new GpxImportInterruptedError(importedCountBeforeChunk, skippedCountBeforeChunk, error);
+    }
   }
 
   return { importedPointCount, skippedPointCount };

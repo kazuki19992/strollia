@@ -7,10 +7,10 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  * `NSAllowsLocalNetworking: true` となり、Tailscale(100.64.0.0/10)などの
  * 非ローカルIP経由では Metro の http バンドル取得が ATS にブロックされる。
  * development ビルドおよびプロファイル未指定のローカル実行(`expo run:ios` 等)のみ
- * ATS を緩和し、preview / production では既定の ATS(https必須)を維持する。
+ * ATS を緩和する。未知のプロファイル名は安全側に倒して緩和しない(fail closed)。
  */
 export function shouldRelaxAppTransportSecurity(buildProfile: string | undefined): boolean {
-  return buildProfile !== 'preview' && buildProfile !== 'production';
+  return buildProfile === undefined || buildProfile === 'development';
 }
 
 /**

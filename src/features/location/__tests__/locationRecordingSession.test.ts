@@ -200,4 +200,21 @@ describe('GPXインポート優先モードのバッファリング', () => {
 
     expect(mockInsertLocationPoint).toHaveBeenCalledTimes(1);
   });
+
+  it('flushが失敗した場合は退避分をバッファへ戻し、次の記録時に受信順を保って回収する', async () => {
+    const session = await createLocationRecordingSession();
+    beginGpxImportPriority();
+    await session.recordLocations([firstLocation]);
+
+    // flush内のセッション生成を失敗させる(SQLITE_BUSY等を想定)
+    mockGetLatestLocationPoint.mockRejectedValueOnce(new Error('database is locked'));
+    await expect(flushLocationsBufferedDuringGpxImport()).rejects.toThrow('database is locked');
+
+    // 位置情報は失われず、次の通常記録でバッファ分(first)→新着(second)の順に処理される
+    await session.recordLocations([secondLocation]);
+
+    expect(mockInsertLocationPoint).toHaveBeenCalledTimes(2);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(1, firstPoint);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(2, secondPoint);
+  });
 });

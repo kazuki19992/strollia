@@ -24,6 +24,12 @@
 import { db } from '@/db/database';
 import { getStringSetting } from '@/features/settings/settingsRepository';
 
+/** トランザクションrunnerのモック。withExclusiveTransaction のコールバックへ渡す。 */
+const mockTxn = {
+  runAsync: jest.fn(),
+  getFirstAsync: jest.fn(),
+};
+
 jest.mock('@/db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),

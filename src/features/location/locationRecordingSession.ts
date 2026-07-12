@@ -3,7 +3,13 @@ import type * as Location from 'expo-location';
 import { initializeDatabase } from '@/db/database';
 import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
 import { getLatestLocationPoint, insertLocationPoint } from '@/features/logs/logRepository';
-import { bufferLocationsDuringGpxImport, endGpxImportPriorityAndDrain, isGpxImportPriorityActive } from './gpxImportPriority';
+import {
+  bufferLocationsDuringGpxImport,
+  drainBufferedLocations,
+  endGpxImportPriorityAndDrain,
+  isGpxImportPriorityActive,
+  requeueLocationsToBuffer,
+} from './gpxImportPriority';
 import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
 import { toLocationPoint } from './locationMapper';
 import { shouldSaveLocationPoint } from './locationSaveFilter';
@@ -37,9 +43,13 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
         return;
       }
 
+      // flush失敗などでバッファに残った位置情報があれば、受信順を保って先に処理する(取りこぼし防止)
+      const pendingLocations = drainBufferedLocations();
+      const locationsToProcess = pendingLocations.length > 0 ? [...pendingLocations, ...locations] : locations;
+
       const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
 
-      for (const location of locations) {
+      for (const location of locationsToProcess) {
         const point = toLocationPoint(location);
         const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, point);
 
@@ -71,6 +81,10 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
  *
  * インポートの成否にかかわらず必ず呼ぶこと(finally推奨)。呼ばないと
  * 位置情報がバッファに残ったまま以後の記録も退避され続ける。
+ *
+ * 取り込みに失敗した場合は退避分をバッファへ戻してから例外を投げる。
+ * 戻した分は次の位置情報受信時(recordLocations)に自動的に回収されるため、
+ * 位置情報が失われることはない。
  */
 export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
   const drained = endGpxImportPriorityAndDrain();
@@ -79,6 +93,12 @@ export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
     return;
   }
 
-  const session = await createLocationRecordingSession();
-  await session.recordLocations(drained);
+  try {
+    const session = await createLocationRecordingSession();
+    await session.recordLocations(drained);
+  } catch (error: unknown) {
+    // 位置情報を失わないよう退避分を戻す。次の記録時に受信順を保って回収される
+    requeueLocationsToBuffer(drained);
+    throw error;
+  }
 }

@@ -151,4 +151,31 @@ describe('逆ジオコーディングのスロットリング recordVisitedAdmin
 
     await expect(recordVisitedAdminAreasForPoint(makePoint(), 1)).rejects.toThrow('network unavailable');
   });
+
+  it('エラーコードにスロットリング系の文言がある場合もレート制限として扱う', async () => {
+    const codedError = Object.assign(new Error('request failed'), { code: 'ERR_LOCATION_GEOCODING_RATE_LIMIT' });
+    (Location.reverseGeocodeAsync as jest.Mock).mockRejectedValueOnce(codedError);
+
+    await expect(recordVisitedAdminAreasForPoint(makePoint(), 1)).resolves.toBeUndefined();
+
+    // クールダウンに入っているため、直後の呼び出しではAPIを呼ばない
+    nowMs += 15_000;
+    await recordVisitedAdminAreasForPoint(makePoint({ latitude: 35.1 }), 2);
+    expect(Location.reverseGeocodeAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('空結果が続いても最短間隔(10秒)を守り連続呼び出しにならない', async () => {
+    (Location.reverseGeocodeAsync as jest.Mock).mockResolvedValue([]);
+
+    await recordVisitedAdminAreasForPoint(makePoint(), 1);
+    nowMs += 5_000;
+    await recordVisitedAdminAreasForPoint(makePoint({ latitude: 35.1 }), 2);
+
+    // 空結果でも直近の呼び出しから10秒未満なら再呼び出ししない
+    expect(Location.reverseGeocodeAsync).toHaveBeenCalledTimes(1);
+
+    nowMs += 6_000;
+    await recordVisitedAdminAreasForPoint(makePoint({ latitude: 35.2 }), 3);
+    expect(Location.reverseGeocodeAsync).toHaveBeenCalledTimes(2);
+  });
 });

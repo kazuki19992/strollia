@@ -10,7 +10,7 @@ import { syncMonthlyReportNotification } from '@/features/reports/monthlyReportN
 import { shareGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
-import { importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { GpxImportInterruptedError, importLocationPointsFromGpx } from '@/features/import/importRepository';
 import type { GpxImportResult } from '@/features/import/importRepository';
 import { beginGpxImportPriority } from '@/features/location/gpxImportPriority';
 import { flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
@@ -875,6 +875,20 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       );
     } catch (error: unknown) {
       console.warn('GPX import failed:', error);
+
+      // チャンク分割インポートの途中失敗では取り込み済みデータがDBに残るため、
+      // 画面を実態に合わせて更新し、部分取り込みと安全な再試行方法を通知する。
+      if (error instanceof GpxImportInterruptedError) {
+        await refreshData().catch((refreshError: unknown) => {
+          console.warn('Failed to refresh data after interrupted GPX import:', refreshError);
+        });
+        Alert.alert(
+          'GPXインポート失敗',
+          `途中まで(${error.importedPointCount}件)取り込んだところで失敗しました。同じファイルを再度インポートすると、取り込み済みの分は重複せず残りから安全に再開できます。`,
+        );
+        return;
+      }
+
       Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
     } finally {
       isImportingGpxRef.current = false;

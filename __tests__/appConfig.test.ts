@@ -94,6 +94,12 @@ describe('ATS緩和の判定 shouldRelaxAppTransportSecurity', () => {
   it('productionプロファイルでは緩和しない', () => {
     expect(shouldRelaxAppTransportSecurity('production')).toBe(false);
   });
+
+  it('未知のプロファイル名は安全側に倒して緩和しない(fail closed)', () => {
+    expect(shouldRelaxAppTransportSecurity('staging')).toBe(false);
+    expect(shouldRelaxAppTransportSecurity('prod')).toBe(false);
+    expect(shouldRelaxAppTransportSecurity('')).toBe(false);
+  });
 });
 
 describe('app.config.ts (ATS注入)', () => {

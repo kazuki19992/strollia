@@ -1,5 +1,5 @@
 import { db, withExclusiveTransaction } from '@/db/database';
-import { IMPORT_TRANSACTION_CHUNK_SIZE, importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { GpxImportInterruptedError, IMPORT_TRANSACTION_CHUNK_SIZE, importLocationPointsFromGpx } from '@/features/import/importRepository';
 
 let mockActiveTransactionDepth = 0;
 
@@ -114,5 +114,27 @@ describe('GPXインポート保存 transaction境界', () => {
     await importLocationPointsFromGpx(fewPoints, 'strollia-all.gpx');
 
     expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('後続チャンクの失敗時は取り込み済み件数を含むGpxImportInterruptedErrorを投げる', async () => {
+    const manyPoints = Array.from({ length: IMPORT_TRANSACTION_CHUNK_SIZE + 1 }, (_, index) => ({
+      ...point,
+      recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
+    }));
+
+    // 1チャンク目は成功、2チャンク目のトランザクションを失敗させる
+    (withExclusiveTransaction as jest.Mock)
+      .mockImplementationOnce(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn))
+      .mockImplementationOnce(async () => {
+        throw new Error('database is locked');
+      });
+
+    const importPromise = importLocationPointsFromGpx(manyPoints, 'strollia-all.gpx');
+
+    await expect(importPromise).rejects.toBeInstanceOf(GpxImportInterruptedError);
+    await expect(importPromise).rejects.toMatchObject({
+      importedPointCount: IMPORT_TRANSACTION_CHUNK_SIZE,
+      skippedPointCount: 0,
+    });
   });
 });

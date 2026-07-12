@@ -11,6 +11,9 @@ import { shareGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { importLocationPointsFromGpx } from '@/features/import/importRepository';
+import type { GpxImportResult } from '@/features/import/importRepository';
+import { beginGpxImportPriority } from '@/features/location/gpxImportPriority';
+import { flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
 import {
   isWhileInUseOnlyMode,
   hasRequiredLocationPermission,
@@ -854,7 +857,17 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         return;
       }
 
-      const result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
+      // インポート中はGPS記録の書き込みを止めてバッファへ退避し、DBロック競合を避ける。
+      beginGpxImportPriority();
+      let result: GpxImportResult;
+      try {
+        result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
+      } finally {
+        // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
+        await flushLocationsBufferedDuringGpxImport().catch((error: unknown) => {
+          console.warn('Failed to flush buffered locations after GPX import:', error);
+        });
+      }
       await refreshData();
       Alert.alert(
         'GPXインポート完了',

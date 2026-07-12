@@ -3,6 +3,7 @@ import type * as Location from 'expo-location';
 import { initializeDatabase } from '@/db/database';
 import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
 import { getLatestLocationPoint, insertLocationPoint } from '@/features/logs/logRepository';
+import { bufferLocationsDuringGpxImport, endGpxImportPriorityAndDrain, isGpxImportPriorityActive } from './gpxImportPriority';
 import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
 import { toLocationPoint } from './locationMapper';
 import { shouldSaveLocationPoint } from './locationSaveFilter';
@@ -29,6 +30,13 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
 
   return {
     async recordLocations(locations) {
+      // GPXインポート中はDB書き込みの競合(SQLITE_BUSY)を避けるため、
+      // 位置情報をバッファへ退避してインポート完了後にまとめて取り込む。
+      if (isGpxImportPriorityActive()) {
+        bufferLocationsDuringGpxImport(locations);
+        return;
+      }
+
       const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
 
       for (const location of locations) {
@@ -55,4 +63,22 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
       }
     },
   };
+}
+
+/**
+ * GPXインポート優先モードを終了し、インポート中にバッファへ退避していた位置情報を
+ * 通常の保存規則(距離・時系列判定、Visited Grid補間、実績処理)でまとめて取り込む。
+ *
+ * インポートの成否にかかわらず必ず呼ぶこと(finally推奨)。呼ばないと
+ * 位置情報がバッファに残ったまま以後の記録も退避され続ける。
+ */
+export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
+  const drained = endGpxImportPriorityAndDrain();
+
+  if (drained.length === 0) {
+    return;
+  }
+
+  const session = await createLocationRecordingSession();
+  await session.recordLocations(drained);
 }

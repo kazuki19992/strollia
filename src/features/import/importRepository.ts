@@ -66,21 +66,37 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
     }
 
     await withExclusiveTransaction(async (txn) => {
-      for (const point of chunk) {
-        const wasInserted = await insertImportedLocationPoint(point, previousImportedPoint, now, txn);
-        if (!wasInserted) {
-          skippedPointCount += 1;
-          continue;
+      // 高頻度で実行する2文はプリペアドステートメントを使い回し、SQL解析のオーバーヘッドを減らす。
+      // チャンクの所要時間を短縮することで、書き込みロックの保持時間も短くなる。
+      const insertPointStatement = await txn.prepareAsync(INSERT_LOCATION_POINT_SQL);
+      const upsertDailyLogStatement = await txn.prepareAsync(UPSERT_DAILY_LOG_SQL);
+
+      try {
+        for (const point of chunk) {
+          const wasInserted = await insertImportedLocationPoint(
+            point,
+            previousImportedPoint,
+            now,
+            insertPointStatement,
+            upsertDailyLogStatement,
+          );
+          if (!wasInserted) {
+            skippedPointCount += 1;
+            continue;
+          }
+
+          const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
+          await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
+          previousImportedPoint = point;
+          importedPointCount += 1;
         }
 
-        const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
-        await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
-        previousImportedPoint = point;
-        importedPointCount += 1;
-      }
-
-      if (isLastChunk) {
-        await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
+        if (isLastChunk) {
+          await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
+        }
+      } finally {
+        await insertPointStatement.finalizeAsync();
+        await upsertDailyLogStatement.finalizeAsync();
       }
     });
   }
@@ -88,34 +104,63 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
   return { importedPointCount, skippedPointCount };
 }
 
+/** GPSポイントを既存データ優先(INSERT OR IGNORE)で挿入するSQL。チャンク内でプリペアして使い回す。 */
+const INSERT_LOCATION_POINT_SQL = `INSERT OR IGNORE INTO location_points (
+  recorded_at,
+  local_date,
+  latitude,
+  longitude,
+  altitude,
+  speed,
+  heading,
+  accuracy,
+  altitude_accuracy,
+  source,
+  created_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`;
+
+/** 日別ログの集計値を更新するUPSERT SQL。チャンク内でプリペアして使い回す。 */
+const UPSERT_DAILY_LOG_SQL = `INSERT INTO daily_logs (
+  local_date,
+  started_at,
+  ended_at,
+  point_count,
+  distance_meters,
+  created_at,
+  updated_at
+) VALUES (?, ?, ?, 1, ?, ?, ?)
+ON CONFLICT(local_date) DO UPDATE SET
+  started_at = CASE
+    WHEN daily_logs.started_at IS NULL OR excluded.started_at < daily_logs.started_at
+    THEN excluded.started_at
+    ELSE daily_logs.started_at
+  END,
+  ended_at = CASE
+    WHEN daily_logs.ended_at IS NULL OR excluded.ended_at > daily_logs.ended_at
+    THEN excluded.ended_at
+    ELSE daily_logs.ended_at
+  END,
+  point_count = daily_logs.point_count + 1,
+  distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
+  updated_at = excluded.updated_at`;
+
 /**
  * 1ポイントをトランザクション内に挿入し、挿入できたかどうかを返す。
  *
  * daily_logs は UPSERT（ON CONFLICT DO UPDATE）で集計値を更新する。
  * 同一日付の前のポイントとの距離を distance_meters に累積する。
+ * SQLはチャンク単位でプリペア済みのステートメントを受け取り実行する。
  */
 async function insertImportedLocationPoint(
   point: NewLocationPoint,
   previousPoint: NewLocationPoint | null,
   now: string,
-  txn: SQLite.SQLiteDatabase,
+  insertPointStatement: SQLite.SQLiteStatement,
+  upsertDailyLogStatement: SQLite.SQLiteStatement,
 ): Promise<boolean> {
   const segmentDistanceMeters = previousPoint?.localDate === point.localDate ? distanceMeters(previousPoint, point) : 0;
 
-  const insertResult = await txn.runAsync(
-    `INSERT OR IGNORE INTO location_points (
-      recorded_at,
-      local_date,
-      latitude,
-      longitude,
-      altitude,
-      speed,
-      heading,
-      accuracy,
-      altitude_accuracy,
-      source,
-      created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`,
+  const insertResult = await insertPointStatement.executeAsync(
     point.recordedAt,
     point.localDate,
     point.latitude,
@@ -132,37 +177,7 @@ async function insertImportedLocationPoint(
     return false;
   }
 
-  await txn.runAsync(
-    `INSERT INTO daily_logs (
-      local_date,
-      started_at,
-      ended_at,
-      point_count,
-      distance_meters,
-      created_at,
-      updated_at
-    ) VALUES (?, ?, ?, 1, ?, ?, ?)
-    ON CONFLICT(local_date) DO UPDATE SET
-      started_at = CASE
-        WHEN daily_logs.started_at IS NULL OR excluded.started_at < daily_logs.started_at
-        THEN excluded.started_at
-        ELSE daily_logs.started_at
-      END,
-      ended_at = CASE
-        WHEN daily_logs.ended_at IS NULL OR excluded.ended_at > daily_logs.ended_at
-        THEN excluded.ended_at
-        ELSE daily_logs.ended_at
-      END,
-      point_count = daily_logs.point_count + 1,
-      distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
-      updated_at = excluded.updated_at`,
-    point.localDate,
-    point.recordedAt,
-    point.recordedAt,
-    segmentDistanceMeters,
-    now,
-    now,
-  );
+  await upsertDailyLogStatement.executeAsync(point.localDate, point.recordedAt, point.recordedAt, segmentDistanceMeters, now, now);
 
   return true;
 }

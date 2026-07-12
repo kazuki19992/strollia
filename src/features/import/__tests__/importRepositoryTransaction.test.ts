@@ -6,6 +6,12 @@ let mockActiveTransactionDepth = 0;
 export const mockTxn = {
   runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 101 }),
   getFirstAsync: jest.fn(),
+  // プリペアドステートメントは常に挿入成功を返すモックを作る
+  prepareAsync: jest.fn(async (sql: string) => ({
+    sql,
+    executeAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 101, changes: 1 }),
+    finalizeAsync: jest.fn().mockResolvedValue(undefined),
+  })),
 };
 
 jest.mock('@/db/database', () => {

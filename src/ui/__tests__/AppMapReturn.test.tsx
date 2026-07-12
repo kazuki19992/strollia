@@ -1950,6 +1950,34 @@ describe('App 地図復帰時の表示範囲復元', () => {
     }
   });
 
+  test('全データ削除の完了をAlertで通知する', async () => {
+    const alertCalls: { title: string; message?: string }[] = [];
+    jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
+      alertCalls.push({ title, message: message ?? undefined });
+      // 確認ダイアログでは「削除する」を押したことにする
+      if (title === 'すべてのデータを削除') {
+        buttons?.find((button) => button.text === '削除する')?.onPress?.();
+      }
+    });
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onDeleteAllData();
+    });
+    await flushPromises();
+
+    expect(alertCalls).toContainEqual({
+      title: '削除完了',
+      message: '保存済みのGPSログ・訪問エリア・実績データを削除しました。',
+    });
+  });
+
   test('設定画面から月払いPackageを直接購入してPlus状態を反映する', async () => {
     (purchasePremiumPackage as jest.Mock).mockResolvedValueOnce({
       status: 'purchased',

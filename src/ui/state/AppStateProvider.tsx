@@ -612,7 +612,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
           deleteAllUserData()
             .then(async () => {
               await refreshDeletedUserDataState(refreshData, refreshAchievementState);
-              setMessage(DELETE_ALL_DATA_SUCCESS_MESSAGE);
+              // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
+              Alert.alert('削除完了', DELETE_ALL_DATA_SUCCESS_MESSAGE);
             })
             .catch((error: unknown) => {
               Alert.alert('削除失敗', error instanceof Error ? error.message : 'データを削除できませんでした。');
@@ -620,7 +621,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         },
       },
     ]);
-  }, [refreshAchievementState, refreshData, setMessage]);
+  }, [refreshAchievementState, refreshData]);
 
   /**
    * 画面ON維持設定をUI状態とSQLiteの両方へ反映する。
@@ -869,6 +870,14 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         });
       }
       await refreshData();
+      // 取り込んだ大量データ(ルート・訪問グリッド)の再描画が終わるまでブロッキングダイアログを維持する。
+      // 先に閉じると再描画中のフリーズが操作可能な画面のまま露出する。
+      // rAFはJSスレッドが再描画で塞がっている間は発火しないため、2回挟むことで描画コミット完了後に解決される。
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
       Alert.alert(
         'GPXインポート完了',
         `${result.importedPointCount}件を取り込みました。${result.skippedPointCount}件は既存データを優先してスキップしました。`,

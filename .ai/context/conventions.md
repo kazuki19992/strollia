@@ -4,7 +4,7 @@
 
 ## TypeScript
 
-- `tsconfig.json` は `expo/tsconfig.base` + `strict: true`。`any` を安易に使わない
+- `tsconfig.json` は `expo/tsconfig.base` + `strict: true`(TypeScript 6.0)。`any` を安易に使わない。TS 6.0 では `node_modules/@types` の自動取り込みが廃止されたため、グローバル型は `types: ["jest", "node"]` で明示している
 - 関数・クラス・型・自明でない変数には日本語JSDocを付ける。「何をするか」に加え、必要なら「なぜその設計にしているか」も書く
 
 ```typescript

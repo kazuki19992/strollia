@@ -3,6 +3,13 @@ import type * as Location from 'expo-location';
 import { initializeDatabase } from '@/db/database';
 import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
 import { getLatestLocationPoint, insertLocationPoint } from '@/features/logs/logRepository';
+import {
+  bufferLocationsDuringGpxImport,
+  drainBufferedLocations,
+  endGpxImportPriorityAndDrain,
+  isGpxImportPriorityActive,
+  requeueLocationsToBuffer,
+} from './gpxImportPriority';
 import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
 import { toLocationPoint } from './locationMapper';
 import { shouldSaveLocationPoint } from './locationSaveFilter';
@@ -29,22 +36,44 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
 
   return {
     async recordLocations(locations) {
+      // GPXインポート中はDB書き込みの競合(SQLITE_BUSY)を避けるため、
+      // 位置情報をバッファへ退避してインポート完了後にまとめて取り込む。
+      if (isGpxImportPriorityActive()) {
+        bufferLocationsDuringGpxImport(locations);
+        return;
+      }
+
+      // flush失敗などでバッファに残った位置情報があれば、受信順を保って先に処理する(取りこぼし防止)
+      const pendingLocations = drainBufferedLocations();
+      const locationsToProcess = pendingLocations.length > 0 ? [...pendingLocations, ...locations] : locations;
+
       const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
+      /** 保存を完了した位置情報の数。途中失敗時に未確定分をバッファへ戻すために追跡する。 */
+      let processedCount = 0;
 
-      for (const location of locations) {
-        const point = toLocationPoint(location);
-        const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, point);
+      try {
+        for (const location of locationsToProcess) {
+          const point = toLocationPoint(location);
+          const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, point);
 
-        if (visitedCells.length > 0) {
-          await upsertVisitedCells(visitedCells, point.recordedAt);
-          previousVisitedCellPoint = point;
+          if (visitedCells.length > 0) {
+            await upsertVisitedCells(visitedCells, point.recordedAt);
+            previousVisitedCellPoint = point;
+          }
+
+          if (shouldSaveLocationPoint(point, previousSavedPoint)) {
+            const locationPointId = await insertLocationPoint(point);
+            savedPoints.push({ point, locationPointId });
+            previousSavedPoint = point;
+          }
+
+          processedCount += 1;
         }
-
-        if (shouldSaveLocationPoint(point, previousSavedPoint)) {
-          const locationPointId = await insertLocationPoint(point);
-          savedPoints.push({ point, locationPointId });
-          previousSavedPoint = point;
-        }
+      } catch (error: unknown) {
+        // 保存が成功するまで位置情報を失わないよう、未確定分(処理中に失敗した点を含む)を
+        // バッファへ戻して次の記録時に受信順を保って再試行する。
+        requeueLocationsToBuffer(locationsToProcess.slice(processedCount));
+        throw error;
       }
 
       // GPSポイントを確定してから、逆ジオコーディングを含む実績処理を行う。
@@ -55,4 +84,37 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
       }
     },
   };
+}
+
+/**
+ * GPXインポート優先モードを終了し、インポート中にバッファへ退避していた位置情報を
+ * 通常の保存規則(距離・時系列判定、Visited Grid補間、実績処理)でまとめて取り込む。
+ *
+ * インポートの成否にかかわらず必ず呼ぶこと(finally推奨)。呼ばないと
+ * 位置情報がバッファに残ったまま以後の記録も退避され続ける。
+ *
+ * 取り込みに失敗した場合も位置情報は失われない:
+ * - セッション生成の失敗: 退避分をこの関数がバッファへ戻す
+ * - 保存処理の途中失敗: recordLocations 自身が未確定分だけをバッファへ戻す
+ *   (この関数では戻さない。両方で戻すと同じ位置情報が二重にバッファへ入り、
+ *   次回再処理で重複保存や daily_logs の重複加算につながるため)
+ * 戻した分は次の位置情報受信時(recordLocations)に受信順を保って回収される。
+ */
+export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
+  const drained = endGpxImportPriorityAndDrain();
+
+  if (drained.length === 0) {
+    return;
+  }
+
+  let session: LocationRecordingSession;
+  try {
+    session = await createLocationRecordingSession();
+  } catch (error: unknown) {
+    // recordLocations へ渡る前の失敗はここで戻す(渡った後の失敗は recordLocations が戻す)
+    requeueLocationsToBuffer(drained);
+    throw error;
+  }
+
+  await session.recordLocations(drained);
 }

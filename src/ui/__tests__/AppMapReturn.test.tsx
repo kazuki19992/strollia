@@ -48,7 +48,7 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('expo-media-library', () => ({
+jest.mock('expo-media-library/legacy', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ accessPrivileges: 'all' }),
 }));
 
@@ -1848,10 +1848,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(screen.getByLabelText('日別詳細を開く')).toBeTruthy();
   });
 
-  test('GPXインポート押下直後に実績反映範囲の注意を表示してからファイル選択を開く', async () => {
+  test('GPXインポート押下直後に実績反映範囲の注意を表示し、OKを押してからファイル選択を開く', async () => {
     const callOrder: string[] = [];
-    jest.spyOn(Alert, 'alert').mockImplementation((title: string, message?: string) => {
+    /** 注意ダイアログのOKボタン。ユーザーが閉じる操作をテスト側から再現するために保持する。 */
+    let confirmAlertButton: (() => void) | undefined;
+    jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
       callOrder.push(`alert:${title}:${message ?? ''}`);
+      confirmAlertButton = () => buttons?.[0]?.onPress?.();
     });
     (pickAndReadGpxFile as jest.Mock).mockImplementation(async () => {
       callOrder.push('pick');
@@ -1865,8 +1868,21 @@ describe('App 地図復帰時の表示範囲復元', () => {
       fireEvent.press(screen.getByLabelText('設定'));
     });
 
+    let importPromise: Promise<void> = Promise.resolve();
     await act(async () => {
-      await mockLatestSettingsScreenProps.onImportGpx();
+      importPromise = mockLatestSettingsScreenProps.onImportGpx();
+      await Promise.resolve();
+    });
+
+    // ダイアログのOKを押すまではファイル選択を開かない
+    expect(callOrder).toEqual([
+      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+    ]);
+    expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+
+    await act(async () => {
+      confirmAlertButton?.();
+      await importPromise;
     });
 
     expect(callOrder).toEqual([
@@ -1883,7 +1899,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       cb(0);
       return 0;
     }) as typeof global.requestAnimationFrame;
-    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    // 注意ダイアログはOKを待つ実装のため、モックでは即座にOKを押したことにする。
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.[0]?.onPress?.();
+    });
     (pickAndReadGpxFile as jest.Mock).mockResolvedValue({ content: '<gpx/>', fileName: 'a.gpx' });
     (parseGpxToLocationPoints as jest.Mock).mockReturnValue([{ latitude: 1, longitude: 2, timestamp: 0 }]);
 
@@ -1929,6 +1948,34 @@ describe('App 地図復帰時の表示範囲復元', () => {
     } finally {
       global.requestAnimationFrame = originalRaf;
     }
+  });
+
+  test('全データ削除の完了をAlertで通知する', async () => {
+    const alertCalls: { title: string; message?: string }[] = [];
+    jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
+      alertCalls.push({ title, message: message ?? undefined });
+      // 確認ダイアログでは「削除する」を押したことにする
+      if (title === 'すべてのデータを削除') {
+        buttons?.find((button) => button.text === '削除する')?.onPress?.();
+      }
+    });
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+
+    await act(async () => {
+      mockLatestSettingsScreenProps.onDeleteAllData();
+    });
+    await flushPromises();
+
+    expect(alertCalls).toContainEqual({
+      title: '削除完了',
+      message: '保存済みのGPSログ・訪問エリア・実績データを削除しました。',
+    });
   });
 
   test('設定画面から月払いPackageを直接購入してPlus状態を反映する', async () => {

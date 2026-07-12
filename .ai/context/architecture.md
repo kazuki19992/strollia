@@ -5,17 +5,17 @@ Strollia (footspot) は Expo (React Native) 製のローカルファーストGPS
 
 ## 技術スタック
 
-| 領域           | ライブラリ                                                                     |
-| -------------- | ------------------------------------------------------------------------------ |
-| 基盤           | Expo ~54 / React 19 / React Native 0.81 / TypeScript ~5.9 (strict)             |
-| ナビゲーション | expo-router ~6(ファイルベースルーティング)                                     |
-| 位置情報       | expo-location + expo-task-manager                                              |
-| DB             | expo-sqlite(`strollia.db`)                                                     |
-| 地図           | react-native-maps                                                              |
-| 課金           | react-native-purchases (RevenueCat)                                            |
-| エラー追跡     | @sentry/react-native                                                           |
-| GPX解析        | fast-xml-parser                                                                |
-| テスト         | jest + jest-expo + @testing-library/react-native + expo-router/testing-library |
+| 領域           | ライブラリ                                                                              |
+| -------------- | --------------------------------------------------------------------------------------- |
+| 基盤           | Expo ~57 / React 19.2 / React Native 0.86 / TypeScript ~6.0 (strict) / New Architecture |
+| ナビゲーション | expo-router ~57(ファイルベースルーティング)                                             |
+| 位置情報       | expo-location + expo-task-manager                                                       |
+| DB             | expo-sqlite(`strollia.db`)                                                              |
+| 地図           | react-native-maps                                                                       |
+| 課金           | react-native-purchases (RevenueCat)                                                     |
+| エラー追跡     | @sentry/react-native                                                                    |
+| GPX解析        | fast-xml-parser                                                                         |
+| テスト         | jest + jest-expo + @testing-library/react-native + expo-router/testing-library          |
 
 ## エントリポイント
 

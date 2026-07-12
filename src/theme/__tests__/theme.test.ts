@@ -41,6 +41,11 @@ describe('テーマ選択 getAppTheme', () => {
     expect(getAppTheme(null)).toBe(lightTheme);
   });
 
+  it("OS設定が不明('unspecified')の場合はライトテーマへフォールバックする", () => {
+    expect(getAppTheme('unspecified')).toBe(lightTheme);
+    expect(getAppTheme('unspecified', 'system')).toBe(lightTheme);
+  });
+
   it('OSがダークモードの場合はダークテーマを返す', () => {
     expect(getAppTheme('dark')).toBe(darkTheme);
   });

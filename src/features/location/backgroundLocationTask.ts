@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 import { BACKGROUND_LOCATION_TASK_NAME } from './locationTrackingConfig';
+import { bufferLocationsDuringGpxImport, isGpxImportPriorityActive } from './gpxImportPriority';
 import { createLocationRecordingSession } from './locationRecordingSession';
 
 /** Expo Locationのバックグラウンドタスクから渡される位置情報ペイロード。 */
@@ -29,6 +30,13 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
     const locations = data?.locations ?? [];
 
     if (locations.length === 0) {
+      return;
+    }
+
+    // GPXインポート中はセッション生成(initializeDatabase等のDBアクセス)より前に退避する。
+    // セッション生成自体がマイグレーションのUPDATE/DDLで書き込みロックを取得するため。
+    if (isGpxImportPriorityActive()) {
+      bufferLocationsDuringGpxImport(locations);
       return;
     }
 

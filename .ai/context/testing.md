@@ -24,12 +24,19 @@
 import { db } from '@/db/database';
 import { getStringSetting } from '@/features/settings/settingsRepository';
 
+/** トランザクションrunnerのモック。withExclusiveTransaction のコールバックへ渡す。 */
+const mockTxn = {
+  runAsync: jest.fn(),
+  getFirstAsync: jest.fn(),
+};
+
 jest.mock('@/db/database', () => ({
   db: {
     getFirstAsync: jest.fn(),
     runAsync: jest.fn(),
-    withExclusiveTransactionAsync: jest.fn(async (callback) => callback(mockTxn)),
   },
+  // busy_timeout付き排他トランザクション(database.tsのラッパー)。txnランナーを直接渡す
+  withExclusiveTransaction: jest.fn(async (callback) => callback(mockTxn)),
 }));
 
 describe('設定リポジトリ settingsRepository', () => {

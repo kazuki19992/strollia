@@ -1,4 +1,4 @@
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 
 /** 地図上に表示するジオタグ付き写真。 */
 export type MapPhoto = {

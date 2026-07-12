@@ -1,4 +1,4 @@
-import { db } from '@/db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 import { getStringSetting, setSettings } from '@/features/settings/settingsRepository';
 
 const mockTxn = {
@@ -10,8 +10,8 @@ jest.mock('@/db/database', () => ({
     getFirstAsync: jest.fn(),
     runAsync: jest.fn(),
     withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
-    withExclusiveTransactionAsync: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
   },
+  withExclusiveTransaction: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
 }));
 
 describe('設定リポジトリ settingsRepository', () => {
@@ -43,7 +43,7 @@ describe('設定リポジトリ settingsRepository', () => {
       { key: 'selectedIcon', value: 'custom' },
     ]);
 
-    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
     expect(db.withTransactionAsync).not.toHaveBeenCalled();
     expect(db.runAsync).not.toHaveBeenCalled();
     expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
@@ -65,7 +65,7 @@ describe('設定リポジトリ settingsRepository', () => {
   it('保存対象が空の場合はトランザクションも書き込みも実行しない', async () => {
     await setSettings([]);
 
-    expect(db.withExclusiveTransactionAsync).not.toHaveBeenCalled();
+    expect(withExclusiveTransaction).not.toHaveBeenCalled();
     expect(db.withTransactionAsync).not.toHaveBeenCalled();
     expect(db.runAsync).not.toHaveBeenCalled();
     expect(mockTxn.runAsync).not.toHaveBeenCalled();

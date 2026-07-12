@@ -95,7 +95,7 @@ function createProps() {
 
 /** テスト中のツリーから MapView 要素を取得する共有ヘルパー。 */
 function getMapView() {
-  return screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'MapView');
+  return screen.UNSAFE_getAllByProps({}).find((node) => String(node.type) === 'MapView');
 }
 
 describe('地図画面 MapScreen', () => {
@@ -386,7 +386,7 @@ describe('地図画面 MapScreen', () => {
     );
 
     // UNSAFE_getAllByProps を使うのは Marker の tracksViewChanges という非セマンティックな props を検証するため
-    const marker = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'Marker');
+    const marker = screen.UNSAFE_getAllByProps({}).find((node) => String(node.type) === 'Marker');
     expect(marker!.props.tracksViewChanges).toBe(true);
 
     // UNSAFE_getByType を使うのは Image という型で要素を検索するため
@@ -395,7 +395,7 @@ describe('地図画面 MapScreen', () => {
       image.props.onLoad();
     });
 
-    const updatedMarker = screen.UNSAFE_getAllByProps({}).find((node) => node.type === 'Marker');
+    const updatedMarker = screen.UNSAFE_getAllByProps({}).find((node) => String(node.type) === 'Marker');
     expect(updatedMarker!.props.tracksViewChanges).toBe(false);
   });
 });

@@ -26,7 +26,7 @@ export function createCommonStyles(theme: AppTheme) {
       opacity: 0.38,
     },
     overlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     screenTransition: {
       flex: 1,
@@ -167,7 +167,7 @@ export function createCommonStyles(theme: AppTheme) {
 
     // Monthly report navigation (used in report screens)
     reportNavigationOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       flexDirection: 'row',
       zIndex: 8,
     },

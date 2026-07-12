@@ -335,7 +335,7 @@ export function createAchievementStyles(theme: AppTheme) {
     },
     // Confetti
     confettiLayer: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       overflow: 'hidden',
       zIndex: 1,
     },

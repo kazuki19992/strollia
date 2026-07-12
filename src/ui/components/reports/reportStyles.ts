@@ -140,7 +140,7 @@ export const reportStyles = StyleSheet.create({
     lineHeight: 31,
   },
   mapBackground: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#13212a',
   },
   mapGridLine: {
@@ -152,7 +152,7 @@ export const reportStyles = StyleSheet.create({
     transform: [{ rotate: '-18deg' }],
   },
   mapOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.26)',
   },
   mapRoute: {
@@ -396,7 +396,7 @@ export const reportStyles = StyleSheet.create({
     width: 48,
   },
   monthlyCloseSafeArea: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 11,
   },
   monthlyEmptyText: {

@@ -10,7 +10,10 @@ import { syncMonthlyReportNotification } from '@/features/reports/monthlyReportN
 import { shareGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
-import { importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { GpxImportInterruptedError, importLocationPointsFromGpx } from '@/features/import/importRepository';
+import type { GpxImportResult } from '@/features/import/importRepository';
+import { beginGpxImportPriority } from '@/features/location/gpxImportPriority';
+import { flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
 import {
   isWhileInUseOnlyMode,
   hasRequiredLocationPermission,
@@ -609,7 +612,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
           deleteAllUserData()
             .then(async () => {
               await refreshDeletedUserDataState(refreshData, refreshAchievementState);
-              setMessage(DELETE_ALL_DATA_SUCCESS_MESSAGE);
+              // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
+              Alert.alert('削除完了', DELETE_ALL_DATA_SUCCESS_MESSAGE);
             })
             .catch((error: unknown) => {
               Alert.alert('削除失敗', error instanceof Error ? error.message : 'データを削除できませんでした。');
@@ -617,7 +621,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         },
       },
     ]);
-  }, [refreshAchievementState, refreshData, setMessage]);
+  }, [refreshAchievementState, refreshData]);
 
   /**
    * 画面ON維持設定をUI状態とSQLiteの両方へ反映する。
@@ -824,10 +828,16 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     setIsImportingGpx(true);
 
     try {
-      Alert.alert(
-        'GPXインポートと実績について',
-        'GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
-      );
+      // 注意ダイアログをユーザーが閉じるまで待ってからファイル選択を開く。
+      // 待たずに開くと、ダイアログの上にピッカーが被さり注意文を読めなくなる。
+      await new Promise<void>((resolve) => {
+        Alert.alert(
+          'GPXインポートと実績について',
+          'GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+          [{ text: 'OK', onPress: () => resolve() }],
+          { cancelable: false },
+        );
+      });
       const pickedFile = await pickAndReadGpxFile();
 
       if (!pickedFile) {
@@ -848,14 +858,46 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         return;
       }
 
-      const result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
+      // インポート中はGPS記録の書き込みを止めてバッファへ退避し、DBロック競合を避ける。
+      beginGpxImportPriority();
+      let result: GpxImportResult;
+      try {
+        result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
+      } finally {
+        // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
+        await flushLocationsBufferedDuringGpxImport().catch((error: unknown) => {
+          console.warn('Failed to flush buffered locations after GPX import:', error);
+        });
+      }
       await refreshData();
+      // 取り込んだ大量データ(ルート・訪問グリッド)の再描画が終わるまでブロッキングダイアログを維持する。
+      // 先に閉じると再描画中のフリーズが操作可能な画面のまま露出する。
+      // rAFはJSスレッドが再描画で塞がっている間は発火しないため、2回挟むことで描画コミット完了後に解決される。
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
       Alert.alert(
         'GPXインポート完了',
         `${result.importedPointCount}件を取り込みました。${result.skippedPointCount}件は既存データを優先してスキップしました。`,
       );
     } catch (error: unknown) {
       console.warn('GPX import failed:', error);
+
+      // チャンク分割インポートの途中失敗では取り込み済みデータがDBに残るため、
+      // 画面を実態に合わせて更新し、部分取り込みと安全な再試行方法を通知する。
+      if (error instanceof GpxImportInterruptedError) {
+        await refreshData().catch((refreshError: unknown) => {
+          console.warn('Failed to refresh data after interrupted GPX import:', refreshError);
+        });
+        Alert.alert(
+          'GPXインポート失敗',
+          `途中まで(${error.importedPointCount}件)取り込んだところで失敗しました。同じファイルを再度インポートすると、取り込み済みの分は重複せず残りから安全に再開できます。`,
+        );
+        return;
+      }
+
       Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
     } finally {
       isImportingGpxRef.current = false;

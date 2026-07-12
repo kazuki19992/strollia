@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
 
+import { bufferLocationsDuringGpxImport, isGpxImportPriorityActive } from '@/features/location/gpxImportPriority';
 import { createLocationRecordingSession, LocationRecordingSession } from '@/features/location/locationRecordingSession';
 import { ensureForegroundLocationPermission } from '@/features/location/locationService';
 
@@ -79,6 +80,12 @@ export function useForegroundUserLocation({ enabled, shouldPersist, onLocation, 
 
           recordingQueue = recordingQueue.then(async () => {
             try {
+              // GPXインポート中はセッション生成(initializeDatabase等のDBアクセス)より前に退避する
+              if (isGpxImportPriorityActive()) {
+                bufferLocationsDuringGpxImport([location]);
+                return;
+              }
+
               sessionPromise ??= createLocationRecordingSession();
               const session = await sessionPromise;
               await session.recordLocations([location]);

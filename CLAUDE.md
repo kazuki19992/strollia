@@ -15,6 +15,6 @@
 - 定型作業は `.claude/skills/` のスキルを優先して使う:
   - 実装系: `add-screen`, `db-schema-change`, `add-setting`, `premium-gate`
   - ビルド系: `build-development`, `build-preview`, `build-production`, `publish`
-  - リリース系: `release`, `tag-release`
+  - リリース系: `release`, `tag-release`, `release-notes`
   - GitHub運用系: `pr-review`, `create-issue`
   - 後片付け: `post-merge-cleanup`(PRマージ後のworktree削除・develop最新化)

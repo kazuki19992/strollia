@@ -194,6 +194,10 @@ GPSログは長期間蓄積されるため、マップ描画の負荷を抑え�
 - 描画用ルートはDouglas-Peucker法で形状を保ちながら簡略化する
 - メインマップでは表示範囲内のvisited cellを取得し、ズームに応じて集約して描画する
 
+### 9.1 初期表示範囲の計算最適化
+
+メインマップの初期表示範囲は、`getLocationPointsBounds()`で取得した緯度経度の最小値・最大値をもとに `createRegionFromBounds()` 関数で算出する。従来は `createInitialRegion(points)` で全ポイント配列のスプレッド展開(`Math.min(...largeArray)`)を行っていたが、記録ポイント数が100万を超える端末ではスプレッド展開が `RangeError` を起こす問題が発生していた。最適化後は、`createInitialRegion()` 内部のスプレッド展開をシンプルなループ集計に変更し、データ量に依存せず安定して動作するように改善した。`createRegionFromBounds()` では `{minLatitude, maxLatitude, minLongitude, maxLongitude}` オブジェクトから `Region` オブジェクトへ変換する。1.4倍の表示余裕と最小デルタ(0.01)の処理ロジックは従来と同じ。
+
 ## 10. 無料利用についての考え方
 
 地図表示は「アプリ側のサーバー費用を発生させない」ことを重視する。

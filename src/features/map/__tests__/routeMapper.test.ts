@@ -1,6 +1,7 @@
 import { LocationPoint } from '@/types/gps';
 import {
   createInitialRegion,
+  createRegionFromBounds,
   filterRouteCoordinatesByRegion,
   filterRouteSegmentsByRegion,
   simplifyRouteCoordinates,
@@ -179,5 +180,55 @@ describe('ルート描画変換', () => {
     expect(region.longitude).toBe(139.767125);
     expect(region.latitudeDelta).toBe(0.08);
     expect(region.longitudeDelta).toBe(0.08);
+  });
+});
+
+describe('境界からの初期表示範囲 createRegionFromBounds', () => {
+  it('境界にマージンを付けて表示範囲を作る', () => {
+    const region = createRegionFromBounds({ minLatitude: 35, maxLatitude: 36, minLongitude: 139, maxLongitude: 140 });
+
+    expect(region.latitude).toBeCloseTo(35.5);
+    expect(region.longitude).toBeCloseTo(139.5);
+    expect(region.latitudeDelta).toBeCloseTo(1.4);
+    expect(region.longitudeDelta).toBeCloseTo(1.4);
+  });
+
+  it('境界が同一点の場合は最小デルタを使う', () => {
+    const region = createRegionFromBounds({ minLatitude: 35, maxLatitude: 35, minLongitude: 139, maxLongitude: 139 });
+
+    expect(region.latitudeDelta).toBe(0.01);
+    expect(region.longitudeDelta).toBe(0.01);
+  });
+
+  it('境界がnullの場合は既定の初期表示位置を返す', () => {
+    const region = createRegionFromBounds(null);
+
+    expect(region.latitude).toBe(35.681236);
+    expect(region.longitude).toBe(139.767125);
+    expect(region.latitudeDelta).toBe(0.08);
+    expect(region.longitudeDelta).toBe(0.08);
+  });
+});
+
+describe('大量データでのcreateInitialRegion(RangeError回帰)', () => {
+  it('110万件の座標でも例外を出さず初期表示範囲を計算する', () => {
+    const points: LocationPoint[] = Array.from({ length: 1_100_000 }, (_, index) => ({
+      id: index,
+      recordedAt: '2026-05-04T00:00:00.000Z',
+      localDate: '2026-05-04',
+      latitude: 35 + index * 0.00001,
+      longitude: 139,
+      altitude: null,
+      speed: null,
+      heading: null,
+      accuracy: null,
+      altitudeAccuracy: null,
+    }));
+
+    expect(() => createInitialRegion(points)).not.toThrow();
+
+    const region = createInitialRegion(points);
+    expect(region.latitude).toBeGreaterThan(35);
+    expect(region.longitudeDelta).toBeGreaterThanOrEqual(0.01);
   });
 });

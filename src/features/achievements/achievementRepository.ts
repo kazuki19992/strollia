@@ -1,7 +1,6 @@
 import { db, withExclusiveTransaction } from '@/db/database';
-import { LocationPoint } from '@/types/gps';
+import { calculateTotalDistanceMeters } from '@/features/logs/dailyLogsService';
 import { toLocalDate } from '@/utils/date';
-import { totalDistanceMeters } from '@/utils/distance';
 import { ACHIEVEMENT_DEFINITIONS, AchievementDefinition, getAchievementDefinition } from './achievementDefinitions';
 import { AchievementProgress, evaluateAchievementUnlocks, getProgressValueForCondition } from './achievementEvaluator';
 
@@ -43,53 +42,6 @@ export async function getAchievementProgress(): Promise<AchievementProgress> {
     prefectureCount: prefectureRow?.count ?? 0,
     municipalityCount: municipalityRow?.count ?? 0,
   };
-}
-
-/**
- * daily_logsの距離合計を計算し、NULLの日はGPSポイントからフォールバック計算する。
- *
- * @param dailyDistanceRows - daily_logsから取得した日別距離行。
- * @returns 実績評価で使う総移動距離メートル。
- */
-async function calculateTotalDistanceMeters(dailyDistanceRows: { localDate: string; distanceMeters: number | null }[]): Promise<number> {
-  const fixedDistance = dailyDistanceRows.reduce((total, row) => total + (row.distanceMeters ?? 0), 0);
-  const fallbackDates = dailyDistanceRows.filter((row) => row.distanceMeters == null).map((row) => row.localDate);
-
-  if (fallbackDates.length === 0) {
-    return fixedDistance;
-  }
-
-  const placeholders = fallbackDates.map(() => '?').join(', ');
-  const points = await db.getAllAsync<LocationPoint>(
-    `SELECT
-      id,
-      recorded_at as recordedAt,
-      local_date as localDate,
-      latitude,
-      longitude,
-      altitude,
-      speed,
-      heading,
-      accuracy,
-      altitude_accuracy as altitudeAccuracy,
-      source,
-      created_at as createdAt
-     FROM location_points
-     WHERE local_date IN (${placeholders})
-     ORDER BY local_date ASC, recorded_at ASC, id ASC`,
-    ...fallbackDates,
-  );
-  const pointsByDate = new Map<string, LocationPoint[]>();
-
-  for (const point of points) {
-    const datePoints = pointsByDate.get(point.localDate) ?? [];
-    datePoints.push(point);
-    pointsByDate.set(point.localDate, datePoints);
-  }
-
-  const fallbackDistance = fallbackDates.reduce((total, localDate) => total + totalDistanceMeters(pointsByDate.get(localDate) ?? []), 0);
-
-  return fixedDistance + fallbackDistance;
 }
 
 /** 解除済み実績IDを取得する。 */

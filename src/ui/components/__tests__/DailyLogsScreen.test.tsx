@@ -14,6 +14,12 @@ jest.mock('@/features/achievements/adminAreaRepository', () => ({
   ),
 }));
 
+// dailyLogsService が calculateTotalDistanceMeters 経由で logRepository を import するため、
+// 実DBへ到達しないようモック化する(このテストでは総距離計算自体は使わない)。
+jest.mock('@/features/logs/logRepository', () => ({
+  getLocationPointsByDates: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
 }));

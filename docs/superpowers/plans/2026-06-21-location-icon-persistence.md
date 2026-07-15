@@ -62,6 +62,7 @@
 ### Task 1: カスタム写真の永続ファイル管理
 
 **Files:**
+
 - Create: `src/features/customization/customIconStorage.ts`
 - Create: `src/features/customization/__tests__/customIconStorage.test.ts`
 
@@ -72,11 +73,7 @@
 ```ts
 import * as FileSystem from 'expo-file-system/legacy';
 
-import {
-  deleteManagedCustomIcon,
-  persistCustomIconImage,
-  resolveCustomIconReference,
-} from '../customIconStorage';
+import { deleteManagedCustomIcon, persistCustomIconImage, resolveCustomIconReference } from '../customIconStorage';
 
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///documents/',
@@ -97,10 +94,7 @@ describe('カスタム現在地アイコンの永続ファイル管理', () => {
       reference: 'managed:icon-1.jpg',
       uri: 'file:///documents/strollia-custom-icons/icon-1.jpg',
     });
-    expect(FileSystem.makeDirectoryAsync).toHaveBeenCalledWith(
-      'file:///documents/strollia-custom-icons/',
-      { intermediates: true },
-    );
+    expect(FileSystem.makeDirectoryAsync).toHaveBeenCalledWith('file:///documents/strollia-custom-icons/', { intermediates: true });
     expect(FileSystem.copyAsync).toHaveBeenCalledWith({
       from: 'file:///cache/cropped.jpg',
       to: 'file:///documents/strollia-custom-icons/icon-1.jpg',
@@ -140,10 +134,7 @@ describe('カスタム現在地アイコンの永続ファイル管理', () => {
     await deleteManagedCustomIcon('file:///cache/legacy.jpg');
 
     expect(FileSystem.deleteAsync).toHaveBeenCalledTimes(1);
-    expect(FileSystem.deleteAsync).toHaveBeenCalledWith(
-      'file:///documents/strollia-custom-icons/icon-1.jpg',
-      { idempotent: true },
-    );
+    expect(FileSystem.deleteAsync).toHaveBeenCalledWith('file:///documents/strollia-custom-icons/icon-1.jpg', { idempotent: true });
   });
 });
 ```
@@ -270,6 +261,7 @@ git commit -m "feat(icon): カスタム画像を永続領域へ保存"
 ### Task 2: 複数設定の原子的保存
 
 **Files:**
+
 - Modify: `src/features/settings/settingsRepository.ts`
 - Modify: `src/features/settings/__tests__/settingsRepository.test.ts`
 
@@ -381,6 +373,7 @@ git commit -m "feat(settings): 関連設定の原子的保存を追加"
 ### Task 3: カスタム写真を安全に置き換えるサービス
 
 **Files:**
+
 - Create: `src/features/customization/customIconSelection.ts`
 - Create: `src/features/customization/__tests__/customIconSelection.test.ts`
 
@@ -410,30 +403,32 @@ describe('カスタム現在地アイコンの置き換え', () => {
   it('新規ファイルの保存と設定保存後に旧ファイルを削除する', async () => {
     const persistSelection = jest.fn().mockResolvedValue(undefined);
 
-    await expect(replaceCustomIconSelection({
-      sourceUri: 'file:///cache/new.jpg',
-      previousReference: 'managed:old.jpg',
-      persistSelection,
-    })).resolves.toEqual({
+    await expect(
+      replaceCustomIconSelection({
+        sourceUri: 'file:///cache/new.jpg',
+        previousReference: 'managed:old.jpg',
+        persistSelection,
+      }),
+    ).resolves.toEqual({
       reference: 'managed:new.jpg',
       uri: 'file:///documents/strollia-custom-icons/new.jpg',
     });
 
     expect(persistSelection).toHaveBeenCalledWith('managed:new.jpg');
-    expect(persistSelection.mock.invocationCallOrder[0]).toBeLessThan(
-      (deleteManagedCustomIcon as jest.Mock).mock.invocationCallOrder[0],
-    );
+    expect(persistSelection.mock.invocationCallOrder[0]).toBeLessThan((deleteManagedCustomIcon as jest.Mock).mock.invocationCallOrder[0]);
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:old.jpg');
   });
 
   it('設定保存に失敗した場合は新規ファイルだけを削除して旧ファイルを維持する', async () => {
     const persistSelection = jest.fn().mockRejectedValue(new Error('DB error'));
 
-    await expect(replaceCustomIconSelection({
-      sourceUri: 'file:///cache/new.jpg',
-      previousReference: 'managed:old.jpg',
-      persistSelection,
-    })).rejects.toThrow('DB error');
+    await expect(
+      replaceCustomIconSelection({
+        sourceUri: 'file:///cache/new.jpg',
+        previousReference: 'managed:old.jpg',
+        persistSelection,
+      }),
+    ).rejects.toThrow('DB error');
 
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:new.jpg');
     expect(deleteManagedCustomIcon).not.toHaveBeenCalledWith('managed:old.jpg');
@@ -456,11 +451,7 @@ Expected: FAIL with `Cannot find module '../customIconSelection'`.
 `src/features/customization/customIconSelection.ts` を作成する。
 
 ```ts
-import {
-  deleteManagedCustomIcon,
-  persistCustomIconImage,
-  StoredCustomIcon,
-} from './customIconStorage';
+import { deleteManagedCustomIcon, persistCustomIconImage, StoredCustomIcon } from './customIconStorage';
 
 export type ReplaceCustomIconSelectionOptions = {
   sourceUri: string;
@@ -508,6 +499,7 @@ git commit -m "feat(icon): カスタム画像を安全に置き換え"
 ### Task 4: Appの復元・選択・非破壊フォールバック
 
 **Files:**
+
 - Modify: `src/app/App.tsx:69-84, 156, 199-312, 620-665, 1330-1408, 1569`
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 - Modify: `src/app/components/__tests__/MapScreen.test.tsx`
@@ -658,10 +650,7 @@ Expected: FAIL because App does not resolve managed references and `clearCustomI
 `App.tsx` へ次を反映する。
 
 ```ts
-import {
-  deleteManagedCustomIcon,
-  resolveCustomIconReference,
-} from '../features/customization/customIconStorage';
+import { deleteManagedCustomIcon, resolveCustomIconReference } from '../features/customization/customIconStorage';
 import { replaceCustomIconSelection } from '../features/customization/customIconSelection';
 import { getBooleanSetting, getStringSetting, setSetting, setSettings } from '../features/settings/settingsRepository';
 ```
@@ -735,10 +724,7 @@ Alert.alert('カスタムアイコン', '写真をアルバムから削除する
 catch時は以前の選択が維持されたことを示す。
 
 ```ts
-Alert.alert(
-  'カスタムアイコンを変更できませんでした',
-  error instanceof Error ? error.message : '以前のカスタムアイコンを維持します。',
-);
+Alert.alert('カスタムアイコンを変更できませんでした', error instanceof Error ? error.message : '以前のカスタムアイコンを維持します。');
 ```
 
 - [x] **Step 5: 画像エラーを非破壊なセッション内フォールバックへ変更する**
@@ -786,6 +772,7 @@ git commit -m "fix(icon): 更新後も現在地アイコン設定を維持"
 ### Task 5: 全体検証と仕様整合
 
 **Files:**
+
 - Verify: `docs/superpowers/specs/2026-06-19-location-icon-persistence-design.md`
 - Verify: `docs/superpowers/plans/2026-06-21-location-icon-persistence.md`
 - Verify: all changed source and test files

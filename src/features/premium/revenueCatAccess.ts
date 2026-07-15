@@ -1,4 +1,4 @@
-import { developmentFlags } from '../../config/developmentFlags';
+import { developmentFlags } from '@/config/developmentFlags';
 import { STROLLIA_PLUS_ENTITLEMENT_ID } from './premiumCatalog';
 
 /** RevenueCatから得る購読/買い切りの利用可否。 */
@@ -156,7 +156,9 @@ export async function getPremiumOfferingSummary(): Promise<PremiumOfferingSummar
 }
 
 function isRevenueCatPurchaseCancelled(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'userCancelled' in error && (error as { userCancelled?: unknown }).userCancelled === true;
+  return (
+    typeof error === 'object' && error !== null && 'userCancelled' in error && (error as { userCancelled?: unknown }).userCancelled === true
+  );
 }
 
 /** RevenueCat Packageを設定画面から直接購入する。 */

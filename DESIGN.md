@@ -59,18 +59,18 @@ Strollia の画面は、派手なSNS風ではなく、移動ログを静かに�
 
 主なトークンの用途は以下である。
 
-| トークン | 用途 |
-| --- | --- |
-| `background` | 画面全体の背景 |
-| `card` | リスト行や控えめな面 |
-| `cardStrong` | 少し強い面、画像フレームなど |
-| `text` | 通常本文 |
-| `mutedText` | 補足説明、空状態、メタ情報 |
-| `border` | 区切り線、控えめな枠 |
-| `primary` | 主要アクション、訪問済みエリア色 |
-| `danger` | 削除など破壊的操作 |
-| `surfaceOverlay` | 地図上やモーダルの半透明面 |
-| `scrim` | 背景を抑える薄い覆い |
+| トークン         | 用途                             |
+| ---------------- | -------------------------------- |
+| `background`     | 画面全体の背景                   |
+| `card`           | リスト行や控えめな面             |
+| `cardStrong`     | 少し強い面、画像フレームなど     |
+| `text`           | 通常本文                         |
+| `mutedText`      | 補足説明、空状態、メタ情報       |
+| `border`         | 区切り線、控えめな枠             |
+| `primary`        | 主要アクション、訪問済みエリア色 |
+| `danger`         | 削除など破壊的操作               |
+| `surfaceOverlay` | 地図上やモーダルの半透明面       |
+| `scrim`          | 背景を抑える薄い覆い             |
 
 ライトモード / ダークモードはOS設定に追従する。
 今後ユーザーがテーマ設定を選ぶ場合も、画面は直接色を分岐せずテーマ解決後の値を受け取る。
@@ -325,7 +325,241 @@ OSSライセンスは設定画面から開く。
 - 写真やGPSログが外部送信されるように見える文言
 - GPX以外に対応しているように見えるインポート説明
 
-## 13. 変更時の確認
+## 13. 実装リファレンス: デザイントークン実値
+
+このセクション以降は、コードベースから抽出した実装用の具体値をまとめる。
+値を変更した場合は、参照元のソースファイルとこのドキュメントを同時に更新する。
+
+### 13.1 カラートークン
+
+定義元: `src/theme/theme.ts` の `lightTheme` / `darkTheme`。
+
+| トークン                  | ライト                   | ダーク                   |
+| ------------------------- | ------------------------ | ------------------------ |
+| `background`              | `#ffffff`                | `#202020`                |
+| `card`                    | `#f8f8f8`                | `#252525`                |
+| `cardStrong`              | `#f0f0f0`                | `#2e2e2e`                |
+| `text`                    | `#1a1a1a`                | `#f0f0f0`                |
+| `mutedText`               | `#666666`                | `#999999`                |
+| `border`                  | `#e0e0e0`                | `#3a3a3a`                |
+| `primary`                 | `#1f7a5c`                | `#73c7a2`                |
+| `primaryText`             | `#fffdf8`                | `#102018`                |
+| `danger`                  | `#b33f52`                | `#ff8899`                |
+| `dangerSurface`           | `#fff1f3`                | `#3a2028`                |
+| `mapLine`                 | `#1f7a5c`                | `#73c7a2`                |
+| `routeMapEmptyBackground` | `#172b63`                | `#142d5c`                |
+| `routeMapEmptyText`       | `#ffffff`                | `#ffffff`                |
+| `shareButtonBackground`   | `#333333`                | `#f0f0f0`                |
+| `shareButtonText`         | `#ffffff`                | `#111111`                |
+| `plusCtaBackground`       | `rgba(31,122,92,0.08)`   | `rgba(115,199,162,0.08)` |
+| `surfaceOverlay`          | `rgba(248,248,248,0.94)` | `rgba(37,37,37,0.94)`    |
+| `scrim`                   | `rgba(0,0,0,0.08)`       | `rgba(0,0,0,0.28)`       |
+| `shadow`                  | `#000000`                | `#000000`                |
+
+注意点:
+
+- 画面コードで色をハードコードしない。必ず `theme.colors.*` または `appStyles.ts` のスタイルを経由する
+- `primary` / `primaryText` / `mapLine` はユーザーが12色プリセットで変更できる(`src/features/customization/colorPresets.ts` の `applyColorPreset`)。上表の値はデフォルトの「まっちゃ」であり、固定値として扱ってはいけない
+- Plusバッジだけは例外で、プリセットに関わらず常に「まっちゃ」色を使う(`appStyles.ts` 冒頭参照)
+
+`appStyles.ts` 内で派生する準トークン(設定系画面で使用):
+
+| 変数                 | ライト                | ダーク                   |
+| -------------------- | --------------------- | ------------------------ |
+| `settingsText`       | `#333333`             | `#ffffff`                |
+| `settingsMuted`      | `#767676`             | `rgba(255,255,255,0.62)` |
+| `settingsBorder`     | `rgba(51,51,51,0.20)` | `rgba(255,255,255,0.28)` |
+| `selectionSurface`   | primaryの10%透過      | 同左                     |
+| `settingsGpsActive`  | `#00b035`             | 同左                     |
+| `settingsGpsDanger`  | `#b0002f`             | 同左                     |
+| `settingsWarning`    | `#a36100`             | 同左                     |
+| `mapPanelBackground` | `rgba(51,51,51,0.80)` | 同左                     |
+| `mapPanelText`       | `#ffffff`             | 同左                     |
+
+### 13.2 カラープリセット(12色)
+
+定義元: `src/features/customization/colorPresets.ts`。デフォルトは `matcha`。
+
+| ID        | 名称     | ライトprimary | ダークprimary |
+| --------- | -------- | ------------- | ------------- |
+| matcha    | まっちゃ | `#1f7a5c`     | `#73c7a2`     |
+| wakaba    | わかば   | `#5a8a1a`     | `#9fd45a`     |
+| himawari  | ひまわり | `#b08000`     | `#f0c040`     |
+| mikan     | みかん   | `#c06010`     | `#f08840`     |
+| yuuyake   | ゆうやけ | `#c04020`     | `#f07050`     |
+| tomato    | トマト   | `#b02020`     | `#f06060`     |
+| sakura    | さくら   | `#b04070`     | `#f090b0`     |
+| tasogare  | たそがれ | `#6030a0`     | `#a870e0`     |
+| hoshizora | ほしぞら | `#3040a0`     | `#7090e0`     |
+| umi       | うみ     | `#1060a0`     | `#50a0e0`     |
+| ramune    | ラムネ   | `#008090`     | `#40c0d0`     |
+| asatsuyu  | あさつゆ | `#13a890`     | `#5fd8be`     |
+
+### 13.3 タイポグラフィ実値
+
+定義元: `src/app/appStyles.ts`。フォントはOS標準。数値表示のみ `DSEG7Classic-BoldItalic`(`src/theme/fonts.ts` の `NUMERIC_DISPLAY_FONT`)。
+
+| 用途                       | スタイル名                  | fontSize | fontWeight | lineHeight |
+| -------------------------- | --------------------------- | -------- | ---------- | ---------- |
+| 画面ヘッダータイトル       | `appHeaderTitle`            | 14       | 900        | 18         |
+| ヘッダーサブタイトル       | `appHeaderSubtitle`         | 11       | 400        | 14         |
+| セクション見出し(詳細画面) | `sectionTitle`              | 18       | 900        | 23         |
+| セクション見出し(設定系)   | `screenSectionTitle`        | 16       | 900        | 20         |
+| リスト行タイトル           | `appListItemTitle`          | 15       | 400        | 20         |
+| リスト行タイトル(強調)     | `appListItemTitleProminent` | 23       | 400        | 30         |
+| リスト行サブタイトル       | `appListItemSubtitle`       | 14       | 400        | 19         |
+| 項目見出し                 | `formItemTitle`             | 14       | 400        | 18         |
+| 補足説明                   | `formItemDescription`       | 11       | 400        | 14         |
+| データ行の値               | `dataSummaryValue`          | 19       | 400        | 25         |
+| ボタン(ピル)               | `actionPillText`            | 14       | 400        | 18         |
+| 空状態タイトル             | `emptyTitle`                | 18       | 800        | -          |
+
+太字(900)は見出し類に限定し、本文・リスト行・ボタンは 400 を使う(§4 の方針の実装値)。
+
+### 13.4 余白・角丸・影
+
+余白(`appStyles.ts` の頻出値):
+
+- 画面の左右余白: 24(`screenList` の `paddingHorizontal`)
+- リスト内ギャップ: 16(`screenList` の `gap`)、セクション内: 10〜14
+- リスト行: `minHeight` 56 / `paddingVertical` 13(`appListItem`)
+- ヘッダー: `minHeight` 68 / 上18・下16・左右24(`appHeader`)
+
+角丸の使い分け:
+
+| 値     | 用途                                                           |
+| ------ | -------------------------------------------------------------- |
+| 999    | ピルボタン(`actionPill`)、アイコンボタン(`iconButton`)、バッジ |
+| 26〜30 | ダイアログ、モーダル                                           |
+| 20〜24 | 実績カード、画像フレーム                                       |
+| 12〜18 | ボタン、入力枠、パネル                                         |
+
+影(`shadowColor` は常に `#000000`):
+
+| 用途                 | offset  | opacity    | radius |
+| -------------------- | ------- | ---------- | ------ |
+| 標準(小さいボタン等) | (0, 4)  | 0.24       | 7      |
+| 浮遊ボタン・パネル   | (0, 8)  | 0.18〜0.28 | 12〜14 |
+| 大きなパネル         | (0, 18) | 0.2        | 28     |
+| モーダル             | (0, 24) | 0.26       | 32     |
+
+## 14. 実装リファレンス: 共通コンポーネントカタログ
+
+配置: `src/app/components/`。全コンポーネントに共通する規約:
+
+- `styles: AppStyles`(`appStyles.ts` の `createStyles` 戻り値)と、テーマ色が必要なら `theme: AppTheme` を props で受け取る
+- 押下可能な要素には `accessibilityLabel` と `accessibilityRole="button"` を必ず付ける
+- 1ファイル1コンポーネント、named export
+
+| コンポーネント             | 用途                                               | 主なprops                                                                                                  |
+| -------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `AppScreenHeader`          | 子画面の共通ヘッダー(中央タイトル+戻る)            | `backLabel`, `title`, `subtitle?`, `onBack`, `styles`, `theme`                                             |
+| `AppBackButton`            | 左上の戻るボタン(chevron-left+ラベル)              | `label`, `onPress`, `styles`, `theme`                                                                      |
+| `AppListItem`              | 詳細遷移リスト行(右端chevron-right)                | `title`, `subtitle?`, `detail?`, `prominent?`, `accessibilityLabel`, `onPress`, `styles`, `theme`          |
+| `DailyLogListItem`         | 日別ログ行(AppListItemのラッパー)                  | `log`, `startAreaName?`, `endAreaName?`, `onPress`, `styles`, `theme`                                      |
+| `ScreenSection`            | セクション見出し+本文領域                          | `title`, `children`, `styles`                                                                              |
+| `SectionTitle`             | セクション見出し単体                               | `children`, `styles`                                                                                       |
+| `DescriptionText`          | ミュートカラーの補足説明                           | `children`, `styles`                                                                                       |
+| `InfoBlock`                | 見出し+補足のブロック(ボタン群の前置き)            | `title`, `description?`, `styles`                                                                          |
+| `DataSummaryRow`           | ラベルと値を罫線付きで並べる行                     | `label`, `value`, `styles`                                                                                 |
+| `ActionPill`               | アウトラインのピル型アクションボタン               | `label`, `icon?`, `danger?`, `disabled?`, `alignLeft?`, `onPress`, `styles`                                |
+| `SelectionTile`            | primary枠+10%塗りで選択状態を表すタイル            | `label`, `icon?`, `swatchColor?`, `isSelected?`, `wide?`, `onPress?`, `styles`                             |
+| `OptionGroup`              | 2択/3択の横並び選択ボタン群                        | `title`, `note?`, `children`, `styles`                                                                     |
+| `ShareButton`              | 共有ボタン(icon/wideバリアント)                    | `accessibilityLabel`, `iconColor`, `label?`, `variant?`, `onPress`                                         |
+| `StepSlider`               | 単一つまみのスライダー                             | -                                                                                                          |
+| `RangeSlider`              | 2つまみの範囲スライダー(時間帯選択)                | `minValue`, `maxValue`, `stepValue`, `startValue`, `endValue`, `onChange` 他                               |
+| `Dialog`                   | 共通ダイアログ(スワイプ閉じ・紙吹雪・自動クローズ) | `visible`, `children`, `dismissible?`, `swipeToClose?`, `showConfetti?`, `autoClose?`, `onClose`, `styles` |
+| `RouteMapPanel`            | 保存済みルートのMapView表示                        | `points`, `regionPoints?`, `emptyLabel`, `onMapLoaded?`, `styles`, `theme`                                 |
+| `TopToast`                 | 画面上部のトースト                                 | -                                                                                                          |
+| `IndeterminateProgressBar` | 不定長プログレスバー                               | -                                                                                                          |
+
+## 15. 実装リファレンス: 画面実装の雛形
+
+標準的な子画面の構成(実例: `src/app/components/DailyLogsScreen.tsx`):
+
+```tsx
+import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+
+import { AppTheme } from '../../theme/theme';
+import { AppStyles } from '../appStyles';
+import { AppScreenHeader } from './AppScreenHeader';
+
+/** ○○画面のprops。 */
+export type XxxScreenProps = {
+  /** 画面共通スタイル。 */
+  styles: AppStyles;
+  /** 現在テーマ。 */
+  theme: AppTheme;
+  /** 戻る処理。 */
+  onBack: () => void;
+};
+
+/** ○○画面を描画する。 */
+export function XxxScreen({ styles, theme, onBack }: XxxScreenProps) {
+  return (
+    <SafeAreaView style={styles.appScreen}>
+      <AppScreenHeader backLabel="設定" styles={styles} theme={theme} title="○○" onBack={onBack} />
+      <ScrollView contentContainerStyle={styles.screenList}>{/* ScreenSection / AppListItem / ActionPill などを並べる */}</ScrollView>
+    </SafeAreaView>
+  );
+}
+```
+
+実装ルール:
+
+- ルートは `SafeAreaView` + `styles.appScreen`(背景は `theme.colors.background`)
+- スタイルは `appStyles.ts` の `createStyles(theme)` に集約する。画面ローカルの `StyleSheet.create` は原則作らない
+- 画面はデータと操作を props で受け取る。DB操作や端末API呼び出しは画面内に直接書かず、呼び出し元(App.tsx)やサービス層から渡す
+- 空状態は `emptyTitle` / `emptyText` スタイルで文言を表示する
+
+ナビゲーション(実例: `src/app/App.tsx`):
+
+- 日別記録系・設定系はそれぞれ `createNativeStackNavigator` + 独立した `NavigationContainer`(`NavigationIndependentTree`)で構成する
+- `screenOptions` は `{ animation: 'slide_from_right', gestureEnabled: true, headerShown: false }`(右入り/左戻り+iOSスワイプバック、§6 の実装値)
+- 新しい子画面は該当スタック(`SettingsStack` / `DailyLogStack`)に `Stack.Screen` を追加する
+- Sentry 用に画面名を `Settings:XxxScreen` 形式で `updateSentryScreenContext` へ通知する(既存の `onStateChange` パターンに従う)
+
+## 16. 実装リファレンス: アイコン・アニメーション・ハプティクス
+
+アイコン(`@expo/vector-icons`):
+
+- 一般UI(chevron、共有、設定など): `Feather`
+- 機能・状態(ロック、トロフィー、衛星など): `MaterialCommunityIcons`
+- サイズ: リスト・ボタン 16〜24 / パネルボタン 28 / ダッシュボード 30〜36
+- 色は `theme.colors.text` / `mutedText` / `primary` を使う。地図上の固定ダークUIのみ `#ffffff`
+
+アニメーション(React Native標準 `Animated` のみ。Reanimated は不使用):
+
+- ダイアログ登場: `Animated.spring`(damping 9, mass 0.72, stiffness 190)
+- ダイアログ退場: `Animated.timing`(duration 500)
+- ドラッグ復帰: `Animated.spring`(damping 12, stiffness 210)
+- レイアウト変化: `LayoutAnimation.configureNext`(easeInEaseOut)
+- 実装は `src/app/components/Dialog.tsx` を参照
+
+ハプティクス(`expo-haptics`):
+
+- 実績解除など達成イベント: `Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)`
+- 選択操作: `Haptics.selectionAsync()`
+- 軽い操作フィードバック: `Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)`
+
+## 17. 実装リファレンス: レポート画面専用カラー
+
+月次レポート(§7.7)はテーマに追従せず常にダーク基調で描画する。
+定義元: `src/app/components/reports/reportStyles.ts`。
+
+| 用途                 | 値                       |
+| -------------------- | ------------------------ |
+| 背景                 | `#202020`                |
+| 面                   | `#2d2d2d`                |
+| 浮いた面             | `#383838`                |
+| テキスト             | `#ffffff`                |
+| ミュート             | `rgba(255,255,255,0.66)` |
+| 罫線・控えめ         | `rgba(255,255,255,0.18)` |
+| アクセント(ゴールド) | `#f5a900`                |
+
+レポート系のスタイルは `reportStyles.ts` に閉じ、`appStyles.ts` と混ぜない。
+
+## 18. 変更時の確認
 
 画面デザインを変更した場合は、以下を確認する。
 
@@ -338,4 +572,3 @@ OSSライセンスは設定画面から開く。
 - iOSの左端スワイプバックが可能な画面で有効になっている
 - テストの画面説明文が日本語で書かれている
 - ユーザー向け挙動を変えた場合は関連する `docs/` も更新している
-

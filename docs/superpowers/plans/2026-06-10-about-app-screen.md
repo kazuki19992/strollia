@@ -13,6 +13,7 @@
 ### Task 1: 設定画面の導線
 
 **Files:**
+
 - Modify: `src/app/components/SettingsScreen.tsx`
 - Test: `src/app/components/__tests__/SettingsScreen.test.tsx`
 
@@ -66,6 +67,7 @@ Expected: PASS.
 ### Task 2: このアプリについて画面
 
 **Files:**
+
 - Create: `src/app/components/AboutAppScreen.tsx`
 - Test: `src/app/components/__tests__/AboutAppScreen.test.tsx`
 - Modify: `src/app/appStyles.ts`
@@ -93,6 +95,7 @@ Expected: PASS.
 ### Task 3: Navigation wiring and verification
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 
 - [x] **Step 1: Wire navigation**

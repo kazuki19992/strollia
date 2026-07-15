@@ -1,5 +1,10 @@
-import { cellToPolygonCoordinates, coordinateToGridCell, getGridBoundsForRegion, isGridBoundsContained } from '../gridCell';
-import type { GridCell } from '../gridCell';
+import {
+  cellToPolygonCoordinates,
+  coordinateToGridCell,
+  getGridBoundsForRegion,
+  isGridBoundsContained,
+} from '@/features/location/grid/gridCell';
+import type { GridCell } from '@/features/location/grid/gridCell';
 
 describe('グリッド範囲の包含判定 isGridBoundsContained', () => {
   const outer = { minX: 0, maxX: 100, minY: 0, maxY: 100 };

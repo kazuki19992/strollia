@@ -3,7 +3,7 @@ import {
   DEFAULT_APP_COLOR_PRESET_ID,
   getAppColorPreset,
   isAppColorPresetId,
-} from '../colorPresets';
+} from '@/features/customization/colorPresets';
 
 describe('アプリカラープリセット colorPresets', () => {
   it('デフォルトIDはまっちゃ', () => {
@@ -46,9 +46,11 @@ describe('アプリカラープリセット colorPresets', () => {
   });
 
   it('有効なIDを渡すと対応するプリセット全体を返す', () => {
-    expect(getAppColorPreset('tomato')).toEqual(expect.objectContaining({
-      id: 'tomato',
-      label: 'トマト',
-    }));
+    expect(getAppColorPreset('tomato')).toEqual(
+      expect.objectContaining({
+        id: 'tomato',
+        label: 'トマト',
+      }),
+    );
   });
 });

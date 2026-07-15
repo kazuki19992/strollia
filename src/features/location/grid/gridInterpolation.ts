@@ -1,5 +1,5 @@
-import { FAST_SPEED_MIN_KMH, estimateAcceptedSegmentSpeedMps } from '../locationSpeed';
-import type { NewLocationPoint } from '../../../types/gps';
+import { FAST_SPEED_MIN_KMH, estimateAcceptedSegmentSpeedMps } from '@/features/location/locationSpeed';
+import type { NewLocationPoint } from '@/types/gps';
 import { coordinateToGridCell, GridCell } from './gridCell';
 
 /** visited cell開放を許可する最大GPS誤差。単位はm。 */

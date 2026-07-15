@@ -1,4 +1,4 @@
-import { parseGpxToLocationPoints } from '../gpxImporter';
+import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 
 describe('GPXインポート gpxImporter', () => {
   it('trkptからGPSポイントを作成する', () => {

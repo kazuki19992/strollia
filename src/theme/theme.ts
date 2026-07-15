@@ -1,4 +1,4 @@
-import type { AppColorPreset } from '../features/customization/colorPresets';
+import type { AppColorPreset } from '@/features/customization/colorPresets';
 
 /** OSカラースキームに対応するアプリテーマ名。 */
 export type AppThemeName = 'light' | 'dark';
@@ -89,8 +89,14 @@ export function isAppThemePreference(value: string): value is AppThemePreference
   return value === 'system' || value === 'light' || value === 'dark';
 }
 
-/** OSのカラースキームとユーザー設定から利用するテーマを選ぶ。 */
-export function getAppTheme(colorScheme: 'light' | 'dark' | null | undefined, preference: AppThemePreference = 'system'): AppTheme {
+/**
+ * OSのカラースキームとユーザー設定から利用するテーマを選ぶ。
+ * RN 0.83以降の ColorSchemeName に含まれる 'unspecified' は、OS設定が不明な状態としてライトテーマへフォールバックする。
+ */
+export function getAppTheme(
+  colorScheme: 'light' | 'dark' | 'unspecified' | null | undefined,
+  preference: AppThemePreference = 'system',
+): AppTheme {
   if (preference === 'light') {
     return lightTheme;
   }

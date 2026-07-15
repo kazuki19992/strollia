@@ -1,17 +1,13 @@
-import { deleteManagedCustomIcon, persistCustomIconImage } from '../customIconStorage';
-import { replaceCustomIconSelection } from '../customIconSelection';
+import { deleteManagedCustomIcon, persistCustomIconImage } from '@/features/customization/customIconStorage';
+import { replaceCustomIconSelection } from '@/features/customization/customIconSelection';
 
-jest.mock('../customIconStorage', () => ({
+jest.mock('@/features/customization/customIconStorage', () => ({
   deleteManagedCustomIcon: jest.fn(),
   persistCustomIconImage: jest.fn(),
 }));
 
-const deleteManagedCustomIconMock = deleteManagedCustomIcon as jest.MockedFunction<
-  typeof deleteManagedCustomIcon
->;
-const persistCustomIconImageMock = persistCustomIconImage as jest.MockedFunction<
-  typeof persistCustomIconImage
->;
+const deleteManagedCustomIconMock = deleteManagedCustomIcon as jest.MockedFunction<typeof deleteManagedCustomIcon>;
+const persistCustomIconImageMock = persistCustomIconImage as jest.MockedFunction<typeof persistCustomIconImage>;
 
 describe('カスタム現在地アイコンの安全な置き換え', () => {
   beforeEach(() => {
@@ -44,12 +40,8 @@ describe('カスタム現在地アイコンの安全な置き換え', () => {
     expect(persistCustomIconImage).toHaveBeenCalledWith('file:///cache/new.jpg');
     expect(persistSelection).toHaveBeenCalledWith('managed:new.jpg');
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:old.jpg');
-    expect(persistCustomIconImageMock.mock.invocationCallOrder[0]).toBeLessThan(
-      persistSelection.mock.invocationCallOrder[0],
-    );
-    expect(persistSelection.mock.invocationCallOrder[0]).toBeLessThan(
-      deleteManagedCustomIconMock.mock.invocationCallOrder[0],
-    );
+    expect(persistCustomIconImageMock.mock.invocationCallOrder[0]).toBeLessThan(persistSelection.mock.invocationCallOrder[0]);
+    expect(persistSelection.mock.invocationCallOrder[0]).toBeLessThan(deleteManagedCustomIconMock.mock.invocationCallOrder[0]);
   });
 
   it('設定保存に失敗した場合は新規ファイルだけを削除して元のエラーを返す', async () => {
@@ -84,10 +76,7 @@ describe('カスタム現在地アイコンの安全な置き換え', () => {
       }),
     ).rejects.toBe(persistenceError);
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      'Failed to delete unpersisted custom icon:',
-      cleanupError,
-    );
+    expect(warnSpy).toHaveBeenCalledWith('Failed to delete unpersisted custom icon:', cleanupError);
     expect(deleteManagedCustomIcon).toHaveBeenCalledTimes(1);
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:new.jpg');
   });
@@ -150,10 +139,7 @@ describe('カスタム現在地アイコンの安全な置き換え', () => {
       uri: 'file:///documents/strollia-custom-icons/new.jpg',
     });
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      'Failed to delete previous custom icon:',
-      deletionError,
-    );
+    expect(warnSpy).toHaveBeenCalledWith('Failed to delete previous custom icon:', deletionError);
   });
 
   it('新規ファイルの保存に失敗した場合は設定保存もファイル削除も行わない', async () => {

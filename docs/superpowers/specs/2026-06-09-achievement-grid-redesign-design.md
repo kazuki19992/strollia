@@ -36,6 +36,7 @@ AchievementListScreen（グリッド・改修）
 **ファイル:** `src/app/components/Dialog.tsx`
 
 `AchievementUnlockModal` の以下のロジックを汎用化して移植する:
+
 - `Modal` + バックドロップ
 - `PanResponder` によるスワイプ閉じ（`achievementUnlockModalLogic.ts` の判定関数を流用）
 - 登場（spring）/ 退場（timing）アニメーション
@@ -43,6 +44,7 @@ AchievementListScreen（グリッド・改修）
 - 閉じるボタン
 
 **Props:**
+
 ```typescript
 export type DialogProps = {
   /** 表示状態。 */
@@ -65,6 +67,7 @@ export type DialogProps = {
 ```
 
 **振る舞い:**
+
 - `showConfetti=false` のときは `ConfettiOverlay` をレンダリングしない
 - `autoClose=false` のときは自動クローズタイマーと進捗バー（`achievementAutoCloseTrack`）を描画しない
 - `swipeToClose=true`（既定）のときスワイプ閉じを有効化し、本文下に「スワイプで閉じる」ヒント（`dialogSwipeHint`）を表示する
@@ -128,6 +131,7 @@ export function AchievementUnlockModal({ achievement, animationKey, styles, them
 **ファイル:** `src/app/components/AchievementDialog.tsx`
 
 **Props:**
+
 ```typescript
 export type AchievementDialogProps = {
   /** 表示する実績一覧アイテム。null で非表示。 */
@@ -142,6 +146,7 @@ export type AchievementDialogProps = {
 ```
 
 **コンテンツ（captureRef 対象は画像〜説明まで、共有/閉じるボタンは対象外）:**
+
 - 実績画像
 - 実績名
 - 開放日（`item.unlockedAt` を `toLocaleDateString()`）
@@ -161,29 +166,33 @@ export type AchievementDialogProps = {
 
 なお `distance` カテゴリには通常の総距離実績と「地球n周」実績（40,000kmごと）が混在するため、`achievementDefinitions` 側で両者をしきい値（m）昇順に並べ替えて `sortOrder` を連番採番する。これにより地球n周実績が総距離の正しい位置に挿入される。
 
-
-| 状態 | 判定 | 画像 | 実績名 | 進捗 | タップ |
-|------|------|------|--------|------|--------|
-| 解除済み | `unlockedAt != null` | 通常 | 実績名 | 開放日 | AchievementDialog を開く |
-| 次の実績 | カテゴリ内で最初のロック済み | グレースケール（薄め） | 実績名 | 進捗（X / Y） | 不可 |
-| それ以降 | 上記以外のロック済み | シルエット | ？？？ | ？？？ | 不可 |
+| 状態     | 判定                         | 画像                   | 実績名 | 進捗          | タップ                   |
+| -------- | ---------------------------- | ---------------------- | ------ | ------------- | ------------------------ |
+| 解除済み | `unlockedAt != null`         | 通常                   | 実績名 | 開放日        | AchievementDialog を開く |
+| 次の実績 | カテゴリ内で最初のロック済み | グレースケール（薄め） | 実績名 | 進捗（X / Y） | 不可                     |
+| それ以降 | 上記以外のロック済み         | シルエット             | ？？？ | ？？？        | 不可                     |
 
 **状態判定ロジック（新規ヘルパー）:**
+
 ```typescript
 type AchievementDisplayState = 'unlocked' | 'next' | 'hidden';
 
-function resolveAchievementDisplayStates(items: AchievementListItem[]): Map<string, AchievementDisplayState>
+function resolveAchievementDisplayStates(items: AchievementListItem[]): Map<string, AchievementDisplayState>;
 ```
+
 カテゴリごとに sortOrder 昇順で走査し、最初のロック済みを `next`、以降のロック済みを `hidden`、解除済みを `unlocked` とする。
 
 **画像の枠（共通）:**
+
 - カード（背景色・境界線）は敷かない。`Image` を透明な正方形枠の中央に配置するだけにする
 
 **グレースケール表現（次の実績）:**
+
 - `Image` に `filter: [{ grayscale: 1 }]` を適用して実際に脱色する（RN 0.81 / New Architecture）
 - あわせて `opacity: 0.45` で薄く表示する
 
 **シルエット表現（それ以降）:**
+
 - `Image` に `tintColor` を適用し単色塗りつぶし
 - 色は `theme.colors.border`（無彩色化後: ライト `#e0e0e0` / ダーク `#3a3a3a`）
 
@@ -197,28 +206,28 @@ function resolveAchievementDisplayStates(items: AchievementListItem[]): Map<stri
 
 ### lightTheme
 
-| キー | 現在 | 変更後 |
-|------|------|--------|
-| `card` | `#fffdf8` | `#f8f8f8` |
-| `cardStrong` | `#fffdf8` | `#f0f0f0` |
-| `text` | `#2d2416` | `#1a1a1a` |
-| `mutedText` | `#675c4d` | `#666666` |
-| `border` | `#e5ddcd` | `#e0e0e0` |
+| キー             | 現在                        | 変更後                      |
+| ---------------- | --------------------------- | --------------------------- |
+| `card`           | `#fffdf8`                   | `#f8f8f8`                   |
+| `cardStrong`     | `#fffdf8`                   | `#f0f0f0`                   |
+| `text`           | `#2d2416`                   | `#1a1a1a`                   |
+| `mutedText`      | `#675c4d`                   | `#666666`                   |
+| `border`         | `#e5ddcd`                   | `#e0e0e0`                   |
 | `surfaceOverlay` | `rgba(255, 253, 248, 0.94)` | `rgba(248, 248, 248, 0.94)` |
-| `scrim` | `rgba(45, 36, 22, 0.08)` | `rgba(0, 0, 0, 0.08)` |
-| `shadow` | `#2d2416` | `#000000` |
+| `scrim`          | `rgba(45, 36, 22, 0.08)`    | `rgba(0, 0, 0, 0.08)`       |
+| `shadow`         | `#2d2416`                   | `#000000`                   |
 
 ### darkTheme
 
-| キー | 現在 | 変更後 |
-|------|------|--------|
-| `card` | `#22261d` | `#252525` |
-| `cardStrong` | `#2b3025` | `#2e2e2e` |
-| `text` | `#f3eadb` | `#f0f0f0` |
-| `mutedText` | `#c8bda7` | `#999999` |
-| `border` | `#3a4032` | `#3a3a3a` |
-| `shareButtonBackground` | `#f7f2ea` | `#f0f0f0` |
-| `surfaceOverlay` | `rgba(34, 38, 29, 0.94)` | `rgba(37, 37, 37, 0.94)` |
+| キー                    | 現在                     | 変更後                   |
+| ----------------------- | ------------------------ | ------------------------ |
+| `card`                  | `#22261d`                | `#252525`                |
+| `cardStrong`            | `#2b3025`                | `#2e2e2e`                |
+| `text`                  | `#f3eadb`                | `#f0f0f0`                |
+| `mutedText`             | `#c8bda7`                | `#999999`                |
+| `border`                | `#3a4032`                | `#3a3a3a`                |
+| `shareButtonBackground` | `#f7f2ea`                | `#f0f0f0`                |
+| `surfaceOverlay`        | `rgba(34, 38, 29, 0.94)` | `rgba(37, 37, 37, 0.94)` |
 
 `background` / `primary` 系 / `routeMapEmpty*` / `shareButtonText` / `dangerSurface` は据え置き。
 
@@ -227,6 +236,7 @@ function resolveAchievementDisplayStates(items: AchievementListItem[]): Map<stri
 ## スタイル追加（appStyles.ts）
 
 グリッド2列・3状態表示用のスタイルを追加:
+
 - `achievementGridTile`（2列タイル: `width: '48%'` 相当）
 - `achievementTileImage` / `achievementTileImageNext`（グレースケールオーバーレイ）/ `achievementTileImageHidden`（シルエット）
 - `achievementTileGrayscaleOverlay`

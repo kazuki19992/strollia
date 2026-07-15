@@ -30,6 +30,7 @@
 ### Task 1: Speed Meter Calculation Tests
 
 **Files:**
+
 - Modify: `src/app/components/__tests__/MapBottomDashboard.test.tsx`
 - Modify: `src/app/components/MapBottomDashboard.tsx`
 
@@ -141,6 +142,7 @@ git commit -m "test(map): 速度メーター円弧計算を追加"
 ### Task 2: Continuous SVG Arc Rendering
 
 **Files:**
+
 - Modify: `src/app/components/MapBottomDashboard.tsx`
 - Modify: `src/app/appStyles.ts`
 - Modify: `src/app/components/__tests__/MapBottomDashboard.test.tsx`
@@ -252,6 +254,7 @@ git commit -m "feat(map): 速度メーターを連続円弧で描画する"
 ### Task 3: Documentation And Full Verification
 
 **Files:**
+
 - Modify: `docs/map-rendering.md`
 
 - [ ] **Step 1: Update documentation**

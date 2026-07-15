@@ -1,4 +1,4 @@
-import { db } from '../../db/database';
+import { db } from '@/db/database';
 import { ReportMonth } from './monthlyReport';
 
 /** 月次レポートで表示する都道府県ランキング項目。 */

@@ -5,7 +5,7 @@ import {
   GIF_FRAME_DELAY_MS,
   GIF_MIN_DURATION_MS,
   GIF_MIN_RANGE_MINUTES,
-} from '../routeGifFrames';
+} from '@/features/export/routeGifFrames';
 
 describe('GIF出力の定数', () => {
   it('15分刻み・0.5秒/コマ・最短5秒・最短15分区間を公開する', () => {

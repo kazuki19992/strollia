@@ -1,13 +1,8 @@
-import { registerRootComponent } from 'expo';
-
-import { initializeSentry, wrapWithSentry } from './src/config/sentry';
+import { initializeSentry } from './src/config/sentry';
 import './src/features/location/backgroundLocationTask';
-
-import App from './App';
 
 initializeSentry();
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(wrapWithSentry(App));
+// expo-router がルートレイアウト経由でアプリを起動する。
+// registerRootComponent は expo-router/entry 内部で呼ばれる。
+import 'expo-router/entry';

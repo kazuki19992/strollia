@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import { db } from '../../db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 
 /** SQLiteへJSON文字列として保存するアプリ設定値。 */
 export type AppSettingValue = boolean | number | string | null;
@@ -43,8 +43,6 @@ export async function getBooleanSetting(key: string, fallback: boolean): Promise
   }
 }
 
-
-
 /** string設定を読み込み、未保存または壊れた値の場合はfallbackを返す。 */
 export async function getStringSetting(key: string, fallback: string): Promise<string> {
   const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', key);
@@ -76,7 +74,7 @@ export async function setSettings(entries: AppSettingEntry[]): Promise<void> {
 
   const now = new Date().toISOString();
 
-  await db.withExclusiveTransactionAsync(async (txn) => {
+  await withExclusiveTransaction(async (txn) => {
     for (const entry of entries) {
       await upsertSetting(txn, entry.key, entry.value, now);
     }

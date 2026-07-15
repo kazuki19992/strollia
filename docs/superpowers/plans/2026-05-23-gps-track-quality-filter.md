@@ -65,6 +65,7 @@
 ## Task 1: Shared Speed Semantics
 
 **Files:**
+
 - Create: `src/features/location/locationSpeed.ts`
 - Create: `src/features/location/__tests__/locationSpeed.test.ts`
 - Modify: `src/features/location/locationSaveFilter.ts`
@@ -168,6 +169,7 @@ git commit -m "refactor(location): 速度帯判定を共通化"
 ## Task 2: Pure Location Quality Decisions
 
 **Files:**
+
 - Create: `src/features/location/locationQualityFilter.ts`
 - Create: `src/features/location/__tests__/locationQualityFilter.test.ts`
 - Modify: `src/features/location/locationSaveFilter.ts`
@@ -216,11 +218,7 @@ import { distanceMeters } from '../../utils/distance';
 import { estimateAcceptedSegmentSpeedMps } from './locationSpeed';
 
 export type LocationQualityReason =
-  | 'accuracy-too-low'
-  | 'duplicate-or-jitter'
-  | 'jump-suspected'
-  | 'stationary-drift'
-  | 'pending-track-confirmation';
+  'accuracy-too-low' | 'duplicate-or-jitter' | 'jump-suspected' | 'stationary-drift' | 'pending-track-confirmation';
 
 export type LocationQualityDecision =
   | { type: 'accepted'; point: NewLocationPoint }
@@ -435,6 +433,7 @@ git commit -m "feat(location): GPS軌跡品質判定を追加"
 ## Task 3: Background Save Integration
 
 **Files:**
+
 - Modify: `src/features/logs/logRepository.ts`
 - Modify: `src/features/logs/__tests__/logRepository.test.ts`
 - Modify: `src/features/location/backgroundLocationTask.ts`
@@ -452,10 +451,7 @@ describe('最近のGPSポイント取得 getRecentLocationPoints', () => {
 
     const recentPoints = await getRecentLocationPoints(2);
 
-    expect(recentPoints.map((item) => item.recordedAt)).toEqual([
-      '2026-05-23T00:00:10.000Z',
-      '2026-05-23T00:00:20.000Z',
-    ]);
+    expect(recentPoints.map((item) => item.recordedAt)).toEqual(['2026-05-23T00:00:10.000Z', '2026-05-23T00:00:20.000Z']);
   });
 });
 ```
@@ -549,6 +545,7 @@ git commit -m "feat(location): 品質判定後のGPS点だけ保存"
 ## Task 4: Segmented Route Rendering
 
 **Files:**
+
 - Modify: `src/features/map/routeMapper.ts`
 - Modify: `src/features/map/__tests__/routeMapper.test.ts`
 - Modify: `src/app/hooks/useMapRouteState.ts`
@@ -573,11 +570,14 @@ it('異常区間を別RouteSegmentへ分割する', () => {
 });
 
 it('各RouteSegmentを個別に簡略化する', () => {
-  const segments = toRenderRouteSegments([
-    point(35, 139, '2026-05-23T00:00:00.000Z'),
-    point(35.00001, 139.00001, '2026-05-23T00:00:10.000Z'),
-    point(35.001, 139.001, '2026-05-23T00:00:20.000Z'),
-  ], 10);
+  const segments = toRenderRouteSegments(
+    [
+      point(35, 139, '2026-05-23T00:00:00.000Z'),
+      point(35.00001, 139.00001, '2026-05-23T00:00:10.000Z'),
+      point(35.001, 139.001, '2026-05-23T00:00:20.000Z'),
+    ],
+    10,
+  );
 
   expect(segments[0].coordinates).toEqual([
     { latitude: 35, longitude: 139 },
@@ -609,10 +609,7 @@ export type RouteSegment = {
 const ROUTE_SEGMENT_MAX_SPEED_MPS = 70;
 const ROUTE_SEGMENT_MAX_GAP_MS = 10 * 60 * 1000;
 
-export function toRenderRouteSegments(
-  points: LocationPoint[],
-  toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS,
-): RouteSegment[] {
+export function toRenderRouteSegments(points: LocationPoint[], toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS): RouteSegment[] {
   return splitRoutePoints(points)
     .map((segment, index) => ({
       id: `${segment[0].recordedAt}-${index}`,
@@ -646,10 +643,26 @@ function splitRoutePoints(points: LocationPoint[]): LocationPoint[][] {
 ```tsx
 test('メインマップは分割済みルートを複数Polylineで描く', () => {
   const renderer = ReactTestRenderer.create(
-    <MapScreen {...createProps({ visibleRouteSegments: [
-      { id: 'a', coordinates: [{ latitude: 35, longitude: 139 }, { latitude: 35.1, longitude: 139.1 }] },
-      { id: 'b', coordinates: [{ latitude: 36, longitude: 140 }, { latitude: 36.1, longitude: 140.1 }] },
-    ] })} />,
+    <MapScreen
+      {...createProps({
+        visibleRouteSegments: [
+          {
+            id: 'a',
+            coordinates: [
+              { latitude: 35, longitude: 139 },
+              { latitude: 35.1, longitude: 139.1 },
+            ],
+          },
+          {
+            id: 'b',
+            coordinates: [
+              { latitude: 36, longitude: 140 },
+              { latitude: 36.1, longitude: 140.1 },
+            ],
+          },
+        ],
+      })}
+    />,
   );
 
   expect(renderer.root.findAllByType(Polyline)).toHaveLength(2);
@@ -671,9 +684,11 @@ const visibleRouteSegments = useMemo(
 Render:
 
 ```tsx
-{visibleRouteSegments.map((segment) => (
-  <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} />
-))}
+{
+  visibleRouteSegments.map((segment) => (
+    <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={routeLineStyle.color} strokeWidth={routeLineStyle.width} />
+  ));
+}
 ```
 
 Render the glow Polyline per segment as well.
@@ -698,6 +713,7 @@ git commit -m "feat(map): 異常区間でルート線を分割"
 ## Task 5: Reliable Dashboard Speed
 
 **Files:**
+
 - Create: `src/app/hooks/useReliableCurrentSpeed.ts`
 - Create: `src/app/hooks/__tests__/useReliableCurrentSpeed.test.ts`
 - Modify: `src/app/App.tsx`
@@ -831,6 +847,7 @@ git commit -m "feat(map): 信頼済み速度をメーターへ反映"
 ## Task 6: Documentation and Full Verification
 
 **Files:**
+
 - Modify: `docs/data-storage.md`
 - Modify: `docs/map-rendering.md`
 

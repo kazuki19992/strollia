@@ -1,0 +1,102 @@
+import { render, screen } from '@testing-library/react-native';
+import RootLayout from '@/app/_layout';
+
+/** usePathname スタブが返す現在パス。各テストで書き換える。 */
+let mockPathname = '/';
+
+// expo-router の Stack / usePathname / useRouter をスタブ化する
+jest.mock('expo-router', () => ({
+  Stack: () => null,
+  usePathname: () => mockPathname,
+  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+}));
+
+/** AppStateProvider が受け取った props の記録。配線検証に使う。 */
+const mockProviderProps: Array<Record<string, unknown>> = [];
+
+// wrapWithSentry はコンポーネントをそのまま返すスタブ
+jest.mock('@/config/sentry', () => ({
+  wrapWithSentry: (component: unknown) => component,
+  updateSentryScreenContext: jest.fn(),
+}));
+
+// AppStateProvider の依存をスタブ化し、軽量な View でレンダリングを確認する
+jest.mock('@/ui/state/AppStateProvider', () => {
+  const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
+  return {
+    AppStateProvider: (props: { children: React.ReactNode } & Record<string, unknown>) => {
+      mockProviderProps.push(props);
+      return <View>{props.children}</View>;
+    },
+    useAppState: () => ({
+      isReady: true,
+      styles: { container: {} },
+      theme: { name: 'light', colors: { primary: '#000' } },
+      isWhileInUseToastVisible: false,
+      setIsWhileInUseToastVisible: jest.fn(),
+      activeAchievementNotification: null,
+      closeAchievementUnlockModal: jest.fn(),
+      shareAchievementToX: jest.fn(),
+      selectedAchievement: null,
+      setSelectedAchievement: jest.fn(),
+      isPremiumPaywallVisible: false,
+      premiumOfferingSummary: null,
+      isLoadingPremiumOffering: false,
+      isPurchasingPremiumPackage: false,
+      isRestoringPremiumPurchases: false,
+      closePremiumPaywall: jest.fn(),
+      purchasePremiumPackageFromSettings: jest.fn(),
+      restorePurchasesFromSettings: jest.fn(),
+      isFirstLaunchTutorialVisible: false,
+      firstLaunchTutorialMode: 'firstLaunch',
+      completeFirstLaunchTutorial: jest.fn(),
+      selectedPhoto: null,
+      selectedPhotoCluster: null,
+      selectedPhotoClusterPages: [],
+      setSelectedPhotoCluster: jest.fn(),
+      setSelectedPhoto: jest.fn(),
+      isProcessingGpxImport: false,
+      openPremiumCustomerCenter: jest.fn(),
+    }),
+  };
+});
+
+// グローバルモーダルコンポーネントをスタブ化する
+jest.mock('@/ui/components/TopToast', () => ({ TopToast: () => null }));
+jest.mock('@/ui/components/AchievementUnlockModal', () => ({ AchievementUnlockModal: () => null }));
+jest.mock('@/ui/components/AchievementDialog', () => ({ AchievementDialog: () => null }));
+jest.mock('@/ui/components/PremiumPaywallModal', () => ({ PremiumPaywallModal: () => null }));
+jest.mock('@/ui/components/FirstLaunchTutorialDialog', () => ({ FirstLaunchTutorialDialog: () => null }));
+jest.mock('@/ui/components/PhotoPreviewModals', () => ({ PhotoPreviewModals: () => null }));
+jest.mock('@/ui/components/GpxImportProgressDialog', () => ({ GpxImportProgressDialog: () => null }));
+
+describe('expo-router ルートレイアウト (_layout)', () => {
+  beforeEach(() => {
+    mockPathname = '/';
+    mockProviderProps.length = 0;
+  });
+
+  test('default export が存在しレンダリングできること', () => {
+    render(<RootLayout />);
+
+    expect(screen.toJSON()).not.toBeNull();
+  });
+
+  test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', () => {
+    mockPathname = '/settings/about';
+
+    render(<RootLayout />);
+
+    // navigator 経由の遷移では内部 state が更新されないため、
+    // パス由来の ScreenMode が単一ソースとして Provider へ渡ることを固定する
+    expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('settings');
+  });
+
+  test('地図(/)では currentScreenMode が map になる', () => {
+    mockPathname = '/';
+
+    render(<RootLayout />);
+
+    expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('map');
+  });
+});

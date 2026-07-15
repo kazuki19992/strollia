@@ -1,5 +1,5 @@
-import { NewLocationPoint } from '../../types/gps';
-import { CoordinateLike, distanceMeters } from '../../utils/distance';
+import { NewLocationPoint } from '@/types/gps';
+import { CoordinateLike, distanceMeters } from '@/utils/distance';
 import { LOCATION_MAX_ACCURACY_METERS, LOCATION_MIN_SAVE_DISTANCE_METERS } from './locationTrackingConfig';
 import { classifyMovementSpeed } from './locationSpeed';
 
@@ -109,5 +109,7 @@ export function estimateSaveSegmentSpeedMps(
 }
 
 function isRawStationaryDrift(point: NewLocationPoint, distance: number): boolean {
-  return point.speed != null && point.speed >= 0 && point.speed < RAW_STATIONARY_SPEED_MAX_MPS && distance < STATIONARY_DRIFT_DISTANCE_METERS;
+  return (
+    point.speed != null && point.speed >= 0 && point.speed < RAW_STATIONARY_SPEED_MAX_MPS && distance < STATIONARY_DRIFT_DISTANCE_METERS
+  );
 }

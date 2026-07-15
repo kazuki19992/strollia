@@ -3,16 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 const CUSTOM_ICON_DIRECTORY_NAME = 'strollia-custom-icons/';
 const MANAGED_REFERENCE_PREFIX = 'managed:';
 const DEFAULT_EXTENSION = 'jpg';
-const RECOGNIZED_IMAGE_EXTENSIONS = new Set([
-  'bmp',
-  'gif',
-  'heic',
-  'heif',
-  'jpeg',
-  'jpg',
-  'png',
-  'webp',
-]);
+const RECOGNIZED_IMAGE_EXTENSIONS = new Set(['bmp', 'gif', 'heic', 'heif', 'jpeg', 'jpg', 'png', 'webp']);
 
 /** 永続領域で管理するカスタム画像の保存情報。 */
 export type StoredCustomIcon = {
@@ -29,10 +20,7 @@ export type ResolvedCustomIcon = StoredCustomIcon & {
 type IdFactory = () => string;
 
 /** 選択された画像をアプリ専用の永続領域へコピーする。 */
-export async function persistCustomIconImage(
-  sourceUri: string,
-  idFactory: IdFactory = createUniqueId,
-): Promise<StoredCustomIcon> {
+export async function persistCustomIconImage(sourceUri: string, idFactory: IdFactory = createUniqueId): Promise<StoredCustomIcon> {
   const directoryUri = getCustomIconDirectoryUri();
   const filename = `${sanitizeId(idFactory())}.${getImageExtension(sourceUri)}`;
   const uri = `${directoryUri}${filename}`;
@@ -61,10 +49,7 @@ export async function persistCustomIconImage(
 }
 
 /** 保存済み参照を現在の端末上のURIへ解決し、必要なら従来URIを移行する。 */
-export async function resolveCustomIconReference(
-  reference: string,
-  idFactory?: IdFactory,
-): Promise<ResolvedCustomIcon | null> {
+export async function resolveCustomIconReference(reference: string, idFactory?: IdFactory): Promise<ResolvedCustomIcon | null> {
   if (reference.length === 0) {
     return null;
   }
@@ -73,9 +58,7 @@ export async function resolveCustomIconReference(
   if (managedFilename !== null) {
     const uri = `${getCustomIconDirectoryUri()}${managedFilename}`;
     const info = await FileSystem.getInfoAsync(uri);
-    return info.exists && !info.isDirectory
-      ? { reference, uri, migrated: false }
-      : null;
+    return info.exists && !info.isDirectory ? { reference, uri, migrated: false } : null;
   }
 
   if (!isAbsoluteUri(reference)) {
@@ -138,9 +121,7 @@ function getImageExtension(uri: string): string {
   const path = uri.split(/[?#]/, 1)[0];
   const match = path.match(/\.([A-Za-z0-9]+)$/);
   const extension = match?.[1].toLowerCase();
-  return extension !== undefined && RECOGNIZED_IMAGE_EXTENSIONS.has(extension)
-    ? extension
-    : DEFAULT_EXTENSION;
+  return extension !== undefined && RECOGNIZED_IMAGE_EXTENSIONS.has(extension) ? extension : DEFAULT_EXTENSION;
 }
 
 /** ID生成元にパス文字が含まれても保存ディレクトリ外へ出ない名前へ変換する。 */

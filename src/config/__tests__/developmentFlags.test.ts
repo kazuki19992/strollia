@@ -1,4 +1,4 @@
-type DevelopmentFlagsModule = typeof import('../developmentFlags');
+type DevelopmentFlagsModule = typeof import('@/config/developmentFlags');
 
 /** process.envに値を設定し、undefinedなら削除する。 */
 function setEnvValue(name: string, value: string | undefined): void {

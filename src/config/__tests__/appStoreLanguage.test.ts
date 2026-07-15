@@ -1,4 +1,4 @@
-import appJson from '../../../app.json';
+import appJson from '../../../app.json'; // eslint-disable-line no-restricted-imports -- src/ 外の Expo 設定ファイルを参照するため @/ エイリアス不使用
 
 /**
  * Expo設定から、iOSの言語判定に使うInfo.plist項目だけを型付きで参照する。

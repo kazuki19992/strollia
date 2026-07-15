@@ -1,4 +1,4 @@
-import { NewLocationPoint } from '../../types/gps';
+import { NewLocationPoint } from '@/types/gps';
 import { recordVisitedAdminAreasForPoint } from './adminAreaResolver';
 import { AchievementDefinition } from './achievementDefinitions';
 import { evaluateAndStoreAchievementUnlocks, resetAchievementUnlocksForDevelopment } from './achievementRepository';
@@ -22,7 +22,10 @@ export async function evaluateAchievementsAndNotify(options: EvaluateAchievement
 }
 
 /** 新規GPSポイント保存後に訪問エリアと実績を更新する。 */
-export async function processAchievementsForSavedPoint(point: NewLocationPoint, locationPointId?: number): Promise<AchievementDefinition[]> {
+export async function processAchievementsForSavedPoint(
+  point: NewLocationPoint,
+  locationPointId?: number,
+): Promise<AchievementDefinition[]> {
   await recordVisitedAdminAreasForPoint(point, locationPointId).catch((error: unknown) => {
     console.warn('Failed to record admin area for saved point:', {
       localDate: point.localDate,

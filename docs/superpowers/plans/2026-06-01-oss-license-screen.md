@@ -13,6 +13,7 @@
 ### Task 1: License Data Generation
 
 **Files:**
+
 - Create: `scripts/generate-licenses.js`
 - Create: `src/app/generated/ossLicenses.ts`
 - Modify: `package.json`
@@ -26,6 +27,7 @@
 ### Task 2: License Screen UI
 
 **Files:**
+
 - Create: `src/app/components/LicenseScreen.tsx`
 - Create: `src/app/components/__tests__/LicenseScreen.test.tsx`
 - Modify: `src/app/components/SettingsScreen.tsx`
@@ -42,6 +44,7 @@
 ### Task 3: Documentation
 
 **Files:**
+
 - Modify: `docs/architecture.md`
 - Modify: `docs/todo.md`
 

@@ -1,4 +1,4 @@
-import { LocationPoint } from '../../../types/gps';
+import { LocationPoint } from '@/types/gps';
 import {
   createInitialRegion,
   filterRouteCoordinatesByRegion,
@@ -7,7 +7,7 @@ import {
   toRenderRouteSegments,
   toRenderRouteCoordinates,
   toRouteCoordinates,
-} from '../routeMapper';
+} from '@/features/map/routeMapper';
 
 function point(latitude: number, longitude: number, recordedAt = '2026-05-04T00:00:00.000Z'): LocationPoint {
   return {
@@ -26,17 +26,11 @@ function point(latitude: number, longitude: number, recordedAt = '2026-05-04T00:
 
 describe('ルート描画変換', () => {
   it('保存済みポイントを地図座標へ変換する', () => {
-    expect(toRouteCoordinates([point(35.1, 139.1)])).toEqual([
-      { latitude: 35.1, longitude: 139.1 },
-    ]);
+    expect(toRouteCoordinates([point(35.1, 139.1)])).toEqual([{ latitude: 35.1, longitude: 139.1 }]);
   });
 
   it('保存済みポイントの不正な座標を地図座標から除外する', () => {
-    const coordinates = toRouteCoordinates([
-      point(Number.NaN, 139),
-      point(35, Number.POSITIVE_INFINITY),
-      point(35.1, 139.1),
-    ]);
+    const coordinates = toRouteCoordinates([point(Number.NaN, 139), point(35, Number.POSITIVE_INFINITY), point(35.1, 139.1)]);
 
     expect(coordinates).toHaveLength(1);
     expect(coordinates[0]).toEqual({ latitude: 35.1, longitude: 139.1 });

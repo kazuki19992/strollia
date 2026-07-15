@@ -1,8 +1,4 @@
-import {
-  DEFAULT_USER_LOCATION_ICON_ID,
-  getUserLocationIconOption,
-  UserLocationIconId,
-} from './customizationOptions';
+import { DEFAULT_USER_LOCATION_ICON_ID, getUserLocationIconOption, UserLocationIconId } from './customizationOptions';
 
 /** 現在地アイコン描画方式の判定結果。 */
 export type ResolvedUserLocationIcon = {

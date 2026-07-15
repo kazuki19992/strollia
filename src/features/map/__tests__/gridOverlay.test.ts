@@ -1,6 +1,6 @@
-import { GRID_OVERLAY_CONFIG } from '../config/gridOverlayConfig';
-import { toVisitedGridOverlayCells, getFogOpacity, resolveVisitedGridCellColor } from '../gridOverlay';
-import { coordinateToGridCell } from '../../location/grid/gridCell';
+import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
+import { toVisitedGridOverlayCells, getFogOpacity, resolveVisitedGridCellColor } from '@/features/map/gridOverlay';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 
 describe('Visited Grid Overlay表示計算 gridOverlay', () => {
   it('latitudeDeltaに応じてFog opacityを線形補間する', () => {
@@ -22,11 +22,13 @@ describe('Visited Grid Overlay表示計算 gridOverlay', () => {
     expect(overlayCell.coordinates).toHaveLength(4);
     expect(overlayCell.fillColor).toBe('rgba(0, 150, 136, 0.4)');
     expect(overlayCell.strokeWidth).toBe(0);
-    expect(overlayCell).toEqual(expect.objectContaining({
-      firstVisitedAt: '2026-05-24T00:00:00.000Z',
-      lastVisitedAt: '2026-05-24T00:10:00.000Z',
-      visitCount: 2,
-    }));
+    expect(overlayCell).toEqual(
+      expect.objectContaining({
+        firstVisitedAt: '2026-05-24T00:00:00.000Z',
+        lastVisitedAt: '2026-05-24T00:10:00.000Z',
+        visitCount: 2,
+      }),
+    );
   });
 
   it('セルごとのopacityで新規セルをフェード表示できる', () => {

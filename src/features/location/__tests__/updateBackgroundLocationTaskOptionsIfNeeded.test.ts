@@ -1,8 +1,8 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-import { updateBackgroundLocationTaskOptionsIfNeeded } from '../locationService';
-import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions } from '../locationTrackingConfig';
+import { updateBackgroundLocationTaskOptionsIfNeeded } from '@/features/location/locationService';
+import { BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions } from '@/features/location/locationTrackingConfig';
 
 jest.mock('expo-location', () => ({
   Accuracy: { High: 4 },
@@ -35,10 +35,7 @@ describe('バックグラウンド位置情報タスクの設定更新 updateBac
     await updateBackgroundLocationTaskOptionsIfNeeded();
 
     expect(mockedLocation.stopLocationUpdatesAsync).not.toHaveBeenCalled();
-    expect(mockedLocation.startLocationUpdatesAsync).toHaveBeenCalledWith(
-      BACKGROUND_LOCATION_TASK_NAME,
-      getLocationTaskOptions(),
-    );
+    expect(mockedLocation.startLocationUpdatesAsync).toHaveBeenCalledWith(BACKGROUND_LOCATION_TASK_NAME, getLocationTaskOptions());
   });
 
   it('記録中で設定が最新の場合はstartもstopも呼ばない', async () => {

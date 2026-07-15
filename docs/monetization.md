@@ -92,7 +92,6 @@ RevenueCat連携後も、GPSログや写真メタデータをRevenueCatへ送信
 
 RevenueCatへ送る情報は購入状態の管理に必要なアプリユーザーIDやストア購入情報に限定する。
 
-
 ## 7. カスタマイズ実装の編集ポイント
 
 ### 7.1 visited cell色を変更する場所
@@ -108,7 +107,7 @@ visited cellの実際の反映は以下で行う。
 
 - `src/features/map/gridOverlay.ts`
 - `resolveVisitedGridCellColor`
-- `src/app/App.tsx` の Grid Overlay生成
+- `src/ui/state/AppStateProvider.tsx` の Grid Overlay生成(`useVisitedGridOverlay` 経由)
 
 ### 7.2 現在地アイコンを変更する場所
 
@@ -121,16 +120,16 @@ visited cellの実際の反映は以下で行う。
 
 独自Markerの描画は以下で行う。
 
-- `src/app/App.tsx`
+- `src/ui/components/MapScreen.tsx`
 - `userLocationIcon.customIconId` を使っている `Marker`
-- `src/app/appStyles.ts` の `customUserLocationMarker`
+- `src/ui/appStyles.ts` の `customUserLocationMarker`
 
 現在は `@expo/vector-icons` の `MaterialCommunityIcons` を使っている。画像アセットに差し替える場合は、例えば以下のように進める。
 
 1. `assets/user-location-icons/` を作成する
 2. `walker.png` や `compass.png` などの画像を配置する
 3. `USER_LOCATION_ICON_OPTIONS` に画像参照用の情報を追加する
-4. `App.tsx` の独自現在地 `Marker` 内を `Image` 表示へ差し替える
+4. `MapScreen.tsx` の独自現在地 `Marker` 内を `Image` 表示へ差し替える
 5. 対応するテストと仕様を更新する
 
 無料状態ではOS標準の現在地アイコンを使う。Plus無効時に有料アイコンが保存されていても、描画時にOS標準表示へフォールバックする。
@@ -144,7 +143,7 @@ visited cellの実際の反映は以下で行う。
 - `userLocationIcon`
 - `appThemePreference`
 
-保存処理と読み込み処理は `src/app/App.tsx` にある。文字列設定の読み込みは `src/features/settings/settingsRepository.ts` の `getStringSetting` を使う。
+保存処理と読み込み処理は `src/ui/state/AppStateProvider.tsx`(`useUserLocationIconSetting` フック経由)にある。文字列設定の読み込みは `src/features/settings/settingsRepository.ts` の `getStringSetting` を使う。
 
 ### 7.4 RevenueCat SDK連携
 
@@ -177,7 +176,7 @@ iOSからAndroidのようにストアをまたぐ復元は、匿名App User ID�
 
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 
-Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnative module登録に失敗する可能性があるため、課金導入時点では `app.json` の `newArchEnabled` を `false` にする。RevenueCat側でExpo SDK 54 New Architecture対応が確認できたら、development buildで購入・復元を再検証したうえで有効化を検討する。
+Expo SDK 55以降はNew Architecture専用であり、`newArchEnabled` オプション自体が廃止された。SDK 57 / React Native 0.86 への移行時(2026-07-11)に調査した結果、react-native-purchases 10.4系はNew Architecture対応済み(React Native Directory登録・公式サンプルのRN 0.86動作実績あり)と確認したため、New Architectureで運用する。移行時はdevelopment buildで購入・復元を再検証すること。
 
 ### 7.5 RevenueCat / Store実設定チェックリスト
 
@@ -187,7 +186,6 @@ Expo SDK 54 / React Native 0.81 のNew Architectureでは、RevenueCat SDKのnat
 - RevenueCatでcurrent offeringに月額/年額packageを紐づける
 - RevenueCat Customer Centerを必要なサポート導線に合わせて設定する
 - iOS/AndroidのPublic SDK API keyを環境変数へ設定する
-- `app.json` の `newArchEnabled` が `false` であることを確認する
 - Expo development buildで月払い購入、年払い購入、復元、Customer Center表示を確認する
 
 ## 8. Plus機能ロードマップ

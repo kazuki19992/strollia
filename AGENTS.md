@@ -120,8 +120,9 @@ StrolliaはローカルファーストのGPSロガーである。
 作業後には以下を確認する。
 
 - 変更したファイルの内容
-- 型チェック結果
-- テスト結果
+- 型チェック結果(`npm run typecheck`)
+- テスト結果(`npm test`)
+- lint 結果(`npm run lint` — error 0 が合格条件)
 - Todoの更新要否
 - ドキュメントの更新要否
 
@@ -168,6 +169,8 @@ StrolliaはローカルファーストのGPSロガーである。
 
 ### 10.2 UI / 画面設計
 
+- 新しい画面は `src/app/` のルートファイル(薄いラッパー) + `src/ui/components/` の画面コンポーネント(UI実体)で構成し、状態・操作は `AppStateProvider`(`src/ui/state/AppStateProvider.tsx`)から `useAppState()` 経由で取得する。
+- 画面や UI を作成・変更する前に、ルートの `DESIGN.md` を参照する。デザイントークンの実値、共通コンポーネントのカタログ、画面実装の雛形が記載されている。
 - 軽微な修正を除き、作業には superpowers を使う。作業前に設計書を作成してユーザーの承認を得てから、計画書を作成し、TDD で開発する。
 - 新しい画面や既存画面の刷新では、カードを多用した見た目を避ける。設定画面に近い、リスト主体・帯状・必要十分なツール UI を優先する。
 - 画面共通で使えるヘッダー、戻るボタン、リスト行、共有ボタンなどは、特定画面名に閉じたコンポーネント名にせず、汎用コンポーネントとして切り出して再利用する。
@@ -190,6 +193,29 @@ StrolliaはローカルファーストのGPSロガーである。
 
 ### 10.4 ドキュメント / 仕様確認
 
+- 作業開始時に `.ai/context/` の3ドキュメントを確認する: `architecture.md`(レイヤー構成・ディレクトリ構造)、`conventions.md`(コーディング規約)、`testing.md`(テストの書き方)。
+- 定型作業(画面追加、DBスキーマ変更、設定項目追加、Plus機能ゲート、ビルド、リリース、タグ付け、PRレビュー、issue作成、マージ後クリーンアップ、リリースノート作成)には `.claude/skills/` 配下の対応スキルを使う。一覧は 10.5 を参照。
 - 残作業や Plus 機能の確認では、まず `docs/todo.md`、`docs/monetization.md`、`docs/plus-features.md` を確認する。
 - GPX インポート作業を始めるときは、既存の設計・計画である `docs/superpowers/specs/2026-05-27-gpx-import-design.md` と `docs/superpowers/plans/2026-05-27-gpx-import.md` を先に確認する。
 - 仕様やユーザー向け挙動を変えた場合は、関連する `docs/` とテストを同じ作業内で更新する。
+
+### 10.5 定型作業スキル一覧
+
+`.claude/skills/<スキル名>/SKILL.md` に定型作業の手順が定義されている。Claude Code・Codex を問わず、該当する作業を始める前に対応する `SKILL.md` を読み、その手順に従うこと(Claude Code はスキル呼び出し機能で自動的に読み込むが、Codex は該当ファイルを直接開いて読む)。
+
+| スキル               | 場所                                         | 用途                                                                                |
+| -------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `add-screen`         | `.claude/skills/add-screen/SKILL.md`         | 新しい画面の追加、既存画面のレイアウト・ナビゲーション再構成                        |
+| `add-setting`        | `.claude/skills/add-setting/SKILL.md`        | 設定画面へのユーザー向け設定項目(トグル・選択・値)の追加、`app_settings` への永続化 |
+| `build-development`  | `.claude/skills/build-development/SKILL.md`  | EASでのdevelopmentビルド(シミュレータ/実機用dev client)作成                         |
+| `build-preview`      | `.claude/skills/build-preview/SKILL.md`      | EASでのpreview(内部配布)ビルド作成。リリース前検証用                                |
+| `build-production`   | `.claude/skills/build-production/SKILL.md`   | EASでのproduction(ストア用)ビルド作成                                               |
+| `create-issue`       | `.claude/skills/create-issue/SKILL.md`       | GitHub issue(バグ報告・機能要望・改善・バックログ)の作成                            |
+| `db-schema-change`   | `.claude/skills/db-schema-change/SKILL.md`   | SQLiteのテーブル・カラム・インデックスの追加変更、リポジトリ新設                    |
+| `post-merge-cleanup` | `.claude/skills/post-merge-cleanup/SKILL.md` | PRマージ後のworktree削除・ブランチ削除・develop最新化                               |
+| `pr-review`          | `.claude/skills/pr-review/SKILL.md`          | PRへのインラインコメントレビュー、既存レビューコメントの取得・解消                  |
+| `premium-gate`       | `.claude/skills/premium-gate/SKILL.md`       | Strollia Plus(課金)限定機能の追加・変更、RevenueCat entitlement判定、paywall導線    |
+| `publish`            | `.claude/skills/publish/SKILL.md`            | 完成したproductionビルドのApp Store / Google Playへの提出                           |
+| `release`            | `.claude/skills/release/SKILL.md`            | 新バージョンのリリース準備(バージョン更新、develop→mainのリリースPR)                |
+| `release-notes`      | `.claude/skills/release-notes/SKILL.md`      | main(リリース済み)とdevelop(リリース予定)の差分からユーザー向けリリースノートを作成 |
+| `tag-release`        | `.claude/skills/tag-release/SKILL.md`        | リリースPRマージ後、mainの最新コミットへバージョンタグを付与                        |

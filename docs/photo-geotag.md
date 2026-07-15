@@ -111,18 +111,18 @@ GPSログ上に写真を重ねることで、ユーザーが「いつ・どこ�
 
 ### 9.1 `photo_assets`
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `asset_id` | TEXT | 写真ライブラリ上のアセットID |
-| `taken_at` | TEXT NULL | 撮影日時 |
-| `latitude` | REAL | 緯度 |
-| `longitude` | REAL | 経度 |
-| `local_uri` | TEXT NULL | ローカル参照URI |
-| `thumbnail_uri` | TEXT NULL | サムネイルキャッシュURI |
-| `last_seen_at` | TEXT | 最終確認日時 |
-| `created_at` | TEXT | 作成日時 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム          | 型        | 説明                         |
+| --------------- | --------- | ---------------------------- |
+| `id`            | INTEGER   | 主キー                       |
+| `asset_id`      | TEXT      | 写真ライブラリ上のアセットID |
+| `taken_at`      | TEXT NULL | 撮影日時                     |
+| `latitude`      | REAL      | 緯度                         |
+| `longitude`     | REAL      | 経度                         |
+| `local_uri`     | TEXT NULL | ローカル参照URI              |
+| `thumbnail_uri` | TEXT NULL | サムネイルキャッシュURI      |
+| `last_seen_at`  | TEXT      | 最終確認日時                 |
+| `created_at`    | TEXT      | 作成日時                     |
+| `updated_at`    | TEXT      | 更新日時                     |
 
 ジオタグがない写真はこのテーブルに保存しない。
 

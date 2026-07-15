@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { setSetting, getBooleanSetting } from '../settings/settingsRepository';
+import { setSetting, getBooleanSetting } from '@/features/settings/settingsRepository';
 import { AchievementDefinition } from './achievementDefinitions';
 import { markAchievementPushDelivered } from './achievementRepository';
 

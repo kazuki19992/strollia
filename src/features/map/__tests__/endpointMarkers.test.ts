@@ -1,5 +1,5 @@
-import { LocationPoint } from '../../../types/gps';
-import { getEndpointMarkers } from '../endpointMarkers';
+import { LocationPoint } from '@/types/gps';
+import { getEndpointMarkers } from '@/features/map/endpointMarkers';
 
 function point(id: number): LocationPoint {
   return {

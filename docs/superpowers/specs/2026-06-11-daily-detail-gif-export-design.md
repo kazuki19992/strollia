@@ -8,18 +8,22 @@
 ## 要件
 
 ### 1. スライダー
+
 - ステップを **30分 → 5分** に変更する。
 - 高さを縮め、幅を広げる（地図の真下に従来どおり配置）。
 
 ### 2. キャプチャ範囲
+
 - 画面下「この日の記録を共有」のキャプチャ画像に、**スライダーとGIF出力ボタンを含めない**。
 - 地図・移動のデータ・おもいでは従来どおりキャプチャに含める。
 
 ### 3. GIF出力ボタン
+
 - スライダーの時刻表示（`valueLabel`）の直下に、他と同じ `ActionPill` コンポーネントで配置。
 - 表示条件は Plus 会員のみ（スライダーと同条件）。
 
 ### 4. GIF生成
+
 - **フレーム**: 記録の最初の点〜最後の点を10分刻み。各コマは開始から該当時刻までの**累積軌跡**。
 - **再生**: 0.5秒/コマ、ループ。
 - **解像度**: 480×480px。
@@ -42,6 +46,7 @@
 - これにより最悪コマ数とファイルサイズをユーザーが制御でき、自宅周辺の除外も可能になる。
 
 ### 5. 生成中のUX
+
 - 生成中は全画面をブロックする進捗ダイアログを表示し、下の画面を操作不可にする。
 - 既存の共通 `Dialog` を**拡張**して実現する（`dismissible` 概念を追加）。
 - ダイアログ内容:
@@ -66,28 +71,33 @@
 - `src/app/components/DailyLogDetailScreen.tsx`: スライダー/ボタン配置変更、キャプチャ除外、GIF生成フローと進捗ダイアログの組み込み。
 
 #### 改訂（区間指定）で追加する主なファイル
+
 - `src/app/components/RangeSlider.tsx`（新規）: 開始・終了の2つのつまみで時間範囲を選ぶスライダー。5分粒度・15分の最小間隔（後ろが前を追い越さない）を強制し、正規化した開始/終了を `onChange` で通知する。
 - `src/app/components/rangeSliderValue.ts`（新規・純関数）: つまみの生値をステップへ丸め、`minSeparation` 以上離して範囲外に出ないようクランプする（`resolveRangeThumbValues`）。
 - `src/features/export/routeGifFrames.ts`: フレーム時刻を「区間 [開始,終了] を刻む」方式へ変更し、共通定数（`GIF_FRAME_STEP_MINUTES=15`/`GIF_FRAME_DELAY_MS=500`/`GIF_MIN_DURATION_MS=5000`/`GIF_MIN_RANGE_MINUTES=15`）と、最短再生時間を満たすための刻み解決（`resolveGifFrameStepMinutes`）を追加。
 - `src/app/components/DailyLogDetailScreen.tsx`: GIFボタン押下でまず区間指定ダイアログ（地図プレビュー＋`RangeSlider`＋「この範囲で出力」）を表示し、選んだ区間だけを生成へ渡す。
 
 ### 新規依存
+
 - `gifenc`（純JS・MIT）: GIFエンコード。
 - `upng-js`（純JS・MIT）: captureRef が返す PNG を RGBA へデコード。
 - いずれもネイティブビルド不要。
 
 ### フレーム時刻算出（`routeGifFrames.ts`）
+
 - 入力: その日の点列（時刻昇順）、ステップ（10分）。
 - 出力: 最初の点〜最後の点を10分刻みにしたフレームの「分（minute-of-day）」配列。最後の点の時刻は必ず含める。
 - 各フレームの点は既存 `filterLocationPointsUntilMinute` で抽出（累積）。
 - エッジ: 点が1つ以下なら空（ボタン無効）、記録が10分未満なら1コマ。
 
 ### キャプチャ除外方式
+
 - レイアウトは変えず、`isCapturingShare` state を追加。
 - `shareDailyLogImage()` 実行時に `true` → 次フレーム待ち → `captureRef` → `false`。
 - スライダーと GIF ボタンは `{!isCapturingShare && ...}` で描画し、共有画像から除外する。
 
 ### 生成フロー
+
 1. GIFボタン押下 → 進捗ダイアログ表示（`abortRef = false`）。
 2. フレーム描画View（`GifFrameRenderer`）を画面外にマウント。MapView の ready を待つ。
 3. 各フレーム: index 更新 → rAF 待ち → `captureRef`（480×480, PNG）→ `upng-js` で RGBA デコード → `gifenc` に書き込み（delay 500ms, loop）。
@@ -98,6 +108,7 @@
 6. エラー時: アラート表示＋ダイアログ閉じる。
 
 ## テスト（TDD）
+
 - `routeGifFrames`: フレーム時刻算出（単点/10分未満/ちょうど境界/通常）。
 - スライダー step 定数変更の回帰テスト更新。
 - GIF生成オーケストレーション: capture/encode を fake 注入し、フレーム数・キャンセル中断・進捗更新を検証。
@@ -108,6 +119,7 @@
 - 実際の captureRef / エンコード / 共有は実機確認。
 
 ## 非対象（YAGNI）
+
 - コマ数の上限設定（記録の最初〜最後で素直に生成。長時間記録での所要時間は許容）。
 - GIF以外のフォーマット（mp4等）。
 - visited グリッドのGIF描画。

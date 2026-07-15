@@ -29,26 +29,26 @@ Strollia の継続利用を促すため、GPSログから算出できる行動�
 
 実績定義は以下の情報を持つ。
 
-| 項目 | 説明 |
-| --- | --- |
-| `id` | 実績を一意に識別する固定ID |
-| `title` | 実績名 |
-| `description` | 達成条件の説明 |
-| `category` | `distance`, `logDays`, `prefecture`, `municipality` など |
-| `condition` | 達成条件 |
-| `trophyImage` | トロフィー画像アセット参照 |
-| `shareText` | X共有時の初期文言 |
-| `sortOrder` | 実績画面の表示順 |
-| `enabled` | 将来の無効化・段階公開用フラグ |
+| 項目          | 説明                                                     |
+| ------------- | -------------------------------------------------------- |
+| `id`          | 実績を一意に識別する固定ID                               |
+| `title`       | 実績名                                                   |
+| `description` | 達成条件の説明                                           |
+| `category`    | `distance`, `logDays`, `prefecture`, `municipality` など |
+| `condition`   | 達成条件                                                 |
+| `trophyImage` | トロフィー画像アセット参照                               |
+| `shareText`   | X共有時の初期文言                                        |
+| `sortOrder`   | 実績画面の表示順                                         |
+| `enabled`     | 将来の無効化・段階公開用フラグ                           |
 
 初期実績例は以下とする。具体的な閾値とトロフィー画像は実装前に確定する。
 
-| カテゴリ | 例 |
-| --- | --- |
-| 総移動距離 | `assets/achievements/odo/` の `odo-{距離}.png` と `odo-earth-{距離}.png` に対応する距離 |
-| ログ記録日数 | `assets/achievements/log-days/` のファイル名に対応する記録日数 |
-| 都道府県訪問数 | `assets/achievements/prefectures/` のファイル名に対応する訪問数 |
-| 市区町村訪問数 | `assets/achievements/cities/` のファイル名に対応する訪問数 |
+| カテゴリ       | 例                                                                                      |
+| -------------- | --------------------------------------------------------------------------------------- |
+| 総移動距離     | `assets/achievements/odo/` の `odo-{距離}.png` と `odo-earth-{距離}.png` に対応する距離 |
+| ログ記録日数   | `assets/achievements/log-days/` のファイル名に対応する記録日数                          |
+| 都道府県訪問数 | `assets/achievements/prefectures/` のファイル名に対応する訪問数                         |
+| 市区町村訪問数 | `assets/achievements/cities/` のファイル名に対応する訪問数                              |
 
 ## 4. 訪問エリア記録
 
@@ -82,19 +82,19 @@ GPSログのすべての点に対して逆ジオコーディングすると重�
 
 ユーザーが訪問した行政区域を保存する。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `area_type` | TEXT | `prefecture` または `municipality` |
-| `area_code` | TEXT NULL | JIS X 0401 / 0402 等の行政区域コード。初期はNULL許容 |
-| `prefecture_name` | TEXT | 都道府県名 |
-| `municipality_name` | TEXT NULL | 市区町村名。都道府県レコードではNULL |
-| `normalized_name` | TEXT | 重複判定用の正規化名 |
-| `first_visited_at` | TEXT | 初回訪問時刻 |
-| `last_visited_at` | TEXT | 最終訪問時刻 |
-| `first_location_point_id` | INTEGER NULL | 初回訪問の根拠GPSポイントID |
-| `created_at` | TEXT | 作成日時 |
-| `updated_at` | TEXT | 更新日時 |
+| カラム                    | 型           | 説明                                                 |
+| ------------------------- | ------------ | ---------------------------------------------------- |
+| `id`                      | INTEGER      | 主キー                                               |
+| `area_type`               | TEXT         | `prefecture` または `municipality`                   |
+| `area_code`               | TEXT NULL    | JIS X 0401 / 0402 等の行政区域コード。初期はNULL許容 |
+| `prefecture_name`         | TEXT         | 都道府県名                                           |
+| `municipality_name`       | TEXT NULL    | 市区町村名。都道府県レコードではNULL                 |
+| `normalized_name`         | TEXT         | 重複判定用の正規化名                                 |
+| `first_visited_at`        | TEXT         | 初回訪問時刻                                         |
+| `last_visited_at`         | TEXT         | 最終訪問時刻                                         |
+| `first_location_point_id` | INTEGER NULL | 初回訪問の根拠GPSポイントID                          |
+| `created_at`              | TEXT         | 作成日時                                             |
+| `updated_at`              | TEXT         | 更新日時                                             |
 
 重複防止のため、以下のユニーク制約を設ける。
 
@@ -106,28 +106,28 @@ GPSログのすべての点に対して逆ジオコーディングすると重�
 
 GPSポイントごとの都道府県・市区町村を保存する。月次レポートなどで対象期間内の都道府県別・市区町村別GPSポイント数を集計するために使う。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `location_point_id` | INTEGER | 根拠GPSポイントID |
-| `recorded_at` | TEXT | GPSポイントの記録時刻 |
-| `local_date` | TEXT | GPSポイントのローカル日付 |
-| `prefecture_name` | TEXT | 都道府県名 |
-| `municipality_name` | TEXT NULL | 市区町村名 |
-| `normalized_prefecture_name` | TEXT | 都道府県の正規化名 |
-| `normalized_municipality_name` | TEXT NULL | 市区町村の正規化名 |
-| `created_at` | TEXT | 作成日時 |
+| カラム                         | 型        | 説明                      |
+| ------------------------------ | --------- | ------------------------- |
+| `id`                           | INTEGER   | 主キー                    |
+| `location_point_id`            | INTEGER   | 根拠GPSポイントID         |
+| `recorded_at`                  | TEXT      | GPSポイントの記録時刻     |
+| `local_date`                   | TEXT      | GPSポイントのローカル日付 |
+| `prefecture_name`              | TEXT      | 都道府県名                |
+| `municipality_name`            | TEXT NULL | 市区町村名                |
+| `normalized_prefecture_name`   | TEXT      | 都道府県の正規化名        |
+| `normalized_municipality_name` | TEXT NULL | 市区町村の正規化名        |
+| `created_at`                   | TEXT      | 作成日時                  |
 
 ### 5.3 `achievement_unlocks`
 
 解除済み実績を保存する。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `achievement_id` | TEXT | 実績定義ID。主キー |
-| `unlocked_at` | TEXT | 解除日時 |
-| `progress_value` | REAL NULL | 解除時点の進捗値 |
-| `created_at` | TEXT | 作成日時 |
+| カラム           | 型        | 説明               |
+| ---------------- | --------- | ------------------ |
+| `achievement_id` | TEXT      | 実績定義ID。主キー |
+| `unlocked_at`    | TEXT      | 解除日時           |
+| `progress_value` | REAL NULL | 解除時点の進捗値   |
+| `created_at`     | TEXT      | 作成日時           |
 
 同じ実績は一度だけ解除する。
 
@@ -135,14 +135,14 @@ GPSポイントごとの都道府県・市区町村を保存する。月次レ�
 
 実績解除時の通知・演出を安全に処理するためのキュー。
 
-| カラム | 型 | 説明 |
-| --- | --- | --- |
-| `id` | INTEGER | 主キー |
-| `achievement_id` | TEXT | 通知対象の実績ID |
-| `queued_at` | TEXT | キュー追加日時 |
+| カラム              | 型        | 説明                 |
+| ------------------- | --------- | -------------------- |
+| `id`                | INTEGER   | 主キー               |
+| `achievement_id`    | TEXT      | 通知対象の実績ID     |
+| `queued_at`         | TEXT      | キュー追加日時       |
 | `delivered_push_at` | TEXT NULL | ローカル通知送信日時 |
-| `shown_in_app_at` | TEXT NULL | アプリ内演出表示日時 |
-| `created_at` | TEXT | 作成日時 |
+| `shown_in_app_at`   | TEXT NULL | アプリ内演出表示日時 |
+| `created_at`        | TEXT      | 作成日時             |
 
 フォアグラウンド中はアプリ内演出を出す。バックグラウンド中はローカル通知で知らせる。状態が曖昧な場合でも、解除済み実績そのものは `achievement_unlocks` を正とする。
 
@@ -152,12 +152,12 @@ GPSポイントごとの都道府県・市区町村を保存する。月次レ�
 
 トロフィー画像は `assets/achievements/` 配下に区分ごとのフォルダーを作って配置する。
 
-| 区分 | フォルダー | ファイル名ルール |
-| --- | --- | --- |
-| 総移動距離 | `assets/achievements/odo/` | `odo-{距離}.png` または `odo-earth-{距離}.png` |
-| ログ記録日数 | `assets/achievements/log-days/` | `{記録日数}.png` |
-| 都道府県訪問数 | `assets/achievements/prefectures/` | `{訪問数}.png` |
-| 市区町村訪問数 | `assets/achievements/cities/` | `{訪問数}.png` |
+| 区分           | フォルダー                         | ファイル名ルール                               |
+| -------------- | ---------------------------------- | ---------------------------------------------- |
+| 総移動距離     | `assets/achievements/odo/`         | `odo-{距離}.png` または `odo-earth-{距離}.png` |
+| ログ記録日数   | `assets/achievements/log-days/`    | `{記録日数}.png`                               |
+| 都道府県訪問数 | `assets/achievements/prefectures/` | `{訪問数}.png`                                 |
+| 市区町村訪問数 | `assets/achievements/cities/`      | `{訪問数}.png`                                 |
 
 現時点のラインナップは、画像ファイル名から実績定義を作成する。あとから画像と実績定義を追加しても、保存済み進捗から再評価して付与できる設計にする。
 

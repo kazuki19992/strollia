@@ -26,6 +26,7 @@
 ## Task 1: Add RevenueCat Paywall UI Dependency
 
 **Files:**
+
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
@@ -61,6 +62,7 @@ git commit -m "build(premium): RevenueCat Paywall UIを追加"
 ## Task 2: Add Premium Offering, Paywall, and Restore Contracts
 
 **Files:**
+
 - Modify: `src/features/premium/revenueCatAccess.ts`
 - Modify: `src/features/premium/revenueCatClient.ts`
 - Modify: `src/features/premium/__tests__/revenueCatAccess.test.ts`
@@ -105,27 +107,10 @@ jest.mock('react-native-purchases', () => ({
 Add tests inside the existing `describe` block:
 
 ```ts
-  it('RevenueCat Offeringを設定画面向けの商品概要へ変換する', async () => {
-    const client: RevenueCatClient = {
-      hasActiveEntitlement: jest.fn().mockResolvedValue(false),
-      getCurrentOffering: jest.fn().mockResolvedValue({
-        offeringId: 'default',
-        packages: [
-          {
-            identifier: '$rc_monthly',
-            packageType: 'MONTHLY',
-            productIdentifier: 'strollia_plus_monthly',
-            title: 'Strollia Plus Monthly',
-            description: 'Monthly plan',
-            priceText: '¥300',
-          },
-        ],
-      }),
-      presentPaywall: jest.fn().mockResolvedValue('cancelled'),
-      restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
-    };
-
-    await expect(resolvePremiumOfferingSummary(client)).resolves.toEqual({
+it('RevenueCat Offeringを設定画面向けの商品概要へ変換する', async () => {
+  const client: RevenueCatClient = {
+    hasActiveEntitlement: jest.fn().mockResolvedValue(false),
+    getCurrentOffering: jest.fn().mockResolvedValue({
       offeringId: 'default',
       packages: [
         {
@@ -137,92 +122,109 @@ Add tests inside the existing `describe` block:
           priceText: '¥300',
         },
       ],
-    });
-  });
+    }),
+    presentPaywall: jest.fn().mockResolvedValue('cancelled'),
+    restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
+  };
 
-  it('RevenueCat Offering未設定時は商品概要をnullにする', async () => {
-    const client: RevenueCatClient = {
-      hasActiveEntitlement: jest.fn().mockResolvedValue(false),
-      getCurrentOffering: jest.fn().mockResolvedValue(null),
-      presentPaywall: jest.fn().mockResolvedValue('cancelled'),
-      restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
-    };
-
-    await expect(resolvePremiumOfferingSummary(client)).resolves.toBeNull();
-  });
-
-  it('RevenueCatのcurrent Offeringから商品概要を取得する', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    (Purchases.getOfferings as jest.Mock).mockResolvedValue({
-      current: {
-        identifier: 'default',
-        availablePackages: [
-          {
-            identifier: '$rc_annual',
-            packageType: 'ANNUAL',
-            product: {
-              identifier: 'strollia_plus_yearly',
-              title: 'Strollia Plus Annual',
-              description: 'Annual plan',
-              priceString: '¥2,900',
-            },
-          },
-        ],
+  await expect(resolvePremiumOfferingSummary(client)).resolves.toEqual({
+    offeringId: 'default',
+    packages: [
+      {
+        identifier: '$rc_monthly',
+        packageType: 'MONTHLY',
+        productIdentifier: 'strollia_plus_monthly',
+        title: 'Strollia Plus Monthly',
+        description: 'Monthly plan',
+        priceText: '¥300',
       },
-    });
+    ],
+  });
+});
 
-    await expect(getPremiumOfferingSummaryFromRevenueCat()).resolves.toEqual({
-      offeringId: 'default',
-      packages: [
+it('RevenueCat Offering未設定時は商品概要をnullにする', async () => {
+  const client: RevenueCatClient = {
+    hasActiveEntitlement: jest.fn().mockResolvedValue(false),
+    getCurrentOffering: jest.fn().mockResolvedValue(null),
+    presentPaywall: jest.fn().mockResolvedValue('cancelled'),
+    restorePurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID }),
+  };
+
+  await expect(resolvePremiumOfferingSummary(client)).resolves.toBeNull();
+});
+
+it('RevenueCatのcurrent Offeringから商品概要を取得する', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  (Purchases.getOfferings as jest.Mock).mockResolvedValue({
+    current: {
+      identifier: 'default',
+      availablePackages: [
         {
           identifier: '$rc_annual',
           packageType: 'ANNUAL',
-          productIdentifier: 'strollia_plus_yearly',
-          title: 'Strollia Plus Annual',
-          description: 'Annual plan',
-          priceText: '¥2,900',
+          product: {
+            identifier: 'strollia_plus_yearly',
+            title: 'Strollia Plus Annual',
+            description: 'Annual plan',
+            priceString: '¥2,900',
+          },
         },
       ],
-    });
+    },
   });
 
-  it('RevenueCat復元後にentitlementがあればPlus有効状態を返す', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    (Purchases.restorePurchases as jest.Mock).mockResolvedValue({
-      entitlements: {
-        active: {
-          [STROLLIA_PLUS_ENTITLEMENT_ID]: { identifier: STROLLIA_PLUS_ENTITLEMENT_ID },
-        },
+  await expect(getPremiumOfferingSummaryFromRevenueCat()).resolves.toEqual({
+    offeringId: 'default',
+    packages: [
+      {
+        identifier: '$rc_annual',
+        packageType: 'ANNUAL',
+        productIdentifier: 'strollia_plus_yearly',
+        title: 'Strollia Plus Annual',
+        description: 'Annual plan',
+        priceText: '¥2,900',
       },
-    });
+    ],
+  });
+});
 
-    await expect(restorePremiumPurchasesWithRevenueCat()).resolves.toEqual({
-      isPlusActive: true,
-      entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
-    });
+it('RevenueCat復元後にentitlementがあればPlus有効状態を返す', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  (Purchases.restorePurchases as jest.Mock).mockResolvedValue({
+    entitlements: {
+      active: {
+        [STROLLIA_PLUS_ENTITLEMENT_ID]: { identifier: STROLLIA_PLUS_ENTITLEMENT_ID },
+      },
+    },
   });
 
-  it('RevenueCat Offering取得失敗時はnullへフォールバックする', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    (Purchases.getOfferings as jest.Mock).mockRejectedValue(new Error('network failed'));
-
-    await expect(getPremiumOfferingSummary()).resolves.toBeNull();
-    expect(console.warn).toHaveBeenCalledWith('Failed to load RevenueCat offerings:', expect.any(Error));
+  await expect(restorePremiumPurchasesWithRevenueCat()).resolves.toEqual({
+    isPlusActive: true,
+    entitlementId: STROLLIA_PLUS_ENTITLEMENT_ID,
   });
+});
 
-  it('RevenueCat復元失敗時は既定の課金状態へフォールバックする', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    (Purchases.restorePurchases as jest.Mock).mockRejectedValue(new Error('restore failed'));
+it('RevenueCat Offering取得失敗時はnullへフォールバックする', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  (Purchases.getOfferings as jest.Mock).mockRejectedValue(new Error('network failed'));
 
-    await expect(restorePremiumPurchases()).resolves.toEqual(getDefaultPremiumAccessState());
-    expect(console.warn).toHaveBeenCalledWith('Failed to restore RevenueCat purchases:', expect.any(Error));
-  });
+  await expect(getPremiumOfferingSummary()).resolves.toBeNull();
+  expect(console.warn).toHaveBeenCalledWith('Failed to load RevenueCat offerings:', expect.any(Error));
+});
+
+it('RevenueCat復元失敗時は既定の課金状態へフォールバックする', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  (Purchases.restorePurchases as jest.Mock).mockRejectedValue(new Error('restore failed'));
+
+  await expect(restorePremiumPurchases()).resolves.toEqual(getDefaultPremiumAccessState());
+  expect(console.warn).toHaveBeenCalledWith('Failed to restore RevenueCat purchases:', expect.any(Error));
+});
 ```
 
 - [ ] **Step 2: Run tests to verify RED**
@@ -439,12 +441,12 @@ export async function restorePremiumPurchasesWithRevenueCat(): Promise<PremiumAc
 Extend `createRevenueCatClient()`:
 
 ```ts
-  return {
-    hasActiveEntitlement: getPremiumAccessStateFromRevenueCat,
-    getCurrentOffering: getPremiumOfferingSummaryFromRevenueCat,
-    presentPaywall: presentPaywallWithRevenueCat,
-    restorePurchases: restorePremiumPurchasesWithRevenueCat,
-  };
+return {
+  hasActiveEntitlement: getPremiumAccessStateFromRevenueCat,
+  getCurrentOffering: getPremiumOfferingSummaryFromRevenueCat,
+  presentPaywall: presentPaywallWithRevenueCat,
+  restorePurchases: restorePremiumPurchasesWithRevenueCat,
+};
 ```
 
 - [ ] **Step 4: Run tests to verify GREEN**
@@ -469,6 +471,7 @@ git commit -m "feat(premium): RevenueCatの商品取得と復元を追加"
 ## Task 3: Add Paywall Result Tests
 
 **Files:**
+
 - Modify: `src/features/premium/__tests__/revenueCatAccess.test.ts`
 - Modify: `src/features/premium/revenueCatClient.ts`
 
@@ -503,39 +506,39 @@ import { presentPaywallWithRevenueCat } from '../revenueCatClient';
 Add tests:
 
 ```ts
-  it('Paywall購入完了をpurchasedとして返す', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('PURCHASED');
+it('Paywall購入完了をpurchasedとして返す', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('PURCHASED');
 
-    await expect(presentPaywallWithRevenueCat()).resolves.toBe('purchased');
-  });
+  await expect(presentPaywallWithRevenueCat()).resolves.toBe('purchased');
+});
 
-  it('Paywall復元完了をrestoredとして返す', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('RESTORED');
+it('Paywall復元完了をrestoredとして返す', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('RESTORED');
 
-    await expect(presentPaywallWithRevenueCat()).resolves.toBe('restored');
-  });
+  await expect(presentPaywallWithRevenueCat()).resolves.toBe('restored');
+});
 
-  it('Paywallキャンセルをcancelledとして返す', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('CANCELLED');
+it('Paywallキャンセルをcancelledとして返す', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  (RevenueCatUI.presentPaywall as jest.Mock).mockResolvedValue('CANCELLED');
 
-    await expect(presentPaywallWithRevenueCat()).resolves.toBe('cancelled');
-  });
+  await expect(presentPaywallWithRevenueCat()).resolves.toBe('cancelled');
+});
 
-  it('Paywall表示失敗時はerrorへフォールバックする', async () => {
-    Platform.OS = 'ios';
-    setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
-    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    (RevenueCatUI.presentPaywall as jest.Mock).mockRejectedValue(new Error('native module failed'));
+it('Paywall表示失敗時はerrorへフォールバックする', async () => {
+  Platform.OS = 'ios';
+  setEnvValue('EXPO_PUBLIC_REVENUECAT_IOS_API_KEY', 'appl_ios_key');
+  jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  (RevenueCatUI.presentPaywall as jest.Mock).mockRejectedValue(new Error('native module failed'));
 
-    await expect(presentPremiumPaywall()).resolves.toBe('error');
-    expect(console.warn).toHaveBeenCalledWith('Failed to present RevenueCat paywall:', expect.any(Error));
-  });
+  await expect(presentPremiumPaywall()).resolves.toBe('error');
+  expect(console.warn).toHaveBeenCalledWith('Failed to present RevenueCat paywall:', expect.any(Error));
+});
 ```
 
 - [ ] **Step 2: Run tests to verify RED**
@@ -574,6 +577,7 @@ git commit -m "feat(premium): RevenueCat Paywall表示結果を扱う"
 ## Task 4: Add Settings Screen Paywall and Restore UI
 
 **Files:**
+
 - Modify: `src/app/components/SettingsScreen.tsx`
 - Modify: `src/app/components/__tests__/SettingsScreen.test.tsx`
 
@@ -734,7 +738,10 @@ Inside the Strollia Plus card, after the status row, add:
 Add helper component below `SettingsScreen`:
 
 ```tsx
-type PremiumOfferingSummaryViewProps = Pick<SettingsScreenProps, 'styles' | 'theme' | 'premiumOfferingSummary' | 'isLoadingPremiumOffering'>;
+type PremiumOfferingSummaryViewProps = Pick<
+  SettingsScreenProps,
+  'styles' | 'theme' | 'premiumOfferingSummary' | 'isLoadingPremiumOffering'
+>;
 
 /** RevenueCat Offeringから取得した商品概要を描画する。 */
 function PremiumOfferingSummaryView({ styles, theme, premiumOfferingSummary, isLoadingPremiumOffering }: PremiumOfferingSummaryViewProps) {
@@ -786,6 +793,7 @@ git commit -m "feat(premium): 設定画面にPaywallと復元導線を追加"
 ## Task 5: Wire Premium Paywall Operations in App
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 
@@ -812,24 +820,24 @@ import { getPremiumOfferingSummary, presentPremiumPaywall, restorePremiumPurchas
 Add test:
 
 ```ts
-  test('Plus未加入時に有料現在地アイコンを選ぶとPaywallを表示してPlus状態を再取得する', async () => {
-    const renderer = await renderApp();
+test('Plus未加入時に有料現在地アイコンを選ぶとPaywallを表示してPlus状態を再取得する', async () => {
+  const renderer = await renderApp();
 
-    await act(async () => {
-      const settingsButton = renderer.root.findAll((node: any) => node.props.accessibilityLabel === '設定')[0];
-      settingsButton.props.onPress();
-    });
-
-    await act(async () => {
-      const walkerButton = renderer.root.findAll(
-        (node: any) => node.props.onPress && node.findAllByType(Text).some((textNode: any) => textNode.props.children === 'さんぽ'),
-      )[0];
-      walkerButton.props.onPress();
-    });
-
-    expect(presentPremiumPaywall).toHaveBeenCalledTimes(1);
-    expect(getPremiumAccessState).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    const settingsButton = renderer.root.findAll((node: any) => node.props.accessibilityLabel === '設定')[0];
+    settingsButton.props.onPress();
   });
+
+  await act(async () => {
+    const walkerButton = renderer.root.findAll(
+      (node: any) => node.props.onPress && node.findAllByType(Text).some((textNode: any) => textNode.props.children === 'さんぽ'),
+    )[0];
+    walkerButton.props.onPress();
+  });
+
+  expect(presentPremiumPaywall).toHaveBeenCalledTimes(1);
+  expect(getPremiumAccessState).toHaveBeenCalledTimes(2);
+});
 ```
 
 If tree lookup is too brittle, locate the `SettingsScreen` component and invoke `props.onUpdateUserLocationIcon('walker')` directly.
@@ -862,100 +870,103 @@ import {
 Add state near `premiumAccessState`:
 
 ```ts
-  const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
-  const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
-  const [isPresentingPremiumPaywall, setIsPresentingPremiumPaywall] = useState(false);
-  const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
+const [premiumOfferingSummary, setPremiumOfferingSummary] = useState<PremiumOfferingSummary | null>(null);
+const [isLoadingPremiumOffering, setIsLoadingPremiumOffering] = useState(false);
+const [isPresentingPremiumPaywall, setIsPresentingPremiumPaywall] = useState(false);
+const [isRestoringPremiumPurchases, setIsRestoringPremiumPurchases] = useState(false);
 ```
 
 In initialization after `getPremiumAccessState()` call, add:
 
 ```ts
-            setIsLoadingPremiumOffering(true);
-            getPremiumOfferingSummary()
-              .then(setPremiumOfferingSummary)
-              .catch((error: unknown) => {
-                console.warn('Failed to refresh premium offering summary:', error);
-              })
-              .finally(() => {
-                setIsLoadingPremiumOffering(false);
-              });
+setIsLoadingPremiumOffering(true);
+getPremiumOfferingSummary()
+  .then(setPremiumOfferingSummary)
+  .catch((error: unknown) => {
+    console.warn('Failed to refresh premium offering summary:', error);
+  })
+  .finally(() => {
+    setIsLoadingPremiumOffering(false);
+  });
 ```
 
 Add helper:
 
 ```ts
-  /** RevenueCatのPlus状態を再取得して画面へ反映する。 */
-  async function refreshPremiumAccessState(): Promise<void> {
-    setPremiumAccessState(await getPremiumAccessState());
-  }
+/** RevenueCatのPlus状態を再取得して画面へ反映する。 */
+async function refreshPremiumAccessState(): Promise<void> {
+  setPremiumAccessState(await getPremiumAccessState());
+}
 ```
 
 Add paywall handler:
 
 ```ts
-  /** RevenueCat Paywallを表示し、購入または復元後にPlus状態を更新する。 */
-  async function openPremiumPaywall(): Promise<void> {
-    if (isPresentingPremiumPaywall) {
-      return;
-    }
-
-    triggerSelectionHaptic();
-    setIsPresentingPremiumPaywall(true);
-
-    try {
-      const result = await presentPremiumPaywall();
-
-      if (result === 'purchased' || result === 'restored') {
-        await refreshPremiumAccessState();
-        Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
-      } else if (result === 'error' || result === 'notPresented') {
-        Alert.alert('Strollia Plus', 'Paywallを表示できませんでした。RevenueCatとストア設定を確認してください。');
-      }
-    } finally {
-      setIsPresentingPremiumPaywall(false);
-    }
+/** RevenueCat Paywallを表示し、購入または復元後にPlus状態を更新する。 */
+async function openPremiumPaywall(): Promise<void> {
+  if (isPresentingPremiumPaywall) {
+    return;
   }
+
+  triggerSelectionHaptic();
+  setIsPresentingPremiumPaywall(true);
+
+  try {
+    const result = await presentPremiumPaywall();
+
+    if (result === 'purchased' || result === 'restored') {
+      await refreshPremiumAccessState();
+      Alert.alert('Strollia Plus', 'Plus特典が有効になりました。');
+    } else if (result === 'error' || result === 'notPresented') {
+      Alert.alert('Strollia Plus', 'Paywallを表示できませんでした。RevenueCatとストア設定を確認してください。');
+    }
+  } finally {
+    setIsPresentingPremiumPaywall(false);
+  }
+}
 ```
 
 Add restore handler:
 
 ```ts
-  /** App StoreまたはGoogle Playの購入をRevenueCat経由で復元する。 */
-  async function restorePurchasesFromSettings(): Promise<void> {
-    if (isRestoringPremiumPurchases) {
-      return;
-    }
-
-    triggerSelectionHaptic();
-    setIsRestoringPremiumPurchases(true);
-
-    try {
-      const restoredState = await restorePremiumPurchases();
-      setPremiumAccessState(restoredState);
-      Alert.alert('購入の復元', restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。');
-    } finally {
-      setIsRestoringPremiumPurchases(false);
-    }
+/** App StoreまたはGoogle Playの購入をRevenueCat経由で復元する。 */
+async function restorePurchasesFromSettings(): Promise<void> {
+  if (isRestoringPremiumPurchases) {
+    return;
   }
+
+  triggerSelectionHaptic();
+  setIsRestoringPremiumPurchases(true);
+
+  try {
+    const restoredState = await restorePremiumPurchases();
+    setPremiumAccessState(restoredState);
+    Alert.alert(
+      '購入の復元',
+      restoredState.isPlusActive ? 'Strollia Plusを復元しました。' : '復元できるStrollia Plus購入は見つかりませんでした。',
+    );
+  } finally {
+    setIsRestoringPremiumPurchases(false);
+  }
+}
 ```
 
 Change `showPremiumLockedMessage` to call Paywall:
 
 ```ts
-  function showPremiumLockedMessage(label: string): void {
-    Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。Paywallを表示しますか？`, [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '見る',
-        onPress: () => {
-          openPremiumPaywall().catch((error: unknown) => {
-            console.warn('Failed to open premium paywall:', error);
-          });
-        },
+function showPremiumLockedMessage(label: string): void {
+  Alert.alert('Strollia Plus限定', `${label}はStrollia Plusで開放できます。Paywallを表示しますか？`, [
+    { text: 'キャンセル', style: 'cancel' },
+    {
+      text: '見る',
+      onPress: () => {
+        openPremiumPaywall().catch((error: unknown) => {
+          console.warn('Failed to open premium paywall:', error);
+        });
       },
-    ]);
-  }
+    },
+  ]);
+}
 ```
 
 Pass new props to `SettingsScreen`:
@@ -1009,6 +1020,7 @@ git commit -m "feat(premium): Paywall購入と復元をアプリに接続"
 ## Task 6: Update Monetization Docs and Todo
 
 **Files:**
+
 - Modify: `docs/monetization.md`
 - Modify: `docs/todo.md`
 
@@ -1071,6 +1083,7 @@ git commit -m "docs(premium): Paywallとストア設定手順を追加"
 ## Task 7: Final Verification
 
 **Files:**
+
 - All changed files
 
 - [ ] **Step 1: Run typecheck**

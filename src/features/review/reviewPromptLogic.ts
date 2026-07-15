@@ -21,9 +21,5 @@ export type ReviewPromptContext = {
  * @returns レビュー促進を要求すべきならtrue。
  */
 export function shouldRequestReviewAfterAchievement(context: ReviewPromptContext): boolean {
-  return (
-    context.dismissedAchievementId === REVIEW_PROMPT_ACHIEVEMENT_ID &&
-    !context.hasPendingNotifications &&
-    !context.hasAlreadyPrompted
-  );
+  return context.dismissedAchievementId === REVIEW_PROMPT_ACHIEVEMENT_ID && !context.hasPendingNotifications && !context.hasAlreadyPrompted;
 }

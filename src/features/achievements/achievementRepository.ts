@@ -1,7 +1,7 @@
-import { db } from '../../db/database';
-import { LocationPoint } from '../../types/gps';
-import { toLocalDate } from '../../utils/date';
-import { totalDistanceMeters } from '../../utils/distance';
+import { db, withExclusiveTransaction } from '@/db/database';
+import { LocationPoint } from '@/types/gps';
+import { toLocalDate } from '@/utils/date';
+import { totalDistanceMeters } from '@/utils/distance';
 import { ACHIEVEMENT_DEFINITIONS, AchievementDefinition, getAchievementDefinition } from './achievementDefinitions';
 import { AchievementProgress, evaluateAchievementUnlocks, getProgressValueForCondition } from './achievementEvaluator';
 
@@ -44,7 +44,6 @@ export async function getAchievementProgress(): Promise<AchievementProgress> {
     municipalityCount: municipalityRow?.count ?? 0,
   };
 }
-
 
 /**
  * daily_logsの距離合計を計算し、NULLの日はGPSポイントからフォールバック計算する。
@@ -157,11 +156,11 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
     return [];
   }
 
-  await db.withTransactionAsync(async () => {
+  await withExclusiveTransaction(async (txn) => {
     for (const definition of newlyUnlocked) {
       const progressValue = getProgressValueForCondition(definition.condition, progress);
 
-      const unlockResult = await db.runAsync(
+      const unlockResult = await txn.runAsync(
         `INSERT OR IGNORE INTO achievement_unlocks (achievement_id, unlocked_at, unlocked_local_date, progress_value, created_at)
          VALUES (?, ?, ?, ?, ?)`,
         definition.id,
@@ -171,7 +170,7 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
         now,
       );
       if (unlockResult.changes > 0) {
-        await db.runAsync(
+        await txn.runAsync(
           `INSERT OR IGNORE INTO achievement_notification_queue (achievement_id, queued_at, created_at)
            VALUES (?, ?, ?)`,
           definition.id,
@@ -185,12 +184,11 @@ export async function evaluateAndStoreAchievementUnlocks(options: EvaluateAchiev
   return newlyUnlocked;
 }
 
-
 /** 開発中の動作確認用に解除済み実績と通知キューを削除する。 */
 export async function resetAchievementUnlocksForDevelopment(): Promise<void> {
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM achievement_notification_queue');
-    await db.runAsync('DELETE FROM achievement_unlocks');
+  await withExclusiveTransaction(async (txn) => {
+    await txn.runAsync('DELETE FROM achievement_notification_queue');
+    await txn.runAsync('DELETE FROM achievement_unlocks');
   });
 }
 

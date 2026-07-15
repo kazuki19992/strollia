@@ -1,8 +1,8 @@
-import * as MediaLibrary from 'expo-media-library';
+import * as MediaLibrary from 'expo-media-library/legacy';
 
-import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto } from '../photoLibrary';
+import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto } from '@/features/photos/photoLibrary';
 
-jest.mock('expo-media-library', () => ({
+jest.mock('expo-media-library/legacy', () => ({
   getAssetsAsync: jest.fn(),
   getAssetInfoAsync: jest.fn(),
   MediaType: { photo: 'photo' },
@@ -92,9 +92,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
         height: 80,
       },
     ]);
-    expect(MediaLibrary.getAssetsAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ mediaType: MediaLibrary.MediaType.photo }),
-    );
+    expect(MediaLibrary.getAssetsAsync).toHaveBeenCalledWith(expect.objectContaining({ mediaType: MediaLibrary.MediaType.photo }));
   });
 
   it('写真ライブラリが空の場合は空配列を返す', async () => {

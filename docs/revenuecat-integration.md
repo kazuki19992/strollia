@@ -140,14 +140,16 @@ import Purchases from 'react-native-purchases';
 export async function getCurrentStrolliaPlusPackages() {
   const offerings = await Purchases.getOfferings();
 
-  return offerings.current?.availablePackages.map((pkg) => ({
-    packageId: pkg.identifier,
-    packageType: pkg.packageType,
-    productId: pkg.product.identifier,
-    title: pkg.product.title,
-    description: pkg.product.description,
-    price: pkg.product.priceString,
-  })) ?? [];
+  return (
+    offerings.current?.availablePackages.map((pkg) => ({
+      packageId: pkg.identifier,
+      packageType: pkg.packageType,
+      productId: pkg.product.identifier,
+      title: pkg.product.title,
+      description: pkg.product.description,
+      price: pkg.product.priceString,
+    })) ?? []
+  );
 }
 ```
 

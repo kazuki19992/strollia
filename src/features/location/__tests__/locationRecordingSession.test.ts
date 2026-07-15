@@ -1,6 +1,9 @@
 import type { LocationObject } from 'expo-location';
 
-import type { LocationPoint, NewLocationPoint } from '../../../types/gps';
+import type { LocationPoint, NewLocationPoint } from '@/types/gps';
+
+import { beginGpxImportPriority, resetGpxImportPriorityForTest } from '@/features/location/gpxImportPriority';
+import { createLocationRecordingSession, flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
 
 const mockInitializeDatabase = jest.fn();
 const mockProcessAchievementsForSavedPoint = jest.fn();
@@ -11,36 +14,34 @@ const mockGetVisitedCellsForLocationPoint = jest.fn();
 const mockShouldSaveLocationPoint = jest.fn();
 const mockUpsertVisitedCells = jest.fn();
 
-jest.mock('../../../db/database', () => ({
+jest.mock('@/db/database', () => ({
   initializeDatabase: (...args: unknown[]) => mockInitializeDatabase(...args),
 }));
 
-jest.mock('../../achievements/achievementService', () => ({
+jest.mock('@/features/achievements/achievementService', () => ({
   processAchievementsForSavedPoint: (...args: unknown[]) => mockProcessAchievementsForSavedPoint(...args),
 }));
 
-jest.mock('../../logs/logRepository', () => ({
+jest.mock('@/features/logs/logRepository', () => ({
   getLatestLocationPoint: (...args: unknown[]) => mockGetLatestLocationPoint(...args),
   insertLocationPoint: (...args: unknown[]) => mockInsertLocationPoint(...args),
 }));
 
-jest.mock('../locationMapper', () => ({
+jest.mock('@/features/location/locationMapper', () => ({
   toLocationPoint: (...args: unknown[]) => mockToLocationPoint(...args),
 }));
 
-jest.mock('../grid/gridInterpolation', () => ({
+jest.mock('@/features/location/grid/gridInterpolation', () => ({
   getVisitedCellsForLocationPoint: (...args: unknown[]) => mockGetVisitedCellsForLocationPoint(...args),
 }));
 
-jest.mock('../locationSaveFilter', () => ({
+jest.mock('@/features/location/locationSaveFilter', () => ({
   shouldSaveLocationPoint: (...args: unknown[]) => mockShouldSaveLocationPoint(...args),
 }));
 
-jest.mock('../visitedCellRepository', () => ({
+jest.mock('@/features/location/visitedCellRepository', () => ({
   upsertVisitedCells: (...args: unknown[]) => mockUpsertVisitedCells(...args),
 }));
-
-import { createLocationRecordingSession } from '../locationRecordingSession';
 
 const latestPoint: LocationPoint = {
   id: 10,
@@ -131,5 +132,129 @@ describe('位置情報保存セッション', () => {
     expect(mockToLocationPoint).not.toHaveBeenCalled();
     expect(mockUpsertVisitedCells).not.toHaveBeenCalled();
     expect(mockInsertLocationPoint).not.toHaveBeenCalled();
+  });
+});
+
+describe('GPXインポート優先モードのバッファリング', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // mockReturnValueOnce のキューは clearAllMocks では消えず前の describe から持ち越されるため、明示的にリセットする
+    mockToLocationPoint.mockReset();
+    mockInsertLocationPoint.mockReset();
+    resetGpxImportPriorityForTest();
+    mockInitializeDatabase.mockResolvedValue(undefined);
+    mockGetLatestLocationPoint.mockResolvedValue(latestPoint);
+    mockToLocationPoint.mockReturnValueOnce(firstPoint).mockReturnValueOnce(secondPoint);
+    mockGetVisitedCellsForLocationPoint.mockReturnValue([{ cellId: 'cell' }]);
+    mockUpsertVisitedCells.mockResolvedValue(undefined);
+    mockShouldSaveLocationPoint.mockReturnValue(true);
+    mockInsertLocationPoint.mockResolvedValueOnce(11).mockResolvedValueOnce(12);
+    mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    resetGpxImportPriorityForTest();
+  });
+
+  it('インポート中はDBへ書き込まず位置情報をバッファへ退避する', async () => {
+    const session = await createLocationRecordingSession();
+    beginGpxImportPriority();
+
+    await session.recordLocations([firstLocation]);
+
+    expect(mockToLocationPoint).not.toHaveBeenCalled();
+    expect(mockUpsertVisitedCells).not.toHaveBeenCalled();
+    expect(mockInsertLocationPoint).not.toHaveBeenCalled();
+  });
+
+  it('flushでバッファ分を通常の保存規則でまとめて取り込む', async () => {
+    const session = await createLocationRecordingSession();
+    beginGpxImportPriority();
+    await session.recordLocations([firstLocation]);
+    await session.recordLocations([secondLocation]);
+
+    await flushLocationsBufferedDuringGpxImport();
+
+    // flush内で新しいセッションが作られ、退避した2点が受信順に処理される
+    expect(mockToLocationPoint).toHaveBeenCalledTimes(2);
+    expect(mockInsertLocationPoint).toHaveBeenCalledTimes(2);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(1, firstPoint);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(2, secondPoint);
+  });
+
+  it('バッファが空の場合はflushで何もしない', async () => {
+    beginGpxImportPriority();
+
+    await flushLocationsBufferedDuringGpxImport();
+
+    expect(mockInitializeDatabase).not.toHaveBeenCalled();
+    expect(mockInsertLocationPoint).not.toHaveBeenCalled();
+  });
+
+  it('flush後の位置情報は通常どおりDBへ書き込まれる', async () => {
+    const session = await createLocationRecordingSession();
+    beginGpxImportPriority();
+    await flushLocationsBufferedDuringGpxImport();
+
+    await session.recordLocations([firstLocation]);
+
+    expect(mockInsertLocationPoint).toHaveBeenCalledTimes(1);
+  });
+
+  it('通常記録の保存が途中で失敗した場合は未確定分をバッファへ戻し、次の記録時に再試行する', async () => {
+    mockToLocationPoint.mockReset();
+    mockInsertLocationPoint.mockReset();
+    // 1回目のrecordLocations: firstの保存で失敗 → [first, second] が未確定としてバッファへ戻る
+    // 2回目のrecordLocations: バッファ分を回収して first, second の順に保存する
+    mockToLocationPoint.mockReturnValueOnce(firstPoint).mockReturnValueOnce(firstPoint).mockReturnValueOnce(secondPoint);
+    mockInsertLocationPoint.mockRejectedValueOnce(new Error('database is locked')).mockResolvedValueOnce(11).mockResolvedValueOnce(12);
+    const session = await createLocationRecordingSession();
+
+    await expect(session.recordLocations([firstLocation, secondLocation])).rejects.toThrow('database is locked');
+
+    await session.recordLocations([]);
+
+    expect(mockInsertLocationPoint).toHaveBeenCalledTimes(3);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(2, firstPoint);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(3, secondPoint);
+  });
+
+  it('flushが失敗した場合は退避分をバッファへ戻し、次の記録時に受信順を保って回収する', async () => {
+    const session = await createLocationRecordingSession();
+    beginGpxImportPriority();
+    await session.recordLocations([firstLocation]);
+
+    // flush内のセッション生成を失敗させる(SQLITE_BUSY等を想定)
+    mockGetLatestLocationPoint.mockRejectedValueOnce(new Error('database is locked'));
+    await expect(flushLocationsBufferedDuringGpxImport()).rejects.toThrow('database is locked');
+
+    // 位置情報は失われず、次の通常記録でバッファ分(first)→新着(second)の順に処理される
+    await session.recordLocations([secondLocation]);
+
+    expect(mockInsertLocationPoint).toHaveBeenCalledTimes(2);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(1, firstPoint);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(2, secondPoint);
+  });
+
+  it('flush中の保存失敗ではrecordLocations側だけがバッファへ戻し、二重復元しない', async () => {
+    mockToLocationPoint.mockReset();
+    mockInsertLocationPoint.mockReset();
+    // flush時: firstの保存で失敗 → recordLocations が未確定分としてバッファへ戻す
+    // 次の記録時: バッファ分のfirstを1回だけ再処理する(二重に戻っていれば2回処理される)
+    mockToLocationPoint.mockReturnValueOnce(firstPoint).mockReturnValueOnce(firstPoint).mockReturnValueOnce(secondPoint);
+    mockInsertLocationPoint.mockRejectedValueOnce(new Error('database is locked')).mockResolvedValue(11);
+    const session = await createLocationRecordingSession();
+    beginGpxImportPriority();
+    await session.recordLocations([firstLocation]);
+
+    await expect(flushLocationsBufferedDuringGpxImport()).rejects.toThrow('database is locked');
+
+    await session.recordLocations([secondLocation]);
+
+    // first は1回だけ再処理される(insert: flushでの失敗1回 + 再試行1回 + second 1回 = 3回)
+    expect(mockToLocationPoint).toHaveBeenCalledTimes(3);
+    expect(mockInsertLocationPoint).toHaveBeenCalledTimes(3);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(2, firstPoint);
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(3, secondPoint);
   });
 });

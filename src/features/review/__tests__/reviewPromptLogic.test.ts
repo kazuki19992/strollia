@@ -1,4 +1,4 @@
-import { REVIEW_PROMPT_ACHIEVEMENT_ID, shouldRequestReviewAfterAchievement } from '../reviewPromptLogic';
+import { REVIEW_PROMPT_ACHIEVEMENT_ID, shouldRequestReviewAfterAchievement } from '@/features/review/reviewPromptLogic';
 
 describe('レビュー促進判定 shouldRequestReviewAfterAchievement', () => {
   it('トリガー実績IDはdistance-200', () => {

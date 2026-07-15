@@ -1,5 +1,5 @@
-import { coordinateToGridCell } from '../../location/grid/gridCell';
-import { createDailyDetailReport } from '../dailyReport';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
+import { createDailyDetailReport } from '@/features/reports/dailyReport';
 
 const basePoint = {
   id: 1,

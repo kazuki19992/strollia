@@ -1,7 +1,7 @@
 import type { GridOverlayConfig } from './config/gridOverlayConfig';
 import { GRID_OVERLAY_CONFIG } from './config/gridOverlayConfig';
-import { cellToPolygonCoordinates } from '../location/grid/gridCell';
-import type { GridCellPolygonSource } from '../location/grid/gridCell';
+import { cellToPolygonCoordinates } from '@/features/location/grid/gridCell';
+import type { GridCellPolygonSource } from '@/features/location/grid/gridCell';
 import type { LatLng } from 'react-native-maps';
 
 type RegionOpacityLike = {
@@ -38,10 +38,7 @@ export type VisitedGridCellOpacityResolver = (cell: GridCellPolygonSource) => nu
  * @param config - Grid Overlay設定。
  * @returns Fog opacity。
  */
-export function getFogOpacity(
-  region: RegionOpacityLike | null,
-  config: GridOverlayConfig = GRID_OVERLAY_CONFIG,
-): number {
+export function getFogOpacity(region: RegionOpacityLike | null, config: GridOverlayConfig = GRID_OVERLAY_CONFIG): number {
   if (!region) {
     return config.minimumFogOpacity;
   }
@@ -56,9 +53,7 @@ export function getFogOpacity(
     return config.maximumFogOpacity;
   }
 
-  const progress =
-    (latitudeDelta - config.opacityStartLatitudeDelta) /
-    (config.opacityEndLatitudeDelta - config.opacityStartLatitudeDelta);
+  const progress = (latitudeDelta - config.opacityStartLatitudeDelta) / (config.opacityEndLatitudeDelta - config.opacityStartLatitudeDelta);
 
   return config.minimumFogOpacity + (config.maximumFogOpacity - config.minimumFogOpacity) * progress;
 }
@@ -118,7 +113,13 @@ function colorWithOpacity(hexColor: string, opacity: number): string {
   }
 
   const rawHex = match[1];
-  const hex = rawHex.length === 3 ? rawHex.split('').map((character) => `${character}${character}`).join('') : rawHex;
+  const hex =
+    rawHex.length === 3
+      ? rawHex
+          .split('')
+          .map((character) => `${character}${character}`)
+          .join('')
+      : rawHex;
   const red = parseInt(hex.slice(0, 2), 16);
   const green = parseInt(hex.slice(2, 4), 16);
   const blue = parseInt(hex.slice(4, 6), 16);

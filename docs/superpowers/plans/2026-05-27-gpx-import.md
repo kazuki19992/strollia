@@ -24,6 +24,7 @@
 ## Task 1: Add Dependencies
 
 **Files:**
+
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
@@ -48,6 +49,7 @@ git commit -m "build: GPXインポート依存関係を追加"
 ## Task 2: GPX Parser
 
 **Files:**
+
 - Create: `src/features/import/gpxImporter.ts`
 - Create: `src/features/import/__tests__/gpxImporter.test.ts`
 
@@ -167,17 +169,19 @@ function toLocationPoint(trkpt: XmlNode): NewLocationPoint[] {
     return [];
   }
 
-  return [{
-    recordedAt,
-    localDate: toLocalDate(new Date(recordedAt)),
-    latitude,
-    longitude,
-    altitude: toFiniteNumber(getTextValue(trkpt.ele)),
-    speed: null,
-    heading: null,
-    accuracy: null,
-    altitudeAccuracy: null,
-  }];
+  return [
+    {
+      recordedAt,
+      localDate: toLocalDate(new Date(recordedAt)),
+      latitude,
+      longitude,
+      altitude: toFiniteNumber(getTextValue(trkpt.ele)),
+      speed: null,
+      heading: null,
+      accuracy: null,
+      altitudeAccuracy: null,
+    },
+  ];
 }
 
 function findNodesByName(value: unknown, name: string): XmlNode[] {
@@ -237,6 +241,7 @@ git commit -m "feat(import): GPXパーサを追加"
 ## Task 3: Import Repository
 
 **Files:**
+
 - Create: `src/features/import/importRepository.ts`
 - Create: `src/features/import/__tests__/importRepository.test.ts`
 - Modify: `src/db/database.ts`
@@ -297,9 +302,37 @@ describe('GPXインポート保存 importRepository', () => {
     const result = await importLocationPointsFromGpx([point], 'walk.gpx');
 
     expect(result.importedPointCount).toBe(1);
-    expect(db.runAsync).toHaveBeenCalledWith(expect.stringContaining("'gpx-import'"), expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything());
-    expect(db.runAsync).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO daily_logs'), expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything());
-    expect(db.runAsync).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO import_history'), 'gpx', 'walk.gpx', point.recordedAt, point.recordedAt, 1, 0, expect.any(String));
+    expect(db.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("'gpx-import'"),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(db.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO daily_logs'),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(db.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO import_history'),
+      'gpx',
+      'walk.gpx',
+      point.recordedAt,
+      point.recordedAt,
+      1,
+      0,
+      expect.any(String),
+    );
   });
 });
 ```
@@ -451,7 +484,13 @@ async function insertImportedLocationPoint(point: NewLocationPoint, previousPoin
   );
 }
 
-async function insertImportHistory(points: NewLocationPoint[], fileName: string, importedPointCount: number, skippedPointCount: number, now: string): Promise<void> {
+async function insertImportHistory(
+  points: NewLocationPoint[],
+  fileName: string,
+  importedPointCount: number,
+  skippedPointCount: number,
+  now: string,
+): Promise<void> {
   const rangeFrom = points[0]?.recordedAt ?? null;
   const rangeTo = points.at(-1)?.recordedAt ?? null;
 
@@ -496,6 +535,7 @@ git commit -m "feat(import): GPXログの保存処理を追加"
 ## Task 4: File Picker Service
 
 **Files:**
+
 - Create: `src/features/import/gpxImportService.ts`
 - Create: `src/features/import/__tests__/gpxImportService.test.ts`
 
@@ -613,6 +653,7 @@ git commit -m "feat(import): GPXファイル選択を追加"
 ## Task 5: Settings and App Integration
 
 **Files:**
+
 - Modify: `src/app/components/SettingsScreen.tsx`
 - Modify: `src/app/components/__tests__/SettingsScreen.test.tsx`
 - Modify: `src/app/App.tsx`
@@ -697,42 +738,45 @@ import { importLocationPointsFromGpx } from '../features/import/importRepository
 Replace `showImportPlaceholder` with:
 
 ```typescript
-  const [isImportingGpx, setIsImportingGpx] = useState(false);
+const [isImportingGpx, setIsImportingGpx] = useState(false);
 
-  /** GPXファイルを選択し、既存データ優先で端末内DBへ取り込む。 */
-  async function importGpx(): Promise<void> {
-    if (isImportingGpx) {
+/** GPXファイルを選択し、既存データ優先で端末内DBへ取り込む。 */
+async function importGpx(): Promise<void> {
+  if (isImportingGpx) {
+    return;
+  }
+
+  triggerSelectionHaptic();
+  setIsImportingGpx(true);
+
+  try {
+    const pickedFile = await pickAndReadGpxFile();
+
+    if (!pickedFile) {
       return;
     }
 
-    triggerSelectionHaptic();
-    setIsImportingGpx(true);
+    const points = parseGpxToLocationPoints(pickedFile.content);
 
-    try {
-      const pickedFile = await pickAndReadGpxFile();
-
-      if (!pickedFile) {
-        return;
-      }
-
-      const points = parseGpxToLocationPoints(pickedFile.content);
-
-      if (points.length === 0) {
-        Alert.alert('GPXインポート', '取り込めるGPSポイントがありませんでした。');
-        return;
-      }
-
-      const result = await importLocationPointsFromGpx(points, pickedFile.fileName);
-      await refreshLogs();
-      await refreshRoute();
-      Alert.alert('GPXインポート完了', `${result.importedPointCount}件を取り込みました。${result.skippedPointCount}件は既存データを優先してスキップしました。`);
-    } catch (error: unknown) {
-      console.warn('GPX import failed:', error);
-      Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
-    } finally {
-      setIsImportingGpx(false);
+    if (points.length === 0) {
+      Alert.alert('GPXインポート', '取り込めるGPSポイントがありませんでした。');
+      return;
     }
+
+    const result = await importLocationPointsFromGpx(points, pickedFile.fileName);
+    await refreshLogs();
+    await refreshRoute();
+    Alert.alert(
+      'GPXインポート完了',
+      `${result.importedPointCount}件を取り込みました。${result.skippedPointCount}件は既存データを優先してスキップしました。`,
+    );
+  } catch (error: unknown) {
+    console.warn('GPX import failed:', error);
+    Alert.alert('GPXインポート失敗', error instanceof Error ? error.message : 'GPXインポートに失敗しました。');
+  } finally {
+    setIsImportingGpx(false);
   }
+}
 ```
 
 Pass `onImportGpx={importGpx}` to `SettingsScreen`.
@@ -757,6 +801,7 @@ git commit -m "feat(import): 設定画面からGPXインポートを実行"
 ## Task 6: Documentation
 
 **Files:**
+
 - Modify: `docs/todo.md`
 - Modify: `docs/mvp.md`
 - Modify: `docs/data-storage.md`
@@ -808,6 +853,7 @@ git commit -m "docs: GPXインポート仕様を反映"
 ## Task 7: Final Verification and PR
 
 **Files:**
+
 - All changed files.
 
 - [ ] **Step 1: Run typecheck**

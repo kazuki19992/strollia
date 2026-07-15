@@ -10,15 +10,15 @@
 
 ## 通知仕様
 
-| 項目 | 値 |
-|------|-----|
-| タイトル | 先月のレポートが完成しました！ |
-| 本文 | いますぐ確認しましょう！👀 |
-| 発火タイミング | 毎月1日 午前9時（端末のローカルタイム） |
-| 対象 | Plusユーザーのみ |
-| トリガー種別 | `CalendarTriggerInput` (`day: 1, hour: 9, minute: 0, repeats: true`) |
-| 通知データ | `{ screen: 'monthlyReport' }` |
-| Android チャンネル | `monthly-reports`（名前: 「月次レポート」） |
+| 項目               | 値                                                                   |
+| ------------------ | -------------------------------------------------------------------- |
+| タイトル           | 先月のレポートが完成しました！                                       |
+| 本文               | いますぐ確認しましょう！👀                                           |
+| 発火タイミング     | 毎月1日 午前9時（端末のローカルタイム）                              |
+| 対象               | Plusユーザーのみ                                                     |
+| トリガー種別       | `CalendarTriggerInput` (`day: 1, hour: 9, minute: 0, repeats: true`) |
+| 通知データ         | `{ screen: 'monthlyReport' }`                                        |
+| Android チャンネル | `monthly-reports`（名前: 「月次レポート」）                          |
 
 ---
 
@@ -56,7 +56,7 @@ isMonthlyReportNotification(data: unknown): boolean
 既存の Plus 状態確定後（`getPremiumAccessState()` の結果受け取り箇所）に追加:
 
 ```ts
-syncMonthlyReportNotification(accessState.isPlusActive)
+syncMonthlyReportNotification(accessState.isPlusActive);
 ```
 
 ### 2. Plus 状態変化時の追従
@@ -64,7 +64,7 @@ syncMonthlyReportNotification(accessState.isPlusActive)
 既存の `subscribeToCustomerInfoUpdates` コールバック内に追加:
 
 ```ts
-syncMonthlyReportNotification(state.isPlusActive)
+syncMonthlyReportNotification(state.isPlusActive);
 ```
 
 ### 3. 通知タップによる画面遷移
@@ -91,9 +91,7 @@ const lastNotificationResponse = Notifications.useLastNotificationResponse();
 
 useEffect(() => {
   if (!isReady) return;
-  if (lastNotificationResponse && isMonthlyReportNotification(
-    lastNotificationResponse.notification.request.content.data
-  )) {
+  if (lastNotificationResponse && isMonthlyReportNotification(lastNotificationResponse.notification.request.content.data)) {
     openMonthlyReport();
   }
 }, [isReady, lastNotificationResponse]);

@@ -1,5 +1,5 @@
-import { applyColorPreset, darkTheme, getAppTheme, isAppThemePreference, lightTheme } from '../theme';
-import { getAppColorPreset } from '../../features/customization/colorPresets';
+import { applyColorPreset, darkTheme, getAppTheme, isAppThemePreference, lightTheme } from '@/theme/theme';
+import { getAppColorPreset } from '@/features/customization/colorPresets';
 
 describe('テーマ選択 getAppTheme', () => {
   it('画面のデフォルト背景は設定画面と同じニュートラルな背景色にする', () => {
@@ -39,6 +39,11 @@ describe('テーマ選択 getAppTheme', () => {
   it('OSがダークモードでない場合はライトテーマを返す', () => {
     expect(getAppTheme('light')).toBe(lightTheme);
     expect(getAppTheme(null)).toBe(lightTheme);
+  });
+
+  it("OS設定が不明('unspecified')の場合はライトテーマへフォールバックする", () => {
+    expect(getAppTheme('unspecified')).toBe(lightTheme);
+    expect(getAppTheme('unspecified', 'system')).toBe(lightTheme);
   });
 
   it('OSがダークモードの場合はダークテーマを返す', () => {

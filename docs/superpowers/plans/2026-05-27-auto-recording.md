@@ -37,6 +37,7 @@
 ### Task 1: 自動開始判定を追加する
 
 **Files:**
+
 - Create: `src/app/autoRecording.ts`
 - Create: `src/app/__tests__/autoRecording.test.ts`
 
@@ -57,35 +58,43 @@ const grantedPermissions: LocationPermissionState = {
 
 describe('自動GPS記録判定 shouldStartRecordingAutomatically', () => {
   it('権限が揃っていて未記録なら自動開始する', () => {
-    expect(shouldStartRecordingAutomatically({
-      permissions: grantedPermissions,
-      isRecording: false,
-      isAutoStartInFlight: false,
-    })).toBe(true);
+    expect(
+      shouldStartRecordingAutomatically({
+        permissions: grantedPermissions,
+        isRecording: false,
+        isAutoStartInFlight: false,
+      }),
+    ).toBe(true);
   });
 
   it('すでに記録中なら自動開始しない', () => {
-    expect(shouldStartRecordingAutomatically({
-      permissions: grantedPermissions,
-      isRecording: true,
-      isAutoStartInFlight: false,
-    })).toBe(false);
+    expect(
+      shouldStartRecordingAutomatically({
+        permissions: grantedPermissions,
+        isRecording: true,
+        isAutoStartInFlight: false,
+      }),
+    ).toBe(false);
   });
 
   it('バックグラウンド権限がない場合は自動開始しない', () => {
-    expect(shouldStartRecordingAutomatically({
-      permissions: { ...grantedPermissions, backgroundGranted: false },
-      isRecording: false,
-      isAutoStartInFlight: false,
-    })).toBe(false);
+    expect(
+      shouldStartRecordingAutomatically({
+        permissions: { ...grantedPermissions, backgroundGranted: false },
+        isRecording: false,
+        isAutoStartInFlight: false,
+      }),
+    ).toBe(false);
   });
 
   it('自動開始処理中なら重複して開始しない', () => {
-    expect(shouldStartRecordingAutomatically({
-      permissions: grantedPermissions,
-      isRecording: false,
-      isAutoStartInFlight: true,
-    })).toBe(false);
+    expect(
+      shouldStartRecordingAutomatically({
+        permissions: grantedPermissions,
+        isRecording: false,
+        isAutoStartInFlight: true,
+      }),
+    ).toBe(false);
   });
 });
 ```
@@ -118,11 +127,7 @@ export type AutoRecordingDecisionInput = {
 };
 
 /** 権限許可後にGPS記録を自動開始すべきか返す。 */
-export function shouldStartRecordingAutomatically({
-  permissions,
-  isRecording,
-  isAutoStartInFlight,
-}: AutoRecordingDecisionInput): boolean {
+export function shouldStartRecordingAutomatically({ permissions, isRecording, isAutoStartInFlight }: AutoRecordingDecisionInput): boolean {
   return hasRequiredLocationPermission(permissions) && !isRecording && !isAutoStartInFlight;
 }
 ```
@@ -151,6 +156,7 @@ git commit -m "feat(app): 自動GPS記録の開始判定を追加"
 ### Task 2: 設定画面の記録操作表示を変更する
 
 **Files:**
+
 - Modify: `src/app/components/SettingsScreen.tsx`
 - Modify: `src/app/components/__tests__/SettingsScreen.test.tsx`
 
@@ -217,21 +223,23 @@ Remove `onStopRecording` from the function parameters.
 Replace the GPS action rendering block with:
 
 ```tsx
-          {!hasRequiredPermission ? (
-            <View style={styles.permissionSettingsBox}>
-              <Text style={styles.permissionTitle}>位置情報の常時許可が必要です</Text>
-              <Text style={styles.permissionText}>OSの権限で「常に」許可すると、画面を閉じても記録できます。</Text>
-              <Pressable onPress={onRequestLocationPermission} style={styles.permissionButton}>
-                <Text style={styles.permissionButtonText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
-              </Pressable>
-            </View>
-          ) : autoStartStatus === 'failed' ? (
-            <View style={styles.actions}>
-              <Pressable disabled={isRecording} onPress={onStartRecording} style={[styles.primaryButton, isRecording && styles.buttonDisabled]}>
-                <Text style={styles.primaryButtonText}>記録開始</Text>
-              </Pressable>
-            </View>
-          ) : null}
+{
+  !hasRequiredPermission ? (
+    <View style={styles.permissionSettingsBox}>
+      <Text style={styles.permissionTitle}>位置情報の常時許可が必要です</Text>
+      <Text style={styles.permissionText}>OSの権限で「常に」許可すると、画面を閉じても記録できます。</Text>
+      <Pressable onPress={onRequestLocationPermission} style={styles.permissionButton}>
+        <Text style={styles.permissionButtonText}>{shouldOpenSettingsForPermission ? '設定を開く' : '権限を付与する'}</Text>
+      </Pressable>
+    </View>
+  ) : autoStartStatus === 'failed' ? (
+    <View style={styles.actions}>
+      <Pressable disabled={isRecording} onPress={onStartRecording} style={[styles.primaryButton, isRecording && styles.buttonDisabled]}>
+        <Text style={styles.primaryButtonText}>記録開始</Text>
+      </Pressable>
+    </View>
+  ) : null;
+}
 ```
 
 Update `createProps` in the test by removing `onStopRecording`.
@@ -260,6 +268,7 @@ git commit -m "feat(settings): GPS記録操作を自動記録前提に変更"
 ### Task 3: 自動開始を権限同期後に再試行する
 
 **Files:**
+
 - Modify: `src/app/App.tsx`
 - Modify: `src/app/__tests__/AppMapReturn.test.tsx`
 
@@ -269,66 +278,63 @@ Update imports in `src/app/__tests__/AppMapReturn.test.tsx`:
 
 ```ts
 import { AppState } from 'react-native';
-import {
-  isBackgroundLocationRecording,
-  startBackgroundLocationRecording,
-} from '../../features/location/locationService';
+import { isBackgroundLocationRecording, startBackgroundLocationRecording } from '../../features/location/locationService';
 import { getLocationPermissionState } from '../../features/location/locationPermission';
 ```
 
 Add tests inside `describe('App 地図復帰時の表示範囲復元', () => { ... })`:
 
 ```tsx
-  test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
-    let appStateHandler: ((state: string) => void) | null = null;
-    jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
-      appStateHandler = handler;
-      return { remove: jest.fn() } as any;
-    });
-    (getLocationPermissionState as jest.Mock)
-      .mockResolvedValueOnce({
-        foregroundGranted: true,
-        backgroundGranted: false,
-        canAskForeground: true,
-        canAskBackground: true,
-      })
-      .mockResolvedValue({
-        foregroundGranted: true,
-        backgroundGranted: true,
-        canAskForeground: true,
-        canAskBackground: true,
-      });
-    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(false);
-    let renderer: any;
-
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
-    });
-    await flushPromises();
-
-    expect(renderer).toBeTruthy();
-    expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
-
-    await act(async () => {
-      appStateHandler?.('active');
-    });
-    await flushPromises();
-
-    expect(startBackgroundLocationRecording).toHaveBeenCalledTimes(1);
+test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
+  let appStateHandler: ((state: string) => void) | null = null;
+  jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
+    appStateHandler = handler;
+    return { remove: jest.fn() } as any;
   });
-
-  test('すでに記録中なら起動後に記録開始を重複実行しない', async () => {
-    (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
-    let renderer: any;
-
-    await act(async () => {
-      renderer = ReactTestRenderer.create(<App />);
+  (getLocationPermissionState as jest.Mock)
+    .mockResolvedValueOnce({
+      foregroundGranted: true,
+      backgroundGranted: false,
+      canAskForeground: true,
+      canAskBackground: true,
+    })
+    .mockResolvedValue({
+      foregroundGranted: true,
+      backgroundGranted: true,
+      canAskForeground: true,
+      canAskBackground: true,
     });
-    await flushPromises();
+  (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(false);
+  let renderer: any;
 
-    expect(renderer).toBeTruthy();
-    expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+  await act(async () => {
+    renderer = ReactTestRenderer.create(<App />);
   });
+  await flushPromises();
+
+  expect(renderer).toBeTruthy();
+  expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+
+  await act(async () => {
+    appStateHandler?.('active');
+  });
+  await flushPromises();
+
+  expect(startBackgroundLocationRecording).toHaveBeenCalledTimes(1);
+});
+
+test('すでに記録中なら起動後に記録開始を重複実行しない', async () => {
+  (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
+  let renderer: any;
+
+  await act(async () => {
+    renderer = ReactTestRenderer.create(<App />);
+  });
+  await flushPromises();
+
+  expect(renderer).toBeTruthy();
+  expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
+});
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -352,47 +358,49 @@ import { shouldStartRecordingAutomatically } from './autoRecording';
 Replace `autoStartAttemptedRef` with:
 
 ```ts
-  const autoStartInFlightRef = useRef(false);
+const autoStartInFlightRef = useRef(false);
 ```
 
 Add callback after `startRecording`:
 
 ```ts
-  /** 権限許可後に未記録ならGPS記録の自動開始を試みる。 */
-  const maybeStartRecordingAutomatically = useCallback(
-    async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
-      if (!shouldStartRecordingAutomatically({
+/** 権限許可後に未記録ならGPS記録の自動開始を試みる。 */
+const maybeStartRecordingAutomatically = useCallback(
+  async (state: { permissions: LocationPermissionState; recording: boolean }): Promise<void> => {
+    if (
+      !shouldStartRecordingAutomatically({
         permissions: state.permissions,
         isRecording: state.recording,
         isAutoStartInFlight: autoStartInFlightRef.current,
-      })) {
-        setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
-        return;
-      }
+      })
+    ) {
+      setAutoStartStatus(hasRequiredLocationPermission(state.permissions) ? 'recording' : 'needsPermission');
+      return;
+    }
 
-      autoStartInFlightRef.current = true;
+    autoStartInFlightRef.current = true;
 
-      try {
-        await startRecording('auto');
-      } finally {
-        autoStartInFlightRef.current = false;
-      }
-    },
-    [startRecording],
-  );
+    try {
+      await startRecording('auto');
+    } finally {
+      autoStartInFlightRef.current = false;
+    }
+  },
+  [startRecording],
+);
 ```
 
 In the initial setup effect, replace:
 
 ```ts
-        await refreshData();
+await refreshData();
 ```
 
 with:
 
 ```ts
-        const initialState = await refreshData();
-        await maybeStartRecordingAutomatically(initialState);
+const initialState = await refreshData();
+await maybeStartRecordingAutomatically(initialState);
 ```
 
 Replace the old `useEffect` that checks `autoStartAttemptedRef` and calls `isBackgroundLocationRecording()` with no effect, because automatic start now happens after each data sync.
@@ -400,20 +408,20 @@ Replace the old `useEffect` that checks `autoStartAttemptedRef` and calls `isBac
 In the AppState active handler, replace:
 
 ```ts
-        refreshDataAndEvaluateAchievementsIfDialogIdle()
+refreshDataAndEvaluateAchievementsIfDialogIdle();
 ```
 
 with:
 
 ```ts
-        refreshData()
-          .then(maybeStartRecordingAutomatically)
-          .then(evaluateAchievementsIfDialogIdle)
-          .then(async (didEvaluate) => {
-            if (didEvaluate) {
-              await refreshAchievementState(true);
-            }
-          })
+refreshData()
+  .then(maybeStartRecordingAutomatically)
+  .then(evaluateAchievementsIfDialogIdle)
+  .then(async (didEvaluate) => {
+    if (didEvaluate) {
+      await refreshAchievementState(true);
+    }
+  });
 ```
 
 Remove `onStopRecording={stopRecording}` from the `SettingsScreen` props and remove the unused `stopRecording` callback if TypeScript reports it unused.
@@ -442,6 +450,7 @@ git commit -m "feat(app): 権限許可後にGPS記録を自動開始"
 ### Task 4: 自動記録文言を更新する
 
 **Files:**
+
 - Modify: `src/app/appText.ts`
 - Modify: `src/app/__tests__/appText.test.ts`
 
@@ -524,6 +533,7 @@ git commit -m "fix(app): 自動GPS記録の案内文を更新"
 ### Task 5: ドキュメントを自動記録仕様へ更新する
 
 **Files:**
+
 - Modify: `docs/mvp.md`
 - Modify: `docs/architecture.md`
 - Modify: `docs/todo.md`
@@ -572,6 +582,7 @@ git commit -m "docs: 自動GPS記録の仕様を反映"
 ### Task 6: 全体検証
 
 **Files:**
+
 - Verify all changed app, test, and docs files.
 
 - [ ] **Step 1: Run focused tests**

@@ -1,7 +1,7 @@
 import { Region } from 'react-native-maps';
 
-import { MapPhoto } from '../photoLibrary';
-import { clusterMapPhotos, getPhotoClusterRadiusMeters, paginateMapPhotos } from '../photoClusters';
+import { MapPhoto } from '@/features/photos/photoLibrary';
+import { clusterMapPhotos, getPhotoClusterRadiusMeters, paginateMapPhotos } from '@/features/photos/photoClusters';
 
 /**
  * テスト用の地図写真を最小プロパティで作る。
@@ -30,7 +30,6 @@ const region: Region = {
   latitudeDelta: 0.01,
   longitudeDelta: 0.01,
 };
-
 
 describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
   it('拡大率が低いほどクラスタ範囲を広げる', () => {
@@ -68,10 +67,7 @@ describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
 
 describe('写真クラスタ clusterMapPhotos', () => {
   it('近い写真を1つのクラスタにまとめる', () => {
-    const clusters = clusterMapPhotos(
-      [createPhoto('old', 35.0001, 139.0001, 1), createPhoto('new', 35.00012, 139.00012, 2)],
-      region,
-    );
+    const clusters = clusterMapPhotos([createPhoto('old', 35.0001, 139.0001, 1), createPhoto('new', 35.00012, 139.00012, 2)], region);
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['new', 'old']);
@@ -80,41 +76,28 @@ describe('写真クラスタ clusterMapPhotos', () => {
   });
 
   it('離れた写真は別クラスタに分ける', () => {
-    const clusters = clusterMapPhotos(
-      [createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.009, 139.009, 2)],
-      region,
-    );
+    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.009, 139.009, 2)], region);
 
     expect(clusters).toHaveLength(2);
     expect(clusters.flatMap((cluster) => cluster.photos.map((photo) => photo.id)).sort()).toEqual(['a', 'b']);
   });
 
   it('グリッド境界をまたいだ近接写真も1つのクラスタにまとめる', () => {
-    const clusters = clusterMapPhotos(
-      [createPhoto('a', 35.00049, 139.00099, 1), createPhoto('b', 35.00051, 139.00101, 2)],
-      region,
-    );
+    const clusters = clusterMapPhotos([createPhoto('a', 35.00049, 139.00099, 1), createPhoto('b', 35.00051, 139.00101, 2)], region);
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['b', 'a']);
   });
 
   it('同じ場所と言えない距離の写真は別クラスタに分ける', () => {
-    const clusters = clusterMapPhotos(
-      [createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)],
-      region,
-    );
+    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)], region);
 
     expect(clusters).toHaveLength(2);
   });
 
   it('連鎖的に離れた写真を巨大クラスタにまとめない', () => {
     const clusters = clusterMapPhotos(
-      [
-        createPhoto('a', 35.0001, 139.0001, 3),
-        createPhoto('b', 35.00035, 139.0001, 2),
-        createPhoto('c', 35.0006, 139.0001, 1),
-      ],
+      [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00035, 139.0001, 2), createPhoto('c', 35.0006, 139.0001, 1)],
       region,
     );
 

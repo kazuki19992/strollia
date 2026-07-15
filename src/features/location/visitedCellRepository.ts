@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 
-import { db } from '../../db/database';
+import { db, withExclusiveTransaction } from '@/db/database';
 import type { GridBounds, GridCell } from './grid/gridCell';
 
 /** SQLiteから取得するvisited cell行。 */
@@ -36,18 +36,22 @@ export async function upsertVisitedCells(cells: GridCell[], visitedAt: string): 
     return;
   }
 
-  await db.withTransactionAsync(async () => {
-    await upsertVisitedCellsInCurrentTransaction(cells, visitedAt);
+  await withExclusiveTransaction(async (txn) => {
+    await upsertVisitedCellsInCurrentTransaction(cells, visitedAt, txn);
   });
 }
 
 /**
  * 呼び出し元のtransaction内でvisited cellを保存する。
  *
- * `db.withTransactionAsync` のネストを避けるため、複数テーブル更新をまとめる処理から使う。
+ * `db.withExclusiveTransactionAsync` のネストを避けるため、複数テーブル更新をまとめる処理から使う。
  * `withExclusiveTransactionAsync` 内から呼ぶ場合は `runner` に `txn` を渡すこと。
  */
-export async function upsertVisitedCellsInCurrentTransaction(cells: GridCell[], visitedAt: string, runner: SQLite.SQLiteDatabase = db): Promise<void> {
+export async function upsertVisitedCellsInCurrentTransaction(
+  cells: GridCell[],
+  visitedAt: string,
+  runner: SQLite.SQLiteDatabase = db,
+): Promise<void> {
   if (cells.length === 0) {
     return;
   }

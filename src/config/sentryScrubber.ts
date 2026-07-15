@@ -34,10 +34,7 @@ function scrubValue(value: unknown): unknown {
   }
 
   return Object.fromEntries(
-    Object.entries(value).map(([key, entryValue]) => [
-      key,
-      LOCATION_FIELD_NAMES.has(key) ? MASKED_LOCATION_VALUE : scrubValue(entryValue),
-    ]),
+    Object.entries(value).map(([key, entryValue]) => [key, LOCATION_FIELD_NAMES.has(key) ? MASKED_LOCATION_VALUE : scrubValue(entryValue)]),
   );
 }
 

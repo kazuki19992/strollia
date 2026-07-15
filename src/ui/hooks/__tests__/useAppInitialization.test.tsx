@@ -72,7 +72,7 @@ const DEFAULT_PERMISSION_STATE = {
 /** テスト用のデフォルト refreshData 戻り値。 */
 const DEFAULT_REFRESH_RESULT = {
   logs: [],
-  allPoints: [],
+  pointsBounds: null,
   recording: false,
   permissions: DEFAULT_PERMISSION_STATE,
 };

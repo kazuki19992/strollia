@@ -145,8 +145,10 @@ jest.mock('@/features/location/locationPermission', () => ({
 }));
 jest.mock('@/features/logs/logRepository', () => ({
   deleteAllUserData: jest.fn().mockResolvedValue(undefined),
-  getAllLocationPoints: jest.fn().mockResolvedValue([]),
   getDailyLogs: jest.fn().mockResolvedValue([]),
+  getLocationPointsBounds: jest.fn().mockResolvedValue(null),
+  getLocationPointsByDates: jest.fn().mockResolvedValue([]),
+  getLocationPointsByMonth: jest.fn().mockResolvedValue([]),
 }));
 jest.mock('expo-notifications', () => ({
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),

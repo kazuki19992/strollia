@@ -25,10 +25,12 @@
 ## Task 1: routeMapper のスプレッド展開を除去する
 
 **Files:**
+
 - Modify: `src/features/map/routeMapper.ts:149-172`(既存 `createInitialRegion`)
 - Test: `src/features/map/__tests__/routeMapper.test.ts`
 
 **Interfaces:**
+
 - Consumes: なし(このタスクは自己完結)
 - Produces: `export type RouteCoordinateBounds = { minLatitude: number; maxLatitude: number; minLongitude: number; maxLongitude: number }`、`export function createRegionFromBounds(bounds: RouteCoordinateBounds | null): Region`。既存 `export function createInitialRegion(points: LocationPoint[]): Region` のシグネチャ・返り値仕様は変更しない(内部実装のみ変更)。Task 2 の `LocationPointsBounds`(logRepository)はこの `RouteCoordinateBounds` を構造的に満たす(pointCountフィールドが余分にあるだけ)ため、そのまま渡せる。
 
@@ -197,10 +199,12 @@ EOF
 ## Task 2: logRepository に境界・月別・複数日クエリを追加する
 
 **Files:**
+
 - Modify: `src/features/logs/logRepository.ts`(`getAllLocationPoints` を削除し新規関数を追加)
 - Test: `src/features/logs/__tests__/logRepository.test.ts`
 
 **Interfaces:**
+
 - Consumes: なし
 - Produces:
   - `export type LocationPointsBounds = { minLatitude: number; maxLatitude: number; minLongitude: number; maxLongitude: number; pointCount: number }`
@@ -416,12 +420,14 @@ EOF
 **背景:** `achievementRepository.ts` には既に非公開の `calculateTotalDistanceMeters`(日別距離を合計し、NULLの日だけGPSポイントをバッチ取得して再計算する)がある。今回追加するロジックは全く同じ構造(fixedDistance + fallback日のバッチIN句クエリ)になるため、重複させず共通ヘルパーとして抽出し、`achievementRepository.ts` 側もそれを使うようリファクタリングする(ユーザー承認済み: 実績評価ロジックの計算結果自体は変更しない、共通化のみ)。
 
 **Files:**
+
 - Modify: `src/features/logs/dailyLogsService.ts`(既存 `fetchAreaNamesByPointIds` に追記)
 - Modify: `src/features/achievements/achievementRepository.ts:1-93`(private `calculateTotalDistanceMeters` と手書きクエリを削除し共通ヘルパーを使う)
 - Test: `src/features/logs/__tests__/dailyLogsService.test.ts`
 - Test: `src/features/achievements/__tests__/achievementRepository.test.ts`(既存テストが引き続き通ることを確認するのみ。新規テスト追加は不要)
 
 **Interfaces:**
+
 - Consumes: `getLocationPointsByDates(localDates: string[]): Promise<LocationPoint[]>`(Task 2, `@/features/logs/logRepository`)
 - Produces:
   - `export type DailyDistanceEntry = { localDate: string; distanceMeters: number | null }`(`localDate`/`distanceMeters` だけを使う最小限の型。`DailyLogSummary` はこの型の要件を満たすため、そのまま渡せる)
@@ -606,10 +612,12 @@ EOF
 ## Task 4: GPXエクスポートを日別チャンク追記方式に変更する
 
 **Files:**
+
 - Modify: `src/features/export/gpxExporter.ts`(全面書き換え)
 - Test: `src/features/export/__tests__/gpxExporter.test.ts`(全面書き換え)
 
 **Interfaces:**
+
 - Consumes: `getDailyLogs(): Promise<DailyLogSummary[]>`, `getLocationPointsByDate(localDate: string): Promise<LocationPoint[]>`(いずれも既存、`@/features/logs/logRepository`)。`parseGpxToLocationPoints(gpx: string): NewLocationPoint[]`(既存、`@/features/import/gpxImporter`、往復テストでのみ使用)
 - Produces:
   - `export function buildGpxHeader(name: string): string`
@@ -719,7 +727,11 @@ describe('GPX生成', () => {
   });
 
   it('複数日のtrkを連結したGPXを再インポートすると全ポイントが復元される(往復互換)', () => {
-    const gpx = buildGpxHeader('Strollia all') + buildGpxDayTrack('2026-05-04', day1Points) + buildGpxDayTrack('2026-05-05', day2Points) + buildGpxFooter();
+    const gpx =
+      buildGpxHeader('Strollia all') +
+      buildGpxDayTrack('2026-05-04', day1Points) +
+      buildGpxDayTrack('2026-05-05', day2Points) +
+      buildGpxFooter();
 
     const imported = parseGpxToLocationPoints(gpx);
 
@@ -922,10 +934,12 @@ EOF
 ## Task 5: useAutoFitInitialRoute を境界ベースの初期表示へ切り替える
 
 **Files:**
+
 - Modify: `src/ui/hooks/useAutoFitInitialRoute.ts`(全面書き換え)
 - Test: `src/ui/hooks/__tests__/useAutoFitInitialRoute.test.tsx`(全面書き換え)
 
 **Interfaces:**
+
 - Consumes: なし(`Region` 型は `react-native-maps` から、`RefObject<MapView | null>` も同様。このタスク単体でテスト可能)
 - Produces: `export function useAutoFitInitialRoute(mapRef: RefObject<MapView | null>, screenMode: string, initialRegion: Region, hasAnyLocationPoints: boolean, userCoordinate: LatLng | null): void`(旧シグネチャ `(mapRef, screenMode, routeCoordinates: LatLng[], userCoordinate)` から変更。Task 7 で呼び出し元を更新する)
 
@@ -1038,10 +1052,12 @@ EOF
 ## Task 6: useLocationRecordingSync から全件points読み込みを除去する
 
 **Files:**
+
 - Modify: `src/ui/hooks/useLocationRecordingSync.ts`
 - Modify: `src/ui/hooks/__tests__/useAppInitialization.test.tsx:75`(`allPoints: []` を `pointsBounds: null` に変更)
 
 **Interfaces:**
+
 - Consumes: `LocationPointsBounds`, `getLocationPointsBounds()`(Task 2, `@/features/logs/logRepository`)、`calculateTotalDistanceMeters(dailyLogs): Promise<number>`(Task 3, `@/features/logs/dailyLogsService`)
 - Produces: `UseLocationRecordingSyncResult` から `points: LocationPoint[]` を削除し、`pointsBounds: LocationPointsBounds | null` と `distance: number` を追加する。`RefreshDataResult` の `allPoints: LocationPoint[]` を `pointsBounds: LocationPointsBounds | null` に変更する(Task 7・`useAppInitialization` が参照する型)。
 
@@ -1106,47 +1122,47 @@ export type RefreshDataResult = {
 `src/ui/hooks/useLocationRecordingSync.ts:162-199` の該当ブロック(`const [points, setPoints] = ...` から `refreshData` の定義末尾まで)を以下に置き換える。
 
 ```typescript
-  const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
-  const [pointsBounds, setPointsBounds] = useState<LocationPointsBounds | null>(null);
-  const [distance, setDistance] = useState(0);
-  const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
-  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
+const [pointsBounds, setPointsBounds] = useState<LocationPointsBounds | null>(null);
+const [distance, setDistance] = useState(0);
+const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
+const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
 
-  /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
-  const refreshData = useCallback(
-    async (options: { signal?: AbortSignal } = {}): Promise<RefreshDataResult> => {
-      const { signal } = options;
-      const [logs, pointsBoundsResult, recording, permissions] = await Promise.all([
-        getDailyLogs(),
-        getLocationPointsBounds(),
-        isBackgroundLocationRecording(),
-        getLocationPermissionState(),
-      ]);
-      const totalDistanceMeters = await calculateTotalDistanceMeters(logs);
+/** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
+const refreshData = useCallback(
+  async (options: { signal?: AbortSignal } = {}): Promise<RefreshDataResult> => {
+    const { signal } = options;
+    const [logs, pointsBoundsResult, recording, permissions] = await Promise.all([
+      getDailyLogs(),
+      getLocationPointsBounds(),
+      isBackgroundLocationRecording(),
+      getLocationPermissionState(),
+    ]);
+    const totalDistanceMeters = await calculateTotalDistanceMeters(logs);
 
-      if (signal?.aborted) {
-        return { logs, pointsBounds: pointsBoundsResult, recording, permissions };
-      }
-
-      setDailyLogs(logs);
-      setPointsBounds(pointsBoundsResult);
-      setDistance(totalDistanceMeters);
-      setIsRecording(recording);
-      setPermissionState(permissions);
-      incrementVisitedGridRefreshVersion();
-
-      getMonthlyAreaReport(getPreviousReportMonth())
-        .then((report) => {
-          if (!signal?.aborted) setMonthlyAreaReport(report);
-        })
-        .catch((error: unknown) => {
-          console.warn('Failed to refresh monthly area report:', error);
-        });
-
+    if (signal?.aborted) {
       return { logs, pointsBounds: pointsBoundsResult, recording, permissions };
-    },
-    [incrementVisitedGridRefreshVersion],
-  );
+    }
+
+    setDailyLogs(logs);
+    setPointsBounds(pointsBoundsResult);
+    setDistance(totalDistanceMeters);
+    setIsRecording(recording);
+    setPermissionState(permissions);
+    incrementVisitedGridRefreshVersion();
+
+    getMonthlyAreaReport(getPreviousReportMonth())
+      .then((report) => {
+        if (!signal?.aborted) setMonthlyAreaReport(report);
+      })
+      .catch((error: unknown) => {
+        console.warn('Failed to refresh monthly area report:', error);
+      });
+
+    return { logs, pointsBounds: pointsBoundsResult, recording, permissions };
+  },
+  [incrementVisitedGridRefreshVersion],
+);
 ```
 
 - [ ] **Step 4: 戻り値オブジェクトを変更する**
@@ -1189,6 +1205,7 @@ EOF
 ## Task 7: AppStateProvider・MapScreen・画面ルートを配線し直す
 
 **Files:**
+
 - Modify: `src/ui/state/AppStateProvider.tsx`
 - Modify: `src/ui/components/MapScreen.tsx`
 - Modify: `src/app/index.tsx`
@@ -1199,6 +1216,7 @@ EOF
 - Delete: `src/ui/hooks/__tests__/useMapRouteState.test.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1〜6 の全成果物(`createRegionFromBounds`, `getLocationPointsByMonth`, `shareAllLogsAsGpx`, `useAutoFitInitialRoute` 新シグネチャ, `useLocationRecordingSync` の `pointsBounds`/`distance`)
 - Produces: `AppStateContextValue` から `points`, `renderRouteCoordinates` を削除し、`hasAnyLocationPoints: boolean` と `monthlyReportPoints: LocationPoint[]` を追加する。`MapScreenProps` から `points: LocationPoint[]` を削除し `hasAnyLocationPoints: boolean` を追加する。
 
@@ -1243,14 +1261,14 @@ import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, hasMont
 `src/ui/state/AppStateProvider.tsx:499` の以下の行を削除する。
 
 ```typescript
-  const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(points, dailyLogs);
+const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(points, dailyLogs);
 ```
 
 削除した箇所に以下を追加する。
 
 ```typescript
-  const hasAnyLocationPoints = pointsBounds != null;
-  const initialRegion = useMemo(() => createRegionFromBounds(pointsBounds), [pointsBounds]);
+const hasAnyLocationPoints = pointsBounds != null;
+const initialRegion = useMemo(() => createRegionFromBounds(pointsBounds), [pointsBounds]);
 ```
 
 - [ ] **Step 5: `useAutoFitInitialRoute` の呼び出しを変更する**
@@ -1258,13 +1276,13 @@ import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, hasMont
 `src/ui/state/AppStateProvider.tsx:674` の以下の行を削除する。
 
 ```typescript
-  useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
+useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
 ```
 
 削除した箇所に以下を追加する。
 
 ```typescript
-  useAutoFitInitialRoute(mapRef, screenMode, initialRegion, hasAnyLocationPoints, userCoordinate);
+useAutoFitInitialRoute(mapRef, screenMode, initialRegion, hasAnyLocationPoints, userCoordinate);
 ```
 
 - [ ] **Step 6: `exportAllLogs` を変更する**
@@ -1272,14 +1290,14 @@ import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, hasMont
 `src/ui/state/AppStateProvider.tsx:596-602` の `exportAllLogs` を以下に置き換える。
 
 ```typescript
-  /** 全期間のGPSログをGPXとして共有する。 */
-  const exportAllLogs = useCallback(async (): Promise<void> => {
-    try {
-      await shareAllLogsAsGpx();
-    } catch (error: unknown) {
-      Alert.alert('エクスポート失敗', error instanceof Error ? error.message : 'GPX出力に失敗しました。');
-    }
-  }, []);
+/** 全期間のGPSログをGPXとして共有する。 */
+const exportAllLogs = useCallback(async (): Promise<void> => {
+  try {
+    await shareAllLogsAsGpx();
+  } catch (error: unknown) {
+    Alert.alert('エクスポート失敗', error instanceof Error ? error.message : 'GPX出力に失敗しました。');
+  }
+}, []);
 ```
 
 - [ ] **Step 7: `openMonthlyReport`/`enterMonthlyReportOrPrompt` を非同期化する**
@@ -1287,59 +1305,59 @@ import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, hasMont
 `src/ui/state/AppStateProvider.tsx:754-794` の `openMonthlyReport` と `enterMonthlyReportOrPrompt` を以下に置き換える。
 
 ```typescript
-  /** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
-  function openMonthlyReport(): void {
-    // 起動直後は premiumAccessState がデフォルト値（未確定）のままの可能性があるため、
-    // ボタン押下時に最新状態を取得してから判定する。
-    getPremiumAccessState()
-      .then((latestState) => {
-        setPremiumAccessState(latestState);
-        return enterMonthlyReportOrPrompt(latestState.isPlusActive);
-      })
-      .catch((error: unknown) => {
-        console.warn('Failed to check premium access state:', error);
-        return enterMonthlyReportOrPrompt(premiumAccessState.isPlusActive);
-      });
+/** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
+function openMonthlyReport(): void {
+  // 起動直後は premiumAccessState がデフォルト値（未確定）のままの可能性があるため、
+  // ボタン押下時に最新状態を取得してから判定する。
+  getPremiumAccessState()
+    .then((latestState) => {
+      setPremiumAccessState(latestState);
+      return enterMonthlyReportOrPrompt(latestState.isPlusActive);
+    })
+    .catch((error: unknown) => {
+      console.warn('Failed to check premium access state:', error);
+      return enterMonthlyReportOrPrompt(premiumAccessState.isPlusActive);
+    });
+}
+
+/**
+ * Plus状態と先月データの有無に応じて、月次レポート遷移・ペイウォール・集計中案内を出し分ける。
+ *
+ * 先月分のGPSポイントはこの関数の中で取得する(全期間ポイントをメモリへ保持しないため)。
+ *
+ * @param isPlusActive - Strollia Plusが有効かどうか。
+ * @returns なし。
+ */
+async function enterMonthlyReportOrPrompt(isPlusActive: boolean): Promise<void> {
+  if (!isPlusActive) {
+    openPremiumPaywall();
+    return;
   }
 
-  /**
-   * Plus状態と先月データの有無に応じて、月次レポート遷移・ペイウォール・集計中案内を出し分ける。
-   *
-   * 先月分のGPSポイントはこの関数の中で取得する(全期間ポイントをメモリへ保持しないため)。
-   *
-   * @param isPlusActive - Strollia Plusが有効かどうか。
-   * @returns なし。
-   */
-  async function enterMonthlyReportOrPrompt(isPlusActive: boolean): Promise<void> {
-    if (!isPlusActive) {
-      openPremiumPaywall();
-      return;
-    }
-
-    let previousMonthPoints: LocationPoint[];
-    try {
-      previousMonthPoints = await getLocationPointsByMonth(formatReportMonth(getPreviousReportMonth()));
-    } catch (error: unknown) {
-      console.warn('Failed to load previous month points:', error);
-      Alert.alert('エラー', '月次レポートの読み込みに失敗しました。');
-      return;
-    }
-
-    const previousMonthReport = createMonthlyReport(dailyLogs, previousMonthPoints, getPreviousReportMonth());
-    if (!hasMonthlyReportData(previousMonthReport)) {
-      Alert.alert('現在集計中です！', '来月になったらもう一度来てください！');
-      return;
-    }
-
-    setMonthlyReportPoints(previousMonthPoints);
-    refreshAchievementState().catch(() => undefined);
-    if (navigator?.openMonthlyReport) {
-      triggerLightImpactHaptic();
-      navigator.openMonthlyReport();
-    } else {
-      navigateToScreen('monthlyReport');
-    }
+  let previousMonthPoints: LocationPoint[];
+  try {
+    previousMonthPoints = await getLocationPointsByMonth(formatReportMonth(getPreviousReportMonth()));
+  } catch (error: unknown) {
+    console.warn('Failed to load previous month points:', error);
+    Alert.alert('エラー', '月次レポートの読み込みに失敗しました。');
+    return;
   }
+
+  const previousMonthReport = createMonthlyReport(dailyLogs, previousMonthPoints, getPreviousReportMonth());
+  if (!hasMonthlyReportData(previousMonthReport)) {
+    Alert.alert('現在集計中です！', '来月になったらもう一度来てください！');
+    return;
+  }
+
+  setMonthlyReportPoints(previousMonthPoints);
+  refreshAchievementState().catch(() => undefined);
+  if (navigator?.openMonthlyReport) {
+    triggerLightImpactHaptic();
+    navigator.openMonthlyReport();
+  } else {
+    navigateToScreen('monthlyReport');
+  }
+}
 ```
 
 - [ ] **Step 8: `monthlyReportPoints` stateを追加する**
@@ -1347,7 +1365,7 @@ import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, hasMont
 `src/ui/state/AppStateProvider.tsx:444-445` 付近(`const [isFirstLaunchTutorialVisible, ...` の直後)に以下を追加する。
 
 ```typescript
-  const [monthlyReportPoints, setMonthlyReportPoints] = useState<LocationPoint[]>([]);
+const [monthlyReportPoints, setMonthlyReportPoints] = useState<LocationPoint[]>([]);
 ```
 
 - [ ] **Step 9: `AppStateContextValue` 型を変更する**
@@ -1410,8 +1428,8 @@ import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, hasMont
 以下に置き換える。
 
 ```typescript
-  /** GPS記録が1件以上あるか(空状態表示の判定用)。 */
-  hasAnyLocationPoints: boolean;
+/** GPS記録が1件以上あるか(空状態表示の判定用)。 */
+hasAnyLocationPoints: boolean;
 ```
 
 `src/ui/components/MapScreen.tsx:138` の分割代入 `points,` を `hasAnyLocationPoints,` に置き換える。
@@ -1464,9 +1482,11 @@ EOF
 ## Task 8: 統合テスト(AppMapReturn.test.tsx)を追従させ全体テストを緑にする
 
 **Files:**
+
 - Modify: `src/ui/__tests__/AppMapReturn.test.tsx:390-393`
 
 **Interfaces:**
+
 - Consumes: Task 2 の `getLocationPointsBounds`, `getLocationPointsByMonth`, `getLocationPointsByDates`(`@/features/logs/logRepository`)
 
 **背景:** `src/ui/__tests__/AppMapReturn.test.tsx` は `renderRouter('src/app')` で `AppStateProvider` を実際にレンダーする大規模統合テスト(2278行)。`getAllLocationPoints` への参照は以下の1箇所のモック宣言のみで、テスト内で個別にオーバーライドされていないことを確認済み。デフォルトを「データなし」(`null`/`[]`)にすることで、`mockAnimateToRegion` を使う既存アサーション(`toHaveBeenCalledTimes(1)` 等)は `hasAnyLocationPoints=false` のままとなり影響を受けない。
@@ -1522,6 +1542,7 @@ EOF
 ## Task 9: 関連ドキュメントを更新する
 
 **Files:**
+
 - Modify: `docs/data-storage.md`
 - Modify: `docs/architecture.md`
 - Modify: `.ai/context/architecture.md`
@@ -1529,6 +1550,7 @@ EOF
 - Modify: `docs/import-export.md`
 
 **Interfaces:**
+
 - Consumes: なし(ドキュメントのみ)
 
 - [ ] **Step 1: `docs/data-storage.md` を更新する**
@@ -1590,6 +1612,7 @@ Expected: 差分なし。差分がある場合は `npm run format` を実行し�
 - [ ] **Step 5: 手動確認手順を記録する(実機/シミュレータでの検証が必要な項目)**
 
 このタスクはコード変更を伴わないため、以下をユーザーへの報告に含める形で明記する(自動テストではカバーできない実機依存の項目):
+
 - 地図画面起動時に、保存済みGPSログの初期表示範囲へ地図が正しく移動すること(現在地未取得時)
 - 設定画面からのGPX全期間エクスポートで、共有シートが開き、生成されたファイルが正しい日別`<trk>`構造のGPXであること
 - エクスポートしたGPXを同アプリでインポートし、全ポイントが往復復元されること

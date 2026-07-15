@@ -411,15 +411,21 @@ EOF
 
 ---
 
-## Task 3: dailyLogsService に総距離フォールバック計算を追加する
+## Task 3: dailyLogsService に総距離フォールバック計算を追加し、achievementRepository の重複ロジックを共通化する
+
+**背景:** `achievementRepository.ts` には既に非公開の `calculateTotalDistanceMeters`(日別距離を合計し、NULLの日だけGPSポイントをバッチ取得して再計算する)がある。今回追加するロジックは全く同じ構造(fixedDistance + fallback日のバッチIN句クエリ)になるため、重複させず共通ヘルパーとして抽出し、`achievementRepository.ts` 側もそれを使うようリファクタリングする(ユーザー承認済み: 実績評価ロジックの計算結果自体は変更しない、共通化のみ)。
 
 **Files:**
 - Modify: `src/features/logs/dailyLogsService.ts`(既存 `fetchAreaNamesByPointIds` に追記)
+- Modify: `src/features/achievements/achievementRepository.ts:1-93`(private `calculateTotalDistanceMeters` と手書きクエリを削除し共通ヘルパーを使う)
 - Test: `src/features/logs/__tests__/dailyLogsService.test.ts`
+- Test: `src/features/achievements/__tests__/achievementRepository.test.ts`(既存テストが引き続き通ることを確認するのみ。新規テスト追加は不要)
 
 **Interfaces:**
 - Consumes: `getLocationPointsByDates(localDates: string[]): Promise<LocationPoint[]>`(Task 2, `@/features/logs/logRepository`)
-- Produces: `export async function calculateTotalDistanceMeters(dailyLogs: DailyLogSummary[]): Promise<number>`
+- Produces:
+  - `export type DailyDistanceEntry = { localDate: string; distanceMeters: number | null }`(`localDate`/`distanceMeters` だけを使う最小限の型。`DailyLogSummary` はこの型の要件を満たすため、そのまま渡せる)
+  - `export async function calculateTotalDistanceMeters(dailyLogs: DailyDistanceEntry[]): Promise<number>`
 
 - [ ] **Step 1: 失敗するテストを書く**
 
@@ -427,7 +433,7 @@ EOF
 
 ```typescript
 import { calculateTotalDistanceMeters } from '@/features/logs/dailyLogsService';
-import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import { LocationPoint } from '@/types/gps';
 
 jest.mock('@/features/logs/logRepository', () => ({
   getLocationPointsByDates: jest.fn(),
@@ -435,16 +441,8 @@ jest.mock('@/features/logs/logRepository', () => ({
 
 import { getLocationPointsByDates } from '@/features/logs/logRepository';
 
-function dailyLog(localDate: string, distanceMeters: number | null): DailyLogSummary {
-  return {
-    localDate,
-    pointCount: 2,
-    startedAt: null,
-    endedAt: null,
-    distanceMeters,
-    startLocationPointId: null,
-    endLocationPointId: null,
-  };
+function dailyDistanceEntry(localDate: string, distanceMeters: number | null): { localDate: string; distanceMeters: number | null } {
+  return { localDate, distanceMeters };
 }
 
 function point(latitude: number, longitude: number, localDate: string): LocationPoint {
@@ -472,7 +470,7 @@ describe('総移動距離計算 calculateTotalDistanceMeters', () => {
   });
 
   it('全日付に距離が保存済みの場合は合計するだけでDBへ問い合わせない', async () => {
-    const result = await calculateTotalDistanceMeters([dailyLog('2026-05-04', 100), dailyLog('2026-05-05', 200)]);
+    const result = await calculateTotalDistanceMeters([dailyDistanceEntry('2026-05-04', 100), dailyDistanceEntry('2026-05-05', 200)]);
 
     expect(result).toBe(300);
     expect(getLocationPointsByDates).not.toHaveBeenCalled();
@@ -481,7 +479,7 @@ describe('総移動距離計算 calculateTotalDistanceMeters', () => {
   it('距離が欠落した日だけGPSポイントから再計算して合算する', async () => {
     (getLocationPointsByDates as jest.Mock).mockResolvedValue([point(35, 139, '2026-05-05'), point(35.001, 139, '2026-05-05')]);
 
-    const result = await calculateTotalDistanceMeters([dailyLog('2026-05-04', 100), dailyLog('2026-05-05', null)]);
+    const result = await calculateTotalDistanceMeters([dailyDistanceEntry('2026-05-04', 100), dailyDistanceEntry('2026-05-05', null)]);
 
     expect(getLocationPointsByDates).toHaveBeenCalledWith(['2026-05-05']);
     expect(result).toBeGreaterThan(100);
@@ -491,7 +489,7 @@ describe('総移動距離計算 calculateTotalDistanceMeters', () => {
   it('全日付が欠落している場合は0から再計算する', async () => {
     (getLocationPointsByDates as jest.Mock).mockResolvedValue([]);
 
-    const result = await calculateTotalDistanceMeters([dailyLog('2026-05-04', null)]);
+    const result = await calculateTotalDistanceMeters([dailyDistanceEntry('2026-05-04', null)]);
 
     expect(result).toBe(0);
   });
@@ -509,23 +507,31 @@ Expected: FAIL — `calculateTotalDistanceMeters is not a function`。
 
 ```typescript
 import { getLocationPointsByDates } from '@/features/logs/logRepository';
-import { DailyLogSummary, LocationPoint } from '@/types/gps';
+import { LocationPoint } from '@/types/gps';
 import { totalDistanceMeters } from '@/utils/distance';
 ```
 
 ファイル末尾(既存 `fetchAreaNamesByPointIds` の後ろ)に以下を追記する。
 
 ```typescript
+/** 総移動距離計算に必要な最小限の日別距離情報。 */
+export type DailyDistanceEntry = {
+  localDate: string;
+  distanceMeters: number | null;
+};
+
 /**
- * 日別サマリーの累積距離を優先し、距離が欠落している日だけGPSポイントから再計算する。
+ * 日別距離の合計を優先し、距離が欠落している日だけGPSポイントから再計算する。
  *
  * 全期間のGPSポイントをメモリへロードせず、欠落している日付だけをまとめて取得することで
  * データ量に依存しない総距離計算にする(2026-07-14のメモリ超過クラッシュ対策の一部)。
+ * `achievementRepository.getAchievementProgress` と `useLocationRecordingSync` の
+ * 両方から使う共通ヘルパー。
  *
- * @param dailyLogs - DBから取得した日別サマリー一覧。
- * @returns 画面表示に使う総移動距離メートル。
+ * @param dailyLogs - 日付と距離のペア一覧(`DailyLogSummary` 等、この形を満たす配列を渡せる)。
+ * @returns 総移動距離メートル。
  */
-export async function calculateTotalDistanceMeters(dailyLogs: DailyLogSummary[]): Promise<number> {
+export async function calculateTotalDistanceMeters(dailyLogs: DailyDistanceEntry[]): Promise<number> {
   const fixedDistance = dailyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0);
   const fallbackDates = dailyLogs.filter((log) => log.distanceMeters == null).map((log) => log.localDate);
 
@@ -553,12 +559,42 @@ export async function calculateTotalDistanceMeters(dailyLogs: DailyLogSummary[])
 Run: `npx jest src/features/logs/__tests__/dailyLogsService.test.ts`
 Expected: PASS(既存の `fetchAreaNamesByPointIds` テスト含め全件)。
 
-- [ ] **Step 5: コミット**
+- [ ] **Step 5: `achievementRepository.ts` を共通ヘルパー利用へリファクタリングする**
+
+`src/features/achievements/achievementRepository.ts:1-5` の import ブロックを以下に置き換える(`LocationPoint`/`totalDistanceMeters` の import を削除し、共通ヘルパーの import を追加する)。
+
+```typescript
+import { db, withExclusiveTransaction } from '@/db/database';
+import { calculateTotalDistanceMeters } from '@/features/logs/dailyLogsService';
+import { toLocalDate } from '@/utils/date';
+import { ACHIEVEMENT_DEFINITIONS, AchievementDefinition, getAchievementDefinition } from './achievementDefinitions';
+import { AchievementProgress, evaluateAchievementUnlocks, getProgressValueForCondition } from './achievementEvaluator';
+```
+
+`src/features/achievements/achievementRepository.ts:48-93` にある非公開の `calculateTotalDistanceMeters` 関数全体(コメント含む)を削除する。
+
+`src/features/achievements/achievementRepository.ts:41` の以下の行は変更しない(同名の関数呼び出しのまま、import元だけが変わる)。
+
+```typescript
+    totalDistanceMeters: await calculateTotalDistanceMeters(dailyDistanceRows),
+```
+
+- [ ] **Step 6: `achievementRepository.ts` の既存テストを実行し、リファクタリングで壊れていないことを確認する**
+
+Run: `npx jest src/features/achievements/__tests__/achievementRepository.test.ts`
+Expected: PASS(全件、既存のアサーション内容は変更不要)。`db.getAllAsync` の呼び出し回数・順序(1回目=dailyDistanceRows、2回目=フォールバックポイント)は変わらないため、既存テストのモックはそのまま通る。
+
+- [ ] **Step 7: 型チェックを実行する**
+
+Run: `npm run typecheck`
+Expected: `src/features/achievements/achievementRepository.ts` と `src/features/logs/dailyLogsService.ts` にエラーがないことを確認する。
+
+- [ ] **Step 8: コミット**
 
 ```bash
-git add src/features/logs/dailyLogsService.ts src/features/logs/__tests__/dailyLogsService.test.ts
+git add src/features/logs/dailyLogsService.ts src/features/logs/__tests__/dailyLogsService.test.ts src/features/achievements/achievementRepository.ts
 git commit -m "$(cat <<'EOF'
-feat(db): 日別サマリーからの総移動距離計算をサービス層に追加する
+refactor(db): 総移動距離のフォールバック計算をサービス層へ共通化する
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 EOF

@@ -443,6 +443,14 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
   const [monthlyReportPoints, setMonthlyReportPoints] = useState<LocationPoint[]>([]);
+  /**
+   * 現在 monthlyReportPoints に読み込み済みの対象月(YYYY-MM)。
+   *
+   * openMonthlyReport 経由の通常遷移と、月次レポート画面表示中の補完 effect の
+   * 両方が対象月ポイントを取得しうるため、同じ月への重複フェッチを避けるために使う。
+   * 未読み込み(初期値 null)のときはディープリンク等の直接到達を示す。
+   */
+  const loadedMonthlyReportMonthRef = useRef<string | null>(null);
 
   const {
     selectedAchievement,
@@ -587,6 +595,46 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   useEffect(() => {
     updateSentrySubscriptionContext(premiumAccessState);
   }, [premiumAccessState]);
+
+  /**
+   * 月次レポート画面の表示中、対象月のポイントが未読み込みなら補完取得する。
+   *
+   * 通常は openMonthlyReport → enterMonthlyReportOrPrompt の中で monthlyReportPoints を
+   * 取得するが、scheme 追加によりディープリンクやアプリ復元で /monthly-report へ直接
+   * 到達できるため、その経路では monthlyReportPoints が空のままになり、日別ログ由来の
+   * 距離・日数は表示されるのにルート地図・共有画像だけ空になる不整合が起きる。
+   * screenMode が 'monthlyReport' の間、読み込み済み月(loadedMonthlyReportMonthRef)と
+   * 対象月が異なる場合だけ取得し、通常遷移直後の重複フェッチを避ける。
+   * 失敗時は console.warn に留める。画面は dailyLogs 由来のデータで表示済みのため、
+   * 補完取得の失敗でAlert等の割り込みは行わず、ref も更新しないため次回表示時に再試行される。
+   */
+  useEffect(() => {
+    if (screenMode !== 'monthlyReport') {
+      return;
+    }
+
+    const targetMonth = formatReportMonth(getPreviousReportMonth());
+    if (loadedMonthlyReportMonthRef.current === targetMonth) {
+      return;
+    }
+
+    let cancelled = false;
+    getLocationPointsByMonth(targetMonth)
+      .then((points) => {
+        if (cancelled) {
+          return;
+        }
+        setMonthlyReportPoints(points);
+        loadedMonthlyReportMonthRef.current = targetMonth;
+      })
+      .catch((error: unknown) => {
+        console.warn('Failed to load monthly report points on direct screen entry:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [screenMode]);
 
   // useAchievementState の evaluateAchievementsIfDialogIdle / refreshAchievementState を
   // useLocationRecordingSync へ ref 経由で渡す。
@@ -782,9 +830,10 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       return;
     }
 
+    const targetMonth = formatReportMonth(getPreviousReportMonth());
     let previousMonthPoints: LocationPoint[];
     try {
-      previousMonthPoints = await getLocationPointsByMonth(formatReportMonth(getPreviousReportMonth()));
+      previousMonthPoints = await getLocationPointsByMonth(targetMonth);
     } catch (error: unknown) {
       console.warn('Failed to load previous month points:', error);
       Alert.alert('エラー', '月次レポートの読み込みに失敗しました。');
@@ -798,6 +847,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
 
     setMonthlyReportPoints(previousMonthPoints);
+    // ディープリンク補完 effect が直後に同じ月を再取得しないよう、読み込み済み月を記録する。
+    loadedMonthlyReportMonthRef.current = targetMonth;
     refreshAchievementState().catch(() => undefined);
     if (navigator?.openMonthlyReport) {
       triggerLightImpactHaptic();

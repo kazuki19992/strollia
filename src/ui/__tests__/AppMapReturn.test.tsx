@@ -18,14 +18,16 @@ import {
   resolveCustomIconReference,
 } from '@/features/customization/customIconStorage';
 import { replaceCustomIconSelection } from '@/features/customization/customIconSelection';
-import { getDailyLogs } from '@/features/logs/logRepository';
+import { getDailyLogs, getLocationPointsByMonth } from '@/features/logs/logRepository';
 import { getMonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
+import { formatReportMonth, getPreviousReportMonth } from '@/features/reports/monthlyReport';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { importLocationPointsFromGpx } from '@/features/import/importRepository';
 import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
 import {
   getConfirmedPremiumAccessState,
+  getDefaultPremiumAccessState,
   getPremiumAccessState,
   getPremiumOfferingSummary,
   getRevenueCatAppUserId,
@@ -41,6 +43,7 @@ import {
 } from '@/features/achievements/achievementNotificationService';
 import { getAchievementListItems, getPendingInAppAchievementNotifications } from '@/features/achievements/achievementRepository';
 import { filterDismissedAchievementNotifications } from '@/features/achievements/pendingNotifications';
+import type { LocationPoint } from '@/types/gps';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -2223,6 +2226,54 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await flushPromises();
 
     expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
+  });
+
+  test('月次レポートへディープリンクで直接到達した場合も対象月のポイントを読み込む', async () => {
+    const previousMonthPoints: LocationPoint[] = [
+      {
+        id: 1,
+        recordedAt: '2026-06-15T00:00:00.000Z',
+        localDate: '2026-06-15',
+        latitude: 35.681236,
+        longitude: 139.767125,
+        altitude: null,
+        speed: null,
+        heading: null,
+        accuracy: null,
+        altitudeAccuracy: null,
+      },
+    ];
+    // mockResolvedValueOnce: mockResolvedValue のまま次テストへ持ち越すと、
+    // 後続テストの getLocationPointsByMonth デフォルト応答([])が上書きされたままになる。
+    (getLocationPointsByMonth as jest.Mock).mockResolvedValueOnce(previousMonthPoints);
+    // premiumAccessState の初期値(usePremiumAccessのuseState初期化)がPlus未加入のままだと、
+    // ルート自身のPlusゲートが初回コミットの効果で即座に "/" へリダイレクトしてしまい、
+    // 後から確定するPlus加入状態が間に合わない。ディープリンク到達時点でPlus加入済みの
+    // 状態を再現するため、初期値そのものをPlus加入済みに差し替える。
+    (getDefaultPremiumAccessState as jest.Mock).mockReturnValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
+
+    renderRouter('src/app', { initialUrl: '/monthly-report' });
+    await flushPromises();
+
+    const expectedMonth = formatReportMonth(getPreviousReportMonth());
+    expect(getLocationPointsByMonth).toHaveBeenCalledWith(expectedMonth);
+    expect(mockLatestMonthlyReportScreenProps.points).toEqual(previousMonthPoints);
+  });
+
+  test('通常のボタン遷移では月次レポートのポイント取得は1回だけで、ディープリンク用effectによる再取得は起きない', async () => {
+    (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
+    (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('月次レポート'));
+    });
+    await flushPromises();
+
+    expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
+    expect((getLocationPointsByMonth as jest.Mock).mock.calls.length).toBe(1);
   });
 
   test('Plus会員でも先月データがない場合は集計中アラートを出し遷移しない', async () => {

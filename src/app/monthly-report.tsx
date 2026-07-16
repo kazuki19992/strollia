@@ -21,7 +21,7 @@ export default function MonthlyReportRoute(): React.ReactElement {
   return (
     <MonthlyReportScreen
       dailyLogs={s.dailyLogs}
-      points={s.points}
+      points={s.monthlyReportPoints}
       achievements={s.achievementItems}
       monthlyAreaReport={s.monthlyAreaReport}
       theme={s.theme}

@@ -146,20 +146,26 @@ export function filterRouteSegmentsByRegion(segments: RouteSegment[], region: Re
     .filter((segment) => segment.coordinates.length > 1);
 }
 
-/** GPSポイント群が収まる初期表示範囲を作る。 */
-export function createInitialRegion(points: LocationPoint[]): Region {
-  const coordinates = toRouteCoordinates(points);
+/** 座標群の外接境界(緯度経度の最小・最大値)。 */
+export type RouteCoordinateBounds = {
+  minLatitude: number;
+  maxLatitude: number;
+  minLongitude: number;
+  maxLongitude: number;
+};
 
-  if (coordinates.length === 0) {
+/**
+ * 座標の外接境界からマージン付きの初期表示範囲を作る。
+ *
+ * @param bounds - 座標群の外接境界。有効な座標が1件もない場合はnull。
+ * @returns 境界がnullなら既定の初期表示位置、それ以外はマージン1.4倍・最小デルタ0.01の表示範囲。
+ */
+export function createRegionFromBounds(bounds: RouteCoordinateBounds | null): Region {
+  if (!bounds) {
     return DEFAULT_REGION;
   }
 
-  const latitudes = coordinates.map((point) => point.latitude);
-  const longitudes = coordinates.map((point) => point.longitude);
-  const minLatitude = Math.min(...latitudes);
-  const maxLatitude = Math.max(...latitudes);
-  const minLongitude = Math.min(...longitudes);
-  const maxLongitude = Math.max(...longitudes);
+  const { minLatitude, maxLatitude, minLongitude, maxLongitude } = bounds;
   const latitudeDelta = Math.max((maxLatitude - minLatitude) * 1.4, 0.01);
   const longitudeDelta = Math.max((maxLongitude - minLongitude) * 1.4, 0.01);
 
@@ -169,6 +175,35 @@ export function createInitialRegion(points: LocationPoint[]): Region {
     latitudeDelta,
     longitudeDelta,
   };
+}
+
+/**
+ * GPSポイント群が収まる初期表示範囲を作る。
+ *
+ * スプレッド展開(`Math.min(...array)`)は要素数が約105万を超えるとHermesで
+ * `RangeError: Maximum call stack size exceeded (native stack depth)` になるため、
+ * 単純なループで境界を求める(2026-07-14のSentryクラッシュの根本原因)。
+ */
+export function createInitialRegion(points: LocationPoint[]): Region {
+  const coordinates = toRouteCoordinates(points);
+
+  if (coordinates.length === 0) {
+    return DEFAULT_REGION;
+  }
+
+  let minLatitude = coordinates[0].latitude;
+  let maxLatitude = coordinates[0].latitude;
+  let minLongitude = coordinates[0].longitude;
+  let maxLongitude = coordinates[0].longitude;
+
+  for (const coordinate of coordinates) {
+    if (coordinate.latitude < minLatitude) minLatitude = coordinate.latitude;
+    if (coordinate.latitude > maxLatitude) maxLatitude = coordinate.latitude;
+    if (coordinate.longitude < minLongitude) minLongitude = coordinate.longitude;
+    if (coordinate.longitude > maxLongitude) maxLongitude = coordinate.longitude;
+  }
+
+  return createRegionFromBounds({ minLatitude, maxLatitude, minLongitude, maxLongitude });
 }
 
 /** GPSポイントを異常な時間差・速度差の境界で分割する。 */

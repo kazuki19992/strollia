@@ -13,10 +13,11 @@ import {
   stopBackgroundLocationRecording,
   updateBackgroundLocationTaskOptionsIfNeeded,
 } from '@/features/location/locationService';
-import { getAllLocationPoints, getDailyLogs } from '@/features/logs/logRepository';
+import { calculateTotalDistanceMeters } from '@/features/logs/dailyLogsService';
+import { getDailyLogs, getLocationPointsBounds, LocationPointsBounds } from '@/features/logs/logRepository';
 import { getMonthlyAreaReport, MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { getPreviousReportMonth } from '@/features/reports/monthlyReport';
-import type { DailyLogSummary, LocationPoint } from '@/types/gps';
+import type { DailyLogSummary } from '@/types/gps';
 import { shouldStartRecordingAutomatically } from '@/ui/autoRecording';
 import type { AutoStartStatus } from '@/ui/appTypes';
 
@@ -49,7 +50,7 @@ export type UseLocationRecordingSyncOptions = {
 /** refreshData が返すデータ構造。 */
 export type RefreshDataResult = {
   logs: DailyLogSummary[];
-  allPoints: LocationPoint[];
+  pointsBounds: LocationPointsBounds | null;
   recording: boolean;
   permissions: LocationPermissionState;
 };
@@ -77,8 +78,10 @@ export type UseLocationRecordingSyncResult = {
   setMessage: (msg: string) => void;
   /** 全日別記録のサマリ一覧。 */
   dailyLogs: DailyLogSummary[];
-  /** 全 GPS ポイントの一覧。 */
-  points: LocationPoint[];
+  /** 有効な緯度経度を持つ全ポイントの外接境界と件数。地図の初期表示範囲・空状態表示に使う。未取得/0件はnull。 */
+  pointsBounds: LocationPointsBounds | null;
+  /** 画面表示用の総移動距離メートル。 */
+  distance: number;
   /** 先月の月次エリアレポート。未取得時は null。 */
   monthlyAreaReport: MonthlyAreaReport | null;
   /**
@@ -131,7 +134,7 @@ const EMPTY_PERMISSION_STATE: LocationPermissionState = {
  * GPS記録・権限・同期に関わるstateと副作用を束ねるフック。
  *
  * App.tsx から切り出した「記録同期」責務を担う。refreshData が返すデータ
- * (dailyLogs / points / monthlyAreaReport) も含めることで、記録フックが
+ * (dailyLogs / pointsBounds / distance / monthlyAreaReport) も含めることで、記録フックが
  * 自己完結した状態管理単位になる。
  */
 export function useLocationRecordingSync({
@@ -160,7 +163,8 @@ export function useLocationRecordingSync({
   const [isWhileInUseToastVisible, setIsWhileInUseToastVisible] = useState(false);
   const [message, setMessage] = useState('起動後に自動でGPS記録を開始します。');
   const [dailyLogs, setDailyLogs] = useState<DailyLogSummary[]>([]);
-  const [points, setPoints] = useState<LocationPoint[]>([]);
+  const [pointsBounds, setPointsBounds] = useState<LocationPointsBounds | null>(null);
+  const [distance, setDistance] = useState(0);
   const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
 
@@ -168,19 +172,21 @@ export function useLocationRecordingSync({
   const refreshData = useCallback(
     async (options: { signal?: AbortSignal } = {}): Promise<RefreshDataResult> => {
       const { signal } = options;
-      const [logs, allPoints, recording, permissions] = await Promise.all([
+      const [logs, pointsBoundsResult, recording, permissions] = await Promise.all([
         getDailyLogs(),
-        getAllLocationPoints(),
+        getLocationPointsBounds(),
         isBackgroundLocationRecording(),
         getLocationPermissionState(),
       ]);
+      const totalDistanceMeters = await calculateTotalDistanceMeters(logs);
 
       if (signal?.aborted) {
-        return { logs, allPoints, recording, permissions };
+        return { logs, pointsBounds: pointsBoundsResult, recording, permissions };
       }
 
       setDailyLogs(logs);
-      setPoints(allPoints);
+      setPointsBounds(pointsBoundsResult);
+      setDistance(totalDistanceMeters);
       setIsRecording(recording);
       setPermissionState(permissions);
       incrementVisitedGridRefreshVersion();
@@ -193,7 +199,7 @@ export function useLocationRecordingSync({
           console.warn('Failed to refresh monthly area report:', error);
         });
 
-      return { logs, allPoints, recording, permissions };
+      return { logs, pointsBounds: pointsBoundsResult, recording, permissions };
     },
     [incrementVisitedGridRefreshVersion],
   );
@@ -404,7 +410,8 @@ export function useLocationRecordingSync({
     message,
     setMessage,
     dailyLogs,
-    points,
+    pointsBounds,
+    distance,
     monthlyAreaReport,
     appState,
     refreshData,

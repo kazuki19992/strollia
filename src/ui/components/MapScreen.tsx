@@ -9,7 +9,6 @@ import { MapPhotoCluster } from '@/features/photos/photoClusters';
 import { AreaLabel } from '@/ui/areaName';
 import { AppTheme } from '@/theme/theme';
 import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
-import { LocationPoint } from '@/types/gps';
 import { AppStyles } from '@/ui/appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
@@ -66,8 +65,8 @@ export type MapScreenProps = {
   isUpdatingPhotoSetting: boolean;
   /** 表示する写真クラスタ。 */
   photoClusters: MapPhotoCluster[];
-  /** 保存済みGPSポイント。 */
-  points: LocationPoint[];
+  /** GPS記録が1件以上あるか(空状態表示の判定用)。 */
+  hasAnyLocationPoints: boolean;
   /** 位置情報権限が揃っているか。 */
   hasRequiredPermission: boolean;
   /** 権限ボタンを設定誘導にするか。 */
@@ -135,7 +134,7 @@ export function MapScreen({
   showPhotosOnMap,
   isUpdatingPhotoSetting,
   photoClusters,
-  points,
+  hasAnyLocationPoints,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
   isWhileInUseOnlyMode,
@@ -240,7 +239,7 @@ export function MapScreen({
       </MapView>
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
-        {points.length === 0 && (
+        {!hasAnyLocationPoints && (
           <View style={styles.emptyCard}>
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.emptyTitle}>
               まだ足あとがありません

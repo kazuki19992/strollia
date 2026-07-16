@@ -64,7 +64,7 @@ function createProps() {
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
     photoClusters: [],
-    points: [],
+    hasAnyLocationPoints: false,
     hasRequiredPermission: true,
     isWhileInUseOnlyMode: false,
     shouldOpenSettingsForPermission: false,

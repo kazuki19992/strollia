@@ -1,6 +1,12 @@
 import { db, withExclusiveTransaction } from '@/db/database';
 import { NewLocationPoint } from '@/types/gps';
-import { deleteAllUserData, getDailyLogs, insertLocationPoint } from '@/features/logs/logRepository';
+import {
+  deleteAllUserData,
+  getDailyLogs,
+  getLocationPointsBounds,
+  getLocationPointsByMonth,
+  insertLocationPoint,
+} from '@/features/logs/logRepository';
 
 const mockTxn = {
   runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
@@ -95,5 +101,55 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_points');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM daily_logs');
+  });
+});
+
+describe('GPSポイント境界 getLocationPointsBounds', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('有効な座標の範囲と件数を返す', async () => {
+    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+      minLatitude: 35,
+      maxLatitude: 36,
+      minLongitude: 139,
+      maxLongitude: 140,
+      pointCount: 5,
+    });
+
+    await expect(getLocationPointsBounds()).resolves.toEqual({
+      minLatitude: 35,
+      maxLatitude: 36,
+      minLongitude: 139,
+      maxLongitude: 140,
+      pointCount: 5,
+    });
+  });
+
+  it('有効ポイントが0件の場合はnullを返す', async () => {
+    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+      minLatitude: null,
+      maxLatitude: null,
+      minLongitude: null,
+      maxLongitude: null,
+      pointCount: 0,
+    });
+
+    await expect(getLocationPointsBounds()).resolves.toBeNull();
+  });
+});
+
+describe('月別ポイント取得 getLocationPointsByMonth', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('指定月のプレフィックスでポイントを絞り込む', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+    await getLocationPointsByMonth('2026-05');
+
+    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('local_date LIKE ?'), '2026-05-%');
   });
 });

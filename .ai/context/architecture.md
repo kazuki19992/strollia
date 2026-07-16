@@ -93,6 +93,7 @@ SQLite (src/db/database.ts)
 - 日別記録スタック(`src/app/daily-logs/_layout.tsx`)・設定スタック(`src/app/settings/_layout.tsx`)はそれぞれ `animation: 'slide_from_right', gestureEnabled: true` で子画面を管理する。iOS スワイプバックが有効になる
 - Sentry 画面名は `_layout.tsx` が `usePathname()` を監視し、`pathnameToScreenMode` / `pathnameToDailyLogsSentryScreenName` / `pathnameToSettingsSentryScreenName` / `resolveSentryScreenName` の純粋関数群で `Settings:SettingsHome` 等の文字列を導出して `updateSentryScreenContext` へ通知する
 - 地図フォーカス制御: 地図へ戻る操作(`openMap`)では `mapFollowState.prepareMapRegionRestore()` を呼び、復帰後に `animateToRegion` で現在地を復元する
+- メインマップ初期表示範囲: `AppStateProvider` が `useLocationRecordingSync`を通じて `pointsBounds`(SQLの`MIN/MAX/COUNT`集計)を取得し、`createRegionFromBounds`(`src/features/map/routeMapper.ts`)でメモリへのポイント本体ロードなしに初期表示範囲を算出する
 
 ## ローカルファースト原則
 

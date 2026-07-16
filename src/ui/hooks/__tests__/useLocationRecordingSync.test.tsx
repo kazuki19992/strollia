@@ -14,7 +14,8 @@ import {
   updateBackgroundLocationTaskOptionsIfNeeded,
 } from '@/features/location/locationService';
 import { getLocationPermissionState, hasRequiredLocationPermission } from '@/features/location/locationPermission';
-import { getDailyLogs, getAllLocationPoints } from '@/features/logs/logRepository';
+import { calculateTotalDistanceMeters } from '@/features/logs/dailyLogsService';
+import { getDailyLogs, getLocationPointsBounds } from '@/features/logs/logRepository';
 import { getMonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { shouldStartRecordingAutomatically } from '@/ui/autoRecording';
 
@@ -39,7 +40,11 @@ jest.mock('@/features/location/locationPermission', () => ({
 
 jest.mock('@/features/logs/logRepository', () => ({
   getDailyLogs: jest.fn().mockResolvedValue([]),
-  getAllLocationPoints: jest.fn().mockResolvedValue([]),
+  getLocationPointsBounds: jest.fn().mockResolvedValue(null),
+}));
+
+jest.mock('@/features/logs/dailyLogsService', () => ({
+  calculateTotalDistanceMeters: jest.fn().mockResolvedValue(0),
 }));
 
 jest.mock('@/features/reports/monthlyAreaReport', () => ({
@@ -92,7 +97,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
     (getLocationPermissionState as jest.Mock).mockResolvedValue(GRANTED_PERMISSION_STATE);
     (hasRequiredLocationPermission as jest.Mock).mockReturnValue(true);
     (getDailyLogs as jest.Mock).mockResolvedValue([]);
-    (getAllLocationPoints as jest.Mock).mockResolvedValue([]);
+    (getLocationPointsBounds as jest.Mock).mockResolvedValue(null);
+    (calculateTotalDistanceMeters as jest.Mock).mockResolvedValue(0);
     (getMonthlyAreaReport as jest.Mock).mockResolvedValue(null);
     (shouldStartRecordingAutomatically as jest.Mock).mockReturnValue(false);
     (updateBackgroundLocationTaskOptionsIfNeeded as jest.Mock).mockResolvedValue(undefined);
@@ -196,7 +202,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.dailyLogs).toEqual([]);
     });
 
-    it('初期 points は空配列になる', () => {
+    it('初期 pointsBounds は null になる', () => {
       const { result } = renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
@@ -206,7 +212,20 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         }),
       );
 
-      expect(result.current.points).toEqual([]);
+      expect(result.current.pointsBounds).toBeNull();
+    });
+
+    it('初期 distance は 0 になる', () => {
+      const { result } = renderHook(() =>
+        useLocationRecordingSync({
+          isReady: true,
+          incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
+          evaluateAchievementsIfDialogIdle: defaultEvaluateAchievementsIfDialogIdle,
+          refreshAchievementState: defaultRefreshAchievementState,
+        }),
+      );
+
+      expect(result.current.distance).toBe(0);
     });
 
     it('初期 monthlyAreaReport は null になる', () => {
@@ -224,7 +243,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
   });
 
   describe('refreshData — DB・権限状態の再読み込み', () => {
-    it('getDailyLogs・getAllLocationPoints・isBackgroundLocationRecording・getLocationPermissionState をまとめて呼ぶ', async () => {
+    it('getDailyLogs・getLocationPointsBounds・isBackgroundLocationRecording・getLocationPermissionState をまとめて呼ぶ', async () => {
       const { result } = renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
@@ -239,7 +258,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       });
 
       expect(getDailyLogs).toHaveBeenCalled();
-      expect(getAllLocationPoints).toHaveBeenCalled();
+      expect(getLocationPointsBounds).toHaveBeenCalled();
       expect(isBackgroundLocationRecording).toHaveBeenCalled();
       expect(getLocationPermissionState).toHaveBeenCalled();
     });

@@ -4,7 +4,6 @@ import {
   deleteAllUserData,
   getDailyLogs,
   getLocationPointsBounds,
-  getLocationPointsByDates,
   getLocationPointsByMonth,
   insertLocationPoint,
 } from '@/features/logs/logRepository';
@@ -152,24 +151,5 @@ describe('月別ポイント取得 getLocationPointsByMonth', () => {
     await getLocationPointsByMonth('2026-05');
 
     expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('local_date LIKE ?'), '2026-05-%');
-  });
-});
-
-describe('複数日ポイント取得 getLocationPointsByDates', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('空配列の場合はDBへ問い合わせず空配列を返す', async () => {
-    await expect(getLocationPointsByDates([])).resolves.toEqual([]);
-    expect(db.getAllAsync).not.toHaveBeenCalled();
-  });
-
-  it('複数日のプレースホルダを展開してクエリする', async () => {
-    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
-
-    await getLocationPointsByDates(['2026-05-04', '2026-05-05']);
-
-    expect(db.getAllAsync).toHaveBeenCalledWith(expect.stringContaining('local_date IN (?, ?)'), '2026-05-04', '2026-05-05');
   });
 });

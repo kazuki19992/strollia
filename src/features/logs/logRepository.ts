@@ -202,23 +202,7 @@ export async function getLocationPointsByMonth(yearMonth: string): Promise<Locat
   );
 }
 
-/** 指定した複数日のポイントを日付・時刻順にまとめて取得する。総距離フォールバック計算で使う。 */
-export async function getLocationPointsByDates(localDates: string[]): Promise<LocationPoint[]> {
-  if (localDates.length === 0) {
-    return [];
-  }
-
-  const placeholders = localDates.map(() => '?').join(', ');
-  return db.getAllAsync<LocationPoint>(
-    `SELECT ${pointColumns}
-     FROM location_points
-     WHERE local_date IN (${placeholders})
-     ORDER BY local_date ASC, recorded_at ASC, id ASC`,
-    ...localDates,
-  );
-}
-
-/** 日別ログ画面で使う指定日のGPSポイントを時系列で取得する。 */
+/** 日別ログ画面で使う指定日のGPSポイントを時系列で取得する。総距離フォールバック計算でも1日ずつ呼ばれる。 */
 export async function getLocationPointsByDate(localDate: string): Promise<LocationPoint[]> {
   return db.getAllAsync<LocationPoint>(
     `SELECT ${pointColumns}

@@ -1,6 +1,5 @@
 import { getLocationPointAdminAreaNames } from '@/features/achievements/adminAreaRepository';
-import { getLocationPointsByDates } from '@/features/logs/logRepository';
-import { LocationPoint } from '@/types/gps';
+import { getLocationPointsByDate } from '@/features/logs/logRepository';
 import { totalDistanceMeters } from '@/utils/distance';
 
 /**
@@ -26,10 +25,14 @@ export type DailyDistanceEntry = {
 /**
  * 日別距離の合計を優先し、距離が欠落している日だけGPSポイントから再計算する。
  *
- * 全期間のGPSポイントをメモリへロードせず、欠落している日付だけをまとめて取得することで
- * データ量に依存しない総距離計算にする(2026-07-14のメモリ超過クラッシュ対策の一部)。
+ * 欠落日のGPSポイントは1日ずつ逐次取得して距離計算後すぐに手放し、まとめて1配列へ
+ * ロードしない。`distance_meters` が未保存のまま残っている既存ユーザー(distance
+ * トラッキング導入前に記録した日が多いユーザー)ほど欠落日数が多くなりやすく、
+ * 一括取得だと結局ほぼ全GPSポイントをJSメモリに載せてしまい、2026-07-14の
+ * メモリ超過クラッシュを再発させる。1日単位の逐次処理にすることで、欠落日数に
+ * 依存せずメモリ使用量を「その日のポイント数」分だけに有界化する。
  * `achievementRepository.getAchievementProgress` と `useLocationRecordingSync` の
- * 両方から使う共通ヘルパー。
+ * 両方から使う共通ヘルパー(起動時 + フォアグラウンド中10秒ごとに呼ばれる)。
  *
  * @param dailyLogs - 日付と距離のペア一覧(`DailyLogSummary` 等、この形を満たす配列を渡せる)。
  * @returns 総移動距離メートル。
@@ -38,20 +41,11 @@ export async function calculateTotalDistanceMeters(dailyLogs: DailyDistanceEntry
   const fixedDistance = dailyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0);
   const fallbackDates = dailyLogs.filter((log) => log.distanceMeters == null).map((log) => log.localDate);
 
-  if (fallbackDates.length === 0) {
-    return fixedDistance;
+  let fallbackDistance = 0;
+  for (const localDate of fallbackDates) {
+    const points = await getLocationPointsByDate(localDate);
+    fallbackDistance += totalDistanceMeters(points);
   }
-
-  const points = await getLocationPointsByDates(fallbackDates);
-  const pointsByDate = new Map<string, LocationPoint[]>();
-
-  for (const point of points) {
-    const datePoints = pointsByDate.get(point.localDate) ?? [];
-    datePoints.push(point);
-    pointsByDate.set(point.localDate, datePoints);
-  }
-
-  const fallbackDistance = fallbackDates.reduce((total, localDate) => total + totalDistanceMeters(pointsByDate.get(localDate) ?? []), 0);
 
   return fixedDistance + fallbackDistance;
 }

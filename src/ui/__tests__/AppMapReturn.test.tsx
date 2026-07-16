@@ -2215,7 +2215,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   test('月次レポートボタンはPlus会員かつ先月データありで月次レポート画面へ遷移させる', async () => {
     (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
-    (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
     renderRouter('src/app');
     await flushPromises();
@@ -2262,7 +2262,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
   test('通常のボタン遷移では月次レポートのポイント取得は1回だけで、ディープリンク用effectによる再取得は起きない', async () => {
     (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
-    (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
     renderRouter('src/app');
     await flushPromises();

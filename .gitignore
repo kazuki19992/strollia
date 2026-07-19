@@ -43,6 +43,9 @@ yarn-error.*
 # local worktrees
 .worktrees/
 
+# superpowers subagent-driven-development scratch state (ブランチ内限りの進捗レジャー・作業ファイル)
+.superpowers/
+
 # build
 *.ipa
 builds/

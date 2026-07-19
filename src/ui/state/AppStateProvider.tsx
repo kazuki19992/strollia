@@ -359,7 +359,7 @@ type AppStateProviderProps = {
    *
    * navigator 経由の遷移は router.push のみで内部 state を更新しないため、
    * これを渡さないと screenMode が初期値 'map' のまま実際の route とズレ、
-   * 地図の isMapReady リセットや画面判定フックが同期しなくなる。
+   * 地図追従の画面判定や画面遷移フックが同期しなくなる。
    * 指定時は内部 state より優先する単一ソースとして扱う(ディープリンク直遷移にも追従)。
    * 未指定時は内部の screenMode 切り替えで動作する(テスト互換モード)。
    */

@@ -306,6 +306,16 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 
 日別の推定移動距離は、表示のたびに全GPS点を走査して再計算しない。新しい点を保存するときに直前の同日ポイントとの距離を加算し、`daily_logs.distance_meters` に累積値として保持する。既存データなど累積距離が存在しない場合のみ、表示側でフォールバック計算する。
 
+### 7.1 GPS点の段階的取得戦略
+
+アプリは全期間のGPSポイントをメモリにロードしない。代わりに、用途に応じて以下の段階的取得関数を使う。
+
+- `getLocationPointsBounds(): Promise<LocationPointsBounds | null>` — 地図の初期表示範囲を算出するため、SQLの集計クエリ(`SELECT MIN(latitude), MAX(latitude), MIN(longitude), MAX(longitude), COUNT(*) FROM location_points WHERE ...`)で緯度経度の最小値・最大値・ポイント総数を取得する。この方式ではポイント本体をアプリメモリへロードしないため、記録年数に依存せず高速に動作する。
+- `getLocationPointsByMonth(yearMonth: string): Promise<LocationPoint[]>` — 月次レポート画面で対象月のポイントを取得する。月単位に限定することで、データ量を管理可能に保つ。
+- `getLocationPointsByDates(localDates: string[]): Promise<LocationPoint[]>` — 日別ログの距離値が欠落している日の距離を計算するため、該当日付のみのポイントを取得する。フォールバック計算の対象を最小限に制限し、毎回全データ走査を避ける。
+
+この設計により、2026-07-14に発生したメモリ超過クラッシュ(記録ポイント数が多い端末で全ポイント配列の作成時にスプレッド展開が`RangeError`を起こす問題)を回避する。
+
 ## 8. バックアップ方針
 
 初期仕様ではクラウドバックアップは提供しない。

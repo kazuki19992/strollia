@@ -141,16 +141,68 @@ export async function getLatestLocationPoint(): Promise<LocationPoint | null> {
   return point ?? null;
 }
 
-/** メインマップに表示する全期間のGPSポイントを時系列で取得する。 */
-export async function getAllLocationPoints(): Promise<LocationPoint[]> {
+/** 有効な緯度経度を持つ全ポイントの外接境界と件数。 */
+export type LocationPointsBounds = {
+  minLatitude: number;
+  maxLatitude: number;
+  minLongitude: number;
+  maxLongitude: number;
+  /** 境界計算に使った有効ポイント件数。 */
+  pointCount: number;
+};
+
+/** 全ポイントの緯度経度境界と件数をSQLで集計する。有効ポイントが0件ならnull。 */
+export async function getLocationPointsBounds(): Promise<LocationPointsBounds | null> {
+  const row = await db.getFirstAsync<{
+    minLatitude: number | null;
+    maxLatitude: number | null;
+    minLongitude: number | null;
+    maxLongitude: number | null;
+    pointCount: number;
+  }>(
+    `SELECT
+      MIN(latitude) as minLatitude,
+      MAX(latitude) as maxLatitude,
+      MIN(longitude) as minLongitude,
+      MAX(longitude) as maxLongitude,
+      COUNT(*) as pointCount
+     FROM location_points
+     WHERE latitude BETWEEN -90 AND 90
+       AND longitude BETWEEN -180 AND 180`,
+  );
+
+  if (
+    !row ||
+    row.pointCount === 0 ||
+    row.minLatitude == null ||
+    row.maxLatitude == null ||
+    row.minLongitude == null ||
+    row.maxLongitude == null
+  ) {
+    return null;
+  }
+
+  return {
+    minLatitude: row.minLatitude,
+    maxLatitude: row.maxLatitude,
+    minLongitude: row.minLongitude,
+    maxLongitude: row.maxLongitude,
+    pointCount: row.pointCount,
+  };
+}
+
+/** 指定月(`"YYYY-MM"`形式)のポイントを時系列で取得する。月次レポート画面で使う。 */
+export async function getLocationPointsByMonth(yearMonth: string): Promise<LocationPoint[]> {
   return db.getAllAsync<LocationPoint>(
     `SELECT ${pointColumns}
      FROM location_points
+     WHERE local_date LIKE ?
      ORDER BY recorded_at ASC`,
+    `${yearMonth}-%`,
   );
 }
 
-/** 日別ログ画面で使う指定日のGPSポイントを時系列で取得する。 */
+/** 日別ログ画面で使う指定日のGPSポイントを時系列で取得する。総距離フォールバック計算でも1日ずつ呼ばれる。 */
 export async function getLocationPointsByDate(localDate: string): Promise<LocationPoint[]> {
   return db.getAllAsync<LocationPoint>(
     `SELECT ${pointColumns}

@@ -7,7 +7,7 @@ import type { LatLng, MapType, Region, UserLocationChangeEvent } from 'react-nat
 
 import { updateSentrySubscriptionContext, updateSentryUserContext } from '@/config/sentry';
 import { syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
-import { shareGpx } from '@/features/export/gpxExporter';
+import { shareAllLogsAsGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { GpxImportInterruptedError, importLocationPointsFromGpx } from '@/features/import/importRepository';
@@ -19,8 +19,9 @@ import {
   hasRequiredLocationPermission,
   canRequestLocationPermissionInApp,
 } from '@/features/location/locationPermission';
-import { deleteAllUserData } from '@/features/logs/logRepository';
-import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData } from '@/features/reports/monthlyReport';
+import { deleteAllUserData, getLocationPointsByMonth } from '@/features/logs/logRepository';
+import { createMonthlyReport, formatReportMonth, getPreviousReportMonth, hasMonthlyReportData } from '@/features/reports/monthlyReport';
+import { createRegionFromBounds } from '@/features/map/routeMapper';
 import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
@@ -39,7 +40,6 @@ import { useAnimatedBooleanOpacity } from '@/ui/hooks/useAnimatedBooleanOpacity'
 import { useAutoFitInitialRoute } from '@/ui/hooks/useAutoFitInitialRoute';
 import { useForegroundUserLocation } from '@/ui/hooks/useForegroundUserLocation';
 import { useKeepScreenAwake } from '@/ui/hooks/useKeepScreenAwake';
-import { useMapRouteState } from '@/ui/hooks/useMapRouteState';
 import { useScreenTransitionOpacity } from '@/ui/hooks/useScreenTransitionOpacity';
 import { useCurrentAreaLabel } from '@/ui/hooks/useCurrentAreaName';
 import { usePremiumAccess } from '@/ui/hooks/usePremiumAccess';
@@ -62,7 +62,6 @@ import type { LocationPoint } from '@/types/gps';
 import type { AreaLabel } from '@/ui/areaName';
 import type { ResolvedUserLocationIcon } from '@/features/customization/customizationResolver';
 import type { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
-import type { RouteCoordinate } from '@/features/map/routeMapper';
 import type { RefreshDataResult } from '@/ui/hooks/useLocationRecordingSync';
 import type { AppColorPresetId } from '@/features/customization/colorPresets';
 import type { UserLocationIconId } from '@/features/customization/customizationOptions';
@@ -124,8 +123,10 @@ export type AppStateContextValue = {
   setIsWhileInUseToastVisible: (visible: boolean) => void;
   /** 日別ログの一覧。 */
   dailyLogs: DailyLogSummary[];
-  /** 全GPSポイント配列。 */
-  points: LocationPoint[];
+  /** GPS記録が1件以上あるか(空状態表示・初期フィットの判定用)。 */
+  hasAnyLocationPoints: boolean;
+  /** 先月分の月次レポート用GPSポイント(openMonthlyReportで取得)。 */
+  monthlyReportPoints: LocationPoint[];
   /** 月次エリアレポート。 */
   monthlyAreaReport: MonthlyAreaReport | null;
   /** データ再取得。 */
@@ -152,8 +153,6 @@ export type AppStateContextValue = {
   currentSpeedKmh: number;
   /** 地図タイプ(標準/衛星)。 */
   mapType: MapType;
-  /** ルート座標列(地図描画用)。 */
-  renderRouteCoordinates: RouteCoordinate[];
   /** 地図の初期表示領域(起動時・全ルートフィット用)。 */
   initialRegion: Region;
   /** 今日の移動距離(m)。 */
@@ -360,7 +359,7 @@ type AppStateProviderProps = {
    *
    * navigator 経由の遷移は router.push のみで内部 state を更新しないため、
    * これを渡さないと screenMode が初期値 'map' のまま実際の route とズレ、
-   * 地図の isMapReady リセットや画面判定フックが同期しなくなる。
+   * 地図追従の画面判定や画面遷移フックが同期しなくなる。
    * 指定時は内部 state より優先する単一ソースとして扱う(ディープリンク直遷移にも追従)。
    * 未指定時は内部の screenMode 切り替えで動作する(テスト互換モード)。
    */
@@ -443,6 +442,15 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
   const [firstLaunchTutorialMode, setFirstLaunchTutorialMode] = useState<FirstLaunchTutorialMode>('firstLaunch');
+  const [monthlyReportPoints, setMonthlyReportPoints] = useState<LocationPoint[]>([]);
+  /**
+   * 現在 monthlyReportPoints に読み込み済みの対象月(YYYY-MM)。
+   *
+   * openMonthlyReport 経由の通常遷移と、月次レポート画面表示中の補完 effect の
+   * 両方が対象月ポイントを取得しうるため、同じ月への重複フェッチを避けるために使う。
+   * 未読み込み(初期値 null)のときはディープリンク等の直接到達を示す。
+   */
+  const loadedMonthlyReportMonthRef = useRef<string | null>(null);
 
   const {
     selectedAchievement,
@@ -479,7 +487,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     setIsWhileInUseToastVisible,
     setMessage,
     dailyLogs,
-    points,
+    pointsBounds,
+    distance,
     monthlyAreaReport,
     appState,
     refreshData,
@@ -496,7 +505,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     evaluateAchievementsIfDialogIdle: stableEvaluateAchievementsIfDialogIdle,
     refreshAchievementState: stableRefreshAchievementState,
   });
-  const { renderRouteCoordinates, initialRegion, distance } = useMapRouteState(points, dailyLogs);
+  const hasAnyLocationPoints = pointsBounds != null;
+  const initialRegion = useMemo(() => createRegionFromBounds(pointsBounds), [pointsBounds]);
   const userLocationIcon = useMemo(
     () =>
       resolveUserLocationIcon(
@@ -586,6 +596,46 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     updateSentrySubscriptionContext(premiumAccessState);
   }, [premiumAccessState]);
 
+  /**
+   * 月次レポート画面の表示中、対象月のポイントが未読み込みなら補完取得する。
+   *
+   * 通常は openMonthlyReport → enterMonthlyReportOrPrompt の中で monthlyReportPoints を
+   * 取得するが、scheme 追加によりディープリンクやアプリ復元で /monthly-report へ直接
+   * 到達できるため、その経路では monthlyReportPoints が空のままになり、日別ログ由来の
+   * 距離・日数は表示されるのにルート地図・共有画像だけ空になる不整合が起きる。
+   * screenMode が 'monthlyReport' の間、読み込み済み月(loadedMonthlyReportMonthRef)と
+   * 対象月が異なる場合だけ取得し、通常遷移直後の重複フェッチを避ける。
+   * 失敗時は console.warn に留める。画面は dailyLogs 由来のデータで表示済みのため、
+   * 補完取得の失敗でAlert等の割り込みは行わず、ref も更新しないため次回表示時に再試行される。
+   */
+  useEffect(() => {
+    if (screenMode !== 'monthlyReport') {
+      return;
+    }
+
+    const targetMonth = formatReportMonth(getPreviousReportMonth());
+    if (loadedMonthlyReportMonthRef.current === targetMonth) {
+      return;
+    }
+
+    let cancelled = false;
+    getLocationPointsByMonth(targetMonth)
+      .then((points) => {
+        if (cancelled) {
+          return;
+        }
+        setMonthlyReportPoints(points);
+        loadedMonthlyReportMonthRef.current = targetMonth;
+      })
+      .catch((error: unknown) => {
+        console.warn('Failed to load monthly report points on direct screen entry:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [screenMode]);
+
   // useAchievementState の evaluateAchievementsIfDialogIdle / refreshAchievementState を
   // useLocationRecordingSync へ ref 経由で渡す。
   // フック呼び出し順序の循環を避けるため ref に同期する。
@@ -595,11 +645,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   /** 全期間のGPSログをGPXとして共有する。 */
   const exportAllLogs = useCallback(async (): Promise<void> => {
     try {
-      await shareGpx(points, 'all');
+      await shareAllLogsAsGpx();
     } catch (error: unknown) {
       Alert.alert('エクスポート失敗', error instanceof Error ? error.message : 'GPX出力に失敗しました。');
     }
-  }, [points]);
+  }, []);
 
   /** 確認ダイアログを挟んで保存済みデータを全削除する。 */
   const deleteAllData = useCallback(async (): Promise<void> => {
@@ -671,7 +721,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     refreshDataAndEvaluateAchievementsIfDialogIdle,
     setMessage,
   });
-  useAutoFitInitialRoute(mapRef, screenMode, renderRouteCoordinates, userCoordinate);
+  useAutoFitInitialRoute(mapRef, screenMode, initialRegion, hasAnyLocationPoints, userCoordinate);
   // カスタムアイコン表示と前景限定記録で1つの位置購読を共有する。
   useForegroundUserLocation({
     enabled: foregroundWatchEnabled,
@@ -758,32 +808,47 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     getPremiumAccessState()
       .then((latestState) => {
         setPremiumAccessState(latestState);
-        enterMonthlyReportOrPrompt(latestState.isPlusActive);
+        return enterMonthlyReportOrPrompt(latestState.isPlusActive);
       })
       .catch((error: unknown) => {
         console.warn('Failed to check premium access state:', error);
-        enterMonthlyReportOrPrompt(premiumAccessState.isPlusActive);
+        return enterMonthlyReportOrPrompt(premiumAccessState.isPlusActive);
       });
   }
 
   /**
    * Plus状態と先月データの有無に応じて、月次レポート遷移・ペイウォール・集計中案内を出し分ける。
    *
+   * 先月分のGPSポイントはこの関数の中で取得する(全期間ポイントをメモリへ保持しないため)。
+   *
    * @param isPlusActive - Strollia Plusが有効かどうか。
    * @returns なし。
    */
-  function enterMonthlyReportOrPrompt(isPlusActive: boolean): void {
+  async function enterMonthlyReportOrPrompt(isPlusActive: boolean): Promise<void> {
     if (!isPlusActive) {
       openPremiumPaywall();
       return;
     }
 
-    const previousMonthReport = createMonthlyReport(dailyLogs, points, getPreviousReportMonth());
+    const targetMonth = formatReportMonth(getPreviousReportMonth());
+    let previousMonthPoints: LocationPoint[];
+    try {
+      previousMonthPoints = await getLocationPointsByMonth(targetMonth);
+    } catch (error: unknown) {
+      console.warn('Failed to load previous month points:', error);
+      Alert.alert('エラー', '月次レポートの読み込みに失敗しました。');
+      return;
+    }
+
+    const previousMonthReport = createMonthlyReport(dailyLogs, previousMonthPoints, getPreviousReportMonth());
     if (!hasMonthlyReportData(previousMonthReport)) {
       Alert.alert('現在集計中です！', '来月になったらもう一度来てください！');
       return;
     }
 
+    setMonthlyReportPoints(previousMonthPoints);
+    // ディープリンク補完 effect が直後に同じ月を再取得しないよう、読み込み済み月を記録する。
+    loadedMonthlyReportMonthRef.current = targetMonth;
     refreshAchievementState().catch(() => undefined);
     if (navigator?.openMonthlyReport) {
       triggerLightImpactHaptic();
@@ -945,7 +1010,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     isWhileInUseToastVisible,
     setIsWhileInUseToastVisible,
     dailyLogs,
-    points,
+    hasAnyLocationPoints,
+    monthlyReportPoints,
     monthlyAreaReport,
     refreshData,
     startRecording,
@@ -958,7 +1024,6 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     visibleRegion,
     currentSpeedKmh,
     mapType,
-    renderRouteCoordinates,
     initialRegion,
     todayDistanceMeters,
     distance,

@@ -48,6 +48,7 @@ export type UseMapFollowStateResult = {
    * ネイティブ地図の初期化完了フラグ。
    * onMapReady 前の animateToRegion はネイティブ側で無視されるため、
    * カスタムアイコンの初回センタリングは準備完了を待ってから実行する。
+   * onMapReady または最初の onRegionChangeComplete で true になり、以後リセットされない。
    */
   isMapReady: boolean;
   /** MapView の現在表示範囲。スクロール中も追従させるために保持する。 */
@@ -138,8 +139,9 @@ export function useMapFollowState({
   const shouldRestoreMapRegionOnOpenRef = useRef(false);
   /**
    * prepareMapRegionRestore を呼ぶたびにインクリメントするカウンター。
-   * expo-router 環境では screenMode が常に 'map' のままのため、このカウンターを
-   * effect の依存に加えることで地図復帰センタリングをトリガーする。
+   * expo-router 環境では地図ルートがマウントされたまま他画面が push され、MapView も
+   * 再マウントされない。screenMode の変化だけでは復帰センタリングの再トリガーを保証できない
+   * ため、このカウンターを effect の依存に加えて地図復帰センタリングを確実にトリガーする。
    */
   const [mapRestoreTrigger, setMapRestoreTrigger] = useState(0);
 
@@ -147,6 +149,7 @@ export function useMapFollowState({
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
   // ネイティブ地図の初期化完了フラグ。onMapReady前のanimateToRegionはネイティブ側で
   // 無視されるため、カスタムアイコンの初回センタリングは準備完了を待ってから実行する。
+  // onMapReadyまたは最初のonRegionChangeCompleteでtrueになり、以後リセットされない。
   const [isMapReady, setIsMapReady] = useState(false);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
@@ -181,8 +184,9 @@ export function useMapFollowState({
   // 起動直後は前景ウォッチの初回更新（getLastKnownPositionAsync）がネイティブ地図の初期化完了より
   // 先に届くことがあり、その時点のanimateToRegionはネイティブ側で無視される。さらに静止中は
   // watchPositionAsyncが再発火しないため再センタリングの機会がなく、広域initialRegionで固定されてしまう。
-  // これを防ぐためisMapReady（onMapReady）を待ってからセンタリングする。現在地が先に届いていれば
-  // 準備完了時に、準備完了が先なら現在地到着時に、いずれの順序でも確実にセンタリングが走る。
+  // これを防ぐためisMapReady（onMapReadyまたは最初のonRegionChangeCompleteでtrueになる）を
+  // 待ってからセンタリングする。現在地が先に届いていれば準備完了時に、準備完了が先なら現在地
+  // 到着時に、いずれの順序でも確実にセンタリングが走る。
   useEffect(() => {
     if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
       return;
@@ -195,14 +199,6 @@ export function useMapFollowState({
     centerOnCoordinate(userCoordinate, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [screenMode, userLocationIcon.useNativeUserLocation, isMapReady, isFollowingUserLocation, userCoordinate]);
-
-  // MapViewは地図画面でのみマウントされる。地図から離れたら準備完了フラグを倒し、再表示時の
-  // 新しいネイティブ地図がonMapReadyを発火するまでカスタムセンタリングを待たせる。
-  useEffect(() => {
-    if (screenMode !== 'map') {
-      setIsMapReady(false);
-    }
-  }, [screenMode]);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
@@ -282,10 +278,16 @@ export function useMapFollowState({
   /**
    * 表示範囲を保存する。追従再開は現在地ボタン押下に限定し、広域表示中の意図しない引き戻しを防ぐ。
    *
+   * ネイティブ地図がregion change completeを発火している時点で地図は初期化済みであり、
+   * animateToRegionを受け付けられる。New Architecture環境等でonMapReadyが発火しないケースの
+   * フォールバックとして、ここでもisMapReadyをtrueにする（同じ値ならReactがbail outするため
+   * 再レンダリングコストは増えない）。
+   *
    * @param region - MapViewの現在表示範囲。
    * @returns なし。
    */
   function handleRegionChangeComplete(region: Region): void {
+    setIsMapReady(true);
     regionChangeThrottleRef.current = Date.now();
     setVisibleRegion(region);
   }
@@ -354,7 +356,7 @@ export function useMapFollowState({
       shouldRestoreMapRegionOnOpenRef.current = true;
       setVisibleRegion(createUserCenteredRegion(userCoordinate));
       incrementVisitedGridRefreshVersionRef.current();
-      // expo-router 環境では screenMode が 'map' のままのため、カウンターを
+      // expo-router 環境では地図ルートがマウントされたままのため、カウンターを
       // インクリメントして restore effect を強制的にトリガーする。
       setMapRestoreTrigger((prev) => prev + 1);
     }

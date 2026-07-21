@@ -116,6 +116,14 @@ flowchart TD
 
 ## 6. データ取得フロー
 
+### 6.1 メインマップ初期表示範囲
+
+アプリ起動時、`AppStateProvider` は `useLocationRecordingSync` フックを通じて `pointsBounds`(緯度経度の最小値・最大値・ポイント総数)を取得する。この `pointsBounds` は SQLiteの集計クエリ(`getLocationPointsBounds()`)で全ポイントをメモリにロードせず算出される。
+
+その後、`createRegionFromBounds(bounds)` 関数(`src/features/map/routeMapper.ts`)が境界値から初期表示範囲(`initialRegion`)を計算する。この処理は全期間の全ポイント配列に依存しないため、記録年数に関わらず安定して動作する。
+
+### 6.2 日別マップ表示
+
 日別マップ表示では、選択日の `local_date` をもとにSQLiteからGPSポイントを取得する。
 
 ```mermaid
@@ -125,6 +133,8 @@ flowchart TD
   C --> D[マップ用座標配列に変換]
   D --> E[Polylineとして描画]
 ```
+
+### 6.3 全履歴マップ表示
 
 メインマップの全履歴表示では、GPSポイントを直接Polylineへつなぐのではなく、`visited_cells` を表示範囲で取得してGrid Overlayとして描画する。
 

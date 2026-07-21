@@ -7,7 +7,7 @@ import MonthlyReportRoute from '@/app/monthly-report';
 const mockState = {
   premiumAccessState: { isPlusActive: false },
   dailyLogs: [],
-  points: [],
+  monthlyReportPoints: [],
   achievementItems: [],
   monthlyAreaReport: null,
   theme: { name: 'light', colors: { primary: '#000' } },

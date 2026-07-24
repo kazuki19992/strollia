@@ -83,7 +83,7 @@ describe('Sentry送信制御', () => {
     expect(Sentry.setContext).not.toHaveBeenCalled();
   });
 
-  it('productionビルドではSentry SDKを初期化する', () => {
+  it('productionビルドではApp Hangを2秒で検知しスタックトレースを添付する設定でSentry SDKを初期化する', () => {
     process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE = 'production';
 
     initializeSentry();
@@ -94,6 +94,10 @@ describe('Sentry送信制御', () => {
         enableAutoSessionTracking: false,
         enableCaptureFailedRequests: false,
         sendDefaultPii: false,
+        // App Hang(iOS ANR相当)を明示的に有効化し、スタックトレースを添付して原因を追えるようにする
+        enableAppHangTracking: true,
+        appHangTimeoutInterval: 2,
+        attachStacktrace: true,
       }),
     );
     expect(Sentry.setContext).toHaveBeenCalledWith(

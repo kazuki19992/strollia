@@ -31,6 +31,16 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
+/**
+ * 表示範囲デルタの有効上限。
+ *
+ * MapKitは緯度スパン180度・経度スパン360度を超えるRegionを NSInvalidArgumentException にする。
+ * 個々の座標が有効範囲内でも、異常値混入等で外接ボックスがこの上限を超えることがあるため、
+ * わずかに下回る値でクランプしてクラッシュを防ぐ。
+ */
+const MAX_LATITUDE_DELTA = 179;
+const MAX_LONGITUDE_DELTA = 359;
+
 /** 徒歩ログの形状を保ちつつ描画点を減らすデフォルト許容誤差。 */
 export const DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS = 10;
 /** この区間速度を超える点間は誤線防止のため同一Polylineで結ばない。 */
@@ -166,8 +176,10 @@ export function createRegionFromBounds(bounds: RouteCoordinateBounds | null): Re
   }
 
   const { minLatitude, maxLatitude, minLongitude, maxLongitude } = bounds;
-  const latitudeDelta = Math.max((maxLatitude - minLatitude) * 1.4, 0.01);
-  const longitudeDelta = Math.max((maxLongitude - minLongitude) * 1.4, 0.01);
+  // 個々の座標が有効範囲内でも、異常値混入等で外接ボックスが有効上限を超えることがある。
+  // MapKitのInvalid Region例外を避けるため、有効上限未満へクランプする。
+  const latitudeDelta = Math.min(Math.max((maxLatitude - minLatitude) * 1.4, 0.01), MAX_LATITUDE_DELTA);
+  const longitudeDelta = Math.min(Math.max((maxLongitude - minLongitude) * 1.4, 0.01), MAX_LONGITUDE_DELTA);
 
   return {
     latitude: (minLatitude + maxLatitude) / 2,

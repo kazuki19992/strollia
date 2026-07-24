@@ -208,6 +208,23 @@ describe('境界からの初期表示範囲 createRegionFromBounds', () => {
     expect(region.latitudeDelta).toBe(0.08);
     expect(region.longitudeDelta).toBe(0.08);
   });
+
+  it('経度スパンが極端に広くてもlongitudeDeltaを360未満に収める(MapKitのInvalid Region回避)', () => {
+    // 有効座標でも地理的に大きく離れた2点(異常値混入等)だと外接ボックスが360度を超える
+    const region = createRegionFromBounds({ minLatitude: 25, maxLatitude: 53, minLongitude: -123, maxLongitude: 146 });
+
+    // (146 - -123) * 1.4 = 376.6 → MapKitが受け付けないためクランプする
+    expect(region.longitudeDelta).toBeLessThan(360);
+    expect(region.longitudeDelta).toBeGreaterThan(0);
+  });
+
+  it('緯度スパンが極端に広くてもlatitudeDeltaを180未満に収める', () => {
+    const region = createRegionFromBounds({ minLatitude: -85, maxLatitude: 85, minLongitude: 139, maxLongitude: 140 });
+
+    // (85 - -85) * 1.4 = 238 → 180を超えるためクランプする
+    expect(region.latitudeDelta).toBeLessThan(180);
+    expect(region.latitudeDelta).toBeGreaterThan(0);
+  });
 });
 
 describe('大量データでのcreateInitialRegion(RangeError回帰)', () => {

@@ -708,6 +708,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         console.warn('Failed to persist crash reporting setting:', error);
         setCrashReportingEnabledState(previousValue);
         applyCrashReportingToSentry(previousValue);
+        // 巻き戻したうえで呼び出し側へ伝播し、設定画面・チュートリアルの catch で保存失敗を通知させる。
+        throw error;
       }
     },
     [crashReportingEnabled],

@@ -322,4 +322,30 @@ describe('不具合レポート設定の状態', () => {
 
     expect(setSetting).toHaveBeenCalledWith('crashReportingEnabled', false);
   });
+
+  it('保存に失敗すると設定画面でAlertを表示する(Provider が例外を握りつぶさない)', async () => {
+    const { Alert } = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    (setSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'crashReportingEnabled') {
+        return Promise.reject(new Error('保存に失敗しました'));
+      }
+      return Promise.resolve(undefined);
+    });
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+    await flushPromises();
+
+    await act(async () => {
+      fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
+    });
+    await flushPromises();
+
+    expect(alertSpy).toHaveBeenCalledWith('設定保存失敗', '保存に失敗しました');
+  });
 });

@@ -43,7 +43,7 @@ Sentry による不具合(App Hang / クラッシュ)レポートは現状 produ
 
 - SQLite `app_settings` にキー `crashReportingEnabled` で boolean を保存する。
 - 読み書きは `src/features/settings/settingsRepository.ts` の `getBooleanSetting` / `setSetting` を使う。
-- デフォルト値は `getBooleanSetting(CRASH_REPORTING_ENABLED_SETTING_KEY, true)` の fallback=true で表現する(未保存時は有効)。
+- デフォルト値は `getBooleanSetting(CRASH_REPORTING_SETTING_KEY, true)` の fallback=true で表現する(未保存時は有効)。
 
 ### Sentry 送信のゲート
 
@@ -57,9 +57,9 @@ Sentry による不具合(App Hang / クラッシュ)レポートは現状 produ
 
 ### 状態と操作の結線
 
-- 起動時初期化(`src/ui/hooks/useAppInitialization.ts`)で `getBooleanSetting(CRASH_REPORTING_ENABLED_SETTING_KEY, true)` を読み込み、`setCrashReportingEnabled(value)` で Sentry フラグへ反映し、UI 状態(`crashReportingEnabled`)へも設定する。
+- 起動時初期化(`src/ui/hooks/useAppInitialization.ts`)で `getBooleanSetting(CRASH_REPORTING_SETTING_KEY, true)` を読み込み、`setCrashReportingEnabled(value)` で Sentry フラグへ反映し、UI 状態(`crashReportingEnabled`)へも設定する。
 - `AppStateProvider` に `crashReportingEnabled: boolean` と `updateCrashReportingEnabled(enabled: boolean): Promise<void>` を追加する。
-  - `updateCrashReportingEnabled` は UI 状態を更新し、`setCrashReportingEnabled(enabled)` で Sentry フラグへ即時反映し、`setSetting(CRASH_REPORTING_ENABLED_SETTING_KEY, enabled)` で永続化する。
+  - `updateCrashReportingEnabled` は UI 状態を更新し、`setCrashReportingEnabled(enabled)` で Sentry フラグへ即時反映し、`setSetting(CRASH_REPORTING_SETTING_KEY, enabled)` で永続化する。
   - 永続化に失敗した場合は UI 状態と Sentry フラグを元の値へ巻き戻す(`updateKeepScreenAwake` と同じ、UIとストレージの乖離を残さない方針)。
 - 設定画面ルート(`src/app/settings/index.tsx`)経由で `SettingsScreen` へ props を渡す。
 
@@ -79,7 +79,7 @@ Sentry による不具合(App Hang / クラッシュ)レポートは現状 produ
 
 ## データフロー
 
-```
+```text
 起動時:
   useAppInitialization
     → getBooleanSetting('crashReportingEnabled', true)

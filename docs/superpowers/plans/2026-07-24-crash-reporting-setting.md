@@ -745,7 +745,7 @@ git commit -m "feat(tutorial): 初回チュートリアルに不具合レポー�
 
 - [ ] **Step 1: 全テスト・型・lint・format を実行**
 
-Run: `npm run typecheck && npm test && npm run lint && npm run format:check`
+Run: `npm run typecheck && npm test && npm run lint && npm run format`
 Expected: typecheck 0エラー / 全テスト PASS / lint error 0 / format 通過
 
 - [ ] **Step 2: ドキュメントに設定キーを追記**

@@ -1,5 +1,6 @@
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useEffect, useMemo } from 'react';
+import { Alert } from 'react-native';
 
 import { wrapWithSentry } from '@/config/sentry';
 import { updateSentryScreenContext } from '@/config/sentry';
@@ -128,7 +129,8 @@ function RootLayoutContent(): React.ReactElement {
         crashReportingEnabled={s.crashReportingEnabled}
         onUpdateCrashReportingEnabled={(value) => {
           s.updateCrashReportingEnabled(value).catch((error: unknown) => {
-            console.warn('Failed to update crash reporting from tutorial:', error);
+            // 設定画面と同じく、保存失敗をユーザーへ通知する(巻き戻しはProvider側で完了済み)。
+            Alert.alert('設定保存失敗', error instanceof Error ? error.message : '設定を保存できませんでした。');
           });
         }}
       />

@@ -706,4 +706,18 @@ describe('設定画面 SettingsScreen', () => {
 
     expect(props.onUpdateCrashReportingEnabled).toHaveBeenCalledWith(false);
   });
+
+  test('不具合レポート設定の保存に失敗するとAlertで通知する', async () => {
+    const { Alert } = require('react-native');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const props = createProps();
+    props.onUpdateCrashReportingEnabled = jest.fn().mockRejectedValue(new Error('保存に失敗しました'));
+    render(<SettingsScreen {...props} />);
+
+    await act(async () => {
+      fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith('設定保存失敗', '保存に失敗しました');
+  });
 });

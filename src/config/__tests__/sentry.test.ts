@@ -94,6 +94,10 @@ describe('Sentry送信制御', () => {
         enableAutoSessionTracking: false,
         enableCaptureFailedRequests: false,
         sendDefaultPii: false,
+        // App Hang(iOS ANR相当)を明示的に有効化し、スタックトレースを添付して原因を追えるようにする
+        enableAppHangTracking: true,
+        appHangTimeoutInterval: 2,
+        attachStacktrace: true,
       }),
     );
     expect(Sentry.setContext).toHaveBeenCalledWith(

@@ -62,6 +62,13 @@ export function initializeSentry(): void {
     enableAutoSessionTracking: false,
     enableCaptureFailedRequests: false,
     sendDefaultPii: false,
+    // App Hang(iOS でアプリが指定時間応答しない状態。Android ANR 相当)の検知を明示的に有効化する。
+    // 既定でも有効だが、意図を明確にするため明示する。2秒以上のハングをイベント化する。
+    enableAppHangTracking: true,
+    appHangTimeoutInterval: 2,
+    // ハングや captureMessage 系イベントへスタックトレースを添付し、どこで固まったか追えるようにする。
+    // 位置情報のマスクは beforeSend(scrubSentryEventLocationData)で従来どおり行う。
+    attachStacktrace: true,
     beforeSend(event) {
       return filterSentryEventBeforeSend(event);
     },

@@ -37,7 +37,15 @@ describe('FirstLaunchTutorialDialog のサイズ変化アニメーション', ()
   it('「次へ」でステップを変える直前にリサイズアニメーションを設定する', () => {
     const spy = jest.spyOn(LayoutAnimation, 'configureNext').mockImplementation(() => undefined);
 
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={() => undefined} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={() => undefined}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={() => undefined}
+      />,
+    );
 
     act(() => {
       fireEvent.press(screen.getByLabelText('次へ'));

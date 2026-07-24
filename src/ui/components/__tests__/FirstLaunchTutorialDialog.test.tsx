@@ -28,27 +28,43 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
   });
 
   test('最初にアプリ説明を表示する', () => {
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={jest.fn()}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
     expect(screen.getByText('すとろりあへようこそ')).toBeTruthy();
-    expect(screen.getByText('1 / 6')).toBeTruthy();
+    expect(screen.getByText('1 / 7')).toBeTruthy();
     expect(screen.getByText('すとろりあは、歩いた場所や移動した道のりを端末内に記録するGPSロガーです。')).toBeTruthy();
     expect(screen.getByText('記録したデータは、あなたの明示操作なしに外部へ送信しません。')).toBeTruthy();
   });
 
   test('次へを押すと画面下の項目、エリア、実績、安全注意、権限案内の順に進む', () => {
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={jest.fn()}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
     press('次へ');
     expect(screen.getByText('画面下の項目')).toBeTruthy();
-    expect(screen.getByText('2 / 6')).toBeTruthy();
+    expect(screen.getByText('2 / 7')).toBeTruthy();
     // Image の accessibilityLabel で確認する
     const instructionImage = screen.getByLabelText('マップ画面の要素説明');
     expect(instructionImage.props.accessibilityLabel).toBe('マップ画面の要素説明');
 
     press('次へ');
     expect(screen.getByText('エリアを広げよう')).toBeTruthy();
-    expect(screen.getByText('3 / 6')).toBeTruthy();
+    expect(screen.getByText('3 / 7')).toBeTruthy();
     expect(screen.getByText('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。')).toBeTruthy();
     expect(
       screen.getByText(
@@ -59,11 +75,11 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
     press('次へ');
     expect(screen.getByText('実績を集める')).toBeTruthy();
-    expect(screen.getByText('4 / 6')).toBeTruthy();
+    expect(screen.getByText('4 / 7')).toBeTruthy();
 
     press('次へ');
     expect(screen.getByText('さいごに')).toBeTruthy();
-    expect(screen.getByText('5 / 6')).toBeTruthy();
+    expect(screen.getByText('5 / 7')).toBeTruthy();
     expect(screen.getByText('安全に楽しくおさんぽするために、次のことを守りましょう。')).toBeTruthy();
     expect(screen.getByText('立入禁止の場所や私有地に入らない')).toBeTruthy();
     expect(screen.getByText('交通ルールを守り、まわりに注意する')).toBeTruthy();
@@ -71,8 +87,12 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(screen.getByText('体調が悪くなったら無理に続けない')).toBeTruthy();
 
     press('次へ');
+    expect(screen.getByText('不具合レポートについて')).toBeTruthy();
+    expect(screen.getByText('6 / 7')).toBeTruthy();
+
+    press('次へ');
     expect(screen.getByText('位置情報を確認してはじめる')).toBeTruthy();
-    expect(screen.getByText('6 / 6')).toBeTruthy();
+    expect(screen.getByText('7 / 7')).toBeTruthy();
     expect(screen.getByText('GPSログの記録には位置情報の常時許可が必要です。')).toBeTruthy();
     expect(screen.getByText('チュートリアルを閉じたあと、地図上に表示される位置情報の案内パネルから続けられます。')).toBeTruthy();
   });
@@ -84,7 +104,15 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       }
       return { width: 453, height: 279, scale: 1, uri: 'home-screen-instruction.png' };
     });
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={jest.fn()}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
     press('次へ');
 
@@ -116,7 +144,15 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       scale: 1,
       uri: 'invalid-instruction.png',
     });
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={jest.fn()}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
     press('次へ');
 
@@ -135,8 +171,17 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
   test('最後のボタンで onComplete を呼ぶ', () => {
     const onComplete = jest.fn();
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={onComplete}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
+    press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
@@ -149,8 +194,18 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
   test('完了ボタンの文言を再表示用に変更できる', () => {
     const onComplete = jest.fn();
-    render(<FirstLaunchTutorialDialog visible completionButtonLabel="閉じる" styles={styles} onComplete={onComplete} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        completionButtonLabel="閉じる"
+        styles={styles}
+        onComplete={onComplete}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
+    press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
@@ -164,29 +219,62 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
 
   test('再表示したときは最初の説明から始まる', () => {
     const onComplete = jest.fn();
-    const { rerender } = render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
+    const { rerender } = render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={onComplete}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
     press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
     press('次へ');
-    expect(screen.getByText('6 / 6')).toBeTruthy();
+    press('次へ');
+    expect(screen.getByText('7 / 7')).toBeTruthy();
 
     act(() => {
-      rerender(<FirstLaunchTutorialDialog visible={false} styles={styles} onComplete={onComplete} />);
+      rerender(
+        <FirstLaunchTutorialDialog
+          visible={false}
+          styles={styles}
+          onComplete={onComplete}
+          crashReportingEnabled
+          onUpdateCrashReportingEnabled={jest.fn()}
+        />,
+      );
     });
     act(() => {
-      rerender(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
+      rerender(
+        <FirstLaunchTutorialDialog
+          visible
+          styles={styles}
+          onComplete={onComplete}
+          crashReportingEnabled
+          onUpdateCrashReportingEnabled={jest.fn()}
+        />,
+      );
     });
 
-    expect(screen.getByText('1 / 6')).toBeTruthy();
+    expect(screen.getByText('1 / 7')).toBeTruthy();
     expect(screen.getByText('すとろりあへようこそ')).toBeTruthy();
   });
 
   test('閉じるボタンで onComplete を呼ぶ', () => {
     const onComplete = jest.fn();
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={onComplete} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={onComplete}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
     act(() => {
       fireEvent.press(screen.getByLabelText('閉じる'));
@@ -196,8 +284,46 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
   });
 
   test('スワイプヒントを表示しない', () => {
-    render(<FirstLaunchTutorialDialog visible styles={styles} onComplete={jest.fn()} />);
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={jest.fn()}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={jest.fn()}
+      />,
+    );
 
     expect(screen.queryByText('スワイプで閉じる')).toBeNull();
+  });
+
+  test('不具合レポート告知ステップのスイッチを切り替えると更新処理を呼ぶ', () => {
+    const onUpdate = jest.fn();
+    render(
+      <FirstLaunchTutorialDialog
+        visible
+        styles={styles}
+        onComplete={jest.fn()}
+        crashReportingEnabled
+        onUpdateCrashReportingEnabled={onUpdate}
+      />,
+    );
+
+    // 告知ステップ(不具合レポートについて)まで「次へ」で進む
+    // タイトルが表示されるまで進める
+    for (let i = 0; i < 10; i += 1) {
+      if (screen.queryByText('不具合レポートについて')) {
+        break;
+      }
+      press('次へ');
+    }
+
+    expect(screen.getByText('不具合レポートについて')).toBeTruthy();
+
+    act(() => {
+      fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
+    });
+
+    expect(onUpdate).toHaveBeenCalledWith(false);
   });
 });

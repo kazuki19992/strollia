@@ -125,6 +125,12 @@ function RootLayoutContent(): React.ReactElement {
         styles={s.styles}
         completionButtonLabel={s.firstLaunchTutorialMode === 'replay' ? '閉じる' : '地図で確認する'}
         onComplete={s.completeFirstLaunchTutorial}
+        crashReportingEnabled={s.crashReportingEnabled}
+        onUpdateCrashReportingEnabled={(value) => {
+          s.updateCrashReportingEnabled(value).catch((error: unknown) => {
+            console.warn('Failed to update crash reporting from tutorial:', error);
+          });
+        }}
       />
 
       <PhotoPreviewModals

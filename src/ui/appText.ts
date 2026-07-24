@@ -18,3 +18,23 @@ export function getAutoRecordNote(status: AutoStartStatus): string {
       return '自動記録を開始できませんでした。記録を始めるには手動で再試行してください。';
   }
 }
+
+/** 不具合レポート送信設定の永続化キー。 */
+export const CRASH_REPORTING_SETTING_KEY = 'crashReportingEnabled';
+
+/** 不具合レポートトグルのラベル(設定画面・チュートリアル共通)。 */
+export const CRASH_REPORTING_TOGGLE_LABEL = '不具合レポートを送る';
+
+/** 設定画面の不具合レポート項目の説明文。 */
+export const CRASH_REPORTING_SETTING_DESCRIPTION =
+  'アプリが固まったり、落ちたりしたときなどの不具合の記録を開発者に自動で送ります。あなたの位置情報や移動記録など、あなたを特定できてしまう情報は送りません。有効にしておくと不具合改善が早くなります。';
+
+/** 初回チュートリアルの不具合レポート告知ステップのタイトル。 */
+export const CRASH_REPORTING_TUTORIAL_TITLE = '不具合レポートについて';
+
+/** 初回チュートリアルの不具合レポート告知ステップの本文段落。 */
+export const CRASH_REPORTING_TUTORIAL_PARAGRAPHS = [
+  'あなたの位置情報や移動記録は、これまで通り外部に送りません。',
+  'ただし、アプリが固まったり落ちたりしたときの不具合の記録だけは、改善のために開発者へ自動で送ります(あなたを特定できる情報は含みません)。下のスイッチか設定画面で切り替えられます。',
+  'アプリ改善にご協力をお願いします。',
+];

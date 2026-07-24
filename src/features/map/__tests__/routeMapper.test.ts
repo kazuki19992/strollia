@@ -209,8 +209,8 @@ describe('境界からの初期表示範囲 createRegionFromBounds', () => {
     expect(region.longitudeDelta).toBe(0.08);
   });
 
-  it('経度スパンが極端に広くてもlongitudeDeltaを360未満に収める(MapKitのInvalid Region回避)', () => {
-    // 有効座標でも地理的に大きく離れた2点(異常値混入等)だと外接ボックスが360度を超える
+  it('マージン適用後のlongitudeDeltaが360を超える場合は360未満へクランプする(MapKitのInvalid Region回避)', () => {
+    // 生スパン269度(<360)でも、1.4倍の表示マージンで表示デルタが360度を超える
     const region = createRegionFromBounds({ minLatitude: 25, maxLatitude: 53, minLongitude: -123, maxLongitude: 146 });
 
     // (146 - -123) * 1.4 = 376.6 → MapKitが受け付けないためクランプする
@@ -218,10 +218,10 @@ describe('境界からの初期表示範囲 createRegionFromBounds', () => {
     expect(region.longitudeDelta).toBeGreaterThan(0);
   });
 
-  it('緯度スパンが極端に広くてもlatitudeDeltaを180未満に収める', () => {
+  it('マージン適用後のlatitudeDeltaが180を超える場合は180未満へクランプする', () => {
     const region = createRegionFromBounds({ minLatitude: -85, maxLatitude: 85, minLongitude: 139, maxLongitude: 140 });
 
-    // (85 - -85) * 1.4 = 238 → 180を超えるためクランプする
+    // 生スパン170度(<180)でも、(85 - -85) * 1.4 = 238 で表示デルタが180を超えるためクランプする
     expect(region.latitudeDelta).toBeLessThan(180);
     expect(region.latitudeDelta).toBeGreaterThan(0);
   });

@@ -83,7 +83,7 @@ describe('Sentry送信制御', () => {
     expect(Sentry.setContext).not.toHaveBeenCalled();
   });
 
-  it('productionビルドではSentry SDKを初期化する', () => {
+  it('productionビルドではApp Hangを2秒で検知しスタックトレースを添付する設定でSentry SDKを初期化する', () => {
     process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE = 'production';
 
     initializeSentry();

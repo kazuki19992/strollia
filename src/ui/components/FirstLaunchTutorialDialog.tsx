@@ -3,11 +3,7 @@ import { Image, Pressable, Switch, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 
 import type { AppStyles } from '@/ui/appStyles';
-import {
-  CRASH_REPORTING_TOGGLE_LABEL,
-  CRASH_REPORTING_TUTORIAL_PARAGRAPHS,
-  CRASH_REPORTING_TUTORIAL_TITLE,
-} from '@/ui/appText';
+import { CRASH_REPORTING_TOGGLE_LABEL, CRASH_REPORTING_TUTORIAL_PARAGRAPHS, CRASH_REPORTING_TUTORIAL_TITLE } from '@/ui/appText';
 import { animateDialogResize, Dialog } from './Dialog';
 
 const FALLBACK_INSTRUCTION_IMAGE_ASPECT_RATIO = 453 / 279;

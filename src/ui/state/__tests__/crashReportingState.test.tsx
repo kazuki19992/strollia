@@ -90,8 +90,12 @@ jest.mock('@/features/location/locationPermission', () => ({
     canAskForeground: true,
     canAskBackground: true,
   }),
-  hasRequiredLocationPermission: jest.fn((state: { foregroundGranted: boolean; backgroundGranted: boolean }) => state.foregroundGranted && state.backgroundGranted),
-  isWhileInUseOnlyMode: jest.fn((state: { foregroundGranted: boolean; backgroundGranted: boolean }) => state.foregroundGranted && !state.backgroundGranted),
+  hasRequiredLocationPermission: jest.fn(
+    (state: { foregroundGranted: boolean; backgroundGranted: boolean }) => state.foregroundGranted && state.backgroundGranted,
+  ),
+  isWhileInUseOnlyMode: jest.fn(
+    (state: { foregroundGranted: boolean; backgroundGranted: boolean }) => state.foregroundGranted && !state.backgroundGranted,
+  ),
 }));
 
 jest.mock('@/features/logs/logRepository', () => ({
@@ -189,7 +193,9 @@ jest.mock('@/features/premium/revenueCatAccess', () => ({
   getPremiumOfferingSummary: jest.fn().mockResolvedValue(null),
   getRevenueCatAppUserId: jest.fn().mockResolvedValue(null),
   presentPremiumCustomerCenter: jest.fn().mockResolvedValue(true),
-  purchasePremiumPackage: jest.fn().mockResolvedValue({ status: 'purchased', accessState: { isPlusActive: false, entitlementId: 'strollia_plus' } }),
+  purchasePremiumPackage: jest
+    .fn()
+    .mockResolvedValue({ status: 'purchased', accessState: { isPlusActive: false, entitlementId: 'strollia_plus' } }),
   restorePremiumPurchases: jest.fn().mockResolvedValue({ isPlusActive: false, entitlementId: 'strollia_plus' }),
   subscribePremiumAccessStateUpdates: jest.fn(() => jest.fn()),
 }));

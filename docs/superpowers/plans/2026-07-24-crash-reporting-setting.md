@@ -32,26 +32,28 @@
 
 ## ファイル構成
 
-| ファイル | 役割 | 変更 |
-| --- | --- | --- |
-| `src/ui/appText.ts` | 文言定数を集約 | 定数追加 |
-| `src/config/sentry.ts` | Sentry 送信ゲート | フラグ+setter+beforeSend拡張 |
-| `src/ui/hooks/useAppInitialization.ts` | 起動時に設定を読み Sentry フラグ・状態へ反映 | 読み込み・setter prop 追加 |
-| `src/ui/state/AppStateProvider.tsx` | 状態 `crashReportingEnabled` と `updateCrashReportingEnabled`、context 配布、init 配線 | 追加 |
-| `src/ui/components/SettingsScreen.tsx` | プライバシーセクション + トグル | props+UI追加 |
-| `src/app/settings/index.tsx` | SettingsScreen へ props 配線 | 2行追加 |
-| `src/ui/components/FirstLaunchTutorialDialog.tsx` | 告知ステップ + トグル + props | 追加 |
-| `src/app/_layout.tsx` | チュートリアルへ props 配線 | 2行追加 |
+| ファイル                                          | 役割                                                                                   | 変更                         |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------- |
+| `src/ui/appText.ts`                               | 文言定数を集約                                                                         | 定数追加                     |
+| `src/config/sentry.ts`                            | Sentry 送信ゲート                                                                      | フラグ+setter+beforeSend拡張 |
+| `src/ui/hooks/useAppInitialization.ts`            | 起動時に設定を読み Sentry フラグ・状態へ反映                                           | 読み込み・setter prop 追加   |
+| `src/ui/state/AppStateProvider.tsx`               | 状態 `crashReportingEnabled` と `updateCrashReportingEnabled`、context 配布、init 配線 | 追加                         |
+| `src/ui/components/SettingsScreen.tsx`            | プライバシーセクション + トグル                                                        | props+UI追加                 |
+| `src/app/settings/index.tsx`                      | SettingsScreen へ props 配線                                                           | 2行追加                      |
+| `src/ui/components/FirstLaunchTutorialDialog.tsx` | 告知ステップ + トグル + props                                                          | 追加                         |
+| `src/app/_layout.tsx`                             | チュートリアルへ props 配線                                                            | 2行追加                      |
 
 ---
 
 ### Task 1: 文言定数を追加する
 
 **Files:**
+
 - Modify: `src/ui/appText.ts`(末尾へ追加)
 - Test: `src/ui/__tests__/appText.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `CRASH_REPORTING_SETTING_KEY: 'crashReportingEnabled'`
   - `CRASH_REPORTING_TOGGLE_LABEL: string`
@@ -64,27 +66,27 @@
 `src/ui/__tests__/appText.test.ts` の末尾(最後の `});` の前)に追記:
 
 ```typescript
-  describe('不具合レポート設定の文言', () => {
-    it('設定キーとラベルが確定値と一致する', () => {
-      expect(CRASH_REPORTING_SETTING_KEY).toBe('crashReportingEnabled');
-      expect(CRASH_REPORTING_TOGGLE_LABEL).toBe('不具合レポートを送る');
-    });
-
-    it('設定説明文が確定文面と一致する', () => {
-      expect(CRASH_REPORTING_SETTING_DESCRIPTION).toBe(
-        'アプリが固まったり、落ちたりしたときなどの不具合の記録を開発者に自動で送ります。あなたの位置情報や移動記録など、あなたを特定できてしまう情報は送りません。有効にしておくと不具合改善が早くなります。',
-      );
-    });
-
-    it('チュートリアル文面が確定内容と一致する', () => {
-      expect(CRASH_REPORTING_TUTORIAL_TITLE).toBe('不具合レポートについて');
-      expect(CRASH_REPORTING_TUTORIAL_PARAGRAPHS).toEqual([
-        'あなたの位置情報や移動記録は、これまで通り外部に送りません。',
-        'ただし、アプリが固まったり落ちたりしたときの不具合の記録だけは、改善のために開発者へ自動で送ります(あなたを特定できる情報は含みません)。下のスイッチか設定画面で切り替えられます。',
-        'アプリ改善にご協力をお願いします。',
-      ]);
-    });
+describe('不具合レポート設定の文言', () => {
+  it('設定キーとラベルが確定値と一致する', () => {
+    expect(CRASH_REPORTING_SETTING_KEY).toBe('crashReportingEnabled');
+    expect(CRASH_REPORTING_TOGGLE_LABEL).toBe('不具合レポートを送る');
   });
+
+  it('設定説明文が確定文面と一致する', () => {
+    expect(CRASH_REPORTING_SETTING_DESCRIPTION).toBe(
+      'アプリが固まったり、落ちたりしたときなどの不具合の記録を開発者に自動で送ります。あなたの位置情報や移動記録など、あなたを特定できてしまう情報は送りません。有効にしておくと不具合改善が早くなります。',
+    );
+  });
+
+  it('チュートリアル文面が確定内容と一致する', () => {
+    expect(CRASH_REPORTING_TUTORIAL_TITLE).toBe('不具合レポートについて');
+    expect(CRASH_REPORTING_TUTORIAL_PARAGRAPHS).toEqual([
+      'あなたの位置情報や移動記録は、これまで通り外部に送りません。',
+      'ただし、アプリが固まったり落ちたりしたときの不具合の記録だけは、改善のために開発者へ自動で送ります(あなたを特定できる情報は含みません)。下のスイッチか設定画面で切り替えられます。',
+      'アプリ改善にご協力をお願いします。',
+    ]);
+  });
+});
 ```
 
 そのファイル先頭の import 文に、新しい定数を追加する(既存 import 行に合わせて追記):
@@ -149,10 +151,12 @@ git commit -m "feat(settings): 不具合レポート設定の文言定数を追�
 ### Task 2: Sentry 送信ゲートを追加する
 
 **Files:**
+
 - Modify: `src/config/sentry.ts`
 - Test: `src/config/__tests__/sentry.test.ts`
 
 **Interfaces:**
+
 - Consumes: `filterSentryEventBeforeSend(event)`(既存)
 - Produces:
   - `setCrashReportingEnabled(enabled: boolean): void` — モジュールフラグを更新
@@ -163,26 +167,26 @@ git commit -m "feat(settings): 不具合レポート設定の文言定数を追�
 `src/config/__tests__/sentry.test.ts` に、`filterSentryEventBeforeSend` を使う新しい describe を追加する。まず import に `setCrashReportingEnabled` を追加(既存の `@/config/sentry` からの import 行へ統合):
 
 ```typescript
-  describe('不具合レポート送信のゲート', () => {
-    afterEach(() => {
-      // 既定(有効)へ戻す。他テストへ副作用を残さない
-      setCrashReportingEnabled(true);
-    });
-
-    it('無効化するとbeforeSendはnullを返しイベントを送らない', () => {
-      const event = { message: 'test' } as unknown as Parameters<typeof filterSentryEventBeforeSend>[0];
-      setCrashReportingEnabled(false);
-
-      expect(filterSentryEventBeforeSend(event)).toBeNull();
-    });
-
-    it('有効時は位置情報マスク済みのイベントを返す', () => {
-      const event = { message: 'test' } as unknown as Parameters<typeof filterSentryEventBeforeSend>[0];
-      setCrashReportingEnabled(true);
-
-      expect(filterSentryEventBeforeSend(event)).not.toBeNull();
-    });
+describe('不具合レポート送信のゲート', () => {
+  afterEach(() => {
+    // 既定(有効)へ戻す。他テストへ副作用を残さない
+    setCrashReportingEnabled(true);
   });
+
+  it('無効化するとbeforeSendはnullを返しイベントを送らない', () => {
+    const event = { message: 'test' } as unknown as Parameters<typeof filterSentryEventBeforeSend>[0];
+    setCrashReportingEnabled(false);
+
+    expect(filterSentryEventBeforeSend(event)).toBeNull();
+  });
+
+  it('有効時は位置情報マスク済みのイベントを返す', () => {
+    const event = { message: 'test' } as unknown as Parameters<typeof filterSentryEventBeforeSend>[0];
+    setCrashReportingEnabled(true);
+
+    expect(filterSentryEventBeforeSend(event)).not.toBeNull();
+  });
+});
 ```
 
 - [ ] **Step 2: テストが失敗することを確認**
@@ -256,12 +260,14 @@ git commit -m "feat(sentry): 不具合レポート送信をbeforeSendでゲー�
 ### Task 3: AppStateProvider に状態と更新処理を追加する
 
 **Files:**
+
 - Modify: `src/ui/state/AppStateProvider.tsx`
 - Modify: `src/ui/hooks/useAppInitialization.ts`
 - Test: `src/ui/components/__tests__/SettingsScreen.test.tsx` はスコープ外。ここでは `useAppInitialization` の読み込み配線と Provider 状態を統合テスト(Task 4 の SettingsScreen 経由)で担保する。単体では下記フックテストを追加。
 - Test(新規): `src/ui/state/__tests__/crashReportingState.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `setCrashReportingEnabled`(Task 2)、`CRASH_REPORTING_SETTING_KEY`(Task 1)、`getBooleanSetting`/`setSetting`(既存)
 - Produces(context 経由):
   - `crashReportingEnabled: boolean`
@@ -379,7 +385,7 @@ import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 5. `setKeepScreenAwake(savedKeepScreenAwake);` の近くに反映を追加:
 
 ```typescript
-        setCrashReportingEnabled(savedCrashReportingEnabled);
+setCrashReportingEnabled(savedCrashReportingEnabled);
 ```
 
 6. `useCallback` の依存配列(末尾の deps)に `setCrashReportingEnabled` を追加。
@@ -403,45 +409,45 @@ import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 3. `AppStateContextValue` 型(`keepScreenAwake: boolean;` の近く)に追加:
 
 ```typescript
-  /** 不具合レポートを送信するか。 */
-  crashReportingEnabled: boolean;
-  /** 不具合レポート送信設定を更新する。 */
-  updateCrashReportingEnabled: (enabled: boolean) => Promise<void>;
+/** 不具合レポートを送信するか。 */
+crashReportingEnabled: boolean;
+/** 不具合レポート送信設定を更新する。 */
+updateCrashReportingEnabled: (enabled: boolean) => Promise<void>;
 ```
 
 4. state 定義(`const [keepScreenAwake, setKeepScreenAwake] = useState(false);` の近く)に追加。既定は true:
 
 ```typescript
-  const [crashReportingEnabled, setCrashReportingEnabledState] = useState(true);
+const [crashReportingEnabled, setCrashReportingEnabledState] = useState(true);
 ```
 
 5. 起動時に UI 状態と Sentry フラグの両方へ反映する setter を用意する(useAppInitialization の `setCrashReportingEnabled` prop へ渡す):
 
 ```typescript
-  const applyCrashReportingSetting = useCallback((value: boolean): void => {
-    setCrashReportingEnabledState(value);
-    applyCrashReportingToSentry(value);
-  }, []);
+const applyCrashReportingSetting = useCallback((value: boolean): void => {
+  setCrashReportingEnabledState(value);
+  applyCrashReportingToSentry(value);
+}, []);
 ```
 
 6. `updateCrashReportingEnabled` を `updateKeepScreenAwake` の近くに追加(巻き戻しパターン + Sentry 即時反映):
 
 ```typescript
-  const updateCrashReportingEnabled = useCallback(
-    async (enabled: boolean): Promise<void> => {
-      const previousValue = crashReportingEnabled;
-      setCrashReportingEnabledState(enabled);
-      applyCrashReportingToSentry(enabled);
-      try {
-        await setSetting(CRASH_REPORTING_SETTING_KEY, enabled);
-      } catch (error: unknown) {
-        console.warn('Failed to persist crash reporting setting:', error);
-        setCrashReportingEnabledState(previousValue);
-        applyCrashReportingToSentry(previousValue);
-      }
-    },
-    [crashReportingEnabled],
-  );
+const updateCrashReportingEnabled = useCallback(
+  async (enabled: boolean): Promise<void> => {
+    const previousValue = crashReportingEnabled;
+    setCrashReportingEnabledState(enabled);
+    applyCrashReportingToSentry(enabled);
+    try {
+      await setSetting(CRASH_REPORTING_SETTING_KEY, enabled);
+    } catch (error: unknown) {
+      console.warn('Failed to persist crash reporting setting:', error);
+      setCrashReportingEnabledState(previousValue);
+      applyCrashReportingToSentry(previousValue);
+    }
+  },
+  [crashReportingEnabled],
+);
 ```
 
 7. `useAppInitialization({ ... })` の呼び出しに prop を追加:
@@ -474,11 +480,13 @@ git commit -m "feat(settings): 不具合レポート設定の状態と更新処�
 ### Task 4: 設定画面にプライバシーセクションとトグルを追加する
 
 **Files:**
+
 - Modify: `src/ui/components/SettingsScreen.tsx`
 - Modify: `src/app/settings/index.tsx`
 - Test: `src/ui/components/__tests__/SettingsScreen.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `CRASH_REPORTING_TOGGLE_LABEL` / `CRASH_REPORTING_SETTING_DESCRIPTION`(Task 1)、Provider の `crashReportingEnabled` / `updateCrashReportingEnabled`(Task 3)
 - Produces: `SettingsScreenProps` に `crashReportingEnabled: boolean` と `onUpdateCrashReportingEnabled: (enabled: boolean) => Promise<void>`
 
@@ -489,6 +497,7 @@ git commit -m "feat(settings): 不具合レポート設定の状態と更新処�
 ```typescript
     crashReportingEnabled: true,
 ```
+
 ```typescript
     onUpdateCrashReportingEnabled: jest.fn().mockResolvedValue(undefined),
 ```
@@ -526,10 +535,10 @@ import { CRASH_REPORTING_SETTING_DESCRIPTION, CRASH_REPORTING_TOGGLE_LABEL } fro
 2. `SettingsScreenProps` 型(`onUpdateKeepScreenAwake: (enabled: boolean) => Promise<void>;` の近く)に追加:
 
 ```typescript
-  /** 不具合レポートを送信するか。 */
-  crashReportingEnabled: boolean;
-  /** 不具合レポート送信設定の更新処理。 */
-  onUpdateCrashReportingEnabled: (enabled: boolean) => Promise<void>;
+/** 不具合レポートを送信するか。 */
+crashReportingEnabled: boolean;
+/** 不具合レポート送信設定の更新処理。 */
+onUpdateCrashReportingEnabled: (enabled: boolean) => Promise<void>;
 ```
 
 3. 関数の分割代入(`keepScreenAwake,` `onUpdateKeepScreenAwake,` の近く)に `crashReportingEnabled,` と `onUpdateCrashReportingEnabled,` を追加。
@@ -537,26 +546,26 @@ import { CRASH_REPORTING_SETTING_DESCRIPTION, CRASH_REPORTING_TOGGLE_LABEL } fro
 4. 「アプリ情報」`ScreenSection`(`<ScreenSection styles={styles} title="アプリ情報">`)の直前に、新しいセクションを追加:
 
 ```tsx
-        <ScreenSection styles={styles} title="プライバシー">
-          <View style={styles.settingsInlineRow}>
-            <View style={styles.settingsInlineText}>
-              <Text style={styles.formItemTitle}>{CRASH_REPORTING_TOGGLE_LABEL}</Text>
-              <Text style={styles.formItemDescription}>{CRASH_REPORTING_SETTING_DESCRIPTION}</Text>
-            </View>
-            <Switch
-              accessibilityLabel={CRASH_REPORTING_TOGGLE_LABEL}
-              accessibilityRole="switch"
-              value={crashReportingEnabled}
-              onValueChange={(value) => {
-                onUpdateCrashReportingEnabled(value).catch((error: unknown) => {
-                  Alert.alert('設定保存失敗', error instanceof Error ? error.message : '設定を保存できませんでした。');
-                });
-              }}
-              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-              thumbColor="#ffffff"
-            />
-          </View>
-        </ScreenSection>
+<ScreenSection styles={styles} title="プライバシー">
+  <View style={styles.settingsInlineRow}>
+    <View style={styles.settingsInlineText}>
+      <Text style={styles.formItemTitle}>{CRASH_REPORTING_TOGGLE_LABEL}</Text>
+      <Text style={styles.formItemDescription}>{CRASH_REPORTING_SETTING_DESCRIPTION}</Text>
+    </View>
+    <Switch
+      accessibilityLabel={CRASH_REPORTING_TOGGLE_LABEL}
+      accessibilityRole="switch"
+      value={crashReportingEnabled}
+      onValueChange={(value) => {
+        onUpdateCrashReportingEnabled(value).catch((error: unknown) => {
+          Alert.alert('設定保存失敗', error instanceof Error ? error.message : '設定を保存できませんでした。');
+        });
+      }}
+      trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+      thumbColor="#ffffff"
+    />
+  </View>
+</ScreenSection>
 ```
 
 （`View` / `Text` / `Switch` / `Alert` / `ScreenSection` は既存 import 済み。未 import ならファイル上部の該当 import に追加する。）
@@ -592,11 +601,13 @@ git commit -m "feat(settings): プライバシーセクションに不具合レ�
 ### Task 5: 初回チュートリアルに告知ステップとトグルを追加する
 
 **Files:**
+
 - Modify: `src/ui/components/FirstLaunchTutorialDialog.tsx`
 - Modify: `src/app/_layout.tsx`
 - Test: `src/ui/components/__tests__/FirstLaunchTutorialDialog.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `CRASH_REPORTING_TOGGLE_LABEL` / `CRASH_REPORTING_TUTORIAL_TITLE` / `CRASH_REPORTING_TUTORIAL_PARAGRAPHS`(Task 1)、Provider の `crashReportingEnabled` / `updateCrashReportingEnabled`(Task 3)
 - Produces: `FirstLaunchTutorialDialogProps` に `crashReportingEnabled: boolean` と `onUpdateCrashReportingEnabled: (enabled: boolean) => void`
 
@@ -682,17 +693,19 @@ import { CRASH_REPORTING_TOGGLE_LABEL, CRASH_REPORTING_TUTORIAL_PARAGRAPHS, CRAS
 6. 本文の描画箇所(`currentStep.paragraphs.map(...)` の後、`currentStep.bulletItems` 描画の近く)に、トグルの条件描画を追加。theme 色はチュートリアルが `theme` を受け取っていない場合、`Switch` の色指定は省略しデフォルトにする(トグル label は必須):
 
 ```tsx
-      {currentStep.showCrashReportingToggle && (
-        <View style={styles.settingsInlineRow}>
-          <Text style={styles.formItemTitle}>{CRASH_REPORTING_TOGGLE_LABEL}</Text>
-          <Switch
-            accessibilityLabel={CRASH_REPORTING_TOGGLE_LABEL}
-            accessibilityRole="switch"
-            value={crashReportingEnabled}
-            onValueChange={onUpdateCrashReportingEnabled}
-          />
-        </View>
-      )}
+{
+  currentStep.showCrashReportingToggle && (
+    <View style={styles.settingsInlineRow}>
+      <Text style={styles.formItemTitle}>{CRASH_REPORTING_TOGGLE_LABEL}</Text>
+      <Switch
+        accessibilityLabel={CRASH_REPORTING_TOGGLE_LABEL}
+        accessibilityRole="switch"
+        value={crashReportingEnabled}
+        onValueChange={onUpdateCrashReportingEnabled}
+      />
+    </View>
+  );
+}
 ```
 
 （`styles.settingsInlineRow` / `styles.formItemTitle` は既存の共通スタイル。`View` が未 import なら追加する。)
@@ -727,6 +740,7 @@ git commit -m "feat(tutorial): 初回チュートリアルに不具合レポー�
 ### Task 6: 全体検証とドキュメント更新
 
 **Files:**
+
 - Modify: `docs/data-storage.md`(app_settings の設定キー一覧があれば追記)
 
 - [ ] **Step 1: 全テスト・型・lint・format を実行**

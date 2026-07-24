@@ -5,7 +5,11 @@ import { Alert, Animated, Linking, useColorScheme } from 'react-native';
 import type MapView from 'react-native-maps';
 import type { LatLng, MapType, Region, UserLocationChangeEvent } from 'react-native-maps';
 
-import { updateSentrySubscriptionContext, updateSentryUserContext, setCrashReportingEnabled as applyCrashReportingToSentry } from '@/config/sentry';
+import {
+  updateSentrySubscriptionContext,
+  updateSentryUserContext,
+  setCrashReportingEnabled as applyCrashReportingToSentry,
+} from '@/config/sentry';
 import { syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
 import { shareAllLogsAsGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';

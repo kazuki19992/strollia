@@ -56,6 +56,7 @@ function createProps() {
     shouldOpenSettingsForPermission: false,
     isWhileInUseOnlyMode: false,
     keepScreenAwake: false,
+    crashReportingEnabled: true,
     mapType: 'standard' as const,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
@@ -75,6 +76,7 @@ function createProps() {
     onRequestLocationPermission: jest.fn(),
     onOpenLocationSettings: jest.fn(),
     onUpdateKeepScreenAwake: jest.fn().mockResolvedValue(undefined),
+    onUpdateCrashReportingEnabled: jest.fn().mockResolvedValue(undefined),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
@@ -692,5 +694,16 @@ describe('設定画面 SettingsScreen', () => {
     render(<SettingsScreen {...props} />);
 
     expect(screen.queryByLabelText('サポート用IDをコピー')).toBeNull();
+  });
+
+  test('プライバシーセクションの不具合レポートトグルを切り替えると更新処理を呼ぶ', () => {
+    const props = createProps();
+    render(<SettingsScreen {...props} />);
+
+    act(() => {
+      fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
+    });
+
+    expect(props.onUpdateCrashReportingEnabled).toHaveBeenCalledWith(false);
   });
 });

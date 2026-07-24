@@ -42,6 +42,8 @@ export default function SettingsRoute(): React.ReactElement {
       onRequestLocationPermission={s.requestLocationPermission}
       onOpenLocationSettings={s.openLocationSettings}
       onUpdateKeepScreenAwake={s.updateKeepScreenAwake}
+      crashReportingEnabled={s.crashReportingEnabled}
+      onUpdateCrashReportingEnabled={s.updateCrashReportingEnabled}
       onToggleMapType={s.toggleMapType}
       onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
       selectedAppColorPresetId={s.selectedAppColorPresetId}

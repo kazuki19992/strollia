@@ -90,6 +90,7 @@ function makeOptions(overrides: Partial<UseAppInitializationOptions> = {}): UseA
     requestAchievementNotificationPermissionIfNeeded: jest.fn().mockResolvedValue(undefined),
     snapshotPremiumAccessUpdateVersion: jest.fn().mockReturnValue(0),
     setKeepScreenAwake: jest.fn(),
+    setCrashReportingEnabled: jest.fn(),
     setMessage: jest.fn(),
     setIsWhileInUseToastVisible: jest.fn(),
     setIsReady: jest.fn(),

@@ -5,6 +5,7 @@ import {
   filterSentryEventBeforeSend,
   initializeSentry,
   reportInvestigatedError,
+  setCrashReportingEnabled,
   updateSentryScreenContext,
   updateSentrySubscriptionContext,
   updateSentryUserContext,
@@ -192,5 +193,26 @@ describe('Sentry送信制御', () => {
       subscriptionStatus: 'free',
     });
     expect(Sentry.captureException).toHaveBeenCalledWith(error);
+  });
+
+  describe('不具合レポート送信のゲート', () => {
+    afterEach(() => {
+      // 既定(有効)へ戻す。他テストへ副作用を残さない
+      setCrashReportingEnabled(true);
+    });
+
+    it('無効化するとbeforeSendはnullを返しイベントを送らない', () => {
+      const event = { message: 'test' } as unknown as Parameters<typeof filterSentryEventBeforeSend>[0];
+      setCrashReportingEnabled(false);
+
+      expect(filterSentryEventBeforeSend(event)).toBeNull();
+    });
+
+    it('有効時は位置情報マスク済みのイベントを返す', () => {
+      const event = { message: 'test' } as unknown as Parameters<typeof filterSentryEventBeforeSend>[0];
+      setCrashReportingEnabled(true);
+
+      expect(filterSentryEventBeforeSend(event)).not.toBeNull();
+    });
   });
 });

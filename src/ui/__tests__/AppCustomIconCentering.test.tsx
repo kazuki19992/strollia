@@ -119,6 +119,7 @@ jest.mock('@/config/sentry', () => ({
   updateSentryScreenContext: jest.fn(),
   updateSentrySubscriptionContext: jest.fn(),
   updateSentryUserContext: jest.fn(),
+  setCrashReportingEnabled: jest.fn(),
 }));
 jest.mock('@/features/settings/settingsRepository', () => ({
   getBooleanSetting: jest.fn().mockResolvedValue(true),

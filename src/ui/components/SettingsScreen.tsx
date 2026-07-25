@@ -6,6 +6,7 @@ import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Te
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
 
+import { CRASH_REPORTING_SETTING_DESCRIPTION, CRASH_REPORTING_TOGGLE_LABEL } from '@/ui/appText';
 import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '@/features/customization/customizationOptions';
 import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
@@ -39,6 +40,8 @@ export type SettingsScreenProps = {
   isWhileInUseOnlyMode: boolean;
   /** 画面ON維持設定。 */
   keepScreenAwake: boolean;
+  /** 不具合レポートを送信するか。 */
+  crashReportingEnabled: boolean;
   /** 表示中の地図種別。 */
   mapType: MapType;
   /** 写真表示設定。 */
@@ -77,6 +80,8 @@ export type SettingsScreenProps = {
   onOpenLocationSettings: () => void;
   /** 画面ON維持設定の更新処理。 */
   onUpdateKeepScreenAwake: (enabled: boolean) => Promise<void>;
+  /** 不具合レポート送信設定の更新処理。 */
+  onUpdateCrashReportingEnabled: (enabled: boolean) => Promise<void>;
   /** 地図種別の切り替え処理。 */
   onToggleMapType: () => void;
   /** 写真表示設定の更新処理。 */
@@ -139,6 +144,7 @@ export function SettingsScreen({
   shouldOpenSettingsForPermission,
   isWhileInUseOnlyMode,
   keepScreenAwake,
+  crashReportingEnabled,
   mapType,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
@@ -160,6 +166,7 @@ export function SettingsScreen({
   onRequestLocationPermission,
   onOpenLocationSettings,
   onUpdateKeepScreenAwake,
+  onUpdateCrashReportingEnabled,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
   onUpdateUserLocationIcon,
@@ -412,6 +419,27 @@ export function SettingsScreen({
             styles={styles}
             onPress={onDeleteAllData}
           />
+        </ScreenSection>
+
+        <ScreenSection styles={styles} title="プライバシー">
+          <View style={styles.settingsInlineRow}>
+            <View style={styles.settingsInlineText}>
+              <Text style={styles.formItemTitle}>{CRASH_REPORTING_TOGGLE_LABEL}</Text>
+              <Text style={styles.formItemDescription}>{CRASH_REPORTING_SETTING_DESCRIPTION}</Text>
+            </View>
+            <Switch
+              accessibilityLabel={CRASH_REPORTING_TOGGLE_LABEL}
+              accessibilityRole="switch"
+              value={crashReportingEnabled}
+              onValueChange={(value) => {
+                onUpdateCrashReportingEnabled(value).catch((error: unknown) => {
+                  Alert.alert('設定保存失敗', error instanceof Error ? error.message : '設定を保存できませんでした。');
+                });
+              }}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor="#ffffff"
+            />
+          </View>
         </ScreenSection>
 
         <ScreenSection styles={styles} title="アプリ情報">

@@ -22,7 +22,16 @@ Strollia を正式にストアへリリースする手順。ブランチ運用�
    - `chore(release): vX.Y.Z へバージョンを更新` でコミットし、`develop` ベースの PR を作成してマージする
 
 2. **プロダクションビルド＆提出**: 最新 develop で `scripts/build-and-submit-ios.sh` を実行する
-   - `eas build --profile production --local` でローカルビルドし、そのまま `eas submit` で App Store Connect へ提出する
+   - **先に develop を最新化する**(バージョン PR 後は別 worktree/ブランチにいる可能性があるため、実行前に必ず確認する)
+
+     ```bash
+     git fetch origin
+     git switch develop
+     git merge --ff-only origin/develop
+     git rev-parse --short HEAD   # ビルド対象コミットを控える
+     ```
+
+   - このスクリプトは `eas build --profile production --local` でローカルビルドし、**続けて `eas submit` で App Store Connect へ自動アップロードする**(=現在チェックアウトしているコミットがそのまま提出される)。提出したくない場合は実行しない
    - **develop の現ブランチのままビルドする**(main へマージしない)
    - `.env.local` の `SENTRY_AUTH_TOKEN` / `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` を使う
    - Android は必要に応じて `build-production` → `publish` スキルを使う
@@ -51,4 +60,5 @@ Strollia を正式にストアへリリースする手順。ブランチ運用�
 - **ビルド前に develop→main PR を作らない**。main PR とタグはリリース後(手順6)。
 - `main` / `develop` へ直接 push しない。必ず PR 経由。
 - リリースノートは `release-notes` スキルで生成できる。
-- 「TestFlight で確認したいだけ」「動作確認用にビルドしたい」など**正式リリースが目的でない**場合は、このフルフローを通さず `scripts/build-and-submit-ios.sh` を現ブランチで実行するだけでよい(main PR 不要)。
+- `scripts/build-and-submit-ios.sh` は**ビルドのみのスクリプトではない**。production ビルドの後に必ず `eas submit` を実行し、**現在のブランチのコードを App Store Connect(TestFlight)へアップロードする**。実行=提出なので、提出してよいコミットであることを確認してから使う。
+- 「TestFlight で動作確認したいだけ」で**正式リリースが目的でない**場合も、意図的に TestFlight ビルドを作る操作(=同スクリプトの実行と App Store Connect へのアップロード)であることに変わりはない。この場合は develop→main のフルリリースフロー(手順6)を通さず、現ブランチでの実行だけでよい(main PR 不要)。ただしアップロードの副作用は同じである点に注意する。

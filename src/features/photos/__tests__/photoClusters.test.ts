@@ -1,7 +1,12 @@
 import { Region } from 'react-native-maps';
 
 import { MapPhoto } from '@/features/photos/photoLibrary';
-import { clusterMapPhotos, getPhotoClusterRadiusMeters, paginateMapPhotos } from '@/features/photos/photoClusters';
+import {
+  clusterMapPhotos,
+  clusterMapPhotosByRadius,
+  getPhotoClusterRadiusMeters,
+  paginateMapPhotos,
+} from '@/features/photos/photoClusters';
 
 /**
  * テスト用の地図写真を最小プロパティで作る。
@@ -62,6 +67,36 @@ describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
     const rangeB = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 });
 
     expect(rangeB).toBeCloseTo(rangeA * 2);
+  });
+
+  // パン(中心移動のみ)でクラスタを再計算しないメモ化は、この性質が前提になっている。
+  it('中心座標だけが変わっても(パン)クラスタ範囲は変化しない', () => {
+    const beforePan = getPhotoClusterRadiusMeters(region);
+    const afterPan = getPhotoClusterRadiusMeters({ ...region, latitude: 40, longitude: -73 });
+
+    expect(afterPan).toBe(beforePan);
+  });
+});
+
+describe('半径指定の写真クラスタ clusterMapPhotosByRadius', () => {
+  it('表示範囲から求めた半径を渡すとclusterMapPhotosと同じ結果になる', () => {
+    const photos = [createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)];
+
+    expect(clusterMapPhotosByRadius(photos, getPhotoClusterRadiusMeters(region))).toEqual(clusterMapPhotos(photos, region));
+  });
+
+  it('中心座標が違っても半径が同じなら同じクラスタ結果を返す', () => {
+    const photos = [createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.00012, 139.00012, 2)];
+    const pannedRegion: Region = { ...region, latitude: 40, longitude: -73 };
+
+    expect(clusterMapPhotos(photos, pannedRegion)).toEqual(clusterMapPhotos(photos, region));
+  });
+
+  it('半径を広げるほど写真がまとまる', () => {
+    const photos = [createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)];
+
+    expect(clusterMapPhotosByRadius(photos, 10)).toHaveLength(2);
+    expect(clusterMapPhotosByRadius(photos, 300)).toHaveLength(1);
   });
 });
 

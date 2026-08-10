@@ -31,7 +31,7 @@ import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/custo
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
-import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
+import { clusterMapPhotosByRadius, getPhotoClusterRadiusMeters, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
@@ -579,7 +579,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     initializePhotoSetting,
     updateShowPhotosOnMap,
   } = usePhotoMapCrashBreaker({ isReady, isMapReady });
-  const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
+  // クラスタ結果は写真一覧と半径だけで決まり、地図の中心座標には依存しない。
+  // 半径計算(O(1))と クラスタリング(写真数に対して重い)を別のuseMemoへ分けることで、
+  // パン(中心移動のみで半径が変わらない操作)では再クラスタリングをスキップする。
+  const photoClusterRadiusMeters = useMemo(() => getPhotoClusterRadiusMeters(visibleRegion), [visibleRegion]);
+  const photoClusters = useMemo(() => clusterMapPhotosByRadius(photos, photoClusterRadiusMeters), [photos, photoClusterRadiusMeters]);
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);

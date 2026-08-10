@@ -201,7 +201,8 @@ jest.mock('@/features/premium/revenueCatAccess', () => ({
   subscribePremiumAccessStateUpdates: jest.fn(() => jest.fn()),
 }));
 jest.mock('@/features/photos/photoClusters', () => ({
-  clusterMapPhotos: jest.fn(() => []),
+  clusterMapPhotosByRadius: jest.fn(() => []),
+  getPhotoClusterRadiusMeters: jest.fn(() => 10),
   paginateMapPhotos: jest.fn(() => []),
 }));
 jest.mock('@/features/photos/photoLibrary', () => ({ hasFullPhotoAccess: jest.fn(() => true) }));

@@ -8,6 +8,8 @@
  *
  * @param items - 処理対象の配列。
  * @param concurrency - 同時に実行する処理の最大数。1未満・NaN・undefinedなど不正な値は1として扱う。
+ *   `Infinity` は「無制限」を意味する特別値として扱い、後段の `Math.min(effectiveConcurrency, items.length)`
+ *   により実質的に全要素を並列実行する。
  * @param mapper - 各要素に適用する非同期処理。
  * @returns 入力順を保った `Promise.allSettled` 相当の結果配列。
  */
@@ -17,10 +19,14 @@ export async function mapWithConcurrency<T, R>(
   mapper: (item: T, index: number) => Promise<R>,
 ): Promise<PromiseSettledResult<R>[]> {
   const results: PromiseSettledResult<R>[] = new Array(items.length);
-  // NaN・undefined等の非有限値をそのままMath.max/Math.minに渡すとNaNが伝播し、
-  // ワーカー数0件・結果が空配列になって全要素が未処理のまま返ってしまう。
-  // 非有限値は1にフォールバックし、小数値は切り捨てて整数のワーカー数にする。
-  const effectiveConcurrency = Number.isFinite(concurrency) ? Math.max(1, Math.floor(concurrency)) : 1;
+  // 先に切り捨てておくと、NaN自体はもちろんundefined(Math.floor(undefined)はNaN)も
+  // Math.floorの時点でNaNに正規化される。ここで得たNaNだけを1にフォールバックする。
+  // Infinityは`Number.isFinite`ではじくと「無制限」の意味が失われ全要素が直列実行に
+  // なってしまうため、あえて除外しない。Math.max(1, Infinity)はInfinityのまま伝播し、
+  // 後段のMath.minでitems.lengthに丸め込まれるので安全に「無制限」として機能する。
+  // 一方-Infinityは Math.max(1, -Infinity) = 1 となり、意図通り1にフォールバックする。
+  const floored = Math.floor(concurrency);
+  const effectiveConcurrency = Number.isNaN(floored) ? 1 : Math.max(1, floored);
   let nextIndex = 0;
 
   async function runWorker(): Promise<void> {

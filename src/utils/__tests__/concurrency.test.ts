@@ -96,4 +96,36 @@ describe('並列数制限付きmap mapWithConcurrency', () => {
       { status: 'fulfilled', value: 30 },
     ]);
   });
+
+  it('concurrencyがInfinityの場合は全要素を同時並列で処理する(直列実行への退行防止)', async () => {
+    const items = [1, 2, 3, 4, 5, 6, 7, 8];
+    let runningCount = 0;
+    let maxRunningCount = 0;
+
+    // 結果の正しさだけを見ると直列実行でも同じ値になってしまうため、既存の
+    // 「同時に実行される処理数」テストと同じ実行中カウンタ技法でピーク同時実行数を
+    // 観測する。Infinityが1にフォールバックする退行が起きた場合、maxRunningCountは
+    // 1のままになりこのアサーションで検出できる。
+    await mapWithConcurrency(items, Infinity, async (item) => {
+      runningCount += 1;
+      maxRunningCount = Math.max(maxRunningCount, runningCount);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      runningCount -= 1;
+      return item;
+    });
+
+    expect(maxRunningCount).toBe(items.length);
+  });
+
+  it('concurrencyが-Infinityでも1として扱い、全要素を穴なしで処理する', async () => {
+    const items = [1, 2, 3];
+
+    const results = await mapWithConcurrency(items, -Infinity, async (item) => item * 10);
+
+    expect(results).toEqual([
+      { status: 'fulfilled', value: 10 },
+      { status: 'fulfilled', value: 20 },
+      { status: 'fulfilled', value: 30 },
+    ]);
+  });
 });

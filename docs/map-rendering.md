@@ -198,6 +198,8 @@ GPSログは長期間蓄積されるため、マップ描画の負荷を抑え�
 
 メインマップの初期表示範囲は、`getLocationPointsBounds()`で取得した緯度経度の最小値・最大値をもとに `createRegionFromBounds()` 関数で算出する。従来は `createInitialRegion(points)` で全ポイント配列のスプレッド展開(`Math.min(...largeArray)`)を行っていたが、記録ポイント数が100万を超える端末ではスプレッド展開が `RangeError` を起こす問題が発生していた。最適化後は、`createInitialRegion()` 内部のスプレッド展開をシンプルなループ集計に変更し、データ量に依存せず安定して動作するように改善した。`createRegionFromBounds()` では `{minLatitude, maxLatitude, minLongitude, maxLongitude}` オブジェクトから `Region` オブジェクトへ変換する。1.4倍の表示余裕と最小デルタ(0.01)の処理ロジックは従来と同じ。
 
+表示範囲のデルタには有効上限のクランプを設けている。個々の座標は緯度 -90〜90・経度 -180〜180 にバリデーション済みで、外接ボックスの生スパンは最大でも緯度180度・経度360度に収まる。しかしこれに1.4倍の表示マージンを掛けた表示デルタは上限を超えうる(例: 経度スパン269度 → 269×1.4=376.6度)。MapKitは緯度デルタ180度・経度デルタ360度を超える `Region` を `NSInvalidArgumentException`(Invalid Region)にしてクラッシュするため、マージン適用後の `latitudeDelta` を179度未満・`longitudeDelta` を359度未満へクランプする。
+
 ## 10. 無料利用についての考え方
 
 地図表示は「アプリ側のサーバー費用を発生させない」ことを重視する。

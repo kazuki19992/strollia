@@ -5,7 +5,11 @@ import { Alert, Animated, Linking, useColorScheme } from 'react-native';
 import type MapView from 'react-native-maps';
 import type { LatLng, MapType, Region, UserLocationChangeEvent } from 'react-native-maps';
 
-import { updateSentrySubscriptionContext, updateSentryUserContext } from '@/config/sentry';
+import {
+  updateSentrySubscriptionContext,
+  updateSentryUserContext,
+  setCrashReportingEnabled as applyCrashReportingToSentry,
+} from '@/config/sentry';
 import { syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
 import { shareAllLogsAsGpx } from '@/features/export/gpxExporter';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
@@ -26,6 +30,7 @@ import { resolveUserLocationIcon } from '@/features/customization/customizationR
 import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { setSetting } from '@/features/settings/settingsRepository';
+import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import type { DailyLogSummary } from '@/types/gps';
@@ -277,6 +282,10 @@ export type AppStateContextValue = {
   keepScreenAwake: boolean;
   /** 画面ON維持を更新する。 */
   updateKeepScreenAwake: (enabled: boolean) => Promise<void>;
+  /** 不具合レポートを送信するか。 */
+  crashReportingEnabled: boolean;
+  /** 不具合レポート送信設定を更新する。 */
+  updateCrashReportingEnabled: (enabled: boolean) => Promise<void>;
   /** データをエクスポートする。 */
   exportAllLogs: () => Promise<void>;
   /** GPXをインポートする。 */
@@ -436,6 +445,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   // 未指定時(テスト互換モード)のみ内部 state で画面を切り替える。
   const screenMode = currentScreenMode ?? internalScreenMode;
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
+  const [crashReportingEnabled, setCrashReportingEnabledState] = useState(true);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
@@ -674,6 +684,38 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   }, [refreshAchievementState, refreshData]);
 
   /**
+   * 起動時読み込みとSentry両方へ不具合レポート設定を反映するsetter。
+   * useAppInitializationのsetCrashReportingEnabled propへ渡す。
+   * Sentryの同名関数と混同しないよう、Sentry側はapplyCrashReportingToSentryと別名importしている。
+   */
+  const applyCrashReportingSetting = useCallback((value: boolean): void => {
+    setCrashReportingEnabledState(value);
+    applyCrashReportingToSentry(value);
+  }, []);
+
+  /**
+   * 不具合レポート送信設定をUI状態・Sentry・SQLiteの三箇所へ反映する。
+   * 永続化に失敗した場合はUI状態とSentryフラグを元へ巻き戻し、乖離を残さない。
+   */
+  const updateCrashReportingEnabled = useCallback(
+    async (enabled: boolean): Promise<void> => {
+      const previousValue = crashReportingEnabled;
+      setCrashReportingEnabledState(enabled);
+      applyCrashReportingToSentry(enabled);
+      try {
+        await setSetting(CRASH_REPORTING_SETTING_KEY, enabled);
+      } catch (error: unknown) {
+        console.warn('Failed to persist crash reporting setting:', error);
+        setCrashReportingEnabledState(previousValue);
+        applyCrashReportingToSentry(previousValue);
+        // 巻き戻したうえで呼び出し側へ伝播し、設定画面・チュートリアルの catch で保存失敗を通知させる。
+        throw error;
+      }
+    },
+    [crashReportingEnabled],
+  );
+
+  /**
    * 画面ON維持設定をUI状態とSQLiteの両方へ反映する。
    * 永続化に失敗した場合はUI状態を元へ巻き戻し、UIとストレージの乖離を残さない。
    */
@@ -702,6 +744,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     requestAchievementNotificationPermissionIfNeeded,
     snapshotPremiumAccessUpdateVersion,
     setKeepScreenAwake,
+    setCrashReportingEnabled: applyCrashReportingSetting,
     setMessage,
     setIsWhileInUseToastVisible,
     setIsReady,
@@ -1078,6 +1121,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     updateUserLocationIcon,
     keepScreenAwake,
     updateKeepScreenAwake,
+    crashReportingEnabled,
+    updateCrashReportingEnabled,
     exportAllLogs,
     importGpx,
     deleteAllData,

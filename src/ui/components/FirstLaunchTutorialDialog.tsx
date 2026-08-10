@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Switch, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 
 import type { AppStyles } from '@/ui/appStyles';
+import { CRASH_REPORTING_TOGGLE_LABEL, CRASH_REPORTING_TUTORIAL_PARAGRAPHS, CRASH_REPORTING_TUTORIAL_TITLE } from '@/ui/appText';
 import { animateDialogResize, Dialog } from './Dialog';
 
 const FALLBACK_INSTRUCTION_IMAGE_ASPECT_RATIO = 453 / 279;
@@ -34,6 +35,8 @@ type TutorialStep = {
   instructionImageAccessibilityLabel?: string;
   /** 本文の下に表示する箇条書き。 */
   bulletItems?: string[];
+  /** このステップで不具合レポートトグルを表示するか。 */
+  showCrashReportingToggle?: boolean;
 };
 
 /** 初回起動チュートリアルのprops。 */
@@ -46,6 +49,10 @@ export type FirstLaunchTutorialDialogProps = {
   completionButtonLabel?: string;
   /** チュートリアル完了時に呼ぶ。 */
   onComplete: () => void;
+  /** 不具合レポートを送信するか。 */
+  crashReportingEnabled: boolean;
+  /** 不具合レポート送信設定の更新処理。 */
+  onUpdateCrashReportingEnabled: (enabled: boolean) => void;
 };
 
 const TUTORIAL_STEPS: TutorialStep[] = [
@@ -92,6 +99,11 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     ],
   },
   {
+    title: CRASH_REPORTING_TUTORIAL_TITLE,
+    paragraphs: CRASH_REPORTING_TUTORIAL_PARAGRAPHS,
+    showCrashReportingToggle: true,
+  },
+  {
     title: '位置情報を確認してはじめる',
     paragraphs: [
       'GPSログの記録には位置情報の常時許可が必要です。',
@@ -106,6 +118,8 @@ export function FirstLaunchTutorialDialog({
   styles,
   completionButtonLabel = '地図で確認する',
   onComplete,
+  crashReportingEnabled,
+  onUpdateCrashReportingEnabled,
 }: FirstLaunchTutorialDialogProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [instructionImageFrameWidth, setInstructionImageFrameWidth] = useState(0);
@@ -162,6 +176,17 @@ export function FirstLaunchTutorialDialog({
           </Text>
         ))}
       </View>
+      {currentStep.showCrashReportingToggle && (
+        <View style={styles.settingsInlineRow}>
+          <Text style={styles.formItemTitle}>{CRASH_REPORTING_TOGGLE_LABEL}</Text>
+          <Switch
+            accessibilityLabel={CRASH_REPORTING_TOGGLE_LABEL}
+            accessibilityRole="switch"
+            value={crashReportingEnabled}
+            onValueChange={onUpdateCrashReportingEnabled}
+          />
+        </View>
+      )}
       {currentStep.bulletItems && (
         <View style={styles.firstLaunchTutorialBulletList}>
           {currentStep.bulletItems.map((item) => (

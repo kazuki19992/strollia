@@ -13,6 +13,7 @@ import { getDefaultPremiumAccessState, getConfirmedPremiumAccessState } from '@/
 import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAccess';
 import { getBooleanSetting, getStringSetting, setSetting } from '@/features/settings/settingsRepository';
 import { loadAppFonts } from '@/theme/fonts';
+import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 import {
   USER_LOCATION_ICON_SETTING_KEY,
   APP_COLOR_PRESET_SETTING_KEY,
@@ -64,6 +65,8 @@ export type UseAppInitializationOptions = {
   snapshotPremiumAccessUpdateVersion: () => number;
   /** 画面ON維持状態を初期化する。 */
   setKeepScreenAwake: (value: boolean) => void;
+  /** 不具合レポート設定のUI状態を反映する。 */
+  setCrashReportingEnabled: (value: boolean) => void;
   /** ユーザー向けメッセージを更新する。 */
   setMessage: (message: string) => void;
   /** 前景限定記録トーストの表示を更新する。 */
@@ -94,6 +97,7 @@ export function useAppInitialization({
   requestAchievementNotificationPermissionIfNeeded,
   snapshotPremiumAccessUpdateVersion,
   setKeepScreenAwake,
+  setCrashReportingEnabled,
   setMessage,
   setIsWhileInUseToastVisible,
   setIsReady,
@@ -113,6 +117,7 @@ export function useAppInitialization({
         const initialPremiumAccessRequest = getConfirmedPremiumAccessState();
         const [
           savedKeepScreenAwake,
+          savedCrashReportingEnabled,
           savedShowPhotosOnMap,
           savedShowPhotosOnMapEnablePending,
           savedUserLocationIcon,
@@ -123,6 +128,7 @@ export function useAppInitialization({
           initialPremiumAccessResult,
         ] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
+          getBooleanSetting(CRASH_REPORTING_SETTING_KEY, true),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false),
           getBooleanSetting(SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY, false),
           getStringSetting(USER_LOCATION_ICON_SETTING_KEY, DEFAULT_USER_LOCATION_ICON_ID),
@@ -134,6 +140,7 @@ export function useAppInitialization({
         ]);
         if (signal.aborted) return;
         setKeepScreenAwake(savedKeepScreenAwake);
+        setCrashReportingEnabled(savedCrashReportingEnabled);
         initializePhotoSetting({ savedShowPhotosOnMap, savedShowPhotosOnMapEnablePending });
         if (savedShowPhotosOnMapEnablePending) {
           await setSetting(SHOW_PHOTOS_ON_MAP_SETTING_KEY, false);
@@ -216,5 +223,6 @@ export function useAppInitialization({
     setFirstLaunchTutorialMode,
     setIsFirstLaunchTutorialVisible,
     setKeepScreenAwake,
+    setCrashReportingEnabled,
   ]);
 }

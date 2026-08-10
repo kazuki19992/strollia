@@ -33,11 +33,30 @@ export function isSentryEnabledForBuild(): boolean {
 }
 
 /**
+ * 不具合レポートを送信するかどうかのモジュール状態。
+ *
+ * Sentry.init は起動時に同期実行され DB 初期化より前に走るため、init 自体は
+ * 設定で切り替えられない。init は常に実行し、beforeSend でこのフラグを参照して
+ * 送信可否だけを動的に制御する。既定は true(有効)。
+ */
+let isCrashReportingEnabled = true;
+
+/** 不具合レポート送信の有効/無効を設定する。 */
+export function setCrashReportingEnabled(enabled: boolean): void {
+  isCrashReportingEnabled = enabled;
+}
+
+/**
  * Sentryへ送るイベントの最終加工を行う。
  *
- * GPSログ本体や座標値は送らない方針のため、送信直前に位置情報らしいフィールドをマスクする。
+ * 不具合レポートが無効なら null を返してイベントを送らない。
+ * 有効なら、GPSログ本体や座標値を送らない方針のため位置情報らしいフィールドをマスクする。
  */
-export function filterSentryEventBeforeSend(event: ErrorEvent): ErrorEvent {
+export function filterSentryEventBeforeSend(event: ErrorEvent): ErrorEvent | null {
+  if (!isCrashReportingEnabled) {
+    return null;
+  }
+
   return scrubSentryEventLocationData(event);
 }
 
@@ -62,6 +81,13 @@ export function initializeSentry(): void {
     enableAutoSessionTracking: false,
     enableCaptureFailedRequests: false,
     sendDefaultPii: false,
+    // App Hang(iOS でアプリが指定時間応答しない状態。Android ANR 相当)の検知を明示的に有効化する。
+    // 既定でも有効だが、意図を明確にするため明示する。2秒以上のハングをイベント化する。
+    enableAppHangTracking: true,
+    appHangTimeoutInterval: 2,
+    // ハングや captureMessage 系イベントへスタックトレースを添付し、どこで固まったか追えるようにする。
+    // 位置情報のマスクは beforeSend(scrubSentryEventLocationData)で従来どおり行う。
+    attachStacktrace: true,
     beforeSend(event) {
       return filterSentryEventBeforeSend(event);
     },

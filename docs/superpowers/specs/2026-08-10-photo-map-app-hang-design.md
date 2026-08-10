@@ -79,13 +79,13 @@ private func resolveImage(asset: PHAsset, options: AssetInfoOptions, promise: Pr
 
 アプリが `AssetInfo` から使うのは `toMapPhoto`(`photoLibrary.ts:39-53`)が読む以下だけ。
 
-| フィールド | 用途 |
-| --- | --- |
-| `location` | 地図上の座標 |
-| `id` | マーカーキー |
-| `localUri ?? uri` | サムネイル表示 |
-| `creationTime` | クラスタ内の並び順 |
-| `width` / `height` | 表示比率 |
+| フィールド         | 用途               |
+| ------------------ | ------------------ |
+| `location`         | 地図上の座標       |
+| `id`               | マーカーキー       |
+| `localUri ?? uri`  | サムネイル表示     |
+| `creationTime`     | クラスタ内の並び順 |
+| `width` / `height` | 表示比率           |
 
 **`exif` は一度も参照していない。**
 
@@ -136,11 +136,11 @@ warn + return は正しい扱い。defect ではないため対象外とする�
 ユーザーからの要望は「全ての写真を地図に表示したい」。
 現状の `DEFAULT_PHOTO_SCAN_LIMIT = 200` は **3つの独立した問題を同時に隠している**。
 
-| # | 問題 | 箇所 | Phase 1(並列数制限)で解決するか |
-| --- | --- | --- | --- |
-| 1 | メインスレッドJPEGデコード | `photoLibrary.ts:68` + ネイティブ | △ 現行200件では緩和で足りるが、デコード自体は残る。上限を上げるほど再び効かなくなる |
-| 2 | クラスタリングが O(N²) × 全ライブラリ × パンごと | `photoClusters.ts:106-122`, `AppStateProvider.tsx:582` | ❌ 残る |
-| 3 | マーカーのビューポート間引きなし | `MapScreen.tsx:236` | ❌ 残る |
+| #   | 問題                                             | 箇所                                                   | Phase 1(並列数制限)で解決するか                                                     |
+| --- | ------------------------------------------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| 1   | メインスレッドJPEGデコード                       | `photoLibrary.ts:68` + ネイティブ                      | △ 現行200件では緩和で足りるが、デコード自体は残る。上限を上げるほど再び効かなくなる |
+| 2   | クラスタリングが O(N²) × 全ライブラリ × パンごと | `photoClusters.ts:106-122`, `AppStateProvider.tsx:582` | ❌ 残る                                                                             |
+| 3   | マーカーのビューポート間引きなし                 | `MapScreen.tsx:236`                                    | ❌ 残る                                                                             |
 
 ### 問題2の詳細
 
@@ -154,11 +154,11 @@ const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [ph
 **既存クラスタを全走査**するため計算量は O(N × C)、写真が散在する実データでは C ≒ N となり **O(N²)**。
 加えてビューポート外の写真も対象に含み、`visibleRegion` 依存なので **地図をパン/ズームするたびに再計算**される。
 
-| 写真数 | 距離計算回数 / パン1回 | 体感 |
-| --- | --- | --- |
-| 200(現状) | 約 4万 | 問題なし |
-| 5,000 | 約 2,500万 | パンのたびに固まる |
-| 20,000 | 約 4億 | 実用不能 |
+| 写真数    | 距離計算回数 / パン1回 | 体感               |
+| --------- | ---------------------- | ------------------ |
+| 200(現状) | 約 4万                 | 問題なし           |
+| 5,000     | 約 2,500万             | パンのたびに固まる |
+| 20,000    | 約 4億                 | 実用不能           |
 
 **問題1だけを直して上限を外すと、ハングが「起動時」から「地図を動かすたび」へ引っ越すだけになる。**
 
@@ -226,13 +226,13 @@ JS 側のさらなる制御で許容範囲に収める設計を検討する。
 
 ## 5. 変更対象ファイル(Phase 1)
 
-| ファイル | 変更内容 |
-| --- | --- |
-| `src/utils/concurrency.ts` | 新設。`mapWithConcurrency` 汎用ヘルパー |
-| `src/utils/__tests__/concurrency.test.ts` | 新設。同時実行数・順序保証・失敗時挙動のテスト |
-| `src/features/photos/photoLibrary.ts` | `Promise.allSettled` → `mapWithConcurrency`。`PHOTO_INFO_CONCURRENCY` 定数追加 |
-| `src/features/photos/__tests__/photoLibrary.test.ts` | 同時実行数が上限を超えないことの回帰テストを追加 |
-| `docs/photo-geotag.md` | 走査上限・並列数制限の理由を追記 |
+| ファイル                                             | 変更内容                                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `src/utils/concurrency.ts`                           | 新設。`mapWithConcurrency` 汎用ヘルパー                                        |
+| `src/utils/__tests__/concurrency.test.ts`            | 新設。同時実行数・順序保証・失敗時挙動のテスト                                 |
+| `src/features/photos/photoLibrary.ts`                | `Promise.allSettled` → `mapWithConcurrency`。`PHOTO_INFO_CONCURRENCY` 定数追加 |
+| `src/features/photos/__tests__/photoLibrary.test.ts` | 同時実行数が上限を超えないことの回帰テストを追加                               |
+| `docs/photo-geotag.md`                               | 走査上限・並列数制限の理由を追記                                               |
 
 ## 6. テスト方針
 

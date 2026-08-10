@@ -1,10 +1,16 @@
 import { mapWithConcurrency } from '@/utils/concurrency';
 
 describe('並列数制限付きmap mapWithConcurrency', () => {
-  it('入力順と同じ順序で結果を返す', async () => {
+  it('完了順が入力順と逆でも、結果は入力順と同じ順序で返す', async () => {
     const items = [1, 2, 3, 4, 5];
 
-    const results = await mapWithConcurrency(items, 2, async (item) => item * 10);
+    // 先頭の要素ほど遅く完了するよう遅延を逆順にし、完了順(5,4,3,2,1)と
+    // 入力順(1,2,3,4,5)が一致しないケースを作る。concurrencyを要素数と同じ
+    // にすることで全ワーカーがほぼ同時に開始し、遅延が確実に重なり合う。
+    const results = await mapWithConcurrency(items, items.length, async (item, index) => {
+      await new Promise((resolve) => setTimeout(resolve, (items.length - index) * 10));
+      return item * 10;
+    });
 
     expect(results).toEqual([
       { status: 'fulfilled', value: 10 },
@@ -73,6 +79,21 @@ describe('並列数制限付きmap mapWithConcurrency', () => {
     expect(results).toEqual([
       { status: 'fulfilled', value: 1 },
       { status: 'fulfilled', value: 2 },
+    ]);
+  });
+
+  it('concurrencyがNaNでも1として扱い、全要素を穴なしで処理する', async () => {
+    const items = [1, 2, 3];
+
+    // NaNをMath.max/Math.minにそのまま渡すとワーカー数がNaN・Array.from結果が
+    // 空配列になり、全要素未処理のスパース配列(穴あき)がそのまま返ってしまう。
+    // lengthだけでなく各要素の中身を検証し、穴あきでないことを確認する。
+    const results = await mapWithConcurrency(items, NaN, async (item) => item * 10);
+
+    expect(results).toEqual([
+      { status: 'fulfilled', value: 10 },
+      { status: 'fulfilled', value: 20 },
+      { status: 'fulfilled', value: 30 },
     ]);
   });
 });

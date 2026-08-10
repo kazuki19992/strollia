@@ -1,6 +1,6 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
-import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto } from '@/features/photos/photoLibrary';
+import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto, PHOTO_INFO_CONCURRENCY } from '@/features/photos/photoLibrary';
 
 jest.mock('expo-media-library/legacy', () => ({
   getAssetsAsync: jest.fn(),
@@ -111,5 +111,27 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
       .mockRejectedValueOnce(new Error('broken asset'));
 
     await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+  });
+
+  it('getAssetInfoAsyncの同時実行数がPHOTO_INFO_CONCURRENCYを超えない', async () => {
+    const assetCount = 10;
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: Array.from({ length: assetCount }, (_, index) => ({ id: `asset-${index}` })),
+    });
+
+    let runningCount = 0;
+    let maxRunningCount = 0;
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockImplementation(async (asset: { id: string }) => {
+      runningCount += 1;
+      maxRunningCount = Math.max(maxRunningCount, runningCount);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      runningCount -= 1;
+      return createAssetInfo(asset.id, { latitude: 35, longitude: 139 });
+    });
+
+    await loadGeotaggedPhotos();
+
+    expect(maxRunningCount).toBeLessThanOrEqual(PHOTO_INFO_CONCURRENCY);
+    expect(MediaLibrary.getAssetInfoAsync).toHaveBeenCalledTimes(assetCount);
   });
 });

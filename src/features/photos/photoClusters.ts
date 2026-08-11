@@ -1,6 +1,7 @@
 import { Region } from 'react-native-maps';
 
 import { MapPhoto } from './photoLibrary';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 import { distanceMeters } from '@/utils/distance';
 
 /** 地図上で近接写真をまとめた表示単位。 */
@@ -90,6 +91,81 @@ export function clusterMapPhotos(photos: MapPhoto[], region: Region | null): Map
 }
 
 /**
+ * クラスタ探索でチェックする隣接セルの半径(自セルを含め (2×3+1)² = 49セル)。
+ *
+ * セルサイズ = クラスタ半径のため、理論上は1セル分(9セル)で「半径内の全候補」を
+ * 見つけられる。しかしこの空間ハッシュは Web Mercator 座標(coordinateToGridCell)を
+ * 使っており、Web Mercator は緯度が上がるほど距離を実際より引き伸ばす
+ * (緯度46度で最大約1.43倍、緯度70度で約2.92倍)。1セル分の探索だと、緯度によっては
+ * 本来半径内にある写真をセル境界の外に見逃す可能性がある。3セル分に広げることで
+ * スケール係数3倍(緯度70度相当)まで安全に候補を拾える。49はNに対して定数なので、
+ * 全体の計算量は O(N) のまま変わらない。
+ */
+const CLUSTER_SEARCH_CELL_RADIUS = 3;
+
+/**
+ * 写真を追加できる最寄りクラスタを、空間ハッシュで候補を絞り込んで探す。
+ * クラスタの代表写真との距離だけを見ることで、連鎖的な巨大クラスタ化を防ぐ(旧実装と同じ)。
+ * 索引は候補の絞り込みにのみ使い、距離判定・採用基準は旧実装から変更しない。
+ *
+ * @param photo - 追加候補の写真。
+ * @param clustersByCellId - セルIDごとのクラスタ索引。
+ * @param clusterRadiusMeters - 同一クラスタとして扱う半径メートル(= セルサイズ)。
+ * @returns 同一表示クラスタとして扱える最寄りクラスタ。見つからない場合はnull。
+ */
+function findNearestClusterViaGrid(
+  photo: MapPhoto,
+  clustersByCellId: Map<string, MutablePhotoCluster[]>,
+  clusterRadiusMeters: number,
+): MutablePhotoCluster | null {
+  const cell = coordinateToGridCell(photo, clusterRadiusMeters);
+  let nearestCluster: MutablePhotoCluster | null = null;
+  let nearestDistanceMeters = Number.POSITIVE_INFINITY;
+
+  for (let dx = -CLUSTER_SEARCH_CELL_RADIUS; dx <= CLUSTER_SEARCH_CELL_RADIUS; dx += 1) {
+    for (let dy = -CLUSTER_SEARCH_CELL_RADIUS; dy <= CLUSTER_SEARCH_CELL_RADIUS; dy += 1) {
+      const candidates = clustersByCellId.get(`${clusterRadiusMeters}:${cell.x + dx}:${cell.y + dy}`);
+
+      if (!candidates) {
+        continue;
+      }
+
+      for (const cluster of candidates) {
+        const distanceToSeedMeters = distanceMeters(photo, cluster.seed);
+
+        if (distanceToSeedMeters > clusterRadiusMeters || distanceToSeedMeters >= nearestDistanceMeters) {
+          continue;
+        }
+
+        nearestCluster = cluster;
+        nearestDistanceMeters = distanceToSeedMeters;
+      }
+    }
+  }
+
+  return nearestCluster;
+}
+
+/**
+ * 新規クラスタの seed を空間ハッシュへ登録する。
+ *
+ * @param cluster - 登録するクラスタ。
+ * @param clustersByCellId - セルIDごとのクラスタ索引。
+ * @param clusterRadiusMeters - セルサイズとして使う半径メートル。
+ */
+function registerClusterCell(cluster: MutablePhotoCluster, clustersByCellId: Map<string, MutablePhotoCluster[]>, clusterRadiusMeters: number): void {
+  const cell = coordinateToGridCell(cluster.seed, clusterRadiusMeters);
+  const existing = clustersByCellId.get(cell.cellId);
+
+  if (existing) {
+    existing.push(cluster);
+    return;
+  }
+
+  clustersByCellId.set(cell.cellId, [cluster]);
+}
+
+/**
  * 指定した半径で、同じ地点付近の写真をメートル距離ベースでまとめる。
  *
  * クラスタ結果は「写真一覧」と「半径」だけで決まり、地図の中心座標には依存しない。
@@ -102,13 +178,18 @@ export function clusterMapPhotos(photos: MapPhoto[], region: Region | null): Map
  */
 export function clusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters: number): MapPhotoCluster[] {
   const clusters: MutablePhotoCluster[] = [];
+  // セルID(coordinateToGridCellの cellId 形式)→ そのセルに seed を持つクラスタ一覧。
+  // 空間ハッシュとして使い、距離判定そのものは変えず候補の絞り込みにのみ使う。
+  const clustersByCellId = new Map<string, MutablePhotoCluster[]>();
 
   // 新しい写真を代表サムネイルと代表座標にし、平均化で別地点へ飛ばないようにする。
   for (const photo of [...photos].sort((a, b) => b.creationTime - a.creationTime)) {
-    const nearestCluster = findNearestCluster(photo, clusters, clusterRadiusMeters);
+    const nearestCluster = findNearestClusterViaGrid(photo, clustersByCellId, clusterRadiusMeters);
 
     if (!nearestCluster) {
-      clusters.push({ seed: photo, photos: [photo] });
+      const newCluster: MutablePhotoCluster = { seed: photo, photos: [photo] };
+      clusters.push(newCluster);
+      registerClusterCell(newCluster, clustersByCellId, clusterRadiusMeters);
       continue;
     }
 
@@ -200,32 +281,6 @@ export function getStablePhotoClusterRadiusMeters(region: Region | null, previou
   }
 
   return nextRadiusMeters;
-}
-
-/**
- * 写真を追加できる最寄りクラスタを探す。クラスタの代表写真との距離だけを見ることで、連鎖的な巨大クラスタ化を防ぐ。
- *
- * @param photo - 追加候補の写真。
- * @param clusters - 既存クラスタ一覧。
- * @param clusterRadiusMeters - 同一クラスタとして扱う半径メートル。
- * @returns 同一表示クラスタとして扱える最寄りクラスタ。見つからない場合はnull。
- */
-function findNearestCluster(photo: MapPhoto, clusters: MutablePhotoCluster[], clusterRadiusMeters: number): MutablePhotoCluster | null {
-  let nearestCluster: MutablePhotoCluster | null = null;
-  let nearestDistanceMeters = Number.POSITIVE_INFINITY;
-
-  for (const cluster of clusters) {
-    const distanceToSeedMeters = distanceMeters(photo, cluster.seed);
-
-    if (distanceToSeedMeters > clusterRadiusMeters || distanceToSeedMeters >= nearestDistanceMeters) {
-      continue;
-    }
-
-    nearestCluster = cluster;
-    nearestDistanceMeters = distanceToSeedMeters;
-  }
-
-  return nearestCluster;
 }
 
 /**

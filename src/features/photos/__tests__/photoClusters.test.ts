@@ -6,8 +6,10 @@ import {
   clusterMapPhotosByRadius,
   getPhotoClusterRadiusMeters,
   getStablePhotoClusterRadiusMeters,
+  MapPhotoCluster,
   paginateMapPhotos,
 } from '@/features/photos/photoClusters';
+import { distanceMeters } from '@/utils/distance';
 
 /**
  * テスト用の地図写真を最小プロパティで作る。
@@ -202,5 +204,120 @@ describe('写真クラスタページ paginateMapPhotos', () => {
 
   it('ページサイズが不正な場合は空配列を返す', () => {
     expect(paginateMapPhotos([createPhoto('a', 35, 139, 1)], 0)).toEqual([]);
+  });
+});
+
+/**
+ * テスト用の決定的疑似乱数生成器(mulberry32)。Math.randomを使うとCI環境間で
+ * 結果が変わりテストの再現性が失われるため、シード固定の軽量PRNGを使う。
+ *
+ * @param seed - シード値。
+ * @returns 呼ぶたびに0以上1未満の疑似乱数を返す関数。
+ */
+function createSeededRandom(seed: number): () => number {
+  let state = seed;
+
+  return () => {
+    state |= 0;
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * 現行実装(空間ハッシュ)との等価性検証に使う、素朴な全走査のO(N^2)参照実装。
+ * clusterMapPhotosByRadius の旧実装(空間ハッシュ導入前)をテスト内に保存したもの。
+ *
+ * @param photos - クラスタ対象の写真一覧。
+ * @param clusterRadiusMeters - 同一クラスタとして扱う半径メートル。
+ * @returns 近接写真をまとめたクラスタ一覧。
+ */
+function referenceClusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters: number): MapPhotoCluster[] {
+  type MutableCluster = { seed: MapPhoto; photos: MapPhoto[] };
+  const clusters: MutableCluster[] = [];
+
+  for (const photo of [...photos].sort((a, b) => b.creationTime - a.creationTime)) {
+    let nearestCluster: MutableCluster | null = null;
+    let nearestDistanceMeters = Number.POSITIVE_INFINITY;
+
+    for (const cluster of clusters) {
+      const distanceToSeedMeters = distanceMeters(photo, cluster.seed);
+
+      if (distanceToSeedMeters > clusterRadiusMeters || distanceToSeedMeters >= nearestDistanceMeters) {
+        continue;
+      }
+
+      nearestCluster = cluster;
+      nearestDistanceMeters = distanceToSeedMeters;
+    }
+
+    if (!nearestCluster) {
+      clusters.push({ seed: photo, photos: [photo] });
+      continue;
+    }
+
+    nearestCluster.photos.push(photo);
+  }
+
+  return clusters.map((cluster, index) => ({
+    id: `ref-${index}-${cluster.seed.id}-${cluster.photos.length}`,
+    latitude: cluster.seed.latitude,
+    longitude: cluster.seed.longitude,
+    photos: cluster.photos,
+  }));
+}
+
+/**
+ * クラスタ比較用に、順序に依存しない形へ正規化する。id は実装(空間ハッシュ版/参照版)で
+ * 形式が異なるため比較対象から外し、内容(座標・含まれる写真ID集合)だけを比較する。
+ *
+ * @param clusters - 正規化するクラスタ一覧。
+ * @returns 座標順に並べ替えた比較用データ。
+ */
+function normalizeClustersForComparison(clusters: MapPhotoCluster[]): Array<{ latitude: number; longitude: number; photoIds: string[] }> {
+  return clusters
+    .map((cluster) => ({
+      latitude: cluster.latitude,
+      longitude: cluster.longitude,
+      photoIds: cluster.photos.map((photo) => photo.id).sort(),
+    }))
+    .sort((a, b) => (a.photoIds[0] ?? '').localeCompare(b.photoIds[0] ?? ''));
+}
+
+describe('新実装(空間ハッシュ)と参照実装(O(N^2))の等価性', () => {
+  it('多様な緯度・経度に散らばる写真でも現行実装と同じクラスタリング結果になる', () => {
+    const random = createSeededRandom(20260811);
+    const photos: MapPhoto[] = Array.from({ length: 300 }, (_, index) => {
+      const latitude = random() * 160 - 80; // -80〜80度
+      const longitude = random() * 360 - 180; // -180〜180度
+      return createPhoto(`photo-${index}`, latitude, longitude, index);
+    });
+
+    for (const clusterRadiusMeters of [10, 75, 300, 1500, 7500]) {
+      const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
+      const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
+
+      expect(actual).toEqual(expected);
+    }
+  });
+
+  it('高緯度に密集した写真でも現行実装と同じクラスタリング結果になる', () => {
+    // 緯度60〜70度(3セル探索で正当性を保証する上限付近、design docの70度に対応)に密集させ、
+    // Web Mercatorの緯度歪みが大きい状況で空間ハッシュの候補絞り込みが正しく機能することを確認する。
+    const random = createSeededRandom(20260812);
+    const photos: MapPhoto[] = Array.from({ length: 200 }, (_, index) => {
+      const latitude = 60 + random() * 10; // 60〜70度
+      const longitude = random() * 4 - 2; // 狭い経度範囲に密集させ近接ペアを増やす
+      return createPhoto(`photo-${index}`, latitude, longitude, index);
+    });
+
+    for (const clusterRadiusMeters of [75, 300, 1500]) {
+      const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
+      const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
+
+      expect(actual).toEqual(expected);
+    }
   });
 });

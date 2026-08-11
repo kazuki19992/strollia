@@ -33,12 +33,29 @@ type MutablePhotoCluster = {
 /**
  * 表示範囲に応じて、同じ地点付近の写真だけをメートル距離ベースでまとめる。
  *
+ * `clusterMapPhotosByRadius` に表示範囲から求めた半径を渡すだけの薄いラッパー。
+ * 呼び出し側が半径を自前で保持してメモ化できるよう、半径計算とクラスタリングを分離している。
+ *
  * @param photos - 地図上に表示するジオタグ付き写真一覧。
  * @param region - 現在の地図表示範囲。未取得の場合は近距離用の既定値を使う。
  * @returns 近接写真をまとめたクラスタ一覧。
  */
 export function clusterMapPhotos(photos: MapPhoto[], region: Region | null): MapPhotoCluster[] {
-  const clusterRadiusMeters = getPhotoClusterRadiusMeters(region);
+  return clusterMapPhotosByRadius(photos, getPhotoClusterRadiusMeters(region));
+}
+
+/**
+ * 指定した半径で、同じ地点付近の写真をメートル距離ベースでまとめる。
+ *
+ * クラスタ結果は「写真一覧」と「半径」だけで決まり、地図の中心座標には依存しない。
+ * 表示範囲オブジェクトではなく半径を引数に取ることで、パン(中心移動のみ)では
+ * 呼び出し側の `useMemo` が再計算をスキップできる。
+ *
+ * @param photos - 地図上に表示するジオタグ付き写真一覧。
+ * @param clusterRadiusMeters - 同一クラスタとして扱う半径メートル。
+ * @returns 近接写真をまとめたクラスタ一覧。
+ */
+export function clusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters: number): MapPhotoCluster[] {
   const clusters: MutablePhotoCluster[] = [];
 
   // 新しい写真を代表サムネイルと代表座標にし、平均化で別地点へ飛ばないようにする。

@@ -31,7 +31,7 @@ import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/custo
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
-import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
+import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
@@ -52,6 +52,7 @@ import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyReportNotificationResponse';
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
+import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
@@ -579,7 +580,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     initializePhotoSetting,
     updateShowPhotosOnMap,
   } = usePhotoMapCrashBreaker({ isReady, isMapReady });
-  const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
+  // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
+  const photoClusters = usePhotoClusters(photos, visibleRegion);
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);

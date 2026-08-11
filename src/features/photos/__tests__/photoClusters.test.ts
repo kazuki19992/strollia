@@ -5,6 +5,7 @@ import {
   clusterMapPhotos,
   clusterMapPhotosByRadius,
   getPhotoClusterRadiusMeters,
+  getStablePhotoClusterRadiusMeters,
   paginateMapPhotos,
 } from '@/features/photos/photoClusters';
 
@@ -37,44 +38,74 @@ const region: Region = {
 };
 
 describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
-  it('拡大率が低いほどクラスタ範囲を広げる', () => {
-    const zoomedIn = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.001 });
-    const zoomedOut = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
-
-    expect(zoomedOut).toBeGreaterThan(zoomedIn);
+  it('各段階の境界でちょうど切り替わる', () => {
+    // 境界未満は手前の段階、境界以上は次の段階になる。
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.0029 })).toBe(10);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.003 })).toBe(30);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.0089 })).toBe(30);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.009 })).toBe(75);
   });
 
-  it('クラスタ範囲に下限を適用し、上限なしで広域ほど大きくする', () => {
-    const veryZoomedIn = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 });
-    const veryZoomedOut = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 5 });
-
-    expect(veryZoomedIn).toBe(10);
-    expect(veryZoomedOut).toBeCloseTo(16_650);
+  it('極端に狭い表示範囲では最小段階(10m)になる', () => {
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 })).toBe(10);
   });
 
-  it('よく使うズーム範囲でもクラスタ範囲が十分変化する', () => {
-    const closeRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.001 });
-    const neighborhoodRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.01 });
-    const wideRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
-
-    expect(closeRange).toBe(10);
-    expect(neighborhoodRange).toBeGreaterThanOrEqual(30);
-    expect(wideRange).toBeCloseTo(266.4);
+  it('最終段階(15000m, 境界4.5)を超える広域表示では世界地図相当のフォールバック値になる', () => {
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.5 })).toBe(3_000_000);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 180 })).toBe(3_000_000);
   });
 
-  it('表示範囲の高さに比例してクラスタ範囲を線形に広げる', () => {
-    const rangeA = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.02 });
-    const rangeB = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 });
-
-    expect(rangeB).toBeCloseTo(rangeA * 2);
+  it('表示範囲がない場合は近距離用の既定値(latitudeDelta=0.01相当)を使う', () => {
+    expect(getPhotoClusterRadiusMeters(null)).toBe(75);
   });
 
   // パン(中心移動のみ)でクラスタを再計算しないメモ化は、この性質が前提になっている。
   it('中心座標だけが変わっても(パン)クラスタ範囲は変化しない', () => {
-    const beforePan = getPhotoClusterRadiusMeters(region);
-    const afterPan = getPhotoClusterRadiusMeters({ ...region, latitude: 40, longitude: -73 });
+    const beforePan = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
+    const afterPan = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08, latitude: 40, longitude: -73 });
 
     expect(afterPan).toBe(beforePan);
+  });
+});
+
+describe('写真クラスタ半径のヒステリシス getStablePhotoClusterRadiusMeters', () => {
+  it('前回値がない場合は段階選択した値をそのまま返す', () => {
+    expect(getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, null)).toBe(150);
+  });
+
+  it('段階境界をわずかに超えるだけならヒステリシス帯の範囲内で前回値を維持する', () => {
+    // 段階3(150m)→4(300m)の境界は0.045。ヒステリシス比率0.2により、
+    // 0.045 * 1.2 = 0.054 未満なら前回値を維持する。
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.05 }, 150);
+
+    expect(stableRadius).toBe(150);
+  });
+
+  it('ヒステリシス帯を明確に超えたら次の段階へ切り替える', () => {
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.06 }, 150);
+
+    expect(stableRadius).toBe(300);
+  });
+
+  it('段階を縮小方向にまたぐときも同じヒステリシスが働く', () => {
+    // 境界0.045未満、かつヒステリシス帯の下限(0.045 * 0.8 = 0.036)以上なら前回値(300)を維持する。
+    const stableWithinBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, 300);
+    expect(stableWithinBand).toBe(300);
+
+    const stableBelowBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.03 }, 300);
+    expect(stableBelowBand).toBe(150);
+  });
+
+  it('2段階以上離れた変化ではヒステリシスを無視して即座に切り替える', () => {
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 }, 75);
+
+    expect(stableRadius).toBe(300);
+  });
+
+  it('前回値が段階テーブルに存在しない場合は素直に段階選択した値を返す', () => {
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.05 }, 999);
+
+    expect(stableRadius).toBe(300);
   });
 });
 

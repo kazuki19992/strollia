@@ -19,11 +19,56 @@ export type MapPhotoCluster = {
 export const PHOTO_CLUSTER_PAGE_SIZE = 9;
 
 const FALLBACK_LATITUDE_DELTA = 0.01;
-const METERS_PER_LATITUDE_DEGREE = 111_000;
-/** 最大拡大時でも同じ地点の連写をまとめるための最小半径。 */
-const MINIMUM_CLUSTER_RADIUS_METERS = 10;
-/** ズームアウト時にクラスタ範囲を線形に広げるため、表示高の3%を半径にする。 */
-const REGION_CLUSTER_RATIO = 0.03;
+
+/** 写真クラスタ半径の1段階。 */
+type PhotoClusterRadiusStage = {
+  /** この段階で使う半径メートル。 */
+  radiusMeters: number;
+  /** この段階を使う latitudeDelta の上限(この値未満まで)。 */
+  maxLatitudeDelta: number;
+};
+
+/**
+ * 写真クラスタ半径の段階テーブル。連続値だった半径を離散段階へ丸めることで、
+ * Web Mercator投影の緯度歪みによりパン時にlatitudeDeltaがbit単位で変化しても
+ * メモ化(usePhotoClusters)がヒットしやすくなる。境界は旧来の連続式
+ * (radius = latitudeDelta × METERS_PER_LATITUDE_DEGREE × REGION_CLUSTER_RATIO)の
+ * 傾きに沿って選んでいるため、量子化以外の挙動変化を最小にしている。
+ */
+const PHOTO_CLUSTER_RADIUS_STAGES: PhotoClusterRadiusStage[] = [
+  { radiusMeters: 10, maxLatitudeDelta: 0.003 },
+  { radiusMeters: 30, maxLatitudeDelta: 0.009 },
+  { radiusMeters: 75, maxLatitudeDelta: 0.0225 },
+  { radiusMeters: 150, maxLatitudeDelta: 0.045 },
+  { radiusMeters: 300, maxLatitudeDelta: 0.09 },
+  { radiusMeters: 750, maxLatitudeDelta: 0.225 },
+  { radiusMeters: 1500, maxLatitudeDelta: 0.45 },
+  { radiusMeters: 3000, maxLatitudeDelta: 0.9 },
+  { radiusMeters: 7500, maxLatitudeDelta: 2.25 },
+  { radiusMeters: 15000, maxLatitudeDelta: 4.5 },
+];
+
+/**
+ * 段階テーブルを超える広域表示(latitudeDelta >= 4.5)で使うフォールバック半径。
+ * 世界地図相当の大きさにすることで、地図が表現できる現実的な範囲内では
+ * 実質「上限なし」だった旧来の挙動と区別がつかないようにする。
+ */
+const PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS = 3_000_000;
+
+/** 段階境界のちらつき防止に使うヒステリシス比率。visited grid(GRID_OVERLAY_CONFIG)と同じ値を踏襲する。 */
+const PHOTO_CLUSTER_RADIUS_HYSTERESIS_RATIO = 0.2;
+
+/**
+ * 表示範囲の広さから写真クラスタ半径の段階indexを選ぶ。
+ *
+ * @param latitudeDelta - 絶対値化済みのlatitudeDelta。
+ * @returns 0始まりの段階index。定義済み範囲より広い場合は段階数(=フォールバックを示す)。
+ */
+function getPhotoClusterRadiusStageIndex(latitudeDelta: number): number {
+  const stageIndex = PHOTO_CLUSTER_RADIUS_STAGES.findIndex((stage) => latitudeDelta < stage.maxLatitudeDelta);
+
+  return stageIndex >= 0 ? stageIndex : PHOTO_CLUSTER_RADIUS_STAGES.length;
+}
 
 type MutablePhotoCluster = {
   seed: MapPhoto;
@@ -100,16 +145,61 @@ export function paginateMapPhotos(photos: MapPhoto[], pageSize = PHOTO_CLUSTER_P
 }
 
 /**
- * 地図の表示範囲から写真クラスタ半径をメートル単位で求める。
+ * 地図の表示範囲から写真クラスタ半径をメートル単位で求める(段階選択のみ、ヒステリシスなし)。
  *
- * @param region - 現在の地図表示範囲。
- * @returns クラスタ判定に使う半径メートル。
+ * @param region - 現在の地図表示範囲。未取得の場合は近距離用の既定値を使う。
+ * @returns 段階選択されたクラスタ半径メートル。
  */
 export function getPhotoClusterRadiusMeters(region: Region | null): number {
-  const visibleHeightMeters = Math.abs(region?.latitudeDelta ?? FALLBACK_LATITUDE_DELTA) * METERS_PER_LATITUDE_DEGREE;
-  const dynamicRadiusMeters = visibleHeightMeters * REGION_CLUSTER_RATIO;
+  const latitudeDelta = Math.abs(region?.latitudeDelta ?? FALLBACK_LATITUDE_DELTA);
+  const stageIndex = getPhotoClusterRadiusStageIndex(latitudeDelta);
 
-  return Math.max(dynamicRadiusMeters, MINIMUM_CLUSTER_RADIUS_METERS);
+  return stageIndex < PHOTO_CLUSTER_RADIUS_STAGES.length
+    ? PHOTO_CLUSTER_RADIUS_STAGES[stageIndex].radiusMeters
+    : PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS;
+}
+
+/**
+ * 表示セルサイズの切替境界付近で直前の半径を維持し、ズーム操作中のちらつきと
+ * パン時のメモ化ミスを抑える。gridAggregation.ts の getStableDisplayCellSizeMeters と
+ * 同じヒステリシスパターンだが、写真クラスタ専用の段階テーブル・比率を使う。
+ *
+ * @param region - 現在の地図表示範囲。
+ * @param previousRadiusMeters - 直前に使った半径。初回は null。
+ * @returns ヒステリシスを加味した半径メートル。
+ */
+export function getStablePhotoClusterRadiusMeters(region: Region | null, previousRadiusMeters: number | null): number {
+  const nextRadiusMeters = getPhotoClusterRadiusMeters(region);
+
+  if (!previousRadiusMeters || previousRadiusMeters === nextRadiusMeters) {
+    return nextRadiusMeters;
+  }
+
+  const radiusValues = [...PHOTO_CLUSTER_RADIUS_STAGES.map((stage) => stage.radiusMeters), PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS];
+  const previousIndex = radiusValues.indexOf(previousRadiusMeters);
+  const nextIndex = radiusValues.indexOf(nextRadiusMeters);
+
+  if (previousIndex < 0 || nextIndex < 0 || Math.abs(previousIndex - nextIndex) > 1) {
+    return nextRadiusMeters;
+  }
+
+  const boundary = PHOTO_CLUSTER_RADIUS_STAGES[Math.min(previousIndex, nextIndex)]?.maxLatitudeDelta;
+
+  if (!boundary) {
+    return nextRadiusMeters;
+  }
+
+  const latitudeDelta = Math.abs(region?.latitudeDelta ?? FALLBACK_LATITUDE_DELTA);
+
+  if (nextIndex > previousIndex && latitudeDelta < boundary * (1 + PHOTO_CLUSTER_RADIUS_HYSTERESIS_RATIO)) {
+    return previousRadiusMeters;
+  }
+
+  if (nextIndex < previousIndex && latitudeDelta >= boundary * (1 - PHOTO_CLUSTER_RADIUS_HYSTERESIS_RATIO)) {
+    return previousRadiusMeters;
+  }
+
+  return nextRadiusMeters;
 }
 
 /**

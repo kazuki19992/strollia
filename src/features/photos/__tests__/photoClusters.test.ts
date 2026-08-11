@@ -156,14 +156,18 @@ describe('写真クラスタ clusterMapPhotos', () => {
   });
 
   it('同じ場所と言えない距離の写真は別クラスタに分ける', () => {
-    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)], region);
+    // 緯度差0.0009°(約100m)。段階量子化後の既定半径(75m)より明確に離す。
+    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.001, 139.0001, 2)], region);
 
     expect(clusters).toHaveLength(2);
   });
 
   it('連鎖的に離れた写真を巨大クラスタにまとめない', () => {
+    // a-b、b-cはそれぞれ約50m(新半径75m以内で直接隣接可能。境界から25m の余裕)だが、
+    // a-c間は約100m(新半径75mを25m超える)。b経由で連鎖してもseedはaのまま動かないため、
+    // cはaとの直接距離で判定され別クラスタになる(連鎖防止の検証)。
     const clusters = clusterMapPhotos(
-      [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00035, 139.0001, 2), createPhoto('c', 35.0006, 139.0001, 1)],
+      [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00055, 139.0001, 2), createPhoto('c', 35.001, 139.0001, 1)],
       region,
     );
 

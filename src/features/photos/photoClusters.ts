@@ -153,7 +153,11 @@ function findNearestClusterViaGrid(
  * @param clustersByCellId - セルIDごとのクラスタ索引。
  * @param clusterRadiusMeters - セルサイズとして使う半径メートル。
  */
-function registerClusterCell(cluster: MutablePhotoCluster, clustersByCellId: Map<string, MutablePhotoCluster[]>, clusterRadiusMeters: number): void {
+function registerClusterCell(
+  cluster: MutablePhotoCluster,
+  clustersByCellId: Map<string, MutablePhotoCluster[]>,
+  clusterRadiusMeters: number,
+): void {
   const cell = coordinateToGridCell(cluster.seed, clusterRadiusMeters);
   const existing = clustersByCellId.get(cell.cellId);
 

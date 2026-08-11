@@ -632,12 +632,17 @@ git commit -m "perf(photos): クラスタリングを空間ハッシュ化しO(N
 
 - Modify: `src/ui/hooks/usePhotoClusters.ts`
 - Modify: `src/ui/hooks/__tests__/usePhotoClusters.test.tsx`
+- Modify: `src/ui/__tests__/AppMapReturn.test.tsx`(手動モック更新)
+- Modify: `src/ui/__tests__/AppCustomIconCentering.test.tsx`(手動モック更新)
+- Modify: `src/ui/state/__tests__/crashReportingState.test.tsx`(手動モック更新)
 
 **Interfaces:**
 
 - Consumes: `getStablePhotoClusterRadiusMeters(region: Region | null, previousRadiusMeters: number | null): number`(Task 1 で追加)
 - Consumes: `clusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters: number): MapPhotoCluster[]`(既存)
 - `usePhotoClusters(photos: MapPhoto[], visibleRegion: Region | null): MapPhotoCluster[]` のシグネチャは不変
+
+**実装時に判明した前提修正**: `src/ui/__tests__/AppMapReturn.test.tsx`・`src/ui/__tests__/AppCustomIconCentering.test.tsx`・`src/ui/state/__tests__/crashReportingState.test.tsx` の3ファイルは `@/features/photos/photoClusters` を手動モックしており(`renderRouter('src/app')` で `AppStateProvider` 経由 `usePhotoClusters` を実際に描画するため)、モックの中身が `clusterMapPhotosByRadius` / `getPhotoClusterRadiusMeters` / `paginateMapPhotos` の3つに固定されている。本タスクでフックが `getPhotoClusterRadiusMeters` ではなく `getStablePhotoClusterRadiusMeters` を呼ぶよう変わるため、この関数がモックに存在せず `TypeError` で3ファイルとも失敗する。このため Step 1〜4(フック本体)の後に Step 4.5 として3ファイルのモックを更新する。
 
 - [ ] **Step 1: 失敗するテストを書く(ヒステリシス)**
 
@@ -717,6 +722,32 @@ export function usePhotoClusters(photos: MapPhoto[], visibleRegion: Region | nul
 Run: `npm test -- src/ui/hooks/__tests__/usePhotoClusters.test.tsx`
 Expected: 全テスト PASS(既存4件 + 追加1件)。既存の「パンでは再計算しない」「ズームでは再計算する」「写真一覧が変われば再計算する」「パンを繰り返しても初回の計算結果を返し続ける」が壊れていないことも確認する
 
+- [ ] **Step 4.5: 手動モック3ファイルへ `getStablePhotoClusterRadiusMeters` を追加する**
+
+以下3ファイルそれぞれの `jest.mock('@/features/photos/photoClusters', () => ({ ... }))` に、既存の `getPhotoClusterRadiusMeters: jest.fn(() => 10)` と同じ形で1行追加する(モック内の他の行順は変えない)。
+
+`src/ui/__tests__/AppMapReturn.test.tsx`(489行目付近)、`src/ui/__tests__/AppCustomIconCentering.test.tsx`(203行目付近)、`src/ui/state/__tests__/crashReportingState.test.tsx`(203行目付近)、それぞれ以下を追加する。
+
+```typescript
+getStablePhotoClusterRadiusMeters: jest.fn(() => 10),
+```
+
+追加後、3ファイルとも以下の形になる(`AppMapReturn.test.tsx` の例)。
+
+```typescript
+jest.mock('@/features/photos/photoClusters', () => ({
+  clusterMapPhotosByRadius: jest.fn(() => []),
+  getPhotoClusterRadiusMeters: jest.fn(() => 10),
+  getStablePhotoClusterRadiusMeters: jest.fn(() => 10),
+  paginateMapPhotos: jest.fn(() => []),
+}));
+```
+
+- [ ] **Step 4.5-確認: 全体テストを実行し、この3ファイルを含めて回帰がないことを確認する**
+
+Run: `npm test`
+Expected: 既存テストを含めて全件 PASS(このタスクの変更で新たに壊れるテストがないことの確認。手動モックのある3ファイルが対象)
+
 - [ ] **Step 5: 型チェックを実行する**
 
 Run: `npm run typecheck`
@@ -725,7 +756,9 @@ Expected: エラー0件
 - [ ] **Step 6: コミット**
 
 ```bash
-git add src/ui/hooks/usePhotoClusters.ts src/ui/hooks/__tests__/usePhotoClusters.test.tsx
+git add src/ui/hooks/usePhotoClusters.ts src/ui/hooks/__tests__/usePhotoClusters.test.tsx \
+  src/ui/__tests__/AppMapReturn.test.tsx src/ui/__tests__/AppCustomIconCentering.test.tsx \
+  src/ui/state/__tests__/crashReportingState.test.tsx
 git commit -m "feat(photos): usePhotoClustersを半径ヒステリシスへ配線する"
 ```
 

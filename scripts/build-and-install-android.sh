@@ -15,6 +15,12 @@ set -euo pipefail
 #   - インストール対象の実機が1台だけ USB 接続され、USBデバッグの許可がされていること
 #   - production プロファイルは Android App Bundle (.aab) を生成するため adb install できない。
 #     ビルドのみ行い、成果物パスを表示して終了する（ストア提出は publish スキルを使用する）
+#
+# 【暫定対応 / issue #141 で解消したら削除】
+#   EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY が Test Store キー(test_プレフィックス)のままの間、
+#   preview プロファイルは eas build を使わず、ネイティブプロジェクトを直接生成して
+#   release buildType を debuggable 化した APK を gradlew でビルドする
+#   (RevenueCat が非debuggableビルドでのTest Storeキー使用を強制クラッシュさせるため)。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -79,11 +85,56 @@ mkdir -p "${BUILDS_DIR}"
 echo "=== Android ${PROFILE} ビルド（ローカル）を開始します ==="
 echo "成果物の出力先: ${BUILDS_DIR}"
 
-eas build \
-  --platform android \
-  --profile "${PROFILE}" \
-  --local \
-  --non-interactive
+# 【暫定対応 / issue #141 で解消したら削除】
+# RevenueCatはTest Storeキー(test_プレフィックス)を非debuggableビルド(release系 = preview/production)で
+# 検出すると、ストア誤配信を防ぐ目的で意図的に強制クラッシュする。Android本番RevenueCatキーが
+# 未発行の間、previewビルドに限り、eas buildを使わずネイティブプロジェクトを直接生成して
+# release buildTypeをdebuggable化し、gradlewで直接ビルドする(署名はAGP既定のdebug鍵を使うため
+# EAS資格情報は不要)。本番キーを.env.localに設定すれば、この分岐は自動的に通らなくなる。
+if [[ "${PROFILE}" == "preview" && "${EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY}" == test_* ]]; then
+  echo ""
+  echo "警告: EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY がRevenueCatのTest Storeキーです。"
+  echo "previewビルドは release バリアントのため、RevenueCat SDKが意図的に強制クラッシュします(issue #141)。"
+  echo "暫定対応として、ネイティブプロジェクトを直接生成し release buildType を debuggable 化してビルドします。"
+  echo "本番用RevenueCat Androidキーを .env.local に設定すれば、この暫定対応は不要になります。"
+
+  ANDROID_DIR="${REPO_ROOT}/android"
+  # スクリプト終了時(成功/失敗問わず)に必ず android/ を削除し、managed workflow の状態を保つ
+  trap 'rm -rf "${ANDROID_DIR}"' EXIT
+  rm -rf "${ANDROID_DIR}"
+
+  # eas.json の preview プロファイルと同じビルド用環境変数を合わせる
+  export EXPO_PUBLIC_STROLLIA_BUILD_PROFILE=preview
+  export SENTRY_DISABLE_AUTO_UPLOAD=true
+
+  npx expo prebuild --platform android --no-install
+
+  BUILD_GRADLE="${ANDROID_DIR}/app/build.gradle"
+  if [[ ! -f "${BUILD_GRADLE}" ]]; then
+    echo "エラー: ${BUILD_GRADLE} が生成されませんでした。" >&2
+    exit 1
+  fi
+
+  if ! grep -q "debuggable true" "${BUILD_GRADLE}"; then
+    sed -i '' -E 's/(release[[:space:]]*\{)/\1\n            debuggable true/' "${BUILD_GRADLE}"
+  fi
+
+  (cd "${ANDROID_DIR}" && ./gradlew :app:assembleRelease)
+
+  BUILT_APK="${ANDROID_DIR}/app/build/outputs/apk/release/app-release.apk"
+  if [[ ! -f "${BUILT_APK}" ]]; then
+    echo "エラー: ${BUILT_APK} が生成されませんでした。" >&2
+    exit 1
+  fi
+
+  cp "${BUILT_APK}" "${BUILDS_DIR}/build-android-preview-test-store-workaround-$(date +%s).apk"
+else
+  eas build \
+    --platform android \
+    --profile "${PROFILE}" \
+    --local \
+    --non-interactive
+fi
 
 # ビルドで生成された最新の .apk / .aab を特定する（macOS の stat で更新時刻順にソート）
 LATEST_ARTIFACT="$(find "${BUILDS_DIR}" -maxdepth 1 \( -name '*.apk' -o -name '*.aab' \) -print0 2>/dev/null \

@@ -29,6 +29,15 @@ export async function mapWithConcurrency<T, R>(
   const effectiveConcurrency = Number.isNaN(floored) ? 1 : Math.max(1, floored);
   let nextIndex = 0;
 
+  /**
+   * 共有カウンタ `nextIndex` から次の担当要素を取り、処理し尽くすまで繰り返すワーカー。
+   *
+   * ワーカーを `workerCount` 個だけ同時に走らせることで同時実行数を制限する。
+   * 「1要素ずつ取り合う」方式にしているのは、配列を事前に等分するとmapperの所要時間に
+   * ばらつきがある場合に遅いチャンクが律速し、同時実行数を下回る時間が生じるため。
+   *
+   * @returns 担当分をすべて処理し終えると解決するPromise。
+   */
   async function runWorker(): Promise<void> {
     while (nextIndex < items.length) {
       // JSはシングルスレッドで、await を挟まないこの2行は割り込まれずに実行される。

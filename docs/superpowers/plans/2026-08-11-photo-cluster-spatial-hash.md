@@ -305,6 +305,51 @@ git commit -m "feat(photos): 写真クラスタ半径を離散段階へ量子化
 
 **この設計により、現行実装とビット単位で同一の出力になる。** 空間ハッシュは候補を絞り込むための索引としてのみ使い、距離判定(`distanceMeters`)・採用基準(最近傍・半径内)は一切変更しない。
 
+**Task 1 完了後に判明した前提修正**: Task 1 の量子化により、既定 `region`(`latitudeDelta: 0.01`)の半径が 33.3m → 75m へ変わった。この結果、`写真クラスタ clusterMapPhotos` describe block 内の2件のテストが、この既定半径をそのまま使った固定座標のせいで**期待値と矛盾するようになっている**(クラスタリングアルゴリズム自体は正しいまま)。空間ハッシュ化はアルゴリズムを変えないためこの2件は自然には直らない。Step 0 として先に修正する。
+
+- [ ] **Step 0: 量子化で無効になった既存フィクスチャを修正する**
+
+`src/features/photos/__tests__/photoClusters.test.ts` の `describe('写真クラスタ clusterMapPhotos', ...)` 内、以下の2テストの本体をそれぞれ置き換える(テスト名・アサーションの意図は変えない。座標だけを新半径75mに合わせて調整する)。
+
+置き換え前後で座標だけが変わる。旧: `createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)`(緯度差0.0006° ≒ 66.8m。旧半径33.3mでは「別クラスタ」だったが、新半径75mでは同一クラスタに吸収されてしまい `toHaveLength(2)` に矛盾する)。
+
+```typescript
+it('同じ場所と言えない距離の写真は別クラスタに分ける', () => {
+  // 緯度差0.0009°(約100m)。段階量子化後の既定半径(75m)より明確に離す。
+  const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.001, 139.0001, 2)], region);
+
+  expect(clusters).toHaveLength(2);
+});
+```
+
+旧: `a(35.0001) / b(35.00035) / c(35.0006)`。連鎖防止(seedとの距離のみで判定)を検証する意図だったが、a-c間(緯度差0.0005°≒55.7m)が新半径75m以内に収まってしまい、chain-preventionが働く前に直接1クラスタへまとまってしまい `toBeGreaterThan(1)` に矛盾する。
+
+```typescript
+it('連鎖的に離れた写真を巨大クラスタにまとめない', () => {
+  // a-b、b-cはそれぞれ約50m(新半径75m以内で直接隣接可能。境界から25m の余裕)だが、
+  // a-c間は約100m(新半径75mを25m超える)。b経由で連鎖してもseedはaのまま動かないため、
+  // cはaとの直接距離で判定され別クラスタになる(連鎖防止の検証)。
+  const clusters = clusterMapPhotos(
+    [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00055, 139.0001, 2), createPhoto('c', 35.001, 139.0001, 1)],
+    region,
+  );
+
+  expect(clusters.length).toBeGreaterThan(1);
+});
+```
+
+- [ ] **Step 0-確認: テストを実行し、この2件が新半径のもとで正しく PASS することを確認する**
+
+Run: `npm test -- src/features/photos/__tests__/photoClusters.test.ts`
+Expected: 上記2件は PASS。他のブロック(`clusterMapPhotosByRadius`/`paginateMapPhotos`/Task 1のヒステリシステスト)も維持されたまま PASS。空間ハッシュ未実装のため、Step 1 以降で追加する等価性テストはまだ存在しない
+
+- [ ] **Step 0-コミット**
+
+```bash
+git add src/features/photos/__tests__/photoClusters.test.ts
+git commit -m "test(photos): 半径量子化で無効になったクラスタフィクスチャを修正する"
+```
+
 - [ ] **Step 1: 失敗するテストを書く(現行実装との等価性)**
 
 `src/features/photos/__tests__/photoClusters.test.ts` の末尾(`describe('写真クラスタページ paginateMapPhotos', ...)` の直後)に追加する。ファイル冒頭の import に `distanceMeters` を追加する。

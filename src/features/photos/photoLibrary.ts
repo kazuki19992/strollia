@@ -1,5 +1,7 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
+import { mapWithConcurrency } from '@/utils/concurrency';
+
 /** 地図上に表示するジオタグ付き写真。 */
 export type MapPhoto = {
   /** 写真ライブラリ内のアセットID。 */
@@ -19,6 +21,16 @@ export type MapPhoto = {
 };
 
 const DEFAULT_PHOTO_SCAN_LIMIT = 200;
+
+/**
+ * getAssetInfoAsync の同時実行数。
+ *
+ * ネイティブ実装(iOS)は完了ブロック内でフル解像度画像をメインキュー上でデコードするため、
+ * 一斉並列で発行するとメインスレッドが長時間ブロックされ App Hang を引き起こす
+ * (2026-08-08 Sentry 観測: 200並列でメインスレッドが2秒以上停止)。
+ * 同時実行数を絞ることでメインキューへ一度に積まれるデコード量を抑える。
+ */
+export const PHOTO_INFO_CONCURRENCY = 4;
 
 /**
  * 写真ライブラリ権限がフルアクセスかどうかを判定する。
@@ -65,8 +77,8 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     sortBy: [[MediaLibrary.SortBy.creationTime, false]],
   });
 
-  const details = await Promise.allSettled(
-    page.assets.map((asset) => MediaLibrary.getAssetInfoAsync(asset, { shouldDownloadFromNetwork: false })),
+  const details = await mapWithConcurrency(page.assets, PHOTO_INFO_CONCURRENCY, (asset) =>
+    MediaLibrary.getAssetInfoAsync(asset, { shouldDownloadFromNetwork: false }),
   );
 
   return details.flatMap((result) => {

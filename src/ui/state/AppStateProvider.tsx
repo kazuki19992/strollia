@@ -31,7 +31,7 @@ import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/custo
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
-import { clusterMapPhotosByRadius, getPhotoClusterRadiusMeters, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
+import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
@@ -52,6 +52,7 @@ import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyReportNotificationResponse';
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
+import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
@@ -579,11 +580,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     initializePhotoSetting,
     updateShowPhotosOnMap,
   } = usePhotoMapCrashBreaker({ isReady, isMapReady });
-  // クラスタ結果は写真一覧と半径だけで決まり、地図の中心座標には依存しない。
-  // 半径計算(O(1))と クラスタリング(写真数に対して重い)を別のuseMemoへ分けることで、
-  // パン(中心移動のみで半径が変わらない操作)では再クラスタリングをスキップする。
-  const photoClusterRadiusMeters = useMemo(() => getPhotoClusterRadiusMeters(visibleRegion), [visibleRegion]);
-  const photoClusters = useMemo(() => clusterMapPhotosByRadius(photos, photoClusterRadiusMeters), [photos, photoClusterRadiusMeters]);
+  // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
+  const photoClusters = usePhotoClusters(photos, visibleRegion);
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);

@@ -18,8 +18,12 @@ import type { MapPhoto } from '@/features/photos/photoLibrary';
  * この2段構成が本フックの存在理由であり、1つの `useMemo` に戻してはいけない。
  *
  * 半径算出には段階境界のちらつき・パン時のメモ化ミスを防ぐヒステリシスがかかっており、
- * 直前の半径を `previousRadiusRef` で保持して次回の算出へ渡す(useVisitedGridOverlay.ts の
- * visitedGridDisplayCellSizeRef と同じパターン)。
+ * 直前の半径を `previousRadiusRef` で保持して次回の算出へ渡す。「前回値をrefに保持して
+ * 次回計算へ渡す」という考え方自体は useVisitedGridOverlay.ts の visitedGridDisplayCellSizeRef
+ * と共通だが、あちらは `useEffect` 内でrefを更新するのに対し、本フックは `useMemo` 内で更新する。
+ * これが安全なのは `getStablePhotoClusterRadiusMeters` が自身の出力を前回値として再入力しても
+ * 同じ結果を返す(冪等)ためで、StrictModeや破棄されたレンダーによる二重実行があってもrefが
+ * 新規レンダーの計算結果とズレない。
  *
  * @param photos - 地図上に表示するジオタグ付き写真一覧。
  * @param visibleRegion - 現在の地図表示範囲。未取得の場合は近距離用の既定値が使われる。

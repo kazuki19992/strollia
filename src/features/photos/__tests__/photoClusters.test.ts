@@ -53,8 +53,8 @@ describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
   });
 
   it('最終段階(15000m, 境界4.5)を超える広域表示では世界地図相当のフォールバック値になる', () => {
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.5 })).toBe(3_000_000);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 180 })).toBe(3_000_000);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.5 })).toBe(50_000);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 180 })).toBe(50_000);
   });
 
   it('表示範囲がない場合は近距離用の既定値(latitudeDelta=0.01相当)を使う', () => {
@@ -310,6 +310,27 @@ describe('新実装(空間ハッシュ)と参照実装(O(N^2))の等価性', () 
     const photos: MapPhoto[] = Array.from({ length: 200 }, (_, index) => {
       const latitude = 60 + random() * 10; // 60〜70度
       const longitude = random() * 4 - 2; // 狭い経度範囲に密集させ近接ペアを増やす
+      return createPhoto(`photo-${index}`, latitude, longitude, index);
+    });
+
+    for (const clusterRadiusMeters of [75, 300, 1500]) {
+      const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
+      const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
+
+      expect(actual).toEqual(expected);
+    }
+  });
+
+  it('密集した写真でも現行実装と同じクラスタリング結果になる(多数のクラスタを跨ぐケース)', () => {
+    // 緯度65度付近の狭い範囲(0.02°×0.05°)に密集させる。既存の等価性テストは写真が疎らすぎて
+    // ほとんどのペアが1枚だけのクラスタになり、空間ハッシュの候補絞り込みロジックが
+    // 実質検証されていなかった(全ペアがそもそも半径外)。この配置は複数枚のクラスタを
+    // 複数の半径で作るため、候補探索が壊れた場合(セルID不一致・1セル探索への後退)に
+    // 実際に不一致を検知できる。
+    const random = createSeededRandom(20260813);
+    const photos: MapPhoto[] = Array.from({ length: 300 }, (_, index) => {
+      const latitude = 65 + random() * 0.02;
+      const longitude = 139 + random() * 0.05;
       return createPhoto(`photo-${index}`, latitude, longitude, index);
     });
 

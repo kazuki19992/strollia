@@ -51,10 +51,17 @@ const PHOTO_CLUSTER_RADIUS_STAGES: PhotoClusterRadiusStage[] = [
 
 /**
  * 段階テーブルを超える広域表示(latitudeDelta >= 4.5)で使うフォールバック半径。
- * 世界地図相当の大きさにすることで、地図が表現できる現実的な範囲内では
- * 実質「上限なし」だった旧来の挙動と区別がつかないようにする。
+ *
+ * 空間ハッシュの3セル探索(CLUSTER_SEARCH_CELL_RADIUS)による正当性は、
+ * Web Mercatorのスケール係数(secant(緯度))がセル内でほぼ一定であることを前提にしている。
+ * セルサイズが数千kmに達すると、緯度に関わらずこの前提が崩れ、現行O(N²)実装との
+ * 出力一致(等価性)が保証できなくなる(検証: 50,000mまでは緯度0〜82度で等価性を確認済み、
+ * 200,000mでは崩れることを確認済み)。そのため「世界地図相当で実質無制限」という
+ * 当初の意図よりは小さいが、等価性が保証できる範囲で最大の値として50,000mを採用する。
+ * この段階に到達するのは極端な広域ズーム時のみで、50kmという半径でも通常の
+ * クラスタリング用途では十分「広く1つにまとめる」効果がある。
  */
-const PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS = 3_000_000;
+const PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS = 50_000;
 
 /** 段階境界のちらつき防止に使うヒステリシス比率。visited grid(GRID_OVERLAY_CONFIG)と同じ値を踏襲する。 */
 const PHOTO_CLUSTER_RADIUS_HYSTERESIS_RATIO = 0.2;

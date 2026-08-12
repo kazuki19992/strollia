@@ -109,9 +109,16 @@ if [[ "${PROFILE}" == "preview" && "${EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY}" =
   echo "本番用RevenueCat Androidキーを .env.local に設定すれば、この暫定対応は不要になります。"
 
   ANDROID_DIR="${REPO_ROOT}/android"
-  # スクリプト終了時(成功/失敗問わず)に必ず android/ を削除し、managed workflow の状態を保つ
+  # 既存の android/ を不用意に上書きしない(ユーザーや他エージェントの変更を保護する)。
+  # 既に存在する場合は削除せずエラーで停止し、判断をユーザーに委ねる。
+  if [[ -e "${ANDROID_DIR}" ]]; then
+    echo "エラー: ${ANDROID_DIR} が既に存在します。既存のネイティブプロジェクトや変更を上書きしないため、削除または退避してから再実行してください。" >&2
+    exit 1
+  fi
+
+  # スクリプト終了時(成功/失敗問わず)に、このスクリプトが生成した android/ を必ず削除し、
+  # managed workflow の状態を保つ
   trap 'rm -rf "${ANDROID_DIR}"' EXIT
-  rm -rf "${ANDROID_DIR}"
 
   # eas.json の preview プロファイルと同じビルド用環境変数を合わせる
   export EXPO_PUBLIC_STROLLIA_BUILD_PROFILE=preview
@@ -126,7 +133,9 @@ if [[ "${PROFILE}" == "preview" && "${EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY}" =
   fi
 
   if ! grep -q "debuggable true" "${BUILD_GRADLE}"; then
-    sed -i '' -E 's/(release[[:space:]]*\{)/\1\n            debuggable true/' "${BUILD_GRADLE}"
+    # BSD sed(macOS)・GNU sed の両方で動く -i.bak 形式を使い、バックアップは使用後に削除する
+    sed -i.bak -E 's/(release[[:space:]]*\{)/\1\n            debuggable true/' "${BUILD_GRADLE}"
+    rm -f "${BUILD_GRADLE}.bak"
   fi
 
   (cd "${ANDROID_DIR}" && ./gradlew :app:assembleRelease)

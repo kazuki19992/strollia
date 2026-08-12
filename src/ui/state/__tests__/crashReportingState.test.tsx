@@ -71,6 +71,11 @@ jest.mock('@/theme/fonts', () => ({
 }));
 
 jest.mock('@/config/developmentFlags', () => ({
+  developmentFlags: {
+    enablePremiumAccessWithoutRevenueCat: false,
+    resetAchievementsOnLaunch: false,
+    logVisitedGridMetrics: false,
+  },
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));

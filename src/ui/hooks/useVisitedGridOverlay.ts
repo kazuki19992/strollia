@@ -6,6 +6,8 @@ import { getGridBoundsForRegion, GridBounds, GridCellPolygonSource, isGridBounds
 import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '@/features/map/gridOverlay';
 import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
+import { CoalescedVisitedGrid, coalesceVisitedGridCells } from '@/features/map/visitedGridCoalescing';
+import { MAX_FADING_VISITED_CELL_COUNT, detectFreshVisitedCells, evictOffscreenFreshCellIds } from '@/features/map/visitedGridFreshCells';
 import { logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
 
 /** visited cellフェードの持続時間。 */
@@ -51,54 +53,107 @@ export type UseVisitedGridOverlayResult = {
   incrementVisitedGridRefreshVersion: () => void;
 };
 
+/** DBから取得して集約したvisited cellと、そのうちfresh扱いのセルID・表示セルサイズ。 */
+type VisitedGridSource = {
+  /** 表示セルサイズへ集約済みのvisited cell。 */
+  cells: GridCellPolygonSource[];
+  /**
+   * GPS記録で新しく開いた100m基本セルID。表示セルサイズが変わっても意味が変わらないよう、
+   * 常に100m基本セルIDで保持する(表示セルサイズに関わらずPolygon結合の対象から外す)。
+   */
+  freshCellIds: Set<string>;
+  /** この取得時点での表示セルサイズ。100mのときだけPolygon結合を行う判定に使う。 */
+  displayCellSizeMeters: number;
+};
+
+/** 直近のvisited cell取得状態。次回取得時のfresh判定・再取得要否の判定に使う。 */
+type LastVisitedGridFetch = {
+  /** DB取得に使った基本セル番号範囲(先読み余白あり)。 */
+  bounds: GridBounds;
+  /** 取得時の表示セルサイズ。 */
+  cellSizeMeters: number;
+  /** 取得時の visitedGridRefreshVersion。 */
+  version: number;
+  /** 取得できた表示セルID。次回取得のfresh判定に使う。 */
+  cellIds: Set<string>;
+};
+
 /**
- * 訪問グリッドオーバーレイの状態・取得・フェードアニメーションを束ねるカスタムフック。
+ * 訪問グリッドオーバーレイの状態・取得・フェードアニメーション・Polygon結合を束ねるカスタムフック。
  *
- * 3 state (visitedGridSourceCells / visitedGridRefreshVersion / visitedGridFadeFrame) と
- * 3 ref (visitedGridDisplayCellSizeRef / lastVisitedGridFetchRef / visitedGridFadeStartedAtRef)、
- * グリッド取得 effect・フェードフレーム effect、および syncVisitedGridFadeState /
- * getVisitedGridFadeProgress の2内部関数を App.tsx から切り出した。
- * ユーザー向け挙動は App.tsx のそれと完全に同一に保つ。
+ * DB取得結果を「fresh cell(GPS記録で新しく開いたセル。フェード対象かつ結合除外)」と
+ * 「stable cell(それ以外の既存セル。即時表示かつ結合対象)」へ分け、描画用メモを
+ * stable側/fresh側で分割することでフェード中の再計算コストを新規セル分だけに抑える。
+ * 詳細は `docs/superpowers/specs/2026-08-12-map-grid-render-optimization-design.md` §3.2・§3.4。
  */
 export function useVisitedGridOverlay({
   isReady,
   gridOverlayRegion,
   themePrimaryColor,
 }: UseVisitedGridOverlayParams): UseVisitedGridOverlayResult {
-  /** DBから取得して表示セルサイズへ集約したvisited cell。表示用フェードとは分けて保持する。 */
-  const [visitedGridSourceCells, setVisitedGridSourceCells] = useState<GridCellPolygonSource[]>([]);
+  const [visitedGridSource, setVisitedGridSource] = useState<VisitedGridSource>({
+    cells: [],
+    freshCellIds: new Set<string>(),
+    displayCellSizeMeters: GRID_OVERLAY_CONFIG.baseCellSizeMeters,
+  });
   const [visitedGridRefreshVersion, setVisitedGridRefreshVersion] = useState(0);
-  /** 新規visited cellの0.5秒フェードを進めるため、50ms間隔で表示セルを再計算する。 */
+  /** 新規visited cellの0.5秒フェードを進めるため、50ms間隔でfresh側の表示セルを再計算する。 */
   const [visitedGridFadeFrame, setVisitedGridFadeFrame] = useState(0);
   const visitedGridDisplayCellSizeRef = useRef<number | null>(null);
-  /** 直近にvisited cellを取得したときの範囲・表示セルサイズ・データ版。取得済み範囲内の小移動では再取得を省く。 */
-  const lastVisitedGridFetchRef = useRef<{ bounds: GridBounds; cellSizeMeters: number; version: number } | null>(null);
+  /** 直近にvisited cellを取得したときの範囲・表示セルサイズ・データ版・セルID。取得済み範囲内の小移動では再取得を省く。 */
+  const lastVisitedGridFetchRef = useRef<LastVisitedGridFetch | null>(null);
+  /**
+   * `visitedGridSource.freshCellIds` の最新値を同期的に参照するためのref。
+   * fetch effectとeviction effectはどちらも非同期完了後にstateを更新するため、
+   * 再レンダーを待たずに最新のfresh集合を読み書きできるようにしている。
+   */
+  const visitedGridFreshCellIdsRef = useRef<Set<string>>(new Set<string>());
   const visitedGridFadeStartedAtRef = useRef(new Map<string, number>());
-  /** 直近の取得・集約・描画変換にかかった時間。開発用の効果測定ログでのみ使う。 */
-  const visitedGridTimingRef = useRef({ fetchMs: 0, aggregationMs: 0, overlayBuildMs: 0 });
+  /** 直近の取得・fresh判定/結合・描画変換にかかった時間。開発用の効果測定ログでのみ使う。 */
+  const visitedGridTimingRef = useRef({
+    fetchMs: 0,
+    freshDetectionMs: 0,
+    coalesceMs: 0,
+    stableOverlayBuildMs: 0,
+    freshOverlayBuildMs: 0,
+  });
 
   /**
-   * visited cellの初回描画時刻を同期し、表示から外れたセルのフェード状態を掃除する。
+   * fadingCellIdsの初回フェード開始時刻を登録し、freshCellIdsから外れたセルのタイマーを掃除する。
    *
-   * @param cells - 次に描画するvisited cell。
+   * 登録対象はfadingCellIdsだけ(freshCellIds全体ではない)。64件超の大量検出時は
+   * fadingCellIdsが空になるため、その場合はタイマー登録なしで即時表示になる。
+   *
+   * @param fadingCellIds - 今回新たにフェードを開始してよいセルID。
+   * @param freshCellIds - 現在fresh扱いの全セルID。フェードタイマーの掃除対象を絞るために使う。
    */
-  function syncVisitedGridFadeState(cells: GridCellPolygonSource[]): void {
+  function syncVisitedGridFadeState(fadingCellIds: ReadonlySet<string>, freshCellIds: ReadonlySet<string>): void {
+    // eslint-disable-next-line react-hooks/purity -- DB取得完了後の.then内からのみ呼ばれ、render中には実行されない
     const now = Date.now();
-    const nextCellIds = new Set(cells.map((cell) => cell.cellId));
 
-    for (const cell of cells) {
-      if (!visitedGridFadeStartedAtRef.current.has(cell.cellId)) {
-        visitedGridFadeStartedAtRef.current.set(cell.cellId, now);
+    for (const cellId of fadingCellIds) {
+      if (!visitedGridFadeStartedAtRef.current.has(cellId)) {
+        visitedGridFadeStartedAtRef.current.set(cellId, now);
       }
     }
 
+    pruneVisitedGridFadeState(freshCellIds);
+    setVisitedGridFadeFrame((frame) => frame + 1);
+  }
+
+  /**
+   * freshCellIdsに含まれなくなったセルのフェードタイマーを削除する。
+   *
+   * 画面外判定でfreshから落ちたセルのタイマーが残り続けてMapが際限なく増えないようにする。
+   *
+   * @param freshCellIds - 現在fresh扱いの全セルID。
+   */
+  function pruneVisitedGridFadeState(freshCellIds: ReadonlySet<string>): void {
     for (const cellId of visitedGridFadeStartedAtRef.current.keys()) {
-      if (!nextCellIds.has(cellId)) {
+      if (!freshCellIds.has(cellId)) {
         visitedGridFadeStartedAtRef.current.delete(cellId);
       }
     }
-
-    setVisitedGridFadeFrame((frame) => frame + 1);
   }
 
   /**
@@ -125,6 +180,8 @@ export function useVisitedGridOverlay({
 
   /**
    * 表示範囲に含まれるvisited cellを読み込み、現在のズームに合う表示セルへ集約する。
+   * 集約結果のうち、前回取得済み範囲に新しく現れたセルをfreshとして検出し、
+   * フェードタイマーを開始する(fadingCellIdsのみ。上限超過時は即時表示)。
    */
   useEffect(() => {
     if (!isReady) {
@@ -139,7 +196,7 @@ export function useVisitedGridOverlay({
     );
     visitedGridDisplayCellSizeRef.current = displayCellSizeMeters;
 
-    // ジェスチャー中（特にAndroidの onRegionChange）に同じ範囲・表示セルサイズで
+    // ジェスチャー中(特にAndroidの onRegionChange)に同じ範囲・表示セルサイズで
     // SQLite取得を連発しないよう、取得済み範囲内かつデータ未更新なら再取得を省く。
     const lastFetch = lastVisitedGridFetchRef.current;
     const coveredByLastFetch =
@@ -153,21 +210,45 @@ export function useVisitedGridOverlay({
     }
 
     let isCancelled = false;
+    // eslint-disable-next-line react-hooks/purity -- useEffect内(commit後)でのみ実行される取得開始時刻。render中には実行されない
     const fetchStartedAt = Date.now();
 
-    getVisitedCellsInBounds(bounds)
-      .then((cells) => {
+    getVisitedCellsInBounds(bounds, displayCellSizeMeters)
+      .then((rows) => {
         if (isCancelled) {
           return;
         }
 
         const fetchedAt = Date.now();
-        lastVisitedGridFetchRef.current = { bounds, cellSizeMeters: displayCellSizeMeters, version: visitedGridRefreshVersion };
-        const aggregatedCells = aggregateVisitedCells(cells, displayCellSizeMeters);
         visitedGridTimingRef.current.fetchMs = fetchedAt - fetchStartedAt;
-        visitedGridTimingRef.current.aggregationMs = Date.now() - fetchedAt;
-        syncVisitedGridFadeState(aggregatedCells);
-        setVisitedGridSourceCells(aggregatedCells);
+
+        const aggregatedCells = aggregateVisitedCells(rows, displayCellSizeMeters);
+        const { freshCellIds: detectedFreshCellIds, fadingCellIds } = detectFreshVisitedCells({
+          previousCellIds: lastFetch?.cellIds ?? new Set<string>(),
+          previousBounds: lastFetch?.bounds ?? null,
+          previousDisplayCellSizeMeters: lastFetch?.cellSizeMeters ?? null,
+          nextCells: aggregatedCells,
+          displayCellSizeMeters,
+          baseCellSizeMeters: GRID_OVERLAY_CONFIG.baseCellSizeMeters,
+          maxFadingCellCount: MAX_FADING_VISITED_CELL_COUNT,
+        });
+        visitedGridTimingRef.current.freshDetectionMs = Date.now() - fetchedAt;
+
+        lastVisitedGridFetchRef.current = {
+          bounds,
+          cellSizeMeters: displayCellSizeMeters,
+          version: visitedGridRefreshVersion,
+          cellIds: new Set(aggregatedCells.map((cell) => cell.cellId)),
+        };
+
+        // 表示され続けているfreshセルを維持するため、前回のfresh集合とマージする。
+        // 100m表示以外(isBaseSizeComparisonがfalse)ではdetectedFreshCellIdsが常に空になるため、
+        // このマージだけで「広域表示中も既存のfreshを保持する」挙動になる。
+        const mergedFreshCellIds = new Set([...visitedGridFreshCellIdsRef.current, ...detectedFreshCellIds]);
+        visitedGridFreshCellIdsRef.current = mergedFreshCellIds;
+
+        syncVisitedGridFadeState(fadingCellIds, mergedFreshCellIds);
+        setVisitedGridSource({ cells: aggregatedCells, freshCellIds: mergedFreshCellIds, displayCellSizeMeters });
       })
       .catch((error: unknown) => {
         console.warn('Failed to refresh visited grid cells:', error);
@@ -176,14 +257,104 @@ export function useVisitedGridOverlay({
     return () => {
       isCancelled = true;
     };
+    // syncVisitedGridFadeState は ref 更新と setState 呼び出しだけの安定した関数のため依存に含めない。
+    // 含めると毎レンダーで新しい関数参照になり、このeffectが不要に再実行されてしまう。
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [gridOverlayRegion, isReady, visitedGridRefreshVersion]);
 
   /**
+   * 画面外(余白なしの実表示範囲外)に出たfreshセルを落とす。
+   *
+   * DB取得範囲には先読み余白が乗るため、取得結果を根拠に判定すると余白の中に残ったセルが
+   * freshのままになる。判定はDB取得effectから独立させ、取得を省略したregion変更でも実行する。
+   */
+  useEffect(() => {
+    const visibleBounds = getGridBoundsForRegion(gridOverlayRegion);
+    const retained = evictOffscreenFreshCellIds(visitedGridFreshCellIdsRef.current, visibleBounds);
+
+    // evictOffscreenFreshCellIdsは既存集合から取り除くだけなので、件数が変わらなければ
+    // 内容も変わっていない。無限ループを避けるため、実際に変化があったときだけ更新する。
+    if (retained.size === visitedGridFreshCellIdsRef.current.size) {
+      return;
+    }
+
+    visitedGridFreshCellIdsRef.current = retained;
+    pruneVisitedGridFadeState(retained);
+    setVisitedGridSource((previous) => ({ ...previous, freshCellIds: retained }));
+  }, [gridOverlayRegion]);
+
+  const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
+
+  /**
+   * fresh cellをPolygon結合対象から除いた上で、完全に埋まった正方形ブロックを結合する。
+   * 結合は100m表示のときだけ行う(§3.3)。それ以外の表示セルサイズでは
+   * stable=集約済みセル全部・fresh=空として扱う(集約表示ではどの100mセルが開いたか特定できないため)。
+   */
+  const coalescedVisitedGrid = useMemo<CoalescedVisitedGrid>(() => {
+    // eslint-disable-next-line react-hooks/purity -- 結合処理コストの開発用計測
+    const startedAt = Date.now();
+    const result: CoalescedVisitedGrid =
+      visitedGridSource.displayCellSizeMeters === GRID_OVERLAY_CONFIG.baseCellSizeMeters
+        ? coalesceVisitedGridCells(visitedGridSource.cells, visitedGridSource.freshCellIds)
+        : { stableCells: visitedGridSource.cells, freshCells: [], blockCountBySize: {} };
+    // eslint-disable-next-line react-hooks/purity, react-hooks/refs -- 開発用の処理時間計測のみ。描画結果もReactの再レンダー判断も参照しない
+    visitedGridTimingRef.current.coalesceMs = Date.now() - startedAt;
+
+    return result;
+  }, [visitedGridSource]);
+
+  /**
+   * stable cellの描画用データ。フェードに依存しないため、フェード中の再計算対象にならない。
+   * フェード中も同じ配列・同じオブジェクトを使い回すことで、Polygon propsの値が変化せず
+   * ネイティブへの更新が飛ばなくなる(今回の最適化の核心)。
+   */
+  const stableOverlayCells = useMemo<VisitedGridOverlayCell[]>(() => {
+    // eslint-disable-next-line react-hooks/purity -- 開発用の処理時間計測
+    const startedAt = Date.now();
+    const overlayCells = toVisitedGridOverlayCells(
+      coalescedVisitedGrid.stableCells,
+      gridOverlayOpacity,
+      themePrimaryColor,
+      GRID_OVERLAY_CONFIG,
+    );
+    // eslint-disable-next-line react-hooks/purity, react-hooks/refs -- 開発用の処理時間計測のみ
+    visitedGridTimingRef.current.stableOverlayBuildMs = Date.now() - startedAt;
+
+    return overlayCells;
+  }, [coalescedVisitedGrid.stableCells, gridOverlayOpacity, themePrimaryColor]);
+
+  /** fresh cellの描画用データ。フェード進捗を反映するため、フェームごとに再計算する(通常数個)。 */
+  const freshOverlayCells = useMemo<VisitedGridOverlayCell[]>(() => {
+    // eslint-disable-next-line react-hooks/purity -- フェード進捗は visitedGridFadeFrame の更新を契機に現在時刻で再計算する既存仕様
+    const now = Date.now();
+    const overlayCells = toVisitedGridOverlayCells(
+      coalescedVisitedGrid.freshCells,
+      gridOverlayOpacity,
+      themePrimaryColor,
+      GRID_OVERLAY_CONFIG,
+      (cell) => getVisitedGridFadeProgress(cell.cellId, now),
+    );
+    // eslint-disable-next-line react-hooks/purity, react-hooks/refs -- 開発用の処理時間計測のみ
+    visitedGridTimingRef.current.freshOverlayBuildMs = Date.now() - now;
+
+    return overlayCells;
+    // visitedGridFadeFrame はフェード中の再計算を強制するための意図的な依存(値自体は未使用)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
+  }, [coalescedVisitedGrid.freshCells, gridOverlayOpacity, themePrimaryColor, visitedGridFadeFrame]);
+
+  /** stable cellとfresh cellを結合した最終描画データ。 */
+  const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(
+    () => [...stableOverlayCells, ...freshOverlayCells],
+    [stableOverlayCells, freshOverlayCells],
+  );
+
+  /**
    * 新規visited cellのフェード中だけ短い間隔で再描画する。
+   * fresh cellだけを見て判定するため、stable cellがどれだけ多くても再描画対象にはならない。
    */
   useEffect(() => {
     const now = Date.now();
-    const hasActiveFade = visitedGridSourceCells.some((cell) => getVisitedGridFadeProgress(cell.cellId, now) < 1);
+    const hasActiveFade = coalescedVisitedGrid.freshCells.some((cell) => getVisitedGridFadeProgress(cell.cellId, now) < 1);
 
     if (!hasActiveFade) {
       return;
@@ -194,43 +365,22 @@ export function useVisitedGridOverlay({
     }, VISITED_GRID_FADE_FRAME_MS);
 
     return () => clearTimeout(timeoutId);
-  }, [visitedGridFadeFrame, visitedGridSourceCells]);
-
-  const gridOverlayOpacity = useMemo(() => getFogOpacity(gridOverlayRegion, GRID_OVERLAY_CONFIG), [gridOverlayRegion]);
-
-  /** 集約済みvisited cellに現在のopacityとフェード進捗を適用したMapView Polygon用データ。 */
-  const visitedGridCells = useMemo<VisitedGridOverlayCell[]>(() => {
-    // eslint-disable-next-line react-hooks/purity -- フェード進捗は visitedGridFadeFrame の更新を契機に現在時刻で再計算する既存仕様
-    const now = Date.now();
-    const overlayCells = toVisitedGridOverlayCells(
-      visitedGridSourceCells,
-      gridOverlayOpacity,
-      themePrimaryColor,
-      GRID_OVERLAY_CONFIG,
-      (cell) => getVisitedGridFadeProgress(cell.cellId, now),
-    );
-    // eslint-disable-next-line react-hooks/purity, react-hooks/refs -- 開発用の処理時間計測のみ。描画結果もReactの再レンダー判断も参照しない
-    visitedGridTimingRef.current.overlayBuildMs = Date.now() - now;
-
-    return overlayCells;
-    // visitedGridFadeFrame はフェード中の再計算を強制するための意図的な依存(値自体は未使用)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
-  }, [gridOverlayOpacity, themePrimaryColor, visitedGridFadeFrame, visitedGridSourceCells]);
+  }, [visitedGridFadeFrame, coalescedVisitedGrid.freshCells]);
 
   /**
-   * 開発フラグ有効時だけ、取得・集約・描画変換のコストを出力する。
-   * 最適化前の基準値を取るため、結合を入れる前の段階から接続している。
+   * 開発フラグ有効時だけ、取得・fresh判定/結合・描画変換のコストを出力する。
+   * 結合後の内訳(stableCellCount / freshCellCount / coalescedBlockCountBySize)を含める。
    */
   useEffect(() => {
     logVisitedGridMetrics({
-      rawCellCount: visitedGridSourceCells.length,
-      stableCellCount: visitedGridSourceCells.length,
-      freshCellCount: 0,
+      rawCellCount: visitedGridSource.cells.length,
+      stableCellCount: coalescedVisitedGrid.stableCells.length,
+      freshCellCount: coalescedVisitedGrid.freshCells.length,
       renderPolygonCount: visitedGridCells.length,
-      coalescedBlockCountBySize: {},
+      coalescedBlockCountBySize: coalescedVisitedGrid.blockCountBySize,
       fetchMs: visitedGridTimingRef.current.fetchMs,
-      aggregationMs: visitedGridTimingRef.current.aggregationMs,
-      overlayBuildMs: visitedGridTimingRef.current.overlayBuildMs,
+      aggregationMs: visitedGridTimingRef.current.freshDetectionMs + visitedGridTimingRef.current.coalesceMs,
+      overlayBuildMs: visitedGridTimingRef.current.stableOverlayBuildMs + visitedGridTimingRef.current.freshOverlayBuildMs,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 描画データが確定したときだけ出力する
   }, [visitedGridCells]);

@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 
 import { db, withExclusiveTransaction } from '@/db/database';
+import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
 import type { GridBounds, GridCell } from './grid/gridCell';
 
 /** SQLiteから取得するvisited cell行。 */
@@ -95,9 +96,14 @@ export async function upsertVisitedCellsInCurrentTransaction(
  * 表示範囲に含まれるvisited cellを取得する。
  *
  * @param bounds - 基本100mセル番号範囲。
+ * @param displayCellSizeMeters - 呼び出し側の表示セルサイズ。現時点では未使用で、常に100mセル行を返す。
+ *   200m以上のSQL側集約(GROUP BY)は別タスクで実装する。
  * @returns 範囲内のvisited cell。
  */
-export async function getVisitedCellsInBounds(bounds: GridBounds): Promise<VisitedCellRow[]> {
+export async function getVisitedCellsInBounds(
+  bounds: GridBounds,
+  displayCellSizeMeters: number = GRID_OVERLAY_CONFIG.baseCellSizeMeters,
+): Promise<VisitedCellRow[]> {
   return db.getAllAsync<VisitedCellRow>(
     `SELECT ${visitedCellColumns}
      FROM visited_cells

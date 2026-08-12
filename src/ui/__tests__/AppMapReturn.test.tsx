@@ -599,13 +599,18 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(callsBeforeReturn + 1);
     expect(mockAnimateToRegion).toHaveBeenLastCalledWith(userRegion, 250);
-    expect(getGridBoundsForRegion).toHaveBeenLastCalledWith(userRegion, expect.any(Object));
-    expect(getVisitedCellsInBounds).toHaveBeenCalledWith({
-      minX: Math.round(userRegion.latitude * 1000),
-      maxX: Math.round(userRegion.longitude * 1000),
-      minY: Math.round(userRegion.latitudeDelta * 1000),
-      maxY: Math.round(userRegion.longitudeDelta * 1000),
-    });
+    // DB取得(先読み余白あり)と画面外判定(余白なし)の2effectがそれぞれgetGridBoundsForRegionを呼ぶため、
+    // 呼び出し順に依存しないtoHaveBeenCalledWithで検証する。
+    expect(getGridBoundsForRegion).toHaveBeenCalledWith(userRegion, expect.any(Object));
+    expect(getVisitedCellsInBounds).toHaveBeenCalledWith(
+      {
+        minX: Math.round(userRegion.latitude * 1000),
+        maxX: Math.round(userRegion.longitude * 1000),
+        minY: Math.round(userRegion.latitudeDelta * 1000),
+        maxY: Math.round(userRegion.longitudeDelta * 1000),
+      },
+      expect.any(Number),
+    );
   });
 
   test('取得済み範囲内(isGridBoundsContained=true)の再移動ではvisited cellを再取得しない', async () => {

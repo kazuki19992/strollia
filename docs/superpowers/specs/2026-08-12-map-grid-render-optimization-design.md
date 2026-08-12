@@ -1,6 +1,7 @@
 # メイン地図 Visited Grid 描画軽量化 設計書
 
 作成日: 2026-08-12
+改訂日: 2026-08-12(Codexレビュー反映。改訂内容は §10)
 対象: GitHub issue [#138 地図表示軽量化](https://github.com/kazuki19992/strollia/issues/138)
 
 ## 1. 背景と現象
@@ -45,21 +46,32 @@ onRegionChange={Platform.OS === 'android' ? onRegionChange : undefined}
 
 ## 3. 設計方針
 
-issue の方針を踏襲しつつ、実装可能性の観点で判断を確定させる。
-
 ### 3.1 Grid取得用 region を地図カメラ用 region から分離する
 
 `useMapFollowState` に `gridSyncRegion` を追加し、更新規則を分ける。
 
 | 契機 | `visibleRegion` | `gridSyncRegion` |
 | --- | --- | --- |
-| `onPanDrag`(ユーザー操作開始) | 変更なし | 変更なし(以後の更新を抑止するフラグを立てる) |
-| `onRegionChange`(操作中・Androidのみ) | 更新する | **抑止フラグが立っている間は更新しない** |
-| `onRegionChangeComplete`(操作完了) | 更新する | 更新する(フラグを下ろす) |
-| `centerOnCoordinate`(追従・現在地ボタン・地図復帰) | 更新する | 更新する(フラグを下ろす) |
+| `onPanDrag`(ユーザー操作) | 変更なし | 変更なし(抑止フラグを立て、アイドルタイマーを張り直す) |
+| `onRegionChange`(操作中・Androidのみ) | 更新する | **抑止フラグが立っている間は更新しない**(アイドルタイマーを張り直す) |
+| `onRegionChangeComplete`(操作完了) | 更新する | 更新する(フラグを下ろし、タイマーを解除) |
+| `centerOnCoordinate`(追従・現在地ボタン・地図復帰) | 更新する | 更新する(フラグを下ろし、タイマーを解除) |
 | `prepareMapRegionRestore`(地図復帰) | 更新する | 更新する |
+| アイドルタイマー発火 | 変更なし | 直近 region へ同期する(フラグを下ろす) |
 
 **ユーザー操作かどうかは `onPanDrag` で立てるフラグだけで判定する。** `onRegionChangeComplete` の発火有無から推測しない。理由は、プログラム移動(`animateToRegion`)でも `onRegionChangeComplete` は発火するため、それを根拠にするとプログラム移動が誤ってユーザー操作扱いになるから。
+
+#### イベント欠落へのフォールバック
+
+`onRegionChangeComplete` が届かないと Grid が固まったままになるため、アイドルタイマーを用意する。
+
+- `onPanDrag` と `onRegionChange` のたびにタイマーを**張り直す**(1000ms)
+- `onRegionChangeComplete` / `centerOnCoordinate` で解除する
+- 発火したら抑止フラグを下ろし、直近に受け取った region へ `gridSyncRegion` を同期する
+
+**張り直す設計にする理由**: 固定タイムアウトだと長いドラッグの最中に発火し、抑止したかったジェスチャー中の更新が復活する。「最後のイベントから1000ms 何も来ていない = 操作が止まっている」という判定にすることで、動いている間は絶対に発火しない。
+
+**1000ms にする理由**: iOS はドラッグ後の慣性スクロール中にイベントが来ないため、短すぎると慣性の途中で古い region へ同期してしまう。1000ms なら通常の慣性は先に収束し、`onRegionChangeComplete` が正常に届く。届かなかった場合だけフォールバックが働く。なお iOS は `onRegionChange` 未配線のため直近 region は操作前の値になるが、その場合の同期は実質no-opで無害。
 
 `AppStateProvider` の `gridOverlayRegion` を `gridSyncRegion ?? initialRegion` へ差し替える。`visibleRegion` は既存のまま `usePhotoClusters` などへ渡す。
 
@@ -69,6 +81,12 @@ issue の方針を踏襲しつつ、実装可能性の観点で判断を確定�
 
 **fresh cell** = GPS記録で新しく開いたセル。フェード対象かつ Polygon 結合の対象外。
 **stable cell** = それ以外の既存セル。フェードせず即時表示し、結合の対象。
+
+#### 保持形式: 100mセルIDを正規形にする
+
+fresh 集合は**表示セルIDではなく100m基本セルID(`100:x:y`)で保持する**。表示セルサイズが変わってもIDの意味が変わらないため、ズーム操作だけで fresh が失われない。
+
+stable 化の条件は「**画面外に出たとき**」だけ。ズーム変更・再取得・時間経過では stable 化しない。
 
 #### 判定方法(検討と決定)
 
@@ -84,34 +102,67 @@ GPS記録は `locationRecordingSession`(前景ウォッチ + バックグラウ�
 
 案Cは、範囲が変わっていないのに増えたセル = DB側でデータが増えた、という事実だけを根拠にする。前回範囲の外側にあるセルは「スクロールで入ってきた既存セル」の可能性があるため fresh にしない。**判定が曖昧なときはフェードしない側へ倒す**(誤って大量フェードするより、フェードし損ねる方が害が小さい)。
 
-集約表示(200m以上)では、表示セルが占める100mセル範囲が前回範囲に完全に含まれる場合のみ fresh とする。
+**fresh の検出は100m表示中だけ行う。** 200m以上の表示では取得結果が集約済みで、どの100mセルが開いたのか特定できないため。広域表示中は fresh の追加を行わない(既存の fresh は保持する)。
 
-#### 状態遷移
+#### stable 化(画面外判定)は DB 取得とは独立に行う
 
-- 表示され続けている fresh cell は fresh のまま(= 結合されない)
-- 表示範囲から外れた fresh cell は fresh 集合から落ちる → 再表示時は stable
-- 表示セルサイズが変わったら fresh 集合をリセットする(セルIDの意味が変わるため)
-- 1回で64件を超える fresh が出た場合は fresh なしへ倒す(フェード嵐の防止)
+DB取得範囲には `boundsPaddingRatio: 0.5` の先読み余白が乗る。取得結果を根拠に「画面外に出た」を判定すると、実際には画面外へ出たセルが余白の中に残り続けて fresh のままになる。さらに `coveredByLastFetch` の早期returnで、取得を省略した region 変更では fresh 状態が一切更新されない。
+
+そこで2つを分離する。
+
+| 用途 | 使う範囲 |
+| --- | --- |
+| SQLite 取得 | `boundsPaddingRatio: 0.5` **あり** |
+| fresh の画面外判定 | 余白**なし**の実表示範囲 |
+
+画面外判定は Grid 用 region が変わるたびに実行する(DB取得を省略した場合も実行する)。判定はセル番号の比較だけなのでコストは無視できる。
+
+#### フェード対象と結合除外を分ける
+
+大量セルが一度に fresh 判定された場合に止めたいのは**フェードの50ms再計算**であって、結合除外ではない。この2つを別集合として持つ。
+
+| 集合 | 役割 | 上限 |
+| --- | --- | --- |
+| `freshBaseCellIds` | Polygon 結合の対象から外す | なし(画面外へ出るまで維持) |
+| `fadingBaseCellIds` | 0.5秒フェードを適用する | 1回の検出で64件を超えたらそのバッチはフェードしない |
+
+上限を超えたセルはフェードせず即時表示になるが、fresh のままなので結合はされない。結合されないセルが一時的に増えても、変更前(全セルが個別 Polygon)より悪くなることはない。
+
+#### 状態遷移まとめ
+
+- 100m表示で新しく現れ、前回取得範囲に完全に含まれるセル → fresh に追加
+- fresh セルは実表示範囲(余白なし)から外れた時点で fresh から落ちる → 再表示時は stable
+- 表示セルサイズの変更では fresh を落とさない
+- 1回の検出で64件超 → そのバッチはフェードしない(fresh 自体は維持)
 
 ### 3.3 stable cell の正方形Polygon結合
 
 完全に埋まった正方形ブロックだけを1つの大きい Polygon へまとめる。**ブロック内の表示セルがすべて visited のときだけ**結合するので、未訪問セルを塗らず100m四方の表示意味は保たれる。
 
+- **適用は100m表示のときだけ**(下記「適用範囲」参照)
 - 対象倍率は `4x4` → `2x2` → 単体 の順。`8x8` 以上と任意長方形は対象外(issue の指定どおり)
 - **グリッド整列ブロックのみを対象にする**。原点は `Math.floor(x / blockSize) * blockSize`
   - 整列に限定する理由: (1) 同一倍率の整列ブロックは必ず互いに素なので貪欲でも結果が一意に決まる (2) スクロールしてもブロック境界が動かないため React key が安定する (3) 探索が O(n) で済む
   - 代償: 非整列で完全に埋まっている領域は結合されない。削減率は落ちるが表示は正しい
-- 結合後セルは `cellSizeMeters = 表示セルサイズ × 倍率`、`x = 原点X / 倍率`、`cellId = ${結合後サイズ}:${x}:${y}` とする。既存の `cellToPolygonCoordinates`(`gridCell.ts:121`)がこの形をそのまま矩形へ変換できるため、描画側の変更は不要
+- 結合後セルは `cellSizeMeters = 100 × 倍率`、`x = 原点X / 倍率`、`cellId = ${結合後サイズ}:${x}:${y}` とする。既存の `cellToPolygonCoordinates`(`gridCell.ts:121`)がこの形をそのまま矩形へ変換できるため、描画側の変更は不要
 - メタデータは `firstVisitedAt = MIN`、`lastVisitedAt = MAX`、`visitCount = SUM`
 
-**適用範囲(ユーザー承認済み)**: 100m表示だけでなく全ズーム段階に適用する。集約表示セルに対しても同じロジックが成立し、見た目は変わらないまま Polygon 数が減るため。
+#### 適用範囲: 100m表示のみ(初回実装)
+
+当初は全ズーム段階への適用を予定していたが、次の理由で100m表示のみへ限定する。
+
+1. fresh cell を100mセルIDで保持するため、200m表示で結合すると「200m表示セルの中に fresh な100mセルが含まれる場合の扱い」という余分な規定が必要になる
+2. 表示セル数は「画面サイズ ÷ セルの見かけ上のサイズ」でほぼ決まり、ズーム段階が上がっても大きくは増えない。広域での削減効果は小さい
+3. 広域表示は §3.5 の SQL 集約でJSへ渡る行数自体が減る
+
+`coalesceVisitedGridCells` 自体は表示セルサイズに依存しない汎用関数として実装するため、効果測定の結果しだいで後から広域へ広げられる。
 
 ### 3.4 描画メモ化の分割
 
 現状は全セルを1つの `useMemo` で作り直しているため、フェード1フレームごとに全セルの座標変換が走る。これを分ける。
 
 ```text
-coalescedVisitedGrid  (deps: 取得結果)          → stableCells / freshCells
+coalescedVisitedGrid  (deps: 取得結果, fresh集合)        → stableCells / freshCells
   ├ stableOverlayCells (deps: stable, opacity, color)      … フェードに依存しない
   └ freshOverlayCells  (deps: fresh, opacity, color, frame) … フェードごとに再計算
 visitedGridCells = [...stableOverlayCells, ...freshOverlayCells]
@@ -147,6 +198,8 @@ GROUP BY blockX, blockY
 
 **GPS座標・cellId・移動履歴は出力しない。** 件数・処理時間・削減率のみ。本番ユーザーには一切出力しない。
 
+**計測は最適化前の現行経路へ先に接続する。** ログ関数を作るだけでは改善前の数字が取れず、前後比較ができない。実装順の最初のタスクで現行の `useVisitedGridOverlay` へ計測を差し込み、基準値を取ってから最適化に入る(§9)。
+
 ## 4. ユーザー体験への影響
 
 | 項目 | 変更前 | 変更後 |
@@ -165,6 +218,7 @@ GROUP BY blockX, blockY
 - `boundsPaddingRatio: 0.5` の縮小
 - 現在地追従モード・現在地ボタン・地図復帰時の挙動変更
 - 任意長方形結合、`8x8` 以上のブロック結合
+- 200m以上の表示セルへの Polygon 結合(初回実装では見送り。§3.3)
 - GPSログや写真メタデータの外部送信を伴う計測
 
 ## 6. リスクと軽減策
@@ -172,29 +226,33 @@ GROUP BY blockX, blockY
 | リスク | 軽減策 |
 | --- | --- |
 | Android の長いパンで Overlay の欠けが目立つ | `boundsPaddingRatio: 0.5` の先読みを維持。実機確認で許容範囲か判断する |
-| `onPanDrag` 後に `onRegionChangeComplete` が来ず Grid が固まる | `centerOnCoordinate`(現在地ボタン・追従・地図復帰)でもフラグを下ろすため、復帰導線が残る |
+| `onRegionChangeComplete` の欠落で Grid が固まる | 最後の操作イベントから1000msのアイドルタイマーで最新 region へ同期する(§3.1)。イベント欠落時のテストを入れる |
+| ズーム操作だけで fresh が stable 化する | fresh を100m基本セルIDで保持し、表示セルサイズ変更では落とさない(§3.2) |
+| 画面外に出た fresh が先読み余白の中に残り続ける | 画面外判定を余白なしの実表示範囲で行い、DB取得を省略した region 変更でも実行する(§3.2) |
+| 大量 fresh 時に結合まで無効化される | フェード対象集合と結合除外集合を分け、上限はフェードにだけ適用する(§3.2) |
 | 結合により未訪問エリアが塗られる | ブロック内全セル visited を必須条件にし、市松模様・欠けブロックのテストで担保する |
 | 結合で React key が不安定になり再マウントが増える | グリッド整列ブロックに限定し、key を `${サイズ}:${x}:${y}` の決定的な形にする |
 | SQL集約が負のセル番号で誤る | floor 除算補正式を使い、負値のテストを入れる |
-| 大量セルの再表示でフェード嵐 | fresh 上限(64件)を超えたら fresh なしへ倒す |
 
 ## 7. 検証方針
 
 ### 自動テスト
 
-- `resolveFreshVisitedCellIds`: 前回範囲内の新規セル / 範囲外セル / 初回取得 / fresh の維持と画面外での stable 化 / 上限超過 / 集約表示セル
-- `coalesceVisitedGridCells`: 4x4完全一致 / 欠けたブロックの2x2・単体への落とし込み / 市松模様 / 未訪問セルを塗らない / fresh除外 / メタデータ引き継ぎ / 負のセル番号 / 200m表示セル
-- `useMapFollowState`: ドラッグ中は `gridSyncRegion` 不変 / 完了で更新 / 現在地ボタンで即時更新
-- `useVisitedGridOverlay`: 表示セルサイズを渡して取得する / 4x4が1Polygonへ結合される / 結合できないデータのフォールバック / 初回取得は即時表示 / 再取得の新規セルは結合されない
+- `resolveFreshVisitedCellIds`: 前回範囲内の新規セル / 範囲外セル / 初回取得 / 100m表示以外では追加しない / fresh の維持 / 上限超過時はフェードだけ止める
+- `evictOffscreenFreshCellIds`: 余白なしの実表示範囲で画面外セルだけ落とす / 表示セルサイズ変更では落とさない
+- `coalesceVisitedGridCells`: 4x4完全一致 / 欠けたブロックの2x2・単体への落とし込み / 市松模様 / 未訪問セルを塗らない / fresh除外 / メタデータ引き継ぎ / 負のセル番号
+- `useMapFollowState`: ドラッグ中は `gridSyncRegion` 不変 / 完了で更新 / 現在地ボタンで即時更新 / `onRegionChangeComplete` が来なくてもアイドルタイマーで同期 / 操作継続中はタイマーが発火しない
+- `useVisitedGridOverlay`: 表示セルサイズを渡して取得する / 4x4が1Polygonへ結合される / 結合できないデータのフォールバック / 初回取得は即時表示 / 再取得の新規セルは結合されない / DB取得を省略した region 変更でも画面外 fresh が落ちる
 - `visitedCellRepository`: 100m表示は従来クエリ / 200m以上は `GROUP BY` / 負値の floor 除算 / 不正な表示セルサイズの拒否
 - `visitedGridMetrics`: 削減率 / 整形 / 開発フラグ無効時は出力しない / 座標を含まない
 
 ### 手動確認(自動テストで担保できない部分)
 
-1. `EXPO_PUBLIC_LOG_VISITED_GRID_METRICS=true` で起動し、密集地域の100m表示で `render < raw` を確認
-2. 指でドラッグ中に `fetchMs` / `aggregationMs` のログが連発せず、離した後に1回だけ更新されることを確認
-3. 現在地ボタンで追従再開と Grid の即時追従を確認
-4. 別画面から地図へ戻ったときの表示範囲・Grid 復元を確認
+1. `EXPO_PUBLIC_LOG_VISITED_GRID_METRICS=true` で最適化前(Task 1完了時点)に密集地域の数字を記録する
+2. 最適化後に同じ地域で `render < raw` と削減率を記録し、前後比較する
+3. 指でドラッグ中に `fetchMs` / `aggregationMs` のログが連発せず、離した後に1回だけ更新されることを確認
+4. 現在地ボタンで追従再開と Grid の即時追従を確認
+5. 別画面から地図へ戻ったときの表示範囲・Grid 復元を確認
 
 ## 8. 変更対象ファイル
 
@@ -202,12 +260,12 @@ GROUP BY blockX, blockY
 | --- | --- | --- |
 | `src/config/developmentFlags.ts` | 変更 | 計測ログ用フラグ `logVisitedGridMetrics` |
 | `src/features/map/visitedGridMetrics.ts` | 新規 | 計測値の型・削減率・整形・出力 |
-| `src/features/map/visitedGridFreshCells.ts` | 新規 | fresh cell 判定(純粋関数) |
+| `src/features/map/visitedGridFreshCells.ts` | 新規 | fresh cell の検出と画面外判定(純粋関数) |
 | `src/features/map/visitedGridCoalescing.ts` | 新規 | 正方形ブロックの Polygon 結合(純粋関数) |
 | `src/features/location/visitedCellRepository.ts` | 変更 | 表示セルサイズ引数と SQL 集約 |
 | `src/features/location/grid/gridAggregation.ts` | 変更 | 不要になる `aggregateVisitedCells` を削除 |
-| `src/ui/hooks/useMapFollowState.ts` | 変更 | `gridSyncRegion` と操作中の更新抑止 |
-| `src/ui/hooks/useVisitedGridOverlay.ts` | 変更 | fresh/stable 分離・結合・メモ分割・計測 |
+| `src/ui/hooks/useMapFollowState.ts` | 変更 | `gridSyncRegion`・操作中の更新抑止・アイドルタイマー |
+| `src/ui/hooks/useVisitedGridOverlay.ts` | 変更 | 計測接続 → fresh/stable 分離・結合・メモ分割 |
 | `src/ui/state/AppStateProvider.tsx` | 変更 | Grid 用 region の差し替え |
 | `docs/map-rendering.md` | 変更 | 仕様追記 |
 
@@ -215,14 +273,29 @@ GROUP BY blockX, blockY
 
 ## 9. 実装順
 
-issue の推奨順に従い、効果測定を先に入れる。
+効果測定を先に入れ、**改善前の基準値を取ってから**最適化に進む。
 
-1. 開発用の効果測定モジュール
-2. fresh cell 判定(純粋関数)
+1. 効果測定モジュール + **現行の `useVisitedGridOverlay` へ計測を接続**(改善前の基準値をここで取得する)
+2. fresh cell の検出・画面外判定(純粋関数)
 3. Polygon 結合(純粋関数)
-4. ユーザースクロール中の Grid 更新停止
-5. `useVisitedGridOverlay` への結線(2・3・1 をまとめて有効化)
+4. ユーザースクロール中の Grid 更新停止 + アイドルタイマー
+5. `useVisitedGridOverlay` への結線(2・3 を有効化し、計測値を結合後の内訳へ拡張)
 6. 200m以上の SQLite 側集約
 7. ドキュメント更新と全体検証
 
 実装計画は `docs/superpowers/plans/2026-08-12-map-grid-render-optimization.md`。
+
+## 10. 改訂履歴
+
+### 2026-08-12 Codexレビュー反映
+
+| # | 指摘 | 対応 |
+| --- | --- | --- |
+| 1 | 表示セルサイズ変更で fresh がリセットされ、ズーム往復だけで stable 化する | fresh を100m基本セルIDで保持し、セルサイズ変更では落とさない。検出は100m表示中のみ(§3.2) |
+| 2 | 「画面外」判定が先読み余白付きの取得範囲になっており、DB取得を省略すると更新もされない | DB取得範囲(余白あり)と画面外判定(余白なし)を分離し、判定は region 変更のたびに実行する(§3.2) |
+| 3 | 64件上限がフェードだけでなく結合除外まで解除してしまう | `freshBaseCellIds`(結合除外)と `fadingBaseCellIds`(フェード)を分離し、上限はフェードにだけ適用(§3.2) |
+| 4 | `onRegionChangeComplete` 欠落時の復旧が現在地ボタン頼み | 最後の操作イベントから1000msのアイドルタイマーで最新 region へ同期(§3.1) |
+| 5 | 計測が最適化後にしか接続されず前後比較ができない | Task 1 で現行経路へ計測を接続し、基準値を取ってから最適化する(§3.6・§9) |
+| 確認 | 全ズーム段階への Polygon 結合は合意が取れていない | ユーザー確認のうえ100m表示のみへ変更。関数は汎用のまま実装し後から広げられるようにする(§3.3) |
+
+`package-lock.json` の 1.1.2 → 1.1.3 更新は、`develop` に元からあった `package.json` との不整合を `npm install` が解消したもの。機能変更とは別コミットにする。

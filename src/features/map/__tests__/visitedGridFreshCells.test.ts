@@ -11,6 +11,7 @@ function params(overrides: Partial<Parameters<typeof detectFreshVisitedCells>[0]
   return {
     previousCellIds: new Set<string>(),
     previousBounds: { minX: 0, maxX: 10, minY: 0, maxY: 10 },
+    previousDisplayCellSizeMeters: 100,
     nextCells: [] as GridCell[],
     displayCellSizeMeters: 100,
     baseCellSizeMeters: 100,
@@ -78,6 +79,33 @@ describe('Visited Grid新規セル検出 detectFreshVisitedCells', () => {
 
     expect(result.freshCellIds.size).toBe(0);
     expect(result.fadingCellIds.size).toBe(0);
+  });
+
+  it('集約表示から100m表示へズームインした直後は既存セルをfreshにしない', () => {
+    // 前回IDは 200:x:y、今回は 100:x:y のため、素朴に差分を取ると範囲内の既存セルが
+    // すべて「前回なかったセル」に見えてしまう。前回も100m表示だった場合だけ検出する。
+    const result = detectFreshVisitedCells(
+      params({
+        previousDisplayCellSizeMeters: 200,
+        previousCellIds: new Set(['200:0:0', '200:1:1']),
+        nextCells: [cell(1, 1), cell(2, 2), cell(3, 3)],
+      }),
+    );
+
+    expect(result.freshCellIds.size).toBe(0);
+    expect(result.fadingCellIds.size).toBe(0);
+  });
+
+  it('前回取得の表示セルサイズが不明な場合はfreshを検出しない', () => {
+    const result = detectFreshVisitedCells(
+      params({
+        previousDisplayCellSizeMeters: null,
+        previousCellIds: new Set(['100:0:0']),
+        nextCells: [cell(1, 1)],
+      }),
+    );
+
+    expect(result.freshCellIds.size).toBe(0);
   });
 
   it('一度に大量のセルがfresh判定された場合はフェードだけ止め、結合除外は維持する', () => {

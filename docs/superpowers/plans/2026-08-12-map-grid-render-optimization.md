@@ -27,18 +27,18 @@
 
 ## ファイル構成
 
-| ファイル | 区分 | 責務 |
-| --- | --- | --- |
-| `src/config/developmentFlags.ts` | 変更 | 計測ログ用フラグ `logVisitedGridMetrics` |
-| `src/features/map/visitedGridMetrics.ts` | 新規 | 計測値の型・削減率・整形・出力 |
-| `src/features/map/visitedGridFreshCells.ts` | 新規 | fresh cell の検出と画面外判定(純粋関数) |
-| `src/features/map/visitedGridCoalescing.ts` | 新規 | 正方形ブロックの Polygon 結合(純粋関数) |
-| `src/features/location/visitedCellRepository.ts` | 変更 | 表示セルサイズ引数と SQL 集約 |
-| `src/features/location/grid/gridAggregation.ts` | 変更 | `aggregateVisitedCells` を削除 |
-| `src/ui/hooks/useMapFollowState.ts` | 変更 | `gridSyncRegion`・操作中の更新抑止・アイドルタイマー |
-| `src/ui/hooks/useVisitedGridOverlay.ts` | 変更 | 計測接続 → fresh/stable 分離・結合・メモ分割 |
-| `src/ui/state/AppStateProvider.tsx` | 変更 | Grid 用 region の差し替え |
-| `docs/map-rendering.md` | 変更 | 仕様追記 |
+| ファイル                                         | 区分 | 責務                                                 |
+| ------------------------------------------------ | ---- | ---------------------------------------------------- |
+| `src/config/developmentFlags.ts`                 | 変更 | 計測ログ用フラグ `logVisitedGridMetrics`             |
+| `src/features/map/visitedGridMetrics.ts`         | 新規 | 計測値の型・削減率・整形・出力                       |
+| `src/features/map/visitedGridFreshCells.ts`      | 新規 | fresh cell の検出と画面外判定(純粋関数)              |
+| `src/features/map/visitedGridCoalescing.ts`      | 新規 | 正方形ブロックの Polygon 結合(純粋関数)              |
+| `src/features/location/visitedCellRepository.ts` | 変更 | 表示セルサイズ引数と SQL 集約                        |
+| `src/features/location/grid/gridAggregation.ts`  | 変更 | `aggregateVisitedCells` を削除                       |
+| `src/ui/hooks/useMapFollowState.ts`              | 変更 | `gridSyncRegion`・操作中の更新抑止・アイドルタイマー |
+| `src/ui/hooks/useVisitedGridOverlay.ts`          | 変更 | 計測接続 → fresh/stable 分離・結合・メモ分割         |
+| `src/ui/state/AppStateProvider.tsx`              | 変更 | Grid 用 region の差し替え                            |
+| `docs/map-rendering.md`                          | 変更 | 仕様追記                                             |
 
 ---
 
@@ -120,14 +120,16 @@ git commit -m "feat(map): Visited Grid描画コストの開発用計測を追加
 - Consumes: `GridBounds`, `GridCell`(`@/features/location/grid/gridCell`)
 - Produces:
   - `const MAX_FADING_VISITED_CELL_COUNT = 64`
-  - `type DetectFreshVisitedCellsParams = { previousCellIds: ReadonlySet<string>; previousBounds: GridBounds | null; nextCells: readonly GridCell[]; displayCellSizeMeters: number; baseCellSizeMeters: number; maxFadingCellCount: number }`
+  - `type DetectFreshVisitedCellsParams = { previousCellIds: ReadonlySet<string>; previousBounds: GridBounds | null; previousDisplayCellSizeMeters: number | null; nextCells: readonly GridCell[]; displayCellSizeMeters: number; baseCellSizeMeters: number; maxFadingCellCount: number }`
   - `type DetectedFreshVisitedCells = { freshCellIds: Set<string>; fadingCellIds: Set<string> }`
   - `function detectFreshVisitedCells(params: DetectFreshVisitedCellsParams): DetectedFreshVisitedCells`
   - `function evictOffscreenFreshCellIds(freshCellIds: ReadonlySet<string>, visibleBounds: GridBounds): Set<string>`
 
 **判定ルール:**
 
-fresh は100m基本セルID(`100:x:y`)で持つ。検出は**100m表示のときだけ**行い、「前回取得済み範囲に完全に含まれるのに前回は返らなかったセル」を fresh とする。前回範囲の外はスクロールで入った既存セルの可能性があるため fresh にしない(曖昧なときはフェードしない側へ倒す)。
+fresh は100m基本セルID(`100:x:y`)で持つ。検出は「前回取得も今回取得も100m表示だった場合」だけ行い、「前回取得済み範囲に完全に含まれるのに前回は返らなかったセル」を fresh とする。前回範囲の外はスクロールで入った既存セルの可能性があるため fresh にしない(曖昧なときはフェードしない側へ倒す)。
+
+**前回の表示セルサイズも見る理由**: 前回が集約表示だと前回IDは `200:x:y`、今回は `100:x:y` になるため、素朴な差分では範囲内の既存セルがすべて「前回なかったセル」に見える。集約表示から100m表示へズームインしただけで大量セルが fresh 判定され、フェードと結合除外が同時に走って避けたい負荷が戻る。前回が100m以外なら検出をスキップし、今回の100mセル集合を次回の baseline として記録するだけにする。
 
 `fadingCellIds` は fresh のうちフェードを開始してよいもの。1回の検出で `maxFadingCellCount` を超えたらフェードは行わない(fresh 自体は維持し、結合除外は続ける)。
 
@@ -138,17 +140,17 @@ fresh は100m基本セルID(`100:x:y`)で持つ。検出は**100m表示のとき
 `src/features/map/__tests__/visitedGridFreshCells.test.ts` の検証項目:
 
 `detectFreshVisitedCells`
+
 1. 前回取得済み範囲の内側に現れた新しいセルは fresh かつ fading になる
 2. 前回取得範囲の外にあるセルは fresh にしない
 3. 初回取得(`previousBounds` が null)では fresh なし
 4. 前回も存在したセルは fresh にしない
 5. 100m表示以外(`displayCellSizeMeters` が 200)では fresh を検出しない
-6. 上限を超えた場合は `freshCellIds` は維持し `fadingCellIds` だけ空にする
+6. 集約表示から100m表示へズームインした直後(`previousDisplayCellSizeMeters` が 200)は既存セルを fresh にしない
+7. `previousDisplayCellSizeMeters` が null なら fresh を検出しない
+8. 上限を超えた場合は `freshCellIds` は維持し `fadingCellIds` だけ空にする
 
-`evictOffscreenFreshCellIds`
-7. 実表示範囲の内側の fresh は残す
-8. 実表示範囲の外側の fresh は落とす
-9. 空集合を渡しても壊れない
+`evictOffscreenFreshCellIds` 7. 実表示範囲の内側の fresh は残す 8. 実表示範囲の外側の fresh は落とす 9. 空集合を渡しても壊れない
 
 - [ ] **Step 2: 失敗を確認する**
 
@@ -160,9 +162,11 @@ Expected: FAIL(`Cannot find module`)
 ```typescript
 export function detectFreshVisitedCells({ ... }): DetectedFreshVisitedCells {
   const freshCellIds = new Set<string>();
+  // 集約表示では取得結果からどの100mセルが開いたか特定できない。前回が集約表示だと
+  // IDの体系が違うため既存セルが全部「前回なかったセル」に見える。どちらも100mのときだけ検出する。
+  const isBaseSizeComparison = displayCellSizeMeters === baseCellSizeMeters && previousDisplayCellSizeMeters === baseCellSizeMeters;
 
-  // 集約表示では取得結果からどの100mセルが開いたか特定できないため検出しない。
-  if (!previousBounds || displayCellSizeMeters !== baseCellSizeMeters) {
+  if (!previousBounds || !isBaseSizeComparison) {
     return { freshCellIds, fadingCellIds: new Set<string>() };
   }
 
@@ -223,6 +227,7 @@ git commit -m "feat(map): GPS記録で開いた新規visited cellの判定を追
 - [ ] **Step 1: 失敗するテストを書く**
 
 検証項目:
+
 1. 4x4が完全に埋まっていれば `400:0:0` の1セルへ結合される
 2. 4x4の一部が欠けていれば 2x2 3個 + 単体 3個へ落ちる
 3. 市松模様では結合せず100mセル8個のまま
@@ -274,14 +279,14 @@ git commit -m "feat(map): 完全に埋まった正方形ブロックのPolygon�
 
 **更新規則(設計書 §3.1 の表と一致させること):**
 
-| 契機 | `visibleRegion` | `gridSyncRegion` | アイドルタイマー |
-| --- | --- | --- | --- |
-| `onPanDrag` | 変更なし | 変更なし | 張り直す |
-| `onRegionChange`(操作中) | 更新 | 抑止フラグが立っていれば更新しない | 張り直す |
-| `onRegionChangeComplete` | 更新 | 更新 | 解除 |
-| `centerOnCoordinate` | 更新 | 更新 | 解除 |
-| `prepareMapRegionRestore` | 更新 | 更新 | 解除 |
-| タイマー発火(1000ms) | 変更なし | 直近 region へ同期 | — |
+| 契機                      | `visibleRegion` | `gridSyncRegion`                   | アイドルタイマー |
+| ------------------------- | --------------- | ---------------------------------- | ---------------- |
+| `onPanDrag`               | 変更なし        | 変更なし                           | 張り直す         |
+| `onRegionChange`(操作中)  | 更新            | 抑止フラグが立っていれば更新しない | 張り直す         |
+| `onRegionChangeComplete`  | 更新            | 更新                               | 解除             |
+| `centerOnCoordinate`      | 更新            | 更新                               | 解除             |
+| `prepareMapRegionRestore` | 更新            | 更新                               | 解除             |
+| タイマー発火(1000ms)      | 変更なし        | 直近 region へ同期                 | —                |
 
 **ユーザー操作判定は `onPanDrag` のフラグだけで行う。** `onRegionChangeComplete` の発火有無から推測しない(プログラム移動でも発火するため)。
 
@@ -328,8 +333,8 @@ Expected: PASS(既存テスト含め全件)
 分割代入へ `gridSyncRegion` を追加し、`gridOverlayRegion` を差し替える。
 
 ```typescript
-  // Grid取得はユーザー操作中に走らせないため visibleRegion ではなく gridSyncRegion を使う。
-  const gridOverlayRegion = gridSyncRegion ?? initialRegion;
+// Grid取得はユーザー操作中に走らせないため visibleRegion ではなく gridSyncRegion を使う。
+const gridOverlayRegion = gridSyncRegion ?? initialRegion;
 ```
 
 - [ ] **Step 6: 地図まわりの既存テストを回す**
@@ -384,6 +389,7 @@ visitedGridCells = [...stableOverlayCells, ...freshOverlayCells]
 `src/ui/hooks/__tests__/useVisitedGridOverlay.test.tsx` を書き換える。`@/features/location/grid/gridCell` と `gridAggregation` のモックは外し、実物を使う(結合結果の検証に必要なため)。`getVisitedCellsInBounds` だけモックする。
 
 検証項目:
+
 1. 既存: 初期は空配列 / `isReady` false では取得しない / `incrementVisitedGridRefreshVersion` で再取得する
 2. `getVisitedCellsInBounds` が表示セルサイズ(100)付きで呼ばれる
 3. 完全に埋まった4x4は `400:0:0` の1Polygonへ結合される
@@ -434,6 +440,7 @@ git commit -m "feat(map): 新規セルのみフェードし既存セルのPolygo
 - [ ] **Step 1: 失敗するテストを書く**
 
 検証項目:
+
 1. 100m表示では従来クエリ(`WHERE x BETWEEN ? AND ?`、`GROUP BY` を含まない)
 2. 200m表示では `GROUP BY blockX, blockY` / `MIN(first_visited_at)` / `MAX(last_visited_at)` / `SUM(visit_count)` を含み、戻り値が `cellId: '200:-3:4'` 形式へ変換される
 3. 集約時の除算式に `((x % ?) + ?) % ?` が含まれ、bounds が末尾4パラメータになる

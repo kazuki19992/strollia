@@ -15,6 +15,8 @@ export type DetectFreshVisitedCellsParams = {
   previousCellIds: ReadonlySet<string>;
   /** 前回取得に使った基本セル番号範囲。初回取得ならnull。 */
   previousBounds: GridBounds | null;
+  /** 前回取得時の表示セルサイズ。単位はm。初回取得ならnull。 */
+  previousDisplayCellSizeMeters: number | null;
   /** 今回取得した表示セル。 */
   nextCells: readonly GridCell[];
   /** 現在の表示セルサイズ。単位はm。 */
@@ -43,20 +45,26 @@ export type DetectedFreshVisitedCells = {
  * 集約表示(200m以上)では取得結果からどの100mセルが開いたのか特定できないため検出しない。
  * fresh は100m基本セルIDで持つため、ズーム操作だけで既存のfreshが失われることはない。
  *
+ * 前回取得も100m表示だった場合に限って検出する。前回が集約表示だと前回IDが `200:x:y`、
+ * 今回が `100:x:y` になり、範囲内の既存セルがすべて「前回なかったセル」に見えてしまう。
+ * その状態で検出すると、ズームインしただけで大量のセルが結合除外され負荷が戻る。
+ *
  * @param params - 前回状態と今回取得結果。
  * @returns fresh扱いにするセルIDと、フェード対象のセルID。
  */
 export function detectFreshVisitedCells({
   previousCellIds,
   previousBounds,
+  previousDisplayCellSizeMeters,
   nextCells,
   displayCellSizeMeters,
   baseCellSizeMeters,
   maxFadingCellCount,
 }: DetectFreshVisitedCellsParams): DetectedFreshVisitedCells {
   const freshCellIds = new Set<string>();
+  const isBaseSizeComparison = displayCellSizeMeters === baseCellSizeMeters && previousDisplayCellSizeMeters === baseCellSizeMeters;
 
-  if (!previousBounds || displayCellSizeMeters !== baseCellSizeMeters) {
+  if (!previousBounds || !isBaseSizeComparison) {
     return { freshCellIds, fadingCellIds: new Set<string>() };
   }
 

@@ -85,4 +85,21 @@ describe('写真クラスタhook usePhotoClusters', () => {
     // 参照ごと同一であることまで確認する(再計算していれば新しい配列になる)。
     expect(result.current).toBe(firstResult);
   });
+
+  it('ヒステリシス境界をわずかに超えるだけでは再計算せず、大きく超えると再計算する', () => {
+    const photos = [createPhoto('a')];
+    const { rerender } = renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
+      initialProps: { region: { ...baseRegion, latitudeDelta: 0.04 } }, // 段階3(150m)の範囲内
+    });
+
+    expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
+
+    // 段階境界(0.045)をわずかに超えるが、ヒステリシス帯(0.045 * 1.2 = 0.054)には収まる。
+    rerender({ region: { ...baseRegion, latitudeDelta: 0.05 } });
+    expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
+
+    // ヒステリシス帯を明確に超える。
+    rerender({ region: { ...baseRegion, latitudeDelta: 0.06 } });
+    expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(2);
+  });
 });

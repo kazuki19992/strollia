@@ -42,21 +42,34 @@
 
 ```typescript
 describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
-  it('各段階の境界でちょうど切り替わる', () => {
+  it('全段階の境界でちょうど切り替わる', () => {
     // 境界未満は手前の段階、境界以上は次の段階になる。
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.0029 })).toBe(10);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.003 })).toBe(30);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.0089 })).toBe(30);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.009 })).toBe(75);
+    const transitions = [
+      { boundary: 0.003, previousRadius: 10, nextRadius: 30 },
+      { boundary: 0.009, previousRadius: 30, nextRadius: 75 },
+      { boundary: 0.0225, previousRadius: 75, nextRadius: 150 },
+      { boundary: 0.045, previousRadius: 150, nextRadius: 300 },
+      { boundary: 0.09, previousRadius: 300, nextRadius: 750 },
+      { boundary: 0.225, previousRadius: 750, nextRadius: 1500 },
+      { boundary: 0.45, previousRadius: 1500, nextRadius: 3000 },
+      { boundary: 0.9, previousRadius: 3000, nextRadius: 7500 },
+      { boundary: 2.25, previousRadius: 7500, nextRadius: 15000 },
+      { boundary: 4.5, previousRadius: 15000, nextRadius: 50000 },
+    ];
+
+    for (const { boundary, previousRadius, nextRadius } of transitions) {
+      expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: boundary - 0.000001 })).toBe(previousRadius);
+      expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: boundary })).toBe(nextRadius);
+    }
   });
 
   it('極端に狭い表示範囲では最小段階(10m)になる', () => {
     expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 })).toBe(10);
   });
 
-  it('最終段階(15000m, 境界4.5)を超える広域表示では世界地図相当のフォールバック値になる', () => {
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.5 })).toBe(3_000_000);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 180 })).toBe(3_000_000);
+  it('最終段階(15000m, 境界4.5)を超える広域表示では等価性を検証済みのフォールバック値になる', () => {
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.5 })).toBe(50_000);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 180 })).toBe(50_000);
   });
 
   it('表示範囲がない場合は近距離用の既定値(latitudeDelta=0.01相当)を使う', () => {
@@ -113,10 +126,9 @@ const PHOTO_CLUSTER_RADIUS_STAGES: PhotoClusterRadiusStage[] = [
 
 /**
  * 段階テーブルを超える広域表示(latitudeDelta >= 4.5)で使うフォールバック半径。
- * 世界地図相当の大きさにすることで、地図が表現できる現実的な範囲内では
- * 実質「上限なし」だった旧来の挙動と区別がつかないようにする。
+ * 空間ハッシュと全走査の等価性を検証済みの上限値を使う。
  */
-const PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS = 3_000_000;
+const PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS = 50_000;
 
 /** 段階境界のちらつき防止に使うヒステリシス比率。visited grid(GRID_OVERLAY_CONFIG)と同じ値を踏襲する。 */
 const PHOTO_CLUSTER_RADIUS_HYSTERESIS_RATIO = 0.2;
@@ -677,7 +689,7 @@ Expected: FAIL(現行のフックはヒステリシスなしで `getPhotoCluster
 `src/ui/hooks/usePhotoClusters.ts` の全体を以下に置き換える。
 
 ```typescript
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Region } from 'react-native-maps';
 
 import { clusterMapPhotosByRadius, getStablePhotoClusterRadiusMeters } from '@/features/photos/photoClusters';
@@ -697,8 +709,8 @@ import type { MapPhoto } from '@/features/photos/photoLibrary';
  * この2段構成が本フックの存在理由であり、1つの `useMemo` に戻してはいけない。
  *
  * 半径算出には段階境界のちらつき・パン時のメモ化ミスを防ぐヒステリシスがかかっており、
- * 直前の半径を `previousRadiusRef` で保持して次回の算出へ渡す(useVisitedGridOverlay.ts の
- * visitedGridDisplayCellSizeRef と同じパターン)。
+ * 直前の半径を `previousRadiusRef` で保持して次回の算出へ渡す。refはコミット後の
+ * `useEffect` で更新するため、破棄されたレンダーの半径を次回計算へ流出させない。
  *
  * @param photos - 地図上に表示するジオタグ付き写真一覧。
  * @param visibleRegion - 現在の地図表示範囲。未取得の場合は近距離用の既定値が使われる。
@@ -708,10 +720,12 @@ export function usePhotoClusters(photos: MapPhoto[], visibleRegion: Region | nul
   const previousRadiusRef = useRef<number | null>(null);
 
   const clusterRadiusMeters = useMemo(() => {
-    const stableRadius = getStablePhotoClusterRadiusMeters(visibleRegion, previousRadiusRef.current);
-    previousRadiusRef.current = stableRadius;
-    return stableRadius;
+    return getStablePhotoClusterRadiusMeters(visibleRegion, previousRadiusRef.current);
   }, [visibleRegion]);
+
+  useEffect(() => {
+    previousRadiusRef.current = clusterRadiusMeters;
+  }, [clusterRadiusMeters]);
 
   return useMemo(() => clusterMapPhotosByRadius(photos, clusterRadiusMeters), [photos, clusterRadiusMeters]);
 }

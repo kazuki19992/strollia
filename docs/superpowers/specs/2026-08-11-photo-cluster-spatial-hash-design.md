@@ -54,11 +54,11 @@ const PHOTO_CLUSTER_RADIUS_STAGES: PhotoClusterRadiusStage[] = [
   { radiusMeters: 7500, maxLatitudeDelta: 2.25 },
   { radiusMeters: 15000, maxLatitudeDelta: 4.5 },
 ];
-/** 上記を超える(latitudeDelta > 4.5)場合に使う最終段階。世界地図相当の大きさで、実質「上限なし」として機能させる。 */
-const PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS = 3_000_000;
+/** 上記を超える(latitudeDelta >= 4.5)場合に使う最終段階。等価性を検証済みの上限値を使う。 */
+const PHOTO_CLUSTER_RADIUS_WORLD_FALLBACK_METERS = 50_000;
 ```
 
-正確な数値(段階数・境界・フォールバック値)は実装時に TDD で確定させる。ここでは構造(既存の傾き `3330` に沿った境界選定、最終段階での実質無制限化)を確定させる。
+正確な数値(段階数・境界・フォールバック値)は実装時に TDD で確定させる。ここでは構造(既存の傾き `3330` に沿った境界選定、等価性を保てる上限を最終段階にすること)を確定させる。
 
 **既存の「上限なし」性質の扱い**: `getPhotoClusterRadiusMeters` は現在、広域ズームで際限なく半径が伸びる(既存テストで明示的に検証済み)。この設計では段階制に変えるため厳密には有限になる。当初は「世界地図相当」の巨大な値でUI上区別がつかない挙動を狙ったが、フォールバック半径は空間ハッシュの3セル探索が前提とするWeb Mercatorスケール係数のほぼ一定性が崩れない範囲に収める必要があり、実測で等価性が保証できる上限は50,000m(50km)である(200,000mでは崩れることを確認済み)。そのため最終段階のフォールバック値は50,000mとし、「世界地図相当で実質無制限」ではなく「等価性が保証できる範囲で最大」という位置付けにする。既存の「上限なし」テストは、新しい段階値に合わせて書き換える(意図した変更であり回帰ではない)。
 
@@ -88,23 +88,25 @@ export function getStablePhotoClusterRadiusMeters(region: Region | null, previou
 
 ### 3.2 呼び出し側(`usePhotoClusters`)のヒステリシス対応
 
-`src/ui/hooks/usePhotoClusters.ts` に、`useVisitedGridOverlay.ts` の `visitedGridDisplayCellSizeRef` と同じパターンで前回半径を保持する `useRef` を追加する。
+`src/ui/hooks/usePhotoClusters.ts` に前回半径を保持する `useRef` を追加する。refの更新はレンダー中ではなく、コミット後に `useEffect` で行う。
 
 ```typescript
 export function usePhotoClusters(photos: MapPhoto[], visibleRegion: Region | null): MapPhotoCluster[] {
   const previousRadiusRef = useRef<number | null>(null);
 
   const clusterRadiusMeters = useMemo(() => {
-    const stableRadius = getStablePhotoClusterRadiusMeters(visibleRegion, previousRadiusRef.current);
-    previousRadiusRef.current = stableRadius;
-    return stableRadius;
+    return getStablePhotoClusterRadiusMeters(visibleRegion, previousRadiusRef.current);
   }, [visibleRegion]);
+
+  useEffect(() => {
+    previousRadiusRef.current = clusterRadiusMeters;
+  }, [clusterRadiusMeters]);
 
   return useMemo(() => clusterMapPhotosByRadius(photos, clusterRadiusMeters), [photos, clusterRadiusMeters]);
 }
 ```
 
-`useMemo` の中で ref を書き換えるのは `useVisitedGridOverlay.ts` に既に前例がある(`visitedGridDisplayCellSizeRef.current = displayCellSizeMeters`)。
+これにより、Concurrent Reactで破棄されたレンダーの半径が、次のコミット済みレンダーへ流出しない。
 
 ### 3.3 空間ハッシュによる O(N) クラスタリング
 
@@ -142,8 +144,9 @@ export function clusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters
 
 - 写真の座標を `coordinateToGridCell(photo, clusterRadiusMeters)` でセル化する(セルサイズ = 半径)
 - 自セルを中心に **±3セル(7×7=49セル)** の範囲にある候補クラスタを `clustersByCellId` から集める
+- Xセル番号はワールド幅で循環させ、日付変更線の両側にある近接写真も候補に含める
 - 候補それぞれについて、**現行と全く同じ** `distanceMeters(photo, cluster.seed)` で判定する(索引は候補の絞り込みにのみ使い、採用基準は変えない)
-- 「半径内かつ最近傍」という現行のロジック(連鎖防止のため代表点との距離のみを見る)はそのまま維持する
+- 「半径内かつ最近傍」という現行のロジック(連鎖防止のため代表点との距離のみを見る)はそのまま維持し、同距離なら先に作られたクラスタを選ぶ
 
 **探索範囲を1セル(9セル)ではなく3セル(49セル)にする理由**: Web Mercator は緯度が上がるほど距離を実際より引き伸ばす(北海道付近・緯度46度で最大約1.43倍)。セルサイズ=半径のまま1セル分だけ探索すると、緯度によっては本来同一クラスタになるべき写真をセル境界の外に見逃す可能性がある。3セル分(スケール係数3倍まで安全、緯度70度相当まで許容)に広げることで、現実的な全緯度域で現行 O(N²) 実装と同一の結果を保証する。49セルは N に対して定数なので、全体の計算量は O(N) のまま変わらない。
 
@@ -170,7 +173,7 @@ export function clusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters
 
 - 各段階の境界で正しい半径が選ばれること
 - 下限(`MINIMUM_CLUSTER_RADIUS_METERS` 相当)が維持されること
-- 最終段階を超える広域ズームでも巨大な既定値へフォールバックすること(「上限なし」の実質的な維持)
+- 最終段階を超える広域ズームでは、等価性を検証済みのフォールバック値(50,000m)になること
 - ヒステリシス: 境界付近を往復しても、比率内ならちらつかず前回値を維持すること(`gridAggregation.test.ts` のテストパターンを踏襲)
 - `previousRadiusMeters` が `null`(初回)の場合は素直に段階選択した値を返すこと
 

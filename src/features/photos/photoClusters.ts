@@ -1,7 +1,7 @@
 import { Region } from 'react-native-maps';
 
 import { MapPhoto } from './photoLibrary';
-import { coordinateToGridCell } from '@/features/location/grid/gridCell';
+import { coordinateToGridCell, getGridWorldColumnCount } from '@/features/location/grid/gridCell';
 import { distanceMeters } from '@/utils/distance';
 
 /** 地図上で近接写真をまとめた表示単位。 */
@@ -55,7 +55,7 @@ const PHOTO_CLUSTER_RADIUS_STAGES: PhotoClusterRadiusStage[] = [
  * 空間ハッシュの3セル探索(CLUSTER_SEARCH_CELL_RADIUS)による正当性は、
  * Web Mercatorのスケール係数(secant(緯度))がセル内でほぼ一定であることを前提にしている。
  * セルサイズが数千kmに達すると、緯度に関わらずこの前提が崩れ、現行O(N²)実装との
- * 出力一致(等価性)が保証できなくなる(検証: 50,000mまでは緯度0〜82度で等価性を確認済み、
+ * 出力一致(等価性)が保証できなくなる(検証: 50,000mまでは緯度70度程度まで等価性を確認済み、
  * 200,000mでは崩れることを確認済み)。そのため「世界地図相当で実質無制限」という
  * 当初の意図よりは小さいが、等価性が保証できる範囲で最大の値として50,000mを採用する。
  * この段階に到達するのは極端な広域ズーム時のみで、50kmという半径でも通常の
@@ -79,6 +79,8 @@ function getPhotoClusterRadiusStageIndex(latitudeDelta: number): number {
 }
 
 type MutablePhotoCluster = {
+  /** 古い全走査実装と同じ同距離時の採用順を保つ、クラスタ作成順。 */
+  creationOrder: number;
   seed: MapPhoto;
   photos: MapPhoto[];
 };
@@ -111,6 +113,25 @@ export function clusterMapPhotos(photos: MapPhoto[], region: Region | null): Map
 const CLUSTER_SEARCH_CELL_RADIUS = 3;
 
 /**
+ * X番号をワールド幅で循環させた、写真クラスタ用のセルIDを作る。
+ *
+ * Web MercatorのX座標は日付変更線の両側で連続しないため、通常のセルIDでは
+ * +180度付近と-180度付近の近接写真を別の遠いセルとして扱ってしまう。Y番号は
+ * 循環しないため、そのまま使う。
+ *
+ * @param cellSizeMeters - セルサイズ。単位はm。
+ * @param x - Web Mercator基準のXセル番号。
+ * @param y - Web Mercator基準のYセル番号。
+ * @param worldColumnCount - X方向のワールド全体のセル数。
+ * @returns 日付変更線をまたいでも一意なクラスタ索引用セルID。
+ */
+function createWrappedClusterCellId(cellSizeMeters: number, x: number, y: number, worldColumnCount: number): string {
+  const wrappedX = ((x % worldColumnCount) + worldColumnCount) % worldColumnCount;
+
+  return `${cellSizeMeters}:${wrappedX}:${y}`;
+}
+
+/**
  * 写真を追加できる最寄りクラスタを、空間ハッシュで候補を絞り込んで探す。
  * クラスタの代表写真との距離だけを見ることで、連鎖的な巨大クラスタ化を防ぐ(旧実装と同じ)。
  * 索引は候補の絞り込みにのみ使い、距離判定・採用基準は旧実装から変更しない。
@@ -124,6 +145,7 @@ function findNearestClusterViaGrid(
   photo: MapPhoto,
   clustersByCellId: Map<string, MutablePhotoCluster[]>,
   clusterRadiusMeters: number,
+  worldColumnCount: number,
 ): MutablePhotoCluster | null {
   const cell = coordinateToGridCell(photo, clusterRadiusMeters);
   let nearestCluster: MutablePhotoCluster | null = null;
@@ -131,7 +153,7 @@ function findNearestClusterViaGrid(
 
   for (let dx = -CLUSTER_SEARCH_CELL_RADIUS; dx <= CLUSTER_SEARCH_CELL_RADIUS; dx += 1) {
     for (let dy = -CLUSTER_SEARCH_CELL_RADIUS; dy <= CLUSTER_SEARCH_CELL_RADIUS; dy += 1) {
-      const candidates = clustersByCellId.get(`${clusterRadiusMeters}:${cell.x + dx}:${cell.y + dy}`);
+      const candidates = clustersByCellId.get(createWrappedClusterCellId(clusterRadiusMeters, cell.x + dx, cell.y + dy, worldColumnCount));
 
       if (!candidates) {
         continue;
@@ -140,7 +162,16 @@ function findNearestClusterViaGrid(
       for (const cluster of candidates) {
         const distanceToSeedMeters = distanceMeters(photo, cluster.seed);
 
-        if (distanceToSeedMeters > clusterRadiusMeters || distanceToSeedMeters >= nearestDistanceMeters) {
+        if (distanceToSeedMeters > clusterRadiusMeters || distanceToSeedMeters > nearestDistanceMeters) {
+          continue;
+        }
+
+        // 旧実装は作成順に全クラスタを走査し、同距離なら先に作られたクラスタを維持していた。
+        if (
+          distanceToSeedMeters === nearestDistanceMeters &&
+          nearestCluster !== null &&
+          cluster.creationOrder > nearestCluster.creationOrder
+        ) {
           continue;
         }
 
@@ -164,16 +195,18 @@ function registerClusterCell(
   cluster: MutablePhotoCluster,
   clustersByCellId: Map<string, MutablePhotoCluster[]>,
   clusterRadiusMeters: number,
+  worldColumnCount: number,
 ): void {
   const cell = coordinateToGridCell(cluster.seed, clusterRadiusMeters);
-  const existing = clustersByCellId.get(cell.cellId);
+  const cellId = createWrappedClusterCellId(clusterRadiusMeters, cell.x, cell.y, worldColumnCount);
+  const existing = clustersByCellId.get(cellId);
 
   if (existing) {
     existing.push(cluster);
     return;
   }
 
-  clustersByCellId.set(cell.cellId, [cluster]);
+  clustersByCellId.set(cellId, [cluster]);
 }
 
 /**
@@ -192,15 +225,16 @@ export function clusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters
   // セルID(coordinateToGridCellの cellId 形式)→ そのセルに seed を持つクラスタ一覧。
   // 空間ハッシュとして使い、距離判定そのものは変えず候補の絞り込みにのみ使う。
   const clustersByCellId = new Map<string, MutablePhotoCluster[]>();
+  const worldColumnCount = getGridWorldColumnCount(clusterRadiusMeters);
 
   // 新しい写真を代表サムネイルと代表座標にし、平均化で別地点へ飛ばないようにする。
   for (const photo of [...photos].sort((a, b) => b.creationTime - a.creationTime)) {
-    const nearestCluster = findNearestClusterViaGrid(photo, clustersByCellId, clusterRadiusMeters);
+    const nearestCluster = findNearestClusterViaGrid(photo, clustersByCellId, clusterRadiusMeters, worldColumnCount);
 
     if (!nearestCluster) {
-      const newCluster: MutablePhotoCluster = { seed: photo, photos: [photo] };
+      const newCluster: MutablePhotoCluster = { creationOrder: clusters.length, seed: photo, photos: [photo] };
       clusters.push(newCluster);
-      registerClusterCell(newCluster, clustersByCellId, clusterRadiusMeters);
+      registerClusterCell(newCluster, clustersByCellId, clusterRadiusMeters, worldColumnCount);
       continue;
     }
 

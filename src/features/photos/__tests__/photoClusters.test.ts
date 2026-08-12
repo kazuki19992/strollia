@@ -40,12 +40,25 @@ const region: Region = {
 };
 
 describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
-  it('各段階の境界でちょうど切り替わる', () => {
+  it('全段階の境界でちょうど切り替わる', () => {
     // 境界未満は手前の段階、境界以上は次の段階になる。
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.0029 })).toBe(10);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.003 })).toBe(30);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.0089 })).toBe(30);
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.009 })).toBe(75);
+    const transitions = [
+      { boundary: 0.003, previousRadius: 10, nextRadius: 30 },
+      { boundary: 0.009, previousRadius: 30, nextRadius: 75 },
+      { boundary: 0.0225, previousRadius: 75, nextRadius: 150 },
+      { boundary: 0.045, previousRadius: 150, nextRadius: 300 },
+      { boundary: 0.09, previousRadius: 300, nextRadius: 750 },
+      { boundary: 0.225, previousRadius: 750, nextRadius: 1500 },
+      { boundary: 0.45, previousRadius: 1500, nextRadius: 3000 },
+      { boundary: 0.9, previousRadius: 3000, nextRadius: 7500 },
+      { boundary: 2.25, previousRadius: 7500, nextRadius: 15000 },
+      { boundary: 4.5, previousRadius: 15000, nextRadius: 50000 },
+    ];
+
+    for (const { boundary, previousRadius, nextRadius } of transitions) {
+      expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: boundary - 0.000001 })).toBe(previousRadius);
+      expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: boundary })).toBe(nextRadius);
+    }
   });
 
   it('極端に狭い表示範囲では最小段階(10m)になる', () => {
@@ -130,6 +143,24 @@ describe('半径指定の写真クラスタ clusterMapPhotosByRadius', () => {
 
     expect(clusterMapPhotosByRadius(photos, 10)).toHaveLength(2);
     expect(clusterMapPhotosByRadius(photos, 300)).toHaveLength(1);
+  });
+
+  it('日付変更線をまたぐ近接写真も1つのクラスタにまとめる', () => {
+    const clusters = clusterMapPhotosByRadius([createPhoto('east', 0, 179.999, 1), createPhoto('west', 0, -179.999, 2)], 300);
+
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['west', 'east']);
+  });
+
+  it('同距離の候補では全走査実装と同じく先に作られたクラスタを選ぶ', () => {
+    const clusters = clusterMapPhotosByRadius(
+      [createPhoto('incoming', 0, 0, 1), createPhoto('east', 0, 0.0016, 3), createPhoto('west', 0, -0.0016, 2)],
+      300,
+    );
+
+    expect(clusters).toHaveLength(2);
+    expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['east', 'incoming']);
+    expect(clusters[1].photos.map((photo) => photo.id)).toEqual(['west']);
   });
 });
 

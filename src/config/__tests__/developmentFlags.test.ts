@@ -14,13 +14,16 @@ function setEnvValue(name: string, value: string | undefined): void {
 function loadDevelopmentFlagsModule(env: Record<string, string | undefined>): DevelopmentFlagsModule {
   const originalPremiumFlag = process.env.EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT;
   const originalAchievementResetFlag = process.env.EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH;
+  const originalVisitedGridMetricsFlag = process.env.EXPO_PUBLIC_LOG_VISITED_GRID_METRICS;
 
   setEnvValue('EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT', env.EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT);
   setEnvValue('EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH', env.EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH);
+  setEnvValue('EXPO_PUBLIC_LOG_VISITED_GRID_METRICS', env.EXPO_PUBLIC_LOG_VISITED_GRID_METRICS);
   jest.resetModules();
   const loadedModule = require('../developmentFlags') as DevelopmentFlagsModule;
   setEnvValue('EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT', originalPremiumFlag);
   setEnvValue('EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH', originalAchievementResetFlag);
+  setEnvValue('EXPO_PUBLIC_LOG_VISITED_GRID_METRICS', originalVisitedGridMetricsFlag);
 
   return loadedModule;
 }
@@ -43,6 +46,15 @@ describe('開発用フラグ developmentFlags', () => {
     });
 
     expect(developmentFlags.enablePremiumAccessWithoutRevenueCat).toBe(true);
+    expect(hasEnabledDevelopmentFlags()).toBe(true);
+  });
+
+  it('環境変数でVisited Grid計測ログを有効にできる', () => {
+    const { developmentFlags, hasEnabledDevelopmentFlags } = loadDevelopmentFlagsModule({
+      EXPO_PUBLIC_LOG_VISITED_GRID_METRICS: 'true',
+    });
+
+    expect(developmentFlags.logVisitedGridMetrics).toBe(true);
     expect(hasEnabledDevelopmentFlags()).toBe(true);
   });
 

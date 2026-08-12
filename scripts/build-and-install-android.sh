@@ -10,7 +10,7 @@ set -euo pipefail
 # 前提:
 #   - .env.local に GOOGLE_MAPS_ANDROID_API_KEY と EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY が設定されている
 #     (production プロファイルの場合は SENTRY_AUTH_TOKEN も必要)
-#   - eas-cli がインストールされている（npx 経由で使用）
+#   - eas-cli がインストールされ、`eas` コマンドとして PATH から直接実行できる(npx 経由ではない)
 #   - Android SDK (adb) がインストールされ、PATH から実行できる
 #   - インストール対象の実機が1台だけ USB 接続され、USBデバッグの許可がされていること
 #   - production プロファイルは Android App Bundle (.aab) を生成するため adb install できない。
@@ -43,11 +43,20 @@ if [[ ! -f "${ENV_LOCAL}" ]]; then
 fi
 
 # .env.local から key=value を読み取る。複数行ある場合は後の値を優先する。
+# `export KEY=...` 形式・前後の引用符・CRLF改行の `\r` を許容し、値のみを返す。
 # キーが存在しない場合、grep は非ゼロ終了するが pipefail 環境下でも
 # 呼び出し側のチェックへ処理を進めるため `|| true` で握り潰す。
 read_env_value() {
   local key="$1"
-  grep -E "^${key}=" "${ENV_LOCAL}" | tail -1 | cut -d'=' -f2- || true
+  local value
+  value="$(grep -E "^(export[[:space:]]+)?${key}=" "${ENV_LOCAL}" | tail -1 | cut -d'=' -f2- || true)"
+  # CRLF改行のファイルから読んだ場合に混入する行末の \r を除去する
+  value="${value%$'\r'}"
+  # 前後を同じ引用符(シングル/ダブル)で囲まれている場合のみ除去する
+  if [[ "${value}" =~ ^\".*\"$ ]] || [[ "${value}" =~ ^\'.*\'$ ]]; then
+    value="${value:1:$((${#value} - 2))}"
+  fi
+  printf '%s' "${value}"
 }
 
 GOOGLE_MAPS_ANDROID_API_KEY="$(read_env_value GOOGLE_MAPS_ANDROID_API_KEY)"
@@ -129,6 +138,11 @@ if [[ "${PROFILE}" == "preview" && "${EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY}" =
 
   cp "${BUILT_APK}" "${BUILDS_DIR}/build-android-preview-test-store-workaround-$(date +%s).apk"
 else
+  if ! command -v eas >/dev/null 2>&1; then
+    echo "エラー: eas コマンドが見つかりません。eas-cli をインストールしてください(npm install -g eas-cli 等)。" >&2
+    exit 1
+  fi
+
   eas build \
     --platform android \
     --profile "${PROFILE}" \

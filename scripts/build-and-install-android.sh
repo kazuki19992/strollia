@@ -15,6 +15,7 @@ set -euo pipefail
 #   - インストール対象の実機が1台だけ USB 接続され、USBデバッグの許可がされていること
 #   - production プロファイルは Android App Bundle (.aab) を生成するため adb install できない。
 #     ビルドのみ行い、成果物パスを表示して終了する（ストア提出は publish スキルを使用する）
+#   - macOS 専用(BSD の `stat -f` を使用)。Linux では成果物検出に失敗する
 #
 # 【暫定対応 / issue #141 で解消したら削除】
 #   EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY が Test Store キー(test_プレフィックス)のままの間、

@@ -111,6 +111,11 @@ jest.mock('@/theme/fonts', () => ({
   NUMERIC_DISPLAY_FONT: 'DSEG7ClassicMini-Regular',
 }));
 jest.mock('@/config/developmentFlags', () => ({
+  developmentFlags: {
+    enablePremiumAccessWithoutRevenueCat: false,
+    resetAchievementsOnLaunch: false,
+    logVisitedGridMetrics: false,
+  },
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));

@@ -142,7 +142,7 @@ flowchart TD
 flowchart TD
   A[MapView表示範囲] --> B[表示範囲を100mセルboundsへ変換]
   B --> C[visited_cellsをx/y範囲検索、表示セルサイズが100mより大きい場合はSQL側GROUP BYでブロック集約]
-  C --> D[100m表示のときだけ整列ブロックが完全に埋まっていれば1つの大きいPolygonへ結合]
+  C --> D[整列ブロックが完全に埋まっていれば1つの大きいPolygonへ結合。100m表示ではfresh cellを結合対象から外す]
   D --> E[Fog opacityをlatitudeDeltaから計算]
   E --> F[Grid Overlayとして描画]
 ```

@@ -544,6 +544,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     isFollowingUserLocation,
     isMapReady,
     visibleRegion,
+    gridSyncRegion,
     currentSpeedKmh,
     mapType,
     handleUserLocationChange,
@@ -554,7 +555,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     handleMapReady,
     recenterOnUserLocation,
   } = mapFollowState;
-  const gridOverlayRegion = visibleRegion ?? initialRegion;
+  // Grid取得はユーザー操作中に走らせないため visibleRegion ではなく gridSyncRegion を使う。
+  const gridOverlayRegion = gridSyncRegion ?? initialRegion;
   const { visitedGridCells, gridOverlayOpacity, incrementVisitedGridRefreshVersion } = useVisitedGridOverlay({
     isReady,
     gridOverlayRegion,

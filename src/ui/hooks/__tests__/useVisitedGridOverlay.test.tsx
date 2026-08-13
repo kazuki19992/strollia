@@ -233,8 +233,10 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
       await flushFetch();
 
-      // フェード中はalphaが0から始まる。初回取得は即時表示のためalpha 0のrgbaにはならない。
-      expect(result.current.visitedGridCells[0].fillColor).not.toMatch(/, 0\)$/);
+      // not.toMatch(/, 0\)$/) だとalphaがちょうど0の場合しか落ちない(誤ってフェードが始まっていても
+      // 1ms経てば0.0004等になり通ってしまう)。gridOverlayOpacity(フェードなしの正しいalpha)と
+      // 完全一致することを検証し、対になるfresh側テスト(下記、alpha < 0.05)と揃える。
+      expect(parseFillOpacity(result.current.visitedGridCells[0].fillColor)).toBeCloseTo(result.current.gridOverlayOpacity);
     });
 
     it('再取得で新しく現れた2x2ブロックは結合されず100mセル4個のまま残り、フェード開始直後の低いalphaで表示される', async () => {
@@ -258,6 +260,36 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
           expect(parseFillOpacity(cell!.fillColor)).toBeLessThan(0.05);
         }
       }
+    });
+
+    it('freshセルのフェード中もstableセルのcoordinates参照は再計算されない(同一参照を維持する)', async () => {
+      // このテストがこのブランチの最適化の核心(stable/freshのメモ分割によるフェード中の
+      // 再計算コスト削減)を固定する。stableOverlayCellsのdepsにvisitedGridFadeFrameが混入する
+      // 退行(または stable/fresh のメモを1つに戻す退行)が起きると、フェードフレームが
+      // 進むたびにstableセルのcoordinatesオブジェクトが新しく生成され直し、このテストが失敗する。
+      //
+      // fake timersは使わない。フェード用setTimeoutは非同期取得完了後のeffectで
+      // (fake timers導入前に)スケジュールされるため、後からfake timersへ切り替えても
+      // 別クロックの空振りになりsetTimeoutが発火しない(この落とし穴を退行注入で確認済み)。
+      // 実時間でVISITED_GRID_FADE_FRAME_MS(50ms)より長く待ち、実際にコールバックを発火させる。
+      const { result } = await setupWithFreshBlock();
+
+      const stableCellId = `400:${BLOCK_ORIGIN.x / 4}:${BLOCK_ORIGIN.y / 4}`;
+      const stableCellBefore = result.current.visitedGridCells.find((cell) => cell.id === stableCellId);
+      expect(stableCellBefore).toBeDefined();
+      const coordinatesBefore = stableCellBefore!.coordinates;
+
+      // フェードフレームを1つ進める(VISITED_GRID_FADE_FRAME_MS=50ms)。fresh cellの
+      // 再描画だけをトリガーする想定で、stable cell側のメモは再計算されないはず。
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 80));
+      });
+
+      const stableCellAfter = result.current.visitedGridCells.find((cell) => cell.id === stableCellId);
+      expect(stableCellAfter).toBeDefined();
+      // toEqualではなくtoBe(参照一致)であることが重要。中身が同じでも新しい配列・オブジェクトが
+      // 作られていればPolygon propsの参照が変わり、ネイティブ側の再挿入コストが発生してしまう。
+      expect(stableCellAfter!.coordinates).toBe(coordinatesBefore);
     });
   });
 

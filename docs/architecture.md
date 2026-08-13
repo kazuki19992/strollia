@@ -141,10 +141,10 @@ flowchart TD
 ```mermaid
 flowchart TD
   A[MapView表示範囲] --> B[表示範囲を100mセルboundsへ変換]
-  B --> C[visited_cellsをx/y範囲検索]
-  C --> D[ズームに応じて100mセルを大セルへ集約]
+  B --> C[visited_cellsをx/y範囲検索、表示セルサイズが100mより大きい場合はSQL側GROUP BYでブロック集約]
+  C --> D[100m表示のときだけ整列ブロックが完全に埋まっていれば1つの大きいPolygonへ結合]
   D --> E[Fog opacityをlatitudeDeltaから計算]
-  E --> F[1セル1PolygonとしてGrid Overlay描画]
+  E --> F[Grid Overlayとして描画]
 ```
 
 ## 7. 初期実装の判断

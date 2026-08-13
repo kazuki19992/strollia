@@ -162,7 +162,8 @@ export async function getVisitedCellsInBounds(bounds: GridBounds, displayCellSiz
        SUM(visit_count) as visitCount
      FROM visited_cells
      WHERE x BETWEEN ? AND ? AND y BETWEEN ? AND ?
-     GROUP BY blockX, blockY`,
+     GROUP BY blockX, blockY
+     ORDER BY blockY ASC, blockX ASC`,
     ratio,
     ratio,
     ratio,

@@ -98,13 +98,17 @@ describe('Visited Grid Polygon結合 coalesceVisitedGridCells', () => {
     expect(result.stableCells[0]).toEqual(expect.objectContaining({ cellId: '400:-1:-1', x: -1, y: -1 }));
   });
 
-  it('ブロック整列していない4x4は4つの2x2へ落とす', () => {
-    // x=1..4 は 4x4 の整列ブロック(x=0..3 / x=4..7)にまたがるため 4x4 では結合しない。
+  it('ブロック整列していない4x4は整列2x2を1つだけ結合し残りは単体で返す', () => {
+    // x=1..4, y=1..4 は 4x4 の整列ブロック(x=0..3 / x=4..7)にまたがるため 4x4 では結合しない。
+    // 2x2の整列ブロック(x,y各0/2/4起点)のうち完全に埋まるのは origin(2,2)の1つだけで、
+    // 残り12セルはどの整列ブロックにも属さず単体のまま残る(1個の2x2 + 12個の1x1 = 13セル)。
     const result = coalesceVisitedGridCells(block(1, 1, 4), new Set());
 
     expect(result.blockCountBySize['4x4']).toBeUndefined();
-    expect(result.stableCells.length).toBeGreaterThan(1);
-    // 結合しても塗る面積は変わらない(100mセル換算で16セルぶん)
+    expect(result.blockCountBySize['2x2']).toBe(1);
+    expect(result.blockCountBySize['1x1']).toBe(12);
+    expect(result.stableCells).toHaveLength(13);
+    // 結合しても塗る面積は変わらない(100mセル換算で16セルぶん、未訪問セルを塗らないことの確認)
     const coveredCellCount = result.stableCells.reduce((total, target) => total + (target.cellSizeMeters / 100) ** 2, 0);
     expect(coveredCellCount).toBe(16);
   });

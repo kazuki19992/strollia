@@ -157,6 +157,19 @@ jest.mock('@/ui/components/MapScreen', () => ({
         <Pressable accessibilityLabel="地図をドラッグ" onPress={props.onPanDrag}>
           <Text>地図をドラッグ</Text>
         </Pressable>
+        <Pressable
+          accessibilityLabel="ドラッグ中に地図範囲を更新"
+          onPress={() =>
+            props.onRegionChange({
+              latitude: 35.7,
+              longitude: 139.8,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            })
+          }
+        >
+          <Text>ドラッグ中に地図範囲を更新</Text>
+        </Pressable>
         <Pressable accessibilityLabel="日ごとの記録" onPress={props.onOpenDailyLogs}>
           <Text>日ごとの記録</Text>
         </Pressable>
@@ -647,6 +660,27 @@ describe('App 地図復帰時の表示範囲復元', () => {
     } finally {
       (isGridBoundsContained as jest.Mock).mockReturnValue(false);
     }
+  });
+
+  test('地図ドラッグ中のonRegionChangeはgridSyncRegionを更新せずvisited cell再取得を増やさない', async () => {
+    // gridOverlayRegionが `gridSyncRegion ?? initialRegion` ではなく `visibleRegion ?? initialRegion` に
+    // 戻る退行が起きると、onPanDrag後でもonRegionChangeのたびにgridOverlayRegionが更新され、
+    // このテストがfailする(isGridBoundsContainedを常にfalseへモックしているため、
+    // regionが変わるたびに再取得条件を満たしてしまう)。
+    renderRouter('src/app');
+    await flushPromises();
+
+    const callsBeforeDrag = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('地図をドラッグ'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('ドラッグ中に地図範囲を更新'));
+    });
+    await flushPromises();
+
+    expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBe(callsBeforeDrag);
   });
 
   test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {

@@ -133,17 +133,34 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     ]);
   });
 
-  it('負のセル番号を真のfloor除算式で扱い、boundsを末尾4パラメータで渡す', async () => {
+  it('負のセル番号を真のfloor除算式で扱い、ratio8個+bounds4個の全12パラメータを順序通り渡す', async () => {
     (db.getAllAsync as jest.Mock).mockResolvedValue([]);
 
     const displayCellSizeMeters = GRID_OVERLAY_CONFIG.baseCellSizeMeters * 2;
+    const ratio = displayCellSizeMeters / GRID_OVERLAY_CONFIG.baseCellSizeMeters;
     await getVisitedCellsInBounds({ minX: -6, maxX: -5, minY: 8, maxY: 9 }, displayCellSizeMeters);
 
     const [query, ...params] = (db.getAllAsync as jest.Mock).mock.calls[0];
     // SQLiteの%は0方向への切り捨てのため、((x % ?) + ?) % ? の形で真のfloor除算に補正する。
     expect(query).toContain('((x % ?) + ?) % ?');
     expect(query).toContain('((y % ?) + ?) % ?');
-    expect(params.slice(-4)).toEqual([-6, -5, 8, 9]);
+    // params.slice(-4)だけの検証だとratioのプレースホルダを1つ減らしても
+    // (11要素配列の末尾4つがなお bounds になるため)合格してしまう。
+    // 手書きSQLのバインドずれは全行が誤ブロックへ集約される致命的な壊れ方をするため、
+    // 配列全体(ratio 8個 + bounds 4個)を固定して検出力を上げる。
+    expect(params).toEqual([ratio, ratio, ratio, ratio, ratio, ratio, ratio, ratio, -6, -5, 8, 9]);
+  });
+
+  it('ブロック集約クエリはブロック番号順(ORDER BY blockY ASC, blockX ASC)で結果を返す', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+    const displayCellSizeMeters = GRID_OVERLAY_CONFIG.baseCellSizeMeters * 2;
+    await getVisitedCellsInBounds({ minX: -6, maxX: -5, minY: 8, maxY: 9 }, displayCellSizeMeters);
+
+    const [query] = (db.getAllAsync as jest.Mock).mock.calls[0];
+    // ORDER BYなしではGROUP BYの出力順が仕様上不定になり、200m以上表示（結合スキップ）で
+    // Polygon順序が変わりネイティブviewの再挿入が起きうる。
+    expect(query).toContain('ORDER BY blockY ASC, blockX ASC');
   });
 
   it('表示セルサイズが基本セルサイズの整数倍でない場合はrejectする', async () => {

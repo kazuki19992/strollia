@@ -455,7 +455,21 @@ Expected: FAIL(集約SQLが生成されない)
 
 - [ ] **Step 3: リポジトリを実装する**
 
-`displayCellSizeMeters` を受け取り、倍数でなければ `throw`。`ratio === 1` なら従来クエリ。それ以外は集約クエリを実行し、`{ cellId: `${size}:${blockX}:${blockY}`, cellSizeMeters: size, x: blockX, y: blockY, firstVisitedAt, lastVisitedAt, visitCount }` へ map する。`AggregatedVisitedCellRow` 型をファイル内に定義する。
+`displayCellSizeMeters` を受け取り、倍数でなければ `throw`。`ratio === 1` なら従来クエリ。それ以外は集約クエリを実行する。
+
+```typescript
+{
+  cellId: `${size}:${blockX}:${blockY}`,
+  cellSizeMeters: size,
+  x: blockX,
+  y: blockY,
+  firstVisitedAt,
+  lastVisitedAt,
+  visitCount,
+}
+```
+
+`AggregatedVisitedCellRow` 型をファイル内に定義する。
 
 - [ ] **Step 4: `aggregateVisitedCells` を削除する**
 

@@ -247,7 +247,7 @@ GROUP BY blockX, blockY
 
 ### 自動テスト
 
-- `resolveFreshVisitedCellIds`: 前回範囲内の新規セル / 範囲外セル / 初回取得 / 100m表示以外では追加しない / fresh の維持 / 上限超過時はフェードだけ止める
+- `detectFreshVisitedCells`: 前回範囲内の新規セル / 範囲外セル / 初回取得 / 100m表示以外では追加しない / fresh の維持 / 上限超過時はフェードだけ止める
 - `evictOffscreenFreshCellIds`: 余白なしの実表示範囲で画面外セルだけ落とす / 表示セルサイズ変更では落とさない
 - `coalesceVisitedGridCells`: 4x4完全一致 / 欠けたブロックの2x2・単体への落とし込み / 市松模様 / 未訪問セルを塗らない / fresh除外 / メタデータ引き継ぎ / 負のセル番号
 - `useMapFollowState`: ドラッグ中は `gridSyncRegion` 不変 / 完了で更新 / 現在地ボタンで即時更新 / `onRegionChangeComplete` が来なくてもアイドルタイマーで同期 / 操作継続中はタイマーが発火しない

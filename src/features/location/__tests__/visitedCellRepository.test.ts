@@ -4,6 +4,7 @@ import {
   deleteAllVisitedCells,
   getVisitedCellsByIds,
   getVisitedCellsInBounds,
+  upsertVisitedCellVisitsInCurrentTransaction,
   upsertVisitedCells,
 } from '@/features/location/visitedCellRepository';
 import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
@@ -56,6 +57,7 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
     expect(mockTxn.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('WHEN excluded.last_visited_at > visited_cells.last_visited_at'),
+      expect.anything(),
       expect.anything(),
       expect.anything(),
       expect.anything(),
@@ -177,6 +179,32 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     expect(withExclusiveTransaction).not.toHaveBeenCalled();
     expect(db.runAsync).not.toHaveBeenCalled();
     expect(mockTxn.runAsync).not.toHaveBeenCalled();
+  });
+
+  it('同一セルへの複数訪問を1回のupsertへ集約し、訪問回数と時刻範囲を保持する', async () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+
+    await upsertVisitedCellVisitsInCurrentTransaction(
+      [
+        { cell, visitedAt: '2026-05-23T00:00:00.000Z' },
+        { cell, visitedAt: '2026-05-23T00:05:00.000Z' },
+      ],
+      mockTxn as never,
+    );
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('visit_count = visited_cells.visit_count + excluded.visit_count'),
+      cell.cellId,
+      cell.cellSizeMeters,
+      cell.x,
+      cell.y,
+      '2026-05-23T00:00:00.000Z',
+      '2026-05-23T00:05:00.000Z',
+      2,
+      expect.any(String),
+      expect.any(String),
+    );
   });
 
   it('deleteAllVisitedCellsはvisited_cellsを全削除する', async () => {

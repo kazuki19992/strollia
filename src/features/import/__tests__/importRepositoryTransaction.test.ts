@@ -105,6 +105,22 @@ describe('GPXインポート保存 transaction境界', () => {
     expect(historyInsertCalls).toHaveLength(1);
   });
 
+  it('GPX優先モードで記録をバッファするため、チャンク間に固定待機を入れない', async () => {
+    const manyPoints = Array.from({ length: IMPORT_TRANSACTION_CHUNK_SIZE + 1 }, (_, index) => ({
+      ...point,
+      recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
+    }));
+    const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
+
+    try {
+      await importLocationPointsFromGpx(manyPoints, 'strollia-all.gpx');
+
+      expect(setTimeoutSpy).not.toHaveBeenCalled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
+  });
+
   it('チャンクサイズ以下のポイントは1トランザクションで取り込む', async () => {
     const fewPoints = Array.from({ length: IMPORT_TRANSACTION_CHUNK_SIZE }, (_, index) => ({
       ...point,

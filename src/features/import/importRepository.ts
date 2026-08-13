@@ -4,7 +4,8 @@ import { withExclusiveTransaction } from '@/db/database';
 import { NewLocationPoint } from '@/types/gps';
 import { distanceMeters } from '@/utils/distance';
 import { getVisitedCellsForLocationPoint } from '@/features/location/grid/gridInterpolation';
-import { upsertVisitedCellsInCurrentTransaction } from '@/features/location/visitedCellRepository';
+import { upsertVisitedCellVisitsInCurrentTransaction } from '@/features/location/visitedCellRepository';
+import type { VisitedCellVisit } from '@/features/location/visitedCellRepository';
 
 /** GPX インポートの実行結果。 */
 export type GpxImportResult = {
@@ -52,14 +53,6 @@ export class GpxImportInterruptedError extends Error {
 export const IMPORT_TRANSACTION_CHUNK_SIZE = 100;
 
 /**
- * チャンク間でロックを解放して待機する時間(ミリ秒)。
- *
- * ロック解放直後に次チャンクのBEGINが走ると、busy_timeout で待機中の
- * バックグラウンドGPS記録の書き込みがロックを取得できないまま
- * 待ち続ける可能性があるため、明示的に書き込みの隙間を作る。
- */
-const INTER_CHUNK_DELAY_MS = 50;
-
 /**
  * GPX 由来の GPS ポイントを既存データ優先で SQLite へ取り込む。
  *
@@ -85,11 +78,6 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
     const chunk = sortedPoints.slice(chunkIndex * IMPORT_TRANSACTION_CHUNK_SIZE, (chunkIndex + 1) * IMPORT_TRANSACTION_CHUNK_SIZE);
     const isLastChunk = chunkIndex === chunkCount - 1;
 
-    if (chunkIndex > 0) {
-      // 待機中のバックグラウンド書き込みへ書き込みの隙間を譲る
-      await new Promise<void>((resolve) => setTimeout(resolve, INTER_CHUNK_DELAY_MS));
-    }
-
     // チャンク開始時点の件数。失敗チャンクはロールバックされるため、この時点の値が取り込み済みの実態になる
     const importedCountBeforeChunk = importedPointCount;
     const skippedCountBeforeChunk = skippedPointCount;
@@ -100,6 +88,7 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
         // チャンクの所要時間を短縮することで、書き込みロックの保持時間も短くなる。
         const insertPointStatement = await txn.prepareAsync(INSERT_LOCATION_POINT_SQL);
         const upsertDailyLogStatement = await txn.prepareAsync(UPSERT_DAILY_LOG_SQL);
+        const visitedCellVisits: VisitedCellVisit[] = [];
 
         try {
           for (const point of chunk) {
@@ -123,10 +112,12 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
             }
 
             const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, importedPoint);
-            await upsertVisitedCellsInCurrentTransaction(visitedCells, importedPoint.recordedAt, txn);
+            visitedCellVisits.push(...visitedCells.map((cell) => ({ cell, visitedAt: importedPoint.recordedAt })));
             previousImportedPoint = importedPoint;
             importedPointCount += 1;
           }
+
+          await upsertVisitedCellVisitsInCurrentTransaction(visitedCellVisits, txn);
 
           if (isLastChunk) {
             await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);

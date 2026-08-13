@@ -507,6 +507,7 @@ jest.mock('@/features/premium/revenueCatAccess', () => ({
 jest.mock('@/features/photos/photoClusters', () => ({
   clusterMapPhotosByRadius: jest.fn(() => []),
   getPhotoClusterRadiusMeters: jest.fn(() => 10),
+  getStablePhotoClusterRadiusMeters: jest.fn(() => 10),
   paginateMapPhotos: jest.fn(() => []),
 }));
 

@@ -1,12 +1,18 @@
 import { act, renderHook } from '@testing-library/react-native';
 
 import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
+import { logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
 import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 
 // getVisitedCellsInBoundsだけモックする。gridCell / gridAggregation / visitedGridFreshCells /
 // visitedGridCoalescing は実物を使い、結合結果・fresh判定を実座標で検証する。
 jest.mock('@/features/location/visitedCellRepository', () => ({
   getVisitedCellsInBounds: jest.fn().mockResolvedValue([]),
+}));
+
+// 計測ログは出力の有無と内訳だけを検証するためモックする。
+jest.mock('@/features/map/visitedGridMetrics', () => ({
+  logVisitedGridMetrics: jest.fn(),
 }));
 
 /** テスト用の標準マップ表示範囲。latitudeDelta=0.01は表示セルサイズ100mになる。 */
@@ -357,6 +363,28 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
           expect(ids).toContain(`100:${x}:${y}`);
         }
       }
+    });
+  });
+  describe('効果測定ログ', () => {
+    it('取得セル数と結合後Polygon数を計測値として出力する', async () => {
+      // 改善前後の比較に使うログがフックから実際に届くことを固定する。
+      // 4x4ブロックが1Polygonへ結合されるため、raw=16 / render=1 になる。
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
+
+      renderHook(() => useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }));
+
+      await flushFetch();
+
+      expect(logVisitedGridMetrics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          rawCellCount: 16,
+          renderPolygonCount: 1,
+          coalescedBlockCountBySize: expect.objectContaining({ '4x4': 1 }),
+          fetchMs: expect.any(Number),
+          aggregationMs: expect.any(Number),
+          overlayBuildMs: expect.any(Number),
+        }),
+      );
     });
   });
 });

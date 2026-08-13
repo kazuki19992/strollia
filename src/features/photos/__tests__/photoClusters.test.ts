@@ -5,8 +5,11 @@ import {
   clusterMapPhotos,
   clusterMapPhotosByRadius,
   getPhotoClusterRadiusMeters,
+  getStablePhotoClusterRadiusMeters,
+  MapPhotoCluster,
   paginateMapPhotos,
 } from '@/features/photos/photoClusters';
+import { distanceMeters } from '@/utils/distance';
 
 /**
  * テスト用の地図写真を最小プロパティで作る。
@@ -37,44 +40,87 @@ const region: Region = {
 };
 
 describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
-  it('拡大率が低いほどクラスタ範囲を広げる', () => {
-    const zoomedIn = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.001 });
-    const zoomedOut = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
+  it('全段階の境界でちょうど切り替わる', () => {
+    // 境界未満は手前の段階、境界以上は次の段階になる。
+    const transitions = [
+      { boundary: 0.003, previousRadius: 10, nextRadius: 30 },
+      { boundary: 0.009, previousRadius: 30, nextRadius: 75 },
+      { boundary: 0.0225, previousRadius: 75, nextRadius: 150 },
+      { boundary: 0.045, previousRadius: 150, nextRadius: 300 },
+      { boundary: 0.09, previousRadius: 300, nextRadius: 750 },
+      { boundary: 0.225, previousRadius: 750, nextRadius: 1500 },
+      { boundary: 0.45, previousRadius: 1500, nextRadius: 3000 },
+      { boundary: 0.9, previousRadius: 3000, nextRadius: 7500 },
+      { boundary: 2.25, previousRadius: 7500, nextRadius: 15000 },
+      { boundary: 4.5, previousRadius: 15000, nextRadius: 50000 },
+    ];
 
-    expect(zoomedOut).toBeGreaterThan(zoomedIn);
+    for (const { boundary, previousRadius, nextRadius } of transitions) {
+      expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: boundary - 0.000001 })).toBe(previousRadius);
+      expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: boundary })).toBe(nextRadius);
+    }
   });
 
-  it('クラスタ範囲に下限を適用し、上限なしで広域ほど大きくする', () => {
-    const veryZoomedIn = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 });
-    const veryZoomedOut = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 5 });
-
-    expect(veryZoomedIn).toBe(10);
-    expect(veryZoomedOut).toBeCloseTo(16_650);
+  it('極端に狭い表示範囲では最小段階(10m)になる', () => {
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 })).toBe(10);
   });
 
-  it('よく使うズーム範囲でもクラスタ範囲が十分変化する', () => {
-    const closeRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.001 });
-    const neighborhoodRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.01 });
-    const wideRange = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
-
-    expect(closeRange).toBe(10);
-    expect(neighborhoodRange).toBeGreaterThanOrEqual(30);
-    expect(wideRange).toBeCloseTo(266.4);
+  it('最終段階(15000m, 境界4.5)を超える広域表示では世界地図相当のフォールバック値になる', () => {
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.5 })).toBe(50_000);
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 180 })).toBe(50_000);
   });
 
-  it('表示範囲の高さに比例してクラスタ範囲を線形に広げる', () => {
-    const rangeA = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.02 });
-    const rangeB = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 });
-
-    expect(rangeB).toBeCloseTo(rangeA * 2);
+  it('表示範囲がない場合は近距離用の既定値(latitudeDelta=0.01相当)を使う', () => {
+    expect(getPhotoClusterRadiusMeters(null)).toBe(75);
   });
 
   // パン(中心移動のみ)でクラスタを再計算しないメモ化は、この性質が前提になっている。
   it('中心座標だけが変わっても(パン)クラスタ範囲は変化しない', () => {
-    const beforePan = getPhotoClusterRadiusMeters(region);
-    const afterPan = getPhotoClusterRadiusMeters({ ...region, latitude: 40, longitude: -73 });
+    const beforePan = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 });
+    const afterPan = getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08, latitude: 40, longitude: -73 });
 
     expect(afterPan).toBe(beforePan);
+  });
+});
+
+describe('写真クラスタ半径のヒステリシス getStablePhotoClusterRadiusMeters', () => {
+  it('前回値がない場合は段階選択した値をそのまま返す', () => {
+    expect(getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, null)).toBe(150);
+  });
+
+  it('段階境界をわずかに超えるだけならヒステリシス帯の範囲内で前回値を維持する', () => {
+    // 段階3(150m)→4(300m)の境界は0.045。ヒステリシス比率0.2により、
+    // 0.045 * 1.2 = 0.054 未満なら前回値を維持する。
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.05 }, 150);
+
+    expect(stableRadius).toBe(150);
+  });
+
+  it('ヒステリシス帯を明確に超えたら次の段階へ切り替える', () => {
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.06 }, 150);
+
+    expect(stableRadius).toBe(300);
+  });
+
+  it('段階を縮小方向にまたぐときも同じヒステリシスが働く', () => {
+    // 境界0.045未満、かつヒステリシス帯の下限(0.045 * 0.8 = 0.036)以上なら前回値(300)を維持する。
+    const stableWithinBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, 300);
+    expect(stableWithinBand).toBe(300);
+
+    const stableBelowBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.03 }, 300);
+    expect(stableBelowBand).toBe(150);
+  });
+
+  it('2段階以上離れた変化ではヒステリシスを無視して即座に切り替える', () => {
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 }, 75);
+
+    expect(stableRadius).toBe(300);
+  });
+
+  it('前回値が段階テーブルに存在しない場合は素直に段階選択した値を返す', () => {
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.05 }, 999);
+
+    expect(stableRadius).toBe(300);
   });
 });
 
@@ -97,6 +143,24 @@ describe('半径指定の写真クラスタ clusterMapPhotosByRadius', () => {
 
     expect(clusterMapPhotosByRadius(photos, 10)).toHaveLength(2);
     expect(clusterMapPhotosByRadius(photos, 300)).toHaveLength(1);
+  });
+
+  it('日付変更線をまたぐ近接写真も1つのクラスタにまとめる', () => {
+    const clusters = clusterMapPhotosByRadius([createPhoto('east', 0, 179.999, 1), createPhoto('west', 0, -179.999, 2)], 300);
+
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['west', 'east']);
+  });
+
+  it('同距離の候補では全走査実装と同じく先に作られたクラスタを選ぶ', () => {
+    const clusters = clusterMapPhotosByRadius(
+      [createPhoto('incoming', 0, 0, 1), createPhoto('east', 0, 0.0016, 3), createPhoto('west', 0, -0.0016, 2)],
+      300,
+    );
+
+    expect(clusters).toHaveLength(2);
+    expect(clusters[0].photos.map((photo) => photo.id)).toEqual(['east', 'incoming']);
+    expect(clusters[1].photos.map((photo) => photo.id)).toEqual(['west']);
   });
 });
 
@@ -125,14 +189,18 @@ describe('写真クラスタ clusterMapPhotos', () => {
   });
 
   it('同じ場所と言えない距離の写真は別クラスタに分ける', () => {
-    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0007, 139.0001, 2)], region);
+    // 緯度差0.0009°(約100m)。段階量子化後の既定半径(75m)より明確に離す。
+    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.001, 139.0001, 2)], region);
 
     expect(clusters).toHaveLength(2);
   });
 
   it('連鎖的に離れた写真を巨大クラスタにまとめない', () => {
+    // a-b、b-cはそれぞれ約50m(新半径75m以内で直接隣接可能。境界から25m の余裕)だが、
+    // a-c間は約100m(新半径75mを25m超える)。b経由で連鎖してもseedはaのまま動かないため、
+    // cはaとの直接距離で判定され別クラスタになる(連鎖防止の検証)。
     const clusters = clusterMapPhotos(
-      [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00035, 139.0001, 2), createPhoto('c', 35.0006, 139.0001, 1)],
+      [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00055, 139.0001, 2), createPhoto('c', 35.001, 139.0001, 1)],
       region,
     );
 
@@ -167,5 +235,141 @@ describe('写真クラスタページ paginateMapPhotos', () => {
 
   it('ページサイズが不正な場合は空配列を返す', () => {
     expect(paginateMapPhotos([createPhoto('a', 35, 139, 1)], 0)).toEqual([]);
+  });
+});
+
+/**
+ * テスト用の決定的疑似乱数生成器(mulberry32)。Math.randomを使うとCI環境間で
+ * 結果が変わりテストの再現性が失われるため、シード固定の軽量PRNGを使う。
+ *
+ * @param seed - シード値。
+ * @returns 呼ぶたびに0以上1未満の疑似乱数を返す関数。
+ */
+function createSeededRandom(seed: number): () => number {
+  let state = seed;
+
+  return () => {
+    state |= 0;
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * 現行実装(空間ハッシュ)との等価性検証に使う、素朴な全走査のO(N^2)参照実装。
+ * clusterMapPhotosByRadius の旧実装(空間ハッシュ導入前)をテスト内に保存したもの。
+ *
+ * @param photos - クラスタ対象の写真一覧。
+ * @param clusterRadiusMeters - 同一クラスタとして扱う半径メートル。
+ * @returns 近接写真をまとめたクラスタ一覧。
+ */
+function referenceClusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters: number): MapPhotoCluster[] {
+  type MutableCluster = { seed: MapPhoto; photos: MapPhoto[] };
+  const clusters: MutableCluster[] = [];
+
+  for (const photo of [...photos].sort((a, b) => b.creationTime - a.creationTime)) {
+    let nearestCluster: MutableCluster | null = null;
+    let nearestDistanceMeters = Number.POSITIVE_INFINITY;
+
+    for (const cluster of clusters) {
+      const distanceToSeedMeters = distanceMeters(photo, cluster.seed);
+
+      if (distanceToSeedMeters > clusterRadiusMeters || distanceToSeedMeters >= nearestDistanceMeters) {
+        continue;
+      }
+
+      nearestCluster = cluster;
+      nearestDistanceMeters = distanceToSeedMeters;
+    }
+
+    if (!nearestCluster) {
+      clusters.push({ seed: photo, photos: [photo] });
+      continue;
+    }
+
+    nearestCluster.photos.push(photo);
+  }
+
+  return clusters.map((cluster, index) => ({
+    id: `ref-${index}-${cluster.seed.id}-${cluster.photos.length}`,
+    latitude: cluster.seed.latitude,
+    longitude: cluster.seed.longitude,
+    photos: cluster.photos,
+  }));
+}
+
+/**
+ * クラスタ比較用に、順序に依存しない形へ正規化する。id は実装(空間ハッシュ版/参照版)で
+ * 形式が異なるため比較対象から外し、内容(座標・含まれる写真ID集合)だけを比較する。
+ *
+ * @param clusters - 正規化するクラスタ一覧。
+ * @returns 座標順に並べ替えた比較用データ。
+ */
+function normalizeClustersForComparison(clusters: MapPhotoCluster[]): Array<{ latitude: number; longitude: number; photoIds: string[] }> {
+  return clusters
+    .map((cluster) => ({
+      latitude: cluster.latitude,
+      longitude: cluster.longitude,
+      photoIds: cluster.photos.map((photo) => photo.id).sort(),
+    }))
+    .sort((a, b) => (a.photoIds[0] ?? '').localeCompare(b.photoIds[0] ?? ''));
+}
+
+describe('新実装(空間ハッシュ)と参照実装(O(N^2))の等価性', () => {
+  it('多様な緯度・経度に散らばる写真でも現行実装と同じクラスタリング結果になる', () => {
+    const random = createSeededRandom(20260811);
+    const photos: MapPhoto[] = Array.from({ length: 300 }, (_, index) => {
+      const latitude = random() * 160 - 80; // -80〜80度
+      const longitude = random() * 360 - 180; // -180〜180度
+      return createPhoto(`photo-${index}`, latitude, longitude, index);
+    });
+
+    for (const clusterRadiusMeters of [10, 75, 300, 1500, 7500]) {
+      const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
+      const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
+
+      expect(actual).toEqual(expected);
+    }
+  });
+
+  it('高緯度に密集した写真でも現行実装と同じクラスタリング結果になる', () => {
+    // 緯度60〜70度(3セル探索で正当性を保証する上限付近、design docの70度に対応)に密集させ、
+    // Web Mercatorの緯度歪みが大きい状況で空間ハッシュの候補絞り込みが正しく機能することを確認する。
+    const random = createSeededRandom(20260812);
+    const photos: MapPhoto[] = Array.from({ length: 200 }, (_, index) => {
+      const latitude = 60 + random() * 10; // 60〜70度
+      const longitude = random() * 4 - 2; // 狭い経度範囲に密集させ近接ペアを増やす
+      return createPhoto(`photo-${index}`, latitude, longitude, index);
+    });
+
+    for (const clusterRadiusMeters of [75, 300, 1500]) {
+      const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
+      const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
+
+      expect(actual).toEqual(expected);
+    }
+  });
+
+  it('密集した写真でも現行実装と同じクラスタリング結果になる(多数のクラスタを跨ぐケース)', () => {
+    // 緯度65度付近の狭い範囲(0.02°×0.05°)に密集させる。既存の等価性テストは写真が疎らすぎて
+    // ほとんどのペアが1枚だけのクラスタになり、空間ハッシュの候補絞り込みロジックが
+    // 実質検証されていなかった(全ペアがそもそも半径外)。この配置は複数枚のクラスタを
+    // 複数の半径で作るため、候補探索が壊れた場合(セルID不一致・1セル探索への後退)に
+    // 実際に不一致を検知できる。
+    const random = createSeededRandom(20260813);
+    const photos: MapPhoto[] = Array.from({ length: 300 }, (_, index) => {
+      const latitude = 65 + random() * 0.02;
+      const longitude = 139 + random() * 0.05;
+      return createPhoto(`photo-${index}`, latitude, longitude, index);
+    });
+
+    for (const clusterRadiusMeters of [75, 300, 1500]) {
+      const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
+      const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
+
+      expect(actual).toEqual(expected);
+    }
   });
 });

@@ -1,5 +1,10 @@
 import { developmentFlags } from '@/config/developmentFlags';
-import { calculatePolygonReductionRatio, formatVisitedGridMetrics, logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
+import {
+  calculatePolygonReductionRatio,
+  formatVisitedGridMetrics,
+  formatVisitedGridSourceUpdate,
+  logVisitedGridMetrics,
+} from '@/features/map/visitedGridMetrics';
 
 /** テスト用の計測値。 */
 const METRICS = {
@@ -72,5 +77,19 @@ describe('Visited Grid計測 visitedGridMetrics', () => {
 
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('[VisitedGrid]'));
     });
+  });
+});
+
+describe('取得結果の更新/スキップログ formatVisitedGridSourceUpdate', () => {
+  it('スキップした回は source=skipped と累計値を含む1行を返す', () => {
+    const line = formatVisitedGridSourceUpdate({ outcome: 'skipped', cellCount: 1234, updatedCount: 3, skippedCount: 57 });
+
+    expect(line).toBe('[VisitedGrid] source=skipped cells=1234 updated=3 skipped=57');
+  });
+
+  it('更新した回は source=updated になる', () => {
+    const line = formatVisitedGridSourceUpdate({ outcome: 'updated', cellCount: 10, updatedCount: 1, skippedCount: 0 });
+
+    expect(line).toBe('[VisitedGrid] source=updated cells=10 updated=1 skipped=0');
   });
 });

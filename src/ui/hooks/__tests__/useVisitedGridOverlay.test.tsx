@@ -27,10 +27,12 @@ const THEME_PRIMARY_COLOR = '#1f7a5c';
 const BLOCK_ORIGIN = { x: 155580, y: 42564 };
 
 /**
- * DB取得範囲・画面外判定範囲の両方に収まりつつ、BLOCK_ORIGINの4x4ブロックとは重ならない座標。
- * 再取得時の新規セル検出(fresh判定)の対象として使う。
+ * 再取得時の新規セル検出(fresh判定)の対象として使う2x2ブロックの原点。
+ * BLOCK_ORIGINの4x4ブロックとは重ならず、TEST_REGIONの画面外判定範囲(padding無し、
+ * 概算 X:[155574,155585] / Y:[42559,42573])の境界から2セル以上内側に寄せている
+ * (境界ちょうどだと丸め次第で不安定になるため)。
  */
-const FRESH_CELL = { x: 155585, y: 42570 };
+const FRESH_BLOCK_ORIGIN = { x: 155576, y: 42568 };
 
 /** VisitedCellRow相当のテスト用行を作る。 */
 function makeRow(x: number, y: number) {
@@ -58,11 +60,54 @@ function makeFullBlockRows(origin: { x: number; y: number }, blockSize = 4) {
   return rows;
 }
 
+/** BLOCK_ORIGINの4x4ブロックとFRESH_BLOCK_ORIGINの2x2ブロックをまとめて返す。 */
+function makeCombinedRows() {
+  return [...makeFullBlockRows(BLOCK_ORIGIN), ...makeFullBlockRows(FRESH_BLOCK_ORIGIN, 2)];
+}
+
 /** マイクロタスクを1つ流し、フックの非同期取得effectを完了させる。 */
 async function flushFetch(): Promise<void> {
   await act(async () => {
     await Promise.resolve();
   });
+}
+
+/** `rgba(r, g, b, a)` 形式の文字列からalpha値を取り出す。フェード進捗の検証に使う。 */
+function parseFillOpacity(fillColor: string): number {
+  const match = fillColor.match(/,\s*([\d.]+)\)$/);
+  return match ? Number(match[1]) : NaN;
+}
+
+/** gridOverlayRegionをpropsとして受け取るrenderHookのラッパー。rerenderでregionを差し替えるテストに使う。 */
+function renderVisitedGridOverlay() {
+  return renderHook(
+    ({ gridOverlayRegion }: { gridOverlayRegion: typeof TEST_REGION }) =>
+      useVisitedGridOverlay({ isReady: true, gridOverlayRegion, themePrimaryColor: THEME_PRIMARY_COLOR }),
+    {
+      initialProps: { gridOverlayRegion: TEST_REGION },
+    },
+  );
+}
+
+/**
+ * 「4x4ブロック(BLOCK_ORIGIN)が既存stable」「2x2ブロック(FRESH_BLOCK_ORIGIN)がfresh」の状態を作る共通セットアップ。
+ * 1回目取得でBLOCK_ORIGINの16セルだけを返し、2回目取得(再取得)でFRESH_BLOCK_ORIGINの4セルを追加する。
+ */
+async function setupWithFreshBlock() {
+  (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeFullBlockRows(BLOCK_ORIGIN));
+
+  const rendered = renderVisitedGridOverlay();
+
+  await flushFetch();
+
+  (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
+
+  await act(async () => {
+    rendered.result.current.incrementVisitedGridRefreshVersion();
+    await Promise.resolve();
+  });
+
+  return rendered;
 }
 
 describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', () => {
@@ -192,32 +237,94 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       expect(result.current.visitedGridCells[0].fillColor).not.toMatch(/, 0\)$/);
     });
 
-    it('再取得で新しく現れたセルは結合されず100mセルのまま残る', async () => {
-      (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeFullBlockRows(BLOCK_ORIGIN));
+    it('再取得で新しく現れた2x2ブロックは結合されず100mセル4個のまま残り、フェード開始直後の低いalphaで表示される', async () => {
+      const { result } = await setupWithFreshBlock();
 
-      const { result } = renderHook(() =>
-        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
-      );
+      const ids = result.current.visitedGridCells.map((cell) => cell.id);
 
-      await flushFetch();
+      // 4x4ブロックは1個の400へ結合される一方、2x2の新規ブロックはfresh扱いのため結合されない。
+      // detectFreshVisitedCellsの呼び出しが壊れてfreshCellIdsが常に空になると、この2x2ブロックも
+      // `200:${FRESH_BLOCK_ORIGIN.x / 2}:${FRESH_BLOCK_ORIGIN.y / 2}` へ結合されてこのテストが落ちる。
+      expect(result.current.visitedGridCells).toHaveLength(1 + 4);
+      expect(ids).toContain(`400:${BLOCK_ORIGIN.x / 4}:${BLOCK_ORIGIN.y / 4}`);
+      expect(ids).not.toContain(`200:${FRESH_BLOCK_ORIGIN.x / 2}:${FRESH_BLOCK_ORIGIN.y / 2}`);
 
-      expect(result.current.visitedGridCells).toHaveLength(1);
+      for (let y = FRESH_BLOCK_ORIGIN.y; y < FRESH_BLOCK_ORIGIN.y + 2; y += 1) {
+        for (let x = FRESH_BLOCK_ORIGIN.x; x < FRESH_BLOCK_ORIGIN.x + 2; x += 1) {
+          const cell = result.current.visitedGridCells.find((candidate) => candidate.id === `100:${x}:${y}`);
 
-      (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce([
-        ...makeFullBlockRows(BLOCK_ORIGIN),
-        makeRow(FRESH_CELL.x, FRESH_CELL.y),
-      ]);
+          expect(cell).toBeDefined();
+          // フェード開始直後なのでalphaはgridOverlayOpacity(0.2)よりかなり低い。
+          expect(parseFillOpacity(cell!.fillColor)).toBeLessThan(0.05);
+        }
+      }
+    });
+  });
+
+  describe('画面外判定とズームでのfresh保持', () => {
+    it('画面外(paddingなしの実表示範囲外)へ出たfreshセルはfreshから落ち、次回取得で結合対象になる', async () => {
+      const { result, rerender } = await setupWithFreshBlock();
+
+      expect(result.current.visitedGridCells).toHaveLength(5);
+
+      // TEST_REGIONから経度を+0.004ずらす。この量は、paddingなしの画面外判定範囲からは
+      // FRESH_BLOCK_ORIGINの2セル(x:155576,155577)を完全に除外する一方、DB取得と同じ
+      // paddingRatio(0.5)を誤って画面外判定に使った場合はまだ範囲内に残ってしまう境界値。
+      // (paddingRatioを誤って渡す退行を検出するため、遠方へ飛ばすのではなくこの値を選んでいる)
+      const MOVED_REGION = { ...TEST_REGION, longitude: TEST_REGION.longitude + 0.004 };
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
       await act(async () => {
-        result.current.incrementVisitedGridRefreshVersion();
+        rerender({ gridOverlayRegion: MOVED_REGION });
         await Promise.resolve();
       });
 
       const ids = result.current.visitedGridCells.map((cell) => cell.id);
 
+      // freshから落ちたことで2x2ブロックも結合され、400ブロックと合わせて2つのPolygonになる。
       expect(result.current.visitedGridCells).toHaveLength(2);
       expect(ids).toContain(`400:${BLOCK_ORIGIN.x / 4}:${BLOCK_ORIGIN.y / 4}`);
-      expect(ids).toContain(`100:${FRESH_CELL.x}:${FRESH_CELL.y}`);
+      expect(ids).toContain(`200:${FRESH_BLOCK_ORIGIN.x / 2}:${FRESH_BLOCK_ORIGIN.y / 2}`);
+    });
+
+    it('表示セルサイズ変更(latitudeDelta 0.01→0.1)ではfreshが落ちない', async () => {
+      const { result, rerender } = await setupWithFreshBlock();
+
+      expect(result.current.visitedGridCells).toHaveLength(5);
+
+      // 200m表示になる。同じ座標に同じ20セルがある想定でモックする。位置はTEST_REGIONと
+      // 同じ中心のまま広げるだけなので、画面外判定は影響しない(視野が広がるだけで
+      // FRESH_BLOCK_ORIGINは引き続き視野内)。
+      const ZOOMED_OUT_REGION = { ...TEST_REGION, latitudeDelta: 0.1, longitudeDelta: 0.1 };
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
+
+      await act(async () => {
+        rerender({ gridOverlayRegion: ZOOMED_OUT_REGION });
+        await Promise.resolve();
+      });
+
+      // 100m表示へ戻す。同じ20セルを再度返す。
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
+
+      await act(async () => {
+        rerender({ gridOverlayRegion: TEST_REGION });
+        await Promise.resolve();
+      });
+
+      const ids = result.current.visitedGridCells.map((cell) => cell.id);
+
+      // ズーム往復後もfreshが保持されていれば、2x2ブロックは結合されず100mセル4個のまま残る。
+      // detectFreshVisitedCellsは表示セルサイズ変更をまたぐ検出を行わないため、ここで
+      // freshが維持されているのはfetch effect内のマージ処理(前回fresh集合とのunion)による。
+      expect(result.current.visitedGridCells).toHaveLength(5);
+      expect(ids).toContain(`400:${BLOCK_ORIGIN.x / 4}:${BLOCK_ORIGIN.y / 4}`);
+      expect(ids).not.toContain(`200:${FRESH_BLOCK_ORIGIN.x / 2}:${FRESH_BLOCK_ORIGIN.y / 2}`);
+
+      for (let y = FRESH_BLOCK_ORIGIN.y; y < FRESH_BLOCK_ORIGIN.y + 2; y += 1) {
+        for (let x = FRESH_BLOCK_ORIGIN.x; x < FRESH_BLOCK_ORIGIN.x + 2; x += 1) {
+          expect(ids).toContain(`100:${x}:${y}`);
+        }
+      }
     });
   });
 });

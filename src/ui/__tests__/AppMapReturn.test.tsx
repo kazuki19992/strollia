@@ -588,6 +588,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
 
     const callsBeforeReturn = mockAnimateToRegion.mock.calls.length;
+    // 直前の「現在地へ戻る」操作で既にuserRegionを引数にgetGridBoundsForRegion / getVisitedCellsInBoundsが
+    // 呼ばれているため、'地図へ'を押した後だけの呼び出しをスライスして検証する(順序依存の防御を保つ)。
+    const gridBoundsCallsBeforeReturn = (getGridBoundsForRegion as jest.Mock).mock.calls.length;
+    const visitedCellsCallsBeforeReturn = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
     await act(async () => {
       fireEvent.press(screen.getByLabelText('日ごとの記録'));
@@ -599,10 +603,16 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(callsBeforeReturn + 1);
     expect(mockAnimateToRegion).toHaveBeenLastCalledWith(userRegion, 250);
+
     // DB取得(先読み余白あり)と画面外判定(余白なし)の2effectがそれぞれgetGridBoundsForRegionを呼ぶため、
-    // 呼び出し順に依存しないtoHaveBeenCalledWithで検証する。
-    expect(getGridBoundsForRegion).toHaveBeenCalledWith(userRegion, expect.any(Object));
-    expect(getVisitedCellsInBounds).toHaveBeenCalledWith(
+    // 'containToEqual'で少なくとも1回はuserRegionで呼ばれたことを確認する。呼び出し範囲を
+    // '地図へ'を押した後だけに絞ることで、直前の「現在地へ戻る」操作の呼び出しを誤って
+    // 合格根拠にしない(prepareMapRegionRestoreがgridSyncRegionを更新しなくなる退行を検出できる)。
+    const gridBoundsCallsAfterReturn = (getGridBoundsForRegion as jest.Mock).mock.calls.slice(gridBoundsCallsBeforeReturn);
+    expect(gridBoundsCallsAfterReturn).toContainEqual([userRegion, expect.any(Object)]);
+
+    const visitedCellsCallsAfterReturn = (getVisitedCellsInBounds as jest.Mock).mock.calls.slice(visitedCellsCallsBeforeReturn);
+    expect(visitedCellsCallsAfterReturn).toContainEqual([
       {
         minX: Math.round(userRegion.latitude * 1000),
         maxX: Math.round(userRegion.longitude * 1000),
@@ -610,7 +620,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
         maxY: Math.round(userRegion.longitudeDelta * 1000),
       },
       expect.any(Number),
-    );
+    ]);
   });
 
   test('取得済み範囲内(isGridBoundsContained=true)の再移動ではvisited cellを再取得しない', async () => {

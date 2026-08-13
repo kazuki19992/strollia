@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Image, Platform, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 
 import { MapPhotoCluster } from '@/features/photos/photoClusters';
@@ -166,6 +166,32 @@ export function MapScreen({
   // ロード後はパフォーマンスのため更新を止める。
   const [isCustomMarkerRendered, setIsCustomMarkerRendered] = useState(false);
 
+  /**
+   * Visited GridのPolygon要素。
+   *
+   * 追従モード中は現在地更新のたびにこのコンポーネントが再レンダーされる。要素配列をメモ化して
+   * 同じ参照を返すことで、visited cellに変化がない限りReactがPolygonサブツリーの再レンダーを
+   * スキップする。Polygonへ渡す値はvisitedGridCells以外に依存しない(tappable/zIndex/testIDは定数)。
+   */
+  const visitedGridPolygons = useMemo(() => {
+    if (!shouldRenderVisitedGrid) {
+      return null;
+    }
+
+    return visitedGridCells.map((cell) => (
+      <Polygon
+        key={cell.id}
+        coordinates={cell.coordinates}
+        fillColor={cell.fillColor}
+        strokeColor={cell.strokeColor}
+        strokeWidth={cell.strokeWidth}
+        testID="visited-grid-cell"
+        tappable={false}
+        zIndex={1}
+      />
+    ));
+  }, [shouldRenderVisitedGrid, visitedGridCells]);
+
   useEffect(() => {
     setIsCustomMarkerRendered(false);
   }, [userLocationIcon.customImageUri]);
@@ -191,19 +217,7 @@ export function MapScreen({
         onRegionChange={Platform.OS === 'android' ? onRegionChange : undefined}
         mapPadding={MAP_PADDING}
       >
-        {shouldRenderVisitedGrid &&
-          visitedGridCells.map((cell) => (
-            <Polygon
-              key={cell.id}
-              coordinates={cell.coordinates}
-              fillColor={cell.fillColor}
-              strokeColor={cell.strokeColor}
-              strokeWidth={cell.strokeWidth}
-              testID="visited-grid-cell"
-              tappable={false}
-              zIndex={1}
-            />
-          ))}
+        {visitedGridPolygons}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker
             coordinate={userCoordinate}

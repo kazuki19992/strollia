@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
+import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
+import { createStyles } from '@/ui/appStyles';
 import { Dialog } from '@/ui/components/Dialog';
 import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
 
@@ -14,6 +16,8 @@ const baseProps = {
   visible: true,
   styles: styles as never,
   theme: lightTheme,
+  odometerDistanceMeters: 123_450,
+  stage: 'saving' as const,
 };
 
 describe('GpxImportProgressDialog', () => {
@@ -28,10 +32,22 @@ describe('GpxImportProgressDialog', () => {
     expect(dialog.props.swipeToClose).toBe(false);
   });
 
-  test('visible=true のとき取り込み中メッセージを表示する', () => {
+  test('処理段階に応じたメッセージを表示する', () => {
     render(<GpxImportProgressDialog {...baseProps} />);
 
-    expect(screen.getByText('GPXを取り込んでいます…')).toBeTruthy();
+    expect(screen.getByText('GPXを保存しています…')).toBeTruthy();
+  });
+
+  test('プログレスバーの下に中央揃えのODOをDSEG数値で表示する', () => {
+    render(<GpxImportProgressDialog {...baseProps} />);
+    const actualStyles = createStyles(lightTheme);
+
+    expect(screen.getByText('ODO')).toBeTruthy();
+    expect(actualStyles.gpxImportOdometerInteger).toMatchObject({ fontFamily: NUMERIC_DISPLAY_FONT });
+    expect(actualStyles.gpxImportOdometerNumber).toMatchObject({ fontFamily: NUMERIC_DISPLAY_FONT });
+    expect(actualStyles.gpxImportOdometerDecimal).toMatchObject({ fontFamily: NUMERIC_DISPLAY_FONT });
+    expect(screen.getByText('km')).toBeTruthy();
+    expect(actualStyles.gpxImportOdometer).toMatchObject({ justifyContent: 'center' });
   });
 
   test('visible=false のとき Dialog を非表示にする', () => {

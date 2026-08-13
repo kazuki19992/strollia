@@ -1914,6 +1914,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('GPXインポート押下直後に実績反映範囲の注意を表示し、OKを押してからファイル選択を開く', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    }) as typeof global.requestAnimationFrame;
     const callOrder: string[] = [];
     /** 注意ダイアログのOKボタン。ユーザーが閉じる操作をテスト側から再現するために保持する。 */
     let confirmAlertButton: (() => void) | undefined;
@@ -1926,35 +1931,39 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return null;
     });
 
-    renderRouter('src/app');
-    await flushPromises();
+    try {
+      renderRouter('src/app');
+      await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
 
-    let importPromise: Promise<void> = Promise.resolve();
-    await act(async () => {
-      importPromise = mockLatestSettingsScreenProps.onImportGpx();
-      await Promise.resolve();
-    });
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
 
-    // ダイアログのOKを押すまではファイル選択を開かない
-    expect(callOrder).toEqual([
-      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
-    ]);
-    expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+      // ダイアログのOKを押すまではファイル選択を開かない
+      expect(callOrder).toEqual([
+        'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+      ]);
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
 
-    await act(async () => {
-      confirmAlertButton?.();
-      await importPromise;
-    });
+      await act(async () => {
+        confirmAlertButton?.();
+        await importPromise;
+      });
 
-    expect(callOrder).toEqual([
-      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
-      'pick',
-    ]);
-    expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+      expect(callOrder).toEqual([
+        'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+        'pick',
+      ]);
+      expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
   });
 
   test('GPX取り込み処理中だけブロッキングダイアログを表示し、完了後(finally)に閉じる', async () => {

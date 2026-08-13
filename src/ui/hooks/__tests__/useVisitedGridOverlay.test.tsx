@@ -299,6 +299,52 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     });
   });
 
+  describe('200m以上でのPolygon結合', () => {
+    it('200m以上へズームアウトすると、fresh集合が残っていても完全な表示セルブロックは結合される', async () => {
+      // 100m表示でFRESH_BLOCK_ORIGINの2x2をfresh化しておく。fresh集合(100m基本セルID)は
+      // 200mへズームアウトしても保持され続ける(evictOffscreenFreshCellIdsは画面外判定のみで
+      // 表示セルサイズでは消さない)。
+      const { rerender, result } = await setupWithFreshBlock();
+
+      // latitudeDelta=0.1はヒステリシス込みでも200m表示になる境界値
+      // (getStableDisplayCellSizeMeters: 100→200切替境界0.06の(1+0.2)倍=0.072を超える)。
+      const ZOOMED_OUT_REGION = { ...TEST_REGION, latitudeDelta: 0.1, longitudeDelta: 0.1 };
+      // 200m表示セルの完全な2x2ブロックを返す(SQL側集約済み想定のため、ここでは任意の座標でよい)。
+      const displayBlockOrigin = { x: 900, y: 900 };
+      const displayBlockRows = [
+        { x: displayBlockOrigin.x, y: displayBlockOrigin.y },
+        { x: displayBlockOrigin.x + 1, y: displayBlockOrigin.y },
+        { x: displayBlockOrigin.x, y: displayBlockOrigin.y + 1 },
+        { x: displayBlockOrigin.x + 1, y: displayBlockOrigin.y + 1 },
+      ].map(({ x, y }) => ({
+        cellId: `200:${x}:${y}`,
+        cellSizeMeters: 200,
+        x,
+        y,
+        firstVisitedAt: '2026-08-01T00:00:00.000Z',
+        lastVisitedAt: '2026-08-01T00:00:00.000Z',
+        visitCount: 1,
+      }));
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(displayBlockRows);
+
+      await act(async () => {
+        rerender({ gridOverlayRegion: ZOOMED_OUT_REGION });
+        await Promise.resolve();
+      });
+
+      // 表示セルサイズが実際に200mへ切り替わったことを、getVisitedCellsInBoundsへ渡された
+      // 第2引数で確認する(ヒステリシスの挙動次第で意図しないサイズになる場合があるため)。
+      expect((getVisitedCellsInBounds as jest.Mock).mock.calls.at(-1)?.[1]).toBe(200);
+
+      // fresh集合(100m基本セルID)が残っていても、200m表示セルの結合対象からは何も除外されない
+      // (100mIDと200mIDはcellIdのサイズ接頭辞が異なるため、そもそも一致しえない)。
+      // この変更前は非100m表示で結合処理自体をスキップしていたため、4個の200mセルがそのまま
+      // 描画されて visitedGridCells は4件になっていた。
+      expect(result.current.visitedGridCells).toHaveLength(1);
+      expect(result.current.visitedGridCells[0].id).toBe(`400:${displayBlockOrigin.x / 2}:${displayBlockOrigin.y / 2}`);
+    });
+  });
+
   describe('画面外判定とズームでのfresh保持', () => {
     it('画面外(paddingなしの実表示範囲外)へ出たfreshセルはfreshから落ち、次回取得で結合対象になる', async () => {
       const { result, rerender } = await setupWithFreshBlock();

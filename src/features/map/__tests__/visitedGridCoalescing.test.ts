@@ -127,4 +127,52 @@ describe('Visited Grid Polygon結合 coalesceVisitedGridCells', () => {
     expect(result.freshCells).toEqual([]);
     expect(result.blockCountBySize).toEqual({});
   });
+
+  describe('200m以上の表示セルサイズへの適用(集約表示でのPolygon結合)', () => {
+    it('200mセルの2x2が完全に埋まっていれば1つの400mセルへ結合される', () => {
+      const result = coalesceVisitedGridCells(block(0, 0, 2, 200), new Set());
+
+      expect(result.stableCells).toHaveLength(1);
+      expect(result.stableCells[0]).toEqual(expect.objectContaining({ cellId: '400:0:0', cellSizeMeters: 400, x: 0, y: 0 }));
+      expect(result.blockCountBySize['2x2']).toBe(1);
+    });
+
+    it('200mセルの4x4が完全に埋まっていれば1つの800mセルへ結合される', () => {
+      const result = coalesceVisitedGridCells(block(0, 0, 4, 200), new Set());
+
+      expect(result.stableCells).toHaveLength(1);
+      expect(result.stableCells[0]).toEqual(expect.objectContaining({ cellId: '800:0:0', cellSizeMeters: 800, x: 0, y: 0 }));
+      expect(result.blockCountBySize['4x4']).toBe(1);
+    });
+
+    it('500mセルの2x2が完全に埋まっていれば1つの1000mセルへ結合される', () => {
+      const result = coalesceVisitedGridCells(block(0, 0, 2, 500), new Set());
+
+      expect(result.stableCells).toHaveLength(1);
+      expect(result.stableCells[0]).toEqual(expect.objectContaining({ cellId: '1000:0:0', cellSizeMeters: 1000, x: 0, y: 0 }));
+      expect(result.blockCountBySize['2x2']).toBe(1);
+    });
+
+    it('200mセルで欠けた表示セルブロックは結合されず、塗る面積(100m換算)も増えない', () => {
+      // 2x2の右上(1,1)だけ欠けさせる。100m表示と同じく、未訪問セルを含むブロックは
+      // どの倍率でも結合しない仕様が200m以上でも維持されることを確認する。
+      const cells = block(0, 0, 2, 200).filter((target) => !(target.x === 1 && target.y === 1));
+
+      const result = coalesceVisitedGridCells(cells, new Set());
+
+      expect(result.blockCountBySize['2x2']).toBeUndefined();
+      expect(result.stableCells).toHaveLength(3);
+      expect(result.stableCells.every((target) => target.cellSizeMeters === 200)).toBe(true);
+      // 100mセル換算の塗り面積が入力(200mセル3個分=12)と一致し、結合による過剰な塗りが発生しないことを確認する。
+      const coveredCellCount = result.stableCells.reduce((total, target) => total + (target.cellSizeMeters / 100) ** 2, 0);
+      expect(coveredCellCount).toBe(12);
+    });
+
+    it('200mセルでも負のセル番号でブロック整列を崩さず結合する', () => {
+      const result = coalesceVisitedGridCells(block(-4, -4, 4, 200), new Set());
+
+      expect(result.stableCells).toHaveLength(1);
+      expect(result.stableCells[0]).toEqual(expect.objectContaining({ cellId: '800:-1:-1', cellSizeMeters: 800, x: -1, y: -1 }));
+    });
+  });
 });

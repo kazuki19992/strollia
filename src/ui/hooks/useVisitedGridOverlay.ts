@@ -14,6 +14,15 @@ import { logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
 const VISITED_GRID_FADE_FRAME_MS = 50;
+/**
+ * 100m表示以外でPolygon結合に渡す、常に空のfresh集合。
+ *
+ * 200m以上の集約表示では「表示セル内に visited な100mセルが1つでもあれば表示セル全体を塗る」
+ * 仕様のため、表示セルは訪問の有無だけを表す。完全に揃った `2x2` / `4x4` を結合しても
+ * 塗り範囲は変わらないため、fresh(今開いた100mセルを個別に見せる概念)を考慮する意味がない。
+ * 毎レンダーで新しい `Set` を作らないよう、モジュールスコープの定数として保持する。
+ */
+const EMPTY_FRESH_CELL_IDS: ReadonlySet<string> = new Set();
 
 /** `useVisitedGridOverlay` フックの引数。 */
 export type UseVisitedGridOverlayParams = {
@@ -288,16 +297,24 @@ export function useVisitedGridOverlay({
 
   /**
    * fresh cellをPolygon結合対象から除いた上で、完全に埋まった正方形ブロックを結合する。
-   * 結合は100m表示のときだけ行う(§3.3)。それ以外の表示セルサイズでは
-   * stable=集約済みセル全部・fresh=空として扱う(集約表示ではどの100mセルが開いたか特定できないため)。
+   *
+   * 結合自体は全ズーム段階(100m表示・200m以上の集約表示)で常に行う(§3.3)。
+   * fresh除外の扱いだけ表示セルサイズで分ける。
+   * - 100m表示: `visitedGridSource.freshCellIds` を渡し、GPS記録で新しく開いたセルを
+   *   結合対象から外す(従来どおり個別セルとしてフェード表示するため)。
+   * - 200m以上: 常に `EMPTY_FRESH_CELL_IDS`(空集合)を渡す。集約表示では
+   *   「表示セル内に visited な100mセルが1つでもあれば表示セル全体を塗る」仕様のため、
+   *   完全に揃ったブロックを結合しても塗り範囲は1ピクセルも変わらない。fresh はもともと
+   *   100mセル単位でしか意味を持たない概念であり、集約表示では考慮する理由がない。
    */
   const coalescedVisitedGrid = useMemo<CoalescedVisitedGrid>(() => {
     // eslint-disable-next-line react-hooks/purity -- 結合処理コストの開発用計測
     const startedAt = Date.now();
-    const result: CoalescedVisitedGrid =
+    const freshCellIdsForCoalescing =
       visitedGridSource.displayCellSizeMeters === GRID_OVERLAY_CONFIG.baseCellSizeMeters
-        ? coalesceVisitedGridCells(visitedGridSource.cells, visitedGridSource.freshCellIds)
-        : { stableCells: visitedGridSource.cells, freshCells: [], blockCountBySize: {} };
+        ? visitedGridSource.freshCellIds
+        : EMPTY_FRESH_CELL_IDS;
+    const result = coalesceVisitedGridCells(visitedGridSource.cells, freshCellIdsForCoalescing);
     // eslint-disable-next-line react-hooks/purity, react-hooks/refs -- 開発用の処理時間計測のみ。描画結果もReactの再レンダー判断も参照しない
     visitedGridTimingRef.current.coalesceMs = Date.now() - startedAt;
 

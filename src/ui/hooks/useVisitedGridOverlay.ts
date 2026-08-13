@@ -8,7 +8,8 @@ import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from
 import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
 import { CoalescedVisitedGrid, coalesceVisitedGridCells, resolveCoalescingFreshCellIds } from '@/features/map/visitedGridCoalescing';
 import { MAX_FADING_VISITED_CELL_COUNT, detectFreshVisitedCells, evictOffscreenFreshCellIds } from '@/features/map/visitedGridFreshCells';
-import { logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
+import { canSkipVisitedGridSourceUpdate } from '@/features/map/visitedGridIdentity';
+import { logVisitedGridMetrics, logVisitedGridSourceUpdate } from '@/features/map/visitedGridMetrics';
 
 /** visited cellフェードの持続時間。 */
 const VISITED_GRID_FADE_DURATION_MS = 500;
@@ -54,7 +55,14 @@ export type UseVisitedGridOverlayResult = {
 
 /** DBから取得して集約したvisited cellと、そのうちfresh扱いのセルID・表示セルサイズ。 */
 type VisitedGridSource = {
-  /** 表示セルサイズへ集約済みのvisited cell。 */
+  /**
+   * 表示セルサイズへ集約済みのvisited cell。
+   *
+   * 取得結果のセルID集合が前回と同一の場合はこのstateを更新しない(`canSkipVisitedGridSourceUpdate`)。
+   * そのため `visitCount` / `lastVisitedAt` などのメタデータは最新でないことがある。
+   * 描画はセルIDと座標・テーマ色だけを使うため表示には影響しないが、
+   * 将来メタデータを描画へ反映する場合は同一性判定を見直すこと。
+   */
   cells: GridCellPolygonSource[];
   /**
    * GPS記録で新しく開いた100m基本セルID。表示セルサイズが変わっても意味が変わらないよう、
@@ -121,6 +129,8 @@ export function useVisitedGridOverlay({
     stableOverlayBuildMs: 0,
     freshOverlayBuildMs: 0,
   });
+  /** 起動後に描画データを更新した回数とスキップした回数。開発用の効果測定ログでのみ使う。 */
+  const visitedGridSourceUpdateCountsRef = useRef({ updatedCount: 0, skippedCount: 0 });
 
   /**
    * fadingCellIdsの初回フェード開始時刻を登録し、freshCellIdsから外れたセルのタイマーを掃除する。
@@ -239,12 +249,44 @@ export function useVisitedGridOverlay({
         });
         visitedGridTimingRef.current.freshDetectionMs = Date.now() - fetchedAt;
 
+        // 表示セルの集合が前回と同じなら、Polygon結合・座標変換・Polygon生成を丸ごと省く。
+        // 追従モード中は現在地更新のたびに再取得が走るが、その大半がこのケースになる。
+        const shouldSkipSourceUpdate = canSkipVisitedGridSourceUpdate({
+          previousFetch: lastFetch ? { cellIds: lastFetch.cellIds, cellSizeMeters: lastFetch.cellSizeMeters } : null,
+          nextCells: rows,
+          displayCellSizeMeters,
+          detectedFreshCellIds,
+        });
+
         lastVisitedGridFetchRef.current = {
           bounds,
           cellSizeMeters: displayCellSizeMeters,
           version: visitedGridRefreshVersion,
-          cellIds: new Set(rows.map((cell) => cell.cellId)),
+          // スキップ時は内容が同一なので、前回のSetをそのまま使い回して毎秒の再確保を避ける。
+          cellIds: shouldSkipSourceUpdate && lastFetch ? lastFetch.cellIds : new Set(rows.map((cell) => cell.cellId)),
         };
+
+        const counts = visitedGridSourceUpdateCountsRef.current;
+
+        if (shouldSkipSourceUpdate) {
+          counts.skippedCount += 1;
+        } else {
+          counts.updatedCount += 1;
+        }
+
+        logVisitedGridSourceUpdate({
+          outcome: shouldSkipSourceUpdate ? 'skipped' : 'updated',
+          cellCount: rows.length,
+          updatedCount: counts.updatedCount,
+          skippedCount: counts.skippedCount,
+        });
+
+        if (shouldSkipSourceUpdate) {
+          // fresh検出0件のためフェード開始対象もなく、fresh集合も変化しない。
+          // フェード進行中の再描画はフェード用effectのsetTimeoutが自走するため、
+          // ここでフェードフレームを進める必要もない。
+          return;
+        }
 
         // 表示され続けているfreshセルを維持するため、前回のfresh集合とマージする。
         // 100m表示以外(isBaseSizeComparisonがfalse)ではdetectedFreshCellIdsが常に空になるため、

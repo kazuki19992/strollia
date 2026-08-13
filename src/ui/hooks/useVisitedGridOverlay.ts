@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Region } from 'react-native-maps';
 
-import { aggregateVisitedCells, getStableDisplayCellSizeMeters } from '@/features/location/grid/gridAggregation';
+import { getStableDisplayCellSizeMeters } from '@/features/location/grid/gridAggregation';
 import { getGridBoundsForRegion, GridBounds, GridCellPolygonSource, isGridBoundsContained } from '@/features/location/grid/gridCell';
 import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '@/features/map/gridOverlay';
@@ -222,12 +222,13 @@ export function useVisitedGridOverlay({
         const fetchedAt = Date.now();
         visitedGridTimingRef.current.fetchMs = fetchedAt - fetchStartedAt;
 
-        const aggregatedCells = aggregateVisitedCells(rows, displayCellSizeMeters);
+        // rows はDB取得時点(getVisitedCellsInBounds)で表示セルサイズへ集約済み(SQL側GROUP BY)のため、
+        // ここでのJS側再集約は行わない。表示セル(200m以上)をさらに集約するとratioで座標が壊れる。
         const { freshCellIds: detectedFreshCellIds, fadingCellIds } = detectFreshVisitedCells({
           previousCellIds: lastFetch?.cellIds ?? new Set<string>(),
           previousBounds: lastFetch?.bounds ?? null,
           previousDisplayCellSizeMeters: lastFetch?.cellSizeMeters ?? null,
-          nextCells: aggregatedCells,
+          nextCells: rows,
           displayCellSizeMeters,
           baseCellSizeMeters: GRID_OVERLAY_CONFIG.baseCellSizeMeters,
           maxFadingCellCount: MAX_FADING_VISITED_CELL_COUNT,
@@ -238,7 +239,7 @@ export function useVisitedGridOverlay({
           bounds,
           cellSizeMeters: displayCellSizeMeters,
           version: visitedGridRefreshVersion,
-          cellIds: new Set(aggregatedCells.map((cell) => cell.cellId)),
+          cellIds: new Set(rows.map((cell) => cell.cellId)),
         };
 
         // 表示され続けているfreshセルを維持するため、前回のfresh集合とマージする。
@@ -248,7 +249,7 @@ export function useVisitedGridOverlay({
         visitedGridFreshCellIdsRef.current = mergedFreshCellIds;
 
         syncVisitedGridFadeState(fadingCellIds, mergedFreshCellIds);
-        setVisitedGridSource({ cells: aggregatedCells, freshCellIds: mergedFreshCellIds, displayCellSizeMeters });
+        setVisitedGridSource({ cells: rows, freshCellIds: mergedFreshCellIds, displayCellSizeMeters });
       })
       .catch((error: unknown) => {
         console.warn('Failed to refresh visited grid cells:', error);

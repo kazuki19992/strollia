@@ -2,6 +2,7 @@
 
 - 対象issue: [#151](https://github.com/kazuki19992/strollia/issues/151)
 - 親issue: [#138 地図表示軽量化](https://github.com/kazuki19992/strollia/issues/138) / [PR #149](https://github.com/kazuki19992/strollia/pull/149)
+- 関連issue: [#152 AndroidでVisited Gridの旧Polygonが残留し二重描画される](https://github.com/kazuki19992/strollia/issues/152)(本変更では解消しない。2.3参照)
 - 作成日: 2026-08-13
 - 起点: `develop` (`c0db214`)
 
@@ -61,10 +62,27 @@ onUserLocationChange
 - GPS記録、バックグラウンド記録、`visited_cells` の保存・upsert、100mセルの永続的な意味には触れない
 - 再取得の頻度そのものは変えない(issue候補3の距離しきい値は採用しない)。SQLite取得は従来どおり毎秒走らせ、新しいセルが開いた瞬間の表示遅延を増やさない
 - `coalescedVisitedGrid` のブロック単位キャッシュ(issue候補2)は行わない。変化がない場合を落とせば残るのは「実際に変化した回のコスト」だけで、キャッシュ無効化の設計を増やすほどの取り分がない
+- **[#152](https://github.com/kazuki19992/strollia/issues/152) の Android 旧Polygon残留は解消しない**(2.3参照)
+
+### 2.3 #152(Android旧Polygon残留)との関係
+
+[#152](https://github.com/kazuki19992/strollia/issues/152) は、Android Fabric で unmount した `Polygon` が Google Maps surface から削除されず二重描画になる不具合(`react-native-maps` の既知未解決issue)であり、**本変更では解消しない**。
+
+本変更で減るのは「描画集合が変わっていないのに Polygon を作り直す回数」だけである。以下の場合は従来どおり旧 Polygon の remove と新規 add が発生するため、残留の条件も従来どおり成立する。
+
+- ズームで表示セルサイズが切り替わったとき(セルIDの体系ごと入れ替わる)
+- スクロールで表示範囲が変わり、セルが増減したとき
+- GPS記録で新しいセルが開いたとき
+
+発生**頻度**は下がるため症状が見えにくくなる可能性があるが、これは原因の解消ではなく観測機会の減少にすぎない。したがって次を守る。
+
+- **#151 の完了は、Android の二重描画解消やリリース可否の根拠にならない**
+- Android実機での重複描画検証は #151 の受け入れ条件に含めず、#152 側の受け入れ条件として独立させる
+- 本変更の検証は iOS シミュレータ / 実機での計測とテストで完結させる
 
 ## 3. 設計
 
-2箇所を変更する。どちらも表示層の最適化であり、記録・保存には一切触れない。
+3箇所を変更する。いずれも表示層に閉じた変更で、記録・保存には一切触れない。3つ目は開発フラグ有効時のみ動く計測である。
 
 ### 3.1 取得結果が同一なら state 更新をスキップする
 
@@ -129,7 +147,34 @@ const visitedGridPolygons = useMemo(
 
 Polygon に渡す値のうち `visitedGridCells` 以外に依存するものはない(`tappable` / `zIndex` / `testID` は定数)ため、依存配列はこの2つで足りる。
 
-### 3.3 変更しないもの
+### 3.3 スキップ回を観測できる開発用ログを追加する
+
+既存の `[VisitedGrid] raw=… render=…` ログは `logVisitedGridMetrics` を呼ぶeffectの依存が `[visitedGridCells]` のため、**更新をスキップした回はログが1行も出ない**。ログが減ったことだけでは「位置更新自体が来なかった」のか「取得したうえで更新をスキップした」のかを区別できず、本変更の効果を直接確認できない。
+
+そこで取得effectの `.then` から、更新・スキップのどちらの経路でも1行出す開発用ログを追加する。
+
+```typescript
+/** visitedGridSource更新の結果。 */
+export type VisitedGridSourceUpdateOutcome = 'updated' | 'skipped';
+
+/** `logVisitedGridSourceUpdate` へ渡す計測値。 */
+export type VisitedGridSourceUpdateMetrics = {
+  /** 今回の取得で state を更新したか、スキップしたか。 */
+  outcome: VisitedGridSourceUpdateOutcome;
+  /** 取得できた表示セル数。 */
+  cellCount: number;
+  /** 起動後に更新した累計回数。 */
+  updatedCount: number;
+  /** 起動後にスキップした累計回数。 */
+  skippedCount: number;
+};
+```
+
+出力形式は既存ログと揃えて `[VisitedGrid] source=skipped cells=1234 updated=3 skipped=57` とする。累計値を持つことで、一定時間歩いたあとの比率がそのまま効果指標になる。
+
+既存の `logVisitedGridMetrics` と同じく `developmentFlags.logVisitedGridMetrics` で全体をゲートし、座標・セルIDは一切出力しない。累計カウンタはフック内のrefで保持する(描画に影響しないため state にしない)。整形は純粋関数 `formatVisitedGridSourceUpdate` に切り出して単体テストする。
+
+### 3.4 変更しないもの
 
 - 取得effectの依存配列と早期リターン条件(`coveredByLastFetch`)
 - `getVisitedCellsInBounds` のクエリ、`boundsPaddingRatio` の先読み余白
@@ -148,6 +193,7 @@ Polygon に渡す値のうち `visitedGridCells` 以外に依存するものは�
        true  : lastVisitedGridFetchRef のみ更新して終了
                → 再レンダーなし。coalesce・座標変換・Polygon生成は一切走らない
        false : 従来どおり fade state 同期 + setVisitedGridSource
+  → logVisitedGridSourceUpdate(updated / skipped) ← 追加(開発フラグ有効時のみ)
   → (再レンダー時) MapScreen は memo 済み Polygon 要素配列を返す ← 追加
 ```
 
@@ -167,20 +213,26 @@ Polygon に渡す値のうち `visitedGridCells` 以外に依存するものは�
   - fresh検出が1件でもあればfalse
   - 上記をすべて満たし、ID集合が一致する場合だけtrue
 
-### 5.2 フック `src/ui/hooks/__tests__/useVisitedGridOverlay.test.tsx`(追加)
+### 5.2 純粋関数 `src/features/map/__tests__/visitedGridMetrics.test.ts`(追加)
 
-- 同じ結果を返す再取得のあと、`visitedGridCells` の参照が維持される(`toBe` で検証)
+- `formatVisitedGridSourceUpdate` が `outcome` / `cellCount` / 累計値を含む1行を返す
+- `skipped` と `updated` で出力が区別できる
+
+### 5.3 フック `src/ui/hooks/__tests__/useVisitedGridOverlay.test.tsx`(追加)
+
+- **同じ cellId で `lastVisitedAt` / `visitCount` だけが変化した rows を2回返しても、`visitedGridCells` の参照が維持される**(本issueの最重要ケース。現在地セルのメタデータはGPS記録のたびに更新されるため、実運用で最も頻繁に起きる。純粋関数のテストとは別に、フックへ正しく結線されていることをここで固定する)
+- 完全に同じ結果を返す再取得のあと、`visitedGridCells` の参照が維持される(`toBe` で検証)
 - 新しいセルが増えた再取得では `visitedGridCells` が更新される
 - 表示セルサイズが変わった再取得では更新される
 - fresh cell が検出された再取得では更新され、フェードが始まる
 - 内容が同一でも `getVisitedCellsInBounds` の呼び出し自体は従来どおり行われる(取得を止めていないことの確認)
 
-### 5.3 画面 `src/ui/components/__tests__/MapScreen.test.tsx`(追加)
+### 5.4 画面 `src/ui/components/__tests__/MapScreen.test.tsx`(追加)
 
 - `visitedGridCells` を据え置いたまま無関係なpropsを変えて再レンダーしても、Polygon が再レンダーされない(モックした Polygon のレンダー回数で検証)
 - `visitedGridCells` を差し替えた再レンダーでは Polygon が再レンダーされる
 
-### 5.4 既存テスト
+### 5.5 既存テスト
 
 `useVisitedGridOverlay` / `MapScreen` / `routerIndex` / `AppMapReturn` などの既存テストが変更なしで通ることを確認する。追従・現在地ボタン・地図復帰の挙動を変えていないことの担保とする。
 
@@ -188,22 +240,30 @@ Polygon に渡す値のうち `visitedGridCells` 以外に依存するものは�
 
 着手前後で `EXPO_PUBLIC_LOG_VISITED_GRID_METRICS=true` を有効にし、密集地域を100m表示・追従モードで歩いて比較する。
 
-`logVisitedGridMetrics` を呼ぶeffectの依存は `[visitedGridCells]` のため、**`[VisitedGrid]` 行の出力頻度そのものが指標になる**。
+主指標は 3.3 で追加する `source=` ログの **skipped / updated 比**とする。描画ログ(`raw=…`)の行数を主指標にはしない。理由は以下の2点。
 
-| 指標                        | 期待                                                     |
-| --------------------------- | -------------------------------------------------------- |
-| `[VisitedGrid]` の出力頻度  | 毎秒 → 新しいセルが開いたときだけ(徒歩で1〜2分に1回程度) |
-| `overlayBuildMs` の発生頻度 | 同上                                                     |
-| `raw` / `render` の値       | 変化なし(表示内容は変わらない)                           |
+- スキップ回は描画ログが出ないため、行が減ったこと自体が「位置更新が来なかった」のか「取得後にスキップした」のかを区別できない
+- 描画ログは `visitedGridCells` が変わるたびに出る。新しいセルが1つ開くとフェード中は50msごとに fresh 側の描画データが変わるため、**1セル追加につき約0.5秒間・最大10行前後がまとまって出る**。「新セル時に1行」ではない
+
+| 指標                                     | 変更前                        | 期待する変更後                                             |
+| ---------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `source=skipped` / `source=updated` の比 | (ログなし。全回 updated 相当) | 静止・低速移動が続く区間では skipped が大多数を占める      |
+| 描画ログ(`raw=…`)の出方                  | 毎秒コンスタントに1行         | 定常時は出ない。新セル追加時にフェード分がバースト状に出る |
+| `overlayBuildMs` の発生頻度              | 毎秒                          | 上記バーストのときだけ                                     |
+| `raw` / `render` の値                    | —                             | 同じ表示内容なら変更前と一致する(表示は変えていない)       |
+
+補足として、静止状態(シミュレータで位置を固定)で観測すると切り分けが容易になる。位置更新は届き続けるが visited cell は増えないため、変更後は `source=skipped` だけが増え、描画ログが1行も出ない状態になるのが期待値である。
 
 ## 7. リスクと対応
 
-| リスク                                                    | 対応                                                                                                 |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| メタデータ更新が画面へ反映されなくなる                    | 現状は描画に未使用。3.1 の理由をJSDocへ明記し、将来描画へ使う際は判定を見直す                        |
-| スキップ判定の誤りで新しいセルが表示されなくなる          | 純粋関数へ切り出して単体テストで固定し、フック側でも「増えたら更新される」ケースをテストする         |
-| メモ化で Polygon が更新されなくなる                       | 依存配列を `visitedGridCells` / `shouldRenderVisitedGrid` だけに限定し、更新されるケースをテストする |
-| `lastVisitedGridFetchRef` と `visitedGridSource` の不整合 | スキップ時も内容は同一なので不整合にならない。スキップ時もrefは必ず更新する                          |
+| リスク                                                     | 対応                                                                                                 |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| メタデータ更新が画面へ反映されなくなる                     | 現状は描画に未使用。3.1 の理由をJSDocへ明記し、将来描画へ使う際は判定を見直す                        |
+| スキップ判定の誤りで新しいセルが表示されなくなる           | 純粋関数へ切り出して単体テストで固定し、フック側でも「増えたら更新される」ケースをテストする         |
+| メモ化で Polygon が更新されなくなる                        | 依存配列を `visitedGridCells` / `shouldRenderVisitedGrid` だけに限定し、更新されるケースをテストする |
+| `lastVisitedGridFetchRef` と `visitedGridSource` の不整合  | スキップ時も内容は同一なので不整合にならない。スキップ時もrefは必ず更新する                          |
+| 発生頻度が下がることで #152 の残留が「直った」ように見える | 2.3 のとおり原因は未解消。Android実機での重複描画検証は #152 の受け入れ条件として独立させる          |
+| 追加した開発用ログが本番ビルドで出力される                 | 既存の `logVisitedGridMetrics` と同じ `developmentFlags.logVisitedGridMetrics` ゲート下に置く        |
 
 ## 8. 受け入れ条件
 
@@ -211,10 +271,15 @@ Polygon に渡す値のうち `visitedGridCells` 以外に依存するものは�
 - [ ] GPS記録で新しいセルが開いたときは従来どおり表示が更新され、fresh cell がフェードインする
 - [ ] 現在地追従モード、現在地ボタン、地図復帰時の既存挙動が変わらない
 - [ ] 未訪問の100mセルを塗らない条件が維持されている
-- [ ] `EXPO_PUBLIC_LOG_VISITED_GRID_METRICS=true` で、追従中の `[VisitedGrid]` 出力頻度が下がることを確認できる
+- [ ] `EXPO_PUBLIC_LOG_VISITED_GRID_METRICS=true` で、追従中に `source=skipped` が大多数を占めることを確認できる
+- [ ] メタデータ(`visitCount` / `lastVisitedAt`)だけが変化した再取得で更新をスキップすることが、フックのテストで固定されている
 - [ ] 退行として検出できるテストが追加されている(スキップ / 更新の両方)
 - [ ] `npm run typecheck`、`npm test`、`npm run lint`(error 0)、`npm run format:check` が成功する
 
+以下は **この issue の受け入れ条件に含めない**。
+
+- Android実機での旧Polygon残留・二重描画の解消([#152](https://github.com/kazuki19992/strollia/issues/152) の受け入れ条件として独立させる)
+
 ## 9. 更新するドキュメント
 
-- `docs/map-rendering.md` §4.2 / §9 — 取得結果が同一な場合の更新スキップと、Polygon 要素のメモ化を追記
+- `docs/map-rendering.md` §4.2 / §9 — 取得結果が同一な場合の更新スキップ、Polygon 要素のメモ化、`source=` 開発用ログを追記

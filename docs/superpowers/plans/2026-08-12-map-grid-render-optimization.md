@@ -20,7 +20,7 @@
 - **既存挙動を変えない箇所**: 現在地追従の状態機械(初期ON / ドラッグでOFF / 現在地ボタンでON)、現在地ボタン、地図復帰時のセンタリング、`GRID_OVERLAY_CONFIG.boundsPaddingRatio: 0.5`。
 - ログに GPS 座標・cellId・移動履歴を含めない。件数・処理時間・削減率のみ。開発フラグ配下に限定する。
 - 結合対象は整列した正方形のみ(`4x4` / `2x2`)。`8x8` 以上と任意長方形は対象外。
-- Polygon 結合の適用は **100m表示のときだけ**(関数自体は表示セルサイズ非依存の汎用実装にする)。
+- Polygon 結合は **全ズーム段階**へ適用する(関数は表示セルサイズ非依存の汎用実装)。100m表示では `freshCellIds` を渡して fresh を除外し、200m以上では空集合を渡して全表示セルを stable として結合する。
 - fresh cell は **100m基本セルID(`100:x:y`)** で保持する。表示セルサイズ変更では落とさない。
 
 ---
@@ -377,7 +377,7 @@ git commit -m "feat(map): ユーザースクロール中のVisited Grid更新を
   変化があったときだけ state を更新する(早期returnで取得を省いた場合も動く)
 
 coalescedVisitedGrid = useMemo(deps: visitedGridSource)
-  100m表示のときだけ coalesceVisitedGridCells を通す。それ以外は stable=cells, fresh=[]
+  常に coalesceVisitedGridCells を通す。100m表示は freshCellIds を渡し、200m以上は空集合を渡す
 
 stableOverlayCells (deps: stable, opacity, color)        … フェード非依存
 freshOverlayCells  (deps: fresh, opacity, color, frame)  … フェードごとに再計算
@@ -484,7 +484,7 @@ git commit -m "feat(map): 200m以上の表示セルをSQLite側で集約する"
 
 - [ ] **Step 1: 4.2 の「隣接セルの矩形結合は…行わない」段落を差し替える**
 
-fresh cell / stable cell の区別、整列正方形ブロック(`4x4` / `2x2`)の結合条件、未訪問セルを塗らないこと、100m表示のみへ適用すること、任意長方形と `8x8` 以上を行わないことを記述する。
+fresh cell / stable cell の区別、整列正方形ブロック(`4x4` / `2x2`)の結合条件、未訪問セルを塗らないこと、全ズーム段階へ適用すること(200m以上では fresh を考慮しない)、任意長方形と `8x8` 以上を行わないことを記述する。
 
 - [ ] **Step 2: 4.2 へ Grid 更新タイミングを追記する**
 
@@ -525,5 +525,5 @@ git commit -m "docs(map): Visited Gridの更新タイミングとPolygon結合�
 ## 自己レビュー結果
 
 - **issue #138 受け入れ条件との対応**: スクロール中のGrid更新停止=Task 4 / fresh cell のフェード限定=Task 2・5 / fresh の非結合と画面外での stable 化=Task 2・5 / 正方形ブロック結合=Task 3 / `8x8`・任意長方形の除外=Task 3 / 未訪問セルを塗らない=Task 3 / `renderPolygonCount < rawCellCount` の確認=Task 1・5・7 / 市松模様のフォールバック=Task 3 / SQL集約=Task 6 / ドキュメント=Task 7 / typecheck・lint・test=Task 7。
-- **設計書との整合**: fresh は100m基本セルIDで保持(Task 2)、画面外判定は余白なし範囲で取得とは独立(Task 2・5)、フェード上限は結合除外に波及しない(Task 2)、アイドルタイマー(Task 4)、計測は現行経路へ先に接続(Task 1)、結合は100m表示のみ(Task 5)。
+- **設計書との整合**: fresh は100m基本セルIDで保持(Task 2)、画面外判定は余白なし範囲で取得とは独立(Task 2・5)、フェード上限は結合除外に波及しない(Task 2)、アイドルタイマー(Task 4)、計測は現行経路へ先に接続(Task 1)、結合は全ズーム段階(Task 5・Task 8)。
 - **`MapScreen` は変更不要**: props の形は変わらず、既存の `MapScreen.test.tsx` が回帰テストになる。

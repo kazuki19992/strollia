@@ -300,10 +300,14 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
   });
 
   describe('200m以上でのPolygon結合', () => {
-    it('200m以上へズームアウトすると、fresh集合が残っていても完全な表示セルブロックは結合される', async () => {
+    it('200m以上へズームアウトすると、完全な表示セルブロックは結合される', async () => {
       // 100m表示でFRESH_BLOCK_ORIGINの2x2をfresh化しておく。fresh集合(100m基本セルID)は
       // 200mへズームアウトしても保持され続ける(evictOffscreenFreshCellIdsは画面外判定のみで
       // 表示セルサイズでは消さない)。
+      // 注意: fresh集合(`100:x:y`)と200m以上の表示セルID(`200:x:y`等)はサイズ接頭辞が異なり
+      // 文字列として一致しないため、このテストは「200m以上でも結合が起きること」だけを検証する。
+      // freshCellIdsに空集合を渡した場合と実際のfresh集合を渡した場合の出力は元々区別できず、
+      // fresh除外が効いているかどうか自体はこのテストの対象外(詳細は下記コメントも参照)。
       const { rerender, result } = await setupWithFreshBlock();
 
       // latitudeDelta=0.1はヒステリシス込みでも200m表示になる境界値

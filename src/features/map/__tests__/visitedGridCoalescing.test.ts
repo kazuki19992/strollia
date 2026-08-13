@@ -1,5 +1,5 @@
 import type { GridCellPolygonSource } from '@/features/location/grid/gridCell';
-import { coalesceVisitedGridCells } from '@/features/map/visitedGridCoalescing';
+import { coalesceVisitedGridCells, resolveCoalescingFreshCellIds } from '@/features/map/visitedGridCoalescing';
 
 /** 指定サイズの表示セルを作る。 */
 function cell(x: number, y: number, cellSizeMeters = 100): GridCellPolygonSource {
@@ -120,7 +120,7 @@ describe('Visited Grid Polygon結合 coalesceVisitedGridCells', () => {
     expect(result.stableCells[0]).toEqual(expect.objectContaining({ cellId: '400:0:0', cellSizeMeters: 400 }));
   });
 
-  it('空配列を渡しても壊れない', () => {
+  it('空配列を渡した場合は空の結果を返す', () => {
     const result = coalesceVisitedGridCells([], new Set());
 
     expect(result.stableCells).toEqual([]);
@@ -174,5 +174,40 @@ describe('Visited Grid Polygon結合 coalesceVisitedGridCells', () => {
       expect(result.stableCells).toHaveLength(1);
       expect(result.stableCells[0]).toEqual(expect.objectContaining({ cellId: '800:-1:-1', cellSizeMeters: 800, x: -1, y: -1 }));
     });
+  });
+});
+
+describe('Polygon結合用fresh集合の解決 resolveCoalescingFreshCellIds', () => {
+  const BASE_CELL_SIZE_METERS = 100;
+
+  it('100m表示(displayCellSizeMeters === baseCellSizeMeters)では渡されたfresh集合をそのまま返す', () => {
+    const freshCellIds = new Set(['100:0:0', '100:1:0']);
+
+    const result = resolveCoalescingFreshCellIds(freshCellIds, BASE_CELL_SIZE_METERS, BASE_CELL_SIZE_METERS);
+
+    expect(result).toBe(freshCellIds);
+  });
+
+  it('200m表示ではfresh集合が空でなくても空集合を返す', () => {
+    const freshCellIds = new Set(['100:0:0', '100:1:0']);
+
+    const result = resolveCoalescingFreshCellIds(freshCellIds, 200, BASE_CELL_SIZE_METERS);
+
+    expect(result.size).toBe(0);
+  });
+
+  it('500m表示ではfresh集合が空でなくても空集合を返す', () => {
+    const freshCellIds = new Set(['100:0:0']);
+
+    const result = resolveCoalescingFreshCellIds(freshCellIds, 500, BASE_CELL_SIZE_METERS);
+
+    expect(result.size).toBe(0);
+  });
+
+  it('200m以上では毎回同じ参照(共有定数)を返し、新しいSetを生成しない', () => {
+    const first = resolveCoalescingFreshCellIds(new Set(['100:0:0']), 200, BASE_CELL_SIZE_METERS);
+    const second = resolveCoalescingFreshCellIds(new Set(), 500, BASE_CELL_SIZE_METERS);
+
+    expect(first).toBe(second);
   });
 });

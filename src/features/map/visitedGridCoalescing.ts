@@ -22,6 +22,43 @@ export type CoalescedVisitedGrid = {
 type BlockOrigin = { x: number; y: number };
 
 /**
+ * Polygon結合へ渡すfresh集合を表示セルサイズから決める。
+ *
+ * 呼ぶたびに新しい `Set` を作らないよう、200m以上表示時はモジュールスコープの共有定数を返す
+ * (Reactのメモ化フックの依存値として使う場合に参照安定性が必要なため)。
+ */
+const EMPTY_FRESH_CELL_IDS: ReadonlySet<string> = new Set();
+
+/**
+ * Polygon結合(`coalesceVisitedGridCells`)へ渡すfresh集合を表示セルサイズから決める。
+ *
+ * 結合自体は全ズーム段階(100m表示・200m以上の集約表示)で常に行うが、fresh除外の扱いだけ
+ * 表示セルサイズで分ける。
+ * - 100m表示(`displayCellSizeMeters === baseCellSizeMeters`): 渡された `freshCellIds` を
+ *   そのまま返し、GPS記録で新しく開いたセルを結合対象から外す(個別セルとしてフェード表示するため)。
+ * - 200m以上: 常に空集合を返す。200m以上の集約表示では「表示セル内に visited な100mセルが
+ *   1つでもあれば表示セル全体を塗る」仕様のため、完全に揃ったブロックを結合しても塗り範囲は
+ *   1ピクセルも変わらない。fresh はもともと100mセル単位でしか意味を持たない概念であり、
+ *   集約表示では考慮する理由がない。
+ *
+ * @param freshCellIds - GPS記録で新しく開いた100m基本セルID。
+ * @param displayCellSizeMeters - 現在の表示セルサイズ。
+ * @param baseCellSizeMeters - 基本セルサイズ(100m)。
+ * @returns 結合対象から除外するfresh集合。
+ */
+export function resolveCoalescingFreshCellIds(
+  freshCellIds: ReadonlySet<string>,
+  displayCellSizeMeters: number,
+  baseCellSizeMeters: number,
+): ReadonlySet<string> {
+  if (displayCellSizeMeters === baseCellSizeMeters) {
+    return freshCellIds;
+  }
+
+  return EMPTY_FRESH_CELL_IDS;
+}
+
+/**
  * 完全に埋まった正方形ブロックだけを1つの大きいPolygonへ結合する。
  *
  * 「大セル内に1つでもvisitedがあれば塗る」集約とは異なり、ブロック内の表示セルが

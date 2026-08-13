@@ -156,7 +156,7 @@ describe('Visited Grid新規セルの画面外判定 evictOffscreenFreshCellIds'
     expect([...retained]).toEqual(['100:5:5']);
   });
 
-  it('空集合を渡しても壊れない', () => {
+  it('空集合を渡した場合は空集合を返す', () => {
     expect(evictOffscreenFreshCellIds(new Set(), { minX: 0, maxX: 10, minY: 0, maxY: 10 }).size).toBe(0);
   });
 });

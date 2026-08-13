@@ -71,10 +71,35 @@ function makeCombinedRows() {
   return [...makeFullBlockRows(BLOCK_ORIGIN), ...makeFullBlockRows(FRESH_BLOCK_ORIGIN, 2)];
 }
 
-/** マイクロタスクを1つ流し、フックの非同期取得effectを完了させる。 */
+/**
+ * マイクロタスクを複数回流し、フックの非同期取得effect(getVisitedCellsInBounds().then(...))を
+ * 完了させる。`Promise.resolve()` 1回だけだと、モックのpromise解決とthen内のsetState呼び出しの
+ * 間に複数のマイクロタスクhopが挟まり、act()の外でsetStateが実行されて
+ * `not wrapped in act(...)` 警告が出る(setVisitedGridFadeFrame / setVisitedGridSource)。
+ * ループで流し切ることで、act()内にsetStateの実行を確実に収める。
+ */
 async function flushFetch(): Promise<void> {
   await act(async () => {
-    await Promise.resolve();
+    for (let index = 0; index < 5; index += 1) {
+      await Promise.resolve();
+    }
+  });
+}
+
+/**
+ * 同期の操作(rerender・incrementVisitedGridRefreshVersionなど)を実行したあと、
+ * flushFetchと同じ理由でマイクロタスクを複数回流し切る。取得effectのsetState呼び出しを
+ * act()内に収めるためのヘルパー。
+ *
+ * @param action - act()内で実行する同期処理。
+ */
+async function flushAct(action: () => void): Promise<void> {
+  await act(async () => {
+    action();
+
+    for (let index = 0; index < 5; index += 1) {
+      await Promise.resolve();
+    }
   });
 }
 
@@ -108,10 +133,7 @@ async function setupWithFreshBlock() {
 
   (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
-  await act(async () => {
-    rendered.result.current.incrementVisitedGridRefreshVersion();
-    await Promise.resolve();
-  });
+  await flushAct(() => rendered.result.current.incrementVisitedGridRefreshVersion());
 
   return rendered;
 }
@@ -123,26 +145,36 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
   });
 
   describe('初期状態', () => {
-    it('初期 visitedGridCells は空配列になる', () => {
+    // isReady: true でレンダーすると取得effectが走る(既定モックは空配列)。取得完了を
+    // flushFetchで待たずにテストを終えると、.then内のsetStateがテスト終了後の
+    // マイクロタスクでact()外に発火し「not wrapped in act」警告になるため、
+    // アサーション対象はrenderHookの同期結果でも取得完了を待ってから検証する。
+    it('初期 visitedGridCells は空配列になる', async () => {
       const { result } = renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
+
+      await flushFetch();
 
       expect(result.current.visitedGridCells).toEqual([]);
     });
 
-    it('gridOverlayOpacity は数値で返される', () => {
+    it('gridOverlayOpacity は数値で返される', async () => {
       const { result } = renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
+
+      await flushFetch();
 
       expect(typeof result.current.gridOverlayOpacity).toBe('number');
     });
 
-    it('incrementVisitedGridRefreshVersion は関数として返される', () => {
+    it('incrementVisitedGridRefreshVersion は関数として返される', async () => {
       const { result } = renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
+
+      await flushFetch();
 
       expect(typeof result.current.incrementVisitedGridRefreshVersion).toBe('function');
     });
@@ -189,10 +221,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
       const callCountBefore = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
-      await act(async () => {
-        result.current.incrementVisitedGridRefreshVersion();
-        await Promise.resolve();
-      });
+      await flushAct(() => result.current.incrementVisitedGridRefreshVersion());
 
       expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBeGreaterThan(callCountBefore);
     });
@@ -331,10 +360,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       }));
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(displayBlockRows);
 
-      await act(async () => {
-        rerender({ gridOverlayRegion: ZOOMED_OUT_REGION });
-        await Promise.resolve();
-      });
+      await flushAct(() => rerender({ gridOverlayRegion: ZOOMED_OUT_REGION }));
 
       // 表示セルサイズが実際に200mへ切り替わったことを、getVisitedCellsInBoundsへ渡された
       // 第2引数で確認する(ヒステリシスの挙動次第で意図しないサイズになる場合があるため)。
@@ -362,10 +388,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       const MOVED_REGION = { ...TEST_REGION, longitude: TEST_REGION.longitude + 0.004 };
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
-      await act(async () => {
-        rerender({ gridOverlayRegion: MOVED_REGION });
-        await Promise.resolve();
-      });
+      await flushAct(() => rerender({ gridOverlayRegion: MOVED_REGION }));
 
       const ids = result.current.visitedGridCells.map((cell) => cell.id);
 
@@ -386,18 +409,12 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       const ZOOMED_OUT_REGION = { ...TEST_REGION, latitudeDelta: 0.1, longitudeDelta: 0.1 };
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
-      await act(async () => {
-        rerender({ gridOverlayRegion: ZOOMED_OUT_REGION });
-        await Promise.resolve();
-      });
+      await flushAct(() => rerender({ gridOverlayRegion: ZOOMED_OUT_REGION }));
 
       // 100m表示へ戻す。同じ20セルを再度返す。
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
-      await act(async () => {
-        rerender({ gridOverlayRegion: TEST_REGION });
-        await Promise.resolve();
-      });
+      await flushAct(() => rerender({ gridOverlayRegion: TEST_REGION }));
 
       const ids = result.current.visitedGridCells.map((cell) => cell.id);
 

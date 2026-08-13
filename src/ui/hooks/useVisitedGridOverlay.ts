@@ -6,7 +6,7 @@ import { getGridBoundsForRegion, GridBounds, GridCellPolygonSource, isGridBounds
 import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
 import { VisitedGridOverlayCell, getFogOpacity, toVisitedGridOverlayCells } from '@/features/map/gridOverlay';
 import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
-import { CoalescedVisitedGrid, coalesceVisitedGridCells } from '@/features/map/visitedGridCoalescing';
+import { CoalescedVisitedGrid, coalesceVisitedGridCells, resolveCoalescingFreshCellIds } from '@/features/map/visitedGridCoalescing';
 import { MAX_FADING_VISITED_CELL_COUNT, detectFreshVisitedCells, evictOffscreenFreshCellIds } from '@/features/map/visitedGridFreshCells';
 import { logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
 
@@ -14,17 +14,6 @@ import { logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
 const VISITED_GRID_FADE_DURATION_MS = 500;
 /** visited cellフェード中の再描画間隔。 */
 const VISITED_GRID_FADE_FRAME_MS = 50;
-/**
- * 100m表示以外でPolygon結合に渡す、常に空のfresh集合。
- *
- * 200m以上の集約表示では「表示セル内に visited な100mセルが1つでもあれば表示セル全体を塗る」
- * 仕様のため、表示セルは訪問の有無だけを表す。完全に揃った `2x2` / `4x4` を結合しても
- * 塗り範囲は変わらないため、fresh(今開いた100mセルを個別に見せる概念)を考慮する意味がない。
- * 「200m以上ではfreshを一切考慮しない」という設計判断をコード上に明示するために、
- * ローカル変数のリテラル `new Set()` ではなくこの専用定数を用意している。
- */
-const EMPTY_FRESH_CELL_IDS: ReadonlySet<string> = new Set();
-
 /** `useVisitedGridOverlay` フックの引数。 */
 export type UseVisitedGridOverlayParams = {
   /**
@@ -69,10 +58,15 @@ type VisitedGridSource = {
   cells: GridCellPolygonSource[];
   /**
    * GPS記録で新しく開いた100m基本セルID。表示セルサイズが変わっても意味が変わらないよう、
-   * 常に100m基本セルIDで保持する(表示セルサイズに関わらずPolygon結合の対象から外す)。
+   * 常に100m基本セルIDで保持する。Polygon結合自体は全ズーム段階で常に行うが、この集合を
+   * 結合対象から外すのは100m表示時だけ(`resolveCoalescingFreshCellIds` 参照)。
    */
   freshCellIds: Set<string>;
-  /** この取得時点での表示セルサイズ。100mのときだけPolygon結合を行う判定に使う。 */
+  /**
+   * この取得時点での表示セルサイズ。Polygon結合自体は全ズーム段階で行うが、fresh除外方針
+   * (100m表示だけfreshCellIdsを結合対象から外すか、200m以上のように常に結合対象へ含めるか)
+   * の判定に使う(`resolveCoalescingFreshCellIds` 参照)。
+   */
   displayCellSizeMeters: number;
 };
 
@@ -300,21 +294,17 @@ export function useVisitedGridOverlay({
    * fresh cellをPolygon結合対象から除いた上で、完全に埋まった正方形ブロックを結合する。
    *
    * 結合自体は全ズーム段階(100m表示・200m以上の集約表示)で常に行う(§3.3)。
-   * fresh除外の扱いだけ表示セルサイズで分ける。
-   * - 100m表示: `visitedGridSource.freshCellIds` を渡し、GPS記録で新しく開いたセルを
-   *   結合対象から外す(従来どおり個別セルとしてフェード表示するため)。
-   * - 200m以上: 常に `EMPTY_FRESH_CELL_IDS`(空集合)を渡す。集約表示では
-   *   「表示セル内に visited な100mセルが1つでもあれば表示セル全体を塗る」仕様のため、
-   *   完全に揃ったブロックを結合しても塗り範囲は1ピクセルも変わらない。fresh はもともと
-   *   100mセル単位でしか意味を持たない概念であり、集約表示では考慮する理由がない。
+   * fresh除外の扱いは表示セルサイズで変わるため、`resolveCoalescingFreshCellIds` へ委譲する
+   * (100m表示だけfreshCellIdsを結合対象から外し、200m以上では空集合を渡して常に結合する)。
    */
   const coalescedVisitedGrid = useMemo<CoalescedVisitedGrid>(() => {
     // eslint-disable-next-line react-hooks/purity -- 結合処理コストの開発用計測
     const startedAt = Date.now();
-    const freshCellIdsForCoalescing =
-      visitedGridSource.displayCellSizeMeters === GRID_OVERLAY_CONFIG.baseCellSizeMeters
-        ? visitedGridSource.freshCellIds
-        : EMPTY_FRESH_CELL_IDS;
+    const freshCellIdsForCoalescing = resolveCoalescingFreshCellIds(
+      visitedGridSource.freshCellIds,
+      visitedGridSource.displayCellSizeMeters,
+      GRID_OVERLAY_CONFIG.baseCellSizeMeters,
+    );
     const result = coalesceVisitedGridCells(visitedGridSource.cells, freshCellIdsForCoalescing);
     // eslint-disable-next-line react-hooks/purity, react-hooks/refs -- 開発用の処理時間計測のみ。描画結果もReactの再レンダー判断も参照しない
     visitedGridTimingRef.current.coalesceMs = Date.now() - startedAt;

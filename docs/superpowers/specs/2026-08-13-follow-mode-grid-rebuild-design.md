@@ -35,7 +35,7 @@ onUserLocationChange
 
 ### 1.2 なぜ #149 では解消しなかったか
 
-#149 の3つの改善は、それぞれ効く場面が異なる。
+PR #149 の3つの改善は、それぞれ効く場面が異なる。
 
 | #149 の改善                          | 効く場面           | 追従・静止時への効果 |
 | ------------------------------------ | ------------------ | -------------------- |
@@ -47,7 +47,7 @@ onUserLocationChange
 
 ### 1.3 変化がない時間の割合
 
-徒歩で新しい100mセルが開くのは、おおむね100m進むごと(徒歩でおよそ1〜2分に1回)。一方で現在地更新は毎秒発生する。つまり**取得結果が前回と変わらない回数が圧倒的多数**であり、ここを落とせば定常負荷はほぼ消える。
+徒歩で新しい100mセルが開くのは、おおむね100m進むごと(徒歩でおよそ1〜2分に1回)。一方で現在地更新は前景ウォッチ(`distanceInterval: 5` / `timeInterval: 2000`。`src/ui/hooks/useForegroundUserLocation.ts:64-69`)から届き、歩行中の実測ではおおむね毎秒になる。この「毎秒」は設定上の保証ではなく実測の目安である。つまり**取得結果が前回と変わらない回数が圧倒的多数**であり、ここを落とせば定常負荷はほぼ消える。
 
 ## 2. ゴールと非ゴール
 
@@ -60,7 +60,7 @@ onUserLocationChange
 ### 2.2 非ゴール
 
 - GPS記録、バックグラウンド記録、`visited_cells` の保存・upsert、100mセルの永続的な意味には触れない
-- 再取得の頻度そのものは変えない(issue候補3の距離しきい値は採用しない)。SQLite取得は従来どおり毎秒走らせ、新しいセルが開いた瞬間の表示遅延を増やさない
+- 再取得の頻度そのものは変えない(issue候補3の距離しきい値は採用しない)。SQLite取得は従来どおり位置更新のたびに走らせ、新しいセルが開いた瞬間の表示遅延を増やさない
 - `coalescedVisitedGrid` のブロック単位キャッシュ(issue候補2)は行わない。変化がない場合を落とせば残るのは「実際に変化した回のコスト」だけで、キャッシュ無効化の設計を増やすほどの取り分がない
 - **[#152](https://github.com/kazuki19992/strollia/issues/152) の Android 旧Polygon残留は解消しない**(2.3参照)
 
@@ -134,7 +134,7 @@ export function canSkipVisitedGridSourceUpdate(params: {
 
 ### 3.2 MapScreen の Polygon 要素をメモ化する
 
-3.1 だけでは受け入れ条件を満たしきれない。追従中は `setUserCoordinate` / `setVisibleRegion` によりどのみち毎秒 `MapScreen` が再レンダーされるため、`visitedGridCells` の参照が同じでも `visitedGridCells.map(...)` は毎回走り、全 Polygon の React 要素が作り直される。props の参照は同一なので値は変わらないが、要素生成と子の差分照合のコストは表示セル数ぶんかかる。
+3.1 だけでは受け入れ条件を満たしきれない。追従中は `setUserCoordinate` / `setVisibleRegion` によりどのみち位置更新のたびに `MapScreen` が再レンダーされるため、`visitedGridCells` の参照が同じでも `visitedGridCells.map(...)` は毎回走り、全 Polygon の React 要素が作り直される。props の参照は同一なので値は変わらないが、要素生成と子の差分照合のコストは表示セル数ぶんかかる。
 
 そこで Polygon 要素の配列を `useMemo` 化し、`visitedGridCells` と `shouldRenderVisitedGrid` が変わらない限り**同じ要素配列の参照を返す**。要素の参照が前回と同一なら React は該当サブツリーの再レンダーをスキップするため、追従中の再レンダーで Visited Grid が完全に据え置かれる。
 
@@ -185,7 +185,7 @@ export type VisitedGridSourceUpdateMetrics = {
 ## 4. データフロー
 
 ```text
-現在地更新(毎秒)
+現在地更新(位置更新のたび。歩行中の実測でおおむね毎秒)
   → centerOnCoordinate → version+1 / region更新
   → 取得effect再実行 → SQLite取得 (従来どおり)
   → detectFreshVisitedCells (従来どおり)
@@ -248,8 +248,8 @@ export type VisitedGridSourceUpdateMetrics = {
 | 指標                                     | 変更前                        | 期待する変更後                                             |
 | ---------------------------------------- | ----------------------------- | ---------------------------------------------------------- |
 | `source=skipped` / `source=updated` の比 | (ログなし。全回 updated 相当) | 同一セル内の移動が続く区間では skipped が大多数を占める    |
-| 描画ログ(`raw=…`)の出方                  | 毎秒コンスタントに1行         | 定常時は出ない。新セル追加時にフェード分がバースト状に出る |
-| `overlayBuildMs` の発生頻度              | 毎秒                          | 上記バーストのときだけ                                     |
+| 描画ログ(`raw=…`)の出方                  | 位置更新のたびに1行           | 定常時は出ない。新セル追加時にフェード分がバースト状に出る |
+| `overlayBuildMs` の発生頻度              | 位置更新のたび                | 上記バーストのときだけ                                     |
 | `raw` / `render` の値                    | —                             | 同じ表示内容なら変更前と一致する(表示は変えていない)       |
 
 ### 6.1 位置を固定した観測は使わない

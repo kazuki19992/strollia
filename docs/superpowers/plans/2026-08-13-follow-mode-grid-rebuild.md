@@ -4,7 +4,7 @@
 
 **Goal:** 追従モードで歩いている間、visited cell の集合に変化がなければ Visited Grid の Polygon を再生成しないようにする。
 
-**Architecture:** DB取得結果の表示セルID集合が前回と同一であれば `useVisitedGridOverlay` の state 更新をスキップし、後続の Polygon 結合・座標変換・Polygon生成を一切走らせない。あわせて `MapScreen` の Polygon 要素配列を `useMemo` 化し、追従中の再レンダーで Polygon サブツリーの再構築も止める。判定と整形はすべて `src/features/map/` の純粋関数へ切り出し、単体テストで固定する。
+**Architecture:** DB取得結果の表示セルサイズと表示セルID集合が前回と同一で、かつ fresh cell の検出がなければ `useVisitedGridOverlay` の state 更新をスキップし、後続の Polygon 結合・座標変換・Polygon生成を一切走らせない。あわせて `MapScreen` の Polygon 要素配列を `useMemo` 化し、追従中の再レンダーで Polygon サブツリーの再構築も止める。判定と整形はすべて `src/features/map/` の純粋関数へ切り出し、単体テストで固定する。
 
 **Tech Stack:** TypeScript 6.0 (strict) / React 19.2 / React Native 0.86 / Expo ~57 / expo-sqlite / react-native-maps / jest + jest-expo + @testing-library/react-native
 
@@ -22,7 +22,7 @@
 - import は `@/` エイリアスを使う(`../` 始まりの相対 import は ESLint error)。`jest.mock` のパス文字列も同じルール
 - テストの `describe` / `test` / `it` の説明文は日本語で書く
 - 関数・型・自明でない変数には日本語JSDocを付ける
-- 各タスクの最後に `npx prettier --write <変更ファイル>` を実行してからコミットする
+- 各タスクの最後に `npx prettier --write <変更ファイル>` を実行してからコミットする。リポジトリ標準は `npm run format` / `npm run lint`(リポジトリ全体)だが、タスク単位では変更ファイルへスコープした `npx prettier --write` / `npx eslint <ファイル>` を使い、リポジトリ全体の `npm run lint` と `npm run format:check` は Task 5 の全体検証でまとめて通す
 - コミットメッセージは `type(scope): 日本語の説明` 形式
 
 ---
@@ -770,30 +770,28 @@ import { useEffect, useMemo, useState } from 'react';
 
 置き換え前:
 
-```tsx
-{
-  shouldRenderVisitedGrid &&
-    visitedGridCells.map((cell) => (
-      <Polygon
-        key={cell.id}
-        coordinates={cell.coordinates}
-        fillColor={cell.fillColor}
-        strokeColor={cell.strokeColor}
-        strokeWidth={cell.strokeWidth}
-        testID="visited-grid-cell"
-        tappable={false}
-        zIndex={1}
-      />
-    ));
-}
+(JSXの断片はそれ単体では有効なファイルにならず、Prettierがブロック文として整形してしまうため `text` フェンスで示す)
+
+```text
+        {shouldRenderVisitedGrid &&
+          visitedGridCells.map((cell) => (
+            <Polygon
+              key={cell.id}
+              coordinates={cell.coordinates}
+              fillColor={cell.fillColor}
+              strokeColor={cell.strokeColor}
+              strokeWidth={cell.strokeWidth}
+              testID="visited-grid-cell"
+              tappable={false}
+              zIndex={1}
+            />
+          ))}
 ```
 
 置き換え後:
 
-```tsx
-{
-  visitedGridPolygons;
-}
+```text
+        {visitedGridPolygons}
 ```
 
 - [ ] **Step 4: テストが通ることを確認する**

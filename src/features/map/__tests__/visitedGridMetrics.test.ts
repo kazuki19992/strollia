@@ -4,6 +4,7 @@ import {
   formatVisitedGridMetrics,
   formatVisitedGridSourceUpdate,
   logVisitedGridMetrics,
+  logVisitedGridSourceUpdate,
 } from '@/features/map/visitedGridMetrics';
 
 /** テスト用の計測値。 */
@@ -91,5 +92,32 @@ describe('取得結果の更新/スキップログ formatVisitedGridSourceUpdate
     const line = formatVisitedGridSourceUpdate({ outcome: 'updated', cellCount: 10, updatedCount: 1, skippedCount: 0 });
 
     expect(line).toBe('[VisitedGrid] source=updated cells=10 updated=1 skipped=0');
+  });
+});
+
+describe('取得結果の更新/スキップログ出力 logVisitedGridSourceUpdate', () => {
+  /** テスト用の更新/スキップ計測値。 */
+  const SOURCE_UPDATE_METRICS = { outcome: 'skipped', cellCount: 1234, updatedCount: 3, skippedCount: 57 } as const;
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('開発フラグが無効なら出力しない', () => {
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    jest.replaceProperty(developmentFlags, 'logVisitedGridMetrics', false);
+
+    logVisitedGridSourceUpdate(SOURCE_UPDATE_METRICS);
+
+    expect(logSpy).not.toHaveBeenCalled();
+  });
+
+  it('開発フラグが有効なら整形済み文字列を出力する', () => {
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    jest.replaceProperty(developmentFlags, 'logVisitedGridMetrics', true);
+
+    logVisitedGridSourceUpdate(SOURCE_UPDATE_METRICS);
+
+    expect(logSpy).toHaveBeenCalledWith(formatVisitedGridSourceUpdate(SOURCE_UPDATE_METRICS));
   });
 });

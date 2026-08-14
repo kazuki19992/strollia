@@ -81,3 +81,54 @@ export function logVisitedGridMetrics(metrics: VisitedGridMetrics): void {
 
   console.log(formatVisitedGridMetrics(metrics));
 }
+
+/** `visitedGridSource` を更新したか、同一結果としてスキップしたか。 */
+export type VisitedGridSourceUpdateOutcome = 'updated' | 'skipped';
+
+/**
+ * 1回の取得で描画データを更新したか、スキップしたかの計測値。
+ *
+ * 既存の `VisitedGridMetrics` は描画データが変わったときにしか出力されないため、
+ * スキップした回を観測できない。ログの少なさが「位置更新が来なかった」のか
+ * 「取得したうえでスキップした」のかを区別するために、取得のたびに1行出す。
+ */
+export type VisitedGridSourceUpdateMetrics = {
+  /** 今回の取得で state を更新したか、スキップしたか。 */
+  outcome: VisitedGridSourceUpdateOutcome;
+  /** 取得できた表示セル数。 */
+  cellCount: number;
+  /** 起動後に更新した累計回数。 */
+  updatedCount: number;
+  /** 起動後にスキップした累計回数。 */
+  skippedCount: number;
+};
+
+/**
+ * 更新/スキップの計測値を1行のログ文字列へ整形する。
+ *
+ * @param metrics - 計測値。
+ * @returns 開発ログ用の1行文字列。
+ */
+export function formatVisitedGridSourceUpdate(metrics: VisitedGridSourceUpdateMetrics): string {
+  return [
+    '[VisitedGrid]',
+    `source=${metrics.outcome}`,
+    `cells=${metrics.cellCount}`,
+    `updated=${metrics.updatedCount}`,
+    `skipped=${metrics.skippedCount}`,
+  ].join(' ');
+}
+
+/**
+ * 開発フラグが有効な場合だけ更新/スキップの計測値を出力する。
+ *
+ * @param metrics - 計測値。
+ * @returns なし。
+ */
+export function logVisitedGridSourceUpdate(metrics: VisitedGridSourceUpdateMetrics): void {
+  if (!developmentFlags.logVisitedGridMetrics) {
+    return;
+  }
+
+  console.log(formatVisitedGridSourceUpdate(metrics));
+}

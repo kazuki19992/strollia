@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 
 import { getVisitedCellsInBounds } from '@/features/location/visitedCellRepository';
-import { logVisitedGridMetrics } from '@/features/map/visitedGridMetrics';
+import { logVisitedGridMetrics, logVisitedGridSourceUpdate } from '@/features/map/visitedGridMetrics';
 import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 
 // getVisitedCellsInBoundsだけモックする。gridCell / gridAggregation / visitedGridFreshCells /
@@ -13,6 +13,7 @@ jest.mock('@/features/location/visitedCellRepository', () => ({
 // 計測ログは出力の有無と内訳だけを検証するためモックする。
 jest.mock('@/features/map/visitedGridMetrics', () => ({
   logVisitedGridMetrics: jest.fn(),
+  logVisitedGridSourceUpdate: jest.fn(),
 }));
 
 /** テスト用の標準マップ表示範囲。latitudeDelta=0.01は表示セルサイズ100mになる。 */
@@ -452,6 +453,107 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
           overlayBuildMs: expect.any(Number),
         }),
       );
+    });
+  });
+
+  describe('取得結果が同一な場合の更新スキップ', () => {
+    it('メタデータだけが変化した再取得では visitedGridCells の参照を維持する', async () => {
+      // 本issueの最重要ケース。現在地セルの visit_count / last_visited_at はGPS記録のたびに
+      // 更新されるため、これを差分として扱うと追従中のスキップがほぼ成立しなくなる。
+      // 純粋関数のテストとは別に、フックへ正しく結線されていることをここで固定する。
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
+
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
+
+      await flushFetch();
+
+      const cellsBefore = result.current.visitedGridCells;
+      expect(cellsBefore.length).toBeGreaterThan(0);
+
+      // 同じセルIDのまま visitCount / lastVisitedAt だけを進めた行を返す。
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(
+        makeFullBlockRows(BLOCK_ORIGIN).map((row) => ({ ...row, visitCount: 99, lastVisitedAt: '2026-08-13T12:00:00.000Z' })),
+      );
+
+      await flushAct(() => result.current.incrementVisitedGridRefreshVersion());
+
+      // toEqualではなくtoBe(参照一致)であることが重要。中身が同じでも新しい配列が
+      // 作られていればPolygon propsの参照が変わり、ネイティブ側の更新コストが発生する。
+      expect(result.current.visitedGridCells).toBe(cellsBefore);
+    });
+
+    it('完全に同じ結果を返す再取得でも visitedGridCells の参照を維持する', async () => {
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
+
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
+
+      await flushFetch();
+
+      const cellsBefore = result.current.visitedGridCells;
+
+      await flushAct(() => result.current.incrementVisitedGridRefreshVersion());
+
+      expect(result.current.visitedGridCells).toBe(cellsBefore);
+    });
+
+    it('スキップしても getVisitedCellsInBounds の呼び出し自体は従来どおり行う', async () => {
+      // 再取得の頻度は変えない(新しいセルが開いた瞬間の表示遅延を増やさない)ことの確認。
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
+
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
+
+      await flushFetch();
+
+      const callCountBefore = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
+
+      await flushAct(() => result.current.incrementVisitedGridRefreshVersion());
+
+      expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBeGreaterThan(callCountBefore);
+    });
+
+    it('セルが増えた再取得では visitedGridCells を更新する', async () => {
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
+
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
+
+      await flushFetch();
+
+      const cellsBefore = result.current.visitedGridCells;
+
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeCombinedRows());
+
+      await flushAct(() => result.current.incrementVisitedGridRefreshVersion());
+
+      expect(result.current.visitedGridCells).not.toBe(cellsBefore);
+      expect(result.current.visitedGridCells.length).toBeGreaterThan(cellsBefore.length);
+    });
+
+    it('更新した回とスキップした回の両方で source ログを出力する', async () => {
+      (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
+
+      const { result } = renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
+
+      await flushFetch();
+
+      expect(logVisitedGridSourceUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ outcome: 'updated', cellCount: 16, updatedCount: 1, skippedCount: 0 }),
+      );
+
+      await flushAct(() => result.current.incrementVisitedGridRefreshVersion());
+
+      // 累計値そのものの整形は formatVisitedGridSourceUpdate のテストで固定済みのため、
+      // ここでは取得のたびに outcome 付きで呼ばれることだけを確認する。
+      expect(logVisitedGridSourceUpdate).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'skipped', cellCount: 16 }));
     });
   });
 });

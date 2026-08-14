@@ -25,12 +25,18 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
+/** Polygonのレンダー回数。メモ化でPolygon要素が作り直されないことの検証に使う。 */
+const mockPolygonRenderCount = { current: 0 };
+
 jest.mock('react-native-maps', () => {
   const React = require('react');
   type MockMapComponentProps = Record<string, unknown> & { children?: unknown };
   const MapViewMock = (props: MockMapComponentProps) => React.createElement('MapView', props, props.children);
   const MarkerMock = (props: MockMapComponentProps) => React.createElement('Marker', props, props.children);
-  const PolygonMock = (props: MockMapComponentProps) => React.createElement('Polygon', props, props.children);
+  const PolygonMock = (props: MockMapComponentProps) => {
+    mockPolygonRenderCount.current += 1;
+    return React.createElement('Polygon', props, props.children);
+  };
   const PolylineMock = (props: MockMapComponentProps) => React.createElement('Polyline', props, props.children);
 
   return {
@@ -397,6 +403,59 @@ describe('地図画面 MapScreen', () => {
 
     const updatedMarker = screen.UNSAFE_getAllByProps({}).find((node) => String(node.type) === 'Marker');
     expect(updatedMarker!.props.tracksViewChanges).toBe(false);
+  });
+
+  describe('Visited Gridの再描画抑制', () => {
+    /** テスト用のvisited grid描画データ。参照を固定して渡すためテスト内で一度だけ作る。 */
+    function makeVisitedGridCells() {
+      return [
+        {
+          id: '100:1:1',
+          coordinates: [
+            { latitude: 35, longitude: 139 },
+            { latitude: 35.001, longitude: 139 },
+            { latitude: 35.001, longitude: 139.001 },
+            { latitude: 35, longitude: 139.001 },
+          ],
+          fillColor: 'rgba(31, 122, 92, 0.3)',
+          strokeColor: 'rgba(31, 122, 92, 0)',
+          strokeWidth: 0,
+        },
+      ];
+    }
+
+    beforeEach(() => {
+      mockPolygonRenderCount.current = 0;
+    });
+
+    test('visitedGridCellsが同じ参照なら、他のpropsが変わってもPolygonを再レンダーしない', () => {
+      // 追従モード中は現在地更新のたびにMapScreenが再レンダーされる。そのたびに
+      // Polygon要素を作り直すと表示セル数ぶんのコストがかかるため、要素配列をメモ化する。
+      const props = createProps();
+      const visitedGridCells = makeVisitedGridCells();
+
+      const { rerender } = render(<MapScreen {...props} visitedGridCells={visitedGridCells} />);
+
+      const renderCountAfterMount = mockPolygonRenderCount.current;
+      expect(renderCountAfterMount).toBeGreaterThan(0);
+
+      // 現在地だけが変わった再レンダーを模す。
+      rerender(<MapScreen {...props} visitedGridCells={visitedGridCells} userCoordinate={{ latitude: 35.1, longitude: 139.1 }} />);
+
+      expect(mockPolygonRenderCount.current).toBe(renderCountAfterMount);
+    });
+
+    test('visitedGridCellsが差し替わるとPolygonを再レンダーする', () => {
+      const props = createProps();
+
+      const { rerender } = render(<MapScreen {...props} visitedGridCells={makeVisitedGridCells()} />);
+
+      const renderCountAfterMount = mockPolygonRenderCount.current;
+
+      rerender(<MapScreen {...props} visitedGridCells={makeVisitedGridCells()} />);
+
+      expect(mockPolygonRenderCount.current).toBeGreaterThan(renderCountAfterMount);
+    });
   });
 });
 

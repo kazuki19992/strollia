@@ -9,6 +9,7 @@ import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
+let latestRedirectHref: string | null = null;
 const mockState = {
   styles: {},
   theme: { name: 'light', colors: {} },
@@ -23,7 +24,10 @@ const mockState = {
 };
 
 jest.mock('expo-router', () => ({
-  Redirect: () => null,
+  Redirect: ({ href }: { href: string }) => {
+    latestRedirectHref = href;
+    return <MockText testID="redirect">{href}</MockText>;
+  },
   useLocalSearchParams: () => ({ id: '1' }),
   useRouter: () => ({ back: mockBack, push: mockPush }),
 }));
@@ -57,6 +61,7 @@ describe('滞在場所設定ルート', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     latestEditorProps = null;
+    latestRedirectHref = null;
     mockState.stayPlaces = [];
     mockState.stayPlacesStatus = 'ready';
   });
@@ -134,5 +139,31 @@ describe('滞在場所設定ルート', () => {
     expect(mockState.updateStayPlace).toHaveBeenCalledWith(1, expect.objectContaining({ name: '新しい自宅' }));
     expect(mockState.deleteStayPlace).toHaveBeenCalledWith(1);
     expect(mockBack).toHaveBeenCalledTimes(2);
+  });
+
+  test('編集URLへ読込中に直接到達した場合は待機し、完了後に対象の編集画面を表示する', () => {
+    mockState.stayPlacesStatus = 'loading';
+    const view = render(<EditStayPlaceRoute />);
+
+    expect(latestRedirectHref).toBeNull();
+    expect(latestEditorProps).toBeNull();
+
+    mockState.stayPlaces = [
+      {
+        id: 1,
+        name: '自宅',
+        iconHexcode: '1F3E0',
+        latitude: 35,
+        longitude: 139,
+        privacyRadiusMeters: 100,
+        createdAt: '2026-08-19T00:00:00.000Z',
+        updatedAt: '2026-08-19T00:00:00.000Z',
+      },
+    ];
+    mockState.stayPlacesStatus = 'ready';
+    view.rerender(<EditStayPlaceRoute />);
+
+    expect(latestRedirectHref).toBeNull();
+    expect(screen.getByTestId('stay-place-editor')).toBeTruthy();
   });
 });

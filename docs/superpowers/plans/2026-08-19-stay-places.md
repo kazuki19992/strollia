@@ -43,15 +43,17 @@
 
 - [ ] **Step 1: Write the failing test**
 
-    test('固定カタログは重複しない完全修飾hexcodeだけを公開する', () => {
-      expect(STAY_PLACE_EMOJIS).toHaveLength(12);
-      expect(new Set(STAY_PLACE_EMOJIS.map((item) => item.hexcode)).size).toBe(12);
-    });
-    test('未知の値は保存対象にしない', () => expect(isStayPlaceEmojiHexcode('UNKNOWN')).toBe(false));
+  ```ts
+  test('固定カタログは重複しない完全修飾hexcodeだけを公開する', () => {
+    expect(STAY_PLACE_EMOJIS).toHaveLength(12);
+    expect(new Set(STAY_PLACE_EMOJIS.map((item) => item.hexcode)).size).toBe(12);
+  });
+  test('未知の値は保存対象にしない', () => expect(isStayPlaceEmojiHexcode('UNKNOWN')).toBe(false));
+  ```
 
-- [ ] **Step 2: Run RED** — npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceEmojiCatalog.test.ts. Expected: module missing.
+- [ ] **Step 2: Run RED** — `npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceEmojiCatalog.test.ts`. Expected: module missing.
 - [ ] **Step 3: Implement** — Add pinned emojibase-data devDependency. The generator reads only the emojibase shortcode preset, resolves the selected 12 icons, and fails for missing, duplicate, changed mappings or assets. Commit literal Metro require calls and local assets; run npm run generate:licenses.
-- [ ] **Step 4: Run GREEN** — node scripts/generate-stay-place-emoji-catalog.mjs; npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceEmojiCatalog.test.ts; npm run generate:licenses. Expected: pass and no generated diff.
+- [ ] **Step 4: Run GREEN** — `node scripts/generate-stay-place-emoji-catalog.mjs`; `npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceEmojiCatalog.test.ts`; `npm run generate:licenses`. Expected: pass and no generated diff.
 - [ ] **Step 5: Commit** — git commit -m "feat(stay-places): Twemojiアイコンカタログを追加".
 
 ### Task 2: 滞在場所のSQLiteスキーマとCRUD
@@ -69,12 +71,17 @@
 
 - [ ] **Step 1: Write failing tests**
 
-    await expect(createStayPlace({ name: '', iconHexcode: '1F3E0', latitude: 35, longitude: 139, privacyRadiusMeters: null })).rejects.toThrow('滞在場所名');
-    expect(mockTxn.runAsync).not.toHaveBeenCalled();
-    expect(await getStayPlaces()).toEqual([oldest, newest]);
+  ```ts
+  await expect(
+    createStayPlace({ name: '', iconHexcode: '1F3E0', latitude: 35, longitude: 139, privacyRadiusMeters: null }),
+  ).rejects.toThrow('滞在場所名');
+  expect(mockTxn.runAsync).not.toHaveBeenCalled();
+  expect(await getStayPlaces()).toEqual([oldest, newest]);
+  ```
 
   Cover allowed radius/icon/coordinates, created_at ASC then id ASC, transaction use, and deleteAllUserData deletion.
-- [ ] **Step 2: Run RED** — npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceRepository.test.ts.
+
+- [ ] **Step 2: Run RED** — `npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceRepository.test.ts`.
 - [ ] **Step 3: Implement** — Create stay_places and a created_at/id index. Use withExclusiveTransaction, validate before SQL, and do not create a sort order or contract flag.
 - [ ] **Step 4: Run GREEN** — same test command. Expected: PASS.
 - [ ] **Step 5: Commit** — git commit -m "feat(db): 滞在場所をSQLiteへ保存".
@@ -93,12 +100,17 @@
 
 - [ ] **Step 1: Write failing tests**
 
-    expect(resolveActiveStayPlaces([newest, oldest], false)).toEqual([oldest]);
-    expect(resolveStayPlaceSnap({ state: stateAfterTwoInside, raw: inside50m, activeStayPlaces: [home] }).effective)
-      .toEqual({ latitude: home.latitude, longitude: home.longitude });
+  ```ts
+  expect(resolveActiveStayPlaces([newest, oldest], false)).toEqual([oldest]);
+  expect(resolveStayPlaceSnap({ state: stateAfterTwoInside, raw: inside50m, activeStayPlaces: [home] }).effective).toEqual({
+    latitude: home.latitude,
+    longitude: home.longitude,
+  });
+  ```
 
   Cover entry/exit third point, 50m inclusive, overlap nearest centre and created/id tie break, entitlement removal, restart initial state, and invalid effective fallback.
-- [ ] **Step 2: Run RED** — npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceAccess.test.ts src/features/stayPlaces/__tests__/stayPlaceSnapResolver.test.ts src/features/location/__tests__/effectiveLocationPoint.test.ts.
+
+- [ ] **Step 2: Run RED** — `npm test -- --runInBand src/features/stayPlaces/__tests__/stayPlaceAccess.test.ts src/features/stayPlaces/__tests__/stayPlaceSnapResolver.test.ts src/features/location/__tests__/effectiveLocationPoint.test.ts`.
 - [ ] **Step 3: Implement** — Use distanceMeters. Never change preceding points. Entry and exit switch only at the third point. Effective mapper adopts both valid effective fields or raw fields.
 - [ ] **Step 4: Run GREEN** — same command. Expected: PASS.
 - [ ] **Step 5: Commit** — git commit -m "feat(location): 滞在場所の吸着判定を追加".
@@ -114,14 +126,21 @@
 
 - [ ] **Step 1: Write failing tests**
 
-    expect(mockInsertLocationPoint).toHaveBeenCalledWith(expect.objectContaining({
-      latitude: raw.latitude, longitude: raw.longitude,
-      effectiveLatitude: home.latitude, effectiveLongitude: home.longitude,
-    }));
-    expect(gpxXml).toContain('lat="35.000000"');
+  ```ts
+  expect(mockInsertLocationPoint).toHaveBeenCalledWith(
+    expect.objectContaining({
+      latitude: raw.latitude,
+      longitude: raw.longitude,
+      effectiveLatitude: home.latitude,
+      effectiveLongitude: home.longitude,
+    }),
+  );
+  expect(gpxXml).toContain('lat="35.000000"');
+  ```
 
   Also require GPX import not to call the resolver and to insert raw/effective equal; daily distance and grid must use effective coordinates.
-- [ ] **Step 2: Run RED** — npm test -- --runInBand src/features/location/__tests__/locationRecordingSession.test.ts src/features/logs/__tests__/logRepository.test.ts src/features/import/__tests__/importRepository.test.ts src/features/export/__tests__/gpxExporter.test.ts.
+
+- [ ] **Step 2: Run RED** — `npm test -- --runInBand src/features/location/__tests__/locationRecordingSession.test.ts src/features/logs/__tests__/logRepository.test.ts src/features/import/__tests__/importRepository.test.ts src/features/export/__tests__/gpxExporter.test.ts`.
 - [ ] **Step 3: Implement** — Add three nullable columns with ensureColumn. Session obtains active places per point, keeps snap state in its closure, validates quality/time with raw points, and uses effective points for filter/distance/grid. GPX INSERT writes raw as effective with null snap ID. Do not change GPX exporter field references.
 - [ ] **Step 4: Run GREEN** — same command. Expected: PASS.
 - [ ] **Step 5: Commit** — git commit -m "feat(location): 有効座標でGPS記録を補正".
@@ -136,13 +155,20 @@
 
 - [ ] **Step 1: Write failing tests**
 
-    expect(toPrivacyRouteSegments([visibleA, visibleB, hidden, visibleC, visibleD], [home100m]).map((segment) => segment.coordinates))
-      .toEqual([[toCoordinate(visibleA), toCoordinate(visibleB)], [toCoordinate(visibleC), toCoordinate(visibleD)]]);
+  ```ts
+  expect(
+    toPrivacyRouteSegments([visibleA, visibleB, hidden, visibleC, visibleD], [home100m]).map((segment) => segment.coordinates),
+  ).toEqual([
+    [toCoordinate(visibleA), toCoordinate(visibleB)],
+    [toCoordinate(visibleC), toCoordinate(visibleD)],
+  ]);
+  ```
 
   Cover null radius, boundary, multiple places, all points hidden, and existing abnormal gaps.
-- [ ] **Step 2: Run RED** — npm test -- --runInBand src/features/stayPlaces/__tests__/privacyRouteSegments.test.ts src/features/map/__tests__/routeMapper.test.ts.
+
+- [ ] **Step 2: Run RED** — `npm test -- --runInBand src/features/stayPlaces/__tests__/privacyRouteSegments.test.ts src/features/map/__tests__/routeMapper.test.ts`.
 - [ ] **Step 3: Implement** — Convert normal routes through effective coordinates. First use existing abnormal-gap splitting, then split each segment when a point is inside any active non-null radius; drop segments shorter than two. Share image/GIF/monthly map renderers map segments to independent Polyline elements. Normal maps remain unredacted.
-- [ ] **Step 4: Run GREEN** — npm test -- --runInBand src/features/stayPlaces/__tests__/privacyRouteSegments.test.ts src/ui/components/__tests__/DailyLogDetailScreen.test.tsx src/ui/components/reports/__tests__/MonthlyReportScreen.test.tsx.
+- [ ] **Step 4: Run GREEN** — `npm test -- --runInBand src/features/stayPlaces/__tests__/privacyRouteSegments.test.ts src/ui/components/__tests__/DailyLogDetailScreen.test.tsx src/ui/components/reports/__tests__/MonthlyReportScreen.test.tsx`.
 - [ ] **Step 5: Commit** — git commit -m "feat(share): 滞在場所のプライバシー範囲を適用".
 
 ### Task 6: AppState・設定導線・Plus上限
@@ -162,12 +188,14 @@
 
 - [ ] **Step 1: Write failing tests**
 
-    await result.current.createStayPlace(first);
-    await result.current.createStayPlace(second);
-    expect(mockCreateStayPlace).toHaveBeenCalledTimes(1);
-    expect(mockOpenPremiumPaywall).toHaveBeenCalledTimes(1);
+  ```ts
+  await result.current.createStayPlace(first);
+  await result.current.createStayPlace(second);
+  expect(mockCreateStayPlace).toHaveBeenCalledTimes(1);
+  expect(mockOpenPremiumPaywall).toHaveBeenCalledTimes(1);
+  ```
 
-- [ ] **Step 2: Run RED** — npm test -- --runInBand src/ui/state/__tests__/stayPlaceState.test.tsx src/ui/components/__tests__/SettingsScreen.test.tsx src/app/__tests__/routerLayout.test.tsx.
+- [ ] **Step 2: Run RED** — `npm test -- --runInBand src/ui/state/__tests__/stayPlaceState.test.tsx src/ui/components/__tests__/SettingsScreen.test.tsx src/app/__tests__/routerLayout.test.tsx`.
 - [ ] **Step 3: Implement** — Provider owns reload and active-list memoization from premiumAccessState.isPlusActive. Free second add opens existing paywall before DB. Add Settings row, navigator route and Sentry mapping. Contract state never writes/deletes rows.
 - [ ] **Step 4: Run GREEN** — same command. Expected: PASS.
 - [ ] **Step 5: Commit** — git commit -m "feat(settings): 滞在場所の設定導線を追加".
@@ -178,14 +206,17 @@
 
 - [ ] **Step 1: Write failing tests**
 
-    fireEvent.press(screen.getByLabelText('滞在場所を追加'));
-    expect(onOpenPremiumPaywall).toHaveBeenCalledTimes(1);
-    fireEvent.press(screen.getByLabelText('家のアイコンを選択'));
-    fireEvent.press(screen.getByLabelText('滞在場所を保存'));
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ iconHexcode: '1F3E0' }));
+  ```ts
+  fireEvent.press(screen.getByLabelText('滞在場所を追加'));
+  expect(onOpenPremiumPaywall).toHaveBeenCalledTimes(1);
+  fireEvent.press(screen.getByLabelText('家のアイコンを選択'));
+  fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+  expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ iconHexcode: '1F3E0' }));
+  ```
 
   Test fixed centre marker, empty name rejection, delete, first-created active label and subsequent Plus label.
-- [ ] **Step 2: Run RED** — npm test -- --runInBand src/ui/components/__tests__/StayPlacesScreen.test.tsx src/ui/components/__tests__/StayPlaceEditorScreen.test.tsx src/app/__tests__/stayPlaceRoutes.test.tsx.
+
+- [ ] **Step 2: Run RED** — `npm test -- --runInBand src/ui/components/__tests__/StayPlacesScreen.test.tsx src/ui/components/__tests__/StayPlaceEditorScreen.test.tsx src/app/__tests__/stayPlaceRoutes.test.tsx`.
 - [ ] **Step 3: Implement** — Build list-style UI with no reorder control. Editor uses catalog picker and MapView with an overlay fixed centre marker; only onRegionChangeComplete writes the centre. Do not reverse-geocode. Use app styles/text and Japanese accessibility labels.
 - [ ] **Step 4: Run GREEN** — same command. Expected: PASS.
 - [ ] **Step 5: Commit** — git commit -m "feat(settings): 滞在場所の編集画面を追加".
@@ -195,14 +226,17 @@
 **Files:** Modify todo, monetization, plus features and affected product docs; add integration tests.
 
 - [ ] **Step 1: Add final regressions** — normal maps use effective coordinates; only shares use privacy segments; cancel/re-subscribe preserves rows; GPX emits raw coordinates.
-- [ ] **Step 2: Run targeted RED/GREEN** — npm test -- --runInBand src/features/stayPlaces src/features/location src/features/map src/ui/components/__tests__/DailyLogDetailScreen.test.tsx src/ui/components/reports/__tests__/MonthlyReportScreen.test.tsx. Fix failures without weakening assertions.
+- [ ] **Step 2: Run targeted RED/GREEN** — `npm test -- --runInBand src/features/stayPlaces src/features/location src/features/map src/ui/components/__tests__/DailyLogDetailScreen.test.tsx src/ui/components/reports/__tests__/MonthlyReportScreen.test.tsx`. Fix failures without weakening assertions.
 - [ ] **Step 3: Update docs/manual checklist** — document entitlement rules, raw GPS, GPX, privacy-only shares, licenses, and iOS/Android three-point 50m entry/exit, Plus cancel/re-subscribe, and daily image/GIF/monthly non-bridging validation.
 - [ ] **Step 4: Run final verification**
 
-    npm run typecheck
-    npm test -- --runInBand
-    npm run lint
-    npm run format:check
+  ```sh
+  npm run typecheck
+  npm test -- --runInBand
+  npm run lint
+  npm run format:check
+  ```
 
   Expected: exit 0 for each command.
+
 - [ ] **Step 5: Commit** — git commit -m "docs: 滞在場所設定の検証手順を追加".

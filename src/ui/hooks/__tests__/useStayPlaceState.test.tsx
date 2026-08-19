@@ -142,6 +142,29 @@ describe('滞在場所状態 useStayPlaceState', () => {
     expect(result.current.activeStayPlaces).toEqual([home]);
   });
 
+  it('Plusの解約と再契約で保存済みの滞在場所を削除せず有効対象だけ切り替える', async () => {
+    const access = createAccess({ getStayPlaces: jest.fn().mockResolvedValue([home, office]) });
+    const { result, rerender } = renderHook(
+      ({ isPlusActive }: { isPlusActive: boolean }) => useStayPlaceState({ isReady: true, isPlusActive, access }),
+      { initialProps: { isPlusActive: true } },
+    );
+
+    await waitFor(() => {
+      expect(result.current.activeStayPlaces).toEqual([home, office]);
+    });
+
+    rerender({ isPlusActive: false });
+
+    expect(result.current.stayPlaces).toEqual([home, office]);
+    expect(result.current.activeStayPlaces).toEqual([home]);
+
+    rerender({ isPlusActive: true });
+
+    expect(result.current.stayPlaces).toEqual([home, office]);
+    expect(result.current.activeStayPlaces).toEqual([home, office]);
+    expect(access.deleteStayPlace).not.toHaveBeenCalled();
+  });
+
   it('無料版の読込中は既存レコードの有無が未確定なため新規保存せずPlus購入導線を開く', async () => {
     const resolveStayPlaces: ((places: StayPlace[]) => void)[] = [];
     const getStayPlaces = jest.fn(

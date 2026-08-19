@@ -28,20 +28,20 @@ export function StayPlaceIconPicker({ selectedHexcode, styles, theme, visible, o
       <SafeAreaView style={styles.stayPlaceEmojiPickerModal}>
         <AppScreenHeader backLabel="編集" styles={styles} theme={theme} title="アイコンを選択" onBack={onClose} />
         <ScrollView contentContainerStyle={styles.stayPlaceEmojiPickerGrid}>
-            {STAY_PLACE_EMOJIS.map((emoji) => (
-              <Pressable
-                key={emoji.hexcode}
-                accessibilityLabel={`${emoji.label}のアイコンを選択`}
-                accessibilityRole="button"
-                style={[styles.stayPlaceEmojiPickerButton, emoji.hexcode === selectedHexcode && styles.stayPlaceEmojiPickerButtonSelected]}
-                onPress={() => {
-                  onSelect(emoji.hexcode);
-                  onClose();
-                }}
-              >
-                <Image accessibilityLabel={emoji.label} source={emoji.asset} style={styles.stayPlaceEmojiPickerImage} />
-              </Pressable>
-            ))}
+          {STAY_PLACE_EMOJIS.map((emoji) => (
+            <Pressable
+              key={emoji.hexcode}
+              accessibilityLabel={`${emoji.label}のアイコンを選択`}
+              accessibilityRole="button"
+              style={[styles.stayPlaceEmojiPickerButton, emoji.hexcode === selectedHexcode && styles.stayPlaceEmojiPickerButtonSelected]}
+              onPress={() => {
+                onSelect(emoji.hexcode);
+                onClose();
+              }}
+            >
+              <Image accessibilityLabel={emoji.label} source={emoji.asset} style={styles.stayPlaceEmojiPickerImage} />
+            </Pressable>
+          ))}
         </ScrollView>
       </SafeAreaView>
     </Modal>

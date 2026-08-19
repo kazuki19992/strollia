@@ -110,10 +110,7 @@ function intersectsPrivacyRadius(start: RouteCoordinate, end: RouteCoordinate, s
   }
 
   const metersPerLatitudeDegree = 111_320;
-  const metersPerLongitudeDegree = Math.max(
-    Math.cos((stayPlace.latitude * Math.PI) / 180) * metersPerLatitudeDegree,
-    1,
-  );
+  const metersPerLongitudeDegree = Math.max(Math.cos((stayPlace.latitude * Math.PI) / 180) * metersPerLatitudeDegree, 1);
   const startX = (start.longitude - stayPlace.longitude) * metersPerLongitudeDegree;
   const startY = (start.latitude - stayPlace.latitude) * metersPerLatitudeDegree;
   const endX = (end.longitude - stayPlace.longitude) * metersPerLongitudeDegree;

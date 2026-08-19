@@ -196,10 +196,54 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
   test('選択範囲がすべて非表示ならGIF出力の確定操作を無効化する', async () => {
     mockGetLocationPointsByDate.mockResolvedValue([
-      { id: 1, recordedAt: new Date(2026, 4, 31, 0, 0).toISOString(), localDate: '2026-05-31', latitude: 35.681236, longitude: 139.767125, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
-      { id: 2, recordedAt: new Date(2026, 4, 31, 0, 5).toISOString(), localDate: '2026-05-31', latitude: 35.6813, longitude: 139.7672, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
-      { id: 3, recordedAt: new Date(2026, 4, 31, 0, 20).toISOString(), localDate: '2026-05-31', latitude: 35.690921, longitude: 139.700258, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
-      { id: 4, recordedAt: new Date(2026, 4, 31, 0, 25).toISOString(), localDate: '2026-05-31', latitude: 35.691, longitude: 139.7001, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
+      {
+        id: 1,
+        recordedAt: new Date(2026, 4, 31, 0, 0).toISOString(),
+        localDate: '2026-05-31',
+        latitude: 35.681236,
+        longitude: 139.767125,
+        altitude: null,
+        speed: null,
+        heading: null,
+        accuracy: 10,
+        altitudeAccuracy: null,
+      },
+      {
+        id: 2,
+        recordedAt: new Date(2026, 4, 31, 0, 5).toISOString(),
+        localDate: '2026-05-31',
+        latitude: 35.6813,
+        longitude: 139.7672,
+        altitude: null,
+        speed: null,
+        heading: null,
+        accuracy: 10,
+        altitudeAccuracy: null,
+      },
+      {
+        id: 3,
+        recordedAt: new Date(2026, 4, 31, 0, 20).toISOString(),
+        localDate: '2026-05-31',
+        latitude: 35.690921,
+        longitude: 139.700258,
+        altitude: null,
+        speed: null,
+        heading: null,
+        accuracy: 10,
+        altitudeAccuracy: null,
+      },
+      {
+        id: 4,
+        recordedAt: new Date(2026, 4, 31, 0, 25).toISOString(),
+        localDate: '2026-05-31',
+        latitude: 35.691,
+        longitude: 139.7001,
+        altitude: null,
+        speed: null,
+        heading: null,
+        accuracy: 10,
+        altitudeAccuracy: null,
+      },
     ]);
     render(
       <DailyLogDetailScreen

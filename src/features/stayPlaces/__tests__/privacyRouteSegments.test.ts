@@ -77,6 +77,15 @@ describe('共有用のプライバシールート区間 toPrivacyRouteSegments',
     ]);
   });
 
+  it.each([50, 300])('旧UIの非表示半径 %dm が渡された場合は位置情報を出力しない', (privacyRadiusMeters) => {
+    const result = toPrivacyRouteSegments(
+      [point(35.004, 139, '2026-08-19T00:00:00.000Z'), point(35.005, 139, '2026-08-19T00:01:00.000Z')],
+      [stayPlace({ privacyRadiusMeters })],
+    );
+
+    expect(result).toEqual([]);
+  });
+
   it('非表示半径の境界上にある点も除外する', () => {
     const boundaryLatitude = 35 + 100 / METERS_PER_LATITUDE_DEGREE;
     const result = toPrivacyRouteSegments(

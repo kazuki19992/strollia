@@ -6,7 +6,7 @@ import {
   type RouteCoordinate,
   type RouteSegment,
 } from '@/features/map/routeMapper';
-import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import { isStayPlacePrivacyRadiusMeters, type StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { LocationPoint } from '@/types/gps';
 import { distanceMeters } from '@/utils/distance';
 
@@ -71,7 +71,7 @@ function hasInvalidPrivacyStayPlace(activeStayPlaces: StayPlace[]): boolean {
       return false;
     }
 
-    return !Number.isFinite(stayPlace.privacyRadiusMeters) || stayPlace.privacyRadiusMeters < 0 || !isValidRouteCoordinate(stayPlace);
+    return !isStayPlacePrivacyRadiusMeters(stayPlace.privacyRadiusMeters) || !isValidRouteCoordinate(stayPlace);
   });
 }
 

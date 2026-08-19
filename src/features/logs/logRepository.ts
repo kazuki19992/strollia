@@ -221,6 +221,7 @@ export async function deleteAllUserData(): Promise<void> {
     await txn.runAsync('DELETE FROM achievement_unlocks');
     await txn.runAsync('DELETE FROM visited_admin_areas');
     await txn.runAsync('DELETE FROM location_point_admin_areas');
+    await txn.runAsync('DELETE FROM stay_places');
     await txn.runAsync('DELETE FROM location_points');
     await txn.runAsync('DELETE FROM daily_logs');
   });

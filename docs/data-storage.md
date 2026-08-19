@@ -241,6 +241,21 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `shown_in_app_at`   | TEXT NULL | アプリ内演出表示日時                                                                                                                                      |
 | `created_at`        | TEXT      | 作成日時                                                                                                                                                  |
 
+### 4.13 `stay_places`
+
+滞在場所ごとのGPS吸着と、共有時にルートを非表示にする範囲を保存するテーブル。契約状態による有効・無効は保存せず、作成日時順にアプリ側で判定する。
+
+| カラム                  | 型           | 説明                                                                    |
+| ----------------------- | ------------ | ----------------------------------------------------------------------- |
+| `id`                    | INTEGER      | 主キー                                                                  |
+| `name`                  | TEXT         | ユーザーが入力する表示名                                                |
+| `icon_hexcode`          | TEXT         | 固定Twemojiカタログに含まれる、完全修飾済みの大文字Unicode hexcode      |
+| `latitude`              | REAL         | 滞在場所の中心緯度                                                      |
+| `longitude`             | REAL         | 滞在場所の中心経度                                                      |
+| `privacy_radius_meters` | INTEGER NULL | `NULL`は共有時も含める。値は`50`、`100`、`200`、`300`、`500`mのいずれか |
+| `created_at`            | TEXT         | 作成日時（ISO 8601）                                                    |
+| `updated_at`            | TEXT         | 更新日時（ISO 8601）                                                    |
+
 ## 5. インデックス方針
 
 GPSログは時系列検索と日付検索が中心になるため、以下のインデックスを作成する。
@@ -257,6 +272,7 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `achievement_notification_queue(delivered_push_at)`
 - `visited_cells(x, y)`
 - `visited_cells(last_visited_at)`
+- `stay_places(created_at, id)` （滞在場所を作成順で安定して取得するため）
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
@@ -340,6 +356,7 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 - `visited_admin_areas`
 - `achievement_unlocks`
 - `achievement_notification_queue`
+- `stay_places`
 
 `location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
 

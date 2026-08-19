@@ -159,6 +159,17 @@ async function runDatabaseInitialization(): Promise<void> {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS stay_places (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      icon_hexcode TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      privacy_radius_meters INTEGER NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 
@@ -194,6 +205,9 @@ async function runDatabaseInitialization(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_visited_cells_last_visited_at
       ON visited_cells(last_visited_at);
+
+    CREATE INDEX IF NOT EXISTS idx_stay_places_created_at_id
+      ON stay_places(created_at, id);
   `);
 
   await ensureColumn('achievement_unlocks', 'unlocked_local_date', 'TEXT NULL');

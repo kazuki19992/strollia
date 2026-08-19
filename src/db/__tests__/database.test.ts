@@ -136,6 +136,17 @@ describe('database initializeDatabase マイグレーション', () => {
       const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
       expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS import_history');
     });
+
+    it('stay_places テーブルと作成順インデックスが含まれる', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS stay_places');
+      expect(firstCall).toContain('idx_stay_places_created_at_id');
+      expect(firstCall).toContain('ON stay_places(created_at, id)');
+    });
   });
 
   describe('PRAGMA 設定', () => {

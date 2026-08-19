@@ -90,7 +90,7 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     jest.clearAllMocks();
   });
 
-  it('GPSログ、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
+  it('GPSログ、滞在場所、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
     await deleteAllUserData();
 
     expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
@@ -99,8 +99,9 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM visited_admin_areas');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_points');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM daily_logs');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM stay_places');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM location_points');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(8, 'DELETE FROM daily_logs');
   });
 });
 

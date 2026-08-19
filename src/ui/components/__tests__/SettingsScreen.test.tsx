@@ -82,6 +82,7 @@ function createProps() {
     onUpdateUserLocationIcon: jest.fn(),
     selectedAppColorPresetId: 'matcha' as AppColorPresetId,
     onUpdateAppColorPreset: jest.fn(),
+    onOpenStayPlaces: jest.fn(),
     onOpenAboutAppScreen: jest.fn(),
     onOpenFirstLaunchTutorial: jest.fn(),
     onOpenFaqScreen: jest.fn(),
@@ -121,6 +122,17 @@ describe('設定画面 SettingsScreen', () => {
     expect(screen.getByText('GPS記録中!')).toBeTruthy();
     expect(screen.getByText('あなたの位置情報はすとろりあがしっかりと記録しています！\n冒険にでかけましょう！')).toBeTruthy();
     expect(screen.getByText('GPXファイルのエクスポート')).toBeTruthy();
+  });
+
+  test('滞在場所設定を開く操作を表示してコールバックへ渡す', () => {
+    const props = createProps();
+    render(<SettingsScreen {...props} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('滞在場所を設定する'));
+    });
+
+    expect(props.onOpenStayPlaces).toHaveBeenCalledTimes(1);
   });
 
   test('このアプリについての下にチュートリアルを表示して開ける', () => {

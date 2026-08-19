@@ -123,4 +123,50 @@ describe('滞在場所状態 useStayPlaceState', () => {
     expect(access.deleteStayPlace).toHaveBeenCalledWith(office.id);
     expect(result.current.activeStayPlaces).toEqual([home]);
   });
+
+  it('無料版で2件目を追加しようとすると永続化せずPlus購入導線を開く', async () => {
+    const access = createAccess({ getStayPlaces: jest.fn().mockResolvedValue([home]) });
+    const onFreeStayPlaceLimitReached = jest.fn();
+    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }));
+
+    await waitFor(() => {
+      expect(result.current.activeStayPlaces).toEqual([home]);
+    });
+
+    await act(async () => {
+      await result.current.createStayPlace(newOffice);
+    });
+
+    expect(access.createStayPlace).not.toHaveBeenCalled();
+    expect(onFreeStayPlaceLimitReached).toHaveBeenCalledTimes(1);
+    expect(result.current.activeStayPlaces).toEqual([home]);
+  });
+
+  it('編集の保存失敗後もDBを再読込して共有対象を古い値へ戻す', async () => {
+    const access = createAccess({
+      getStayPlaces: jest.fn().mockResolvedValue([home]),
+      updateStayPlace: jest.fn().mockRejectedValue(new Error('保存失敗')),
+    });
+    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
+
+    await waitFor(() => {
+      expect(result.current.activeStayPlaces).toEqual([home]);
+    });
+
+    let caughtError: unknown;
+    await act(async () => {
+      try {
+        await result.current.updateStayPlace(home.id, newOffice);
+      } catch (error) {
+        caughtError = error;
+      }
+    });
+
+    expect(caughtError).toEqual(new Error('保存失敗'));
+
+    await waitFor(() => {
+      expect(result.current.activeStayPlaces).toEqual([home]);
+    });
+    expect(access.getStayPlaces).toHaveBeenCalledTimes(2);
+  });
 });

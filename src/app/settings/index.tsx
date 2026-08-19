@@ -49,6 +49,7 @@ export default function SettingsRoute(): React.ReactElement {
       selectedAppColorPresetId={s.selectedAppColorPresetId}
       onUpdateAppColorPreset={s.updateAppColorPreset}
       onUpdateUserLocationIcon={(iconId) => s.updateUserLocationIcon(iconId, s.premiumAccessState, s.showPremiumLockedMessage)}
+      onOpenStayPlaces={s.openStayPlaces}
       onOpenAboutAppScreen={() => router.push('/settings/about')}
       onOpenFirstLaunchTutorial={s.openFirstLaunchTutorial}
       onOpenFaqScreen={() => router.push('/settings/faq')}

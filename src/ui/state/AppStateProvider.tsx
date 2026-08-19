@@ -341,6 +341,8 @@ export type AppStateContextValue = {
   openMonthlyReport: () => void;
   /** 設定画面へ移動する。 */
   openSettings: () => void;
+  /** 滞在場所の設定画面へ移動する。 */
+  openStayPlaces: () => void;
   /** 設定からチュートリアルを再表示する。 */
   openFirstLaunchTutorial: () => void;
 };
@@ -381,6 +383,8 @@ type AppStateProviderProps = {
     openMonthlyReport?: () => void;
     /** 設定画面へ移動する。 */
     openSettings?: () => void;
+    /** 滞在場所の設定画面へ移動する。 */
+    openStayPlaces?: () => void;
   };
   /**
    * expo-router の現在パスから導出した ScreenMode。
@@ -493,7 +497,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     createStayPlace,
     updateStayPlace,
     deleteStayPlace,
-  } = useStayPlaceState({ isReady, isPlusActive: premiumAccessState.isPlusActive });
+  } = useStayPlaceState({
+    isReady,
+    isPlusActive: premiumAccessState.isPlusActive,
+    onFreeStayPlaceLimitReached: openPremiumPaywall,
+  });
 
   const {
     selectedAchievement,
@@ -948,6 +956,16 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
+  /** 滞在場所の設定画面へ移動する。 */
+  function openStayPlaces(): void {
+    if (navigator?.openStayPlaces) {
+      triggerLightImpactHaptic();
+      navigator.openStayPlaces();
+    } else {
+      navigateToScreen('settings');
+    }
+  }
+
   /** 設定画面から初回チュートリアルを再表示する。 */
   function openFirstLaunchTutorial(): void {
     triggerSelectionHaptic();
@@ -1183,6 +1201,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openAchievements,
     openMonthlyReport,
     openSettings,
+    openStayPlaces,
     openFirstLaunchTutorial,
   };
 

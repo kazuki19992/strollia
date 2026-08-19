@@ -6,7 +6,12 @@ import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Te
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
 
-import { CRASH_REPORTING_SETTING_DESCRIPTION, CRASH_REPORTING_TOGGLE_LABEL } from '@/ui/appText';
+import {
+  CRASH_REPORTING_SETTING_DESCRIPTION,
+  CRASH_REPORTING_TOGGLE_LABEL,
+  STAY_PLACES_SETTING_DESCRIPTION,
+  STAY_PLACES_SETTING_LABEL,
+} from '@/ui/appText';
 import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '@/features/customization/customizationOptions';
 import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
@@ -92,6 +97,8 @@ export type SettingsScreenProps = {
   selectedAppColorPresetId: AppColorPresetId;
   /** アプリカラープリセット更新処理。 */
   onUpdateAppColorPreset: (presetId: AppColorPresetId) => void;
+  /** 滞在場所の設定画面を開く。 */
+  onOpenStayPlaces: () => void;
   /** このアプリについて画面を開く処理。 */
   onOpenAboutAppScreen: () => void;
   /** 初回チュートリアルを再表示する処理。 */
@@ -161,6 +168,7 @@ export function SettingsScreen({
   selectedUserLocationIconId,
   selectedAppColorPresetId,
   onUpdateAppColorPreset,
+  onOpenStayPlaces,
   onBackToMap,
   onStartRecording,
   onRequestLocationPermission,
@@ -308,6 +316,17 @@ export function SettingsScreen({
               onUpdateUserLocationIcon={onUpdateUserLocationIcon}
             />
           ) : null}
+        </ScreenSection>
+
+        <ScreenSection styles={styles} title={STAY_PLACES_SETTING_LABEL}>
+          <InfoBlock description={STAY_PLACES_SETTING_DESCRIPTION} styles={styles} title={STAY_PLACES_SETTING_LABEL} />
+          <ActionPill
+            alignLeft
+            icon={<MaterialCommunityIcons name="map-marker-radius-outline" size={22} color={theme.colors.text} />}
+            label="滞在場所を設定する"
+            styles={styles}
+            onPress={onOpenStayPlaces}
+          />
         </ScreenSection>
 
         <ScreenSection styles={styles} title="サブスク情報">

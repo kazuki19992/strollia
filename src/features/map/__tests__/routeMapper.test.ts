@@ -30,6 +30,16 @@ describe('ルート描画変換', () => {
     expect(toRouteCoordinates([point(35.1, 139.1)])).toEqual([{ latitude: 35.1, longitude: 139.1 }]);
   });
 
+  it('有効座標が保存されているポイントは通常ルートに有効座標を使う', () => {
+    const snappedPoint = {
+      ...point(35, 139),
+      effectiveLatitude: 35.5,
+      effectiveLongitude: 139.5,
+    };
+
+    expect(toRouteCoordinates([snappedPoint])).toEqual([{ latitude: 35.5, longitude: 139.5 }]);
+  });
+
   it('保存済みポイントの不正な座標を地図座標から除外する', () => {
     const coordinates = toRouteCoordinates([point(Number.NaN, 139), point(35, Number.POSITIVE_INFINITY), point(35.1, 139.1)]);
 

@@ -10,6 +10,9 @@ const mockCreateLocationRecordingSession = jest.fn();
 // isolateModules で読み込むタスクとモジュールインスタンスを共有するため、gpxImportPriority はモックで差し替える
 const mockIsGpxImportPriorityActive = jest.fn(() => false);
 const mockBufferLocationsDuringGpxImport = jest.fn();
+const mockGetPremiumAccessState = jest.fn();
+const mockGetStayPlaces = jest.fn();
+const mockResolveActiveStayPlaces = jest.fn();
 let definedTask: ((body: TaskBody) => Promise<void>) | null = null;
 
 jest.mock('expo-task-manager', () => ({
@@ -28,6 +31,18 @@ jest.mock('@/features/location/gpxImportPriority', () => ({
   bufferLocationsDuringGpxImport: (...args: unknown[]) => mockBufferLocationsDuringGpxImport(...args),
 }));
 
+jest.mock('@/features/premium/revenueCatAccess', () => ({
+  getPremiumAccessState: (...args: unknown[]) => mockGetPremiumAccessState(...args),
+}));
+
+jest.mock('@/features/stayPlaces/stayPlaceRepository', () => ({
+  getStayPlaces: (...args: unknown[]) => mockGetStayPlaces(...args),
+}));
+
+jest.mock('@/features/stayPlaces/stayPlaceAccess', () => ({
+  resolveActiveStayPlaces: (...args: unknown[]) => mockResolveActiveStayPlaces(...args),
+}));
+
 describe('バックグラウンド位置情報タスク', () => {
   beforeAll(() => {
     jest.isolateModules(() => {
@@ -40,6 +55,9 @@ describe('バックグラウンド位置情報タスク', () => {
     jest.clearAllMocks();
     mockRecordLocations.mockResolvedValue(undefined);
     mockCreateLocationRecordingSession.mockResolvedValue({ recordLocations: mockRecordLocations });
+    mockGetPremiumAccessState.mockResolvedValue({ isPlusActive: false });
+    mockGetStayPlaces.mockResolvedValue([]);
+    mockResolveActiveStayPlaces.mockReturnValue([]);
   });
 
   it('受信した位置情報配列を共通保存セッションへ渡す', async () => {
@@ -49,6 +67,21 @@ describe('バックグラウンド位置情報タスク', () => {
 
     expect(mockCreateLocationRecordingSession).toHaveBeenCalledTimes(1);
     expect(mockRecordLocations).toHaveBeenCalledWith([location]);
+  });
+
+  it('現在のPlus状態で解決した有効滞在場所を保存セッションへ渡す', async () => {
+    const home = { id: 1, name: '自宅' };
+    const activePlaces = [home];
+    mockGetPremiumAccessState.mockResolvedValue({ isPlusActive: false });
+    mockGetStayPlaces.mockResolvedValue([home]);
+    mockResolveActiveStayPlaces.mockReturnValue(activePlaces);
+
+    await definedTask!({ data: { locations: [{ timestamp: 1, coords: {} } as LocationObject] }, error: null });
+
+    const options = mockCreateLocationRecordingSession.mock.calls[0][0] as { getActiveStayPlaces: () => Promise<unknown[]> };
+    await expect(options.getActiveStayPlaces()).resolves.toEqual(activePlaces);
+    expect(mockGetPremiumAccessState).toHaveBeenCalledTimes(1);
+    expect(mockResolveActiveStayPlaces).toHaveBeenCalledWith([home], false);
   });
 
   it('位置情報が空の場合は保存セッションを作らない', async () => {

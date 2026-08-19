@@ -33,6 +33,7 @@ type HarnessProps = {
   shouldPersist: boolean;
   onLocation?: (lat: number, lng: number, speed: number | null) => void;
   onError?: (error: unknown) => void;
+  getActiveStayPlaces?: () => Promise<unknown[]>;
 };
 
 const watchedLocation = {
@@ -116,6 +117,29 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
     expect(onLocation).toHaveBeenCalledWith(35, 139, 2.5);
     expect(mockCreateLocationRecordingSession).toHaveBeenCalledTimes(1);
     expect(mockRecordLocations).toHaveBeenCalledWith([watchedLocation]);
+  });
+
+  test('保存セッションへ最新の有効滞在場所取得関数を渡す', async () => {
+    const home = { id: 1, name: '自宅' };
+    const activePlaces = [home];
+    const getActiveStayPlaces = jest.fn().mockResolvedValue(activePlaces);
+    let watchCallback: ((location: LocationObject) => void) | null = null;
+    mockWatchPositionAsync.mockImplementation((_options: unknown, callback: (location: LocationObject) => void) => {
+      watchCallback = callback;
+      return Promise.resolve({ remove: mockRemove });
+    });
+
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, getActiveStayPlaces }));
+
+    await act(async () => {
+      await flushPromises();
+      watchCallback?.(watchedLocation);
+      await flushPromises();
+    });
+
+    const options = mockCreateLocationRecordingSession.mock.calls[0][0] as { getActiveStayPlaces: () => Promise<unknown[]> };
+    await expect(options.getActiveStayPlaces()).resolves.toEqual(activePlaces);
+    expect(getActiveStayPlaces).toHaveBeenCalledTimes(1);
   });
 
   test('表示コールバックがなくても新しい位置を保存する', async () => {

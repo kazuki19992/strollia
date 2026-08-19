@@ -141,7 +141,7 @@ async function getActiveStayPlacesSafely(getActiveStayPlaces: (() => Promise<Sta
  *   次回再処理で重複保存や daily_logs の重複加算につながるため)
  * 戻した分は次の位置情報受信時(recordLocations)に受信順を保って回収される。
  */
-export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
+export async function flushLocationsBufferedDuringGpxImport(options: LocationRecordingSessionOptions = {}): Promise<void> {
   const drained = endGpxImportPriorityAndDrain();
 
   if (drained.length === 0) {
@@ -150,7 +150,7 @@ export async function flushLocationsBufferedDuringGpxImport(): Promise<void> {
 
   let session: LocationRecordingSession;
   try {
-    session = await createLocationRecordingSession();
+    session = await createLocationRecordingSession(options);
   } catch (error: unknown) {
     // recordLocations へ渡る前の失敗はここで戻す(渡った後の失敗は recordLocations が戻す)
     requeueLocationsToBuffer(drained);

@@ -1,6 +1,7 @@
 import type { Region } from 'react-native-maps';
 
 import { LocationPoint } from '@/types/gps';
+import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
 import { estimateAcceptedSegmentSpeedMps } from '@/features/location/locationSpeed';
 
 /** react-native-mapsのPolylineへ渡す緯度経度座標。 */
@@ -68,7 +69,10 @@ export function isValidRouteCoordinate(coordinate: RouteCoordinate): boolean {
 
 /** 保存済みGPSポイントを地図描画用の緯度経度へ変換する。 */
 export function toRouteCoordinates(points: LocationPoint[]): RouteCoordinate[] {
-  return points.map((point) => ({ latitude: point.latitude, longitude: point.longitude })).filter(isValidRouteCoordinate);
+  return points
+    .map(toEffectiveLocationPoint)
+    .map((point) => ({ latitude: point.latitude, longitude: point.longitude }))
+    .filter(isValidRouteCoordinate);
 }
 
 /** 保存用ポイントから簡略化済みの描画用座標を生成する。 */
@@ -87,7 +91,7 @@ export function toRenderRouteCoordinates(
  * @returns 2点以上を持つ描画用ルート区間。
  */
 export function toRenderRouteSegments(points: LocationPoint[], toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS): RouteSegment[] {
-  return splitRoutePoints(points)
+  return splitRoutePoints(points.map(toEffectiveLocationPoint))
     .map((segment, index) => ({
       id: `${segment[0].recordedAt}-${index}`,
       coordinates: simplifyRouteCoordinates(toRouteCoordinates(segment), toleranceMeters),

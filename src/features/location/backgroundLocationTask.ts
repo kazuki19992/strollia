@@ -4,6 +4,9 @@ import * as TaskManager from 'expo-task-manager';
 import { BACKGROUND_LOCATION_TASK_NAME } from './locationTrackingConfig';
 import { bufferLocationsDuringGpxImport, isGpxImportPriorityActive } from './gpxImportPriority';
 import { createLocationRecordingSession } from './locationRecordingSession';
+import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
+import { resolveActiveStayPlaces } from '@/features/stayPlaces/stayPlaceAccess';
+import { getStayPlaces } from '@/features/stayPlaces/stayPlaceRepository';
 
 /** Expo Locationのバックグラウンドタスクから渡される位置情報ペイロード。 */
 type BackgroundLocationTaskData = {
@@ -40,7 +43,15 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
       return;
     }
 
-    const session = await createLocationRecordingSession();
+    const session = await createLocationRecordingSession({
+      getActiveStayPlaces: getActiveStayPlacesForBackgroundRecording,
+    });
     await session.recordLocations(locations);
   });
+}
+
+/** バックグラウンド実行時点の契約状態に従う、GPS吸着用の有効滞在場所を取得する。 */
+async function getActiveStayPlacesForBackgroundRecording() {
+  const [premiumAccessState, stayPlaces] = await Promise.all([getPremiumAccessState(), getStayPlaces()]);
+  return resolveActiveStayPlaces(stayPlaces, premiumAccessState.isPlusActive);
 }

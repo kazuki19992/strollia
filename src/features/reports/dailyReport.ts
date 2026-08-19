@@ -1,5 +1,6 @@
 import type { GridCell } from '@/features/location/grid/gridCell';
 import { coordinateToGridCell } from '@/features/location/grid/gridCell';
+import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
 import type { ImageSourcePropType } from 'react-native';
 import type { LocationPoint } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
@@ -44,7 +45,7 @@ export type DailyDetailReport = {
 
 /** 1日のGPSポイントと保存済みエリア状態からPlus向け日別詳細レポートを作る。 */
 export function createDailyDetailReport(input: DailyDetailReportInput): DailyDetailReport {
-  const pointCellIds = new Set(input.points.map((point) => coordinateToGridCell(point).cellId));
+  const pointCellIds = new Set(input.points.map(toEffectiveLocationPoint).map((point) => coordinateToGridCell(point).cellId));
   const newAreaCount = input.visitedCells.filter((cell) => {
     if (!pointCellIds.has(cell.cellId) || !cell.firstVisitedAt) {
       return false;

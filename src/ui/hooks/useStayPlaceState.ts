@@ -80,7 +80,7 @@ export function useStayPlaceState(input: {
 
   const createStayPlace = useCallback(
     async (newStayPlace: SaveStayPlaceInput): Promise<void> => {
-      if (!isPlusActive && stayPlaces.length >= 1) {
+      if (!isPlusActive && (status !== 'ready' || stayPlaces.length >= 1)) {
         onFreeStayPlaceLimitReached?.();
         return;
       }
@@ -95,7 +95,7 @@ export function useStayPlaceState(input: {
         throw error;
       }
     },
-    [access, isPlusActive, onFreeStayPlaceLimitReached, reloadStayPlaces, stayPlaces.length],
+    [access, isPlusActive, onFreeStayPlaceLimitReached, reloadStayPlaces, status, stayPlaces.length],
   );
   const updateStayPlace = useCallback(
     async (id: number, updatedStayPlace: SaveStayPlaceInput): Promise<void> => {

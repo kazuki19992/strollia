@@ -142,6 +142,34 @@ describe('滞在場所状態 useStayPlaceState', () => {
     expect(result.current.activeStayPlaces).toEqual([home]);
   });
 
+  it('無料版の読込中は既存レコードの有無が未確定なため新規保存せずPlus購入導線を開く', async () => {
+    const resolveStayPlaces: ((places: StayPlace[]) => void)[] = [];
+    const getStayPlaces = jest.fn(
+      () =>
+        new Promise<StayPlace[]>((resolve) => {
+          resolveStayPlaces.push(resolve);
+        }),
+    );
+    const access = createAccess({ getStayPlaces });
+    const onFreeStayPlaceLimitReached = jest.fn();
+    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }));
+
+    let createPromise: Promise<void> | undefined;
+    await act(async () => {
+      createPromise = result.current.createStayPlace(newOffice);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(access.createStayPlace).not.toHaveBeenCalled();
+    expect(onFreeStayPlaceLimitReached).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveStayPlaces.forEach((resolve) => resolve([home]));
+      await createPromise;
+    });
+  });
+
   it('編集の保存失敗後もDBを再読込して共有対象を古い値へ戻す', async () => {
     const access = createAccess({
       getStayPlaces: jest.fn().mockResolvedValue([home]),

@@ -122,6 +122,18 @@ const log = {
   endLocationPointId: 2,
 };
 const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
+const activeStayPlaces = [
+  {
+    id: 1,
+    name: '自宅',
+    iconHexcode: '1F3E0',
+    latitude: 35.681236,
+    longitude: 139.767125,
+    privacyRadiusMeters: 100,
+    createdAt: '2026-08-19T00:00:00.000Z',
+    updatedAt: '2026-08-19T00:00:00.000Z',
+  },
+];
 
 describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   beforeEach(() => {
@@ -142,6 +154,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={activeStayPlaces}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={jest.fn()}
       />,
@@ -166,6 +179,9 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     await act(async () => {
       await flushAnimationFrames();
     });
+
+    // UNSAFE_getByType は画面外のGIF描画コンポーネントへ渡したpropsを確認するために使う。
+    expect(screen.UNSAFE_getByType(GifFrameRenderer).props.activeStayPlaces).toEqual(activeStayPlaces);
 
     // 画面外の GifFrameRenderer がマウントされ、地図のタイル描画完了を発火させる
     await act(async () => {

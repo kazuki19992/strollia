@@ -11,10 +11,12 @@ import {
 } from '@/features/export/routeGifFrames';
 import { exportRouteGif } from '@/features/export/routeGifExporter';
 import { shareViewAsPng } from '@/features/export/capturedViewShare';
-import { createInitialRegion } from '@/features/map/routeMapper';
+import { createInitialRegionFromCoordinates } from '@/features/map/routeMapper';
 import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';
+import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
-import type { DailyLogSummary, LocationPoint } from '@/types/gps';
+import type { DailyLogSummary } from '@/types/gps';
 import {
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
@@ -57,6 +59,8 @@ export type DailyLogDetailScreenProps = {
   theme: AppTheme;
   /** Plus課金状態。 */
   premiumAccessState: PremiumAccessState;
+  /** 共有時の非表示半径を適用する現在有効な滞在場所。 */
+  activeStayPlaces?: StayPlace[];
   /** 日別ログ一覧へ戻る処理。 */
   onBackToDailyLogs: () => void;
   /** ペイウォールモーダルを開く処理。 */
@@ -69,6 +73,7 @@ export function DailyLogDetailScreen({
   styles,
   theme,
   premiumAccessState,
+  activeStayPlaces = [],
   onBackToDailyLogs,
   onOpenPremiumPaywall,
 }: DailyLogDetailScreenProps) {
@@ -117,7 +122,14 @@ export function DailyLogDetailScreen({
     const step = resolveGifFrameStepMinutes(gifRangeEnd - gifRangeStart);
     return computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, step);
   }, [gifRangeStart, gifRangeEnd]);
-  const gifRegion = useMemo(() => (gifRangePoints.length > 0 ? createInitialRegion(gifRangePoints) : null), [gifRangePoints]);
+  const gifRangePrivacyRouteSegments = useMemo(
+    () => toPrivacyRouteSegments(gifRangePoints, activeStayPlaces),
+    [activeStayPlaces, gifRangePoints],
+  );
+  const gifRegion = useMemo(
+    () => createInitialRegionFromCoordinates(gifRangePrivacyRouteSegments.flatMap((segment) => segment.coordinates)),
+    [gifRangePrivacyRouteSegments],
+  );
   const isGeneratingGif = gifProgress !== null;
   // 各コマは選択開始時刻からその時刻までの累積軌跡（区間内のみ）。
   const gifFrameMinute = gifFrameMinutes[gifFrameIndex] ?? gifRangeStart;
@@ -423,6 +435,7 @@ export function DailyLogDetailScreen({
           ref={shareCardRef}
           width={Dimensions.get('window').width}
           points={visibleRoutePoints}
+          activeStayPlaces={activeStayPlaces}
           regionPoints={dailyPoints}
           isPlusActive={isPlusActive}
           distanceLabel={distanceLabel}
@@ -444,6 +457,7 @@ export function DailyLogDetailScreen({
           ref={gifFrameRef}
           region={gifRegion}
           points={gifFramePoints}
+          activeStayPlaces={activeStayPlaces}
           timeLabel={gifFrameTimeLabel}
           dateLabel={gifFrameDateLabel}
           styles={styles}
@@ -501,6 +515,7 @@ export function DailyLogDetailScreen({
             <RouteMapPanel
               emptyLabel="この範囲に移動記録がありません"
               points={gifRangePoints}
+              activeStayPlaces={activeStayPlaces}
               regionPoints={dailyPoints}
               styles={styles}
               theme={theme}

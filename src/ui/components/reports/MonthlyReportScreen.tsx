@@ -8,7 +8,9 @@ import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { AchievementListItem } from '@/features/achievements/achievementRepository';
 import { MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData, MonthlyReport } from '@/features/reports/monthlyReport';
-import { createInitialRegion, toRenderRouteCoordinates } from '@/features/map/routeMapper';
+import { createInitialRegionFromCoordinates } from '@/features/map/routeMapper';
+import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { DailyLogSummary, LocationPoint } from '@/types/gps';
 import type { AppTheme } from '@/theme/theme';
 import { MonthlyReportAnimatedCard } from './MonthlyReportAnimatedCard';
@@ -25,6 +27,8 @@ export type MonthlyReportScreenProps = {
   dailyLogs: DailyLogSummary[];
   /** GPSポイント一覧。 */
   points: LocationPoint[];
+  /** 共有時の非表示半径を適用する現在有効な滞在場所。 */
+  activeStayPlaces?: StayPlace[];
   /** 実績一覧。 */
   achievements: AchievementListItem[];
   /** 月次行政区域サマリー。 */
@@ -83,15 +87,29 @@ function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: Mont
 }
 
 /** スクロール型の月次レポート画面。 */
-export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAreaReport, theme, onBackToMap }: MonthlyReportScreenProps) {
+export function MonthlyReportScreen({
+  dailyLogs,
+  points,
+  activeStayPlaces = [],
+  achievements,
+  monthlyAreaReport,
+  theme,
+  onBackToMap,
+}: MonthlyReportScreenProps) {
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
   const reportCaptureRef = useRef<View | null>(null);
   const [isSharingReport, setIsSharingReport] = useState(false);
   const report = useMemo(() => createMonthlyReport(dailyLogs, points, getPreviousReportMonth()), [dailyLogs, points]);
   const summary = useMemo(() => createMonthlyDistanceSummary(dailyLogs, report), [dailyLogs, report]);
-  const reportRouteCoordinates = useMemo(() => toRenderRouteCoordinates(report.routePoints), [report.routePoints]);
-  const reportMapRegion = useMemo(() => createInitialRegion(report.routePoints), [report.routePoints]);
+  const reportRouteSegments = useMemo(
+    () => toPrivacyRouteSegments(report.routePoints, activeStayPlaces),
+    [activeStayPlaces, report.routePoints],
+  );
+  const reportMapRegion = useMemo(
+    () => createInitialRegionFromCoordinates(reportRouteSegments.flatMap((segment) => segment.coordinates)),
+    [reportRouteSegments],
+  );
   const monthlyAchievements = achievements.filter((item) => item.unlockedAt?.startsWith(report.label)).slice(0, 6);
   const hasReportData = hasMonthlyReportData(report);
   const prefectureRanking = rankingLabels.map((rank, index) => ({
@@ -205,7 +223,7 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
             forceVisible={isSharingReport}
             style={[reportStyles.monthlyMapCard, { backgroundColor: surfaceColor }]}
           >
-            {reportRouteCoordinates.length > 1 ? (
+            {reportRouteSegments.length > 0 ? (
               <MapView
                 initialRegion={reportMapRegion}
                 mapType={theme.name === 'dark' ? 'mutedStandard' : 'standard'}
@@ -216,7 +234,9 @@ export function MonthlyReportScreen({ dailyLogs, points, achievements, monthlyAr
                 toolbarEnabled={false}
                 zoomEnabled={false}
               >
-                <Polyline coordinates={reportRouteCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
+                {reportRouteSegments.map((segment) => (
+                  <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
+                ))}
               </MapView>
             ) : (
               <View style={reportStyles.monthlyMapNoData}>

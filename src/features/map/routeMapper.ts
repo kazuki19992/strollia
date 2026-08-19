@@ -91,12 +91,21 @@ export function toRenderRouteCoordinates(
  * @returns 2点以上を持つ描画用ルート区間。
  */
 export function toRenderRouteSegments(points: LocationPoint[], toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS): RouteSegment[] {
-  return splitRoutePoints(points.map(toEffectiveLocationPoint))
+  return toRoutePointSegments(points)
     .map((segment, index) => ({
       id: `${segment[0].recordedAt}-${index}`,
       coordinates: simplifyRouteCoordinates(toRouteCoordinates(segment), toleranceMeters),
     }))
     .filter((segment) => segment.coordinates.length > 1);
+}
+
+/**
+ * 保存済みGPSポイントを有効座標へ変換し、異常な時間差・速度差で区間を分割する。
+ *
+ * 共有用の非表示区間分割でも、通常地図と同一の異常ギャップ判定を先に適用するために公開する。
+ */
+export function toRoutePointSegments(points: LocationPoint[]): LocationPoint[][] {
+  return splitRoutePoints(points.map(toEffectiveLocationPoint));
 }
 
 /** Douglas-Peucker法でルート形状を保ちながら座標数を減らす。 */
@@ -202,18 +211,27 @@ export function createRegionFromBounds(bounds: RouteCoordinateBounds | null): Re
  * 単純なループで境界を求める(2026-07-14のSentryクラッシュの根本原因)。
  */
 export function createInitialRegion(points: LocationPoint[]): Region {
-  const coordinates = toRouteCoordinates(points);
+  return createInitialRegionFromCoordinates(toRouteCoordinates(points));
+}
 
-  if (coordinates.length === 0) {
+/**
+ * 描画に使う座標群だけから、マージン付きの初期表示範囲を作る。
+ *
+ * 共有用の地図は非表示範囲外の座標だけを渡し、MapViewの表示中心にも隠した場所を使わない。
+ */
+export function createInitialRegionFromCoordinates(coordinates: RouteCoordinate[]): Region {
+  const validCoordinates = coordinates.filter(isValidRouteCoordinate);
+
+  if (validCoordinates.length === 0) {
     return DEFAULT_REGION;
   }
 
-  let minLatitude = coordinates[0].latitude;
-  let maxLatitude = coordinates[0].latitude;
-  let minLongitude = coordinates[0].longitude;
-  let maxLongitude = coordinates[0].longitude;
+  let minLatitude = validCoordinates[0].latitude;
+  let maxLatitude = validCoordinates[0].latitude;
+  let minLongitude = validCoordinates[0].longitude;
+  let maxLongitude = validCoordinates[0].longitude;
 
-  for (const coordinate of coordinates) {
+  for (const coordinate of validCoordinates) {
     if (coordinate.latitude < minLatitude) minLatitude = coordinate.latitude;
     if (coordinate.latitude > maxLatitude) maxLatitude = coordinate.latitude;
     if (coordinate.longitude < minLongitude) minLongitude = coordinate.longitude;

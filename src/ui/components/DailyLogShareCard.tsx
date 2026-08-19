@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import { Text, View } from 'react-native';
 
 import type { DailyDetailReport } from '@/features/reports/dailyReport';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
 import type { LocationPoint } from '@/types/gps';
 import type { AppStyles } from '@/ui/appStyles';
@@ -14,6 +15,8 @@ export type DailyLogShareCardProps = {
   width: number;
   /** 地図に描くポイント。 */
   points: LocationPoint[];
+  /** 共有時の非表示半径を適用する有効な滞在場所。 */
+  activeStayPlaces: StayPlace[];
   /** 地図の表示範囲の基準にするポイント。 */
   regionPoints: LocationPoint[];
   /** Plus課金状態。 */
@@ -44,6 +47,7 @@ export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(functi
   {
     width,
     points,
+    activeStayPlaces,
     regionPoints,
     isPlusActive,
     distanceLabel,
@@ -64,6 +68,7 @@ export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(functi
           <RouteMapPanel
             emptyLabel="移動地図を表示できません"
             points={points}
+            activeStayPlaces={activeStayPlaces}
             regionPoints={regionPoints}
             styles={styles}
             theme={theme}

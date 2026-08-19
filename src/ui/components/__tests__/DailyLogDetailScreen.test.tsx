@@ -364,6 +364,41 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/daily-log-detail.png', expect.objectContaining({ mimeType: 'image/png' }));
   });
 
+  test('共有画像には有効な滞在場所の非表示範囲を渡す', async () => {
+    const activeStayPlaces = [
+      {
+        id: 1,
+        name: '自宅',
+        iconHexcode: '1F3E0',
+        latitude: 35.681236,
+        longitude: 139.767125,
+        privacyRadiusMeters: 100,
+        createdAt: '2026-08-19T00:00:00.000Z',
+        updatedAt: '2026-08-19T00:00:00.000Z',
+      },
+    ];
+
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={activeStayPlaces}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+    });
+
+    // UNSAFE_getByType は画面外の共有専用コンポーネントへ渡したpropsを確認するために使う。
+    expect(screen.UNSAFE_getByType(DailyLogShareCard).props.activeStayPlaces).toEqual(activeStayPlaces);
+  });
+
   test('今日以外の日付はスライダーの最大値が 24:00 になる', async () => {
     render(
       <DailyLogDetailScreen

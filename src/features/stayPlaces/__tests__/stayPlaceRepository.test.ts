@@ -51,6 +51,10 @@ describe('滞在場所リポジトリ stayPlaceRepository', () => {
     ['小文字のicon_hexcode', { ...validInput, iconHexcode: '1f3e0' }, 'アイコン'],
     ['無限の緯度', { ...validInput, latitude: Infinity }, '緯度'],
     ['NaNの経度', { ...validInput, longitude: Number.NaN }, '経度'],
+    ['上限を超える有限の緯度', { ...validInput, latitude: 90.000001 }, '緯度'],
+    ['下限を下回る有限の緯度', { ...validInput, latitude: -90.000001 }, '緯度'],
+    ['上限を超える有限の経度', { ...validInput, longitude: 180.000001 }, '経度'],
+    ['下限を下回る有限の経度', { ...validInput, longitude: -180.000001 }, '経度'],
     ['許可されない半径', { ...validInput, privacyRadiusMeters: 400 }, '共有時の非表示範囲'],
   ])('%sはSQLを実行せず拒否する', async (_label, input, message) => {
     await expect(createStayPlace(input)).rejects.toThrow(message);
@@ -73,6 +77,15 @@ describe('滞在場所リポジトリ stayPlaceRepository', () => {
       expect.any(String),
       expect.any(String),
     );
+  });
+
+  it.each([
+    ['緯度と経度の上限', 90, 180],
+    ['緯度と経度の下限', -90, -180],
+  ])('%sは保存できる', async (_label, latitude, longitude) => {
+    await expect(createStayPlace({ ...validInput, latitude, longitude })).resolves.toBe(42);
+
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
   });
 
   it('登録を排他トランザクション内で実行してIDを返す', async () => {

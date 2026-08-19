@@ -27,11 +27,11 @@ function validateSaveStayPlaceInput(input: SaveStayPlaceInput): void {
     throw new Error('滞在場所のアイコンが不正です');
   }
 
-  if (!Number.isFinite(input.latitude)) {
+  if (!Number.isFinite(input.latitude) || input.latitude < -90 || input.latitude > 90) {
     throw new Error('滞在場所の緯度が不正です');
   }
 
-  if (!Number.isFinite(input.longitude)) {
+  if (!Number.isFinite(input.longitude) || input.longitude < -180 || input.longitude > 180) {
     throw new Error('滞在場所の経度が不正です');
   }
 

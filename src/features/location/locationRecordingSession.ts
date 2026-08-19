@@ -3,6 +3,10 @@ import type * as Location from 'expo-location';
 import { initializeDatabase } from '@/db/database';
 import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
 import { getLatestLocationPoint, insertLocationPoint } from '@/features/logs/logRepository';
+import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
+import { INITIAL_STAY_PLACE_SNAP_STATE, resolveStayPlaceSnap, StayPlaceSnapState } from '@/features/stayPlaces/stayPlaceSnapResolver';
+import { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import { NewLocationPoint } from '@/types/gps';
 import {
   bufferLocationsDuringGpxImport,
   drainBufferedLocations,
@@ -21,18 +25,27 @@ export type LocationRecordingSession = {
   recordLocations: (locations: Location.LocationObject[]) => Promise<void>;
 };
 
+/** 記録中の各観測点で有効な滞在場所を取得する依存。 */
+export type LocationRecordingSessionOptions = {
+  /** 課金状態・設定変更を次の観測から反映するため、ポイントごとに取得する。 */
+  getActiveStayPlaces?: () => Promise<StayPlace[]>;
+};
+
 /**
  * 最新保存点を一度だけ読み込み、位置情報を継続的に保存するセッションを作る。
  *
  * 前景監視では位置情報が1件ずつ届くため、呼び出し間で前回点を保持して
  * 距離・時系列判定とVisited Grid補間を背景タスクの一括処理と一致させる。
  */
-export async function createLocationRecordingSession(): Promise<LocationRecordingSession> {
+export async function createLocationRecordingSession(options: LocationRecordingSessionOptions = {}): Promise<LocationRecordingSession> {
   await initializeDatabase();
 
   const latestSavedPoint = await getLatestLocationPoint();
-  let previousSavedPoint: Parameters<typeof shouldSaveLocationPoint>[1] = latestSavedPoint;
-  let previousVisitedCellPoint: ReturnType<typeof toLocationPoint> | null = latestSavedPoint;
+  let previousSavedPoint: Parameters<typeof shouldSaveLocationPoint>[1] = latestSavedPoint
+    ? toEffectiveLocationPoint(latestSavedPoint)
+    : null;
+  let previousVisitedCellPoint: NewLocationPoint | null = latestSavedPoint ? toEffectiveLocationPoint(latestSavedPoint) : null;
+  let snapState: StayPlaceSnapState = INITIAL_STAY_PLACE_SNAP_STATE;
 
   return {
     async recordLocations(locations) {
@@ -53,18 +66,32 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
 
       try {
         for (const location of locationsToProcess) {
-          const point = toLocationPoint(location);
-          const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, point);
+          const rawPoint = toLocationPoint(location);
+          const activeStayPlaces = await getActiveStayPlacesSafely(options.getActiveStayPlaces);
+          const snapResult = resolveStayPlaceSnap({
+            state: snapState,
+            raw: rawPoint,
+            activeStayPlaces,
+          });
+          snapState = snapResult.state;
+          const point: NewLocationPoint = {
+            ...rawPoint,
+            effectiveLatitude: snapResult.effective.latitude,
+            effectiveLongitude: snapResult.effective.longitude,
+            snappedStayPlaceId: snapResult.snappedStayPlaceId,
+          };
+          const effectivePoint = toEffectiveLocationPoint(point);
+          const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, effectivePoint);
 
           if (visitedCells.length > 0) {
-            await upsertVisitedCells(visitedCells, point.recordedAt);
-            previousVisitedCellPoint = point;
+            await upsertVisitedCells(visitedCells, effectivePoint.recordedAt);
+            previousVisitedCellPoint = effectivePoint;
           }
 
-          if (shouldSaveLocationPoint(point, previousSavedPoint)) {
+          if (shouldSaveLocationPoint(effectivePoint, previousSavedPoint)) {
             const locationPointId = await insertLocationPoint(point);
             savedPoints.push({ point, locationPointId });
-            previousSavedPoint = point;
+            previousSavedPoint = effectivePoint;
           }
 
           processedCount += 1;
@@ -84,6 +111,20 @@ export async function createLocationRecordingSession(): Promise<LocationRecordin
       }
     },
   };
+}
+
+/** 滞在場所一覧の読込失敗時も生座標の記録を止めないため、吸着なしへ安全にフォールバックする。 */
+async function getActiveStayPlacesSafely(getActiveStayPlaces: (() => Promise<StayPlace[]>) | undefined): Promise<StayPlace[]> {
+  if (!getActiveStayPlaces) {
+    return [];
+  }
+
+  try {
+    return await getActiveStayPlaces();
+  } catch (error: unknown) {
+    console.warn('Stay place loading failed:', error);
+    return [];
+  }
 }
 
 /**

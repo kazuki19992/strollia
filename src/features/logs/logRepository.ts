@@ -1,4 +1,5 @@
 import { db, withExclusiveTransaction } from '@/db/database';
+import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
 import { DailyLogSummary, LocationPoint, NewLocationPoint } from '@/types/gps';
 import { distanceMeters } from '@/utils/distance';
 
@@ -9,6 +10,9 @@ const pointColumns = `
   local_date as localDate,
   latitude,
   longitude,
+  effective_latitude as effectiveLatitude,
+  effective_longitude as effectiveLongitude,
+  snapped_stay_place_id as snappedStayPlaceId,
   altitude,
   speed,
   heading,
@@ -20,7 +24,9 @@ const pointColumns = `
 export async function insertLocationPoint(point: NewLocationPoint): Promise<number> {
   const now = new Date().toISOString();
   const previousPoint = await getLatestLocationPointByDate(point.localDate);
-  const segmentDistanceMeters = previousPoint ? distanceMeters(previousPoint, point) : 0;
+  const segmentDistanceMeters = previousPoint
+    ? distanceMeters(toEffectiveLocationPoint(previousPoint), toEffectiveLocationPoint(point))
+    : 0;
   let insertedLocationPointId = 0;
 
   await withExclusiveTransaction(async (txn) => {
@@ -30,6 +36,9 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<numb
         local_date,
         latitude,
         longitude,
+        effective_latitude,
+        effective_longitude,
+        snapped_stay_place_id,
         altitude,
         speed,
         heading,
@@ -37,11 +46,14 @@ export async function insertLocationPoint(point: NewLocationPoint): Promise<numb
         altitude_accuracy,
         source,
         created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'expo-location', ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'expo-location', ?)`,
       point.recordedAt,
       point.localDate,
       point.latitude,
       point.longitude,
+      point.effectiveLatitude ?? point.latitude,
+      point.effectiveLongitude ?? point.longitude,
+      point.snappedStayPlaceId ?? null,
       point.altitude,
       point.speed,
       point.heading,
@@ -161,14 +173,14 @@ export async function getLocationPointsBounds(): Promise<LocationPointsBounds | 
     pointCount: number;
   }>(
     `SELECT
-      MIN(latitude) as minLatitude,
-      MAX(latitude) as maxLatitude,
-      MIN(longitude) as minLongitude,
-      MAX(longitude) as maxLongitude,
+      MIN(CASE WHEN effective_latitude BETWEEN -90 AND 90 AND effective_longitude BETWEEN -180 AND 180 THEN effective_latitude ELSE latitude END) as minLatitude,
+      MAX(CASE WHEN effective_latitude BETWEEN -90 AND 90 AND effective_longitude BETWEEN -180 AND 180 THEN effective_latitude ELSE latitude END) as maxLatitude,
+      MIN(CASE WHEN effective_latitude BETWEEN -90 AND 90 AND effective_longitude BETWEEN -180 AND 180 THEN effective_longitude ELSE longitude END) as minLongitude,
+      MAX(CASE WHEN effective_latitude BETWEEN -90 AND 90 AND effective_longitude BETWEEN -180 AND 180 THEN effective_longitude ELSE longitude END) as maxLongitude,
       COUNT(*) as pointCount
      FROM location_points
-     WHERE latitude BETWEEN -90 AND 90
-       AND longitude BETWEEN -180 AND 180`,
+     WHERE (effective_latitude BETWEEN -90 AND 90 AND effective_longitude BETWEEN -180 AND 180)
+        OR (latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180)`,
   );
 
   if (

@@ -1,7 +1,7 @@
-import { LocationPoint } from '@/types/gps';
-
-/** Task 4のDB列追加前でも旧形式のLocationPointを受け取るための座標拡張。 */
-type LocationPointWithEffectiveCoordinates = LocationPoint & {
+/** 有効座標のフォールバックに必要な最小のポイント形状。 */
+type EffectiveCoordinatePoint = {
+  latitude: number;
+  longitude: number;
   effectiveLatitude?: number | null;
   effectiveLongitude?: number | null;
 };
@@ -11,8 +11,8 @@ type LocationPointWithEffectiveCoordinates = LocationPoint & {
  *
  * 旧データや片方だけ・範囲外の有効座標は、位置情報を捏造せず生座標のまま返す。
  */
-export function toEffectiveLocationPoint(point: LocationPoint): LocationPoint {
-  const { effectiveLatitude, effectiveLongitude } = point as LocationPointWithEffectiveCoordinates;
+export function toEffectiveLocationPoint<T extends EffectiveCoordinatePoint>(point: T): T {
+  const { effectiveLatitude, effectiveLongitude } = point;
 
   if (!isValidLatitude(effectiveLatitude) || !isValidLongitude(effectiveLongitude)) {
     return point;

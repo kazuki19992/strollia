@@ -53,6 +53,27 @@ describe('GPSポイント保存 insertLocationPoint', () => {
     expect(dailySummaryArgs[4]).toBeGreaterThan(100);
     expect(dailySummaryArgs[4]).toBeLessThan(120);
   });
+
+  it('日別距離は記録時の有効座標で計算する', async () => {
+    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+      ...point(35, 139),
+      id: 1,
+      effectiveLatitude: 35,
+      effectiveLongitude: 139,
+      snappedStayPlaceId: 1,
+    });
+    const snappedPoint = {
+      ...point(35.001, 139.001),
+      effectiveLatitude: 35,
+      effectiveLongitude: 139,
+      snappedStayPlaceId: 1,
+    } as NewLocationPoint;
+
+    await insertLocationPoint(snappedPoint);
+
+    const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
+    expect(dailySummaryArgs[4]).toBe(0);
+  });
 });
 
 describe('日別ログ一覧 getDailyLogs', () => {

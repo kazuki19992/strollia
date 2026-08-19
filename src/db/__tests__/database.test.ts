@@ -252,6 +252,26 @@ describe('database initializeDatabase マイグレーション', () => {
     });
   });
 
+  describe('ensureColumn マイグレーション（location_pointsの有効座標）', () => {
+    it('既存ログを更新せず有効座標と吸着先IDの列だけを追加する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const alterStatements = (db.execAsync as jest.Mock).mock.calls
+        .map(([sql]) => sql as string)
+        .filter((sql) => sql.includes('ALTER TABLE location_points'));
+      expect(alterStatements).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('effective_latitude REAL NULL'),
+          expect.stringContaining('effective_longitude REAL NULL'),
+          expect.stringContaining('snapped_stay_place_id INTEGER NULL'),
+        ]),
+      );
+      expect(db.runAsync).not.toHaveBeenCalledWith(expect.stringContaining('UPDATE location_points'), expect.anything());
+    });
+  });
+
   describe('インデックス作成 SQL', () => {
     it('idx_location_points_recorded_at インデックスが含まれる', async () => {
       (db.getAllAsync as jest.Mock).mockResolvedValue([]);

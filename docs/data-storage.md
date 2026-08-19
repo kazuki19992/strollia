@@ -38,20 +38,23 @@ React Native + Expo では `expo-sqlite` の利用を第一候補とする。`ex
 
 GPSで取得した位置情報を保存する中心テーブル。
 
-| カラム              | 型        | 説明                                           |
-| ------------------- | --------- | ---------------------------------------------- |
-| `id`                | INTEGER   | 主キー                                         |
-| `recorded_at`       | TEXT      | 取得日時。ISO 8601形式                         |
-| `local_date`        | TEXT      | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
-| `latitude`          | REAL      | 緯度                                           |
-| `longitude`         | REAL      | 経度                                           |
-| `altitude`          | REAL NULL | 高度                                           |
-| `speed`             | REAL NULL | 速度                                           |
-| `heading`           | REAL NULL | 方位                                           |
-| `accuracy`          | REAL NULL | 水平方向の位置精度                             |
-| `altitude_accuracy` | REAL NULL | 高度の精度                                     |
-| `source`            | TEXT      | 取得元。例: `expo-location`                    |
-| `created_at`        | TEXT      | DB保存日時                                     |
+| カラム                  | 型           | 説明                                           |
+| ----------------------- | ------------ | ---------------------------------------------- |
+| `id`                    | INTEGER      | 主キー                                         |
+| `recorded_at`           | TEXT         | 取得日時。ISO 8601形式                         |
+| `local_date`            | TEXT         | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
+| `latitude`              | REAL         | 緯度                                           |
+| `longitude`             | REAL         | 経度                                           |
+| `effective_latitude`    | REAL NULL    | 記録時に決定した有効緯度。旧ログはNULL         |
+| `effective_longitude`   | REAL NULL    | 記録時に決定した有効経度。旧ログはNULL         |
+| `snapped_stay_place_id` | INTEGER NULL | 吸着した滞在場所ID。吸着なし・旧ログはNULL     |
+| `altitude`              | REAL NULL    | 高度                                           |
+| `speed`                 | REAL NULL    | 速度                                           |
+| `heading`               | REAL NULL    | 方位                                           |
+| `accuracy`              | REAL NULL    | 水平方向の位置精度                             |
+| `altitude_accuracy`     | REAL NULL    | 高度の精度                                     |
+| `source`                | TEXT         | 取得元。例: `expo-location`                    |
+| `created_at`            | TEXT         | DB保存日時                                     |
 
 ### 4.2 `daily_logs`
 

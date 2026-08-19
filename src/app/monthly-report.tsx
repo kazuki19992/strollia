@@ -23,6 +23,7 @@ export default function MonthlyReportRoute(): React.ReactElement {
       dailyLogs={s.dailyLogs}
       points={s.monthlyReportPoints}
       activeStayPlaces={s.activeStayPlaces}
+      stayPlacesStatus={s.stayPlacesStatus}
       achievements={s.achievementItems}
       monthlyAreaReport={s.monthlyAreaReport}
       theme={s.theme}

@@ -212,6 +212,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={jest.fn()}
       />,
@@ -249,6 +250,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={jest.fn()}
       />,

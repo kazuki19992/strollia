@@ -13,8 +13,8 @@ export type RouteMapPanelProps = {
   emptyLabel: string;
   /** GPSポイント。 */
   points: LocationPoint[];
-  /** 指定時は共有専用として非表示半径を適用する有効な滞在場所。 */
-  activeStayPlaces?: StayPlace[];
+  /** 指定時は共有専用として非表示半径を適用する有効な滞在場所。nullなら未解決のため描画しない。 */
+  activeStayPlaces?: StayPlace[] | null;
   /** 表示範囲の基準にするGPSポイント。未指定ならpointsを使う。 */
   regionPoints?: LocationPoint[];
   /** 画面共通スタイル。 */
@@ -35,9 +35,14 @@ export function RouteMapPanel({
   theme,
   onMapLoaded,
 }: RouteMapPanelProps) {
-  const routeSegments = activeStayPlaces == null ? toRenderRouteSegments(points) : toPrivacyRouteSegments(points, activeStayPlaces);
+  const routeSegments =
+    activeStayPlaces === undefined
+      ? toRenderRouteSegments(points)
+      : activeStayPlaces === null
+        ? []
+        : toPrivacyRouteSegments(points, activeStayPlaces);
   const routeCoordinates = routeSegments.flatMap((segment) => segment.coordinates);
-  const hasPrivacyRoute = activeStayPlaces != null;
+  const hasPrivacyRoute = activeStayPlaces !== undefined;
 
   if (regionPoints.length === 0 || (hasPrivacyRoute && routeSegments.length === 0)) {
     return (

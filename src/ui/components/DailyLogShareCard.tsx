@@ -15,8 +15,8 @@ export type DailyLogShareCardProps = {
   width: number;
   /** 地図に描くポイント。 */
   points: LocationPoint[];
-  /** 共有時の非表示半径を適用する有効な滞在場所。 */
-  activeStayPlaces: StayPlace[];
+  /** 共有時の非表示半径を適用する有効な滞在場所。未解決時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
   /** 地図の表示範囲の基準にするポイント。 */
   regionPoints: LocationPoint[];
   /** Plus課金状態。 */

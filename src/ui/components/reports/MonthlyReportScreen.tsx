@@ -10,6 +10,7 @@ import { MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData, MonthlyReport } from '@/features/reports/monthlyReport';
 import { createInitialRegionFromCoordinates } from '@/features/map/routeMapper';
 import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { DailyLogSummary, LocationPoint } from '@/types/gps';
 import type { AppTheme } from '@/theme/theme';
@@ -27,8 +28,10 @@ export type MonthlyReportScreenProps = {
   dailyLogs: DailyLogSummary[];
   /** GPSポイント一覧。 */
   points: LocationPoint[];
-  /** 共有時の非表示半径を適用する現在有効な滞在場所。 */
-  activeStayPlaces?: StayPlace[];
+  /** 共有時の非表示半径を適用する現在有効な滞在場所。未解決・失敗時はnull。 */
+  activeStayPlaces?: StayPlace[] | null;
+  /** 滞在場所の読込状態。共有開始のfail-closed判定と説明文に使う。 */
+  stayPlacesStatus?: StayPlacesStatus;
   /** 実績一覧。 */
   achievements: AchievementListItem[];
   /** 月次行政区域サマリー。 */
@@ -90,12 +93,15 @@ function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: Mont
 export function MonthlyReportScreen({
   dailyLogs,
   points,
-  activeStayPlaces = [],
+  activeStayPlaces = null,
+  stayPlacesStatus,
   achievements,
   monthlyAreaReport,
   theme,
   onBackToMap,
 }: MonthlyReportScreenProps) {
+  const resolvedStayPlacesStatus = stayPlacesStatus ?? (activeStayPlaces == null ? 'loading' : 'ready');
+  const isSharePrivacyReady = resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null;
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
   const reportCaptureRef = useRef<View | null>(null);
@@ -103,7 +109,7 @@ export function MonthlyReportScreen({
   const report = useMemo(() => createMonthlyReport(dailyLogs, points, getPreviousReportMonth()), [dailyLogs, points]);
   const summary = useMemo(() => createMonthlyDistanceSummary(dailyLogs, report), [dailyLogs, report]);
   const reportRouteSegments = useMemo(
-    () => toPrivacyRouteSegments(report.routePoints, activeStayPlaces),
+    () => (activeStayPlaces == null ? [] : toPrivacyRouteSegments(report.routePoints, activeStayPlaces)),
     [activeStayPlaces, report.routePoints],
   );
   const reportMapRegion = useMemo(
@@ -125,7 +131,7 @@ export function MonthlyReportScreen({
 
   /** レポートのスクロール本文全体をPNG化して共有する。 */
   async function shareReportImage(): Promise<void> {
-    if (!reportCaptureRef.current || isSharingReport) {
+    if (!reportCaptureRef.current || isSharingReport || !isSharePrivacyReady) {
       return;
     }
 
@@ -217,6 +223,13 @@ export function MonthlyReportScreen({
           </MonthlyReportAnimatedCard>
 
           <Text style={[reportStyles.monthlySectionTitle, { color: textColor }]}>移動マップ</Text>
+          {!isSharePrivacyReady && (
+            <Text style={[reportStyles.monthlyNoDataText, { color: mutedTextColor }]}>
+              {resolvedStayPlacesStatus === 'error'
+                ? '滞在場所を読み込めないため、共有を準備できません。'
+                : '滞在場所を確認中です。共有は確認後に利用できます。'}
+            </Text>
+          )}
           <MonthlyReportAnimatedCard
             scrollY={scrollY}
             viewportHeight={height}
@@ -325,7 +338,7 @@ export function MonthlyReportScreen({
         </View>
         <ShareButton
           accessibilityLabel="レポートを共有"
-          disabled={isSharingReport}
+          disabled={isSharingReport || !isSharePrivacyReady}
           iconColor={shareButtonTextColor}
           iconSize={24}
           label="レポートを共有"

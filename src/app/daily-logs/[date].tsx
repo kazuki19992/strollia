@@ -32,6 +32,7 @@ export default function DailyLogDetailRoute(): React.ReactElement | null {
       theme={s.theme}
       premiumAccessState={s.premiumAccessState}
       activeStayPlaces={s.activeStayPlaces}
+      stayPlacesStatus={s.stayPlacesStatus}
       onBackToDailyLogs={() => router.back()}
       onOpenPremiumPaywall={s.openPremiumPaywall}
     />

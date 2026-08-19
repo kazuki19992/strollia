@@ -24,6 +24,7 @@ const mockState = {
   achievementItems: [],
   monthlyAreaReport: null,
   activeStayPlaces,
+  stayPlacesStatus: 'ready' as 'loading' | 'ready' | 'error',
   theme: { name: 'light', colors: { primary: '#000' } },
   openMap: jest.fn(),
 };
@@ -82,5 +83,17 @@ describe('月次レポートルートのPlusゲート (/monthly-report 直接遷
     render(<MonthlyReportRoute />);
 
     expect(latestMonthlyReportScreenProps?.activeStayPlaces).toEqual(activeStayPlaces);
+    expect(latestMonthlyReportScreenProps?.stayPlacesStatus).toBe('ready');
+  });
+
+  test('滞在場所の読込失敗状態も月次共有画面へ渡す', () => {
+    mockState.premiumAccessState = { isPlusActive: true };
+    (mockState as { activeStayPlaces: typeof activeStayPlaces | null }).activeStayPlaces = null;
+    mockState.stayPlacesStatus = 'error';
+
+    render(<MonthlyReportRoute />);
+
+    expect(latestMonthlyReportScreenProps?.activeStayPlaces).toBeNull();
+    expect(latestMonthlyReportScreenProps?.stayPlacesStatus).toBe('error');
   });
 });

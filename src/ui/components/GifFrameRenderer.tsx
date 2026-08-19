@@ -13,8 +13,8 @@ export type GifFrameRendererProps = {
   region: Region;
   /** このコマで表示する累積ポイント。 */
   points: LocationPoint[];
-  /** GIF共有時の非表示半径を適用する有効な滞在場所。 */
-  activeStayPlaces: StayPlace[];
+  /** GIF共有時の非表示半径を適用する有効な滞在場所。未解決時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
   /** 左上に表示する時刻ラベル（スペース埋め H:MM）。 */
   timeLabel: string;
   /** 時刻の下に表示する日付ラベル（YYYY年M月D日 (曜)）。 */
@@ -32,7 +32,7 @@ export const GifFrameRenderer = forwardRef<View, GifFrameRendererProps>(function
   { region, points, activeStayPlaces, timeLabel, dateLabel, styles, theme, onMapLoaded },
   ref,
 ) {
-  const routeSegments = toPrivacyRouteSegments(points, activeStayPlaces);
+  const routeSegments = activeStayPlaces == null ? [] : toPrivacyRouteSegments(points, activeStayPlaces);
 
   return (
     <View ref={ref} collapsable={false} style={styles.gifFrameContainer}>

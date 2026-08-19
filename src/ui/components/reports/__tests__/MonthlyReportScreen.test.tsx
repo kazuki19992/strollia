@@ -63,6 +63,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
         achievements={[]}
         monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
         theme={lightTheme}
+        activeStayPlaces={[]}
         onBackToMap={jest.fn()}
       />,
     );
@@ -112,6 +113,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
         achievements={[]}
         monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
         theme={lightTheme}
+        activeStayPlaces={[]}
         onBackToMap={jest.fn()}
       />,
     );
@@ -135,6 +137,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
         achievements={[]}
         monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
         theme={lightTheme}
+        activeStayPlaces={[]}
         onBackToMap={jest.fn()}
       />,
     );
@@ -270,5 +273,65 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
         ]),
       ]),
     );
+  });
+
+  it('滞在場所が未解決なら生ルートを描画せずレポート共有も無効にする', () => {
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[
+          {
+            id: 1,
+            recordedAt: '2026-05-01T00:00:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+          {
+            id: 2,
+            recordedAt: '2026-05-01T00:01:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35.01,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+        ]}
+        activeStayPlaces={null}
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    expect(screen.UNSAFE_queryAllByProps({ strokeWidth: 5 })).toHaveLength(0);
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
+  });
+
+  it('滞在場所の読込失敗時は共有を無効化して安全なエラー状態を表示する', () => {
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[]}
+        activeStayPlaces={null}
+        stayPlacesStatus="error"
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('滞在場所を読み込めないため、共有を準備できません。')).toBeTruthy();
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
   });
 });

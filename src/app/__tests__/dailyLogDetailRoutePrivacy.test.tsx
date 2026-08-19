@@ -31,6 +31,7 @@ const mockState = {
   theme: { name: 'light', colors: { primary: '#000' } },
   premiumAccessState: { isPlusActive: true },
   activeStayPlaces,
+  stayPlacesStatus: 'ready' as 'loading' | 'ready' | 'error',
   openPremiumPaywall: jest.fn(),
 };
 
@@ -69,5 +70,16 @@ describe('日別記録詳細ルートの共有プライバシー配線', () => {
 
     expect(screen.getByTestId('daily-log-detail-screen')).toBeTruthy();
     expect(latestDailyLogDetailScreenProps?.activeStayPlaces).toEqual(activeStayPlaces);
+    expect(latestDailyLogDetailScreenProps?.stayPlacesStatus).toBe('ready');
+  });
+
+  test('滞在場所の読込失敗状態も日別共有画面へ渡す', () => {
+    (mockState as { activeStayPlaces: typeof activeStayPlaces | null }).activeStayPlaces = null;
+    mockState.stayPlacesStatus = 'error';
+
+    render(<DailyLogDetailRoute />);
+
+    expect(latestDailyLogDetailScreenProps?.activeStayPlaces).toBeNull();
+    expect(latestDailyLogDetailScreenProps?.stayPlacesStatus).toBe('error');
   });
 });

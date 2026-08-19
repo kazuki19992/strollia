@@ -29,9 +29,9 @@ import { createRegionFromBounds } from '@/features/map/routeMapper';
 import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
-import { resolveActiveStayPlaces } from '@/features/stayPlaces/stayPlaceAccess';
+import { resolveActiveStayPlaces, type StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import { getStayPlaces } from '@/features/stayPlaces/stayPlaceRepository';
-import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import type { SaveStayPlaceInput, StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
@@ -61,6 +61,7 @@ import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
+import { useStayPlaceState } from '@/ui/hooks/useStayPlaceState';
 import type { PremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import type { AchievementListItem, PendingAchievementNotification } from '@/features/achievements/achievementRepository';
 import type { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
@@ -138,8 +139,20 @@ export type AppStateContextValue = {
   monthlyReportPoints: LocationPoint[];
   /** 月次エリアレポート。 */
   monthlyAreaReport: MonthlyAreaReport | null;
-  /** 現在の契約状態で共有・記録に使う滞在場所。 */
-  activeStayPlaces: StayPlace[];
+  /** 登録済みの滞在場所。 */
+  stayPlaces: StayPlace[];
+  /** 現在の契約状態で共有・記録に使う滞在場所。未解決・失敗時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
+  /** 滞在場所の読込状態。共有画面がfail-closed表示を選ぶために使う。 */
+  stayPlacesStatus: StayPlacesStatus;
+  /** 滞在場所を再読込する。 */
+  reloadStayPlaces: () => Promise<void>;
+  /** 滞在場所を作成して一覧・共有用リストを更新する。 */
+  createStayPlace: (input: SaveStayPlaceInput) => Promise<void>;
+  /** 滞在場所を更新して一覧・共有用リストを更新する。 */
+  updateStayPlace: (id: number, input: SaveStayPlaceInput) => Promise<void>;
+  /** 滞在場所を削除して一覧・共有用リストを更新する。 */
+  deleteStayPlace: (id: number) => Promise<void>;
   /** データ再取得。 */
   refreshData: (options?: { signal?: AbortSignal }) => Promise<RefreshDataResult>;
   /** 手動で記録を開始する。 */
@@ -450,7 +463,6 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     Promise.resolve(),
   );
   const [isReady, setIsReady] = useState(false);
-  const [stayPlaces, setStayPlaces] = useState<StayPlace[]>([]);
   const [internalScreenMode, setScreenMode] = useState<ScreenMode>('map');
   // currentScreenMode(expo-routerのパス由来)が渡されていればそれを単一ソースとして優先する。
   // 未指定時(テスト互換モード)のみ内部 state で画面を切り替える。
@@ -473,32 +485,15 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
    */
   const loadedMonthlyReportMonthRef = useRef<string | null>(null);
 
-  // DB初期化後に一度だけ登録済み場所を取得し、契約状態の変化には下のmemoで即時追従する。
-  // 登録・編集・削除後の再読み込みは、滞在場所設定用のProvider操作から接続する。
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-
-    let cancelled = false;
-    getStayPlaces()
-      .then((places) => {
-        if (!cancelled) {
-          setStayPlaces(places);
-        }
-      })
-      .catch((error: unknown) => {
-        console.warn('Failed to load stay places for shared routes:', error);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isReady]);
-  const activeStayPlaces = useMemo(
-    () => resolveActiveStayPlaces(stayPlaces, premiumAccessState.isPlusActive),
-    [premiumAccessState.isPlusActive, stayPlaces],
-  );
+  const {
+    stayPlaces,
+    activeStayPlaces,
+    status: stayPlacesStatus,
+    reloadStayPlaces,
+    createStayPlace,
+    updateStayPlace,
+    deleteStayPlace,
+  } = useStayPlaceState({ isReady, isPlusActive: premiumAccessState.isPlusActive });
 
   const {
     selectedAchievement,
@@ -1098,7 +1093,13 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     hasAnyLocationPoints,
     monthlyReportPoints,
     monthlyAreaReport,
+    stayPlaces,
     activeStayPlaces,
+    stayPlacesStatus,
+    reloadStayPlaces,
+    createStayPlace,
+    updateStayPlace,
+    deleteStayPlace,
     refreshData,
     startRecording,
     requestLocationPermission,

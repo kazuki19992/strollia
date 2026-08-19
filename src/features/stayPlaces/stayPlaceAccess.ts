@@ -1,5 +1,8 @@
 import { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
+/** 滞在場所の読み込み状態。共有経路はready以外で位置情報を出力しない。 */
+export type StayPlacesStatus = 'loading' | 'ready' | 'error';
+
 /** 作成日時、同時刻ならIDで滞在場所を安定して並べる。 */
 function compareStayPlacesByCreation(a: StayPlace, b: StayPlace): number {
   const createdAtComparison = a.createdAt.localeCompare(b.createdAt);

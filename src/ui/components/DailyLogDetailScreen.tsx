@@ -14,6 +14,7 @@ import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { createInitialRegionFromCoordinates } from '@/features/map/routeMapper';
 import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
 import type { DailyLogSummary } from '@/types/gps';
@@ -59,8 +60,10 @@ export type DailyLogDetailScreenProps = {
   theme: AppTheme;
   /** Plus課金状態。 */
   premiumAccessState: PremiumAccessState;
-  /** 共有時の非表示半径を適用する現在有効な滞在場所。 */
-  activeStayPlaces?: StayPlace[];
+  /** 共有時の非表示半径を適用する現在有効な滞在場所。未解決・失敗時はnull。 */
+  activeStayPlaces?: StayPlace[] | null;
+  /** 滞在場所の読込状態。共有開始のfail-closed判定と説明文に使う。 */
+  stayPlacesStatus?: StayPlacesStatus;
   /** 日別ログ一覧へ戻る処理。 */
   onBackToDailyLogs: () => void;
   /** ペイウォールモーダルを開く処理。 */
@@ -73,11 +76,14 @@ export function DailyLogDetailScreen({
   styles,
   theme,
   premiumAccessState,
-  activeStayPlaces = [],
+  activeStayPlaces = null,
+  stayPlacesStatus,
   onBackToDailyLogs,
   onOpenPremiumPaywall,
 }: DailyLogDetailScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
+  const resolvedStayPlacesStatus = stayPlacesStatus ?? (activeStayPlaces == null ? 'loading' : 'ready');
+  const isSharePrivacyReady = resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null;
   const { dailyPoints, dailyDetailReport, isLoadingDetail, routeEndpointsLabel, routeMaxMinutes, routeEndMinutes, setRouteEndMinutes } =
     useDailyLogDetailData(log);
   const [isSharingDetail, setIsSharingDetail] = useState(false);
@@ -111,7 +117,8 @@ export function DailyLogDetailScreen({
   // スライダーの選択肢を00/15/30/45分に揃えるため、範囲を15分境界へ丸める。
   const gifRangeMinMinute = Math.floor(recordingStartMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
   const gifRangeMaxMinute = Math.ceil(recordingEndMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
-  const canExportGif = isPlusActive && dailyPoints.length >= 2 && gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
+  const canExportGif =
+    isSharePrivacyReady && isPlusActive && dailyPoints.length >= 2 && gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
   // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
   const gifRangePoints = useMemo(
     () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifRangeEnd),
@@ -123,7 +130,7 @@ export function DailyLogDetailScreen({
     return computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, step);
   }, [gifRangeStart, gifRangeEnd]);
   const gifRangePrivacyRouteSegments = useMemo(
-    () => toPrivacyRouteSegments(gifRangePoints, activeStayPlaces),
+    () => (activeStayPlaces == null ? [] : toPrivacyRouteSegments(gifRangePoints, activeStayPlaces)),
     [activeStayPlaces, gifRangePoints],
   );
   const gifRegion = useMemo(
@@ -191,7 +198,7 @@ export function DailyLogDetailScreen({
   }
 
   async function shareDailyLogImage(): Promise<void> {
-    if (isSharingDetail) {
+    if (isSharingDetail || !isSharePrivacyReady) {
       return;
     }
 
@@ -402,8 +409,15 @@ export function DailyLogDetailScreen({
 
         {/* アクションボタン群（キャプチャ範囲外） */}
         <View style={styles.dailyLogDetailActions}>
+          {!isSharePrivacyReady && (
+            <DescriptionText styles={styles}>
+              {resolvedStayPlacesStatus === 'error'
+                ? '滞在場所を読み込めないため、共有を準備できません。'
+                : '滞在場所を確認中です。共有は確認後に利用できます。'}
+            </DescriptionText>
+          )}
           <ActionPill
-            disabled={isSharingDetail}
+            disabled={isSharingDetail || !isSharePrivacyReady}
             icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
             label={isSharingDetail ? '画像を作っています……' : 'この日の記録を共有'}
             styles={styles}
@@ -430,7 +444,7 @@ export function DailyLogDetailScreen({
         </View>
       </ScrollView>
 
-      {isSharingDetail && (
+      {isSharingDetail && isSharePrivacyReady && activeStayPlaces != null && (
         <DailyLogShareCard
           ref={shareCardRef}
           width={Dimensions.get('window').width}
@@ -452,7 +466,7 @@ export function DailyLogDetailScreen({
         />
       )}
 
-      {isGeneratingGif && gifRegion && (
+      {isGeneratingGif && gifRegion && activeStayPlaces != null && (
         <GifFrameRenderer
           ref={gifFrameRef}
           region={gifRegion}

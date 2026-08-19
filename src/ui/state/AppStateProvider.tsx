@@ -31,6 +31,7 @@ import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/custo
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { resolveActiveStayPlaces } from '@/features/stayPlaces/stayPlaceAccess';
 import { getStayPlaces } from '@/features/stayPlaces/stayPlaceRepository';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
@@ -137,6 +138,8 @@ export type AppStateContextValue = {
   monthlyReportPoints: LocationPoint[];
   /** 月次エリアレポート。 */
   monthlyAreaReport: MonthlyAreaReport | null;
+  /** 現在の契約状態で共有・記録に使う滞在場所。 */
+  activeStayPlaces: StayPlace[];
   /** データ再取得。 */
   refreshData: (options?: { signal?: AbortSignal }) => Promise<RefreshDataResult>;
   /** 手動で記録を開始する。 */
@@ -447,6 +450,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     Promise.resolve(),
   );
   const [isReady, setIsReady] = useState(false);
+  const [stayPlaces, setStayPlaces] = useState<StayPlace[]>([]);
   const [internalScreenMode, setScreenMode] = useState<ScreenMode>('map');
   // currentScreenMode(expo-routerのパス由来)が渡されていればそれを単一ソースとして優先する。
   // 未指定時(テスト互換モード)のみ内部 state で画面を切り替える。
@@ -468,6 +472,33 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
    * 未読み込み(初期値 null)のときはディープリンク等の直接到達を示す。
    */
   const loadedMonthlyReportMonthRef = useRef<string | null>(null);
+
+  // DB初期化後に一度だけ登録済み場所を取得し、契約状態の変化には下のmemoで即時追従する。
+  // 登録・編集・削除後の再読み込みは、滞在場所設定用のProvider操作から接続する。
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    let cancelled = false;
+    getStayPlaces()
+      .then((places) => {
+        if (!cancelled) {
+          setStayPlaces(places);
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn('Failed to load stay places for shared routes:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isReady]);
+  const activeStayPlaces = useMemo(
+    () => resolveActiveStayPlaces(stayPlaces, premiumAccessState.isPlusActive),
+    [premiumAccessState.isPlusActive, stayPlaces],
+  );
 
   const {
     selectedAchievement,
@@ -1067,6 +1098,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     hasAnyLocationPoints,
     monthlyReportPoints,
     monthlyAreaReport,
+    activeStayPlaces,
     refreshData,
     startRecording,
     requestLocationPermission,

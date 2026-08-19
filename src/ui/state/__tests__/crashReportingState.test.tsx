@@ -61,6 +61,10 @@ jest.mock('@/features/settings/settingsRepository', () => ({
   setSettings: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@/features/stayPlaces/stayPlaceRepository', () => ({
+  getStayPlaces: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('@/db/database', () => ({
   initializeDatabase: jest.fn().mockResolvedValue(undefined),
 }));

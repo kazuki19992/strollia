@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { StayPlaceEditorScreen } from '@/ui/components/StayPlaceEditorScreen';
 import { useAppState } from '@/ui/state/AppStateProvider';
 
-/** 滞在場所の新規作成ルート(/settings/stay-places/new)。 */
+/**
+ * Renders the route for creating a new stay place.
+ */
 export default function NewStayPlaceRoute(): React.ReactElement {
   const s = useAppState();
   const router = useRouter();

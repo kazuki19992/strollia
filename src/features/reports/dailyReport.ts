@@ -43,7 +43,12 @@ export type DailyDetailReport = {
   unlockedAchievements: DailyDetailAchievement[];
 };
 
-/** 1日のGPSポイントと保存済みエリア状態からPlus向け日別詳細レポートを作る。 */
+/**
+ * Creates a Plus daily detail report from GPS points and saved area state.
+ *
+ * @param input - The target date, GPS points, saved visited-cell data, and achievements unlocked that day.
+ * @returns The target date, visited-area count, new-area count, GPS point count, and unlocked achievements.
+ */
 export function createDailyDetailReport(input: DailyDetailReportInput): DailyDetailReport {
   const pointCellIds = new Set(input.points.map(toEffectiveLocationPoint).map((point) => coordinateToGridCell(point).cellId));
   const newAreaCount = input.visitedCells.filter((cell) => {

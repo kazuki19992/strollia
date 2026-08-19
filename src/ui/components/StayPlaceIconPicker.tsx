@@ -21,7 +21,13 @@ export type StayPlaceIconPickerProps = {
   visible: boolean;
 };
 
-/** 同梱Twemojiだけから滞在場所のアイコンを選択するモーダル。 */
+/**
+ * Displays a modal for selecting a stay-place icon from the bundled emoji catalog.
+ *
+ * @param selectedHexcode - The hexcode of the currently selected icon
+ * @param onClose - Called when the modal should close
+ * @param onSelect - Called with the selected icon's hexcode
+ */
 export function StayPlaceIconPicker({ selectedHexcode, styles, theme, visible, onClose, onSelect }: StayPlaceIconPickerProps) {
   return (
     <Modal animationType="slide" visible={visible} onRequestClose={onClose}>

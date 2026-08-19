@@ -50,7 +50,12 @@ export function resetDatabaseInitializationForTest(): void {
   initializeDatabasePromise = null;
 }
 
-/** スキーマ作成・マイグレーションの実体。 */
+/**
+ * Initializes the database schema and applies pending migrations.
+ *
+ * Creates required tables and indexes, adds missing columns, and backfills
+ * achievement local dates for existing records.
+ */
 async function runDatabaseInitialization(): Promise<void> {
   await db.execAsync(`
     PRAGMA foreign_keys = ON;

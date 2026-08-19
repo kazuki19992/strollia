@@ -37,9 +37,13 @@ export type StayPlaceState = {
 };
 
 /**
- * 滞在場所を読み込み、契約状態に応じた有効リストを管理する。
+ * Manages stay-place data, contract-eligible places, loading status, and persistence operations.
  *
- * 設定の読込・再読込中は共有をfail-closedにするため、activeStayPlacesをnullにする。
+ * Active stay places are unavailable while data is loading or an error has occurred. Free plans
+ * are limited to one stay place, and the optional callback is invoked when creation is disallowed.
+ *
+ * @param input - Readiness, subscription status, persistence access, and optional upgrade callback.
+ * @returns The stay-place state and operations for reloading, creating, updating, and deleting places.
  */
 export function useStayPlaceState(input: {
   isReady: boolean;

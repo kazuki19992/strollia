@@ -4,15 +4,9 @@ import { DailyLogDetailScreen } from '@/ui/components/DailyLogDetailScreen';
 import { useAppState } from '@/ui/state/AppStateProvider';
 
 /**
- * 日別記録詳細ルート(/daily-logs/[date])。
+ * Renders the daily log detail screen for the date specified in the route.
  *
- * URL パラメータの date 文字列から AppStateProvider の dailyLogs を検索し
- * DailyLogDetailScreen を描画する。
- *
- * 設計上の注意:
- * - ナビゲーションパラメータは文字列のみ許容するため、DailyLogSummary オブジェクトは
- *   渡さず date 文字列で検索する。
- * - ログが見つからない場合は何も描画しない(異常系)。
+ * @returns The matching daily log detail screen, or `null` when no log exists for the requested date.
  */
 export default function DailyLogDetailRoute(): React.ReactElement | null {
   const { date } = useLocalSearchParams<{ date: string }>();

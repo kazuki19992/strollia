@@ -25,7 +25,13 @@ export type RouteMapPanelProps = {
   onMapLoaded?: () => void;
 };
 
-/** 保存済みルートを、ユーザーがスクロール・ズームできるMapViewで表示する。 */
+/**
+ * Displays a saved GPS route in an interactive map.
+ *
+ * @param activeStayPlaces - Stay places used to apply privacy filtering; `null` displays the empty state while stay data is unresolved.
+ * @param regionPoints - Points used to determine the initial map region when privacy filtering is inactive.
+ * @returns A map with route segments, or an empty-state panel when no route can be displayed.
+ */
 export function RouteMapPanel({
   emptyLabel,
   points,

@@ -32,10 +32,13 @@ export type LocationRecordingSessionOptions = {
 };
 
 /**
- * 最新保存点を一度だけ読み込み、位置情報を継続的に保存するセッションを作る。
+ * Creates a session that continuously records location updates while preserving state between calls.
  *
- * 前景監視では位置情報が1件ずつ届くため、呼び出し間で前回点を保持して
- * 距離・時系列判定とVisited Grid補間を背景タスクの一括処理と一致させる。
+ * Initializes the database and loads the latest saved location once. Location updates received during
+ * GPX import are buffered for later processing.
+ *
+ * @param options - Optional configuration for loading active stay places used for location snapping.
+ * @returns A location recording session.
  */
 export async function createLocationRecordingSession(options: LocationRecordingSessionOptions = {}): Promise<LocationRecordingSession> {
   await initializeDatabase();
@@ -115,7 +118,12 @@ export async function createLocationRecordingSession(options: LocationRecordingS
   };
 }
 
-/** 滞在場所一覧の読込失敗時も生座標の記録を止めないため、吸着なしへ安全にフォールバックする。 */
+/**
+ * Loads the active stay places while allowing location recording to continue if loading fails.
+ *
+ * @param getActiveStayPlaces - Optional function that loads the active stay places.
+ * @returns The active stay places, or an empty list when no loader is configured or loading fails.
+ */
 async function getActiveStayPlacesSafely(getActiveStayPlaces: (() => Promise<StayPlace[]>) | undefined): Promise<StayPlace[]> {
   if (!getActiveStayPlaces) {
     return [];
@@ -130,18 +138,10 @@ async function getActiveStayPlacesSafely(getActiveStayPlaces: (() => Promise<Sta
 }
 
 /**
- * GPXインポート優先モードを終了し、インポート中にバッファへ退避していた位置情報を
- * 通常の保存規則(距離・時系列判定、Visited Grid補間、実績処理)でまとめて取り込む。
+ * Ends GPX import priority and processes buffered locations using normal recording rules.
  *
- * インポートの成否にかかわらず必ず呼ぶこと(finally推奨)。呼ばないと
- * 位置情報がバッファに残ったまま以後の記録も退避され続ける。
- *
- * 取り込みに失敗した場合も位置情報は失われない:
- * - セッション生成の失敗: 退避分をこの関数がバッファへ戻す
- * - 保存処理の途中失敗: recordLocations 自身が未確定分だけをバッファへ戻す
- *   (この関数では戻さない。両方で戻すと同じ位置情報が二重にバッファへ入り、
- *   次回再処理で重複保存や daily_logs の重複加算につながるため)
- * 戻した分は次の位置情報受信時(recordLocations)に受信順を保って回収される。
+ * Buffered locations are restored if session creation fails. Processing failures preserve
+ * unconfirmed locations through the recording session and propagate the error.
  */
 export async function flushLocationsBufferedDuringGpxImport(options: LocationRecordingSessionOptions = {}): Promise<void> {
   const drained = endGpxImportPriorityAndDrain();

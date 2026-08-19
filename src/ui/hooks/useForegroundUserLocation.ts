@@ -24,10 +24,16 @@ export type ForegroundUserLocationOptions = {
 };
 
 /**
- * 前景の位置情報を1つの購読で取得し、必要に応じて現在地表示とGPS保存へ渡す。
+ * Subscribes to foreground location updates for display and optional GPS recording.
  *
- * 最終取得位置は表示だけに使い、watchから届く新しい観測だけを保存する。
- * 保存は直列化し、距離・時系列判定に使うセッション状態の競合を防ぐ。
+ * The last known position is sent only to the display callback. New observations
+ * are recorded sequentially when persistence is enabled.
+ *
+ * @param enabled - Whether to start the foreground location subscription
+ * @param shouldPersist - Whether to persist new location observations
+ * @param onLocation - Callback invoked with the latitude, longitude, and speed of each displayed location
+ * @param onError - Callback invoked when setup or recording fails
+ * @param getActiveStayPlaces - Optional callback used to retrieve active stay places for recording
  */
 export function useForegroundUserLocation({
   enabled,

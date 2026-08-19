@@ -20,12 +20,22 @@ export const STAY_PLACE_EMOJIS: readonly StayPlaceEmoji[] = GENERATED_STAY_PLACE
 /** 未知の保存値を許可しないための、固定カタログのhexcode索引。 */
 const stayPlaceEmojiByHexcode = new Map(STAY_PLACE_EMOJIS.map((emoji) => [emoji.hexcode, emoji]));
 
-/** 指定値が固定カタログに含まれる保存可能なhexcodeかを返す。 */
+/**
+ * Determines whether a hexcode is included in the stay-place emoji catalog.
+ *
+ * @param value - The emoji hexcode to check
+ * @returns `true` if the hexcode is included in the catalog, `false` otherwise.
+ */
 export function isStayPlaceEmojiHexcode(value: string): boolean {
   return stayPlaceEmojiByHexcode.has(value);
 }
 
-/** 指定hexcodeの同梱Twemoji情報を返し、未知の値はfail closedでnullにする。 */
+/**
+ * Finds the stay-place emoji associated with a hexcode.
+ *
+ * @param value - The emoji hexcode to look up
+ * @returns The matching emoji entry, or `null` if the hexcode is unknown
+ */
 export function getStayPlaceEmoji(value: string): StayPlaceEmoji | null {
   return stayPlaceEmojiByHexcode.get(value) ?? null;
 }

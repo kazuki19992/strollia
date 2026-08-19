@@ -3,7 +3,11 @@ import { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 /** 滞在場所の読み込み状態。共有経路はready以外で位置情報を出力しない。 */
 export type StayPlacesStatus = 'loading' | 'ready' | 'error';
 
-/** 作成日時、同時刻ならIDで滞在場所を安定して並べる。 */
+/**
+ * Compares stay places by creation timestamp, using ascending ID order for ties.
+ *
+ * @returns A negative number if `a` precedes `b`, a positive number if `a` follows `b`, or `0` if they are equivalent.
+ */
 function compareStayPlacesByCreation(a: StayPlace, b: StayPlace): number {
   const createdAtComparison = a.createdAt.localeCompare(b.createdAt);
 
@@ -11,10 +15,11 @@ function compareStayPlacesByCreation(a: StayPlace, b: StayPlace): number {
 }
 
 /**
- * 現在の契約状態で吸着・共有範囲に使える滞在場所を登録順で返す。
+ * Determines which stay places are available for the current subscription.
  *
- * 無料版・解約中でも保存済みの場所は削除せず、最初に登録した1件だけを
- * 有効にするため、入力配列は変更せずに並べ替えたコピーから導出する。
+ * @param stayPlaces - The saved stay places to evaluate.
+ * @param isPlusActive - Whether the Plus subscription is active.
+ * @returns The stay places in registration order, including all places for active Plus subscriptions or only the earliest registered place otherwise.
  */
 export function resolveActiveStayPlaces(stayPlaces: StayPlace[], isPlusActive: boolean): StayPlace[] {
   const orderedStayPlaces = [...stayPlaces].sort(compareStayPlacesByCreation);

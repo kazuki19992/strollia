@@ -19,7 +19,12 @@ export function parseGpxToLocationPoints(gpx: string): NewLocationPoint[] {
   return trkpts.flatMap((trkpt) => toLocationPoint(trkpt));
 }
 
-/** GPXのtrkptを保存用GPS点へ変換し、時刻や座標が壊れた点は取り込まない。 */
+/**
+ * Converts a GPX track point into a storable location point.
+ *
+ * @param trkpt - The GPX track point containing coordinates, time, and optional elevation.
+ * @returns An array containing the normalized location point, or an empty array when the coordinates or timestamp are invalid.
+ */
 function toLocationPoint(trkpt: XmlNode): NewLocationPoint[] {
   const latitude = toFiniteNumber(trkpt['@_lat']);
   const longitude = toFiniteNumber(trkpt['@_lon']);

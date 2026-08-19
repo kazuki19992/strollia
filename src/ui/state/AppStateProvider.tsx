@@ -399,13 +399,12 @@ type AppStateProviderProps = {
 };
 
 /**
- * アプリ全体の状態・フック・コールバックを提供する Context Provider。
+ * Provides application-wide state, settings, and navigation callbacks through context.
  *
- * 旧 App.tsx のフック結線部を一括して受け持ち、expo-router 移行後も
- * 既存フックの呼び出し順序・依存関係を完全に維持する。
- *
- * navigator prop を渡すと画面遷移を expo-router の router.push 経由にできる。
- * 未指定時は内部の screenMode 切り替えで動作する(テスト互換モード)。
+ * @param children - The components rendered within the provider.
+ * @param navigator - Optional navigation callbacks used instead of internal screen state.
+ * @param currentScreenMode - Optional externally controlled screen mode.
+ * @returns The application state context provider element.
  */
 export function AppStateProvider({ children, navigator, currentScreenMode }: AppStateProviderProps): React.ReactElement {
   const colorScheme = useColorScheme();
@@ -942,7 +941,9 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
-  /** 設定画面へ移動する。 */
+  /**
+   * Navigates to the settings screen.
+   */
   function openSettings(): void {
     if (navigator?.openSettings) {
       triggerLightImpactHaptic();
@@ -952,7 +953,9 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
-  /** 滞在場所の設定画面へ移動する。 */
+  /**
+   * Navigates to the stay places settings screen.
+   */
   function openStayPlaces(): void {
     if (navigator?.openStayPlaces) {
       triggerLightImpactHaptic();
@@ -962,7 +965,9 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
-  /** 設定画面から初回チュートリアルを再表示する。 */
+  /**
+   * Reopens the first-launch tutorial in replay mode.
+   */
   function openFirstLaunchTutorial(): void {
     triggerSelectionHaptic();
     setFirstLaunchTutorialMode('replay');
@@ -976,7 +981,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     });
   }
 
-  /** GPXファイルを選択し、既存データ優先で端末内DBへ取り込む。 */
+  /**
+   * Imports GPS points from a user-selected GPX file while preserving existing data.
+   *
+   * Displays import status and reports completion or failure through alerts. Interrupted imports can be safely retried without duplicating previously imported points.
+   */
   async function importGpx(): Promise<void> {
     if (isImportingGpxRef.current) {
       return;

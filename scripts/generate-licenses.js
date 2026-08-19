@@ -23,7 +23,10 @@ const STATIC_ASSET_LICENSES = [
   },
 ];
 
-/** license-checker-rseidelsohnのESM APIを読み込む。 */
+/**
+ * Loads the license checker module.
+ * @returns {object} The license checker module namespace.
+ */
 async function loadLicenseChecker() {
   return import('license-checker-rseidelsohn');
 }
@@ -139,9 +142,9 @@ function decodeXmlEntities(value) {
 }
 
 /**
- * CocoaPods acknowledgements plistからiOS native依存のライセンス情報を読む。
+ * Collect iOS dependency license records from CocoaPods acknowledgement plists.
  *
- * @returns {OssLicenseEntry[]}
+ * @returns {OssLicenseEntry[]} The deduplicated iOS license entries found in the acknowledgement plists.
  */
 function collectIosAcknowledgements() {
   const supportFilesPath = path.join(PROJECT_ROOT, 'ios/Pods/Target Support Files');
@@ -183,22 +186,21 @@ function collectIosAcknowledgements() {
 }
 
 /**
- * npm、iOS native、同梱アセットのライセンスをアプリ表示用に統合する。
+ * Combines npm, iOS, and bundled asset license entries for display in the app.
  *
- * @param {OssLicenseEntry[]} npmLicenses - npm由来のライセンス。
- * @param {OssLicenseEntry[]} iosLicenses - iOS native由来のライセンス。
- * @returns {OssLicenseEntry[]}
+ * @param {OssLicenseEntry[]} npmLicenses - License entries from npm packages.
+ * @param {OssLicenseEntry[]} iosLicenses - License entries from native iOS dependencies.
+ * @returns {OssLicenseEntry[]} The combined license entries sorted by name.
  */
 function mergeOssLicenses(npmLicenses, iosLicenses) {
   return [...npmLicenses, ...iosLicenses, ...STATIC_ASSET_LICENSES].sort((left, right) => left.name.localeCompare(right.name));
 }
 
 /**
- * 生成済みライセンスデータをTypeScriptとして書き出す。
+ * Writes OSS license data as a generated TypeScript module.
  *
- * @param {OssLicenseEntry[]} licenses - 表示用ライセンス一覧。
- * @param {string} generatedAt - 生成日時。
- * @returns {void}
+ * @param {OssLicenseEntry[]} licenses - License entries to include in the generated module.
+ * @param {string} generatedAt - Timestamp recorded in the generated module.
  */
 function writeTypeScriptOutput(licenses, generatedAt) {
   const source = `/**\n * OSSライセンス表示用の生成済みデータ。\n * 手動編集せず、npm run generate:licenses で再生成する。\n */\nexport type OssLicenseSource = 'npm' | 'ios' | 'asset';\n\nexport type OssLicenseEntry = {\n  id: string;\n  name: string;\n  version: string;\n  licenses: string;\n  repository: string | null;\n  source: OssLicenseSource;\n  licenseText: string | null;\n  noticeText: string | null;\n};\n\nexport const OSS_LICENSES_GENERATED_AT = ${JSON.stringify(generatedAt)};\n\nexport const OSS_LICENSES: OssLicenseEntry[] = ${JSON.stringify(licenses, null, 2)};\n`;
@@ -208,9 +210,7 @@ function writeTypeScriptOutput(licenses, generatedAt) {
 }
 
 /**
- * npmと存在するnative acknowledgementsからアプリ同梱用ライセンスデータを生成する。
- *
- * @returns {Promise<void>}
+ * Generates the application's bundled OSS license data from production dependencies and native acknowledgements.
  */
 async function main() {
   const checker = await loadLicenseChecker();

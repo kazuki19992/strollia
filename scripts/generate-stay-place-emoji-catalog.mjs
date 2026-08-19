@@ -30,21 +30,20 @@ const STAY_PLACE_EMOJI_SELECTIONS = [
 ];
 
 /**
- * Emojibase shortcode presetの値を常に配列として扱える形へ正規化する。
- *
- * @param {string | string[]} shortcodes - Emojibaseが返すshortcode値。
- * @returns {string[]}
+ * Normalizes an Emojibase shortcode value to an array.
+ * @param {string | string[]} shortcodes - The shortcode value returned by Emojibase.
+ * @returns {string[]} The shortcodes as an array.
  */
 function normalizeShortcodes(shortcodes) {
   return Array.isArray(shortcodes) ? shortcodes : [shortcodes];
 }
 
 /**
- * 指定shortcodeをemojibaseプリセットだけから逆引きし、一意なhexcodeを返す。
- *
- * @param {Record<string, string | string[]>} shortcodePreset - emojibase shortcode preset。
- * @param {string} shortcode - 解決するshortcode。
- * @returns {string}
+ * Resolves a shortcode to its unique emoji hexcode.
+ * @param {Record<string, string | string[]>} shortcodePreset - The shortcode mappings to search.
+ * @param {string} shortcode - The shortcode to resolve.
+ * @returns {string} The matching emoji hexcode.
+ * @throws {Error} If the shortcode does not resolve to exactly one hexcode.
  */
 function resolveUniqueHexcode(shortcodePreset, shortcode) {
   const matches = Object.entries(shortcodePreset)
@@ -59,11 +58,11 @@ function resolveUniqueHexcode(shortcodePreset, shortcode) {
 }
 
 /**
- * 生成済みカタログに必要な日本語ラベルとUnicode文字列をEmojibaseデータから取得する。
- *
- * @param {Array<{ hexcode: string; label: string; emoji: string }>} emojiData - Emojibase日本語データ。
- * @param {string} hexcode - 取得する絵文字のhexcode。
- * @returns {{ label: string; unicode: string }}
+ * Retrieves Japanese label and Unicode metadata for an emoji.
+ * @param {Array<{hexcode: string, label: string, emoji: string}>} emojiData - Japanese Emojibase metadata.
+ * @param {string} hexcode - Hexcode of the emoji to find.
+ * @returns {{label: string, unicode: string}} The emoji's label and Unicode character.
+ * @throws {Error} If matching metadata or required fields are missing.
  */
 function findEmojiMetadata(emojiData, hexcode) {
   const emoji = emojiData.find((item) => item.hexcode === hexcode);
@@ -76,10 +75,11 @@ function findEmojiMetadata(emojiData, hexcode) {
 }
 
 /**
- * Metroが静的に解析できる同梱Twemoji PNGが存在することを検証する。
+ * Verifies that the bundled Twemoji PNG exists and contains data.
  *
- * @param {string} hexcode - Twemojiアセット名に使うhexcode。
- * @returns {string}
+ * @param {string} hexcode - The hexcode used to identify the Twemoji asset.
+ * @returns {string} The lowercase PNG filename.
+ * @throws {Error} If the asset is missing or empty.
  */
 function assertTwemojiAsset(hexcode) {
   const fileName = `${hexcode.toLowerCase()}.png`;
@@ -93,10 +93,9 @@ function assertTwemojiAsset(hexcode) {
 }
 
 /**
- * TypeScriptの静的Metro requireを含む固定カタログを組み立てる。
- *
- * @param {Array<{ hexcode: string; label: string; unicode: string; assetFileName: string }>} emojis - 生成対象の絵文字。
- * @returns {string}
+ * Generates TypeScript source for the fixed stay-place emoji catalog.
+ * @param {Array<{ hexcode: string; label: string; unicode: string; assetFileName: string }>} emojis - The emoji entries to include in the catalog.
+ * @return {string} The generated TypeScript source code.
  */
 function createGeneratedCatalogSource(emojis) {
   const rows = emojis
@@ -111,7 +110,10 @@ function createGeneratedCatalogSource(emojis) {
   return `/**\n * Emojibaseのemojibase shortcode presetと日本語データから生成した固定Twemojiカタログ。\n * 手動編集せず、node scripts/generate-stay-place-emoji-catalog.mjs で再生成する。\n */\nimport type { ImageSourcePropType } from 'react-native';\n\nexport type GeneratedStayPlaceEmoji = {\n  hexcode: string;\n  label: string;\n  unicode: string;\n  asset: ImageSourcePropType;\n};\n\nexport const GENERATED_STAY_PLACE_EMOJIS: readonly GeneratedStayPlaceEmoji[] = [\n${rows}\n];\n`;
 }
 
-/** 固定カタログを再生成する。 */
+/**
+ * Regenerates the fixed stay-place emoji catalog.
+ * @throws {Error} If an emoji shortcode resolves unexpectedly, duplicates an existing entry, lacks required metadata or assets, or the catalog does not contain exactly 12 entries.
+ */
 async function main() {
   // shortcodeの逆引きには、他プリセットを混在させずemojibaseだけを使う。
   const shortcodePreset = JSON.parse(

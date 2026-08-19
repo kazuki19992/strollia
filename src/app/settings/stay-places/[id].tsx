@@ -4,7 +4,11 @@ import { ActivityIndicator, View } from 'react-native';
 import { StayPlaceEditorScreen } from '@/ui/components/StayPlaceEditorScreen';
 import { useAppState } from '@/ui/state/AppStateProvider';
 
-/** 滞在場所の編集ルート(/settings/stay-places/[id])。 */
+/**
+ * Renders the route for editing a stay place.
+ *
+ * @returns The loading view, stay-place editor, or redirect to the stay-place list.
+ */
 export default function EditStayPlaceRoute(): React.ReactElement {
   const s = useAppState();
   const router = useRouter();

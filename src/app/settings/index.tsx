@@ -5,9 +5,9 @@ import { SettingsScreen } from '@/ui/components/SettingsScreen';
 import { useAppState } from '@/ui/state/AppStateProvider';
 
 /**
- * 設定トップルート(/settings)。
+ * Renders the settings route and connects application state and navigation to the settings screen.
  *
- * AppStateProvider から設定関連状態・操作を取得し SettingsScreen を描画する。
+ * @returns The settings screen route element.
  */
 export default function SettingsRoute(): React.ReactElement {
   const s = useAppState();

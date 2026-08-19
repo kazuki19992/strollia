@@ -3,7 +3,11 @@ import { useRouter } from 'expo-router';
 import { StayPlacesScreen } from '@/ui/components/StayPlacesScreen';
 import { useAppState } from '@/ui/state/AppStateProvider';
 
-/** 滞在場所一覧ルート(/settings/stay-places)。 */
+/**
+ * Renders the stay places settings route.
+ *
+ * @returns The stay places settings screen.
+ */
 export default function StayPlacesRoute(): React.ReactElement {
   const s = useAppState();
   const router = useRouter();

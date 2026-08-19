@@ -4,9 +4,10 @@ import type { AppTheme } from '@/theme/theme';
 import { getSettingsDerivedColors, hexToRgba } from './styleHelpers';
 
 /**
- * 設定画面・共通ヘッダー・リスト行・フォーム項目・色プリセット・アバウト・ライセンス関連のスタイルを生成する。
+ * Creates theme-aware styles for settings screens and related interfaces.
  *
- * @param theme - アプリテーマ。
+ * @param theme - The application theme used to derive colors and style variants.
+ * @returns A readonly React Native style object for settings and related screens.
  */
 export function createSettingsStyles(theme: AppTheme) {
   const { colors } = theme;

@@ -20,7 +20,12 @@ const pointColumns = `
   altitude_accuracy as altitudeAccuracy
 `;
 
-/** GPSポイントを保存し、日別サマリーの点数と距離を同時に更新する。 */
+/**
+ * Saves a GPS point and updates the corresponding daily summary.
+ *
+ * @param point - The GPS point to save
+ * @returns The ID of the inserted location point
+ */
 export async function insertLocationPoint(point: NewLocationPoint): Promise<number> {
   const now = new Date().toISOString();
   const previousPoint = await getLatestLocationPointByDate(point.localDate);
@@ -163,7 +168,11 @@ export type LocationPointsBounds = {
   pointCount: number;
 };
 
-/** 全ポイントの緯度経度境界と件数をSQLで集計する。有効ポイントが0件ならnull。 */
+/**
+ * Retrieves the latitude and longitude bounds for recorded location points.
+ *
+ * @returns The coordinate bounds and point count, or `null` when no valid coordinates are available.
+ */
 export async function getLocationPointsBounds(): Promise<LocationPointsBounds | null> {
   const row = await db.getFirstAsync<{
     minLatitude: number | null;
@@ -225,7 +234,9 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
   );
 }
 
-/** ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。 */
+/**
+ * Deletes all user-related location, visit, achievement, administrative-area, stay-place, and daily-log data in a single transaction.
+ */
 export async function deleteAllUserData(): Promise<void> {
   await withExclusiveTransaction(async (txn) => {
     await txn.runAsync('DELETE FROM visited_cells');

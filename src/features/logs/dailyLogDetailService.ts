@@ -20,17 +20,10 @@ export type DailyLogDetailData = {
 };
 
 /**
- * 日別詳細画面に必要なデータをリポジトリから集約して返す。
+ * Aggregates the data required for the daily log detail screen.
  *
- * 内部で以下を並列実行する:
- * - 訪問エリアの保存状態取得（`getVisitedCellsByIds`）
- * - 解除済み実績取得（`getAchievementUnlocksByDate`）
- * - 出発地点・到着地点の行政区域名取得（`getLocationPointAdminAreaName`）
- *
- * 取得順序・並列性はリファクタ前の `DailyLogDetailScreen.loadDetail` と同一に保つ。
- *
- * @param localDate 対象日。YYYY-MM-DD 形式。
- * @returns 集約データ。
+ * @param localDate - The target date in `YYYY-MM-DD` format
+ * @returns The daily log points, detail report, and route endpoint label
  */
 export async function fetchDailyLogDetailData(localDate: string): Promise<DailyLogDetailData> {
   const points = await getLocationPointsByDate(localDate);

@@ -7,9 +7,10 @@ type EffectiveCoordinatePoint = {
 };
 
 /**
- * 保存済みポイントを、記録時に決定した有効座標で読むための共通変換。
+ * Applies stored effective coordinates to a location point when both coordinates are valid.
  *
- * 旧データや片方だけ・範囲外の有効座標は、位置情報を捏造せず生座標のまま返す。
+ * @param point - The location point to convert.
+ * @returns A point with valid effective coordinates applied, or the original point when either effective coordinate is unavailable or outside its valid geographic range.
  */
 export function toEffectiveLocationPoint<T extends EffectiveCoordinatePoint>(point: T): T {
   const { effectiveLatitude, effectiveLongitude } = point;
@@ -21,12 +22,22 @@ export function toEffectiveLocationPoint<T extends EffectiveCoordinatePoint>(poi
   return { ...point, latitude: effectiveLatitude, longitude: effectiveLongitude };
 }
 
-/** 有効緯度として保存値を使えるか判定する。 */
+/**
+ * Validates a latitude value.
+ *
+ * @param value - The value to validate as a latitude
+ * @returns `true` if the value is finite and between -90 and 90 degrees, `false` otherwise
+ */
 function isValidLatitude(value: number | null | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= -90 && value <= 90;
 }
 
-/** 有効経度として保存値を使えるか判定する。 */
+/**
+ * Determines whether a value is a valid geographic longitude.
+ *
+ * @param value - The value to validate.
+ * @returns `true` if the value is finite and within -180 to 180 degrees, `false` otherwise.
+ */
 function isValidLongitude(value: number | null | undefined): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= -180 && value <= 180;
 }

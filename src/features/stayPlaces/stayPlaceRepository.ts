@@ -17,7 +17,12 @@ const stayPlaceColumns = `
 /** 共有時に非表示にできる半径の集合。 */
 const privacyRadiusMeterSet = new Set<number>(STAY_PLACE_PRIVACY_RADIUS_METERS);
 
-/** 保存前に滞在場所入力を検証し、不正な値をSQLiteへ到達させない。 */
+/**
+ * Validates the fields required to save a stay place.
+ *
+ * @param input - The stay place values to validate
+ * @throws Error if any field contains an invalid value
+ */
 function validateSaveStayPlaceInput(input: SaveStayPlaceInput): void {
   if (input.name.trim().length === 0) {
     throw new Error('滞在場所名を入力してください');
@@ -40,7 +45,11 @@ function validateSaveStayPlaceInput(input: SaveStayPlaceInput): void {
   }
 }
 
-/** 滞在場所を作成日時、同時刻ならIDの昇順で取得する。 */
+/**
+ * Retrieves all stay places ordered by creation time and then by ID in ascending order.
+ *
+ * @returns The retrieved stay places.
+ */
 export async function getStayPlaces(): Promise<StayPlace[]> {
   return db.getAllAsync<StayPlace>(`
     SELECT ${stayPlaceColumns}
@@ -49,7 +58,12 @@ export async function getStayPlaces(): Promise<StayPlace[]> {
   `);
 }
 
-/** 入力を検証してから、滞在場所を排他トランザクションで新規保存する。 */
+/**
+ * Creates a stay place after validating its input.
+ *
+ * @param input - The stay-place details to save
+ * @returns The ID of the newly created stay place
+ */
 export async function createStayPlace(input: SaveStayPlaceInput): Promise<number> {
   validateSaveStayPlaceInput(input);
 
@@ -80,7 +94,12 @@ export async function createStayPlace(input: SaveStayPlaceInput): Promise<number
   return id;
 }
 
-/** 入力を検証してから、既存の滞在場所を排他トランザクションで更新する。 */
+/**
+ * Updates an existing stay place with validated details.
+ *
+ * @param id - The ID of the stay place to update
+ * @param input - The updated stay place details
+ */
 export async function updateStayPlace(id: number, input: SaveStayPlaceInput): Promise<void> {
   validateSaveStayPlaceInput(input);
 
@@ -105,7 +124,11 @@ export async function updateStayPlace(id: number, input: SaveStayPlaceInput): Pr
   });
 }
 
-/** 指定IDの滞在場所だけを排他トランザクションで削除する。 */
+/**
+ * Deletes the stay place identified by the given ID.
+ *
+ * @param id - The ID of the stay place to delete
+ */
 export async function deleteStayPlace(id: number): Promise<void> {
   await withExclusiveTransaction(async (txn) => {
     await txn.runAsync('DELETE FROM stay_places WHERE id = ?', id);

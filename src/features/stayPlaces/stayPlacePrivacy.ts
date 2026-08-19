@@ -1,7 +1,12 @@
 import type { RouteCoordinate } from '@/features/map/routeMapper';
 import { isStayPlacePrivacyRadiusMeters, type StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
-/** 共有時の非表示半径を設定画面全体で同じ単位へ整形する。 */
+/**
+ * Formats a stay place's privacy radius for display.
+ *
+ * @param privacyRadiusMeters - The privacy radius in meters, or `null` to include the location.
+ * @returns The radius in kilometers or meters, or `含める` when the radius is `null`.
+ */
 export function formatStayPlacePrivacyRadius(privacyRadiusMeters: number | null): string {
   if (privacyRadiusMeters === null) {
     return '含める';
@@ -11,10 +16,10 @@ export function formatStayPlacePrivacyRadius(privacyRadiusMeters: number | null)
 }
 
 /**
- * 共有に使う非表示設定が安全に解釈できるか判定する。
+ * Validates privacy settings for all stay places before sharing.
  *
- * 不正な半径を黙って無視すると共有画像に本来隠すべき経路が出るため、1件でも壊れて
- * いれば共有を停止する。半径nullの場所は描画を隠さないため座標を要求しない。
+ * @param stayPlaces - The stay places whose privacy settings are validated
+ * @returns `true` if every configured privacy radius and its coordinates are valid, `false` otherwise.
  */
 export function hasValidStayPlacePrivacyConfiguration(stayPlaces: StayPlace[]): boolean {
   return stayPlaces.every((stayPlace) => {
@@ -26,7 +31,12 @@ export function hasValidStayPlacePrivacyConfiguration(stayPlaces: StayPlace[]): 
   });
 }
 
-/** 地図・距離判定で使える有限の緯度経度かを判定する。 */
+/**
+ * Validates that a coordinate is geographically valid.
+ *
+ * @param coordinate - The latitude and longitude to validate
+ * @returns `true` if both values are finite and within their valid geographic ranges, `false` otherwise.
+ */
 function isValidCoordinate(coordinate: RouteCoordinate): boolean {
   return (
     Number.isFinite(coordinate.latitude) &&

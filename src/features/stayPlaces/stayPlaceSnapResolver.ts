@@ -35,11 +35,14 @@ export type StayPlaceSnapResult = {
 };
 
 /**
- * 生座標と現在有効な滞在場所から、この1点に保存する有効座標を決める。
+ * Determines the coordinate and stay-place snapping state for a route point.
  *
- * 入場・退出とも同じ条件が3点連続した3点目でだけ切り替えるため、先行する
- * 保存済みポイントを後から書き換えない。吸着先が契約変更や削除で無効になった
- * 場合は、この位置更新から直ちに未吸着へ戻す。
+ * Invalid coordinates and points without a confirmed eligible stay place retain their
+ * raw coordinates. Entry and exit transitions require three consecutive qualifying
+ * points.
+ *
+ * @param input - The current snapping state, raw coordinate, and active stay places
+ * @returns The coordinate to store, updated snapping state, and snapped stay place when applicable
  */
 export function resolveStayPlaceSnap(input: {
   state: StayPlaceSnapState;
@@ -63,7 +66,12 @@ export function resolveStayPlaceSnap(input: {
   return resolveWhileInactive({ state: inactiveState, raw, activeStayPlaces });
 }
 
-/** 吸着中の場所に対する退出ヒステリシスを解決する。 */
+/**
+ * Resolves exit hysteresis for the currently snapped stay place.
+ *
+ * @param input - The current snap state, raw coordinate, and active stay place.
+ * @returns The snapped stay-place result while fewer than three consecutive points are outside the radius; otherwise, the raw coordinate with cleared snap state.
+ */
 function resolveWhileActive(input: { state: StayPlaceSnapState; raw: RouteCoordinate; activeStayPlace: StayPlace }): StayPlaceSnapResult {
   const { state, raw, activeStayPlace } = input;
 
@@ -90,7 +98,12 @@ function resolveWhileActive(input: { state: StayPlaceSnapState; raw: RouteCoordi
   });
 }
 
-/** 未吸着時の最寄り候補と入場ヒステリシスを解決する。 */
+/**
+ * Resolves the nearest stay-place candidate while snapping is inactive and confirms entry after consecutive candidate points.
+ *
+ * @param input - The current snap state, raw coordinate, and active stay places.
+ * @returns The updated snap state and effective coordinate, snapping to the candidate after three consecutive points.
+ */
 function resolveWhileInactive(input: {
   state: StayPlaceSnapState;
   raw: RouteCoordinate;
@@ -126,7 +139,13 @@ function resolveWhileInactive(input: {
   };
 }
 
-/** 半径内の滞在場所から最寄りを選び、同距離では作成日時・ID順で安定させる。 */
+/**
+ * Finds the nearest active stay place within the snapping radius.
+ *
+ * @param raw - The raw route coordinate used to measure proximity
+ * @param activeStayPlaces - The active stay places eligible for snapping
+ * @returns The nearest eligible stay place, or `null` when none is within the radius
+ */
 function findClosestEligibleStayPlace(raw: RouteCoordinate, activeStayPlaces: StayPlace[]): StayPlace | null {
   let closest: { stayPlace: StayPlace; distance: number } | null = null;
 
@@ -148,19 +167,36 @@ function findClosestEligibleStayPlace(raw: RouteCoordinate, activeStayPlaces: St
   return closest?.stayPlace ?? null;
 }
 
-/** 指定地点が滞在場所の吸着半径内か判定する。 */
+/**
+ * Determines whether a coordinate is within the stay place snapping radius.
+ *
+ * @param raw - The coordinate to check
+ * @param stayPlace - The stay place whose coordinates define the center of the radius
+ * @returns `true` if the stay place has valid coordinates and the raw coordinate is within 50 meters of it, `false` otherwise.
+ */
 function isWithinSnapRadius(raw: RouteCoordinate, stayPlace: StayPlace): boolean {
   return isValidCoordinate(stayPlace) && distanceMeters(raw, stayPlace) <= STAY_PLACE_SNAP_RADIUS_METERS;
 }
 
-/** 作成日時、同時刻ならIDで滞在場所を安定して比較する。 */
+/**
+ * Orders stay places by creation timestamp and then by numeric ID.
+ *
+ * @param a - The first stay place to compare
+ * @param b - The second stay place to compare
+ * @returns A negative number if `a` precedes `b`, a positive number if `a` follows `b`, or `0` if their ordering values are equal
+ */
 function compareStayPlaceCreation(a: StayPlace, b: StayPlace): number {
   const createdAtComparison = a.createdAt.localeCompare(b.createdAt);
 
   return createdAtComparison !== 0 ? createdAtComparison : a.id - b.id;
 }
 
-/** 有限値かつ地理座標として有効な緯度経度か判定する。 */
+/**
+ * Determines whether a coordinate contains finite latitude and longitude values within valid geographic bounds.
+ *
+ * @param coordinate - The coordinate to validate
+ * @returns `true` if the latitude is between -90 and 90 and the longitude is between -180 and 180, `false` otherwise.
+ */
 function isValidCoordinate(coordinate: RouteCoordinate): boolean {
   return (
     Number.isFinite(coordinate.latitude) &&
@@ -172,7 +208,11 @@ function isValidCoordinate(coordinate: RouteCoordinate): boolean {
   );
 }
 
-/** 吸着解除後または無効入力時の生座標結果を作る。 */
+/**
+ * Creates a result that uses the raw coordinate without an active stay-place snap.
+ *
+ * @returns The raw coordinate with initial snap state and no snapped stay-place ID.
+ */
 function toRawResult(raw: RouteCoordinate): StayPlaceSnapResult {
   return {
     state: INITIAL_STAY_PLACE_SNAP_STATE,
@@ -181,7 +221,13 @@ function toRawResult(raw: RouteCoordinate): StayPlaceSnapResult {
   };
 }
 
-/** 吸着中の中心座標を使う結果を作る。 */
+/**
+ * Creates a result using the stay place's center coordinates.
+ *
+ * @param stayPlace - The stay place whose coordinates are used
+ * @param state - The snap state associated with the result
+ * @returns A snapped coordinate result with the stay place ID
+ */
 function toSnappedResult(stayPlace: StayPlace, state: StayPlaceSnapState): StayPlaceSnapResult {
   return {
     state,

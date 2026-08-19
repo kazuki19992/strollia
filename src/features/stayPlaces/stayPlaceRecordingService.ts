@@ -4,10 +4,9 @@ import { getStayPlaces } from '@/features/stayPlaces/stayPlaceRepository';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
 /**
- * 記録時点の契約状態に対応する有効な滞在場所を取得する。
+ * Retrieves stay places active under the current Plus access state for recording.
  *
- * ProviderやバックグラウンドTaskがDB・課金実装を直接組み合わせないよう、吸着用途の
- * 読み込み境界をここへ集約する。
+ * @returns Stay places resolved as active for the current Plus access state
  */
 export async function getActiveStayPlacesForRecording(): Promise<StayPlace[]> {
   const [premiumAccessState, stayPlaces] = await Promise.all([getPremiumAccessState(), getStayPlaces()]);

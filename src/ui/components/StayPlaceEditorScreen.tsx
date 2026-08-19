@@ -42,12 +42,23 @@ const DEFAULT_ICON_HEXCODE = '1F3E0';
 /** 現在地未取得時に、地点を捏造せず地図を操作できるよう表示だけに使う中心。 */
 const DEFAULT_EDITOR_VIEWPORT_COORDINATE = { latitude: 35.681236, longitude: 139.767125 };
 
-/** 編集に使う地図regionを座標から作る。 */
+/**
+ * Creates a map region centered on the specified coordinate.
+ *
+ * @returns A map region with fixed latitude and longitude deltas.
+ */
 function createEditorRegion(coordinate: LatLng): Region {
   return { ...coordinate, latitudeDelta: 0.005, longitudeDelta: 0.005 };
 }
 
-/** 滞在場所の新規作成・編集画面。 */
+/**
+ * Provides a screen for creating or editing a stay place.
+ *
+ * The user can configure the place name, icon, map center, and privacy radius,
+ * then save the validated details or delete an existing place.
+ *
+ * @returns The stay place editor screen.
+ */
 export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme, onBack, onDelete, onSave }: StayPlaceEditorScreenProps) {
   const [name, setName] = useState(place?.name ?? '');
   const [iconHexcode, setIconHexcode] = useState(place?.iconHexcode ?? DEFAULT_ICON_HEXCODE);
@@ -61,7 +72,9 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
   const isSavingRef = useRef(false);
   const selectedEmoji = getStayPlaceEmoji(iconHexcode);
 
-  /** 入力を検証し、成功時だけProviderへ保存を委譲する。 */
+  /**
+   * Validates the editor input and saves the stay place when valid.
+   */
   async function handleSave(): Promise<void> {
     if (isSavingRef.current) {
       return;
@@ -97,7 +110,9 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
     }
   }
 
-  /** 確認後にProviderの削除操作を呼ぶ。 */
+  /**
+   * Prompts for confirmation before deleting the current stay place.
+   */
   function handleDelete(): void {
     if (!onDelete) {
       return;

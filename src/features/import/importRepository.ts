@@ -61,16 +61,17 @@ export const IMPORT_TRANSACTION_CHUNK_SIZE = 100;
 const INTER_CHUNK_DELAY_MS = 50;
 
 /**
- * GPX 由来の GPS ポイントを既存データ優先で SQLite へ取り込む。
+ * Imports GPX GPS points into SQLite while preserving existing records.
  *
- * - ポイントは `recorded_at` 昇順にソートしてから挿入する。
- * - `INSERT OR IGNORE` で既存ポイント（同じ recorded_at / latitude / longitude）はスキップする。
- * - 日別ログ（daily_logs）と訪問セル（visited_cells）も同一トランザクション内で更新する。
- * - インポート履歴（import_history）は最後のチャンクのトランザクション内で記録する。
- * - 排他トランザクションは {@link IMPORT_TRANSACTION_CHUNK_SIZE} 件ごとに分割する。
- *   途中失敗時はそのチャンクだけロールバックされ、取り込み済みチャンクは残る。
- *   その場合は取り込み済み件数を含む {@link GpxImportInterruptedError} を投げる。
- *   `INSERT OR IGNORE` により再インポートで重複せず安全にリトライできる。
+ * Points are processed in recorded time order. Duplicate points are skipped,
+ * and related daily logs, visited cells, and import history are updated as part
+ * of the import. If a transaction chunk fails, completed chunks remain
+ * committed and the error includes their cumulative counts.
+ *
+ * @param points - GPX GPS points to import
+ * @param fileName - Name of the imported GPX file
+ * @returns Counts of imported and skipped points
+ * @throws GpxImportInterruptedError If a transaction chunk fails
  */
 export async function importLocationPointsFromGpx(points: NewLocationPoint[], fileName: string): Promise<GpxImportResult> {
   const sortedPoints = [...points].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
@@ -190,11 +191,10 @@ ON CONFLICT(local_date) DO UPDATE SET
   updated_at = excluded.updated_at`;
 
 /**
- * 1ポイントをトランザクション内に挿入し、挿入できたかどうかを返す。
+ * Inserts an imported location point and updates its daily log.
  *
- * daily_logs は UPSERT（ON CONFLICT DO UPDATE）で集計値を更新する。
- * 同一日付の前のポイントとの距離を distance_meters に累積する。
- * SQLはチャンク単位でプリペア済みのステートメントを受け取り実行する。
+ * @param previousPoint - The preceding imported point used to calculate same-day distance.
+ * @returns `true` if the point was inserted, `false` if the insert was ignored.
  */
 async function insertImportedLocationPoint(
   point: NewLocationPoint,

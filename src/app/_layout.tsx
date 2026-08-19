@@ -150,10 +150,9 @@ function RootLayoutContent(): React.ReactElement {
 }
 
 /**
- * expo-router ルートのナビゲーターを生成するフック。
+ * Creates navigation callbacks for the application's routes.
  *
- * AppStateProvider の navigator prop に渡し、openMap/openDailyLogs 等の
- * ナビゲーションコールバックを expo-router の router.push 経由にする。
+ * @returns Navigation callbacks for opening the map, daily logs, achievements, monthly reports, settings, and stay places
  */
 function useRouterNavigator() {
   const router = useRouter();

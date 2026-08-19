@@ -15,11 +15,14 @@ import { distanceMeters } from '@/utils/distance';
 const PRIVACY_RADIUS_EPSILON_METERS = 0.000001;
 
 /**
- * 有効な滞在場所の非表示半径を適用した共有専用の描画区間を作る。
+ * Creates route segments for sharing while excluding points and lines hidden by active stay-place privacy radii.
  *
- * 異常な時間差・速度差での既存分割を先に維持し、非表示範囲に入った点ごとにさらに
- * 区間を閉じる。可視点を再結合しないため、非表示範囲をまたぐPolylineは生成しない。
- * 非表示設定の座標・半径が壊れている場合は安全側へ倒してルートを出力しない。
+ * Existing route segmentation is preserved, and segments with fewer than two visible coordinates are omitted.
+ * No route segments are produced when an active stay-place privacy configuration is invalid.
+ *
+ * @param points - The stored location points used to build the route
+ * @param activeStayPlaces - The active stay places whose privacy radii hide nearby route content
+ * @returns The visible route segments
  */
 export function toPrivacyRouteSegments(points: LocationPoint[], activeStayPlaces: StayPlace[]): RouteSegment[] {
   if (hasInvalidPrivacyStayPlace(activeStayPlaces)) {
@@ -31,7 +34,13 @@ export function toPrivacyRouteSegments(points: LocationPoint[], activeStayPlaces
     .filter((segment) => segment.coordinates.length > 1);
 }
 
-/** 非表示半径内または不正座標で閉じた、描画可能な可視点区間を作る。 */
+/**
+ * Builds drawable visible route segments while excluding invalid points and privacy-radius crossings.
+ *
+ * @param activeStayPlaces - Active stay places whose privacy radii hide points and route segments
+ * @param routeSegmentIndex - Index used to identify the generated segments
+ * @returns Visible route segments containing at least two coordinates
+ */
 function splitVisiblePoints(points: LocationPoint[], activeStayPlaces: StayPlace[], routeSegmentIndex: number): RouteSegment[] {
   const segments: RouteSegment[] = [];
   let visiblePoints: RouteCoordinate[] = [];
@@ -71,17 +80,32 @@ function splitVisiblePoints(points: LocationPoint[], activeStayPlaces: StayPlace
   return segments;
 }
 
-/** 有効座標へ変換済みの保存ポイントからPolyline用の座標を作る。 */
+/**
+ * Converts a stored location point into a route coordinate.
+ *
+ * @param point - The stored location point to convert
+ * @returns A route coordinate containing the point's latitude and longitude
+ */
 function toCoordinate(point: LocationPoint): RouteCoordinate {
   return { latitude: point.latitude, longitude: point.longitude };
 }
 
-/** 1件でも有効な非表示設定が壊れていれば、位置情報を公開しない。 */
+/**
+ * Determines whether any active stay place has invalid privacy configuration.
+ *
+ * @param activeStayPlaces - The active stay places to validate
+ * @returns `true` if the privacy configuration is invalid, `false` otherwise
+ */
 function hasInvalidPrivacyStayPlace(activeStayPlaces: StayPlace[]): boolean {
   return !hasValidStayPlacePrivacyConfiguration(activeStayPlaces);
 }
 
-/** 有効な非表示半径を持つ滞在場所のいずれかに、座標が含まれるか判定する。 */
+/**
+ * Determines whether a coordinate falls within an active stay place's privacy radius.
+ *
+ * @param activeStayPlaces - The stay places whose privacy settings are active
+ * @returns `true` if the coordinate is within a configured privacy radius, `false` otherwise
+ */
 function isHiddenByPrivacyRadius(coordinate: RouteCoordinate, activeStayPlaces: StayPlace[]): boolean {
   return activeStayPlaces.some(
     (stayPlace) =>
@@ -91,10 +115,11 @@ function isHiddenByPrivacyRadius(coordinate: RouteCoordinate, activeStayPlaces: 
 }
 
 /**
- * 座標列のいずれかの線分が、非表示半径の円と交差するか判定する。
+ * Determines whether any consecutive route coordinates intersect a configured privacy radius.
  *
- * 半径が最大10kmであるため、各滞在場所の緯度を基準とした局所正距円筒投影で
- * 線分と円の最短距離を計算する。端点が範囲外でも線分が通過するケースを防ぐ。
+ * @param coordinates - The route coordinates to evaluate
+ * @param activeStayPlaces - The stay places with privacy settings to check
+ * @returns `true` if any route segment intersects or touches a privacy radius, `false` otherwise
  */
 function routeCrossesPrivacyRadius(coordinates: RouteCoordinate[], activeStayPlaces: StayPlace[]): boolean {
   return coordinates.some((coordinate, index) => {
@@ -103,7 +128,14 @@ function routeCrossesPrivacyRadius(coordinates: RouteCoordinate[], activeStayPla
   });
 }
 
-/** 非表示半径を持つ1箇所の円と線分が交差・接触するか判定する。 */
+/**
+ * Determines whether a route segment intersects or touches a stay place's privacy radius.
+ *
+ * @param start - The segment's starting coordinate
+ * @param end - The segment's ending coordinate
+ * @param stayPlace - The stay place whose privacy center and radius are evaluated
+ * @returns `true` if the segment intersects or touches the configured privacy radius, `false` if no radius is configured or the segment remains outside it
+ */
 function intersectsPrivacyRadius(start: RouteCoordinate, end: RouteCoordinate, stayPlace: StayPlace): boolean {
   if (stayPlace.privacyRadiusMeters == null) {
     return false;

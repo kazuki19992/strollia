@@ -141,7 +141,11 @@ export function getSubscriptionStoreName(platformOS: typeof Platform.OS): string
   return platformOS === 'android' ? 'Playストア' : 'App Store';
 }
 
-/** 設定画面をデザイン案の大きなパネルと選択タイルで描画する。 */
+/**
+ * Renders the settings screen and its configurable options.
+ *
+ * @returns The rendered settings screen.
+ */
 export function SettingsScreen({
   styles,
   theme,

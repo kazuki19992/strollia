@@ -70,7 +70,18 @@ export type DailyLogDetailScreenProps = {
   onOpenPremiumPaywall: () => void;
 };
 
-/** 日ごとの記録の詳細画面を描画する。 */
+/**
+ * Renders the daily travel log detail screen with route information, sharing controls, and Plus features.
+ *
+ * @param log - The daily travel log to display
+ * @param styles - Styles used to render the screen
+ * @param theme - Theme configuration used by the screen
+ * @param premiumAccessState - Current premium access information
+ * @param activeStayPlaces - Stay-place data used to protect shared route information
+ * @param stayPlacesStatus - Loading status of the stay-place privacy data
+ * @param onBackToDailyLogs - Callback invoked to return to the daily logs
+ * @param onOpenPremiumPaywall - Callback invoked to open the premium paywall
+ */
 export function DailyLogDetailScreen({
   log,
   styles,
@@ -193,7 +204,9 @@ export function DailyLogDetailScreen({
     return () => cancelAnimationFrame(rafId);
   }, [gifFrameIndex, isGeneratingGif]);
 
-  // 共有用カードの地図タイル描画完了を待つ。発火しない端末でも詰まらないようフォールバックを設ける。
+  /**
+   * Waits for the share card map to finish loading, with a timeout fallback.
+   */
   function waitForShareMapReady(): Promise<void> {
     return new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
@@ -207,6 +220,11 @@ export function DailyLogDetailScreen({
     });
   }
 
+  /**
+   * Shares a privacy-filtered image of the daily travel log.
+   *
+   * The operation is skipped while another share is in progress or when stay-place privacy data is unavailable.
+   */
   async function shareDailyLogImage(): Promise<void> {
     if (isSharingDetail || !isSharePrivacyReady) {
       return;
@@ -261,12 +279,18 @@ export function DailyLogDetailScreen({
     });
   }
 
+  /**
+   * Opens the GIF range selector with the full available recording range selected.
+   */
   function openGifRangeSelection(): void {
     setGifRangeStart(gifRangeMinMinute);
     setGifRangeEnd(gifRangeMaxMinute);
     setIsSelectingGifRange(true);
   }
 
+  /**
+   * Confirms the selected GIF range and starts GIF generation when it contains route data.
+   */
   function handleConfirmGifRange(): void {
     if (gifRangePrivacyRouteSegments.length === 0) {
       return;
@@ -276,6 +300,11 @@ export function DailyLogDetailScreen({
     handleExportGif().catch(() => undefined);
   }
 
+  /**
+   * Exports the selected daily-log route as an animated GIF.
+   *
+   * Cancels and waits for any previous export before starting a new one, and reports generation failures to the user.
+   */
   async function handleExportGif(): Promise<void> {
     if (!canExportGif || gifRangePrivacyRouteSegments.length === 0 || !gifRegion || gifFrameMinutes.length < 2) {
       return;

@@ -24,19 +24,10 @@ export type DailyDistanceEntry = {
 };
 
 /**
- * 日別距離の合計を優先し、距離が欠落している日だけGPSポイントから再計算する。
+ * Calculates total travel distance from stored daily distances and GPS points for dates without stored distances.
  *
- * 欠落日のGPSポイントは1日ずつ逐次取得して距離計算後すぐに手放し、まとめて1配列へ
- * ロードしない。`distance_meters` が未保存のまま残っている既存ユーザー(distance
- * トラッキング導入前に記録した日が多いユーザー)ほど欠落日数が多くなりやすく、
- * 一括取得だと結局ほぼ全GPSポイントをJSメモリに載せてしまい、2026-07-14の
- * メモリ超過クラッシュを再発させる。1日単位の逐次処理にすることで、欠落日数に
- * 依存せずメモリ使用量を「その日のポイント数」分だけに有界化する。
- * `achievementRepository.getAchievementProgress` と `useLocationRecordingSync` の
- * 両方から使う共通ヘルパー(起動時 + フォアグラウンド中10秒ごとに呼ばれる)。
- *
- * @param dailyLogs - 日付と距離のペア一覧(`DailyLogSummary` 等、この形を満たす配列を渡せる)。
- * @returns 総移動距離メートル。
+ * @param dailyLogs - Daily records containing local dates and optional stored distances.
+ * @returns The total travel distance in meters.
  */
 export async function calculateTotalDistanceMeters(dailyLogs: DailyDistanceEntry[]): Promise<number> {
   const fixedDistance = dailyLogs.reduce((total, log) => total + (log.distanceMeters ?? 0), 0);

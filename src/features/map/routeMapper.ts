@@ -67,7 +67,12 @@ export function isValidRouteCoordinate(coordinate: RouteCoordinate): boolean {
   );
 }
 
-/** 保存済みGPSポイントを地図描画用の緯度経度へ変換する。 */
+/**
+ * Converts saved GPS points into valid latitude and longitude coordinates for map rendering.
+ *
+ * @param points - The saved GPS points to convert
+ * @returns The valid route coordinates extracted from the points
+ */
 export function toRouteCoordinates(points: LocationPoint[]): RouteCoordinate[] {
   return points
     .map(toEffectiveLocationPoint)
@@ -84,11 +89,11 @@ export function toRenderRouteCoordinates(
 }
 
 /**
- * 保存済みGPSポイントから異常区間を分割した描画用ルートを作る。
+ * Creates simplified renderable route segments from stored GPS points, splitting anomalous sections.
  *
- * @param points - 保存済みGPSポイント。
- * @param toleranceMeters - segment単位の簡略化許容誤差。
- * @returns 2点以上を持つ描画用ルート区間。
+ * @param points - Stored GPS points.
+ * @param toleranceMeters - Maximum simplification error in meters.
+ * @returns Route segments containing at least two coordinates each.
  */
 export function toRenderRouteSegments(points: LocationPoint[], toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS): RouteSegment[] {
   return toRoutePointSegments(points)
@@ -100,15 +105,21 @@ export function toRenderRouteSegments(points: LocationPoint[], toleranceMeters =
 }
 
 /**
- * 保存済みGPSポイントを有効座標へ変換し、異常な時間差・速度差で区間を分割する。
+ * Converts stored GPS points to effective locations and divides them into route segments at anomalous time gaps or speeds.
  *
- * 共有用の非表示区間分割でも、通常地図と同一の異常ギャップ判定を先に適用するために公開する。
+ * @returns The normalized route point segments.
  */
 export function toRoutePointSegments(points: LocationPoint[]): LocationPoint[][] {
   return splitRoutePoints(points.map(toEffectiveLocationPoint));
 }
 
-/** Douglas-Peucker法でルート形状を保ちながら座標数を減らす。 */
+/**
+ * Reduces the number of route coordinates while preserving the route shape.
+ *
+ * @param coordinates - The route coordinates to simplify
+ * @param toleranceMeters - The maximum deviation in meters for removing intermediate coordinates
+ * @returns The simplified route coordinates
+ */
 export function simplifyRouteCoordinates(
   coordinates: RouteCoordinate[],
   toleranceMeters = DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS,
@@ -204,20 +215,22 @@ export function createRegionFromBounds(bounds: RouteCoordinateBounds | null): Re
 }
 
 /**
- * GPSポイント群が収まる初期表示範囲を作る。
+ * Creates the initial map region containing the provided GPS points.
  *
- * スプレッド展開(`Math.min(...array)`)は要素数が約105万を超えるとHermesで
- * `RangeError: Maximum call stack size exceeded (native stack depth)` になるため、
- * 単純なループで境界を求める(2026-07-14のSentryクラッシュの根本原因)。
+ * @param points - GPS points used to determine the map bounds
+ * @returns A padded region containing the valid point coordinates, or the default region when no valid coordinates are available
  */
 export function createInitialRegion(points: LocationPoint[]): Region {
   return createInitialRegionFromCoordinates(toRouteCoordinates(points));
 }
 
 /**
- * 描画に使う座標群だけから、マージン付きの初期表示範囲を作る。
+ * Creates an initial map region that encompasses the supplied route coordinates with padding.
  *
- * 共有用の地図は非表示範囲外の座標だけを渡し、MapViewの表示中心にも隠した場所を使わない。
+ * Invalid coordinates are ignored. If no valid coordinates remain, the default region is returned.
+ *
+ * @param coordinates - Route coordinates used to determine the region bounds
+ * @returns A padded map region enclosing the valid coordinates, or the default region when none are valid
  */
 export function createInitialRegionFromCoordinates(coordinates: RouteCoordinate[]): Region {
   const validCoordinates = coordinates.filter(isValidRouteCoordinate);

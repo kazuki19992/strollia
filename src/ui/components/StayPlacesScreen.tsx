@@ -32,7 +32,12 @@ export type StayPlacesScreenProps = {
   onOpenPremiumPaywall: () => void;
 };
 
-/** 共有範囲の説明をユーザー向けに整形する。 */
+/**
+ * Formats a stay place's privacy radius for display.
+ *
+ * @param privacyRadiusMeters - The privacy radius in meters, or `null` to include the place when sharing.
+ * @returns A user-facing description of the sharing privacy setting.
+ */
 function formatPrivacyRadius(privacyRadiusMeters: number | null): string {
   if (privacyRadiusMeters === null) {
     return '共有時もこの場所を含める';
@@ -41,12 +46,26 @@ function formatPrivacyRadius(privacyRadiusMeters: number | null): string {
   return `共有時は中心から${formatStayPlacePrivacyRadius(privacyRadiusMeters)}以内を隠す`;
 }
 
-/** 契約状態に応じた場所の状態ラベルを返す。 */
+/**
+ * Determines the status label for a stay place based on its position and Plus membership.
+ *
+ * @param index - The stay place's zero-based position in creation order
+ * @returns `現在有効` if Plus is active or the place is first, `Plusで有効` otherwise
+ */
 function getStayPlaceStatusLabel(index: number, isPlusActive: boolean): string {
   return isPlusActive || index === 0 ? '現在有効' : 'Plusで有効';
 }
 
-/** 滞在場所を作成順で確認・編集する一覧画面。 */
+/**
+ * Displays registered stay places in creation order and provides actions to edit or add them.
+ *
+ * @param isPlusActive - Whether the user has an active Plus subscription
+ * @param stayPlaces - Registered stay places to display
+ * @param onBackToSettings - Opens the settings screen
+ * @param onOpenEditor - Opens the editor for a stay place
+ * @param onOpenNew - Opens the new stay place flow
+ * @param onOpenPremiumPaywall - Opens the Plus subscription paywall
+ */
 export function StayPlacesScreen({
   isPlusActive,
   stayPlaces,

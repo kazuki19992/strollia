@@ -36,10 +36,10 @@ export function pathnameToScreenMode(pathname: string): ScreenMode {
 }
 
 /**
- * expo-router のパス名から Sentry 用の設定系子画面名を解決する。
+ * Resolves a settings route to its corresponding Sentry screen name.
  *
- * 設定スタック内の子ルートは `Settings:ルート名` の形式で Sentry へ送る。
- * 旧実装の `NavigationContainer#onStateChange` が生成していた文字列と完全に一致させる。
+ * @param pathname - The expo-router pathname to resolve
+ * @returns The Sentry screen name for the settings route, or `Settings:SettingsHome` for unrecognized paths
  */
 export function pathnameToSettingsSentryScreenName(pathname: string): string {
   if (!pathname.startsWith('/settings')) {

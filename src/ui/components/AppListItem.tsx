@@ -27,7 +27,13 @@ export type AppListItemProps = {
   prominent?: boolean;
 };
 
-/** アプリ内の詳細遷移リストで共通利用する行コンポーネント。 */
+/**
+ * Renders a pressable list row for navigating to an in-app detail view.
+ *
+ * @param leading - Optional content displayed at the start of the row
+ * @param prominent - Whether to emphasize the title
+ * @returns The rendered list row
+ */
 export function AppListItem({
   accessibilityLabel,
   detail,

@@ -1,7 +1,12 @@
 /** 滞在場所の共有時に選べる非表示半径（メートル）。 */
 export const STAY_PLACE_PRIVACY_RADIUS_METERS = [100, 200, 500, 1000, 2000, 3000, 5000, 10000] as const;
 
-/** 共有時に選べる非表示半径かを判定する。 */
+/**
+ * Determines whether a privacy radius can be selected when sharing a stay place.
+ *
+ * @param value - The privacy radius in meters, or `null` for no radius
+ * @returns `true` if the value is `null` or an allowed privacy radius, `false` otherwise
+ */
 export function isStayPlacePrivacyRadiusMeters(value: number | null): boolean {
   return value === null || STAY_PLACE_PRIVACY_RADIUS_METERS.some((radius) => radius === value);
 }

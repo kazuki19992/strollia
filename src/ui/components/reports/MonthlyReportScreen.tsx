@@ -66,7 +66,13 @@ function createMonthlyDistanceMap(dailyLogs: DailyLogSummary[]): Map<string, num
   }, new Map<string, number>());
 }
 
-/** 月の日別ログから通算・最長日・月間記録を集計する。 */
+/**
+ * Summarizes distance metrics and records for a monthly report.
+ *
+ * @param dailyLogs - Daily distance logs used to calculate lifetime and daily metrics
+ * @param report - Report month and total distance to evaluate
+ * @returns The lifetime distance, longest day, and monthly and daily record indicators
+ */
 function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: MonthlyReport): MonthlyDistanceSummary {
   const monthlyDistanceMap = createMonthlyDistanceMap(dailyLogs);
   const previousBestMonthlyDistance = Array.from(monthlyDistanceMap.entries())
@@ -90,7 +96,19 @@ function createMonthlyDistanceSummary(dailyLogs: DailyLogSummary[], report: Mont
   };
 }
 
-/** スクロール型の月次レポート画面。 */
+/**
+ * Renders a scrollable monthly report with distance metrics, privacy-filtered routes, achievements, rankings, and sharing controls.
+ *
+ * @param dailyLogs - Daily movement logs used to calculate the report.
+ * @param points - Recorded route points used to display the report map.
+ * @param activeStayPlaces - Stay places used to filter route data for privacy.
+ * @param stayPlacesStatus - Status of stay-place privacy data.
+ * @param achievements - Available achievements to display for the report month.
+ * @param monthlyAreaReport - Area rankings and municipality data for the report month.
+ * @param theme - Theme used to style the report.
+ * @param onBackToMap - Callback invoked when the report is closed.
+ * @returns The monthly report screen.
+ */
 export function MonthlyReportScreen({
   dailyLogs,
   points,
@@ -131,7 +149,11 @@ export function MonthlyReportScreen({
   const shareButtonBackgroundColor = theme.name === 'dark' ? '#f7f2ea' : '#333333';
   const shareButtonTextColor = theme.name === 'dark' ? '#111111' : '#ffffff';
 
-  /** レポートのスクロール本文全体をPNG化して共有する。 */
+  /**
+   * Shares the monthly report content as a PNG image.
+   *
+   * Sharing is skipped while another share is in progress or when privacy data is unavailable.
+   */
   async function shareReportImage(): Promise<void> {
     if (!reportCaptureRef.current || isSharingReport || !isSharePrivacyReady) {
       return;

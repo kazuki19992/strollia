@@ -83,6 +83,28 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     });
   });
 
+  test('共有時の非表示範囲で1kmを選ぶと1000mとして保存する', () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    render(
+      <StayPlaceEditorScreen
+        initialCoordinate={{ latitude: 35, longitude: 139 }}
+        place={null}
+        styles={styles as never}
+        theme={lightTheme}
+        onBack={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.changeText(screen.getByLabelText('滞在場所名'), '自宅');
+    expect(screen.queryByLabelText('非表示範囲: 50m')).toBeNull();
+    expect(screen.getByLabelText('非表示範囲: 10km')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('非表示範囲: 1km'));
+    fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ privacyRadiusMeters: 1000 }));
+  });
+
   test('地図の固定中心マーカーを表示し、地図操作完了後の中心座標だけを保存する', () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     render(

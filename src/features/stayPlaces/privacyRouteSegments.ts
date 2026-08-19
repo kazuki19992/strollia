@@ -10,6 +10,9 @@ import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { LocationPoint } from '@/types/gps';
 import { distanceMeters } from '@/utils/distance';
 
+/** 浮動小数点誤差で半径境界上の点を露出させないための距離許容値。 */
+const PRIVACY_RADIUS_EPSILON_METERS = 0.000001;
+
 /**
  * 有効な滞在場所の非表示半径を適用した共有専用の描画区間を作る。
  *
@@ -75,6 +78,8 @@ function hasInvalidPrivacyStayPlace(activeStayPlaces: StayPlace[]): boolean {
 /** 有効な非表示半径を持つ滞在場所のいずれかに、座標が含まれるか判定する。 */
 function isHiddenByPrivacyRadius(coordinate: RouteCoordinate, activeStayPlaces: StayPlace[]): boolean {
   return activeStayPlaces.some(
-    (stayPlace) => stayPlace.privacyRadiusMeters != null && distanceMeters(coordinate, stayPlace) <= stayPlace.privacyRadiusMeters,
+    (stayPlace) =>
+      stayPlace.privacyRadiusMeters != null &&
+      distanceMeters(coordinate, stayPlace) <= stayPlace.privacyRadiusMeters + PRIVACY_RADIUS_EPSILON_METERS,
   );
 }

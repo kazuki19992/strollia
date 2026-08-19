@@ -78,14 +78,14 @@ describe('共有用のプライバシールート区間 toPrivacyRouteSegments',
   });
 
   it('非表示半径の境界上にある点も除外する', () => {
-    const boundaryLatitude = 35 + 50 / METERS_PER_LATITUDE_DEGREE;
+    const boundaryLatitude = 35 + 100 / METERS_PER_LATITUDE_DEGREE;
     const result = toPrivacyRouteSegments(
       [
         point(35.002, 139, '2026-08-19T00:00:00.000Z'),
         point(boundaryLatitude, 139, '2026-08-19T00:01:00.000Z'),
         point(35.003, 139, '2026-08-19T00:02:00.000Z'),
       ],
-      [stayPlace({ privacyRadiusMeters: 50 })],
+      [stayPlace({ privacyRadiusMeters: 100 })],
     );
 
     expect(result).toEqual([]);

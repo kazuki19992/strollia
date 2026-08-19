@@ -46,7 +46,11 @@ function createEditorRegion(coordinate: LatLng): Region {
 
 /** 半径を選択UI向けに表示する。 */
 function formatPrivacyRadius(privacyRadiusMeters: number | null): string {
-  return privacyRadiusMeters === null ? '含める' : `${privacyRadiusMeters}m`;
+  if (privacyRadiusMeters === null) {
+    return '含める';
+  }
+
+  return privacyRadiusMeters >= 1000 ? `${privacyRadiusMeters / 1000}km` : `${privacyRadiusMeters}m`;
 }
 
 /** 滞在場所の新規作成・編集画面。 */

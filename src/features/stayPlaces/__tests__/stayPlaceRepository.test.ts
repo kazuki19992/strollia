@@ -55,6 +55,8 @@ describe('滞在場所リポジトリ stayPlaceRepository', () => {
     ['下限を下回る有限の緯度', { ...validInput, latitude: -90.000001 }, '緯度'],
     ['上限を超える有限の経度', { ...validInput, longitude: 180.000001 }, '経度'],
     ['下限を下回る有限の経度', { ...validInput, longitude: -180.000001 }, '経度'],
+    ['旧UIの50m半径', { ...validInput, privacyRadiusMeters: 50 }, '共有時の非表示範囲'],
+    ['旧UIの300m半径', { ...validInput, privacyRadiusMeters: 300 }, '共有時の非表示範囲'],
     ['許可されない半径', { ...validInput, privacyRadiusMeters: 400 }, '共有時の非表示範囲'],
   ])('%sはSQLを実行せず拒否する', async (_label, input, message) => {
     await expect(createStayPlace(input)).rejects.toThrow(message);
@@ -63,7 +65,7 @@ describe('滞在場所リポジトリ stayPlaceRepository', () => {
     expect(mockTxn.runAsync).not.toHaveBeenCalled();
   });
 
-  it.each([50, 100, 200, 300, 500])('許可済みの非表示半径 %dm を作成できる', async (privacyRadiusMeters) => {
+  it.each([100, 200, 500, 1000, 2000, 3000, 5000, 10000])('許可済みの非表示半径 %dm を作成できる', async (privacyRadiusMeters) => {
     await expect(createStayPlace({ ...validInput, privacyRadiusMeters })).resolves.toBe(42);
 
     expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);

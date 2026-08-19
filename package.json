@@ -65,6 +65,7 @@
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.10",
     "@types/upng-js": "^2.1.5",
+    "emojibase-data": "15.3.0",
     "eslint": "^9.39.4",
     "eslint-config-expo": "~57.0.0",
     "eslint-config-prettier": "^10.1.8",

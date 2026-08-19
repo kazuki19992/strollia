@@ -6,7 +6,22 @@ const path = require('node:path');
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const OUTPUT_PATH = path.join(PROJECT_ROOT, 'src/ui/generated/ossLicenses.ts');
 
-/** @typedef {{ id: string; name: string; version: string; licenses: string; repository: string | null; source: 'npm' | 'ios'; licenseText: string | null; noticeText: string | null }} OssLicenseEntry */
+/** @typedef {{ id: string; name: string; version: string; licenses: string; repository: string | null; source: 'npm' | 'ios' | 'asset'; licenseText: string | null; noticeText: string | null }} OssLicenseEntry */
+
+/** @type {OssLicenseEntry[]} 同梱した非npmアセットの帰属情報。 */
+const STATIC_ASSET_LICENSES = [
+  {
+    id: 'asset:twemoji-graphics',
+    name: 'Twemoji graphics',
+    version: '14.1.2',
+    licenses: 'CC-BY 4.0',
+    repository: 'https://github.com/jdecked/twemoji',
+    source: 'asset',
+    licenseText:
+      'Twemoji graphics © 2020 Twitter, Inc and other contributors. Licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/.',
+    noticeText: 'Twelve static PNG assets are bundled from Twemoji v14.1.2.',
+  },
+];
 
 /** license-checker-rseidelsohnのESM APIを読み込む。 */
 async function loadLicenseChecker() {
@@ -168,6 +183,17 @@ function collectIosAcknowledgements() {
 }
 
 /**
+ * npm、iOS native、同梱アセットのライセンスをアプリ表示用に統合する。
+ *
+ * @param {OssLicenseEntry[]} npmLicenses - npm由来のライセンス。
+ * @param {OssLicenseEntry[]} iosLicenses - iOS native由来のライセンス。
+ * @returns {OssLicenseEntry[]}
+ */
+function mergeOssLicenses(npmLicenses, iosLicenses) {
+  return [...npmLicenses, ...iosLicenses, ...STATIC_ASSET_LICENSES].sort((left, right) => left.name.localeCompare(right.name));
+}
+
+/**
  * 生成済みライセンスデータをTypeScriptとして書き出す。
  *
  * @param {OssLicenseEntry[]} licenses - 表示用ライセンス一覧。
@@ -175,7 +201,7 @@ function collectIosAcknowledgements() {
  * @returns {void}
  */
 function writeTypeScriptOutput(licenses, generatedAt) {
-  const source = `/**\n * OSSライセンス表示用の生成済みデータ。\n * 手動編集せず、npm run generate:licenses で再生成する。\n */\nexport type OssLicenseSource = 'npm' | 'ios';\n\nexport type OssLicenseEntry = {\n  id: string;\n  name: string;\n  version: string;\n  licenses: string;\n  repository: string | null;\n  source: OssLicenseSource;\n  licenseText: string | null;\n  noticeText: string | null;\n};\n\nexport const OSS_LICENSES_GENERATED_AT = ${JSON.stringify(generatedAt)};\n\nexport const OSS_LICENSES: OssLicenseEntry[] = ${JSON.stringify(licenses, null, 2)};\n`;
+  const source = `/**\n * OSSライセンス表示用の生成済みデータ。\n * 手動編集せず、npm run generate:licenses で再生成する。\n */\nexport type OssLicenseSource = 'npm' | 'ios' | 'asset';\n\nexport type OssLicenseEntry = {\n  id: string;\n  name: string;\n  version: string;\n  licenses: string;\n  repository: string | null;\n  source: OssLicenseSource;\n  licenseText: string | null;\n  noticeText: string | null;\n};\n\nexport const OSS_LICENSES_GENERATED_AT = ${JSON.stringify(generatedAt)};\n\nexport const OSS_LICENSES: OssLicenseEntry[] = ${JSON.stringify(licenses, null, 2)};\n`;
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, source, 'utf8');
@@ -206,7 +232,7 @@ async function main() {
     );
   });
   const iosLicenses = collectIosAcknowledgements();
-  const licenses = [...npmLicenses, ...iosLicenses].sort((left, right) => left.name.localeCompare(right.name));
+  const licenses = mergeOssLicenses(npmLicenses, iosLicenses);
 
   writeTypeScriptOutput(licenses, new Date().toISOString());
   console.log(`Generated ${licenses.length} OSS license entries at ${path.relative(PROJECT_ROOT, OUTPUT_PATH)}`);
@@ -222,6 +248,7 @@ if (require.main === module) {
 module.exports = {
   collectIosAcknowledgements,
   decodeXmlEntities,
+  mergeOssLicenses,
   normalizeNpmLicenses,
   readPlistStringValue,
   splitPackageKey,

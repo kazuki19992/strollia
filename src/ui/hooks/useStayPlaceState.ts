@@ -88,16 +88,16 @@ export function useStayPlaceState(input: {
       }
 
       const persist = async (): Promise<void> => {
-        // 直列化後にDBを読み直す。呼び出し時のReact stateだけでは、同時タップや別画面の
-        // 保存による無料版の2件目作成を判定できない。
-        if (!isPlusActive && (await access.getStayPlaces()).length >= 1) {
-          onFreeStayPlaceLimitReached?.();
-          await reloadStayPlaces();
-          return;
-        }
-
-        setStatus('loading');
         try {
+          // 直列化後にDBを読み直す。呼び出し時のReact stateだけでは、同時タップや別画面の
+          // 保存による無料版の2件目作成を判定できない。
+          if (!isPlusActive && (await access.getStayPlaces()).length >= 1) {
+            onFreeStayPlaceLimitReached?.();
+            await reloadStayPlaces();
+            return;
+          }
+
+          setStatus('loading');
           await access.createStayPlace(newStayPlace);
           await reloadStayPlaces();
         } catch (error) {

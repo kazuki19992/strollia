@@ -47,7 +47,7 @@ function createAccess(overrides: Partial<StayPlaceAccess> = {}): StayPlaceAccess
   };
 }
 
-describe('滞在場所状態 useStayPlaceState', () => {
+describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、失敗時は共有対象を安全側にする', () => {
   it('読込完了前は有効な滞在場所をnullにして共有をfail-closedにする', () => {
     const access = createAccess();
     const { result } = renderHook(() => useStayPlaceState({ isReady: false, isPlusActive: true, access }));
@@ -232,6 +232,22 @@ describe('滞在場所状態 useStayPlaceState', () => {
     expect(access.createStayPlace).toHaveBeenCalledTimes(1);
     expect(onFreeStayPlaceLimitReached).toHaveBeenCalledTimes(1);
     expect(result.current.stayPlaces).toEqual([home]);
+  });
+
+  it('無料版の作成直前の読込に失敗した場合は共有対象をerrorへfail-closedにする', async () => {
+    const access = createAccess({
+      getStayPlaces: jest.fn().mockResolvedValueOnce([]).mockRejectedValue(new Error('事前読込失敗')),
+    });
+    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access }));
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    await act(async () => {
+      await expect(result.current.createStayPlace(newOffice)).rejects.toThrow('事前読込失敗');
+    });
+
+    expect(result.current.status).toBe('error');
+    expect(result.current.activeStayPlaces).toBeNull();
   });
 
   it('編集の保存失敗後もDBを再読込して共有対象を古い値へ戻す', async () => {

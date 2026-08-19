@@ -429,7 +429,6 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     closePremiumPaywall,
     showPremiumLockedMessage,
   } = usePremiumAccess();
-  const getActiveStayPlacesForLocationRecording = useCallback(() => getActiveStayPlacesForRecording(), []);
   const {
     selectedAppColorPresetId,
     selectedUserLocationIconId,
@@ -811,7 +810,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     enabled: foregroundWatchEnabled,
     shouldPersist: shouldPersistForegroundLocation,
     onLocation: shouldDisplayCustomLocation ? applyUserLocation : undefined,
-    getActiveStayPlaces: getActiveStayPlacesForLocationRecording,
+    getActiveStayPlaces: getActiveStayPlacesForRecording,
     onError: (error: unknown) => {
       setMessage(error instanceof Error ? error.message : 'フォアグラウンド位置情報の取得に失敗しました。');
     },
@@ -1025,7 +1024,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
       } finally {
         // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
-        await flushLocationsBufferedDuringGpxImport({ getActiveStayPlaces: getActiveStayPlacesForLocationRecording }).catch((error: unknown) => {
+        await flushLocationsBufferedDuringGpxImport({ getActiveStayPlaces: getActiveStayPlacesForRecording }).catch((error: unknown) => {
           console.warn('Failed to flush buffered locations after GPX import:', error);
         });
       }

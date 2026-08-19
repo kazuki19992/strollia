@@ -1,8 +1,10 @@
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react-native';
 
+import { getLocationPointsByDate } from '@/features/logs/logRepository';
 import { lightTheme } from '@/theme/theme';
 import { DailyLogDetailScreen } from '@/ui/components/DailyLogDetailScreen';
 import { GifFrameRenderer } from '@/ui/components/GifFrameRenderer';
+import { RangeSlider } from '@/ui/components/RangeSlider';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -60,10 +62,10 @@ jest.mock('@/features/logs/logRepository', () => ({
     },
     {
       id: 2,
-      recordedAt: new Date(2026, 4, 31, 0, 30).toISOString(),
+      recordedAt: new Date(2026, 4, 31, 0, 5).toISOString(),
       localDate: '2026-05-31',
-      latitude: 35.6815,
-      longitude: 139.7675,
+      latitude: 35.682,
+      longitude: 139.767125,
       altitude: null,
       speed: null,
       heading: null,
@@ -122,14 +124,105 @@ const log = {
   endLocationPointId: 2,
 };
 const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
+const activeStayPlaces = [
+  {
+    id: 1,
+    name: '自宅',
+    iconHexcode: '1F3E0',
+    latitude: 35.681236,
+    longitude: 139.767125,
+    privacyRadiusMeters: 100,
+    createdAt: '2026-08-19T00:00:00.000Z',
+    updatedAt: '2026-08-19T00:00:00.000Z',
+  },
+];
+const defaultLocationPoints = [
+  {
+    id: 1,
+    recordedAt: new Date(2026, 4, 31, 0, 0).toISOString(),
+    localDate: '2026-05-31',
+    latitude: 35.681236,
+    longitude: 139.767125,
+    altitude: null,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  },
+  {
+    id: 2,
+    recordedAt: new Date(2026, 4, 31, 0, 5).toISOString(),
+    localDate: '2026-05-31',
+    latitude: 35.682,
+    longitude: 139.767125,
+    altitude: null,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  },
+];
+const mockGetLocationPointsByDate = getLocationPointsByDate as jest.MockedFunction<typeof getLocationPointsByDate>;
 describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    mockGetLocationPointsByDate.mockReset();
+    mockGetLocationPointsByDate.mockResolvedValue(defaultLocationPoints);
   });
 
   afterEach(() => {
+    cleanup();
     jest.restoreAllMocks();
+  });
+
+  test('日全体でプライバシー適用後の描画可能な線分がなければGIF出力を開始できない', async () => {
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={activeStayPlaces}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />,
+    );
+
+    await act(async () => {});
+
+    expect(screen.queryByLabelText('移動記録をGIFで出力')).toBeNull();
+  });
+
+  test('選択範囲がすべて非表示ならGIF出力の確定操作を無効化する', async () => {
+    mockGetLocationPointsByDate.mockResolvedValue([
+      { id: 1, recordedAt: new Date(2026, 4, 31, 0, 0).toISOString(), localDate: '2026-05-31', latitude: 35.681236, longitude: 139.767125, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
+      { id: 2, recordedAt: new Date(2026, 4, 31, 0, 5).toISOString(), localDate: '2026-05-31', latitude: 35.6813, longitude: 139.7672, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
+      { id: 3, recordedAt: new Date(2026, 4, 31, 0, 20).toISOString(), localDate: '2026-05-31', latitude: 35.690921, longitude: 139.700258, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
+      { id: 4, recordedAt: new Date(2026, 4, 31, 0, 25).toISOString(), localDate: '2026-05-31', latitude: 35.691, longitude: 139.7001, altitude: null, speed: null, heading: null, accuracy: 10, altitudeAccuracy: null },
+    ]);
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={activeStayPlaces}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />,
+    );
+
+    await act(async () => {});
+    fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
+    // RangeSliderの公開callbackを使うのは、両端の選択値を一度に変えるため。
+    act(() => {
+      const rangeSlider = screen.UNSAFE_getByType(RangeSlider);
+      rangeSlider.props.onChange(rangeSlider.props.minValue, rangeSlider.props.minValue + 15);
+    });
+    await act(async () => {});
+
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この範囲で出力' })[0].props.disabled).toBe(true);
   });
 
   test('GIF出力ボタンを押すと初回フレームでデッドロックせず生成・共有まで完了する', async () => {

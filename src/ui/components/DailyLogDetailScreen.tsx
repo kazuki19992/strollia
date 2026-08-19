@@ -117,9 +117,16 @@ export function DailyLogDetailScreen({
   // スライダーの選択肢を00/15/30/45分に揃えるため、範囲を15分境界へ丸める。
   const gifRangeMinMinute = Math.floor(recordingStartMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
   const gifRangeMaxMinute = Math.ceil(recordingEndMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
+  // 区間選択前は日全体で共有用に描画できるルートがあることを確認する。選択範囲の
+  // stateは初期値0のため、ここで使うと初回のGIF導線を誤って閉じてしまう。
+  const dailyPrivacyRouteSegments = useMemo(
+    () => (activeStayPlaces == null ? [] : toPrivacyRouteSegments(dailyPoints, activeStayPlaces)),
+    [activeStayPlaces, dailyPoints],
+  );
   const canExportGif =
     isSharePrivacyReady &&
     isPlusActive &&
+    dailyPrivacyRouteSegments.length > 0 &&
     dailyPoints.length >= 2 &&
     gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
   // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
@@ -261,13 +268,16 @@ export function DailyLogDetailScreen({
   }
 
   function handleConfirmGifRange(): void {
+    if (gifRangePrivacyRouteSegments.length === 0) {
+      return;
+    }
     // 区間選択→生成中で中身の高さが変わるので、滑らかにリサイズさせる。
     animateDialogResize();
     handleExportGif().catch(() => undefined);
   }
 
   async function handleExportGif(): Promise<void> {
-    if (!canExportGif || !gifRegion || gifFrameMinutes.length < 2) {
+    if (!canExportGif || gifRangePrivacyRouteSegments.length === 0 || !gifRegion || gifFrameMinutes.length < 2) {
       return;
     }
 
@@ -556,7 +566,7 @@ export function DailyLogDetailScreen({
               }}
             />
             <ActionPill
-              disabled={gifFrameMinutes.length < 2 || !gifRegion}
+              disabled={gifRangePrivacyRouteSegments.length === 0 || gifFrameMinutes.length < 2 || !gifRegion}
               icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
               label="この範囲で出力"
               styles={styles}

@@ -13,11 +13,12 @@
 | 無料版同時作成 | 直列化し、永続化直前にDBを再確認して2件目を防止 | `useStayPlaceState.test.tsx` |
 | 記録境界 | DB/課金の有効滞在場所取得を feature service へ集約 | background task test |
 | 位置バッチ | 1配送の全ポイントで滞在場所を1回だけ読み込む | recording session test |
+| GIF出力 | 入口は日全体の可視線分で判定し、選択範囲も確定・実行時に再検証して全非表示なら出力不可 | `DailyLogDetailGifGeneration.test.tsx` |
 | JSDoc | 新規の公開service・privacy判定・表示専用フォールバックに意図を記載 | typecheck / lint |
 
 ## 検証結果
 
 - focused Jest: pass
 - `npm run typecheck`: pass
-- `npm run lint`: error 0（既存 warning 263件）
+- `npm run lint`: error 0（warning 263件）
 - `npm test -- --runInBand --silent`: 169 suites / 1352 tests pass

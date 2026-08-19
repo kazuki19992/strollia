@@ -83,6 +83,59 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     });
   });
 
+  test('地図の固定中心マーカーを表示し、地図操作完了後の中心座標だけを保存する', () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    render(
+      <StayPlaceEditorScreen
+        initialCoordinate={{ latitude: 35, longitude: 139 }}
+        place={null}
+        styles={styles as never}
+        theme={lightTheme}
+        onBack={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.changeText(screen.getByLabelText('滞在場所名'), '自宅');
+    expect(screen.getByTestId('stay-place-map-center-marker')).toBeTruthy();
+
+    const map = screen.getByLabelText('滞在場所の中心を選ぶ地図');
+    fireEvent(map, 'onRegionChange', { latitude: 35.1, longitude: 139.1, latitudeDelta: 0.005, longitudeDelta: 0.005 });
+    fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+
+    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ latitude: 35, longitude: 139 }));
+
+    fireEvent(map, 'onRegionChangeComplete', {
+      latitude: 35.2,
+      longitude: 139.2,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    });
+    fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+
+    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ latitude: 35.2, longitude: 139.2 }));
+  });
+
+  test('許可リスト外の共有時非表示範囲は保存せず入力エラーを表示する', () => {
+    const onSave = jest.fn();
+    render(
+      <StayPlaceEditorScreen
+        initialCoordinate={{ latitude: 35, longitude: 139 }}
+        place={{ ...home, privacyRadiusMeters: 999 }}
+        styles={styles as never}
+        theme={lightTheme}
+        onBack={jest.fn()}
+        onDelete={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+
+    expect(screen.getByText('入力内容を確認してください')).toBeTruthy();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   test('既存の場所は削除確認後に削除コールバックを呼ぶ', () => {
     const onDelete = jest.fn().mockResolvedValue(undefined);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {

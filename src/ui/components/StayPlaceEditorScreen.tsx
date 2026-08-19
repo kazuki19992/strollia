@@ -5,7 +5,12 @@ import MapView from 'react-native-maps';
 import type { LatLng, Region } from 'react-native-maps';
 
 import { getStayPlaceEmoji, isStayPlaceEmojiHexcode } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
-import { STAY_PLACE_PRIVACY_RADIUS_METERS, type SaveStayPlaceInput, type StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import {
+  isStayPlacePrivacyRadiusMeters,
+  STAY_PLACE_PRIVACY_RADIUS_METERS,
+  type SaveStayPlaceInput,
+  type StayPlace,
+} from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
 import { ActionPill } from './ActionPill';
@@ -62,7 +67,12 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
       setErrorMessage('滞在場所名を入力してください');
       return;
     }
-    if (!isStayPlaceEmojiHexcode(iconHexcode) || !Number.isFinite(coordinate.latitude) || !Number.isFinite(coordinate.longitude)) {
+    if (
+      !isStayPlaceEmojiHexcode(iconHexcode) ||
+      !Number.isFinite(coordinate.latitude) ||
+      !Number.isFinite(coordinate.longitude) ||
+      !isStayPlacePrivacyRadiusMeters(privacyRadiusMeters)
+    ) {
       setErrorMessage('入力内容を確認してください');
       return;
     }
@@ -134,11 +144,12 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
           <DescriptionText styles={styles}>地図を動かして、中央のマーカーを場所の中心へ合わせてください。</DescriptionText>
           <View style={styles.stayPlaceEditorMapContainer}>
             <MapView
+              accessibilityLabel="滞在場所の中心を選ぶ地図"
               initialRegion={createEditorRegion(coordinate)}
               style={styles.stayPlaceEditorMap}
               onRegionChangeComplete={(region) => setCoordinate({ latitude: region.latitude, longitude: region.longitude })}
             />
-            <View pointerEvents="none" style={styles.stayPlaceEditorMapCenterMarker}>
+            <View pointerEvents="none" style={styles.stayPlaceEditorMapCenterMarker} testID="stay-place-map-center-marker">
               <Feather name="map-pin" size={34} color={theme.colors.primary} />
             </View>
           </View>

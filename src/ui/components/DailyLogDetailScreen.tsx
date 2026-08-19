@@ -14,6 +14,7 @@ import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { createInitialRegionFromCoordinates } from '@/features/map/routeMapper';
 import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import { hasValidStayPlacePrivacyConfiguration } from '@/features/stayPlaces/stayPlacePrivacy';
 import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
@@ -83,7 +84,8 @@ export function DailyLogDetailScreen({
 }: DailyLogDetailScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
   const resolvedStayPlacesStatus = stayPlacesStatus ?? (activeStayPlaces == null ? 'loading' : 'ready');
-  const isSharePrivacyReady = resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null;
+  const isSharePrivacyReady =
+    resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null && hasValidStayPlacePrivacyConfiguration(activeStayPlaces);
   const { dailyPoints, dailyDetailReport, isLoadingDetail, routeEndpointsLabel, routeMaxMinutes, routeEndMinutes, setRouteEndMinutes } =
     useDailyLogDetailData(log);
   const [isSharingDetail, setIsSharingDetail] = useState(false);

@@ -414,6 +414,37 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
   });
 
+  test('不正な共有時非表示半径を含む場合は日別共有をfail-closedにする', async () => {
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={[
+          {
+            id: 1,
+            name: '自宅',
+            iconHexcode: '1F3E0',
+            latitude: 35.681236,
+            longitude: 139.767125,
+            privacyRadiusMeters: 50,
+            createdAt: '2026-08-20T00:00:00.000Z',
+            updatedAt: '2026-08-20T00:00:00.000Z',
+          },
+        ]}
+        stayPlacesStatus="ready"
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    await act(async () => {});
+
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
+    expect(screen.queryByLabelText('移動記録をGIFで出力')).toBeNull();
+  });
+
   test('共有画像には有効な滞在場所の非表示範囲を渡す', async () => {
     const activeStayPlaces = [
       {

@@ -61,13 +61,15 @@ export async function createLocationRecordingSession(options: LocationRecordingS
       const locationsToProcess = pendingLocations.length > 0 ? [...pendingLocations, ...locations] : locations;
 
       const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
+      // Expoは複数観測を1回のタスク配信へまとめる。設定DBを点ごとに読むと不要な
+      // ロック競合を増やすため、この配信全体では同じ有効滞在場所を使う。
+      const activeStayPlaces = await getActiveStayPlacesSafely(options.getActiveStayPlaces);
       /** 保存を完了した位置情報の数。途中失敗時に未確定分をバッファへ戻すために追跡する。 */
       let processedCount = 0;
 
       try {
         for (const location of locationsToProcess) {
           const rawPoint = toLocationPoint(location);
-          const activeStayPlaces = await getActiveStayPlacesSafely(options.getActiveStayPlaces);
           const snapResult = resolveStayPlaceSnap({
             state: snapState,
             raw: rawPoint,

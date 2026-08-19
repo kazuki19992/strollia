@@ -193,6 +193,47 @@ describe('滞在場所状態 useStayPlaceState', () => {
     });
   });
 
+  it('無料版で作成操作が重なっても、直列化後の再読込で2件目を保存しない', async () => {
+    let resolveCreate: (() => void) | undefined;
+    const getStayPlaces = jest
+      .fn()
+      .mockResolvedValueOnce([]) // 初回読込
+      .mockResolvedValueOnce([]) // 1件目の永続化直前
+      .mockResolvedValueOnce([home]) // 1件目の再読込
+      .mockResolvedValue([home]); // 2件目の永続化直前と表示再読込
+    const access = createAccess({
+      getStayPlaces,
+      createStayPlace: jest.fn(
+        () =>
+          new Promise<number>((resolve) => {
+            resolveCreate = () => resolve(1);
+          }),
+      ),
+    });
+    const onFreeStayPlaceLimitReached = jest.fn();
+    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }));
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    let first: Promise<void> | undefined;
+    let second: Promise<void> | undefined;
+    await act(async () => {
+      first = result.current.createStayPlace(newOffice);
+      second = result.current.createStayPlace({ ...newOffice, name: '別の職場' });
+      await Promise.resolve();
+    });
+    expect(access.createStayPlace).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveCreate?.();
+      await Promise.all([first, second]);
+    });
+
+    expect(access.createStayPlace).toHaveBeenCalledTimes(1);
+    expect(onFreeStayPlaceLimitReached).toHaveBeenCalledTimes(1);
+    expect(result.current.stayPlaces).toEqual([home]);
+  });
+
   it('編集の保存失敗後もDBを再読込して共有対象を古い値へ戻す', async () => {
     const access = createAccess({
       getStayPlaces: jest.fn().mockResolvedValue([home]),

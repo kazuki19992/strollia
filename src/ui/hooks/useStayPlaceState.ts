@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { resolveActiveStayPlaces, type StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import {
@@ -51,6 +51,8 @@ export function useStayPlaceState(input: {
   const { isReady, isPlusActive, access = repositoryAccess, onFreeStayPlaceLimitReached } = input;
   const [stayPlaces, setStayPlaces] = useState<StayPlace[]>([]);
   const [status, setStatus] = useState<StayPlacesStatus>('loading');
+  /** 無料版の同時作成で2件目をすり抜けないよう、作成判定と永続化を直列化する。 */
+  const freeCreationQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const reloadStayPlaces = useCallback(async (): Promise<void> => {
     if (!isReady) {
@@ -85,15 +87,34 @@ export function useStayPlaceState(input: {
         return;
       }
 
-      setStatus('loading');
-      try {
-        await access.createStayPlace(newStayPlace);
-        await reloadStayPlaces();
-      } catch (error) {
-        // 保存に失敗しても、共有・記録で使うリストをDBの実状態に戻す。
-        await reloadStayPlaces();
-        throw error;
+      const persist = async (): Promise<void> => {
+        // 直列化後にDBを読み直す。呼び出し時のReact stateだけでは、同時タップや別画面の
+        // 保存による無料版の2件目作成を判定できない。
+        if (!isPlusActive && (await access.getStayPlaces()).length >= 1) {
+          onFreeStayPlaceLimitReached?.();
+          await reloadStayPlaces();
+          return;
+        }
+
+        setStatus('loading');
+        try {
+          await access.createStayPlace(newStayPlace);
+          await reloadStayPlaces();
+        } catch (error) {
+          // 保存に失敗しても、共有・記録で使うリストをDBの実状態に戻す。
+          await reloadStayPlaces();
+          throw error;
+        }
+      };
+
+      if (isPlusActive) {
+        await persist();
+        return;
       }
+
+      const queued = freeCreationQueueRef.current.catch(() => undefined).then(persist);
+      freeCreationQueueRef.current = queued;
+      await queued;
     },
     [access, isPlusActive, onFreeStayPlaceLimitReached, reloadStayPlaces, status, stayPlaces.length],
   );

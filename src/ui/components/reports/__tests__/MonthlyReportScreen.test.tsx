@@ -334,4 +334,32 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     expect(screen.getByText('滞在場所を読み込めないため、共有を準備できません。')).toBeTruthy();
     expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
   });
+
+  it('許可リスト外の非表示半径が1件でもあれば共有を無効化する', () => {
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[]}
+        activeStayPlaces={[
+          {
+            id: 1,
+            name: '自宅',
+            iconHexcode: '1F3E0',
+            latitude: 35,
+            longitude: 139,
+            privacyRadiusMeters: 999,
+            createdAt: '2026-08-19T00:00:00.000Z',
+            updatedAt: '2026-08-19T00:00:00.000Z',
+          },
+        ]}
+        stayPlacesStatus="ready"
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
+  });
 });

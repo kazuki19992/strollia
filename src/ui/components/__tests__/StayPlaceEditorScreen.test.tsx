@@ -50,7 +50,7 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  test('固定カタログから家アイコンを選び、入力した場所を保存する', () => {
+  test('固定カタログから初期値と異なるアイコンを選び、hexcodeを保存する', async () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     render(
       <StayPlaceEditorScreen
@@ -70,20 +70,49 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     });
 
     act(() => {
-      fireEvent.press(screen.getByLabelText('家のアイコンを選択'));
-      fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+      fireEvent.press(screen.getByLabelText('オフィスビルのアイコンを選択'));
     });
+    await act(async () => {});
+    fireEvent.press(screen.getByLabelText('滞在場所を保存'));
 
     expect(onSave).toHaveBeenCalledWith({
       name: '自宅',
-      iconHexcode: '1F3E0',
+      iconHexcode: '1F3E2',
       latitude: 35,
       longitude: 139,
       privacyRadiusMeters: null,
     });
   });
 
-  test('共有時の非表示範囲で1kmを選ぶと1000mとして保存する', () => {
+  test('保存中は連続タップしても保存処理を1回だけ呼ぶ', async () => {
+    let resolveSave: (() => void) | undefined;
+    const onSave = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    render(
+      <StayPlaceEditorScreen
+        initialCoordinate={{ latitude: 35, longitude: 139 }}
+        place={null}
+        styles={styles as never}
+        theme={lightTheme}
+        onBack={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.changeText(screen.getByLabelText('滞在場所名'), '自宅');
+    const saveButton = screen.getByLabelText('滞在場所を保存');
+    fireEvent.press(saveButton);
+    fireEvent.press(saveButton);
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    await act(async () => resolveSave?.());
+  });
+
+  test('共有時の非表示範囲で1kmを選ぶと1000mとして保存する', async () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     render(
       <StayPlaceEditorScreen
@@ -101,11 +130,12 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     expect(screen.getByLabelText('非表示範囲: 10km')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('非表示範囲: 1km'));
     fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+    await act(async () => {});
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ privacyRadiusMeters: 1000 }));
   });
 
-  test('地図の固定中心マーカーを表示し、地図操作完了後の中心座標だけを保存する', () => {
+  test('地図の固定中心マーカーを表示し、地図操作完了後の中心座標だけを保存する', async () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     render(
       <StayPlaceEditorScreen
@@ -124,6 +154,7 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     const map = screen.getByLabelText('滞在場所の中心を選ぶ地図');
     fireEvent(map, 'onRegionChange', { latitude: 35.1, longitude: 139.1, latitudeDelta: 0.005, longitudeDelta: 0.005 });
     fireEvent.press(screen.getByLabelText('滞在場所を保存'));
+    await act(async () => {});
 
     expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ latitude: 35, longitude: 139 }));
 

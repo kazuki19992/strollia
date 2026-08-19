@@ -95,6 +95,13 @@ describe('滞在場所設定ルート', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
+  test('現在地が未取得の新規作成画面は、地図を動かすまで保存座標を渡さない', () => {
+    mockState.userCoordinate = null;
+    render(<NewStayPlaceRoute />);
+
+    expect(latestEditorProps?.initialCoordinate).toBeNull();
+  });
+
   test('無料版の読込中に直接新規作成へ到達しても保存せずPlus購入導線を開く', async () => {
     mockState.stayPlacesStatus = 'loading';
     render(<NewStayPlaceRoute />);

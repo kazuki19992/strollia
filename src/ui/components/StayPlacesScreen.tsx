@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image, SafeAreaView, ScrollView, Text } from 'react-native';
 
 import { getStayPlaceEmoji } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
+import { formatStayPlacePrivacyRadius } from '@/features/stayPlaces/stayPlacePrivacy';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
@@ -37,7 +38,7 @@ function formatPrivacyRadius(privacyRadiusMeters: number | null): string {
     return '共有時もこの場所を含める';
   }
 
-  return `共有時は中心から${privacyRadiusMeters}m以内を隠す`;
+  return `共有時は中心から${formatStayPlacePrivacyRadius(privacyRadiusMeters)}以内を隠す`;
 }
 
 /** 契約状態に応じた場所の状態ラベルを返す。 */

@@ -3,8 +3,6 @@ import { useRouter } from 'expo-router';
 import { StayPlaceEditorScreen } from '@/ui/components/StayPlaceEditorScreen';
 import { useAppState } from '@/ui/state/AppStateProvider';
 
-const DEFAULT_STAY_PLACE_COORDINATE = { latitude: 35.681236, longitude: 139.767125 };
-
 /** 滞在場所の新規作成ルート(/settings/stay-places/new)。 */
 export default function NewStayPlaceRoute(): React.ReactElement {
   const s = useAppState();
@@ -12,7 +10,7 @@ export default function NewStayPlaceRoute(): React.ReactElement {
 
   return (
     <StayPlaceEditorScreen
-      initialCoordinate={s.userCoordinate ?? DEFAULT_STAY_PLACE_COORDINATE}
+      initialCoordinate={s.userCoordinate}
       place={null}
       styles={s.styles}
       theme={s.theme}

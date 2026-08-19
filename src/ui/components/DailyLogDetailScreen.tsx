@@ -118,7 +118,10 @@ export function DailyLogDetailScreen({
   const gifRangeMinMinute = Math.floor(recordingStartMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
   const gifRangeMaxMinute = Math.ceil(recordingEndMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
   const canExportGif =
-    isSharePrivacyReady && isPlusActive && dailyPoints.length >= 2 && gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
+    isSharePrivacyReady &&
+    isPlusActive &&
+    dailyPoints.length >= 2 &&
+    gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
   // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
   const gifRangePoints = useMemo(
     () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifRangeEnd),

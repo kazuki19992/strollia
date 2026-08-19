@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
 import MapView from 'react-native-maps';
 import type { LatLng, Region } from 'react-native-maps';
@@ -11,6 +11,7 @@ import {
   type SaveStayPlaceInput,
   type StayPlace,
 } from '@/features/stayPlaces/stayPlaceTypes';
+import { formatStayPlacePrivacyRadius } from '@/features/stayPlaces/stayPlacePrivacy';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
 import { ActionPill } from './ActionPill';
@@ -21,8 +22,8 @@ import { StayPlaceIconPicker } from './StayPlaceIconPicker';
 
 /** 滞在場所編集画面のprops。 */
 export type StayPlaceEditorScreenProps = {
-  /** 新規作成時に使う地図中心。 */
-  initialCoordinate: LatLng;
+  /** 新規作成時の現在地。未取得なら東京駅付近は表示専用で、保存座標には使わない。 */
+  initialCoordinate: LatLng | null;
   /** 編集対象。新規作成時はnull。 */
   place: StayPlace | null;
   /** 画面共通スタイル。 */
@@ -38,37 +39,39 @@ export type StayPlaceEditorScreenProps = {
 };
 
 const DEFAULT_ICON_HEXCODE = '1F3E0';
+/** 現在地未取得時に、地点を捏造せず地図を操作できるよう表示だけに使う中心。 */
+const DEFAULT_EDITOR_VIEWPORT_COORDINATE = { latitude: 35.681236, longitude: 139.767125 };
 
 /** 編集に使う地図regionを座標から作る。 */
 function createEditorRegion(coordinate: LatLng): Region {
   return { ...coordinate, latitudeDelta: 0.005, longitudeDelta: 0.005 };
 }
 
-/** 半径を選択UI向けに表示する。 */
-function formatPrivacyRadius(privacyRadiusMeters: number | null): string {
-  if (privacyRadiusMeters === null) {
-    return '含める';
-  }
-
-  return privacyRadiusMeters >= 1000 ? `${privacyRadiusMeters / 1000}km` : `${privacyRadiusMeters}m`;
-}
-
 /** 滞在場所の新規作成・編集画面。 */
 export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme, onBack, onDelete, onSave }: StayPlaceEditorScreenProps) {
   const [name, setName] = useState(place?.name ?? '');
   const [iconHexcode, setIconHexcode] = useState(place?.iconHexcode ?? DEFAULT_ICON_HEXCODE);
-  const [coordinate, setCoordinate] = useState<LatLng>(
+  const [coordinate, setCoordinate] = useState<LatLng | null>(
     place ? { latitude: place.latitude, longitude: place.longitude } : initialCoordinate,
   );
   const [privacyRadiusMeters, setPrivacyRadiusMeters] = useState<number | null>(place?.privacyRadiusMeters ?? null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isIconPickerVisible, setIsIconPickerVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
   const selectedEmoji = getStayPlaceEmoji(iconHexcode);
 
   /** 入力を検証し、成功時だけProviderへ保存を委譲する。 */
   async function handleSave(): Promise<void> {
+    if (isSavingRef.current) {
+      return;
+    }
     if (name.trim().length === 0) {
       setErrorMessage('滞在場所名を入力してください');
+      return;
+    }
+    if (coordinate === null) {
+      setErrorMessage('地図を動かして中心位置を選んでください');
       return;
     }
     if (
@@ -82,10 +85,15 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
     }
 
     try {
+      isSavingRef.current = true;
+      setIsSaving(true);
       setErrorMessage(null);
       await onSave({ name: name.trim(), iconHexcode, latitude: coordinate.latitude, longitude: coordinate.longitude, privacyRadiusMeters });
     } catch (error: unknown) {
       setErrorMessage(error instanceof Error ? error.message : '滞在場所を保存できませんでした');
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
     }
   }
 
@@ -149,7 +157,7 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
           <View style={styles.stayPlaceEditorMapContainer}>
             <MapView
               accessibilityLabel="滞在場所の中心を選ぶ地図"
-              initialRegion={createEditorRegion(coordinate)}
+              initialRegion={createEditorRegion(coordinate ?? DEFAULT_EDITOR_VIEWPORT_COORDINATE)}
               style={styles.stayPlaceEditorMap}
               onRegionChangeComplete={(region) => setCoordinate({ latitude: region.latitude, longitude: region.longitude })}
             />
@@ -166,12 +174,12 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
               return (
                 <Pressable
                   key={radius ?? 'include'}
-                  accessibilityLabel={`非表示範囲: ${formatPrivacyRadius(radius)}`}
+                  accessibilityLabel={`非表示範囲: ${formatStayPlacePrivacyRadius(radius)}`}
                   accessibilityRole="button"
                   style={[styles.stayPlaceEmojiPickerButton, selected && styles.stayPlaceEmojiPickerButtonSelected]}
                   onPress={() => setPrivacyRadiusMeters(radius)}
                 >
-                  <Text style={styles.formItemTitle}>{formatPrivacyRadius(radius)}</Text>
+                  <Text style={styles.formItemTitle}>{formatStayPlacePrivacyRadius(radius)}</Text>
                 </Pressable>
               );
             })}
@@ -180,8 +188,9 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
         {errorMessage ? <Text style={styles.stayPlaceFormError}>{errorMessage}</Text> : null}
         <ActionPill
           alignLeft
+          disabled={isSaving}
           icon={<Feather name="save" size={20} color={theme.colors.text} />}
-          label="滞在場所を保存"
+          label={isSaving ? '滞在場所を保存中…' : '滞在場所を保存'}
           styles={styles}
           onPress={() => {
             handleSave().catch(() => undefined);

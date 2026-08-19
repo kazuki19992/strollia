@@ -62,8 +62,8 @@ jest.mock('@/features/logs/logRepository', () => ({
       id: 2,
       recordedAt: new Date(2026, 4, 31, 0, 30).toISOString(),
       localDate: '2026-05-31',
-      latitude: 35.690921,
-      longitude: 139.700258,
+      latitude: 35.6815,
+      longitude: 139.7675,
       altitude: null,
       speed: null,
       heading: null,
@@ -122,19 +122,6 @@ const log = {
   endLocationPointId: 2,
 };
 const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
-const activeStayPlaces = [
-  {
-    id: 1,
-    name: '自宅',
-    iconHexcode: '1F3E0',
-    latitude: 35.681236,
-    longitude: 139.767125,
-    privacyRadiusMeters: 100,
-    createdAt: '2026-08-19T00:00:00.000Z',
-    updatedAt: '2026-08-19T00:00:00.000Z',
-  },
-];
-
 describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -154,7 +141,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
-        activeStayPlaces={activeStayPlaces}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={jest.fn()}
       />,
@@ -181,7 +168,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     });
 
     // UNSAFE_getByType は画面外のGIF描画コンポーネントへ渡したpropsを確認するために使う。
-    expect(screen.UNSAFE_getByType(GifFrameRenderer).props.activeStayPlaces).toEqual(activeStayPlaces);
+    expect(screen.UNSAFE_getByType(GifFrameRenderer).props.activeStayPlaces).toEqual([]);
 
     // 画面外の GifFrameRenderer がマウントされ、地図のタイル描画完了を発火させる
     await act(async () => {

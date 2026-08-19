@@ -194,6 +194,16 @@ describe('滞在場所の有効座標を使う位置情報保存セッション'
       expect.objectContaining({ latitude: home.latitude, longitude: home.longitude }),
     );
   });
+
+  it('1回の位置情報バッチでは有効な滞在場所を1回だけ読み込む', async () => {
+    mockToLocationPoint.mockReturnValueOnce(firstPoint).mockReturnValueOnce(secondPoint);
+    const getActiveStayPlaces = jest.fn().mockResolvedValue([home]);
+    const session = await createLocationRecordingSession({ getActiveStayPlaces });
+
+    await session.recordLocations([firstLocation, secondLocation]);
+
+    expect(getActiveStayPlaces).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('GPXインポート優先モードのバッファリング', () => {

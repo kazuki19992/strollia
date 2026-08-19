@@ -27,8 +27,7 @@ export function StayPlaceIconPicker({ selectedHexcode, styles, theme, visible, o
     <Modal animationType="slide" visible={visible} onRequestClose={onClose}>
       <SafeAreaView style={styles.stayPlaceEmojiPickerModal}>
         <AppScreenHeader backLabel="編集" styles={styles} theme={theme} title="アイコンを選択" onBack={onClose} />
-        <ScrollView contentContainerStyle={styles.screenList}>
-          <ScrollView contentContainerStyle={styles.stayPlaceEmojiPickerGrid} horizontal={false}>
+        <ScrollView contentContainerStyle={styles.stayPlaceEmojiPickerGrid}>
             {STAY_PLACE_EMOJIS.map((emoji) => (
               <Pressable
                 key={emoji.hexcode}
@@ -43,7 +42,6 @@ export function StayPlaceIconPicker({ selectedHexcode, styles, theme, visible, o
                 <Image accessibilityLabel={emoji.label} source={emoji.asset} style={styles.stayPlaceEmojiPickerImage} />
               </Pressable>
             ))}
-          </ScrollView>
         </ScrollView>
       </SafeAreaView>
     </Modal>

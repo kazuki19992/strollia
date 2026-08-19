@@ -153,4 +153,36 @@ describe('共有用のプライバシールート区間 toPrivacyRouteSegments',
       ],
     ]);
   });
+
+  it('両端が非表示範囲の外でも、半径を横切る線分は出力しない', () => {
+    const result = toPrivacyRouteSegments(
+      [
+        point(35 - 200 / METERS_PER_LATITUDE_DEGREE, 139, '2026-08-19T00:00:00.000Z'),
+        point(35 + 200 / METERS_PER_LATITUDE_DEGREE, 139, '2026-08-19T00:01:00.000Z'),
+      ],
+      [stayPlace()],
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it('簡略化後の線が非表示範囲を横切る場合は、簡略化前の安全な折れ線を維持する', () => {
+    const metersPerLongitudeDegree = METERS_PER_LATITUDE_DEGREE * Math.cos((35 * Math.PI) / 180);
+    const result = toPrivacyRouteSegments(
+      [
+        point(35, 139 - 200 / metersPerLongitudeDegree, '2026-08-19T00:00:00.000Z'),
+        point(35 + 200 / METERS_PER_LATITUDE_DEGREE, 139, '2026-08-19T00:01:00.000Z'),
+        point(35, 139 + 200 / metersPerLongitudeDegree, '2026-08-19T00:02:00.000Z'),
+      ],
+      [stayPlace()],
+    );
+
+    expect(coordinates(result)).toEqual([
+      [
+        { latitude: 35, longitude: 139 - 200 / metersPerLongitudeDegree },
+        { latitude: 35 + 200 / METERS_PER_LATITUDE_DEGREE, longitude: 139 },
+        { latitude: 35, longitude: 139 + 200 / metersPerLongitudeDegree },
+      ],
+    ]);
+  });
 });

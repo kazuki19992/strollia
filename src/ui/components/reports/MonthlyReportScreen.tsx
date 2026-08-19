@@ -10,6 +10,7 @@ import { MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { createMonthlyReport, getPreviousReportMonth, hasMonthlyReportData, MonthlyReport } from '@/features/reports/monthlyReport';
 import { createInitialRegionFromCoordinates } from '@/features/map/routeMapper';
 import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import { hasValidStayPlacePrivacyConfiguration } from '@/features/stayPlaces/stayPlacePrivacy';
 import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { DailyLogSummary, LocationPoint } from '@/types/gps';
@@ -101,7 +102,8 @@ export function MonthlyReportScreen({
   onBackToMap,
 }: MonthlyReportScreenProps) {
   const resolvedStayPlacesStatus = stayPlacesStatus ?? (activeStayPlaces == null ? 'loading' : 'ready');
-  const isSharePrivacyReady = resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null;
+  const isSharePrivacyReady =
+    resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null && hasValidStayPlacePrivacyConfiguration(activeStayPlaces);
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
   const reportCaptureRef = useRef<View | null>(null);

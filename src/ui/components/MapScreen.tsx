@@ -6,12 +6,17 @@ import { useEffect, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 
 import { MapPhotoCluster } from '@/features/photos/photoClusters';
+import { getStayPlaceEmoji } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
+import { formatStayPlacePrivacyRadius } from '@/features/stayPlaces/stayPlacePrivacy';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { AreaLabel } from '@/ui/areaName';
 import { AppTheme } from '@/theme/theme';
 import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import { AppStyles } from '@/ui/appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
+import { Dialog } from './Dialog';
+import { StayPlaceMapMarker } from './StayPlaceMapMarker';
 
 /** マップ上の補助UIはOS文字サイズで地図表示を覆わないよう固定する。 */
 const FIXED_MAP_UI_TEXT_PROPS = { allowFontScaling: false };
@@ -65,6 +70,8 @@ export type MapScreenProps = {
   isUpdatingPhotoSetting: boolean;
   /** 表示する写真クラスタ。 */
   photoClusters: MapPhotoCluster[];
+  /** 現在の契約状態で有効な滞在場所。読込中・失敗時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
   /** GPS記録が1件以上あるか(空状態表示の判定用)。 */
   hasAnyLocationPoints: boolean;
   /** 位置情報権限が揃っているか。 */
@@ -134,6 +141,7 @@ export function MapScreen({
   showPhotosOnMap,
   isUpdatingPhotoSetting,
   photoClusters,
+  activeStayPlaces,
   hasAnyLocationPoints,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
@@ -165,6 +173,9 @@ export function MapScreen({
   // カスタム画像マーカーは画像ロード完了までネイティブスナップショットを更新し続ける。
   // ロード後はパフォーマンスのため更新を止める。
   const [isCustomMarkerRendered, setIsCustomMarkerRendered] = useState(false);
+  /** タップして詳細ダイアログを開いている滞在場所。 */
+  const [selectedStayPlace, setSelectedStayPlace] = useState<StayPlace | null>(null);
+  const selectedStayPlaceEmoji = selectedStayPlace ? getStayPlaceEmoji(selectedStayPlace.iconHexcode) : null;
 
   /**
    * Visited GridのPolygon要素。
@@ -218,11 +229,15 @@ export function MapScreen({
         mapPadding={MAP_PADDING}
       >
         {visitedGridPolygons}
+        {activeStayPlaces?.map((place) => (
+          <StayPlaceMapMarker key={place.id} place={place} styles={styles} onPress={setSelectedStayPlace} />
+        ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker
             coordinate={userCoordinate}
             anchor={{ x: 0.5, y: 0.5 }}
             tracksViewChanges={userLocationIcon.customImageUri ? !isCustomMarkerRendered : undefined}
+            zIndex={4}
           >
             {userLocationIcon.customImageUri ? (
               <Image
@@ -251,6 +266,24 @@ export function MapScreen({
             <PhotoClusterMarker key={cluster.id} cluster={cluster} styles={styles} onPress={onPhotoClusterPress} />
           ))}
       </MapView>
+
+      <Dialog visible={selectedStayPlace !== null} swipeToClose styles={styles} onClose={() => setSelectedStayPlace(null)}>
+        {selectedStayPlace ? (
+          <View style={styles.stayPlaceMapDialogContent}>
+            {selectedStayPlaceEmoji ? (
+              <Image
+                accessibilityLabel={`${selectedStayPlaceEmoji.label}のTwemojiアイコン`}
+                source={selectedStayPlaceEmoji.asset}
+                style={styles.stayPlaceMapDialogImage}
+              />
+            ) : null}
+            <Text style={styles.stayPlaceMapDialogTitle}>{selectedStayPlace.name}</Text>
+            <Text style={styles.stayPlaceMapDialogPrivacy}>
+              非表示範囲: {formatStayPlacePrivacyRadius(selectedStayPlace.privacyRadiusMeters)}
+            </Text>
+          </View>
+        ) : null}
+      </Dialog>
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
         {!hasAnyLocationPoints && (

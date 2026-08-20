@@ -15,6 +15,11 @@ jest.mock('react-native-maps', () => {
   return { __esModule: true, Circle: View, default: View, Marker: View };
 });
 
+// 画面単体テストではRootLayoutを描画しないため、実機のセーフエリア値を固定する。
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
+}));
+
 const styles = new Proxy({}, { get: () => ({}) });
 
 const home: StayPlace = {
@@ -72,7 +77,7 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     });
 
     act(() => {
-      fireEvent.press(screen.getByLabelText('オフィスビル'));
+      fireEvent.press(screen.getByLabelText('仕事場'));
     });
     await act(async () => {});
     fireEvent.press(screen.getByLabelText('滞在場所を保存'));

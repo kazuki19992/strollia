@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
@@ -41,6 +42,10 @@ export function SelectionDropdown<T>({
   theme,
 }: SelectionDropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  // シートの上端をセーフエリアより少し下に保ち、長い候補は内部でスクロールさせる。
+  const maximumSheetHeight = Math.max(0, height - insets.top - 16);
 
   return (
     <>
@@ -56,31 +61,39 @@ export function SelectionDropdown<T>({
       </Pressable>
 
       <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
-        <Pressable style={styles.colorPresetModalBackdrop} onPress={() => setIsOpen(false)}>
-          <View style={styles.colorPresetModalSheet}>
-            {options.map((option) => {
-              const isSelected = option === selectedValue;
+        <View style={styles.colorPresetModalBackdrop}>
+          <Pressable
+            accessibilityLabel="選択を閉じる"
+            accessibilityRole="button"
+            style={StyleSheet.absoluteFill}
+            onPress={() => setIsOpen(false)}
+          />
+          <View testID="selection-dropdown-sheet" style={[styles.colorPresetModalSheet, { maxHeight: maximumSheetHeight }]}>
+            <ScrollView testID="selection-dropdown-options" style={styles.colorPresetModalScroll}>
+              {options.map((option) => {
+                const isSelected = option === selectedValue;
 
-              return (
-                <Pressable
-                  key={getKey(option)}
-                  accessibilityRole="button"
-                  accessibilityLabel={getLabel(option)}
-                  accessibilityState={{ selected: isSelected }}
-                  onPress={() => {
-                    onSelect(option);
-                    setIsOpen(false);
-                  }}
-                  style={styles.colorPresetRow}
-                >
-                  {renderLeading?.(option)}
-                  <Text style={styles.colorPresetRowLabel}>{getLabel(option)}</Text>
-                  {isSelected ? <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} /> : null}
-                </Pressable>
-              );
-            })}
+                return (
+                  <Pressable
+                    key={getKey(option)}
+                    accessibilityRole="button"
+                    accessibilityLabel={getLabel(option)}
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => {
+                      onSelect(option);
+                      setIsOpen(false);
+                    }}
+                    style={styles.colorPresetRow}
+                  >
+                    {renderLeading?.(option)}
+                    <Text style={styles.colorPresetRowLabel}>{getLabel(option)}</Text>
+                    {isSelected ? <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} /> : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </>
   );

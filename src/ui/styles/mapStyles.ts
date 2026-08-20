@@ -619,6 +619,52 @@ export function createMapStyles(theme: AppTheme) {
       width: 42,
     },
 
+    // Stay place marker
+    stayPlaceMapMarkerBubble: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 10,
+      borderWidth: 1,
+      elevation: 5,
+      height: 44,
+      justifyContent: 'center',
+      shadowColor: '#000000',
+      shadowOffset: { height: 3, width: 0 },
+      shadowOpacity: 0.22,
+      shadowRadius: 6,
+      width: 44,
+    },
+    stayPlaceMapMarkerContainer: {
+      alignItems: 'center',
+      height: 50,
+      justifyContent: 'flex-start',
+      width: 44,
+    },
+    stayPlaceMapMarkerImage: {
+      height: 28,
+      width: 28,
+    },
+    stayPlaceMapDialogContent: {
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 26,
+      paddingVertical: 18,
+    },
+    stayPlaceMapDialogImage: {
+      height: 42,
+      width: 42,
+    },
+    stayPlaceMapDialogPrivacy: {
+      color: colors.mutedText,
+      fontSize: 13,
+    },
+    stayPlaceMapDialogTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '700',
+    },
+
     // Photo markers (map overlay)
     photoMarkerBubble: {
       backgroundColor: colors.surfaceOverlay,

@@ -186,8 +186,8 @@ export function createSettingsStyles(theme: AppTheme) {
       gap: 10,
     },
     stayPlaceEmojiPickerImage: {
-      height: 34,
-      width: 34,
+      height: 28,
+      width: 28,
     },
     stayPlaceEmojiPickerModal: {
       backgroundColor: colors.background,
@@ -538,6 +538,10 @@ export function createSettingsStyles(theme: AppTheme) {
       borderTopRightRadius: 20,
       paddingBottom: 34,
       paddingTop: 8,
+    },
+    colorPresetModalScroll: {
+      flexGrow: 0,
+      flexShrink: 1,
     },
     colorPresetRow: {
       alignItems: 'center',

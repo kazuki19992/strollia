@@ -59,6 +59,7 @@ export default function MapRoute(): React.ReactElement {
           showPhotosOnMap={s.showPhotosOnMap}
           isUpdatingPhotoSetting={s.isUpdatingPhotoSetting}
           photoClusters={s.photoClusters}
+          activeStayPlaces={s.activeStayPlaces}
           hasAnyLocationPoints={s.hasAnyLocationPoints}
           hasRequiredPermission={s.hasRequiredPermission}
           shouldOpenSettingsForPermission={s.shouldOpenSettingsForPermission}

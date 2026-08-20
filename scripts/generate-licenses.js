@@ -19,7 +19,7 @@ const STATIC_ASSET_LICENSES = [
     source: 'asset',
     licenseText:
       'Twemoji graphics © 2020 Twitter, Inc and other contributors. Licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/.',
-    noticeText: 'Twelve static PNG assets are bundled from Twemoji v14.1.2.',
+    noticeText: 'Fourteen static PNG assets are bundled from Twemoji v14.1.2.',
   },
 ];
 

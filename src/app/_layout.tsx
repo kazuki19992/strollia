@@ -1,6 +1,7 @@
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { Alert } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { wrapWithSentry } from '@/config/sentry';
 import { updateSentryScreenContext } from '@/config/sentry';
@@ -184,9 +185,11 @@ function RootLayout(): React.ReactElement {
   const pathname = usePathname();
 
   return (
-    <AppStateProvider navigator={navigator} currentScreenMode={pathnameToScreenMode(pathname)}>
-      <RootLayoutContent />
-    </AppStateProvider>
+    <SafeAreaProvider>
+      <AppStateProvider navigator={navigator} currentScreenMode={pathnameToScreenMode(pathname)}>
+        <RootLayoutContent />
+      </AppStateProvider>
+    </SafeAreaProvider>
   );
 }
 

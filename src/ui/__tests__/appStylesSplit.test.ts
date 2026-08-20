@@ -9,6 +9,7 @@
  *   - createStyles(theme) の全体結果が代表キーをすべて含むことを確認する
  */
 import { createStyles } from '@/ui/appStyles';
+import { StyleSheet } from 'react-native';
 import { createAchievementStyles } from '@/ui/styles/achievementStyles';
 import { createCommonStyles } from '@/ui/styles/commonStyles';
 import { createDailyLogStyles } from '@/ui/styles/dailyLogStyles';
@@ -66,6 +67,12 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.premiumBadge).toBeDefined();
       expect(styles.settingsPlusBadge).toBeDefined();
     });
+
+    test('滞在場所アイコンのドロップダウンではTwemojiを文字より少し大きい28pxで表示する', () => {
+      const styles = createSettingsStyles(theme);
+
+      expect(StyleSheet.flatten(styles.stayPlaceEmojiPickerImage)).toMatchObject({ height: 28, width: 28 });
+    });
   });
 
   describe('createDailyLogStyles — 日別ログ・スライダー・GIF', () => {
@@ -117,6 +124,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.actionPill).toBeDefined();
       expect(styles.settingsPlusBadge).toBeDefined();
       expect(styles.stayPlaceEditorMap).toBeDefined();
+      expect(styles.colorPresetModalScroll).toBeDefined();
+      expect(styles.stayPlaceMapMarkerBubble).toBeDefined();
       // dailyLogStyles
       expect(styles.routeMapFrame).toBeDefined();
       expect(styles.gifFrameContainer).toBeDefined();
@@ -126,13 +135,13 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全366キーが存在する（過不足なし）', () => {
+    test('全374キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
       // 分割前の総キー数と一致することを確認する（将来のキー追加で差分が出た場合に検知できる）
-      // 内訳: 分割前352キー + topToast系2キー + lockedOverlay 1キー + 滞在場所設定11キー
-      expect(keys.length).toBe(366);
+      // 内訳: 分割前352キー + topToast系2キー + lockedOverlay 1キー + 滞在場所設定12キー + 地図マーカー7キー
+      expect(keys.length).toBe(374);
     });
   });
 });

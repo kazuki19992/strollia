@@ -13,8 +13,16 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: mockBack }),
 }));
 
+// RootLayout がセーフエリア情報を全画面へ提供することを確認する。
+jest.mock('react-native-safe-area-context', () => {
+  const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
+  return {
+    SafeAreaProvider: ({ children }: { children: React.ReactNode }) => <View testID="root-safe-area-provider">{children}</View>,
+  };
+});
+
 /** AppStateProvider が受け取った props の記録。配線検証に使う。 */
-const mockProviderProps: Array<Record<string, unknown>> = [];
+const mockProviderProps: Record<string, unknown>[] = [];
 
 // wrapWithSentry はコンポーネントをそのまま返すスタブ
 jest.mock('@/config/sentry', () => ({
@@ -84,6 +92,12 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     render(<RootLayout />);
 
     expect(screen.toJSON()).not.toBeNull();
+  });
+
+  test('全画面がセーフエリア情報を参照できるようSafeAreaProviderで包む', () => {
+    render(<RootLayout />);
+
+    expect(screen.getByTestId('root-safe-area-provider')).toBeTruthy();
   });
 
   test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', () => {

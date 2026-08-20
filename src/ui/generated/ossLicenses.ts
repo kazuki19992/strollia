@@ -15,7 +15,7 @@ export type OssLicenseEntry = {
   noticeText: string | null;
 };
 
-export const OSS_LICENSES_GENERATED_AT = "2026-08-19T03:50:23.537Z";
+export const OSS_LICENSES_GENERATED_AT = "2026-08-20T08:31:13.946Z";
 
 export const OSS_LICENSES: OssLicenseEntry[] = [
   {
@@ -7336,7 +7336,7 @@ export const OSS_LICENSES: OssLicenseEntry[] = [
     "repository": "https://github.com/jdecked/twemoji",
     "source": "asset",
     "licenseText": "Twemoji graphics © 2020 Twitter, Inc and other contributors. Licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/.",
-    "noticeText": "Twelve static PNG assets are bundled from Twemoji v14.1.2."
+    "noticeText": "Fourteen static PNG assets are bundled from Twemoji v14.1.2."
   },
   {
     "id": "npm:type-detect@4.0.8",

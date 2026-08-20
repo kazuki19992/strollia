@@ -7,12 +7,18 @@ import { StayPlaceEditorScreen } from '@/ui/components/StayPlaceEditorScreen';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
+  MaterialCommunityIcons: require('react-native').Text,
 }));
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native');
-  return { __esModule: true, default: View, Marker: View };
+  return { __esModule: true, Circle: View, default: View, Marker: View };
 });
+
+// 画面単体テストではRootLayoutを描画しないため、実機のセーフエリア値を固定する。
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
+}));
 
 const styles = new Proxy({}, { get: () => ({}) });
 
@@ -50,7 +56,7 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
-  test('固定カタログから初期値と異なるアイコンを選び、hexcodeを保存する', async () => {
+  test('ドロップダウンのTwemojiアイコンを選び、hexcodeを保存する', async () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     render(
       <StayPlaceEditorScreen
@@ -66,11 +72,12 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
 
     act(() => {
       fireEvent.changeText(screen.getByLabelText('滞在場所名'), '自宅');
+      expect(screen.getByLabelText('家のTwemojiアイコン')).toBeTruthy();
       fireEvent.press(screen.getByLabelText('アイコンを選択'));
     });
 
     act(() => {
-      fireEvent.press(screen.getByLabelText('オフィスビルのアイコンを選択'));
+      fireEvent.press(screen.getByLabelText('仕事場'));
     });
     await act(async () => {});
     fireEvent.press(screen.getByLabelText('滞在場所を保存'));
@@ -112,7 +119,7 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     await act(async () => resolveSave?.());
   });
 
-  test('共有時の非表示範囲で1kmを選ぶと1000mとして保存する', async () => {
+  test('ドロップダウンから共有時の非表示範囲を選ぶと地図の範囲円と保存値へ反映する', async () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     render(
       <StayPlaceEditorScreen
@@ -126,13 +133,31 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     );
 
     fireEvent.changeText(screen.getByLabelText('滞在場所名'), '自宅');
-    expect(screen.queryByLabelText('非表示範囲: 50m')).toBeNull();
-    expect(screen.getByLabelText('非表示範囲: 10km')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('非表示範囲: 1km'));
+    expect(screen.getByLabelText('共有時の非表示範囲を選択')).toHaveTextContent('共有画像に含める');
+    expect(screen.queryByTestId('stay-place-privacy-circle')).toBeNull();
+    fireEvent.press(screen.getByLabelText('共有時の非表示範囲を選択'));
+    fireEvent.press(screen.getByLabelText('1km'));
+    expect(screen.getByTestId('stay-place-privacy-circle')).toBeTruthy();
+    expect(screen.getByText('この円内のルートは共有画像・GIF・月次レポートでは隠れます。通常の地図やGPXには影響しません。')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('滞在場所を保存'));
     await act(async () => {});
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ privacyRadiusMeters: 1000 }));
+  });
+
+  test('非表示範囲が未設定なら共有画像に場所を含めることを説明する', () => {
+    render(
+      <StayPlaceEditorScreen
+        initialCoordinate={{ latitude: 35, longitude: 139 }}
+        place={null}
+        styles={styles as never}
+        theme={lightTheme}
+        onBack={jest.fn()}
+        onSave={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('非表示範囲を設定すると、この場所の周辺を共有するルートから隠します。')).toBeTruthy();
   });
 
   test('地図の固定中心マーカーを表示し、地図操作完了後の中心座標だけを保存する', async () => {

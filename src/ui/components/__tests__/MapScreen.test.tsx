@@ -4,6 +4,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import {
   formatDistanceKilometers,
   formatSpeedKmh,
@@ -52,6 +53,24 @@ jest.mock('@/ui/components/PhotoClusterMarker', () => ({
   PhotoClusterMarker: () => null,
 }));
 
+jest.mock('@/ui/components/StayPlaceMapMarker', () => {
+  const { Pressable, Text } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
+  return {
+    StayPlaceMapMarker: ({ place, onPress }: { place: StayPlace; onPress: (place: StayPlace) => void }) => (
+      <Pressable accessibilityLabel={`${place.name}を開く`} accessibilityRole="button" onPress={() => onPress(place)}>
+        <Text>{place.name}</Text>
+      </Pressable>
+    ),
+  };
+});
+
+jest.mock('@/ui/components/Dialog', () => {
+  const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
+  return {
+    Dialog: ({ children, visible }: { children: React.ReactNode; visible: boolean }) => (visible ? <View>{children}</View> : null),
+  };
+});
+
 const styles = createStyles(lightTheme);
 
 /** 地図画面テスト用の既定propsを作る。 */
@@ -70,6 +89,7 @@ function createProps() {
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
     photoClusters: [],
+    activeStayPlaces: null as StayPlace[] | null,
     hasAnyLocationPoints: false,
     hasRequiredPermission: true,
     isWhileInUseOnlyMode: false,
@@ -120,6 +140,28 @@ describe('地図画面 MapScreen', () => {
     expect(screen.getByText('神田')).toBeTruthy();
     expect(screen.queryByText('🚶 徒歩で移動中...')).toBeNull();
     expect(screen.queryByText('メニュー')).toBeNull();
+  });
+
+  test('有効な滞在場所のマーカーをタップするとアイコン・太字の名前・非表示範囲を表示する', () => {
+    const place: StayPlace = {
+      id: 1,
+      name: '自宅',
+      iconHexcode: '1F3E0',
+      latitude: 35,
+      longitude: 139,
+      privacyRadiusMeters: 1000,
+      createdAt: '2026-08-20T00:00:00.000Z',
+      updatedAt: '2026-08-20T00:00:00.000Z',
+    };
+    render(<MapScreen {...createProps()} activeStayPlaces={[place]} />);
+
+    fireEvent.press(screen.getByLabelText('自宅を開く'));
+
+    const name = screen.getAllByText('自宅').at(-1);
+    expect(name).toBeDefined();
+    expect(StyleSheet.flatten(name!.props.style)).toMatchObject({ fontWeight: '700' });
+    expect(screen.getByLabelText('家のTwemojiアイコン')).toBeTruthy();
+    expect(screen.getByText('非表示範囲: 1km')).toBeTruthy();
   });
 
   test('記録状態とスピードメーターを表示する', () => {
@@ -303,6 +345,20 @@ describe('地図画面 MapScreen', () => {
     // UNSAFE_getAllByProps を使うのは MapView の showsUserLocation という非セマンティックな props を検証するため
     const mapView = getMapView();
     expect(mapView!.props.showsUserLocation).toBe(false);
+  });
+
+  test('カスタム現在地アイコンは滞在場所マーカーより前面に表示する', () => {
+    render(
+      <MapScreen
+        {...createProps()}
+        userLocationIcon={{ useNativeUserLocation: false, customIconId: 'walker' as const, customImageUri: null }}
+        userCoordinate={{ latitude: 35, longitude: 139 }}
+      />,
+    );
+
+    // UNSAFE_getAllByProps を使うのは Marker の zIndex という非セマンティックなpropsを検証するため
+    const marker = screen.UNSAFE_getAllByProps({}).find((node) => String(node.type) === 'Marker');
+    expect(marker!.props.zIndex).toBe(4);
   });
 
   test('OS標準アイコン時はOS標準の現在地ドットを表示する', () => {

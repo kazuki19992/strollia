@@ -33,6 +33,11 @@ jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn().mockResolvedValue(true),
 }));
 
+// 画面単体テストではRootLayoutを描画しないため、実機のセーフエリア値を固定する。
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
+}));
+
 const styles = new Proxy(
   {},
   {

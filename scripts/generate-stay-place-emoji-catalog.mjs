@@ -16,17 +16,19 @@ const TWEMOJI_ASSETS_DIRECTORY = path.join(PROJECT_ROOT, 'assets/stayPlaces/twem
  */
 const STAY_PLACE_EMOJI_SELECTIONS = [
   { category: 'home', shortcode: 'house', expectedHexcode: '1F3E0' },
-  { category: 'office', shortcode: 'office', expectedHexcode: '1F3E2' },
-  { category: 'briefcase', shortcode: 'briefcase', expectedHexcode: '1F4BC' },
+  { category: 'office', shortcode: 'office', expectedHexcode: '1F3E2', displayLabel: '仕事場' },
   { category: 'school', shortcode: 'school', expectedHexcode: '1F3EB' },
   { category: 'hospital', shortcode: 'hospital', expectedHexcode: '1F3E5' },
-  { category: 'shopping', shortcode: 'shopping_bags', expectedHexcode: '1F6CD' },
-  { category: 'cafe', shortcode: 'coffee', expectedHexcode: '2615' },
-  { category: 'restaurant', shortcode: 'fork_and_knife', expectedHexcode: '1F374' },
-  { category: 'park', shortcode: 'national_park', expectedHexcode: '1F3DE' },
-  { category: 'gym', shortcode: 'person_lifting_weights', expectedHexcode: '1F3CB' },
+  { category: 'shopping', shortcode: 'shopping_bags', expectedHexcode: '1F6CD', displayLabel: 'ショッピング' },
+  { category: 'cafe', shortcode: 'coffee', expectedHexcode: '2615', displayLabel: 'カフェ' },
+  { category: 'restaurant', shortcode: 'fork_and_knife', expectedHexcode: '1F374', displayLabel: 'レストラン' },
+  { category: 'park', shortcode: 'national_park', expectedHexcode: '1F3DE', displayLabel: '公園・観光地' },
+  { category: 'gym', shortcode: 'person_lifting_weights', expectedHexcode: '1F3CB', displayLabel: 'ジム' },
   { category: 'station', shortcode: 'station', expectedHexcode: '1F689' },
   { category: 'hotel', shortcode: 'hotel', expectedHexcode: '1F3E8' },
+  { category: 'stadium', shortcode: 'stadium', expectedHexcode: '1F3DF', displayLabel: '観戦施設' },
+  { category: 'performing_arts', shortcode: 'performing_arts', expectedHexcode: '1F3AD', displayLabel: 'ホール・映画館' },
+  { category: 'public_facility', shortcode: 'classical_building', expectedHexcode: '1F3DB', displayLabel: '公共施設' },
 ];
 
 /**
@@ -133,11 +135,11 @@ async function main() {
     seenHexcodes.add(hexcode);
 
     const metadata = findEmojiMetadata(japaneseEmojiData, hexcode);
-    return { hexcode, ...metadata, assetFileName: assertTwemojiAsset(hexcode) };
+    return { hexcode, ...metadata, label: selection.displayLabel ?? metadata.label, assetFileName: assertTwemojiAsset(hexcode) };
   });
 
-  if (emojis.length !== 12) {
-    throw new Error(`Stay-place emoji catalog must contain exactly 12 entries, received ${emojis.length}.`);
+  if (emojis.length !== 14) {
+    throw new Error(`Stay-place emoji catalog must contain exactly 14 entries, received ${emojis.length}.`);
   }
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });

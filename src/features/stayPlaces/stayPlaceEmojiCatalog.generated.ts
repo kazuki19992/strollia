@@ -20,15 +20,9 @@ export const GENERATED_STAY_PLACE_EMOJIS: readonly GeneratedStayPlaceEmoji[] = [
   },
   {
     hexcode: '1F3E2',
-    label: 'オフィスビル',
+    label: '仕事場',
     unicode: '🏢',
     asset: require('../../../assets/stayPlaces/twemoji/1f3e2.png'),
-  },
-  {
-    hexcode: '1F4BC',
-    label: 'ブリーフケース',
-    unicode: '💼',
-    asset: require('../../../assets/stayPlaces/twemoji/1f4bc.png'),
   },
   {
     hexcode: '1F3EB',
@@ -44,31 +38,31 @@ export const GENERATED_STAY_PLACE_EMOJIS: readonly GeneratedStayPlaceEmoji[] = [
   },
   {
     hexcode: '1F6CD',
-    label: '紙袋',
+    label: 'ショッピング',
     unicode: '🛍️',
     asset: require('../../../assets/stayPlaces/twemoji/1f6cd.png'),
   },
   {
     hexcode: '2615',
-    label: '温かい飲み物',
+    label: 'カフェ',
     unicode: '☕️',
     asset: require('../../../assets/stayPlaces/twemoji/2615.png'),
   },
   {
     hexcode: '1F374',
-    label: 'ナイフとフォーク',
+    label: 'レストラン',
     unicode: '🍴',
     asset: require('../../../assets/stayPlaces/twemoji/1f374.png'),
   },
   {
     hexcode: '1F3DE',
-    label: '国立公園',
+    label: '公園・観光地',
     unicode: '🏞️',
     asset: require('../../../assets/stayPlaces/twemoji/1f3de.png'),
   },
   {
     hexcode: '1F3CB',
-    label: '重量挙げをする人',
+    label: 'ジム',
     unicode: '🏋️',
     asset: require('../../../assets/stayPlaces/twemoji/1f3cb.png'),
   },
@@ -83,5 +77,23 @@ export const GENERATED_STAY_PLACE_EMOJIS: readonly GeneratedStayPlaceEmoji[] = [
     label: 'ホテル',
     unicode: '🏨',
     asset: require('../../../assets/stayPlaces/twemoji/1f3e8.png'),
+  },
+  {
+    hexcode: '1F3DF',
+    label: '観戦施設',
+    unicode: '🏟️',
+    asset: require('../../../assets/stayPlaces/twemoji/1f3df.png'),
+  },
+  {
+    hexcode: '1F3AD',
+    label: 'ホール・映画館',
+    unicode: '🎭️',
+    asset: require('../../../assets/stayPlaces/twemoji/1f3ad.png'),
+  },
+  {
+    hexcode: '1F3DB',
+    label: '公共施設',
+    unicode: '🏛️',
+    asset: require('../../../assets/stayPlaces/twemoji/1f3db.png'),
   },
 ];

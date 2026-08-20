@@ -1,10 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import { useRef, useState } from 'react';
-import { Alert, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
-import MapView from 'react-native-maps';
+import { Alert, Image, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
+import MapView, { Circle } from 'react-native-maps';
 import type { LatLng, Region } from 'react-native-maps';
 
-import { getStayPlaceEmoji, isStayPlaceEmojiHexcode } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
+import { getStayPlaceEmoji, isStayPlaceEmojiHexcode, STAY_PLACE_EMOJIS } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
 import {
   isStayPlacePrivacyRadiusMeters,
   STAY_PLACE_PRIVACY_RADIUS_METERS,
@@ -18,7 +18,7 @@ import { ActionPill } from './ActionPill';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DescriptionText } from './DescriptionText';
 import { ScreenSection } from './ScreenSection';
-import { StayPlaceIconPicker } from './StayPlaceIconPicker';
+import { SelectionDropdown } from './SelectionDropdown';
 
 /** 滞在場所編集画面のprops。 */
 export type StayPlaceEditorScreenProps = {
@@ -56,7 +56,6 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
   );
   const [privacyRadiusMeters, setPrivacyRadiusMeters] = useState<number | null>(place?.privacyRadiusMeters ?? null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isIconPickerVisible, setIsIconPickerVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const selectedEmoji = getStayPlaceEmoji(iconHexcode);
@@ -139,18 +138,19 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
           />
         </ScreenSection>
         <ScreenSection styles={styles} title="アイコン">
-          <Pressable
+          <SelectionDropdown
             accessibilityLabel="アイコンを選択"
-            accessibilityRole="button"
-            style={styles.stayPlaceEmojiPickerButton}
-            onPress={() => setIsIconPickerVisible(true)}
-          >
-            {selectedEmoji ? (
-              <Text style={styles.formItemTitle}>{selectedEmoji.unicode}</Text>
-            ) : (
-              <Text style={styles.formItemTitle}>選択</Text>
+            getKey={(emoji) => emoji.hexcode}
+            getLabel={(emoji) => emoji.label}
+            options={STAY_PLACE_EMOJIS}
+            selectedValue={selectedEmoji ?? STAY_PLACE_EMOJIS[0]}
+            styles={styles}
+            theme={theme}
+            renderLeading={(emoji) => (
+              <Image accessibilityLabel={`${emoji.label}のTwemojiアイコン`} source={emoji.asset} style={styles.stayPlaceEmojiPickerImage} />
             )}
-          </Pressable>
+            onSelect={(emoji) => setIconHexcode(emoji.hexcode)}
+          />
         </ScreenSection>
         <ScreenSection styles={styles} title="中心位置">
           <DescriptionText styles={styles}>地図を動かして、中央のマーカーを場所の中心へ合わせてください。</DescriptionText>
@@ -160,30 +160,38 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
               initialRegion={createEditorRegion(coordinate ?? DEFAULT_EDITOR_VIEWPORT_COORDINATE)}
               style={styles.stayPlaceEditorMap}
               onRegionChangeComplete={(region) => setCoordinate({ latitude: region.latitude, longitude: region.longitude })}
-            />
+            >
+              {coordinate !== null && privacyRadiusMeters !== null ? (
+                <Circle
+                  center={coordinate}
+                  fillColor={`${theme.colors.primary}24`}
+                  radius={privacyRadiusMeters}
+                  strokeColor={theme.colors.primary}
+                  strokeWidth={1}
+                  testID="stay-place-privacy-circle"
+                />
+              ) : null}
+            </MapView>
             <View pointerEvents="none" style={styles.stayPlaceEditorMapCenterMarker} testID="stay-place-map-center-marker">
               <Feather name="map-pin" size={34} color={theme.colors.primary} />
             </View>
           </View>
         </ScreenSection>
         <ScreenSection styles={styles} title="共有時の非表示範囲">
-          <DescriptionText styles={styles}>この場所の周辺を共有するルートから隠します。</DescriptionText>
-          <View style={styles.stayPlaceEmojiPickerGrid}>
-            {[null, ...STAY_PLACE_PRIVACY_RADIUS_METERS].map((radius) => {
-              const selected = privacyRadiusMeters === radius;
-              return (
-                <Pressable
-                  key={radius ?? 'include'}
-                  accessibilityLabel={`非表示範囲: ${formatStayPlacePrivacyRadius(radius)}`}
-                  accessibilityRole="button"
-                  style={[styles.stayPlaceEmojiPickerButton, selected && styles.stayPlaceEmojiPickerButtonSelected]}
-                  onPress={() => setPrivacyRadiusMeters(radius)}
-                >
-                  <Text style={styles.formItemTitle}>{formatStayPlacePrivacyRadius(radius)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <DescriptionText styles={styles}>非表示範囲を設定すると、この場所の周辺を共有するルートから隠します。</DescriptionText>
+          <SelectionDropdown
+            accessibilityLabel="共有時の非表示範囲を選択"
+            getKey={(radius) => String(radius ?? 'include')}
+            getLabel={formatStayPlacePrivacyRadius}
+            options={[null, ...STAY_PLACE_PRIVACY_RADIUS_METERS]}
+            selectedValue={privacyRadiusMeters}
+            styles={styles}
+            theme={theme}
+            onSelect={setPrivacyRadiusMeters}
+          />
+          <DescriptionText styles={styles}>
+            この円内のルートは共有画像・GIF・月次レポートでは隠れます。通常の地図やGPXには影響しません。
+          </DescriptionText>
         </ScreenSection>
         {errorMessage ? <Text style={styles.stayPlaceFormError}>{errorMessage}</Text> : null}
         <ActionPill
@@ -198,14 +206,6 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
         />
         {place && onDelete ? <ActionPill alignLeft danger label="滞在場所を削除" styles={styles} onPress={handleDelete} /> : null}
       </ScrollView>
-      <StayPlaceIconPicker
-        selectedHexcode={iconHexcode}
-        styles={styles}
-        theme={theme}
-        visible={isIconPickerVisible}
-        onClose={() => setIsIconPickerVisible(false)}
-        onSelect={setIconHexcode}
-      />
     </SafeAreaView>
   );
 }

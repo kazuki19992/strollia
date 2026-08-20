@@ -76,11 +76,11 @@ export function reportPhotoMapDiagnostics(stage: PhotoMapDiagnosticsStage, data:
 `src/ui/hooks/usePhotoMapCrashBreaker.ts` の `updateShowPhotosOnMap` 内、
 `MediaLibrary.requestPermissionsAsync` の直後に送る。
 
-| キー                | 内容                                       |
-| ------------------- | ------------------------------------------ |
-| `granted`           | `permission.granted`                       |
-| `accessPrivileges`  | `permission.accessPrivileges ?? null`      |
-| `hasFullAccess`     | `hasFullPhotoAccess(permission)` の結果    |
+| キー               | 内容                                    |
+| ------------------ | --------------------------------------- |
+| `granted`          | `permission.granted`                    |
+| `accessPrivileges` | `permission.accessPrivileges ?? null`   |
+| `hasFullAccess`    | `hasFullPhotoAccess(permission)` の結果 |
 
 保存済み設定からの復元経路(`shouldRestorePhotosOnMapAfterMapReady` の effect)は
 権限要求を通らないため、このステージは送らない。
@@ -89,15 +89,15 @@ export function reportPhotoMapDiagnostics(stage: PhotoMapDiagnosticsStage, data:
 
 `src/features/photos/photoLibrary.ts` の `loadGeotaggedPhotos` の末尾で送る。
 
-| キー                       | 内容                                                     |
-| -------------------------- | -------------------------------------------------------- |
-| `requestedLimit`           | 引数 `limit`                                             |
-| `scannedAssetCount`        | `page.assets.length`                                     |
-| `hasNextPage`              | `page.hasNextPage`                                       |
-| `assetInfoFulfilledCount`  | `getAssetInfoAsync` が fulfilled だった件数              |
-| `assetInfoRejectedCount`   | 同 rejected だった件数                                   |
-| `geotaggedPhotoCount`      | 最終的に返した写真の件数                                 |
-| `durationMs`               | 関数全体の所要ミリ秒(`Date.now()` 差分、整数)            |
+| キー                      | 内容                                          |
+| ------------------------- | --------------------------------------------- |
+| `requestedLimit`          | 引数 `limit`                                  |
+| `scannedAssetCount`       | `page.assets.length`                          |
+| `hasNextPage`             | `page.hasNextPage`                            |
+| `assetInfoFulfilledCount` | `getAssetInfoAsync` が fulfilled だった件数   |
+| `assetInfoRejectedCount`  | 同 rejected だった件数                        |
+| `geotaggedPhotoCount`     | 最終的に返した写真の件数                      |
+| `durationMs`              | 関数全体の所要ミリ秒(`Date.now()` 差分、整数) |
 
 `loadGeotaggedPhotos` が例外で落ちた場合はこの計装を通らないが、
 その経路は `usePhotoMapOverlay` が `photoErrorMessage` を立てて UI に出すため計装不要。
@@ -119,10 +119,10 @@ export type UsePhotoMapClusterDiagnosticsParams = {
 export function usePhotoMapClusterDiagnostics(params: UsePhotoMapClusterDiagnosticsParams): void;
 ```
 
-| キー           | 内容                |
-| -------------- | ------------------- |
-| `photoCount`   | `photos.length`     |
-| `clusterCount` | `clusters.length`   |
+| キー           | 内容              |
+| -------------- | ----------------- |
+| `photoCount`   | `photos.length`   |
+| `clusterCount` | `clusters.length` |
 
 送信条件: `enabled` が true で、かつ **`photos` の参照が前回送信時から変わったとき**だけ送る。
 ズーム変更でクラスタ半径だけが変わるケースでは送らない(イベントが増えすぎるため)。

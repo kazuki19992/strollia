@@ -1,4 +1,10 @@
-const { decodeXmlEntities, normalizeNpmLicenses, readPlistStringValue, splitPackageKey } = require('../generate-licenses');
+const {
+  decodeXmlEntities,
+  mergeOssLicenses,
+  normalizeNpmLicenses,
+  readPlistStringValue,
+  splitPackageKey,
+} = require('../generate-licenses');
 
 describe('OSSライセンス生成スクリプト', () => {
   test('scope付きnpmパッケージ名とバージョンを分離する', () => {
@@ -43,5 +49,17 @@ describe('OSSライセンス生成スクリプト', () => {
 
   test('plistのXML実体参照を戻す', () => {
     expect(decodeXmlEntities('&lt;MIT&gt; &amp; &quot;notice&quot;')).toBe('<MIT> & "notice"');
+  });
+
+  test('同梱Twemoji画像のCC-BY 4.0帰属情報をライセンス一覧に含める', () => {
+    expect(mergeOssLicenses([], [])).toEqual([
+      expect.objectContaining({
+        id: 'asset:twemoji-graphics',
+        name: 'Twemoji graphics',
+        licenses: 'CC-BY 4.0',
+        repository: 'https://github.com/jdecked/twemoji',
+        source: 'asset',
+      }),
+    ]);
   });
 });

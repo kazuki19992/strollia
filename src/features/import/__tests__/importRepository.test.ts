@@ -68,6 +68,9 @@ const point = {
   localDate: '2026-05-01',
   latitude: 35,
   longitude: 139,
+  effectiveLatitude: 35,
+  effectiveLongitude: 139,
+  snappedStayPlaceId: null,
   altitude: null,
   speed: null,
   heading: null,
@@ -104,6 +107,9 @@ describe('GPXインポート保存 importRepository', () => {
       point.localDate,
       point.latitude,
       point.longitude,
+      point.latitude,
+      point.longitude,
+      null,
       point.altitude,
       point.speed,
       point.heading,
@@ -129,6 +135,27 @@ describe('GPXインポート保存 importRepository', () => {
       point.recordedAt,
       1,
       0,
+      expect.any(String),
+    );
+  });
+
+  it('GPXインポートは吸着せず、生座標と同じ有効座標を保存する', async () => {
+    await importLocationPointsFromGpx([point], 'walk.gpx');
+
+    const insertPointStatement = findStatement("'gpx-import'");
+    expect(insertPointStatement!.executeAsync).toHaveBeenCalledWith(
+      point.recordedAt,
+      point.localDate,
+      point.latitude,
+      point.longitude,
+      point.latitude,
+      point.longitude,
+      null,
+      point.altitude,
+      point.speed,
+      point.heading,
+      point.accuracy,
+      point.altitudeAccuracy,
       expect.any(String),
     );
   });

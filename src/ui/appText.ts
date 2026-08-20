@@ -25,6 +25,13 @@ export const CRASH_REPORTING_SETTING_KEY = 'crashReportingEnabled';
 /** 不具合レポートトグルのラベル(設定画面・チュートリアル共通)。 */
 export const CRASH_REPORTING_TOGGLE_LABEL = '不具合レポートを送る';
 
+/** 滞在場所の設定画面へ進む設定行の見出し。 */
+export const STAY_PLACES_SETTING_LABEL = '滞在場所';
+
+/** 滞在場所の設定行に表示する説明文。 */
+export const STAY_PLACES_SETTING_DESCRIPTION =
+  '登録した場所の周辺ではGPSの揺れを抑え、共有するルートから指定した範囲を隠せます。無料版では最初に登録した1か所を使えます。';
+
 /** 設定画面の不具合レポート項目の説明文。 */
 export const CRASH_REPORTING_SETTING_DESCRIPTION =
   'アプリが固まったり、落ちたりしたときなどの不具合の記録を開発者に自動で送ります。あなたの位置情報や移動記録など、あなたを特定できてしまう情報は送りません。有効にしておくと不具合改善が早くなります。';

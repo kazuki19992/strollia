@@ -164,6 +164,7 @@ function useRouterNavigator() {
       openAchievements: () => router.push('/achievements'),
       openMonthlyReport: () => router.push('/monthly-report'),
       openSettings: () => router.push('/settings'),
+      openStayPlaces: () => router.push('/settings/stay-places'),
     }),
     [router],
   );

@@ -116,6 +116,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.appScreen).toBeDefined();
       expect(styles.actionPill).toBeDefined();
       expect(styles.settingsPlusBadge).toBeDefined();
+      expect(styles.stayPlaceEditorMap).toBeDefined();
       // dailyLogStyles
       expect(styles.routeMapFrame).toBeDefined();
       expect(styles.gifFrameContainer).toBeDefined();
@@ -125,13 +126,13 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('分割前の全355キーが存在する（過不足なし）', () => {
+    test('全366キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
       // 分割前の総キー数と一致することを確認する（将来のキー追加で差分が出た場合に検知できる）
-      // 内訳: 分割前352キー + このPRで移設した topToast系2キー + lockedOverlay 1キー
-      expect(keys.length).toBe(355);
+      // 内訳: 分割前352キー + topToast系2キー + lockedOverlay 1キー + 滞在場所設定11キー
+      expect(keys.length).toBe(366);
     });
   });
 });

@@ -169,6 +169,8 @@ flowchart TD
 
 ライセンス一覧は実行時に `node_modules` やnative projectを探索せず、`npm run generate:licenses` で `src/app/generated/ossLicenses.ts` へ静的生成する。npm依存の収集には `license-checker-rseidelsohn` を使い、ライセンス名、リポジトリ、ライセンス本文、NOTICE本文を保存する。依存関係を追加・更新した場合は、ライセンス一覧も再生成する。
 
+滞在場所の固定アイコンには同梱したTwemoji PNGを使う。Twemoji graphicsのCC-BY 4.0帰属表記は、この同じOSSライセンス画面の静的一覧へ含める。実行時に絵文字CDNへアクセスしない。
+
 Expo managed checkoutでは `ios/` や `android/` が存在しない場合がある。その場合はnpm依存のみを生成対象にする。`ios/Pods/Target Support Files/**/**-acknowledgements.plist` が存在するprebuild/build環境では、CocoaPodsが生成するAcknowledgements plistも読み込み、iOS native依存のライセンスも同じ画面に統合する。
 
 ## 9. 子ページ遷移

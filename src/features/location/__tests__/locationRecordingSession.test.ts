@@ -1,6 +1,7 @@
 import type { LocationObject } from 'expo-location';
 
 import type { LocationPoint, NewLocationPoint } from '@/types/gps';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
 import { beginGpxImportPriority, resetGpxImportPriorityForTest } from '@/features/location/gpxImportPriority';
 import { createLocationRecordingSession, flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
@@ -49,6 +50,9 @@ const latestPoint: LocationPoint = {
   localDate: '2026-06-19',
   latitude: 35,
   longitude: 139,
+  effectiveLatitude: 35,
+  effectiveLongitude: 139,
+  snappedStayPlaceId: null,
   altitude: null,
   speed: 1,
   heading: null,
@@ -60,6 +64,7 @@ const firstPoint: NewLocationPoint = {
   ...latestPoint,
   recordedAt: '2026-06-19T00:00:10.000Z',
   latitude: 35.0001,
+  effectiveLatitude: 35.0001,
 };
 delete (firstPoint as Partial<LocationPoint>).id;
 
@@ -67,10 +72,22 @@ const secondPoint: NewLocationPoint = {
   ...firstPoint,
   recordedAt: '2026-06-19T00:00:20.000Z',
   latitude: 35.0002,
+  effectiveLatitude: 35.0002,
 };
 
 const firstLocation = { timestamp: 1, coords: {} } as LocationObject;
 const secondLocation = { timestamp: 2, coords: {} } as LocationObject;
+
+const home: StayPlace = {
+  id: 1,
+  name: '自宅',
+  iconHexcode: '1F3E0',
+  latitude: 35,
+  longitude: 139,
+  privacyRadiusMeters: null,
+  createdAt: '2026-08-19T00:00:00.000Z',
+  updatedAt: '2026-08-19T00:00:00.000Z',
+};
 
 describe('位置情報保存セッション', () => {
   beforeEach(() => {
@@ -132,6 +149,60 @@ describe('位置情報保存セッション', () => {
     expect(mockToLocationPoint).not.toHaveBeenCalled();
     expect(mockUpsertVisitedCells).not.toHaveBeenCalled();
     expect(mockInsertLocationPoint).not.toHaveBeenCalled();
+  });
+});
+
+describe('滞在場所の有効座標を使う位置情報保存セッション', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockToLocationPoint.mockReset();
+    mockInsertLocationPoint.mockReset();
+    mockInitializeDatabase.mockResolvedValue(undefined);
+    mockGetLatestLocationPoint.mockResolvedValue(null);
+    mockGetVisitedCellsForLocationPoint.mockReturnValue([{ cellId: 'cell' }]);
+    mockUpsertVisitedCells.mockResolvedValue(undefined);
+    mockShouldSaveLocationPoint.mockReturnValue(true);
+    mockInsertLocationPoint.mockResolvedValue(11);
+    mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
+  });
+
+  it('同じ滞在場所の半径内に3点連続で入ると生座標を保持して中心の有効座標で保存・Grid更新する', async () => {
+    const rawPoints: NewLocationPoint[] = [
+      { ...firstPoint, recordedAt: '2026-06-19T00:00:10.000Z', latitude: 35.0001, longitude: 139.0001 },
+      { ...firstPoint, recordedAt: '2026-06-19T00:00:20.000Z', latitude: 35.0002, longitude: 139.0001 },
+      { ...firstPoint, recordedAt: '2026-06-19T00:00:30.000Z', latitude: 35.0001, longitude: 139.0002 },
+    ];
+    mockToLocationPoint.mockReturnValueOnce(rawPoints[0]).mockReturnValueOnce(rawPoints[1]).mockReturnValueOnce(rawPoints[2]);
+
+    const session = await createLocationRecordingSession({ getActiveStayPlaces: async () => [home] });
+
+    await session.recordLocations([firstLocation, secondLocation, { timestamp: 3, coords: {} } as LocationObject]);
+
+    expect(mockInsertLocationPoint).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        latitude: rawPoints[2].latitude,
+        longitude: rawPoints[2].longitude,
+        effectiveLatitude: home.latitude,
+        effectiveLongitude: home.longitude,
+        snappedStayPlaceId: home.id,
+      }),
+    );
+    expect(mockGetVisitedCellsForLocationPoint).toHaveBeenNthCalledWith(
+      3,
+      expect.anything(),
+      expect.objectContaining({ latitude: home.latitude, longitude: home.longitude }),
+    );
+  });
+
+  it('1回の位置情報バッチでは有効な滞在場所を1回だけ読み込む', async () => {
+    mockToLocationPoint.mockReturnValueOnce(firstPoint).mockReturnValueOnce(secondPoint);
+    const getActiveStayPlaces = jest.fn().mockResolvedValue([home]);
+    const session = await createLocationRecordingSession({ getActiveStayPlaces });
+
+    await session.recordLocations([firstLocation, secondLocation]);
+
+    expect(getActiveStayPlaces).toHaveBeenCalledTimes(1);
   });
 });
 

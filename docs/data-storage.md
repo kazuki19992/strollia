@@ -38,20 +38,23 @@ React Native + Expo では `expo-sqlite` の利用を第一候補とする。`ex
 
 GPSで取得した位置情報を保存する中心テーブル。
 
-| カラム              | 型        | 説明                                           |
-| ------------------- | --------- | ---------------------------------------------- |
-| `id`                | INTEGER   | 主キー                                         |
-| `recorded_at`       | TEXT      | 取得日時。ISO 8601形式                         |
-| `local_date`        | TEXT      | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
-| `latitude`          | REAL      | 緯度                                           |
-| `longitude`         | REAL      | 経度                                           |
-| `altitude`          | REAL NULL | 高度                                           |
-| `speed`             | REAL NULL | 速度                                           |
-| `heading`           | REAL NULL | 方位                                           |
-| `accuracy`          | REAL NULL | 水平方向の位置精度                             |
-| `altitude_accuracy` | REAL NULL | 高度の精度                                     |
-| `source`            | TEXT      | 取得元。例: `expo-location`                    |
-| `created_at`        | TEXT      | DB保存日時                                     |
+| カラム                  | 型           | 説明                                           |
+| ----------------------- | ------------ | ---------------------------------------------- |
+| `id`                    | INTEGER      | 主キー                                         |
+| `recorded_at`           | TEXT         | 取得日時。ISO 8601形式                         |
+| `local_date`            | TEXT         | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
+| `latitude`              | REAL         | 緯度                                           |
+| `longitude`             | REAL         | 経度                                           |
+| `effective_latitude`    | REAL NULL    | 記録時に決定した有効緯度。旧ログはNULL         |
+| `effective_longitude`   | REAL NULL    | 記録時に決定した有効経度。旧ログはNULL         |
+| `snapped_stay_place_id` | INTEGER NULL | 吸着した滞在場所ID。吸着なし・旧ログはNULL     |
+| `altitude`              | REAL NULL    | 高度                                           |
+| `speed`                 | REAL NULL    | 速度                                           |
+| `heading`               | REAL NULL    | 方位                                           |
+| `accuracy`              | REAL NULL    | 水平方向の位置精度                             |
+| `altitude_accuracy`     | REAL NULL    | 高度の精度                                     |
+| `source`                | TEXT         | 取得元。例: `expo-location`                    |
+| `created_at`            | TEXT         | DB保存日時                                     |
 
 ### 4.2 `daily_logs`
 
@@ -241,6 +244,23 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `shown_in_app_at`   | TEXT NULL | アプリ内演出表示日時                                                                                                                                      |
 | `created_at`        | TEXT      | 作成日時                                                                                                                                                  |
 
+### 4.13 `stay_places`
+
+滞在場所ごとのGPS吸着と、共有時にルートを非表示にする範囲を保存するテーブル。契約状態による有効・無効は保存せず、作成日時順にアプリ側で判定する。
+
+| カラム                  | 型           | 説明                                                                                                |
+| ----------------------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| `id`                    | INTEGER      | 主キー                                                                                              |
+| `name`                  | TEXT         | ユーザーが入力する表示名                                                                            |
+| `icon_hexcode`          | TEXT         | 固定Twemojiカタログに含まれる、完全修飾済みの大文字Unicode hexcode                                  |
+| `latitude`              | REAL         | 滞在場所の中心緯度                                                                                  |
+| `longitude`             | REAL         | 滞在場所の中心経度                                                                                  |
+| `privacy_radius_meters` | INTEGER NULL | `NULL`は共有時も含める。値は`100`、`200`、`500`、`1000`、`2000`、`3000`、`5000`、`10000`mのいずれか |
+| `created_at`            | TEXT         | 作成日時（ISO 8601）                                                                                |
+| `updated_at`            | TEXT         | 更新日時（ISO 8601）                                                                                |
+
+滞在場所の有効・無効は保存しない。Plus有効時は全件、無料版または解約中は`created_at`、`id`の昇順で最初の1件だけを、GPS吸着と共有時の非表示範囲に使う。解約してもレコードを削除・変更せず、再契約時には保存済み全件を再び有効にする。
+
 ## 5. インデックス方針
 
 GPSログは時系列検索と日付検索が中心になるため、以下のインデックスを作成する。
@@ -257,6 +277,7 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `achievement_notification_queue(delivered_push_at)`
 - `visited_cells(x, y)`
 - `visited_cells(last_visited_at)`
+- `stay_places(created_at, id)` （滞在場所を作成順で安定して取得するため）
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
@@ -340,6 +361,7 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 - `visited_admin_areas`
 - `achievement_unlocks`
 - `achievement_notification_queue`
+- `stay_places`
 
 `location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
 

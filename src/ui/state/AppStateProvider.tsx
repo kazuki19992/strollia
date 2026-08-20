@@ -29,6 +29,9 @@ import { createRegionFromBounds } from '@/features/map/routeMapper';
 import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
+import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
+import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlaceRecordingService';
+import type { SaveStayPlaceInput, StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
@@ -58,6 +61,7 @@ import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
+import { useStayPlaceState } from '@/ui/hooks/useStayPlaceState';
 import type { PremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import type { AchievementListItem, PendingAchievementNotification } from '@/features/achievements/achievementRepository';
 import type { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
@@ -135,6 +139,20 @@ export type AppStateContextValue = {
   monthlyReportPoints: LocationPoint[];
   /** 月次エリアレポート。 */
   monthlyAreaReport: MonthlyAreaReport | null;
+  /** 登録済みの滞在場所。 */
+  stayPlaces: StayPlace[];
+  /** 現在の契約状態で共有・記録に使う滞在場所。未解決・失敗時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
+  /** 滞在場所の読込状態。共有画面がfail-closed表示を選ぶために使う。 */
+  stayPlacesStatus: StayPlacesStatus;
+  /** 滞在場所を再読込する。 */
+  reloadStayPlaces: () => Promise<void>;
+  /** 滞在場所を作成して一覧・共有用リストを更新する。 */
+  createStayPlace: (input: SaveStayPlaceInput) => Promise<void>;
+  /** 滞在場所を更新して一覧・共有用リストを更新する。 */
+  updateStayPlace: (id: number, input: SaveStayPlaceInput) => Promise<void>;
+  /** 滞在場所を削除して一覧・共有用リストを更新する。 */
+  deleteStayPlace: (id: number) => Promise<void>;
   /** データ再取得。 */
   refreshData: (options?: { signal?: AbortSignal }) => Promise<RefreshDataResult>;
   /** 手動で記録を開始する。 */
@@ -323,6 +341,8 @@ export type AppStateContextValue = {
   openMonthlyReport: () => void;
   /** 設定画面へ移動する。 */
   openSettings: () => void;
+  /** 滞在場所の設定画面へ移動する。 */
+  openStayPlaces: () => void;
   /** 設定からチュートリアルを再表示する。 */
   openFirstLaunchTutorial: () => void;
 };
@@ -363,6 +383,8 @@ type AppStateProviderProps = {
     openMonthlyReport?: () => void;
     /** 設定画面へ移動する。 */
     openSettings?: () => void;
+    /** 滞在場所の設定画面へ移動する。 */
+    openStayPlaces?: () => void;
   };
   /**
    * expo-router の現在パスから導出した ScreenMode。
@@ -462,6 +484,20 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
    * 未読み込み(初期値 null)のときはディープリンク等の直接到達を示す。
    */
   const loadedMonthlyReportMonthRef = useRef<string | null>(null);
+
+  const {
+    stayPlaces,
+    activeStayPlaces,
+    status: stayPlacesStatus,
+    reloadStayPlaces,
+    createStayPlace,
+    updateStayPlace,
+    deleteStayPlace,
+  } = useStayPlaceState({
+    isReady,
+    isPlusActive: premiumAccessState.isPlusActive,
+    onFreeStayPlaceLimitReached: openPremiumPaywall,
+  });
 
   const {
     selectedAchievement,
@@ -774,6 +810,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     enabled: foregroundWatchEnabled,
     shouldPersist: shouldPersistForegroundLocation,
     onLocation: shouldDisplayCustomLocation ? applyUserLocation : undefined,
+    getActiveStayPlaces: getActiveStayPlacesForRecording,
     onError: (error: unknown) => {
       setMessage(error instanceof Error ? error.message : 'フォアグラウンド位置情報の取得に失敗しました。');
     },
@@ -915,6 +952,16 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
+  /** 滞在場所の設定画面へ移動する。 */
+  function openStayPlaces(): void {
+    if (navigator?.openStayPlaces) {
+      triggerLightImpactHaptic();
+      navigator.openStayPlaces();
+    } else {
+      navigateToScreen('settings');
+    }
+  }
+
   /** 設定画面から初回チュートリアルを再表示する。 */
   function openFirstLaunchTutorial(): void {
     triggerSelectionHaptic();
@@ -977,7 +1024,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
       } finally {
         // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
-        await flushLocationsBufferedDuringGpxImport().catch((error: unknown) => {
+        await flushLocationsBufferedDuringGpxImport({ getActiveStayPlaces: getActiveStayPlacesForRecording }).catch((error: unknown) => {
           console.warn('Failed to flush buffered locations after GPX import:', error);
         });
       }
@@ -1060,6 +1107,13 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     hasAnyLocationPoints,
     monthlyReportPoints,
     monthlyAreaReport,
+    stayPlaces,
+    activeStayPlaces,
+    stayPlacesStatus,
+    reloadStayPlaces,
+    createStayPlace,
+    updateStayPlace,
+    deleteStayPlace,
     refreshData,
     startRecording,
     requestLocationPermission,
@@ -1143,6 +1197,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openAchievements,
     openMonthlyReport,
     openSettings,
+    openStayPlaces,
     openFirstLaunchTutorial,
   };
 

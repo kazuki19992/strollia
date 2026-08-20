@@ -11,10 +11,14 @@ import {
 } from '@/features/export/routeGifFrames';
 import { exportRouteGif } from '@/features/export/routeGifExporter';
 import { shareViewAsPng } from '@/features/export/capturedViewShare';
-import { createInitialRegion } from '@/features/map/routeMapper';
+import { createInitialRegionFromCoordinates } from '@/features/map/routeMapper';
 import type { PremiumAccessState } from '@/features/premium/revenueCatAccess';
+import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import { hasValidStayPlacePrivacyConfiguration } from '@/features/stayPlaces/stayPlacePrivacy';
+import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
-import type { DailyLogSummary, LocationPoint } from '@/types/gps';
+import type { DailyLogSummary } from '@/types/gps';
 import {
   DAILY_ROUTE_START_MINUTES,
   DAILY_ROUTE_TIME_STEP_MINUTES,
@@ -57,6 +61,10 @@ export type DailyLogDetailScreenProps = {
   theme: AppTheme;
   /** Plus課金状態。 */
   premiumAccessState: PremiumAccessState;
+  /** 共有時の非表示半径を適用する現在有効な滞在場所。未解決・失敗時はnull。 */
+  activeStayPlaces?: StayPlace[] | null;
+  /** 滞在場所の読込状態。共有開始のfail-closed判定と説明文に使う。 */
+  stayPlacesStatus?: StayPlacesStatus;
   /** 日別ログ一覧へ戻る処理。 */
   onBackToDailyLogs: () => void;
   /** ペイウォールモーダルを開く処理。 */
@@ -69,10 +77,15 @@ export function DailyLogDetailScreen({
   styles,
   theme,
   premiumAccessState,
+  activeStayPlaces = null,
+  stayPlacesStatus,
   onBackToDailyLogs,
   onOpenPremiumPaywall,
 }: DailyLogDetailScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
+  const resolvedStayPlacesStatus = stayPlacesStatus ?? (activeStayPlaces == null ? 'loading' : 'ready');
+  const isSharePrivacyReady =
+    resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null && hasValidStayPlacePrivacyConfiguration(activeStayPlaces);
   const { dailyPoints, dailyDetailReport, isLoadingDetail, routeEndpointsLabel, routeMaxMinutes, routeEndMinutes, setRouteEndMinutes } =
     useDailyLogDetailData(log);
   const [isSharingDetail, setIsSharingDetail] = useState(false);
@@ -106,7 +119,18 @@ export function DailyLogDetailScreen({
   // スライダーの選択肢を00/15/30/45分に揃えるため、範囲を15分境界へ丸める。
   const gifRangeMinMinute = Math.floor(recordingStartMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
   const gifRangeMaxMinute = Math.ceil(recordingEndMinute / GIF_RANGE_STEP_MINUTES) * GIF_RANGE_STEP_MINUTES;
-  const canExportGif = isPlusActive && dailyPoints.length >= 2 && gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
+  // 区間選択前は日全体で共有用に描画できるルートがあることを確認する。選択範囲の
+  // stateは初期値0のため、ここで使うと初回のGIF導線を誤って閉じてしまう。
+  const dailyPrivacyRouteSegments = useMemo(
+    () => (activeStayPlaces == null ? [] : toPrivacyRouteSegments(dailyPoints, activeStayPlaces)),
+    [activeStayPlaces, dailyPoints],
+  );
+  const canExportGif =
+    isSharePrivacyReady &&
+    isPlusActive &&
+    dailyPrivacyRouteSegments.length > 0 &&
+    dailyPoints.length >= 2 &&
+    gifRangeMaxMinute - gifRangeMinMinute >= GIF_MIN_RANGE_MINUTES;
   // 選択区間内のポイント（プレビュー地図と地図範囲フィットに使う）。
   const gifRangePoints = useMemo(
     () => filterLocationPointsBetweenMinutes(dailyPoints, gifRangeStart, gifRangeEnd),
@@ -117,7 +141,14 @@ export function DailyLogDetailScreen({
     const step = resolveGifFrameStepMinutes(gifRangeEnd - gifRangeStart);
     return computeGifFrameMinutesInRange(gifRangeStart, gifRangeEnd, step);
   }, [gifRangeStart, gifRangeEnd]);
-  const gifRegion = useMemo(() => (gifRangePoints.length > 0 ? createInitialRegion(gifRangePoints) : null), [gifRangePoints]);
+  const gifRangePrivacyRouteSegments = useMemo(
+    () => (activeStayPlaces == null ? [] : toPrivacyRouteSegments(gifRangePoints, activeStayPlaces)),
+    [activeStayPlaces, gifRangePoints],
+  );
+  const gifRegion = useMemo(
+    () => createInitialRegionFromCoordinates(gifRangePrivacyRouteSegments.flatMap((segment) => segment.coordinates)),
+    [gifRangePrivacyRouteSegments],
+  );
   const isGeneratingGif = gifProgress !== null;
   // 各コマは選択開始時刻からその時刻までの累積軌跡（区間内のみ）。
   const gifFrameMinute = gifFrameMinutes[gifFrameIndex] ?? gifRangeStart;
@@ -179,7 +210,7 @@ export function DailyLogDetailScreen({
   }
 
   async function shareDailyLogImage(): Promise<void> {
-    if (isSharingDetail) {
+    if (isSharingDetail || !isSharePrivacyReady) {
       return;
     }
 
@@ -239,13 +270,16 @@ export function DailyLogDetailScreen({
   }
 
   function handleConfirmGifRange(): void {
+    if (gifRangePrivacyRouteSegments.length === 0) {
+      return;
+    }
     // 区間選択→生成中で中身の高さが変わるので、滑らかにリサイズさせる。
     animateDialogResize();
     handleExportGif().catch(() => undefined);
   }
 
   async function handleExportGif(): Promise<void> {
-    if (!canExportGif || !gifRegion || gifFrameMinutes.length < 2) {
+    if (!canExportGif || gifRangePrivacyRouteSegments.length === 0 || !gifRegion || gifFrameMinutes.length < 2) {
       return;
     }
 
@@ -390,8 +424,15 @@ export function DailyLogDetailScreen({
 
         {/* アクションボタン群（キャプチャ範囲外） */}
         <View style={styles.dailyLogDetailActions}>
+          {!isSharePrivacyReady && (
+            <DescriptionText styles={styles}>
+              {resolvedStayPlacesStatus === 'error'
+                ? '滞在場所を読み込めないため、共有を準備できません。'
+                : '滞在場所を確認中です。共有は確認後に利用できます。'}
+            </DescriptionText>
+          )}
           <ActionPill
-            disabled={isSharingDetail}
+            disabled={isSharingDetail || !isSharePrivacyReady}
             icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
             label={isSharingDetail ? '画像を作っています……' : 'この日の記録を共有'}
             styles={styles}
@@ -418,11 +459,12 @@ export function DailyLogDetailScreen({
         </View>
       </ScrollView>
 
-      {isSharingDetail && (
+      {isSharingDetail && isSharePrivacyReady && activeStayPlaces != null && (
         <DailyLogShareCard
           ref={shareCardRef}
           width={Dimensions.get('window').width}
           points={visibleRoutePoints}
+          activeStayPlaces={activeStayPlaces}
           regionPoints={dailyPoints}
           isPlusActive={isPlusActive}
           distanceLabel={distanceLabel}
@@ -439,11 +481,12 @@ export function DailyLogDetailScreen({
         />
       )}
 
-      {isGeneratingGif && gifRegion && (
+      {isGeneratingGif && gifRegion && activeStayPlaces != null && (
         <GifFrameRenderer
           ref={gifFrameRef}
           region={gifRegion}
           points={gifFramePoints}
+          activeStayPlaces={activeStayPlaces}
           timeLabel={gifFrameTimeLabel}
           dateLabel={gifFrameDateLabel}
           styles={styles}
@@ -501,6 +544,7 @@ export function DailyLogDetailScreen({
             <RouteMapPanel
               emptyLabel="この範囲に移動記録がありません"
               points={gifRangePoints}
+              activeStayPlaces={activeStayPlaces}
               regionPoints={dailyPoints}
               styles={styles}
               theme={theme}
@@ -524,7 +568,7 @@ export function DailyLogDetailScreen({
               }}
             />
             <ActionPill
-              disabled={gifFrameMinutes.length < 2 || !gifRegion}
+              disabled={gifRangePrivacyRouteSegments.length === 0 || gifFrameMinutes.length < 2 || !gifRegion}
               icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
               label="この範囲で出力"
               styles={styles}

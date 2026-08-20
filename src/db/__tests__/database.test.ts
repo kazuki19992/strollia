@@ -136,6 +136,17 @@ describe('database initializeDatabase マイグレーション', () => {
       const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
       expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS import_history');
     });
+
+    it('stay_places テーブルと作成順インデックスが含まれる', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS stay_places');
+      expect(firstCall).toContain('idx_stay_places_created_at_id');
+      expect(firstCall).toContain('ON stay_places(created_at, id)');
+    });
   });
 
   describe('PRAGMA 設定', () => {
@@ -238,6 +249,26 @@ describe('database initializeDatabase マイグレーション', () => {
         return sql.includes('UPDATE achievement_unlocks') && sql.includes('unlocked_local_date IS NULL');
       });
       expect(updateCalled).toBe(true);
+    });
+  });
+
+  describe('ensureColumn マイグレーション（location_pointsの有効座標）', () => {
+    it('既存ログを更新せず有効座標と吸着先IDの列だけを追加する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const alterStatements = (db.execAsync as jest.Mock).mock.calls
+        .map(([sql]) => sql as string)
+        .filter((sql) => sql.includes('ALTER TABLE location_points'));
+      expect(alterStatements).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('effective_latitude REAL NULL'),
+          expect.stringContaining('effective_longitude REAL NULL'),
+          expect.stringContaining('snapped_stay_place_id INTEGER NULL'),
+        ]),
+      );
+      expect(db.runAsync).not.toHaveBeenCalledWith(expect.stringContaining('UPDATE location_points'), expect.anything());
     });
   });
 

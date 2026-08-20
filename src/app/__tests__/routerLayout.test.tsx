@@ -3,12 +3,14 @@ import RootLayout from '@/app/_layout';
 
 /** usePathname スタブが返す現在パス。各テストで書き換える。 */
 let mockPathname = '/';
+const mockPush = jest.fn();
+const mockBack = jest.fn();
 
 // expo-router の Stack / usePathname / useRouter をスタブ化する
 jest.mock('expo-router', () => ({
   Stack: () => null,
   usePathname: () => mockPathname,
-  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+  useRouter: () => ({ push: mockPush, back: mockBack }),
 }));
 
 /** AppStateProvider が受け取った props の記録。配線検証に使う。 */
@@ -74,6 +76,8 @@ describe('expo-router ルートレイアウト (_layout)', () => {
   beforeEach(() => {
     mockPathname = '/';
     mockProviderProps.length = 0;
+    mockPush.mockClear();
+    mockBack.mockClear();
   });
 
   test('default export が存在しレンダリングできること', () => {
@@ -98,5 +102,14 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     render(<RootLayout />);
 
     expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('map');
+  });
+
+  test('滞在場所設定へのナビゲーターをAppStateProviderへ渡す', () => {
+    render(<RootLayout />);
+
+    const navigator = mockProviderProps.at(-1)?.navigator as { openStayPlaces: () => void };
+    navigator.openStayPlaces();
+
+    expect(mockPush).toHaveBeenCalledWith('/settings/stay-places');
   });
 });

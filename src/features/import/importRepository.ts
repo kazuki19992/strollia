@@ -103,8 +103,15 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
 
         try {
           for (const point of chunk) {
+            // GPXは観測済み履歴なので現在の滞在場所で再判定せず、生座標を有効座標として固定する。
+            const importedPoint: NewLocationPoint = {
+              ...point,
+              effectiveLatitude: point.latitude,
+              effectiveLongitude: point.longitude,
+              snappedStayPlaceId: null,
+            };
             const wasInserted = await insertImportedLocationPoint(
-              point,
+              importedPoint,
               previousImportedPoint,
               now,
               insertPointStatement,
@@ -115,9 +122,9 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
               continue;
             }
 
-            const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
-            await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
-            previousImportedPoint = point;
+            const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, importedPoint);
+            await upsertVisitedCellsInCurrentTransaction(visitedCells, importedPoint.recordedAt, txn);
+            previousImportedPoint = importedPoint;
             importedPointCount += 1;
           }
 
@@ -145,6 +152,9 @@ const INSERT_LOCATION_POINT_SQL = `INSERT OR IGNORE INTO location_points (
   local_date,
   latitude,
   longitude,
+  effective_latitude,
+  effective_longitude,
+  snapped_stay_place_id,
   altitude,
   speed,
   heading,
@@ -152,7 +162,7 @@ const INSERT_LOCATION_POINT_SQL = `INSERT OR IGNORE INTO location_points (
   altitude_accuracy,
   source,
   created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`;
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`;
 
 /** 日別ログの集計値を更新するUPSERT SQL。チャンク内でプリペアして使い回す。 */
 const UPSERT_DAILY_LOG_SQL = `INSERT INTO daily_logs (
@@ -200,6 +210,9 @@ async function insertImportedLocationPoint(
     point.localDate,
     point.latitude,
     point.longitude,
+    point.effectiveLatitude ?? point.latitude,
+    point.effectiveLongitude ?? point.longitude,
+    point.snappedStayPlaceId ?? null,
     point.altitude,
     point.speed,
     point.heading,

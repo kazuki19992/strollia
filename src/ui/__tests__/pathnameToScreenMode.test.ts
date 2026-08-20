@@ -63,6 +63,11 @@ describe('pathnameToSettingsSentryScreenName', () => {
     expect(pathnameToSettingsSentryScreenName('/settings/faq')).toBe('Settings:Faq');
   });
 
+  it('"/settings/stay-places" とその子画面は Settings:StayPlaces を返す', () => {
+    expect(pathnameToSettingsSentryScreenName('/settings/stay-places')).toBe('Settings:StayPlaces');
+    expect(pathnameToSettingsSentryScreenName('/settings/stay-places/new')).toBe('Settings:StayPlaces');
+  });
+
   it('"/settings/licenses" は Settings:LicenseList を返す', () => {
     expect(pathnameToSettingsSentryScreenName('/settings/licenses')).toBe('Settings:LicenseList');
   });

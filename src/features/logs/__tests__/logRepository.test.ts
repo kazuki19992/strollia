@@ -53,6 +53,27 @@ describe('GPSポイント保存 insertLocationPoint', () => {
     expect(dailySummaryArgs[4]).toBeGreaterThan(100);
     expect(dailySummaryArgs[4]).toBeLessThan(120);
   });
+
+  it('日別距離は記録時の有効座標で計算する', async () => {
+    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+      ...point(35, 139),
+      id: 1,
+      effectiveLatitude: 35,
+      effectiveLongitude: 139,
+      snappedStayPlaceId: 1,
+    });
+    const snappedPoint = {
+      ...point(35.001, 139.001),
+      effectiveLatitude: 35,
+      effectiveLongitude: 139,
+      snappedStayPlaceId: 1,
+    } as NewLocationPoint;
+
+    await insertLocationPoint(snappedPoint);
+
+    const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
+    expect(dailySummaryArgs[4]).toBe(0);
+  });
 });
 
 describe('日別ログ一覧 getDailyLogs', () => {
@@ -90,7 +111,7 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     jest.clearAllMocks();
   });
 
-  it('GPSログ、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
+  it('GPSログ、滞在場所、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
     await deleteAllUserData();
 
     expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
@@ -99,8 +120,9 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM visited_admin_areas');
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_points');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM daily_logs');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM stay_places');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM location_points');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(8, 'DELETE FROM daily_logs');
   });
 });
 

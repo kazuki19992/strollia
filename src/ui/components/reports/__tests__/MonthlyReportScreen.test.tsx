@@ -63,6 +63,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
         achievements={[]}
         monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
         theme={lightTheme}
+        activeStayPlaces={[]}
         onBackToMap={jest.fn()}
       />,
     );
@@ -112,6 +113,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
         achievements={[]}
         monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
         theme={lightTheme}
+        activeStayPlaces={[]}
         onBackToMap={jest.fn()}
       />,
     );
@@ -135,6 +137,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
         achievements={[]}
         monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
         theme={lightTheme}
+        activeStayPlaces={[]}
         onBackToMap={jest.fn()}
       />,
     );
@@ -169,5 +172,194 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       );
 
     expect(container).toBeTruthy();
+  });
+
+  it('共有する月次マップは非表示範囲で分割したPolylineだけを描く', () => {
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[
+          {
+            id: 1,
+            recordedAt: '2026-05-01T00:00:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35.002,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+          {
+            id: 2,
+            recordedAt: '2026-05-01T00:01:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35.003,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+          {
+            id: 3,
+            recordedAt: '2026-05-01T00:02:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+          {
+            id: 4,
+            recordedAt: '2026-05-01T00:03:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35.004,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+          {
+            id: 5,
+            recordedAt: '2026-05-01T00:04:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35.005,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+        ]}
+        activeStayPlaces={[
+          {
+            id: 1,
+            name: '自宅',
+            iconHexcode: '1F3E0',
+            latitude: 35,
+            longitude: 139,
+            privacyRadiusMeters: 100,
+            createdAt: '2026-08-19T00:00:00.000Z',
+            updatedAt: '2026-08-19T00:00:00.000Z',
+          },
+        ]}
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    // モックしたPolylineはReactコンポーネントとViewの両方が検索されるため、座標列を重複排除して区間数を検証する。
+    const renderedSegments = new Set(screen.UNSAFE_getAllByProps({ strokeWidth: 5 }).map((node) => JSON.stringify(node.props.coordinates)));
+    expect(renderedSegments).toEqual(
+      new Set([
+        JSON.stringify([
+          { latitude: 35.002, longitude: 139 },
+          { latitude: 35.003, longitude: 139 },
+        ]),
+        JSON.stringify([
+          { latitude: 35.004, longitude: 139 },
+          { latitude: 35.005, longitude: 139 },
+        ]),
+      ]),
+    );
+  });
+
+  it('滞在場所が未解決なら生ルートを描画せずレポート共有も無効にする', () => {
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[
+          {
+            id: 1,
+            recordedAt: '2026-05-01T00:00:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+          {
+            id: 2,
+            recordedAt: '2026-05-01T00:01:00.000Z',
+            localDate: '2026-05-01',
+            latitude: 35.01,
+            longitude: 139,
+            altitude: null,
+            speed: null,
+            heading: null,
+            accuracy: null,
+            altitudeAccuracy: null,
+          },
+        ]}
+        activeStayPlaces={null}
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    expect(screen.UNSAFE_queryAllByProps({ strokeWidth: 5 })).toHaveLength(0);
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
+  });
+
+  it('滞在場所の読込失敗時は共有を無効化して安全なエラー状態を表示する', () => {
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[]}
+        activeStayPlaces={null}
+        stayPlacesStatus="error"
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('滞在場所を読み込めないため、共有を準備できません。')).toBeTruthy();
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
+  });
+
+  it('許可リスト外の非表示半径が1件でもあれば共有を無効化する', () => {
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[]}
+        activeStayPlaces={[
+          {
+            id: 1,
+            name: '自宅',
+            iconHexcode: '1F3E0',
+            latitude: 35,
+            longitude: 139,
+            privacyRadiusMeters: 999,
+            createdAt: '2026-08-19T00:00:00.000Z',
+            updatedAt: '2026-08-19T00:00:00.000Z',
+          },
+        ]}
+        stayPlacesStatus="ready"
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
   });
 });

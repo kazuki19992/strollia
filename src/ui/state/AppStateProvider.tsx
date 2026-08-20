@@ -622,7 +622,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
   const photoClusters = usePhotoClusters(photos, visibleRegion);
   // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
-  usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, photos, clusters: photoClusters });
+  usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, isLoadingPhotos, photos, clusters: photoClusters });
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);

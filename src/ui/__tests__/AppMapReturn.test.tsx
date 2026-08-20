@@ -70,6 +70,7 @@ jest.mock('@/config/sentry', () => ({
   updateSentrySubscriptionContext: jest.fn(),
   updateSentryUserContext: jest.fn(),
   setCrashReportingEnabled: jest.fn(),
+  reportPhotoMapDiagnostics: jest.fn(),
 }));
 
 jest.mock('@expo/vector-icons', () => {

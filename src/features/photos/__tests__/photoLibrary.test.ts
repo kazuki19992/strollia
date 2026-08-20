@@ -1,6 +1,11 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
+import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto, PHOTO_INFO_CONCURRENCY } from '@/features/photos/photoLibrary';
+
+jest.mock('@/config/sentry', () => ({
+  reportPhotoMapDiagnostics: jest.fn(),
+}));
 
 jest.mock('expo-media-library/legacy', () => ({
   getAssetsAsync: jest.fn(),
@@ -133,5 +138,81 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
 
     expect(maxRunningCount).toBeLessThanOrEqual(PHOTO_INFO_CONCURRENCY);
     expect(MediaLibrary.getAssetInfoAsync).toHaveBeenCalledTimes(assetCount);
+  });
+});
+
+describe('ジオタグ付き写真読み込みの診断計装', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('走査件数・ジオタグ件数・所要時間をloadステージとして送る', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1' }, { id: 'asset-2' }],
+      hasNextPage: true,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock)
+      .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
+      .mockResolvedValueOnce(createAssetInfo('asset-2'));
+
+    await loadGeotaggedPhotos(50);
+
+    expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(1);
+    expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('load', {
+      requestedLimit: 50,
+      scannedAssetCount: 2,
+      hasNextPage: true,
+      assetInfoFulfilledCount: 2,
+      assetInfoRejectedCount: 0,
+      geotaggedPhotoCount: 1,
+      durationMs: expect.any(Number),
+    });
+  });
+
+  it('詳細取得の一部が失敗した場合はfulfilled/rejectedの件数を分けて送る', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1' }, { id: 'asset-2' }, { id: 'asset-3' }],
+      hasNextPage: false,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock)
+      .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
+      .mockRejectedValueOnce(new Error('broken asset'))
+      .mockRejectedValueOnce(new Error('broken asset'));
+
+    await loadGeotaggedPhotos();
+
+    expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith(
+      'load',
+      expect.objectContaining({
+        scannedAssetCount: 3,
+        assetInfoFulfilledCount: 1,
+        assetInfoRejectedCount: 2,
+        geotaggedPhotoCount: 1,
+      }),
+    );
+  });
+
+  it('座標・アセットID・URIを診断へ含めない', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1' }],
+      hasNextPage: false,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
+
+    await loadGeotaggedPhotos();
+
+    // ローカルファースト方針(AGENTS.md §5)により、写真メタデータ本体は送信対象外。
+    // 送信キーを固定して、座標・アセットID・URIが紛れ込む余地を無くす
+    const [, payload] = (reportPhotoMapDiagnostics as jest.Mock).mock.calls[0];
+    expect(Object.keys(payload).sort()).toEqual([
+      'assetInfoFulfilledCount',
+      'assetInfoRejectedCount',
+      'durationMs',
+      'geotaggedPhotoCount',
+      'hasNextPage',
+      'requestedLimit',
+      'scannedAssetCount',
+    ]);
+    expect(Object.values(payload).every((value) => typeof value === 'number' || typeof value === 'boolean')).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ import { isStayPlacePrivacyRadiusMeters, type StayPlace } from '@/features/stayP
 /** 共有時の非表示半径を設定画面全体で同じ単位へ整形する。 */
 export function formatStayPlacePrivacyRadius(privacyRadiusMeters: number | null): string {
   if (privacyRadiusMeters === null) {
-    return '含める';
+    return '共有画像に含める';
   }
 
   return privacyRadiusMeters >= 1000 ? `${privacyRadiusMeters / 1000}km` : `${privacyRadiusMeters}m`;

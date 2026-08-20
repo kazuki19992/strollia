@@ -1,8 +1,7 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import type { ComponentProps } from 'react';
-import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
 
@@ -26,6 +25,7 @@ import { InfoBlock } from './InfoBlock';
 import { OptionGroup } from './OptionGroup';
 import { ScreenSection } from './ScreenSection';
 import { SelectionTile } from './SelectionTile';
+import { SelectionDropdown } from './SelectionDropdown';
 
 /** 設定画面のprops。 */
 export type SettingsScreenProps = {
@@ -690,9 +690,7 @@ type AppColorPickerProps = {
 
 /** アプリカラープリセット選択ドロップダウン。 */
 function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: AppColorPickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const selectedPreset = getAppColorPreset(selectedPresetId);
-  const dotColor = theme.name === 'dark' ? selectedPreset.dark.primary : selectedPreset.light.primary;
 
   return (
     <OptionGroup
@@ -700,45 +698,19 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
       title="アプリカラー (Strollia Plus)"
       note="現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。"
     >
-      <Pressable
-        accessibilityRole="button"
+      <SelectionDropdown
         accessibilityLabel="アプリカラーを選択"
-        onPress={() => setIsOpen(true)}
-        style={styles.colorPresetDropdownButton}
-      >
-        <View style={[styles.colorPresetDot, { backgroundColor: dotColor }]} />
-        <Text style={styles.colorPresetLabel}>{selectedPreset.label}</Text>
-        <MaterialCommunityIcons name="chevron-down" size={18} color={theme.colors.mutedText} />
-      </Pressable>
-
-      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
-        <Pressable style={styles.colorPresetModalBackdrop} onPress={() => setIsOpen(false)}>
-          <View style={styles.colorPresetModalSheet}>
-            {APP_COLOR_PRESETS.map((preset) => {
-              const presetDotColor = theme.name === 'dark' ? preset.dark.primary : preset.light.primary;
-              const isSelected = preset.id === selectedPresetId;
-
-              return (
-                <Pressable
-                  key={preset.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={preset.label}
-                  accessibilityState={{ selected: isSelected }}
-                  onPress={() => {
-                    onUpdatePreset(preset.id);
-                    setIsOpen(false);
-                  }}
-                  style={styles.colorPresetRow}
-                >
-                  <View style={[styles.colorPresetDot, { backgroundColor: presetDotColor }]} />
-                  <Text style={styles.colorPresetRowLabel}>{preset.label}</Text>
-                  {isSelected && <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} />}
-                </Pressable>
-              );
-            })}
-          </View>
-        </Pressable>
-      </Modal>
+        getKey={(preset) => preset.id}
+        getLabel={(preset) => preset.label}
+        options={APP_COLOR_PRESETS}
+        selectedValue={selectedPreset}
+        styles={styles}
+        theme={theme}
+        renderLeading={(preset) => (
+          <View style={[styles.colorPresetDot, { backgroundColor: theme.name === 'dark' ? preset.dark.primary : preset.light.primary }]} />
+        )}
+        onSelect={(preset) => onUpdatePreset(preset.id)}
+      />
     </OptionGroup>
   );
 }

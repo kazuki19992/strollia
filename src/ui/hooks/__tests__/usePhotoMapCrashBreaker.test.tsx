@@ -1,5 +1,10 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { usePhotoMapCrashBreaker, UsePhotoMapCrashBreakerResult } from '@/ui/hooks/usePhotoMapCrashBreaker';
+
+jest.mock('@/config/sentry', () => ({
+  reportPhotoMapDiagnostics: jest.fn(),
+}));
 
 jest.mock('expo-media-library/legacy', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),
@@ -147,6 +152,71 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
 
       // サイレントにOFFへ戻すのではなく、巻き戻した理由をユーザーへ通知する
       expect(alertSpy).toHaveBeenCalledWith('写真表示を有効化できませんでした', '設定の保存に失敗したため、写真表示をOFFに戻しました。');
+    });
+  });
+
+  describe('権限取得結果の診断計装', () => {
+    it('フルアクセスのとき hasFullAccess: true で permission ステージを送る', async () => {
+      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+
+      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+
+      await act(async () => {
+        await result.current.updateShowPhotosOnMap(true);
+      });
+
+      expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('permission', {
+        granted: true,
+        accessPrivileges: 'all',
+        hasFullAccess: true,
+      });
+    });
+
+    it('限定アクセスのとき hasFullAccess: false で送り、既存のAlert挙動は変えない', async () => {
+      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { Alert } = require('react-native');
+      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+      (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
+
+      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+
+      await act(async () => {
+        await result.current.updateShowPhotosOnMap(true);
+      });
+
+      expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('permission', {
+        granted: true,
+        accessPrivileges: 'limited',
+        hasFullAccess: false,
+      });
+      expect(alertSpy).toHaveBeenCalledWith('写真のフルアクセスが必要です', expect.any(String));
+    });
+
+    it('accessPrivileges が未定義の場合は null として送る', async () => {
+      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+
+      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+
+      await act(async () => {
+        await result.current.updateShowPhotosOnMap(true);
+      });
+
+      expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith(
+        'permission',
+        expect.objectContaining({ accessPrivileges: null, hasFullAccess: true }),
+      );
+    });
+
+    it('写真表示をOFFにするときは権限要求を通らないため送らない', async () => {
+      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+
+      await act(async () => {
+        await result.current.updateShowPhotosOnMap(false);
+      });
+
+      expect(reportPhotoMapDiagnostics).not.toHaveBeenCalled();
     });
   });
 });

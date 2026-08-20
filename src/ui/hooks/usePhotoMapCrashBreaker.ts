@@ -2,6 +2,7 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 
+import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { hasFullPhotoAccess } from '@/features/photos/photoLibrary';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { usePhotoMapOverlay } from './usePhotoMapOverlay';
@@ -139,6 +140,14 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
         }
 
         const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+
+        // 実機で「ONにしても写真が出ない」原因が権限段階かを切り分けるための調査用計装。
+        // 保存済み設定からの復元経路は権限要求を通らないため、この経路だけで送る。
+        reportPhotoMapDiagnostics('permission', {
+          granted: permission.granted,
+          accessPrivileges: permission.accessPrivileges ?? null,
+          hasFullAccess: hasFullPhotoAccess(permission),
+        });
 
         if (!hasFullPhotoAccess(permission)) {
           setShouldRestorePhotosOnMapAfterMapReady(false);

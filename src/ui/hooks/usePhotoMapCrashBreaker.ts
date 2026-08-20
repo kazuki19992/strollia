@@ -143,6 +143,11 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
 
         // 実機で「ONにしても写真が出ない」原因が権限段階かを切り分けるための調査用計装。
         // 保存済み設定からの復元経路は権限要求を通らないため、この経路だけで送る。
+        //
+        // accessPrivileges は expo-media-library の型上 optional で、OS/APIレベルによっては未設定になる
+        // (limited を返すのは iOS 14 以降 / Android 14 (API 34) 以降のみ)。未設定でも granted が true なら
+        // hasFullPhotoAccess はフルアクセス扱いとする。そのため診断値の null は「拒否」ではなく
+        // 「OS が accessPrivileges を返さなかった」を意味する。granted と併せて読むこと。
         reportPhotoMapDiagnostics('permission', {
           granted: permission.granted,
           accessPrivileges: permission.accessPrivileges ?? null,

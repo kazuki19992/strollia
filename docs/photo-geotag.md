@@ -187,6 +187,28 @@ GPSログ上に写真を重ねることで、ユーザーが「いつ・どこ�
 読み込み前の初期値(空配列)は結果ではないため送らず、`photoCount: 0` の偽イベントが出ないようにしている。
 ズームでクラスタ半径のみが変わる場合も送らない。
 
+#### `accessPrivileges` の読み方(OS差分)
+
+`accessPrivileges` は `expo-media-library` の `PermissionResponse` において optional な項目であり、
+取りうる値と意味は以下である。
+
+| 値                  | 意味                                                                            |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `all`               | 写真ライブラリ全体へのアクセスが許可された                                      |
+| `limited`           | ユーザーが選択した写真だけアクセスが許可された(限定アクセス)                    |
+| `none`              | 拒否された、またはまだ許可されていない                                          |
+| 未設定(`undefined`) | OS/実装が `accessPrivileges` を返さなかった。診断イベントでは `null` として送る |
+
+OS差分は以下のとおり。
+
+- iOS: 権限応答から常に設定される。`limited`(選択した写真のみ)が発生しうるのは iOS 14 以降。
+- Android: `limited` が発生しうるのは Android 14 (API 34) 以降のみ。API 34 未満では許可なら `all`、それ以外は `none` を返す。
+
+診断イベントの `accessPrivileges: null` は**「拒否」を意味しない**。あくまで「OS が `accessPrivileges` を
+返さなかった」であり、`granted` と併せて読む必要がある。`hasFullPhotoAccess`
+(`src/features/photos/photoLibrary.ts`)も同じ前提で、`granted` が true かつ `limited` / `none` の
+いずれでもない場合をフルアクセスとして扱う。したがって未設定の場合は `granted` の値がそのまま判定結果になる。
+
 ### 12.2 送信しない項目
 
 ローカルファースト方針(AGENTS.md §5)に従い、以下は**一切送信しない**。

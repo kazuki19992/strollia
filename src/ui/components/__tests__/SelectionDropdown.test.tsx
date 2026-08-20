@@ -5,6 +5,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { lightTheme } from '@/theme/theme';
 import { SelectionDropdown } from '@/ui/components/SelectionDropdown';
 
+const mockUseWindowDimensions = jest.fn();
+
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: mockUseWindowDimensions,
+}));
+
 jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: require('react-native').Text,
 }));
@@ -12,7 +19,13 @@ jest.mock('@expo/vector-icons', () => ({
 const styles = new Proxy({}, { get: () => ({}) });
 
 describe('選択ドロップダウン SelectionDropdown', () => {
+  afterEach(() => {
+    mockUseWindowDimensions.mockReset();
+  });
+
   test('選択肢が画面高を超える場合は高さ制限付きのスクロール領域へ収める', () => {
+    mockUseWindowDimensions.mockReturnValue({ fontScale: 1, height: 844, scale: 3, width: 390 });
+
     render(
       <SafeAreaProvider
         initialMetrics={{
@@ -36,7 +49,7 @@ describe('選択ドロップダウン SelectionDropdown', () => {
     fireEvent.press(screen.getByLabelText('候補を選択'));
 
     const sheet = screen.getByTestId('selection-dropdown-sheet');
-    expect(StyleSheet.flatten(sheet.props.style).maxHeight).toEqual(expect.any(Number));
+    expect(StyleSheet.flatten(sheet.props.style).maxHeight).toBe(769);
     expect(screen.getByTestId('selection-dropdown-options')).toBeTruthy();
   });
 });

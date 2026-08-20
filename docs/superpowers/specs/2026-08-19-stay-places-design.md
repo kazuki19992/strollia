@@ -71,7 +71,7 @@ GPSの生座標を失わず、滞在場所の編集・削除やPlusの契約状�
 | `icon_hexcode`          | TEXT NOT NULL       | Emojibaseが提供する、完全修飾済みUnicode絵文字の16進コードポイント列 |
 | `latitude`              | REAL NOT NULL       | 固定中心マーカーの緯度                                               |
 | `longitude`             | REAL NOT NULL       | 固定中心マーカーの経度                                               |
-| `privacy_radius_meters` | INTEGER NULL        | `NULL` は「含める」、それ以外は許可済み半径                          |
+| `privacy_radius_meters` | INTEGER NULL        | `NULL` は「共有画像に含める」、それ以外は許可済み半径                |
 | `created_at`            | TEXT NOT NULL       | ISO 8601作成日時                                                     |
 | `updated_at`            | TEXT NOT NULL       | ISO 8601更新日時                                                     |
 
@@ -198,7 +198,7 @@ DBへ保存する点の有効座標は、生座標と同じ場合も明示して
 
 ### 分割アルゴリズム
 
-共有対象の有効座標列を時系列順に走査し、有効な滞在場所のうち少なくとも1つの非表示半径内にある点を除外する。`含める`（`privacy_radius_meters = NULL`）は除外対象にしない。点が半径境界上にある場合も除外する。
+共有対象の有効座標列を時系列順に走査し、有効な滞在場所のうち少なくとも1つの非表示半径内にある点を除外する。`共有画像に含める`（`privacy_radius_meters = NULL`）は除外対象にしない。点が半径境界上にある場合も除外する。
 
 可視点だけを単一の `Polyline` へ渡してはいけない。半径内に入る点を見つけた時点で現在のセグメントを閉じ、次の可視点から新しいセグメントを開始する。2点未満のセグメントは描画しない。
 

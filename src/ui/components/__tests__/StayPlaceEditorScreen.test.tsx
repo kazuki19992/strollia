@@ -145,6 +145,21 @@ describe('滞在場所編集 StayPlaceEditorScreen', () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ privacyRadiusMeters: 1000 }));
   });
 
+  test('非表示範囲が未設定なら共有画像に場所を含めることを説明する', () => {
+    render(
+      <StayPlaceEditorScreen
+        initialCoordinate={{ latitude: 35, longitude: 139 }}
+        place={null}
+        styles={styles as never}
+        theme={lightTheme}
+        onBack={jest.fn()}
+        onSave={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('非表示範囲を設定すると、この場所の周辺を共有するルートから隠します。')).toBeTruthy();
+  });
+
   test('地図の固定中心マーカーを表示し、地図操作完了後の中心座標だけを保存する', async () => {
     const onSave = jest.fn().mockResolvedValue(undefined);
     render(

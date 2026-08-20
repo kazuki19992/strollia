@@ -178,7 +178,7 @@ export function StayPlaceEditorScreen({ initialCoordinate, place, styles, theme,
           </View>
         </ScreenSection>
         <ScreenSection styles={styles} title="共有時の非表示範囲">
-          <DescriptionText styles={styles}>この場所の周辺を共有するルートから隠します。</DescriptionText>
+          <DescriptionText styles={styles}>非表示範囲を設定すると、この場所の周辺を共有するルートから隠します。</DescriptionText>
           <SelectionDropdown
             accessibilityLabel="共有時の非表示範囲を選択"
             getKey={(radius) => String(radius ?? 'include')}

@@ -26,6 +26,9 @@ jest.mock('@/features/photos/photoAssetRepository', () => ({
 jest.mock('expo-media-library/legacy', () => ({
   getAssetsAsync: jest.fn(),
   getAssetInfoAsync: jest.fn(),
+  // 既定はフルアクセス。突き合わせを抑止するケースだけ各テストで上書きする
+  getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),
+  requestPermissionsAsync: jest.fn(),
   MediaType: { photo: 'photo' },
   SortBy: { creationTime: 'creationTime' },
 }));
@@ -519,6 +522,90 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
 
     await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
     expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+});
+
+describe('写真ライブラリ権限による突き合わせの抑止 loadGeotaggedPhotos', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // 限定アクセスでは getAssetsAsync が「ユーザーが選択した写真」だけを hasNextPage: false で返す。
+    // その形をそのまま突き合わせると全期間が対象になり、保存済みの行がほぼ全て削除される
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1', creationTime: 2000 }],
+      hasNextPage: false,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValue(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
+  });
+
+  /**
+   * `savePhotoAssets` へ渡された突き合わせ条件を取り出す。
+   *
+   * @returns 突き合わせ条件。渡されていない場合はnull。
+   */
+  function reconciliationArgument(): PhotoAssetReconciliation | null {
+    return (savePhotoAssets as jest.Mock).mock.calls[0][1] as PhotoAssetReconciliation | null;
+  }
+
+  it('フルアクセスの場合は従来どおり突き合わせを行う', async () => {
+    (MediaLibrary.getPermissionsAsync as jest.Mock).mockResolvedValueOnce({ granted: true, accessPrivileges: 'all' });
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()).toEqual({ scannedEntireLibrary: true, retainedAssetIds: ['asset-1'] });
+  });
+
+  it('権限は参照するだけで、権限ダイアログを出さない', async () => {
+    await loadGeotaggedPhotos();
+
+    expect(MediaLibrary.getPermissionsAsync).toHaveBeenCalled();
+    expect(MediaLibrary.requestPermissionsAsync).not.toHaveBeenCalled();
+  });
+
+  it('限定アクセスの場合は突き合わせを行わず保存だけ行う', async () => {
+    (MediaLibrary.getPermissionsAsync as jest.Mock).mockResolvedValueOnce({ granted: true, accessPrivileges: 'limited' });
+
+    await loadGeotaggedPhotos();
+
+    expect(savePhotoAssets).toHaveBeenCalledWith(
+      [
+        {
+          assetId: 'asset-1',
+          latitude: 35,
+          longitude: 139,
+          takenAt: new Date(1).toISOString(),
+          uri: 'ph://asset-1',
+          width: 100,
+          height: 80,
+        },
+      ],
+      null,
+    );
+  });
+
+  it('権限がnoneの場合は突き合わせを行わない', async () => {
+    (MediaLibrary.getPermissionsAsync as jest.Mock).mockResolvedValueOnce({ granted: false, accessPrivileges: 'none' });
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()).toBeNull();
+  });
+
+  it('権限が許可されていない場合は突き合わせを行わない', async () => {
+    (MediaLibrary.getPermissionsAsync as jest.Mock).mockResolvedValueOnce({ granted: false });
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()).toBeNull();
+  });
+
+  it('権限の参照に失敗した場合は安全側に倒して突き合わせを行わず、写真の読み込みは成功する', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (MediaLibrary.getPermissionsAsync as jest.Mock).mockRejectedValueOnce(new Error('permission unavailable'));
+
+    await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+    expect(reconciliationArgument()).toBeNull();
 
     warnSpy.mockRestore();
   });

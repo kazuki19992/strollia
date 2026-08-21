@@ -47,6 +47,32 @@ export function hasFullPhotoAccess(permission: MediaLibrary.PermissionResponse):
 }
 
 /**
+ * 走査済み時間窓との突き合わせ(削除)を行ってよい権限状態かを判定する。
+ *
+ * **限定アクセスでは突き合わせを行ってはいけない。** 限定アクセスの `getAssetsAsync` は
+ * ユーザーが選択した写真だけを、しかも `hasNextPage: false` で返す。その結果を素直に突き合わせると
+ * 「ライブラリ全体を見終えた」と誤認し、選択されていない写真の行をすべて削除してしまう。
+ * 未選択の写真がライブラリに実在するのか削除されたのかは限定アクセスでは**区別できない**ため、
+ * `getAssetInfoAsync` が reject したアセットの行を残すのと同じく「判断できないものは消さない」に倒す。
+ *
+ * 権限の参照自体に失敗した場合もフルアクセスと言い切れないため、同様に突き合わせを行わない。
+ *
+ * @returns 突き合わせを行ってよい場合はtrue。
+ */
+async function canReconcilePhotoAssets(): Promise<boolean> {
+  try {
+    // 参照のみ。権限の要求(ダイアログ表示)は写真表示をONにする導線の責務なので、ここでは行わない
+    const permission = await MediaLibrary.getPermissionsAsync();
+
+    return hasFullPhotoAccess(permission);
+  } catch (error: unknown) {
+    console.warn('Failed to read photo library permission:', error);
+
+    return false;
+  }
+}
+
+/**
  * MediaLibrary由来の座標値を有限な数値へ正規化する。
  *
  * expo-media-library の型定義(`Location`)は緯度経度を `number` と宣言しているが、**iOSのネイティブ
@@ -249,7 +275,11 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     isInfoResolved: details[index].status === 'fulfilled',
     isSaved: savedAssetIds.has(asset.id),
   }));
-  const reconciliation = createPhotoAssetReconciliation({ assets: page.assets, outcomes, hasNextPage: page.hasNextPage });
+  // フルアクセスが無いときは走査結果が「ライブラリの実態」を表さないため、突き合わせ(削除)を丸ごと
+  // スキップして保存(UPSERT)だけ行う。理由は `canReconcilePhotoAssets` を参照
+  const reconciliation = (await canReconcilePhotoAssets())
+    ? createPhotoAssetReconciliation({ assets: page.assets, outcomes, hasNextPage: page.hasNextPage })
+    : null;
 
   await savePhotoAssets(assetRecords, reconciliation).catch((error: unknown) => {
     console.warn('Failed to save photo assets:', error);

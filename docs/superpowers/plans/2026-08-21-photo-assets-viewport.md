@@ -172,6 +172,15 @@ CREATE INDEX IF NOT EXISTS idx_photo_assets_taken_at
 - 下限を計算できない場合は突き合わせ自体を行わない
 - ページが空 + `hasNextPage` が false: ライブラリが空を意味するため全行削除
 
+**フルアクセスが無いときは突き合わせを行わない**（保存は従来どおり行う）。限定アクセスの `getAssetsAsync` は
+ユーザーが選択した写真だけを `hasNextPage: false` で返すため、そのまま突き合わせると窓が全期間になり、
+選択されていない写真の行がすべて削除される。限定アクセスでは**未選択の写真が実在するのか削除されたのかを
+区別できない**ので、`getAssetInfoAsync` の reject と同じ「判断できないものは消さない」に倒す。
+
+- 権限は `MediaLibrary.getPermissionsAsync()` で参照するだけにし、この経路で権限ダイアログを出さない
+- 判定は既存の `hasFullPhotoAccess` を使う（限定アクセス・拒否のいずれも突き合わせを行わない）
+- 権限の参照自体に失敗した場合も突き合わせを行わない（安全側）
+
 実装:
 
 - 判定ロジックは `src/features/photos/photoScanWindow.ts` に純粋関数として切り出し、単体テストする

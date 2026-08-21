@@ -158,6 +158,8 @@ GPX / KML インポート履歴を保存するテーブル。
 
 保存は `asset_id` を主キーとしたUPSERTで行う。`created_at` は初回保存時の値を保ち、`updated_at` と `last_seen_at` は毎回更新する（`visited_cells` と同じ方針）。
 
+**行の削除**: 保存と同じトランザクションで、走査済みの時間窓（今回の走査で確実に見た撮影日時の範囲）にある行を走査結果と突き合わせ、確認できなかった行を `DELETE` する。写真ライブラリから削除された写真やジオタグを失った写真の行が残ると、画像を読めず地図上に空のバブルが出るため。判定条件と端の扱いは `docs/photo-geotag.md` §9.3 を参照する。`getAssetInfoAsync` が reject したアセットは「存在するが判断できない」ものとして削除対象から外し、実在する写真の行を消さないようにしている。
+
 **`local_uri` / `thumbnail_uri` は保存しない。** `getAssetInfoAsync` が返す `localUri` は
 `requestContentEditingInput` の `fullSizeImageURL` に由来する一時パスで、アプリ再起動をまたいで有効である保証がない。代わりに `getAssetsAsync` が返す安定した `uri` を保存する。
 

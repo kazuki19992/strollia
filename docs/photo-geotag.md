@@ -159,7 +159,75 @@ GPSログ上に写真を重ねることで、ユーザーが「いつ・どこ�
 - 写真データを外部サーバーへ送信しない
 - 権限が取り消された場合は写真表示を停止する
 
-## 12. 実装優先度
+## 12. 調査用の Sentry 計装
+
+実機(production ビルド)でのみ再現する「設定を ON にしてもマップに写真が表示されない」不具合を
+切り分けるため、写真表示パイプラインの各段階に**一時的な**診断計装を入れている。
+
+送信は既存の Sentry 基盤に乗るため、以下が自動的に守られる。
+
+- `isSentryEnabledForBuild()` により production profile のビルドでのみ送信される
+- `filterSentryEventBeforeSend` により、不具合レポート設定が OFF のユーザーからは送信されない
+
+送信量は「写真表示 ON」1 回につき最大 3 イベント。ズームやパンでは増えない。
+
+### 12.1 送信する項目
+
+いずれも `investigation_area: photo-map` タグと `photo_map_stage` タグを付けた info メッセージとして
+`src/config/sentry.ts` の `reportPhotoMapDiagnostics` から送る。
+
+| ステージ     | 送信箇所                                        | 送信する値                                                                                                                                           |
+| ------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `permission` | `src/ui/hooks/usePhotoMapCrashBreaker.ts`       | `granted` / `accessPrivileges` / `hasFullAccess`                                                                                                     |
+| `load`       | `src/features/photos/photoLibrary.ts`           | `requestedLimit` / `scannedAssetCount` / `hasNextPage` / `assetInfoFulfilledCount` / `assetInfoRejectedCount` / `geotaggedPhotoCount` / `durationMs` |
+| `cluster`    | `src/ui/hooks/usePhotoMapClusterDiagnostics.ts` | `photoCount` / `clusterCount`                                                                                                                        |
+
+`permission` は権限要求を通る経路でのみ送る。保存済み設定からの復元経路は権限要求を通らないため送らない。
+`cluster` は写真の読み込みが完了し、かつ写真一覧の参照が前回送信時から変わったときだけ送る。
+読み込み前の初期値(空配列)は結果ではないため送らず、`photoCount: 0` の偽イベントが出ないようにしている。
+ズームでクラスタ半径のみが変わる場合も送らない。
+
+#### `accessPrivileges` の読み方(OS差分)
+
+`accessPrivileges` は `expo-media-library` の `PermissionResponse` において optional な項目であり、
+取りうる値と意味は以下である。
+
+| 値                  | 意味                                                                            |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `all`               | 写真ライブラリ全体へのアクセスが許可された                                      |
+| `limited`           | ユーザーが選択した写真だけアクセスが許可された(限定アクセス)                    |
+| `none`              | 拒否された、またはまだ許可されていない                                          |
+| 未設定(`undefined`) | OS/実装が `accessPrivileges` を返さなかった。診断イベントでは `null` として送る |
+
+OS差分は以下のとおり。
+
+- iOS: 権限応答から常に設定される。`limited`(選択した写真のみ)が発生しうるのは iOS 14 以降。
+- Android: `limited` が発生しうるのは Android 14 (API 34) 以降のみ。API 34 未満では許可なら `all`、それ以外は `none` を返す。
+
+診断イベントの `accessPrivileges: null` は**「拒否」を意味しない**。あくまで「OS が `accessPrivileges` を
+返さなかった」であり、`granted` と併せて読む必要がある。`hasFullPhotoAccess`
+(`src/features/photos/photoLibrary.ts`)も同じ前提で、`granted` が true かつ `limited` / `none` の
+いずれでもない場合をフルアクセスとして扱う。したがって未設定の場合は `granted` の値がそのまま判定結果になる。
+
+### 12.2 送信しない項目
+
+ローカルファースト方針(AGENTS.md §5)に従い、以下は**一切送信しない**。
+
+- 写真の座標(緯度・経度)
+- アセットID
+- 写真の URI・ファイル名
+- 撮影日時
+- 写真本体・サムネイル
+
+送るのは件数・真偽値・所要時間・`accessPrivileges` 文字列だけである。
+
+### 12.3 撤去について
+
+これは原因特定のための一時的な計装である。原因が確定して修正が入った後、
+`load` / `cluster` ステージの常時送信は撤去するか、閾値付き(件数が 0 のときだけ送る等)へ
+絞り込むことを検討する。
+
+## 13. 実装優先度
 
 この機能は任意機能とする。
 
@@ -169,7 +237,7 @@ GPSログ上に写真を重ねることで、ユーザーが「いつ・どこ�
 - v1: ジオタグ付き写真のマップ表示と近接写真クラスタリングを実装
 - 将来: GPSログとの時刻連動、サムネイルキャッシュを検討
 
-## 13. 参考資料
+## 14. 参考資料
 
 - Expo MediaLibrary: https://docs.expo.dev/versions/latest/sdk/media-library/
 - Expo ImagePicker: https://docs.expo.dev/versions/latest/sdk/imagepicker/

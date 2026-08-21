@@ -1,5 +1,6 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
+import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { mapWithConcurrency } from '@/utils/concurrency';
 
 /** 地図上に表示するジオタグ付き写真。 */
@@ -67,10 +68,15 @@ export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
 /**
  * 写真ライブラリからジオタグ付き写真だけを読み込む。
  *
+ * 実機でのみ再現する「写真が表示されない」不具合の切り分けのため、末尾で件数の診断を
+ * Sentryへ送る(調査用の一時的な計装。詳細は `docs/photo-geotag.md`)。
+ *
  * @param limit - 走査する最新写真の最大件数。初期表示の重さを抑えるため上限を持つ。
  * @returns 地図上に表示可能なジオタグ付き写真一覧。
  */
 export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<MapPhoto[]> {
+  const startedAtMs = Date.now();
+
   const page = await MediaLibrary.getAssetsAsync({
     first: limit,
     mediaType: MediaLibrary.MediaType.photo,
@@ -81,7 +87,7 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     MediaLibrary.getAssetInfoAsync(asset, { shouldDownloadFromNetwork: false }),
   );
 
-  return details.flatMap((result) => {
+  const photos = details.flatMap((result) => {
     if (result.status !== 'fulfilled') {
       return [];
     }
@@ -89,4 +95,18 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     const photo = toMapPhoto(result.value);
     return photo ? [photo] : [];
   });
+
+  const assetInfoFulfilledCount = details.filter((result) => result.status === 'fulfilled').length;
+
+  reportPhotoMapDiagnostics('load', {
+    requestedLimit: limit,
+    scannedAssetCount: page.assets.length,
+    hasNextPage: page.hasNextPage,
+    assetInfoFulfilledCount,
+    assetInfoRejectedCount: details.length - assetInfoFulfilledCount,
+    geotaggedPhotoCount: photos.length,
+    durationMs: Date.now() - startedAtMs,
+  });
+
+  return photos;
 }

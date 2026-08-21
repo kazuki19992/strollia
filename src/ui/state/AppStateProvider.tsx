@@ -56,6 +56,7 @@ import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyRepor
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
+import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiagnostics';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
@@ -620,6 +621,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   } = usePhotoMapCrashBreaker({ isReady, isMapReady });
   // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
   const photoClusters = usePhotoClusters(photos, visibleRegion);
+  // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
+  usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, isLoadingPhotos, photos, clusters: photoClusters });
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);

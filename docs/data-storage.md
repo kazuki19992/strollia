@@ -137,24 +137,33 @@ GPX / KML インポート履歴を保存するテーブル。
 | `skipped_point_count`  | INTEGER   | 重複などでスキップした記録点数 |
 | `created_at`           | TEXT      | インポート日時                 |
 
-### 4.7 `photo_assets`（任意機能）
+### 4.7 `photo_assets`
 
 ジオタグ付き写真の表示に必要なメタデータを保存するテーブル。
 
 写真本体はDBに保存しない。ジオタグがない写真も保存しない。
 
-| カラム          | 型        | 説明                         |
-| --------------- | --------- | ---------------------------- |
-| `id`            | INTEGER   | 主キー                       |
-| `asset_id`      | TEXT      | 写真ライブラリ上のアセットID |
-| `taken_at`      | TEXT NULL | 撮影日時                     |
-| `latitude`      | REAL      | 緯度                         |
-| `longitude`     | REAL      | 経度                         |
-| `local_uri`     | TEXT NULL | ローカル参照URI              |
-| `thumbnail_uri` | TEXT NULL | サムネイルキャッシュURI      |
-| `last_seen_at`  | TEXT      | 最終確認日時                 |
-| `created_at`    | TEXT      | 作成日時                     |
-| `updated_at`    | TEXT      | 更新日時                     |
+| カラム         | 型        | 説明                                             |
+| -------------- | --------- | ------------------------------------------------ |
+| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID             |
+| `latitude`     | REAL      | 緯度                                             |
+| `longitude`    | REAL      | 経度                                             |
+| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可   |
+| `uri`          | TEXT      | 表示用URI（iOS: `ph://…` / Android: `file://…`） |
+| `width`        | INTEGER   | 写真の横幅                                       |
+| `height`       | INTEGER   | 写真の高さ                                       |
+| `last_seen_at` | TEXT      | 最終確認日時                                     |
+| `created_at`   | TEXT      | 作成日時                                         |
+| `updated_at`   | TEXT      | 更新日時                                         |
+
+保存は `asset_id` を主キーとしたUPSERTで行う。`created_at` は初回保存時の値を保ち、`updated_at` と `last_seen_at` は毎回更新する（`visited_cells` と同じ方針）。
+
+**`local_uri` / `thumbnail_uri` は保存しない。** `getAssetInfoAsync` が返す `localUri` は
+`requestContentEditingInput` の `fullSizeImageURL` に由来する一時パスで、アプリ再起動をまたいで有効である保証がない。代わりに `getAssetsAsync` が返す安定した `uri` を保存する。
+
+> 表示時に `uri` 単独でサムネイルを描画できるかは実機未検証である。描画できない場合は、`local_uri` を「保存しないが表示直前に都度取得する値」として扱い、ビューポート検索の結果に対してのみ `getAssetInfoAsync` で解決する方式へ切り替える。切り替え箇所は `toMapPhotoFromPhotoAsset`（`src/features/photos/photoLibrary.ts`）1箇所に閉じている。
+
+`taken_at` とそのインデックスは、GPSログとの時刻連動（`docs/photo-geotag.md` §7）に向けた準備工事である。後から実装するときにスキーマ変更と写真ライブラリの全件再走査が要らないよう、絞り込みに使う前から保存する。
 
 ### 4.8 `app_settings`
 
@@ -278,6 +287,8 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `visited_cells(x, y)`
 - `visited_cells(last_visited_at)`
 - `stay_places(created_at, id)` （滞在場所を作成順で安定して取得するため）
+- `photo_assets(latitude, longitude)` （マップ表示範囲での絞り込みに使う）
+- `photo_assets(taken_at)` （撮影期間での絞り込みに向けた準備）
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
@@ -362,8 +373,11 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 - `achievement_unlocks`
 - `achievement_notification_queue`
 - `stay_places`
+- `photo_assets`
 
 `location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
+
+`photo_assets` は写真ライブラリから読み取ったメタデータのキャッシュだが、撮影位置は端末内に残る個人データであるため削除対象に含める。写真ライブラリ側の写真は削除しない。
 
 アプリ設定を保持する `app_settings` は、画面表示設定や開発フラグ確認状態などを含むため、初期実装では削除対象外とする。
 

@@ -1,6 +1,7 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
+import { savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
 import { mapWithConcurrency } from '@/utils/concurrency';
 
 /** 地図上に表示するジオタグ付き写真。 */
@@ -115,7 +116,45 @@ export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
 }
 
 /**
+ * MediaLibraryの詳細アセットを `photo_assets` の保存レコードへ変換する。
+ *
+ * `MapPhoto.uri` が `localUri ?? uri` を採るのに対し、**保存するのは `asset.uri` だけ**である。
+ * `localUri` は `requestContentEditingInput` が返す一時パスで、アプリ再起動をまたいで
+ * 有効である保証がないため永続化してはいけない(親設計書 §4.2)。
+ *
+ * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
+ * @returns 有効なジオタグがある写真の場合は保存レコード、ない場合はnull。
+ */
+export function toPhotoAssetRecord(asset: MediaLibrary.AssetInfo): PhotoAssetRecord | null {
+  if (!asset.location) {
+    return null;
+  }
+
+  const latitude = toFiniteCoordinate(asset.location.latitude);
+  const longitude = toFiniteCoordinate(asset.location.longitude);
+
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return {
+    assetId: asset.id,
+    latitude,
+    longitude,
+    // iOSの PHAsset.creationDate は optional で、取得できないアセットが存在する。
+    // 0 や不正値をエポック時刻として保存しないよう null へ倒す
+    takenAt: Number.isFinite(asset.creationTime) && asset.creationTime > 0 ? new Date(asset.creationTime).toISOString() : null,
+    uri: asset.uri,
+    width: asset.width,
+    height: asset.height,
+  };
+}
+
+/**
  * 写真ライブラリからジオタグ付き写真だけを読み込む。
+ *
+ * 読み込んだメタデータは `photo_assets` へ保存し、ビューポート検索の対象にする。
+ * 保存は表示の付随処理であり、失敗しても写真表示そのものは継続させる(ログのみ残す)。
  *
  * 実機でのみ再現する「写真が表示されない」不具合の切り分けのため、末尾で件数の診断を
  * Sentryへ送る(調査用の一時的な計装。詳細は `docs/photo-geotag.md`)。
@@ -143,6 +182,19 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
 
     const photo = toMapPhoto(result.value);
     return photo ? [photo] : [];
+  });
+
+  const assetRecords = details.flatMap((result) => {
+    if (result.status !== 'fulfilled') {
+      return [];
+    }
+
+    const record = toPhotoAssetRecord(result.value);
+    return record ? [record] : [];
+  });
+
+  await savePhotoAssets(assetRecords).catch((error: unknown) => {
+    console.warn('Failed to save photo assets:', error);
   });
 
   const assetInfoFulfilledCount = details.filter((result) => result.status === 'fulfilled').length;

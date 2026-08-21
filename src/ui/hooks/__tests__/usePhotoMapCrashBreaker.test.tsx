@@ -14,6 +14,12 @@ jest.mock('@/features/settings/settingsRepository', () => ({
   setSetting: jest.fn().mockResolvedValue(undefined),
 }));
 
+// photoLibrary(hasFullPhotoAccess の import 元)が写真メタデータの保存でリポジトリを参照するため、
+// SQLiteのネイティブモジュールを読み込まないようリポジトリごとモックする
+jest.mock('@/features/photos/photoAssetRepository', () => ({
+  savePhotoAssets: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/ui/hooks/usePhotoMapOverlay', () => ({
   usePhotoMapOverlay: jest.fn().mockReturnValue({
     photos: [],

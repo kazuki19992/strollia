@@ -1,10 +1,21 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
-import { hasFullPhotoAccess, loadGeotaggedPhotos, toMapPhoto, PHOTO_INFO_CONCURRENCY } from '@/features/photos/photoLibrary';
+import { savePhotoAssets } from '@/features/photos/photoAssetRepository';
+import {
+  hasFullPhotoAccess,
+  loadGeotaggedPhotos,
+  toMapPhoto,
+  toPhotoAssetRecord,
+  PHOTO_INFO_CONCURRENCY,
+} from '@/features/photos/photoLibrary';
 
 jest.mock('@/config/sentry', () => ({
   reportPhotoMapDiagnostics: jest.fn(),
+}));
+
+jest.mock('@/features/photos/photoAssetRepository', () => ({
+  savePhotoAssets: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('expo-media-library/legacy', () => ({
@@ -116,9 +127,86 @@ describe('地図写真変換 toMapPhoto', () => {
   });
 });
 
+describe('写真メタデータ変換 toPhotoAssetRecord', () => {
+  it('DBには再起動をまたいで安定するuriを保存し、一時パスのlocalUriは使わない', () => {
+    const asset = createAssetInfo('asset-1', { latitude: 35, longitude: 139 });
+
+    expect(toPhotoAssetRecord(asset)).toEqual({
+      assetId: 'asset-1',
+      latitude: 35,
+      longitude: 139,
+      takenAt: new Date(1).toISOString(),
+      uri: 'ph://asset-1',
+      width: 100,
+      height: 80,
+    });
+    // MapPhoto.uri は localUri を優先するが、保存する値とは別物である
+    expect(toMapPhoto(asset)?.uri).toBe('file:///asset-1.jpg');
+  });
+
+  it('撮影日時が取得できない場合はtakenAtをnullにする', () => {
+    const asset = createAssetInfo('asset-1', { latitude: 35, longitude: 139 });
+    asset.creationTime = 0;
+
+    expect(toPhotoAssetRecord(asset)?.takenAt).toBeNull();
+  });
+
+  it('ジオタグがない写真はnullを返す', () => {
+    expect(toPhotoAssetRecord(createAssetInfo('asset-1'))).toBeNull();
+  });
+
+  it('iOSのように文字列で返る緯度経度を数値へ変換する', () => {
+    const record = toPhotoAssetRecord(createAssetInfo('asset-1', { latitude: '35.6812', longitude: '139.7671' }));
+
+    expect(record).toMatchObject({ latitude: 35.6812, longitude: 139.7671 });
+    expect(typeof record?.latitude).toBe('number');
+  });
+
+  it('数値へ変換できない緯度経度の写真は保存対象にしない', () => {
+    expect(toPhotoAssetRecord(createAssetInfo('asset-1', { latitude: 'abc', longitude: '139.7671' }))).toBeNull();
+  });
+});
+
 describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('ジオタグ付き写真のメタデータをphoto_assetsへ保存する', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1' }, { id: 'asset-2' }],
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock)
+      .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
+      // ジオタグのない写真は保存対象外
+      .mockResolvedValueOnce(createAssetInfo('asset-2'));
+
+    await loadGeotaggedPhotos();
+
+    expect(savePhotoAssets).toHaveBeenCalledTimes(1);
+    expect(savePhotoAssets).toHaveBeenCalledWith([
+      {
+        assetId: 'asset-1',
+        latitude: 35,
+        longitude: 139,
+        takenAt: new Date(1).toISOString(),
+        uri: 'ph://asset-1',
+        width: 100,
+        height: 80,
+      },
+    ]);
+  });
+
+  it('保存に失敗しても写真表示は継続する', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (savePhotoAssets as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({ assets: [{ id: 'asset-1' }] });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
+
+    await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
   });
 
   it('ジオタグ付き写真だけを返す', async () => {

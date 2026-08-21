@@ -1,6 +1,13 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
-import { usePhotoMapCrashBreaker, UsePhotoMapCrashBreakerResult } from '@/ui/hooks/usePhotoMapCrashBreaker';
+import { usePhotoMapCrashBreaker, UsePhotoMapCrashBreakerParams, UsePhotoMapCrashBreakerResult } from '@/ui/hooks/usePhotoMapCrashBreaker';
+
+/** 写真表示が復元可能な状態のフック引数。写真の検索範囲は usePhotoMapOverlay をモックしているため影響しない。 */
+const crashBreakerParams: UsePhotoMapCrashBreakerParams = {
+  isReady: true,
+  isMapReady: true,
+  photoOverlayRegion: { latitude: 35, longitude: 139, latitudeDelta: 0.1, longitudeDelta: 0.1 },
+};
 
 jest.mock('@/config/sentry', () => ({
   reportPhotoMapDiagnostics: jest.fn(),
@@ -42,19 +49,19 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
 
   describe('初期状態', () => {
     it('初期 showPhotosOnMap は false になる', () => {
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       expect(result.current.showPhotosOnMap).toBe(false);
     });
 
     it('初期 isUpdatingPhotoSetting は false になる', () => {
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       expect(result.current.isUpdatingPhotoSetting).toBe(false);
     });
 
     it('photos は空配列になる', () => {
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       expect(result.current.photos).toEqual([]);
     });
@@ -62,7 +69,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
 
   describe('initializePhotoSetting — 起動時の初期化', () => {
     it('savedShowPhotosOnMapEnablePending が false で savedShowPhotosOnMap が false のとき showPhotosOnMap は false のまま', () => {
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       act(() => {
         result.current.initializePhotoSetting({ savedShowPhotosOnMap: false, savedShowPhotosOnMapEnablePending: false });
@@ -72,7 +79,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('savedShowPhotosOnMapEnablePending が true のとき showPhotosOnMap は false になる（クラッシュブレーカー発動）', () => {
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       act(() => {
         // 前回クラッシュした可能性があるため pending フラグが残っている
@@ -86,7 +93,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
 
   describe('updateShowPhotosOnMap — 写真表示の切り替え', () => {
     it('false を渡すと showPhotosOnMap が false になる', async () => {
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(false);
@@ -99,7 +106,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       const { requestPermissionsAsync } = require('expo-media-library/legacy');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(true);
@@ -112,7 +119,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       const { requestPermissionsAsync } = require('expo-media-library/legacy');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
 
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(true);
@@ -128,7 +135,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       // pending フラグ保存(1回目)は reject させて enableShowPhotosOnMapWithCrashBreaker を失敗させる
       (setSetting as jest.Mock).mockRejectedValueOnce(new Error('SQLite error'));
 
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(true);
@@ -150,7 +157,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
       (setSetting as jest.Mock).mockRejectedValueOnce(new Error('SQLite error'));
 
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(true);
@@ -166,7 +173,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       const { requestPermissionsAsync } = require('expo-media-library/legacy');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(true);
@@ -185,7 +192,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
 
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(true);
@@ -203,7 +210,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
       const { requestPermissionsAsync } = require('expo-media-library/legacy');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
 
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(true);
@@ -216,7 +223,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('写真表示をOFFにするときは権限要求を通らないため送らない', async () => {
-      const { result } = renderHook(() => usePhotoMapCrashBreaker({ isReady: true, isMapReady: true }));
+      const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
 
       await act(async () => {
         await result.current.updateShowPhotosOnMap(false);

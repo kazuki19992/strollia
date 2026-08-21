@@ -1,6 +1,7 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
+import type { Region } from 'react-native-maps';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { hasFullPhotoAccess } from '@/features/photos/photoLibrary';
@@ -27,6 +28,11 @@ export type UsePhotoMapCrashBreakerParams = {
    * MapView 準備完了後に写真表示を復元する。
    */
   isMapReady: boolean;
+  /**
+   * 写真の検索範囲に使う地図表示範囲。
+   * ジェスチャー中に更新されない範囲(Visited Grid と同じもの)を渡す。
+   */
+  photoOverlayRegion: Region;
 };
 
 /** `usePhotoMapCrashBreaker` が返す状態と操作の型。 */
@@ -79,7 +85,11 @@ export type UsePhotoMapCrashBreakerResult = {
  *
  * ユーザー向け挙動は App.tsx のそれと完全に同一に保つ。
  */
-export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCrashBreakerParams): UsePhotoMapCrashBreakerResult {
+export function usePhotoMapCrashBreaker({
+  isReady,
+  isMapReady,
+  photoOverlayRegion,
+}: UsePhotoMapCrashBreakerParams): UsePhotoMapCrashBreakerResult {
   const isUpdatingPhotoSettingRef = useRef(false);
 
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
@@ -87,7 +97,7 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
 
   // 写真データ取得フック。showPhotosOnMap が true のときのみ写真を取得する。
-  const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
+  const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap, photoOverlayRegion);
 
   /**
    * 写真表示を有効化する前にpendingを保存し、ネイティブクラッシュ後の次回起動で復旧できるようにする。

@@ -1,14 +1,17 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
-import { savePhotoAssets } from '@/features/photos/photoAssetRepository';
+import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
 import {
   hasFullPhotoAccess,
   loadGeotaggedPhotos,
+  loadGeotaggedPhotosInBounds,
   toMapPhoto,
+  toMapPhotoFromPhotoAsset,
   toPhotoAssetRecord,
   PHOTO_INFO_CONCURRENCY,
 } from '@/features/photos/photoLibrary';
+import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
 jest.mock('@/config/sentry', () => ({
   reportPhotoMapDiagnostics: jest.fn(),
@@ -16,6 +19,7 @@ jest.mock('@/config/sentry', () => ({
 
 jest.mock('@/features/photos/photoAssetRepository', () => ({
   savePhotoAssets: jest.fn().mockResolvedValue(undefined),
+  getPhotoAssetsInBounds: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock('expo-media-library/legacy', () => ({
@@ -164,6 +168,92 @@ describe('写真メタデータ変換 toPhotoAssetRecord', () => {
 
   it('数値へ変換できない緯度経度の写真は保存対象にしない', () => {
     expect(toPhotoAssetRecord(createAssetInfo('asset-1', { latitude: 'abc', longitude: '139.7671' }))).toBeNull();
+  });
+});
+
+describe('保存済み写真の地図表示変換 toMapPhotoFromPhotoAsset', () => {
+  /** テスト用の保存済みレコードを作る。 */
+  function record(overrides: Partial<PhotoAssetRecord> = {}): PhotoAssetRecord {
+    return {
+      assetId: 'asset-1',
+      latitude: 35,
+      longitude: 139,
+      takenAt: '2026-08-21T00:00:00.000Z',
+      uri: 'ph://asset-1',
+      width: 100,
+      height: 80,
+      ...overrides,
+    };
+  }
+
+  it('保存済みの安定したuriをそのまま表示用URIとして使う', () => {
+    expect(toMapPhotoFromPhotoAsset(record())).toEqual({
+      id: 'asset-1',
+      uri: 'ph://asset-1',
+      latitude: 35,
+      longitude: 139,
+      creationTime: Date.parse('2026-08-21T00:00:00.000Z'),
+      width: 100,
+      height: 80,
+    });
+  });
+
+  it('撮影日時が無い写真は撮影日時を0として扱う', () => {
+    expect(toMapPhotoFromPhotoAsset(record({ takenAt: null })).creationTime).toBe(0);
+  });
+
+  it('撮影日時が壊れている写真も撮影日時を0として扱う', () => {
+    expect(toMapPhotoFromPhotoAsset(record({ takenAt: 'broken' })).creationTime).toBe(0);
+  });
+});
+
+describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => {
+  const bounds: PhotoViewportBounds = {
+    minLatitude: 34,
+    maxLatitude: 36,
+    westLongitude: 138,
+    eastLongitude: 140,
+    crossesAntimeridian: false,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('表示範囲で絞り込んだ保存済み写真を地図表示用データへ変換して返す', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([
+      {
+        assetId: 'asset-1',
+        latitude: 35,
+        longitude: 139,
+        takenAt: '2026-08-21T00:00:00.000Z',
+        uri: 'ph://asset-1',
+        width: 100,
+        height: 80,
+      },
+    ]);
+
+    await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
+      {
+        id: 'asset-1',
+        uri: 'ph://asset-1',
+        latitude: 35,
+        longitude: 139,
+        creationTime: Date.parse('2026-08-21T00:00:00.000Z'),
+        width: 100,
+        height: 80,
+      },
+    ]);
+    expect(getPhotoAssetsInBounds).toHaveBeenCalledWith(bounds);
+  });
+
+  it('写真ライブラリの走査は行わない', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([]);
+
+    await loadGeotaggedPhotosInBounds(bounds);
+
+    expect(MediaLibrary.getAssetsAsync).not.toHaveBeenCalled();
+    expect(MediaLibrary.getAssetInfoAsync).not.toHaveBeenCalled();
   });
 });
 

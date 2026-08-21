@@ -1,7 +1,8 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
-import { savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
+import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
+import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 import { mapWithConcurrency } from '@/utils/concurrency';
 
 /** 地図上に表示するジオタグ付き写真。 */
@@ -148,6 +149,48 @@ export function toPhotoAssetRecord(asset: MediaLibrary.AssetInfo): PhotoAssetRec
     width: asset.width,
     height: asset.height,
   };
+}
+
+/**
+ * `photo_assets` に保存済みのメタデータを地図表示用写真へ変換する。
+ *
+ * **保存済みデータから `MapPhoto` を組み立てる箇所はここ1つに閉じている。**
+ * 表示に使うURIの決め方(現状は保存した安定URIをそのまま使う)を変えるときは、必ずこの関数だけを
+ * 直す。親設計書 §9-2 のとおり「`uri` 単独でサムネイル表示できるか」は実機未検証であり、
+ * 描画できなかった場合は表示直前に `getAssetInfoAsync` で `localUri` を解決する方式へ
+ * 切り替える必要がある。その手戻りをこの関数の内側だけに閉じ込めるため、
+ * 呼び出し側でURIを組み立て直してはいけない。
+ *
+ * @param record - `photo_assets` から取得したメタデータ。
+ * @returns 地図表示用の写真。
+ */
+export function toMapPhotoFromPhotoAsset(record: PhotoAssetRecord): MapPhoto {
+  const creationTime = record.takenAt === null ? Number.NaN : Date.parse(record.takenAt);
+
+  return {
+    id: record.assetId,
+    uri: record.uri,
+    latitude: record.latitude,
+    longitude: record.longitude,
+    // 撮影日時を持たないアセットは iOS に実在する。表示順の基準として 0(最古扱い)へ倒す
+    creationTime: Number.isNaN(creationTime) ? 0 : creationTime,
+    width: record.width,
+    height: record.height,
+  };
+}
+
+/**
+ * 表示範囲に含まれるジオタグ付き写真を `photo_assets` から読み込む。
+ *
+ * 写真ライブラリの走査(重いデコードを伴う)は行わず、保存済みメタデータだけを参照する。
+ *
+ * @param bounds - 検索対象の緯度経度境界。
+ * @returns 範囲内の地図表示用写真。
+ */
+export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): Promise<MapPhoto[]> {
+  const records = await getPhotoAssetsInBounds(bounds);
+
+  return records.map(toMapPhotoFromPhotoAsset);
 }
 
 /**

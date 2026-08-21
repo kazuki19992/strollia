@@ -1,4 +1,5 @@
-import { db, withExclusiveTransaction } from '@/db/database';
+import { db, withExclusiveTransaction, type ExclusiveTransaction } from '@/db/database';
+import type { PhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
 import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
 /**
@@ -38,7 +39,48 @@ const photoAssetColumns = `
 `;
 
 /**
- * ジオタグ付き写真のメタデータを保存する。
+ * 走査済み時間窓と突き合わせて、今回の走査で確認できなかった行を削除する。
+ *
+ * 窓の中にありながら `retainedAssetIds` に含まれない行は、写真ライブラリから削除されたか
+ * ジオタグを失ったかのどちらかである。残しておくと画像の読み込みに失敗し、地図上に空のバブルが出る。
+ *
+ * `taken_at` はすべて `new Date(ms).toISOString()` 由来のUTC固定長表記なので、辞書順比較が時刻順比較と一致する。
+ *
+ * **SQLパラメータ数について**: `NOT IN` のプレースホルダはアセット1件につき1つ増える。現状は1ページ
+ * (最大200件)ぶんしか渡らないためSQLiteの上限(SQLITE_MAX_VARIABLE_NUMBER)に対して十分小さい。
+ * ページング走査を入れる 2-c でも1ページ単位で突き合わせる限りは同じ規模に収まるが、**複数ページ分の
+ * IDをまとめて渡す設計にするなら分割が必要**になる。その際に `NOT IN` をチャンクへ素朴に分割すると
+ * 「チャンクAに無い行」を消してチャンクBの行まで削除してしまうため、分割するなら一時テーブルへ
+ * 残すIDを入れて `NOT IN (SELECT …)` で1文にすること。
+ *
+ * @param txn - 保存と同じトランザクションのランナー。
+ * @param reconciliation - 突き合わせ条件。
+ * @returns なし。
+ */
+async function deleteUnconfirmedPhotoAssets(txn: ExclusiveTransaction, reconciliation: PhotoAssetReconciliation): Promise<void> {
+  const conditions: string[] = [];
+  const params: string[] = [];
+
+  if (!reconciliation.scannedEntireLibrary) {
+    // 撮影日時が不明な行は窓の内外を判定できないため、明示的に対象から外す(安全側)
+    conditions.push('taken_at IS NOT NULL');
+    conditions.push('taken_at >= ?');
+    params.push(reconciliation.oldestTakenAt);
+  }
+
+  if (reconciliation.retainedAssetIds.length > 0) {
+    conditions.push(`asset_id NOT IN (${reconciliation.retainedAssetIds.map(() => '?').join(', ')})`);
+    params.push(...reconciliation.retainedAssetIds);
+  }
+
+  // 残す対象が無く全期間が対象の場合はWHERE句自体を付けない(NOT IN () は構文エラーになるため)
+  const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+
+  await txn.runAsync(`DELETE FROM photo_assets${whereClause}`, ...params);
+}
+
+/**
+ * ジオタグ付き写真のメタデータを保存し、必要なら走査済み時間窓と突き合わせる。
  *
  * `asset_id` を主キーとしたUPSERTのため、同じ写真を再走査しても行は増えない。
  * `created_at` は初回保存時の値を保ち(`visited_cells` のUPSERTと同じ方針)、
@@ -46,11 +88,15 @@ const photoAssetColumns = `
  *
  * ジオタグの無い写真の除外は呼び出し側の責務とし、ここでは受け取った行をそのまま保存する。
  *
- * @param records - 保存対象のメタデータ。空配列の場合は何もしない。
+ * 保存と削除は**同一トランザクション**で行う。別々に実行すると、片方だけ成功したときに
+ * 「削除だけ走って保存されていない」中途半端な状態が残るため。
+ *
+ * @param records - 保存対象のメタデータ。空配列でも突き合わせがある場合はトランザクションを開く。
+ * @param reconciliation - 走査済み時間窓との突き合わせ条件。nullの場合は削除を行わない。
  * @returns なし。
  */
-export async function savePhotoAssets(records: PhotoAssetRecord[]): Promise<void> {
-  if (records.length === 0) {
+export async function savePhotoAssets(records: PhotoAssetRecord[], reconciliation: PhotoAssetReconciliation | null = null): Promise<void> {
+  if (records.length === 0 && reconciliation === null) {
     return;
   }
 
@@ -91,6 +137,11 @@ export async function savePhotoAssets(records: PhotoAssetRecord[]): Promise<void
         now,
         now,
       );
+    }
+
+    // 再保存した行の last_seen_at を先に更新してから突き合わせる(削除順序の取り違えを防ぐ)
+    if (reconciliation !== null) {
+      await deleteUnconfirmedPhotoAssets(txn, reconciliation);
     }
   });
 }

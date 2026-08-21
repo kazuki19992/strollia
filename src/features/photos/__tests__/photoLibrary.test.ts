@@ -11,6 +11,7 @@ import {
   toPhotoAssetRecord,
   PHOTO_INFO_CONCURRENCY,
 } from '@/features/photos/photoLibrary';
+import type { PhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
 import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
 jest.mock('@/config/sentry', () => ({
@@ -274,17 +275,21 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
     await loadGeotaggedPhotos();
 
     expect(savePhotoAssets).toHaveBeenCalledTimes(1);
-    expect(savePhotoAssets).toHaveBeenCalledWith([
-      {
-        assetId: 'asset-1',
-        latitude: 35,
-        longitude: 139,
-        takenAt: new Date(1).toISOString(),
-        uri: 'ph://asset-1',
-        width: 100,
-        height: 80,
-      },
-    ]);
+    expect(savePhotoAssets).toHaveBeenCalledWith(
+      [
+        {
+          assetId: 'asset-1',
+          latitude: 35,
+          longitude: 139,
+          takenAt: new Date(1).toISOString(),
+          uri: 'ph://asset-1',
+          width: 100,
+          height: 80,
+        },
+      ],
+      // ページ内アセットの撮影日時が無く窓の下限を計算できないため、突き合わせは行わない
+      null,
+    );
   });
 
   it('保存に失敗しても写真表示は継続する', async () => {
@@ -383,6 +388,139 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
 
     expect(maxRunningCount).toBeLessThanOrEqual(PHOTO_INFO_CONCURRENCY);
     expect(MediaLibrary.getAssetInfoAsync).toHaveBeenCalledTimes(assetCount);
+  });
+});
+
+describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  /**
+   * `savePhotoAssets` へ渡された突き合わせ条件を取り出す。
+   *
+   * @returns 突き合わせ条件。渡されていない場合はnull。
+   */
+  function reconciliationArgument(): PhotoAssetReconciliation | null {
+    return (savePhotoAssets as jest.Mock).mock.calls[0][1] as PhotoAssetReconciliation | null;
+  }
+
+  it('ライブラリから削除された写真は残す対象に含まれず、削除候補になる', async () => {
+    // 以前保存した asset-deleted は getAssetsAsync が返さない = 窓の中に存在しない
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1', creationTime: 2000 }],
+      hasNextPage: true,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()).toEqual({
+      scannedEntireLibrary: false,
+      oldestTakenAt: new Date(2000).toISOString(),
+      retainedAssetIds: ['asset-1'],
+    });
+  });
+
+  it('ジオタグを失った写真は残す対象に含まれない', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [
+        { id: 'asset-1', creationTime: 2000 },
+        { id: 'asset-lost-geotag', creationTime: 1000 },
+      ],
+      hasNextPage: true,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock)
+      .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
+      // 詳細取得は成功したがジオタグが無い = 写真アプリで位置情報が外された
+      .mockResolvedValueOnce(createAssetInfo('asset-lost-geotag'));
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()?.retainedAssetIds).toEqual(['asset-1']);
+  });
+
+  it('詳細取得がrejectされた写真は残す対象に含まれ、削除されない', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [
+        { id: 'asset-1', creationTime: 2000 },
+        { id: 'asset-broken', creationTime: 1000 },
+      ],
+      hasNextPage: true,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock)
+      .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
+      .mockRejectedValueOnce(new Error('broken asset'));
+
+    await loadGeotaggedPhotos();
+
+    // 存在は確認できたがジオタグの有無を判断できないため、実在する写真の行を消してはいけない
+    expect(reconciliationArgument()?.retainedAssetIds).toEqual(['asset-1', 'asset-broken']);
+  });
+
+  it('窓の下限はジオタグの有無を問わずページ内全アセットの最古の撮影日時になる', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [
+        { id: 'asset-1', creationTime: 3000 },
+        // ジオタグが無い写真も「見た範囲」に含まれる
+        { id: 'asset-2', creationTime: 1000 },
+      ],
+      hasNextPage: true,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock)
+      .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
+      .mockResolvedValueOnce(createAssetInfo('asset-2'));
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()).toMatchObject({ oldestTakenAt: new Date(1000).toISOString() });
+  });
+
+  it('ライブラリ末尾まで走査した場合は全期間の突き合わせになる', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1', creationTime: 2000 }],
+      hasNextPage: false,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()).toEqual({ scannedEntireLibrary: true, retainedAssetIds: ['asset-1'] });
+  });
+
+  it('写真ライブラリが空の場合は保存済みの行をすべて削除する条件を渡す', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({ assets: [], hasNextPage: false });
+
+    await loadGeotaggedPhotos();
+
+    expect(savePhotoAssets).toHaveBeenCalledWith([], { scannedEntireLibrary: true, retainedAssetIds: [] });
+  });
+
+  it('窓の下限を計算できない場合は突き合わせを行わない', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1' }],
+      hasNextPage: true,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
+
+    await loadGeotaggedPhotos();
+
+    expect(reconciliationArgument()).toBeNull();
+  });
+
+  it('突き合わせを含む保存が失敗しても写真表示は継続する', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (savePhotoAssets as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1', creationTime: 2000 }],
+      hasNextPage: false,
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
+
+    await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
   });
 });
 

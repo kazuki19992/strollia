@@ -2,6 +2,7 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
+import { createPhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
 import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 import { mapWithConcurrency } from '@/utils/concurrency';
 
@@ -199,6 +200,10 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): 
  * 読み込んだメタデータは `photo_assets` へ保存し、ビューポート検索の対象にする。
  * 保存は表示の付随処理であり、失敗しても写真表示そのものは継続させる(ログのみ残す)。
  *
+ * あわせて、走査済みの時間窓に限って保存済みの行と突き合わせる。窓の中にありながら今回の走査で
+ * 確認できなかった行は、写真ライブラリから削除されたかジオタグを失ったものなので削除する
+ * (残すと画像を読めず地図上に空のバブルが出る)。判定条件は `createPhotoAssetReconciliation` を参照。
+ *
  * 実機でのみ再現する「写真が表示されない」不具合の切り分けのため、末尾で件数の診断を
  * Sentryへ送る(調査用の一時的な計装。詳細は `docs/photo-geotag.md`)。
  *
@@ -236,7 +241,17 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     return record ? [record] : [];
   });
 
-  await savePhotoAssets(assetRecords).catch((error: unknown) => {
+  // 走査済み時間窓との突き合わせ用に、ページ内アセットごとの結果を組み立てる。
+  // `mapWithConcurrency` は入力順を保つため、`details[index]` は `page.assets[index]` の結果である。
+  const savedAssetIds = new Set(assetRecords.map((record) => record.assetId));
+  const outcomes = page.assets.map((asset, index) => ({
+    assetId: asset.id,
+    isInfoResolved: details[index].status === 'fulfilled',
+    isSaved: savedAssetIds.has(asset.id),
+  }));
+  const reconciliation = createPhotoAssetReconciliation({ assets: page.assets, outcomes, hasNextPage: page.hasNextPage });
+
+  await savePhotoAssets(assetRecords, reconciliation).catch((error: unknown) => {
     console.warn('Failed to save photo assets:', error);
   });
 

@@ -95,6 +95,89 @@ describe('写真メタデータリポジトリ savePhotoAssets', () => {
   });
 });
 
+describe('写真メタデータリポジトリ savePhotoAssets の走査済み窓との突き合わせ', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  /**
+   * 発行されたDELETE文とそのパラメータを取り出す。
+   *
+   * UPSERTとDELETEが同じ `runAsync` で発行されるため、SQL先頭で判別する。
+   *
+   * @returns DELETE文のSQLとパラメータ。発行されていない場合はnull。
+   */
+  function findDeleteCall(): { sql: string; params: unknown[] } | null {
+    const call = mockTxn.runAsync.mock.calls.find((args) => String(args[0]).trimStart().startsWith('DELETE'));
+
+    return call ? { sql: call[0] as string, params: call.slice(1) } : null;
+  }
+
+  it('突き合わせを渡さない場合は削除を行わない', async () => {
+    await savePhotoAssets([record()]);
+
+    expect(findDeleteCall()).toBeNull();
+  });
+
+  it('保存と削除を同一トランザクションで行う', async () => {
+    await savePhotoAssets([record()], { scannedEntireLibrary: true, retainedAssetIds: ['asset-1'] });
+
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
+    expect(findDeleteCall()).not.toBeNull();
+  });
+
+  it('保存対象が空でも突き合わせがあればトランザクションを開く', async () => {
+    await savePhotoAssets([], { scannedEntireLibrary: true, retainedAssetIds: [] });
+
+    expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
+    expect(findDeleteCall()?.sql).toContain('DELETE FROM photo_assets');
+  });
+
+  it('窓が部分的な場合は下限以降かつ残す対象以外の行だけを削除する', async () => {
+    await savePhotoAssets([], {
+      scannedEntireLibrary: false,
+      oldestTakenAt: '2026-08-01T00:00:00.000Z',
+      retainedAssetIds: ['asset-1', 'asset-2'],
+    });
+
+    const deleteCall = findDeleteCall();
+    expect(deleteCall?.sql).toContain('taken_at >= ?');
+    expect(deleteCall?.sql).toContain('asset_id NOT IN (?, ?)');
+    expect(deleteCall?.params).toEqual(['2026-08-01T00:00:00.000Z', 'asset-1', 'asset-2']);
+  });
+
+  it('窓が部分的な場合はtaken_atがNULLの行を削除対象にしない', async () => {
+    await savePhotoAssets([], {
+      scannedEntireLibrary: false,
+      oldestTakenAt: '2026-08-01T00:00:00.000Z',
+      retainedAssetIds: [],
+    });
+
+    // 窓の内外を判定できないため、撮影日時不明の行は安全側で残す
+    expect(findDeleteCall()?.sql).toContain('taken_at IS NOT NULL');
+  });
+
+  it('ライブラリ末尾まで走査した場合はtaken_atがNULLの行も突き合わせ対象にする', async () => {
+    await savePhotoAssets([], { scannedEntireLibrary: true, retainedAssetIds: ['asset-1'] });
+
+    const deleteCall = findDeleteCall();
+    expect(deleteCall?.sql).not.toContain('taken_at');
+    expect(deleteCall?.sql).toContain('asset_id NOT IN (?)');
+    expect(deleteCall?.params).toEqual(['asset-1']);
+  });
+
+  it('ライブラリ末尾まで走査して残す対象が無い場合は全行を削除する', async () => {
+    await savePhotoAssets([], { scannedEntireLibrary: true, retainedAssetIds: [] });
+
+    const deleteCall = findDeleteCall();
+    // NOT IN () は構文エラーになるため、条件そのものを付けない
+    expect(deleteCall?.sql).not.toContain('NOT IN');
+    expect(deleteCall?.sql).not.toContain('WHERE');
+    expect(deleteCall?.params).toEqual([]);
+  });
+});
+
 describe('写真メタデータリポジトリ getPhotoAssetsInBounds', () => {
   beforeEach(() => {
     jest.clearAllMocks();

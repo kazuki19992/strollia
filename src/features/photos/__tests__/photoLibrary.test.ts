@@ -15,13 +15,22 @@ jest.mock('expo-media-library/legacy', () => ({
 }));
 
 /**
+ * テスト用アセットの位置情報。
+ *
+ * expo-media-libraryの型定義は`number`を宣言しているが、iOSのネイティブ実装は緯度経度を
+ * 文字列で返す(Androidは数値)。実機で起きる形をそのまま再現できるよう、テストでは
+ * `number | string` のどちらも渡せるようにしている。
+ */
+type TestAssetLocation = { latitude: number | string; longitude: number | string };
+
+/**
  * テスト用の写真アセット詳細を作る。
  *
  * @param id - アセットID。
- * @param location - 写真の位置情報。
+ * @param location - 写真の位置情報。iOS実機を模す場合は文字列を渡す。
  * @returns MediaLibrary.AssetInfo相当のテストデータ。
  */
-function createAssetInfo(id: string, location?: { latitude: number; longitude: number }): MediaLibrary.AssetInfo {
+function createAssetInfo(id: string, location?: TestAssetLocation): MediaLibrary.AssetInfo {
   return {
     id,
     uri: `ph://${id}`,
@@ -34,7 +43,7 @@ function createAssetInfo(id: string, location?: { latitude: number; longitude: n
     duration: 0,
     filename: `${id}.jpg`,
     location,
-  } as MediaLibrary.AssetInfo;
+  } as unknown as MediaLibrary.AssetInfo;
 }
 
 describe('写真ライブラリ権限 hasFullPhotoAccess', () => {
@@ -71,6 +80,40 @@ describe('地図写真変換 toMapPhoto', () => {
   it('ジオタグがない写真はnullを返す', () => {
     expect(toMapPhoto(createAssetInfo('asset-1'))).toBeNull();
   });
+
+  it('iOSのネイティブ実装が返す文字列の緯度経度を数値へ変換する', () => {
+    // iOSは exportLocation が [String: String] を返すため、実行時は "35.6812" のような文字列になる。
+    // 文字列のままMarkerへ渡すと座標が解決されずマーカーが描画されない(issue #160)
+    const photo = toMapPhoto(createAssetInfo('asset-1', { latitude: '35.6812', longitude: '139.7671' }));
+
+    expect(photo).toEqual({
+      id: 'asset-1',
+      uri: 'file:///asset-1.jpg',
+      latitude: 35.6812,
+      longitude: 139.7671,
+      creationTime: 1,
+      width: 100,
+      height: 80,
+    });
+    expect(typeof photo?.latitude).toBe('number');
+    expect(typeof photo?.longitude).toBe('number');
+  });
+
+  it('Androidのネイティブ実装が返す数値の緯度経度はそのまま数値として扱う', () => {
+    // Androidは putDouble で数値を返すため、変換後も値が変わらないことを確認する
+    const photo = toMapPhoto(createAssetInfo('asset-1', { latitude: -35.6812, longitude: -139.7671 }));
+
+    expect(photo).toMatchObject({ latitude: -35.6812, longitude: -139.7671 });
+    expect(typeof photo?.latitude).toBe('number');
+  });
+
+  it('数値へ変換できない緯度経度の写真は除外してnullを返す', () => {
+    expect(toMapPhoto(createAssetInfo('asset-1', { latitude: 'abc', longitude: '139.7671' }))).toBeNull();
+    expect(toMapPhoto(createAssetInfo('asset-2', { latitude: '35.6812', longitude: '' }))).toBeNull();
+    expect(toMapPhoto(createAssetInfo('asset-3', { latitude: Number.NaN, longitude: 139.7671 }))).toBeNull();
+    expect(toMapPhoto(createAssetInfo('asset-4', { latitude: 35.6812, longitude: Number.POSITIVE_INFINITY }))).toBeNull();
+    expect(toMapPhoto(createAssetInfo('asset-5', { latitude: Number.NEGATIVE_INFINITY, longitude: 139.7671 }))).toBeNull();
+  });
 });
 
 describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
@@ -98,6 +141,30 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
       },
     ]);
     expect(MediaLibrary.getAssetsAsync).toHaveBeenCalledWith(expect.objectContaining({ mediaType: MediaLibrary.MediaType.photo }));
+  });
+
+  it('iOSのように文字列座標が返ってきても数値のMapPhotoとして返す', async () => {
+    (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({
+      assets: [{ id: 'asset-1' }, { id: 'asset-2' }],
+    });
+    (MediaLibrary.getAssetInfoAsync as jest.Mock)
+      .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: '35.6812', longitude: '139.7671' }))
+      // 座標として解釈できないアセットは地図に置けないため除外する
+      .mockResolvedValueOnce(createAssetInfo('asset-2', { latitude: 'abc', longitude: 'def' }));
+
+    const photos = await loadGeotaggedPhotos();
+
+    expect(photos).toEqual([
+      {
+        id: 'asset-1',
+        uri: 'file:///asset-1.jpg',
+        latitude: 35.6812,
+        longitude: 139.7671,
+        creationTime: 1,
+        width: 100,
+        height: 80,
+      },
+    ]);
   });
 
   it('写真ライブラリが空の場合は空配列を返す', async () => {

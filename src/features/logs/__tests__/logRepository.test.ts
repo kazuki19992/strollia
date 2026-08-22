@@ -115,14 +115,15 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     await deleteAllUserData();
 
     expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM visited_cells');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_notification_queue');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM visited_admin_areas');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM stay_places');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM location_points');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(8, 'DELETE FROM daily_logs');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM location_recording_state');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM visited_cells');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_notification_queue');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM achievement_unlocks');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM visited_admin_areas');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_point_admin_areas');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM stay_places');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(8, 'DELETE FROM location_points');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(9, 'DELETE FROM daily_logs');
   });
 });
 

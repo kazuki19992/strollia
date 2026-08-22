@@ -228,6 +228,7 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
 /** ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。 */
 export async function deleteAllUserData(): Promise<void> {
   await withExclusiveTransaction(async (txn) => {
+    await txn.runAsync('DELETE FROM location_recording_state');
     await txn.runAsync('DELETE FROM visited_cells');
     await txn.runAsync('DELETE FROM achievement_notification_queue');
     await txn.runAsync('DELETE FROM achievement_unlocks');

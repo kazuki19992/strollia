@@ -147,6 +147,29 @@ describe('database initializeDatabase マイグレーション', () => {
       expect(firstCall).toContain('idx_stay_places_created_at_id');
       expect(firstCall).toContain('ON stay_places(created_at, id)');
     });
+
+    it('ライブ記録の吸着状態を保持する単一行テーブルを作成する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const createSql = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(createSql).toContain('CREATE TABLE IF NOT EXISTS location_recording_state');
+      expect(createSql).toContain('CHECK (id = 1)');
+      expect(createSql).toContain('last_observed_at TEXT NULL');
+    });
+
+    it('記録状態テーブル追加時に既存距離と実績を更新しない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const sql = [...(db.execAsync as jest.Mock).mock.calls, ...(db.runAsync as jest.Mock).mock.calls]
+        .map(([statement]) => String(statement))
+        .join('\n');
+      expect(sql).not.toMatch(/UPDATE\s+daily_logs/i);
+      expect(sql).not.toMatch(/UPDATE\s+achievement_unlocks[\s\S]*progress_value/i);
+    });
   });
 
   describe('PRAGMA 設定', () => {

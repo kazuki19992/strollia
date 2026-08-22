@@ -1,5 +1,9 @@
 import { withExclusiveTransaction } from '@/db/database';
-import { recordLocationObservation, RecordLocationObservationInput } from '@/features/location/locationObservationRecorder';
+import {
+  recordLocationObservation,
+  RecordLocationObservationInput,
+  RecordLocationObservationResult,
+} from '@/features/location/locationObservationRecorder';
 import { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { NewLocationPoint } from '@/types/gps';
 
@@ -82,6 +86,12 @@ function pointAtHome(recordedAt: string): NewLocationPoint {
   return pointAt(home.latitude, home.longitude, recordedAt);
 }
 
+/** 自宅から指定距離だけ北へ離れた合成観測を作る。 */
+function pointAtDistanceFromHome(distanceMeters: number, recordedAt: string): NewLocationPoint {
+  const latitudeOffset = (distanceMeters / 6_371_000) * (180 / Math.PI);
+  return pointAt(home.latitude + latitudeOffset, home.longitude, recordedAt);
+}
+
 /** 自宅の吸着半径50mより十分外側の観測を作る。 */
 function pointOutsideHome(recordedAt: string): NewLocationPoint {
   return pointAt(home.latitude + 0.001, home.longitude, recordedAt);
@@ -132,6 +142,30 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
         }),
       }),
     );
+  });
+
+  it('自宅付近の密集観測を別配信相当で処理しても中心と生座標を往復しない', async () => {
+    let persistedState = { ...initialPersistedState };
+    mockGetState.mockImplementation(async () => persistedState);
+    mockUpsertState.mockImplementation(async (state) => {
+      persistedState = state;
+    });
+    const observations = Array.from({ length: 12 }, (_, index) =>
+      pointAtDistanceFromHome(index % 2 === 0 ? 12 : 18, `2026-08-23T00:${String(index).padStart(2, '0')}:00.000Z`),
+    );
+
+    const results: RecordLocationObservationResult[] = [];
+    for (const rawPoint of observations) {
+      results.push(await recordLocationObservation(input(rawPoint)));
+    }
+
+    const saved = results.filter(
+      (result): result is Extract<RecordLocationObservationResult, { status: 'saved' }> => result.status === 'saved',
+    );
+    expect(saved).toHaveLength(12);
+    expect(saved.slice(2).every((result) => result.point.snappedStayPlaceId === home.id)).toBe(true);
+    expect(saved.slice(2).every((result) => result.point.effectiveLatitude === home.latitude)).toBe(true);
+    expect(saved.slice(2).every((result) => result.point.effectiveLongitude === home.longitude)).toBe(true);
   });
 
   it('吸着中の範囲外観測も別々の呼び出しで数え3点目に退出する', async () => {

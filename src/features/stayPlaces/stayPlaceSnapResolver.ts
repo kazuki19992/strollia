@@ -8,9 +8,9 @@ const STAY_PLACE_SNAP_RADIUS_METERS = 50;
 const REQUIRED_CONSECUTIVE_POINT_COUNT = 3;
 
 /**
- * 位置情報記録セッションだけが保持する吸着状態。
+ * 純粋な吸着解決関数が入力として受け取る状態。
  *
- * SQLiteへ保存せず、再起動時は `INITIAL_STAY_PLACE_SNAP_STATE` から再判定する。
+ * ライブ位置記録境界は観測ごとにSQLiteから読み、解決後の状態を同じtransactionへ保存する。
  */
 export type StayPlaceSnapState = {
   activeStayPlaceId: number | null;

@@ -69,6 +69,23 @@ describe('バックグラウンド位置情報タスク', () => {
     expect(mockRecordLocations).toHaveBeenCalledWith([location]);
   });
 
+  it('別々のバックグラウンド配信も共通記録セッションへ順番に渡す', async () => {
+    const locations = [
+      { timestamp: 10, coords: {} } as LocationObject,
+      { timestamp: 20, coords: {} } as LocationObject,
+      { timestamp: 30, coords: {} } as LocationObject,
+    ];
+
+    for (const item of locations) {
+      await definedTask!({ data: { locations: [item] }, error: null });
+    }
+
+    expect(mockCreateLocationRecordingSession).toHaveBeenCalledTimes(3);
+    expect(mockRecordLocations).toHaveBeenNthCalledWith(1, [locations[0]]);
+    expect(mockRecordLocations).toHaveBeenNthCalledWith(2, [locations[1]]);
+    expect(mockRecordLocations).toHaveBeenNthCalledWith(3, [locations[2]]);
+  });
+
   it('現在のPlus状態で解決した有効滞在場所を保存セッションへ渡す', async () => {
     const home = { id: 1, name: '自宅' };
     const activePlaces = [home];

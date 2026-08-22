@@ -56,7 +56,23 @@ GPSで取得した位置情報を保存する中心テーブル。
 | `source`                | TEXT         | 取得元。例: `expo-location`                    |
 | `created_at`            | TEXT         | DB保存日時                                     |
 
-### 4.2 `daily_logs`
+### 4.2 `location_recording_state`
+
+ライブ位置情報の滞在場所吸着状態を保持する単一行テーブル。IDは常に`1`とし、最初のライブ観測を処理するときに作成する。
+
+| カラム                    | 型           | 説明                                                 |
+| ------------------------- | ------------ | ---------------------------------------------------- |
+| `id`                      | INTEGER      | 主キー。常に`1`                                      |
+| `active_stay_place_id`    | INTEGER NULL | 現在吸着中の滞在場所ID。未吸着ならNULL               |
+| `candidate_stay_place_id` | INTEGER NULL | 入場判定中の候補ID。候補なしならNULL                 |
+| `candidate_count`         | INTEGER      | 同じ候補が50m以内に入った連続観測数                  |
+| `outside_count`           | INTEGER      | 吸着先から50m外になった連続観測数                    |
+| `last_observed_at`        | TEXT NULL    | 状態へ反映済みの最新ライブ観測日時。初期状態ではNULL |
+| `updated_at`              | TEXT         | 状態行の最終更新日時                                 |
+
+ライブ位置情報の吸着状態はID=`1`の単一行へ保存する。GPS点が保存対象外でも連続観測数と最終観測日時を更新するため、前景・背景の切替とJSプロセス再生成後も同じ状態を引き継ぐ。滞在場所IDには外部キーを設定しない。
+
+### 4.3 `daily_logs`
 
 日単位の記録概要を保存するテーブル。
 
@@ -71,7 +87,7 @@ GPSで取得した位置情報を保存する中心テーブル。
 | `created_at`      | TEXT      | 作成日時               |
 | `updated_at`      | TEXT      | 更新日時               |
 
-### 4.3 `recording_sessions`
+### 4.4 `recording_sessions`
 
 記録開始から停止までのまとまりを保存するテーブル。
 
@@ -87,7 +103,7 @@ GPSで取得した位置情報を保存する中心テーブル。
 | `created_at` | TEXT      | 作成日時                                |
 | `updated_at` | TEXT      | 更新日時                                |
 
-### 4.4 `export_history`
+### 4.5 `export_history`
 
 GPX / KML エクスポート履歴を保存するテーブル。
 
@@ -101,7 +117,7 @@ GPX / KML エクスポート履歴を保存するテーブル。
 | `point_count` | INTEGER | 出力対象の記録点数 |
 | `created_at`  | TEXT    | エクスポート日時   |
 
-### 4.5 `visited_cells`
+### 4.6 `visited_cells`
 
 メインマップの Visited Grid Overlay 表示に使う訪問済みセルを保存するテーブル。
 
@@ -120,7 +136,7 @@ GPX / KML エクスポート履歴を保存するテーブル。
 | `created_at`       | TEXT    | 作成日時                                          |
 | `updated_at`       | TEXT    | 更新日時                                          |
 
-### 4.6 `import_history`
+### 4.7 `import_history`
 
 GPX / KML インポート履歴を保存するテーブル。
 
@@ -137,7 +153,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `skipped_point_count`  | INTEGER   | 重複などでスキップした記録点数 |
 | `created_at`           | TEXT      | インポート日時                 |
 
-### 4.7 `photo_assets`（任意機能）
+### 4.8 `photo_assets`（任意機能）
 
 ジオタグ付き写真の表示に必要なメタデータを保存するテーブル。
 
@@ -156,7 +172,7 @@ GPX / KML インポート履歴を保存するテーブル。
 | `created_at`    | TEXT      | 作成日時                     |
 | `updated_at`    | TEXT      | 更新日時                     |
 
-### 4.8 `app_settings`
+### 4.9 `app_settings`
 
 ユーザー設定を保存するテーブル。
 
@@ -182,7 +198,7 @@ RevenueCatの初回確認が起動待機上限を超えた場合は、保存済�
 
 RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。エラー時はアイコン表示だけ未確定状態を維持し、CustomerInfoまたは購読更新でactive/inactiveを取得できた時点で確定状態へ切り替える。
 
-### 4.9 `visited_admin_areas`
+### 4.10 `visited_admin_areas`
 
 実績システムで都道府県・市区町村の訪問状態を判定するため、訪問済み行政区域を保存するテーブル。
 
@@ -200,7 +216,7 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `created_at`              | TEXT         | 作成日時                           |
 | `updated_at`              | TEXT         | 更新日時                           |
 
-### 4.10 `location_point_admin_areas`
+### 4.11 `location_point_admin_areas`
 
 月次レポートや将来の期間指定集計で、都道府県・市区町村ごとのGPSポイント数を集計するための履歴テーブル。
 
@@ -220,7 +236,7 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 月次レポートの「よくいた都道府県」「一番よくいた市区町村」は、このテーブルの対象期間内GPSポイント数を集計して算出する。
 
-### 4.11 `achievement_unlocks`
+### 4.12 `achievement_unlocks`
 
 解除済み実績を保存するテーブル。
 
@@ -231,7 +247,7 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `progress_value` | REAL NULL | 解除時点の進捗値   |
 | `created_at`     | TEXT      | 作成日時           |
 
-### 4.12 `achievement_notification_queue`
+### 4.13 `achievement_notification_queue`
 
 実績解除通知とフォアグラウンド演出を安全に扱うためのキュー。
 
@@ -244,7 +260,7 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `shown_in_app_at`   | TEXT NULL | アプリ内演出表示日時                                                                                                                                      |
 | `created_at`        | TEXT      | 作成日時                                                                                                                                                  |
 
-### 4.13 `stay_places`
+### 4.14 `stay_places`
 
 滞在場所ごとのGPS吸着と、共有時にルートを非表示にする範囲を保存するテーブル。契約状態による有効・無効は保存せず、作成日時順にアプリ側で判定する。
 
@@ -325,7 +341,9 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 
 描画時は生データを直接Polylineへ渡さず、簡略化した描画用データを使う。
 
-日別の推定移動距離は、表示のたびに全GPS点を走査して再計算しない。新しい点を保存するときに直前の同日ポイントとの距離を加算し、`daily_logs.distance_meters` に累積値として保持する。既存データなど累積距離が存在しない場合のみ、表示側でフォールバック計算する。
+日別の推定移動距離は、表示のたびに全GPS点を走査して再計算しない。ライブ観測では時系列の前後点検索、GPS点挿入、Visited Grid、吸着状態、日別距離の差分加算を同じ排他トランザクションで確定する。距離、保存判定、Visited Gridには有効座標を使い、生座標は`location_points.latitude` / `longitude`へ維持する。保存対象外の観測でもVisited Gridと吸着状態は更新する。
+
+同日の末尾へ保存する点は直前点との距離を加え、時系列途中へ保存する点は既存区間を置き換える差分だけを加算する。既存の`daily_logs.distance_meters`はマイグレーションで再計算・修復しない。既存データなど累積距離が存在しない場合のみ、表示側でフォールバック計算する。
 
 ### 7.1 GPS点の段階的取得戦略
 
@@ -356,6 +374,7 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 削除対象は以下とする。
 
 - `location_points`
+- `location_recording_state`
 - `location_point_admin_areas`
 - `daily_logs`
 - `visited_admin_areas`

@@ -28,7 +28,7 @@ export type LocationRecordingSession = {
 
 /** 記録中の各観測点で有効な滞在場所を取得する依存。 */
 export type LocationRecordingSessionOptions = {
-  /** 課金状態・設定変更を次の観測から反映するため、ポイントごとに取得する。 */
+  /** 課金状態・設定変更を次の配信バッチから反映するため、配信バッチごとに取得する。 */
   getActiveStayPlaces?: () => Promise<StayPlace[]>;
 };
 

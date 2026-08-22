@@ -157,6 +157,59 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     expect(persistedState.activeStayPlaceId).toBeNull();
   });
 
+  it('吸着中は生座標をDBへ保持し保存判定とGridに有効座標を渡す', async () => {
+    const rawPoint = pointAt(home.latitude + 0.0001, home.longitude + 0.0001, '2026-08-23T00:00:10.000Z');
+    const latestSavedPoint = {
+      id: 10,
+      ...pointAt(34.9, 138.9, '2026-08-23T00:00:00.000Z'),
+      effectiveLatitude: 35.1,
+      effectiveLongitude: 139.1,
+      snappedStayPlaceId: 2,
+    };
+    const previousVisitedCellPoint = {
+      ...pointAt(35.2, 139.2, '2026-08-23T00:00:05.000Z'),
+      effectiveLatitude: 35.2,
+      effectiveLongitude: 139.2,
+      snappedStayPlaceId: 3,
+    };
+    const effectiveCurrentPoint = {
+      ...rawPoint,
+      latitude: home.latitude,
+      longitude: home.longitude,
+      effectiveLatitude: home.latitude,
+      effectiveLongitude: home.longitude,
+      snappedStayPlaceId: home.id,
+    };
+    const effectivePreviousSavedPoint = {
+      ...latestSavedPoint,
+      latitude: latestSavedPoint.effectiveLatitude,
+      longitude: latestSavedPoint.effectiveLongitude,
+    };
+    mockGetState.mockResolvedValue({
+      activeStayPlaceId: home.id,
+      candidateStayPlaceId: null,
+      candidateCount: 0,
+      outsideCount: 0,
+      lastObservedAt: null,
+    });
+    mockGetLatest.mockResolvedValue(latestSavedPoint);
+
+    await recordLocationObservation({ ...input(rawPoint), previousVisitedCellPoint });
+
+    expect(mockShouldSave).toHaveBeenCalledWith(effectiveCurrentPoint, effectivePreviousSavedPoint);
+    expect(mockGetVisitedCells).toHaveBeenCalledWith(previousVisitedCellPoint, effectiveCurrentPoint);
+    expect(mockInsert).toHaveBeenCalledWith(
+      {
+        ...rawPoint,
+        effectiveLatitude: home.latitude,
+        effectiveLongitude: home.longitude,
+        snappedStayPlaceId: home.id,
+      },
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+  });
+
   it('GPSログ保存対象外でも状態とVisited Gridを同じtransactionで更新する', async () => {
     const rawPoint = pointAtHome('2026-08-23T00:00:10.000Z');
     mockShouldSave.mockReturnValue(false);

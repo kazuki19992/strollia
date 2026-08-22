@@ -337,7 +337,7 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 
 停止状態は端末のraw speedが停止相当かつ移動距離が小さい場合だけドリフトとして扱う。徒歩開始や低速移動の取りこぼしを避けるため、停止クラスタやprovisional点列による厳密な確定待ちは行わない。
 
-`expo-location` の要求精度は `Location.Accuracy.High` とし、`distanceInterval` は5mに設定して停止中のコールバック頻度を抑える。
+`expo-location` の要求精度は `Location.Accuracy.High` とする。iOSではバックグラウンドの継続更新を維持するためネイティブの `distanceInterval` を指定せず、Androidでは5mの距離フィルターを指定する。両OSでGPSポイントの保存判定は5mを基準に行う。
 
 描画時は生データを直接Polylineへ渡さず、簡略化した描画用データを使う。
 

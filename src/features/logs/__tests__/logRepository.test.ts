@@ -1,15 +1,17 @@
 import { db, withExclusiveTransaction } from '@/db/database';
-import { NewLocationPoint } from '@/types/gps';
+import { LocationPoint, NewLocationPoint } from '@/types/gps';
 import {
   deleteAllUserData,
   getDailyLogs,
   getLocationPointsBounds,
   getLocationPointsByMonth,
+  insertLocationPointInCurrentTransaction,
   insertLocationPoint,
 } from '@/features/logs/logRepository';
 
 const mockTxn = {
-  runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
+  getFirstAsync: jest.fn(),
+  runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100, changes: 1 }),
 };
 
 jest.mock('@/db/database', () => ({
@@ -41,10 +43,11 @@ describe('GPSポイント保存 insertLocationPoint', () => {
   });
 
   it('日別サマリーへ区間距離を累積保存する', async () => {
-    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+    mockTxn.getFirstAsync.mockResolvedValueOnce({
       ...point(35, 139),
       id: 1,
     });
+    mockTxn.getFirstAsync.mockResolvedValueOnce(null);
 
     await expect(insertLocationPoint(point(35.001, 139))).resolves.toBe(100);
 
@@ -55,13 +58,14 @@ describe('GPSポイント保存 insertLocationPoint', () => {
   });
 
   it('日別距離は記録時の有効座標で計算する', async () => {
-    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+    mockTxn.getFirstAsync.mockResolvedValueOnce({
       ...point(35, 139),
       id: 1,
       effectiveLatitude: 35,
       effectiveLongitude: 139,
       snappedStayPlaceId: 1,
     });
+    mockTxn.getFirstAsync.mockResolvedValueOnce(null);
     const snappedPoint = {
       ...point(35.001, 139.001),
       effectiveLatitude: 35,
@@ -73,6 +77,31 @@ describe('GPSポイント保存 insertLocationPoint', () => {
 
     const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
     expect(dailySummaryArgs[4]).toBe(0);
+  });
+
+  it('前後点の読取・GPS挿入・日別距離更新を同じrunnerで行う', async () => {
+    const previousPoint: LocationPoint = { ...point(35, 139), id: 1 };
+    const nextPoint: LocationPoint = { ...point(35.002, 139.002), id: 2 };
+    const newPoint = point(35.001, 139.001);
+    mockTxn.runAsync.mockResolvedValueOnce({ lastInsertRowId: 100, changes: 1 }).mockResolvedValueOnce({ changes: 1 });
+    mockTxn.getFirstAsync.mockResolvedValueOnce(previousPoint).mockResolvedValueOnce(nextPoint);
+
+    const result = await insertLocationPointInCurrentTransaction(newPoint, '2026-08-23T00:00:30.000Z', mockTxn as never);
+
+    expect(result).toEqual(expect.objectContaining({ locationPointId: 100, previousPoint, nextPoint }));
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(2);
+    expect(mockTxn.runAsync.mock.calls[1][0]).toContain('distance_meters = COALESCE');
+    expect(mockTxn.runAsync.mock.calls[1][4]).toBe(result?.distanceDeltaMeters);
+    expect(db.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('重複点のINSERTが無視された場合は日別集計を更新しない', async () => {
+    mockTxn.runAsync.mockResolvedValueOnce({ lastInsertRowId: 0, changes: 0 });
+
+    await expect(insertLocationPointInCurrentTransaction(point(35, 139), '2026-08-23T00:00:30.000Z', mockTxn as never)).resolves.toBeNull();
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.getFirstAsync).not.toHaveBeenCalled();
   });
 });
 

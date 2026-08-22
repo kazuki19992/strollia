@@ -1,7 +1,7 @@
+import * as SQLite from 'expo-sqlite';
 import { db, withExclusiveTransaction } from '@/db/database';
-import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
+import { calculateInsertedPointDistanceDeltaMeters } from '@/features/logs/locationDistanceDelta';
 import { DailyLogSummary, LocationPoint, NewLocationPoint } from '@/types/gps';
-import { distanceMeters } from '@/utils/distance';
 
 /** DB列名をアプリ内のcamelCaseプロパティへ揃える共通SELECT句。 */
 const pointColumns = `
@@ -20,83 +20,152 @@ const pointColumns = `
   altitude_accuracy as altitudeAccuracy
 `;
 
-/** GPSポイントを保存し、日別サマリーの点数と距離を同時に更新する。 */
+/** 1点を挿入して日別距離へ反映したトランザクション内の結果。 */
+export type InsertedLocationPointResult = {
+  locationPointId: number;
+  previousPoint: LocationPoint | null;
+  nextPoint: LocationPoint | null;
+  distanceDeltaMeters: number;
+};
+
+/** GPSポイントを保存し、日別サマリーの点数と距離を同じ排他トランザクションで更新する。 */
 export async function insertLocationPoint(point: NewLocationPoint): Promise<number> {
   const now = new Date().toISOString();
-  const previousPoint = await getLatestLocationPointByDate(point.localDate);
-  const segmentDistanceMeters = previousPoint
-    ? distanceMeters(toEffectiveLocationPoint(previousPoint), toEffectiveLocationPoint(point))
-    : 0;
-  let insertedLocationPointId = 0;
+  const result: { inserted: InsertedLocationPointResult | null } = { inserted: null };
 
   await withExclusiveTransaction(async (txn) => {
-    const result = await txn.runAsync(
-      `INSERT INTO location_points (
-        recorded_at,
-        local_date,
-        latitude,
-        longitude,
-        effective_latitude,
-        effective_longitude,
-        snapped_stay_place_id,
-        altitude,
-        speed,
-        heading,
-        accuracy,
-        altitude_accuracy,
-        source,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'expo-location', ?)`,
-      point.recordedAt,
-      point.localDate,
-      point.latitude,
-      point.longitude,
-      point.effectiveLatitude ?? point.latitude,
-      point.effectiveLongitude ?? point.longitude,
-      point.snappedStayPlaceId ?? null,
-      point.altitude,
-      point.speed,
-      point.heading,
-      point.accuracy,
-      point.altitudeAccuracy,
-      now,
-    );
-    insertedLocationPointId = result.lastInsertRowId;
-
-    await txn.runAsync(
-      `INSERT INTO daily_logs (
-        local_date,
-        started_at,
-        ended_at,
-        point_count,
-        distance_meters,
-        created_at,
-        updated_at
-      ) VALUES (?, ?, ?, 1, ?, ?, ?)
-      ON CONFLICT(local_date) DO UPDATE SET
-        started_at = CASE
-          WHEN daily_logs.started_at IS NULL OR excluded.started_at < daily_logs.started_at
-          THEN excluded.started_at
-          ELSE daily_logs.started_at
-        END,
-        ended_at = CASE
-          WHEN daily_logs.ended_at IS NULL OR excluded.ended_at > daily_logs.ended_at
-          THEN excluded.ended_at
-          ELSE daily_logs.ended_at
-        END,
-        point_count = daily_logs.point_count + 1,
-        distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
-        updated_at = excluded.updated_at`,
-      point.localDate,
-      point.recordedAt,
-      point.recordedAt,
-      segmentDistanceMeters,
-      now,
-      now,
-    );
+    result.inserted = await insertLocationPointInCurrentTransaction(point, now, txn);
   });
 
-  return insertedLocationPointId;
+  const inserted = result.inserted;
+
+  if (!inserted) {
+    throw new Error('Location point already exists.');
+  }
+
+  return inserted.locationPointId;
+}
+
+/** 同一トランザクションで最新の保存済みGPSポイントを取得する。 */
+export async function getLatestLocationPointInCurrentTransaction(runner: SQLite.SQLiteDatabase): Promise<LocationPoint | null> {
+  const point = await runner.getFirstAsync<LocationPoint>(
+    `SELECT ${pointColumns}
+     FROM location_points
+     ORDER BY recorded_at DESC, id DESC
+     LIMIT 1`,
+  );
+
+  return point ?? null;
+}
+
+/**
+ * GPSポイントをトランザクション内で挿入し、前後区間を考慮した日別距離を更新する。
+ *
+ * INSERT OR IGNOREで重複を既存データ優先にし、重複時は日別集計を変更しない。
+ */
+export async function insertLocationPointInCurrentTransaction(
+  point: NewLocationPoint,
+  now: string,
+  runner: SQLite.SQLiteDatabase,
+): Promise<InsertedLocationPointResult | null> {
+  const insertResult = await runner.runAsync(
+    `INSERT OR IGNORE INTO location_points (
+      recorded_at,
+      local_date,
+      latitude,
+      longitude,
+      effective_latitude,
+      effective_longitude,
+      snapped_stay_place_id,
+      altitude,
+      speed,
+      heading,
+      accuracy,
+      altitude_accuracy,
+      source,
+      created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'expo-location', ?)`,
+    point.recordedAt,
+    point.localDate,
+    point.latitude,
+    point.longitude,
+    point.effectiveLatitude ?? point.latitude,
+    point.effectiveLongitude ?? point.longitude,
+    point.snappedStayPlaceId ?? null,
+    point.altitude,
+    point.speed,
+    point.heading,
+    point.accuracy,
+    point.altitudeAccuracy,
+    now,
+  );
+
+  if ((insertResult.changes ?? 1) === 0) {
+    return null;
+  }
+
+  const locationPointId = insertResult.lastInsertRowId;
+  const [previousPoint, nextPoint] = await Promise.all([
+    runner.getFirstAsync<LocationPoint>(
+      `SELECT ${pointColumns}
+       FROM location_points
+       WHERE local_date = ?
+         AND (recorded_at < ? OR (recorded_at = ? AND id < ?))
+       ORDER BY recorded_at DESC, id DESC
+       LIMIT 1`,
+      point.localDate,
+      point.recordedAt,
+      point.recordedAt,
+      locationPointId,
+    ),
+    runner.getFirstAsync<LocationPoint>(
+      `SELECT ${pointColumns}
+       FROM location_points
+       WHERE local_date = ?
+         AND (recorded_at > ? OR (recorded_at = ? AND id > ?))
+       ORDER BY recorded_at ASC, id ASC
+       LIMIT 1`,
+      point.localDate,
+      point.recordedAt,
+      point.recordedAt,
+      locationPointId,
+    ),
+  ]);
+  const distanceDeltaMeters = calculateInsertedPointDistanceDeltaMeters(previousPoint ?? null, point, nextPoint ?? null);
+
+  await runner.runAsync(
+    `INSERT INTO daily_logs (
+      local_date,
+      started_at,
+      ended_at,
+      point_count,
+      distance_meters,
+      created_at,
+      updated_at
+    ) VALUES (?, ?, ?, 1, ?, ?, ?)
+    ON CONFLICT(local_date) DO UPDATE SET
+      started_at = CASE
+        WHEN daily_logs.started_at IS NULL OR excluded.started_at < daily_logs.started_at
+        THEN excluded.started_at
+        ELSE daily_logs.started_at
+      END,
+      ended_at = CASE
+        WHEN daily_logs.ended_at IS NULL OR excluded.ended_at > daily_logs.ended_at
+        THEN excluded.ended_at
+        ELSE daily_logs.ended_at
+      END,
+      point_count = daily_logs.point_count + 1,
+      distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
+      updated_at = excluded.updated_at`,
+    point.localDate,
+    point.recordedAt,
+    point.recordedAt,
+    distanceDeltaMeters,
+    now,
+    now,
+  );
+
+  return { locationPointId, previousPoint: previousPoint ?? null, nextPoint: nextPoint ?? null, distanceDeltaMeters };
 }
 
 /** 日別ログの一覧表示に使うサマリーを新しい日付順で取得する。 */
@@ -125,20 +194,6 @@ export async function getDailyLogs(): Promise<DailyLogSummary[]> {
     FROM daily_logs
     ORDER BY local_date DESC`,
   );
-}
-
-/** 日別距離を差分加算するため、同じ日の最後の保存点を取得する。 */
-async function getLatestLocationPointByDate(localDate: string): Promise<LocationPoint | null> {
-  const point = await db.getFirstAsync<LocationPoint>(
-    `SELECT ${pointColumns}
-     FROM location_points
-     WHERE local_date = ?
-     ORDER BY recorded_at DESC
-     LIMIT 1`,
-    localDate,
-  );
-
-  return point ?? null;
 }
 
 /** バックグラウンドタスクの保存フィルタで使う直近の保存済みGPS点を取得する。 */

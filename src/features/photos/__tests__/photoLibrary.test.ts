@@ -1,5 +1,5 @@
-import { Asset } from 'expo-media-library';
 import * as MediaLibrary from 'expo-media-library/legacy';
+import { getPhotoThumbnailAsync } from '@modules/photo-thumbnail';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
@@ -25,9 +25,9 @@ jest.mock('@/features/photos/photoAssetRepository', () => ({
   getPhotoAssetsInBounds: jest.fn().mockResolvedValue([]),
 }));
 
-// 表示用URIの解決に使う新API(クラスベース)。`new Asset(uri).getUri()` の形をモックで再現する
-jest.mock('expo-media-library', () => ({
-  Asset: jest.fn(),
+// 表示用URIの解決に使うサムネイル取得モジュール。ネイティブ実装は jest で読めないためモックする
+jest.mock('@modules/photo-thumbnail', () => ({
+  getPhotoThumbnailAsync: jest.fn(),
 }));
 
 jest.mock('expo-media-library/legacy', () => ({
@@ -50,17 +50,14 @@ jest.mock('expo-media-library/legacy', () => ({
 type TestAssetLocation = { latitude: number | string; longitude: number | string };
 
 /**
- * `new Asset(uri).getUri()` の解決結果を差し替える。
+ * `getPhotoThumbnailAsync` の解決結果を差し替える。
  *
  * `clearMocks: true` により実装はテストごとに消えるため、必要なテストのbeforeEachで入れ直す。
  *
- * @param resolver - `new Asset()` に渡されたURIから表示用URIを返す関数。
+ * @param resolver - 渡された `ph://` URIからサムネイルのパスを返す関数。取得できない場合はnull。
  */
-function mockAssetUri(resolver: (uri: string) => Promise<string>): void {
-  (Asset as unknown as jest.Mock).mockImplementation((uri: string) => ({
-    id: uri,
-    getUri: () => resolver(uri),
-  }));
+function mockPhotoThumbnail(resolver: (uri: string) => Promise<string | null>): void {
+  (getPhotoThumbnailAsync as jest.Mock).mockImplementation((uri: string) => resolver(uri));
 }
 
 /**
@@ -264,7 +261,7 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
   beforeEach(() => {
     jest.clearAllMocks();
     clearPhotoDisplayUriCache();
-    mockAssetUri(async (uri) => `file:///tmp/${uri.replace('ph://', '')}.jpg`);
+    mockPhotoThumbnail(async (uri) => `file:///tmp/${uri.replace('ph://', '')}.jpg`);
   });
 
   it('表示範囲で絞り込んだ保存済み写真を、描画できる表示用URIへ解決して返す', async () => {
@@ -291,12 +288,30 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
     await loadGeotaggedPhotosInBounds(bounds);
     await loadGeotaggedPhotosInBounds(bounds);
 
-    expect(Asset).toHaveBeenCalledTimes(1);
+    expect(getPhotoThumbnailAsync).toHaveBeenCalledTimes(1);
   });
 
-  it('一部の写真で表示用URIを解決できなくても、残りの写真は表示する', async () => {
+  it('サムネイルを取得できなかった写真も、画像なし(uri=null)として結果に残す', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1')]);
+    mockPhotoThumbnail(async () => null);
+
+    // 除外すると「マーカーごと消える」ため、画像が無いだけのマーカーとして表示する
+    await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([expect.objectContaining({ id: 'asset-1', uri: null })]);
+  });
+
+  it('一部の写真だけサムネイルを取得できた場合、取得できた写真は画像あり・できなかった写真は画像なしで返す', async () => {
     (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1'), savedRecord('asset-2')]);
-    mockAssetUri(async (uri) => {
+    mockPhotoThumbnail(async (uri) => (uri === 'ph://asset-1' ? null : 'file:///tmp/asset-2.jpg'));
+
+    await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
+      expect.objectContaining({ id: 'asset-1', uri: null }),
+      expect.objectContaining({ id: 'asset-2', uri: 'file:///tmp/asset-2.jpg' }),
+    ]);
+  });
+
+  it('表示用URIの解決が例外で失敗した写真も、画像なしとして結果に残す', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1'), savedRecord('asset-2')]);
+    mockPhotoThumbnail(async (uri) => {
       if (uri === 'ph://asset-1') {
         throw new Error('asset not found');
       }
@@ -305,6 +320,7 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
     });
 
     await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
+      expect.objectContaining({ id: 'asset-1', uri: null }),
       expect.objectContaining({ id: 'asset-2', uri: 'file:///tmp/asset-2.jpg' }),
     ]);
   });
@@ -317,7 +333,7 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
 
     let runningCount = 0;
     let maxRunningCount = 0;
-    mockAssetUri(async (uri) => {
+    mockPhotoThumbnail(async (uri) => {
       runningCount += 1;
       maxRunningCount = Math.max(maxRunningCount, runningCount);
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -329,7 +345,7 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
     await loadGeotaggedPhotosInBounds(bounds);
 
     expect(maxRunningCount).toBeLessThanOrEqual(PHOTO_INFO_CONCURRENCY);
-    expect(Asset).toHaveBeenCalledTimes(assetCount);
+    expect(getPhotoThumbnailAsync).toHaveBeenCalledTimes(assetCount);
   });
 
   it('写真ライブラリの走査は行わない', async () => {

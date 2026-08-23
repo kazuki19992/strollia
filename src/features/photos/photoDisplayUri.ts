@@ -1,4 +1,4 @@
-import { Asset } from 'expo-media-library';
+import { getPhotoThumbnailAsync } from '@modules/photo-thumbnail';
 
 /**
  * iOSのフォトライブラリURIの接頭辞。
@@ -9,12 +9,22 @@ import { Asset } from 'expo-media-library';
 const PHOTO_LIBRARY_URI_SCHEME = 'ph://';
 
 /**
+ * 要求するサムネイルの一辺のピクセル数。
+ *
+ * 用途は地図上のマーカー(最大52pt)と、タップしたときの拡大表示である。マーカーだけなら
+ * 数百pxで足り、大きくするほど書き出しコストとキャッシュ容量が増える。一方で小さすぎると
+ * 拡大表示が粗くなるため、その中間としてこの値を採る。
+ */
+export const PHOTO_THUMBNAIL_SIZE = 512;
+
+/**
  * アセットID → 表示用URI のメモリキャッシュ。
  *
- * **永続化してはいけない。** ここに入るのは `requestContentEditingInput` が返す一時ファイルのパスで、
- * アプリ再起動をまたいで有効である保証がない(親設計書 §4.2)。DBへ保存すると、次回起動時に
- * 存在しないパスを `<Image>` へ渡して再び白紙になる。セッション内に閉じたキャッシュにとどめることで、
- * 「安定した識別子はDBへ、揮発する表示用パスはメモリへ」という役割分担を保つ。
+ * **永続化してはいけない。** ここに入るのはキャッシュディレクトリ上のサムネイルのパスで、
+ * OSは容量が逼迫したときにこのディレクトリを消してよいことになっている。DBへ保存すると、
+ * 次回起動時に存在しないパスを `<Image>` へ渡して再び白紙になる。セッション内に閉じた
+ * キャッシュにとどめることで、「安定した識別子はDBへ、揮発する表示用パスはメモリへ」という
+ * 役割分担を保つ。
  *
  * 地図のパン・ズームのたびにビューポート検索が走るため、同じ写真の解決を繰り返さないことが目的。
  */
@@ -27,22 +37,24 @@ const displayUriCache = new Map<string, string>();
  * (`RCTImageLoader.mm` のコメント内で言及されているだけ)、`<Image source={{ uri: 'ph://…' }} />` は
  * 何も描画しない。マーカーの位置とクラスタ数は正しいのに画像だけが白紙になる不具合の原因がこれである。
  *
- * **なぜ新API(`Asset` クラス)なのか**: 旧APIの `getAssetInfoAsync` は `requestContentEditingInput` に
- * 加えて `CIImage(contentsOf:)` でフル解像度デコードを行い、これが App Hang の原因だった。
- * 新APIの `getUri()` は `UriExtractor` 経由で `requestContentEditingInput` の `fullSizeImageURL` を
- * 読むだけで、デコードは行わない(デコードを伴うのは `getExif()` のみ)。
+ * **なぜサムネイル取得なのか**: `expo-media-library` の `Asset.getUri()` も `expo-file-system` の
+ * `ph://` コピーも、内部では**オリジナル本体**を要求する。「iPhoneのストレージを最適化」で
+ * オリジナルが iCloud へ退避された写真ではこれらが軒並み失敗し、地図上の写真が1枚も出なくなる。
+ * `PHImageManager.requestImage` はオリジナルが端末に無くてもローカルのサムネイルを返せるため、
+ * ローカルモジュール `@modules/photo-thumbnail` 経由でそちらを使う(設計書 §2)。
  *
- * `ph://` 以外のURI(Androidの `file://`)はそのまま `<Image>` で描画できるうえ、Androidの新API
- * `Asset` は `contentUri` を前提とするため、**問い合わせずにそのまま返す**。
+ * `ph://` 以外のURI(Androidの `file://`)はそのまま `<Image>` で描画できるため、
+ * **問い合わせずにそのまま返す**。
  *
- * 失敗は握りつぶさず reject する。呼び出し側が「その写真だけ表示しない」と判断できるようにするためで、
- * 失敗はキャッシュしないので次回の読み込みで再試行される(写真の一時的な取り込み中などから復帰できる)。
+ * **取得できない場合は例外を投げずnullを返す。** 呼び出し側はその写真を除外せず「画像なしの
+ * マーカー」として扱う(設計書 §5.2)。解決失敗を除外に倒すと、全件失敗する環境で地図から
+ * 写真マーカーが丸ごと消えてしまうためである。失敗はキャッシュしないので、次回の読み込みで再試行される。
  *
  * @param assetId - 写真ライブラリ上のアセットID。キャッシュのキーに使う。
  * @param storedUri - `photo_assets` に保存した安定URI。
- * @returns `<Image>` へ渡せる表示用URI。
+ * @returns `<Image>` へ渡せる表示用URI。取得できない場合はnull。
  */
-export async function resolvePhotoDisplayUri(assetId: string, storedUri: string): Promise<string> {
+export async function resolvePhotoDisplayUri(assetId: string, storedUri: string): Promise<string | null> {
   if (!storedUri.startsWith(PHOTO_LIBRARY_URI_SCHEME)) {
     return storedUri;
   }
@@ -52,10 +64,14 @@ export async function resolvePhotoDisplayUri(assetId: string, storedUri: string)
     return cached;
   }
 
-  const resolvedUri = await new Asset(storedUri).getUri();
-  displayUriCache.set(assetId, resolvedUri);
+  const thumbnailUri = await getPhotoThumbnailAsync(storedUri, PHOTO_THUMBNAIL_SIZE);
+  if (thumbnailUri === null) {
+    return null;
+  }
 
-  return resolvedUri;
+  displayUriCache.set(assetId, thumbnailUri);
+
+  return thumbnailUri;
 }
 
 /**

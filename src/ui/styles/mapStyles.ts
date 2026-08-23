@@ -691,6 +691,18 @@ export function createMapStyles(theme: AppTheme) {
       height: '100%',
       width: '100%',
     },
+    // サムネイルを取得できなかった写真のマーカー。除外して消すより、画像なしで存在を示す
+    photoMarkerPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: colors.cardStrong,
+      borderRadius: 7,
+      height: '100%',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    photoMarkerPlaceholderIcon: {
+      color: colors.mutedText,
+    },
     photoClusterBadge: {
       alignItems: 'center',
       backgroundColor: colors.primary,
@@ -736,6 +748,15 @@ export function createMapStyles(theme: AppTheme) {
     photoClusterGridItem: {
       height: 50,
       width: 50,
+    },
+    // サムネイルを取得できなかった写真の一覧表示。白紙のマスにしない
+    photoClusterGridPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      height: '100%',
+      justifyContent: 'center',
+      width: '100%',
     },
     photoClusterMarkerBubble: {
       backgroundColor: colors.surfaceOverlay,
@@ -807,6 +828,19 @@ export function createMapStyles(theme: AppTheme) {
     photoPreviewImage: {
       height: '88%',
       width: '100%',
+    },
+    // サムネイルを取得できなかった写真の拡大表示。暗転した背景に何も出ない状態を避ける
+    photoPreviewPlaceholder: {
+      alignItems: 'center',
+      gap: 12,
+      height: '88%',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    photoPreviewPlaceholderText: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、文字色も固定の白にする
+      color: '#ffffff',
+      fontSize: 14,
     },
     photoStatusCard: {
       alignSelf: 'center',

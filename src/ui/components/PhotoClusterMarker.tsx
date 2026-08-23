@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Image, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
@@ -20,6 +21,10 @@ export type PhotoClusterMarkerProps = {
 /**
  * 地図上に表示する写真クラスタマーカー。
  *
+ * 代表写真の画像を取得できなかった場合(iCloudにしか本体が無いなど)は、マーカーを消さず
+ * プレースホルダを描画する。写真がそこにあるという情報自体に地図上の価値があるためで、
+ * 画像が無い写真を除外すると地図から写真マーカーが丸ごと消えてしまう(設計書 §5.2)。
+ *
  * @param props - 写真クラスタ、スタイル、押下時コールバック。
  * @returns 写真クラスタMarker。写真が空の場合はnull。
  */
@@ -33,8 +38,11 @@ export function PhotoClusterMarker({ cluster, styles, onPress }: PhotoClusterMar
     return null;
   }
 
+  const representativeUri = representativePhoto.uri;
+
   return (
     <Marker
+      accessibilityLabel={getPhotoClusterAccessibilityLabel(cluster.photos.length, representativeUri !== null)}
       coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
       anchor={{ x: 0.5, y: 1 }}
       identifier={cluster.id}
@@ -44,7 +52,19 @@ export function PhotoClusterMarker({ cluster, styles, onPress }: PhotoClusterMar
     >
       <View collapsable={false} style={isCluster ? styles.photoClusterMarkerContainer : styles.photoMarkerContainer}>
         <View collapsable={false} style={isCluster ? styles.photoClusterMarkerBubble : styles.photoMarkerBubble}>
-          <Image source={{ uri: representativePhoto.uri }} style={styles.photoMarkerImage} onLoadEnd={() => setTracksViewChanges(false)} />
+          {representativeUri !== null ? (
+            <Image source={{ uri: representativeUri }} style={styles.photoMarkerImage} onLoadEnd={() => setTracksViewChanges(false)} />
+          ) : (
+            // 画像が無い場合は onLoadEnd が来ない。レイアウト完了をもって
+            // tracksViewChanges を止め、地図の更新のたびにスナップショットを作り直させない
+            <View
+              accessibilityLabel="画像を表示できない写真"
+              style={styles.photoMarkerPlaceholder}
+              onLayout={() => setTracksViewChanges(false)}
+            >
+              <MaterialCommunityIcons name="image-off-outline" size={20} color={styles.photoMarkerPlaceholderIcon.color} />
+            </View>
+          )}
         </View>
         {badgeLabel ? (
           <View style={styles.photoClusterBadge}>
@@ -54,6 +74,20 @@ export function PhotoClusterMarker({ cluster, styles, onPress }: PhotoClusterMar
       </View>
     </Marker>
   );
+}
+
+/**
+ * 写真クラスタマーカーの読み上げ文言を作る。
+ *
+ * 画像を表示できない場合はその旨を含める。見た目上もプレースホルダになるため、
+ * 読み上げでも「写真はあるが画像が出せない」状態が伝わるようにしている。
+ *
+ * @param photoCount - クラスタ内の写真枚数。
+ * @param hasImage - 代表写真の画像を表示できるかどうか。
+ * @returns 読み上げ文言。
+ */
+function getPhotoClusterAccessibilityLabel(photoCount: number, hasImage: boolean): string {
+  return hasImage ? `写真${photoCount}枚を開く` : `写真${photoCount}枚を開く（画像を表示できません）`;
 }
 
 /**

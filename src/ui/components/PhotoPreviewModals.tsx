@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { MapPhotoCluster } from '@/features/photos/photoClusters';
@@ -20,7 +21,13 @@ export type PhotoPreviewModalsProps = {
   onSelectPhoto: (photo: MapPhoto | null) => void;
 };
 
-/** 写真クラスタの吹き出しと全画面写真プレビューを描画する。 */
+/**
+ * 写真クラスタの吹き出しと全画面写真プレビューを描画する。
+ *
+ * サムネイルを取得できなかった写真(`uri` がnull)は、白紙のマスや真っ黒な画面にせず
+ * プレースホルダを描画する。地図側で除外せず表示している以上、開いた先でも
+ * 「画像は出せないが写真は存在する」と分かる必要があるため(設計書 §5.2)。
+ */
 export function PhotoPreviewModals({
   selectedPhotoCluster,
   selectedPhotoClusterPages,
@@ -46,13 +53,21 @@ export function PhotoPreviewModals({
                   {pagePhotos.map((photo) => (
                     <Pressable
                       key={photo.id}
+                      accessibilityLabel={photo.uri === null ? '画像を表示できない写真を開く' : '写真を開く'}
+                      accessibilityRole="button"
                       onPress={() => {
                         onSelectPhotoCluster(null);
                         onSelectPhoto(photo);
                       }}
                       style={styles.photoClusterGridItem}
                     >
-                      <Image source={{ uri: photo.uri }} style={styles.photoClusterGridImage} />
+                      {photo.uri === null ? (
+                        <View style={styles.photoClusterGridPlaceholder}>
+                          <MaterialCommunityIcons name="image-off-outline" size={20} color={styles.photoMarkerPlaceholderIcon.color} />
+                        </View>
+                      ) : (
+                        <Image source={{ uri: photo.uri }} style={styles.photoClusterGridImage} />
+                      )}
                     </Pressable>
                   ))}
                 </View>
@@ -66,7 +81,15 @@ export function PhotoPreviewModals({
       <Modal visible={selectedPhoto != null} transparent animationType="fade" onRequestClose={() => onSelectPhoto(null)}>
         <View style={styles.photoPreviewBackdrop}>
           <Pressable onPress={() => onSelectPhoto(null)} style={styles.photoPreviewCloseArea}>
-            {selectedPhoto && <Image source={{ uri: selectedPhoto.uri }} style={styles.photoPreviewImage} resizeMode="contain" />}
+            {selectedPhoto &&
+              (selectedPhoto.uri === null ? (
+                <View style={styles.photoPreviewPlaceholder}>
+                  <MaterialCommunityIcons name="image-off-outline" size={48} color={styles.photoPreviewPlaceholderText.color} />
+                  <Text style={styles.photoPreviewPlaceholderText}>この写真の画像を表示できません</Text>
+                </View>
+              ) : (
+                <Image source={{ uri: selectedPhoto.uri }} style={styles.photoPreviewImage} resizeMode="contain" />
+              ))}
             <Text style={styles.photoPreviewHint}>タップして閉じる</Text>
           </Pressable>
         </View>

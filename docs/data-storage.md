@@ -60,17 +60,20 @@ GPSで取得した位置情報を保存する中心テーブル。
 
 ライブ位置情報の滞在場所吸着状態を保持する単一行テーブル。IDは常に`1`とし、最初のライブ観測を処理するときに作成する。
 
-| カラム                    | 型           | 説明                                                 |
-| ------------------------- | ------------ | ---------------------------------------------------- |
-| `id`                      | INTEGER      | 主キー。常に`1`                                      |
-| `active_stay_place_id`    | INTEGER NULL | 現在吸着中の滞在場所ID。未吸着ならNULL               |
-| `candidate_stay_place_id` | INTEGER NULL | 入場判定中の候補ID。候補なしならNULL                 |
-| `candidate_count`         | INTEGER      | 同じ候補が50m以内に入った連続観測数                  |
-| `outside_count`           | INTEGER      | 吸着先から50m外になった連続観測数                    |
-| `last_observed_at`        | TEXT NULL    | 状態へ反映済みの最新ライブ観測日時。初期状態ではNULL |
-| `updated_at`              | TEXT         | 状態行の最終更新日時                                 |
+| カラム                          | 型           | 説明                                                             |
+| ------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `id`                            | INTEGER      | 主キー。常に`1`                                                  |
+| `active_stay_place_id`          | INTEGER NULL | 現在吸着中の滞在場所ID。未吸着ならNULL                           |
+| `candidate_stay_place_id`       | INTEGER NULL | 入場判定中の候補ID。候補なしならNULL                             |
+| `candidate_count`               | INTEGER      | 同じ候補が50m以内に入った連続観測数                              |
+| `outside_count`                 | INTEGER      | 吸着先から50m外になった連続観測数                                |
+| `last_observed_at`              | TEXT NULL    | 状態へ反映済みの最新ライブ観測日時。初期状態ではNULL             |
+| `last_visited_grid_recorded_at` | TEXT NULL    | 最後にVisited Gridへ反映した有効座標の観測日時。初期状態ではNULL |
+| `last_visited_grid_latitude`    | REAL NULL    | 最後にVisited Gridへ反映した有効緯度。初期状態ではNULL           |
+| `last_visited_grid_longitude`   | REAL NULL    | 最後にVisited Gridへ反映した有効経度。初期状態ではNULL           |
+| `updated_at`                    | TEXT         | 状態行の最終更新日時                                             |
 
-ライブ位置情報の吸着状態はID=`1`の単一行へ保存する。GPS点が保存対象外でも連続観測数と最終観測日時を更新するため、前景・背景の切替とJSプロセス再生成後も同じ状態を引き継ぐ。滞在場所IDには外部キーを設定しない。
+ライブ位置情報の吸着状態とVisited Grid補間起点はID=`1`の単一行へ保存する。GPS点が保存対象外でも連続観測数、最終観測日時、セル更新へ利用できた有効座標を更新するため、前景・背景の切替とJSプロセス再生成後も同じ状態を引き継ぐ。補間起点の3列は既存GPS点から埋め戻さず、いずれかがNULL、または緯度・経度が不正な場合は補間起点なしとして現在観測のセルだけを処理する。滞在場所IDには外部キーを設定しない。
 
 ### 4.3 `daily_logs`
 
@@ -325,7 +328,7 @@ from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
 保存前には raw GPS 観測を軽量な保存判定へ通し、`location_points` と日別距離へ反映する。
 
-Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` へ保存する。低速時は点が存在したセルだけを開放し、150km/h以上の高速移動時のみvisited cell補完用に点間を補間する。
+Visited Grid Overlayでは、有効な観測が存在した100mセルを `visited_cells` へ保存する。低速時は現在観測のセルだけを開放し、150km/h以上の高速移動時のみ、`location_recording_state`に永続化した直前のセル開放対象点から点間を補間する。現在観測でセルを更新できた場合はGPS点の保存対象外でも有効座標を次の補間起点として保存し、セルを生成できなければ以前の起点を保持する。
 
 メインマップはPolylineではなくVisited Gridを主表示とするため、`location_points` 側ではprovisional確定待ちを行わない。水平方向精度が80mを超える点、5m未満の細かな揺れ、端末のraw speedが停止相当で20m未満に散る点を落とし、それ以外は速度帯に応じた最小距離を満たせば保存する。
 

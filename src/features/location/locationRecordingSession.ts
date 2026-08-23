@@ -2,15 +2,12 @@ import type * as Location from 'expo-location';
 
 import { initializeDatabase } from '@/db/database';
 import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
-import { getLatestLocationPoint } from '@/features/logs/logRepository';
-import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
 import {
   ActiveStayPlacesSnapshot,
   recordLocationObservation,
   RecordLocationObservationResult,
 } from '@/features/location/locationObservationRecorder';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
-import type { NewLocationPoint } from '@/types/gps';
 import {
   bufferLocationsDuringGpxImport,
   drainBufferedLocations,
@@ -22,7 +19,7 @@ import { toLocationPoint } from './locationMapper';
 
 /** 前景・背景の位置情報を同じ保存規則で処理するセッション。 */
 export type LocationRecordingSession = {
-  /** 位置情報を観測日時順に処理し、Visited Grid補間起点を次回呼び出しへ引き継ぐ。 */
+  /** 位置情報を観測日時順に原子的なRecorderへ渡す。 */
   recordLocations: (locations: Location.LocationObject[]) => Promise<void>;
 };
 
@@ -33,16 +30,13 @@ export type LocationRecordingSessionOptions = {
 };
 
 /**
- * 最新保存点を一度だけ読み込み、Visited Grid補間起点を保持するセッションを作る。
+ * SQLite初期化後、前景・背景で共通の記録処理を行うセッションを作る。
  *
- * 吸着・GPS保存判定は観測ごとにSQLiteの最新状態を読むRecorderへ委譲し、
- * セッションを跨ぐ前景・背景配信でも同じ永続状態を使う。
+ * 吸着・GPS保存判定・Visited Grid補間起点は観測ごとにSQLiteの最新状態を読む
+ * Recorderへ委譲し、セッションを跨ぐ前景・背景配信でも同じ永続状態を使う。
  */
 export async function createLocationRecordingSession(options: LocationRecordingSessionOptions = {}): Promise<LocationRecordingSession> {
   await initializeDatabase();
-
-  const latestSavedPoint = await getLatestLocationPoint();
-  let previousVisitedCellPoint: NewLocationPoint | null = latestSavedPoint ? toEffectiveLocationPoint(latestSavedPoint) : null;
 
   return {
     async recordLocations(locations) {
@@ -74,12 +68,7 @@ export async function createLocationRecordingSession(options: LocationRecordingS
           const result: RecordLocationObservationResult = await recordLocationObservation({
             rawPoint,
             activeStayPlaces,
-            previousVisitedCellPoint,
           });
-
-          if (result.visitedCellPoint != null) {
-            previousVisitedCellPoint = result.visitedCellPoint;
-          }
 
           if (result.status === 'saved') {
             savedPoints.push({ point: result.point, locationPointId: result.locationPointId });

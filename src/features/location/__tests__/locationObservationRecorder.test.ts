@@ -51,6 +51,7 @@ const initialPersistedState = {
   candidateCount: 0,
   outsideCount: 0,
   lastObservedAt: null,
+  lastVisitedGridPoint: null,
 };
 
 const home: StayPlace = {
@@ -102,7 +103,6 @@ function input(rawPoint: NewLocationPoint): RecordLocationObservationInput {
   return {
     rawPoint,
     activeStayPlaces: { status: 'ready', stayPlaces: [home] },
-    previousVisitedCellPoint: null,
     now: '2026-08-23T01:00:00.000Z',
   };
 }
@@ -170,10 +170,8 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
 
   it('吸着中の範囲外観測も別々の呼び出しで数え3点目に退出する', async () => {
     let persistedState = {
+      ...initialPersistedState,
       activeStayPlaceId: home.id,
-      candidateStayPlaceId: null,
-      candidateCount: 0,
-      outsideCount: 0,
       lastObservedAt: '2026-08-23T00:00:00.000Z',
     };
     mockGetState.mockImplementation(async () => persistedState);
@@ -200,11 +198,10 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
       effectiveLongitude: 139.1,
       snappedStayPlaceId: 2,
     };
-    const previousVisitedCellPoint = {
-      ...pointAt(35.2, 139.2, '2026-08-23T00:00:05.000Z'),
-      effectiveLatitude: 35.2,
-      effectiveLongitude: 139.2,
-      snappedStayPlaceId: 3,
+    const previousVisitedGridPoint = {
+      recordedAt: '2026-08-23T00:00:05.000Z',
+      latitude: 35.2,
+      longitude: 139.2,
     };
     const effectiveCurrentPoint = {
       ...rawPoint,
@@ -225,13 +222,15 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
       candidateCount: 0,
       outsideCount: 0,
       lastObservedAt: null,
+      lastVisitedGridPoint: previousVisitedGridPoint,
     });
     mockGetLatest.mockResolvedValue(latestSavedPoint);
+    mockGetVisitedCells.mockReturnValue([cell]);
 
-    await recordLocationObservation({ ...input(rawPoint), previousVisitedCellPoint });
+    await recordLocationObservation(input(rawPoint));
 
     expect(mockShouldSave).toHaveBeenCalledWith(effectiveCurrentPoint, effectivePreviousSavedPoint);
-    expect(mockGetVisitedCells).toHaveBeenCalledWith(previousVisitedCellPoint, effectiveCurrentPoint);
+    expect(mockGetVisitedCells).toHaveBeenCalledWith(previousVisitedGridPoint, effectiveCurrentPoint);
     expect(mockInsert).toHaveBeenCalledWith(
       {
         ...rawPoint,
@@ -242,6 +241,17 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
       '2026-08-23T01:00:00.000Z',
       mockTxn,
     );
+    expect(mockUpsertState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lastVisitedGridPoint: {
+          recordedAt: rawPoint.recordedAt,
+          latitude: home.latitude,
+          longitude: home.longitude,
+        },
+      }),
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
   });
 
   it('GPSログ保存対象外でも状態とVisited Gridを同じtransactionで更新する', async () => {
@@ -249,14 +259,61 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     mockShouldSave.mockReturnValue(false);
     mockGetVisitedCells.mockReturnValue([cell]);
 
-    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual(
-      expect.objectContaining({ status: 'not-saved', visitedCellPoint: expect.any(Object) }),
-    );
+    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'not-saved' });
 
     expect(mockInsert).not.toHaveBeenCalled();
     expect(mockUpsertVisitedCells).toHaveBeenCalledWith([cell], rawPoint.recordedAt, mockTxn);
     expect(mockUpsertState).toHaveBeenCalledWith(
-      expect.objectContaining({ lastObservedAt: rawPoint.recordedAt }),
+      expect.objectContaining({
+        lastObservedAt: rawPoint.recordedAt,
+        lastVisitedGridPoint: {
+          recordedAt: rawPoint.recordedAt,
+          latitude: home.latitude,
+          longitude: home.longitude,
+        },
+      }),
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+  });
+
+  it('別セッション相当の保存対象外観測でも永続補間起点を次の観測へ引き継ぐ', async () => {
+    const first = pointOutsideHome('2026-08-23T00:00:10.000Z');
+    const second = pointAt(home.latitude + 0.002, home.longitude, '2026-08-23T00:00:20.000Z');
+    let persistedState = { ...initialPersistedState };
+    mockGetState.mockImplementation(async () => persistedState);
+    mockUpsertState.mockImplementation(async (state) => {
+      persistedState = state;
+    });
+    mockShouldSave.mockReturnValue(false);
+    mockGetVisitedCells.mockReturnValue([cell]);
+
+    await recordLocationObservation(input(first));
+    await recordLocationObservation(input(second));
+
+    expect(mockGetVisitedCells).toHaveBeenNthCalledWith(1, null, expect.objectContaining({ recordedAt: first.recordedAt }));
+    expect(mockGetVisitedCells).toHaveBeenNthCalledWith(
+      2,
+      { recordedAt: first.recordedAt, latitude: first.latitude, longitude: first.longitude },
+      expect.objectContaining({ recordedAt: second.recordedAt }),
+    );
+  });
+
+  it('セルを生成できない観測では以前の永続補間起点を保持する', async () => {
+    const previousVisitedGridPoint = {
+      recordedAt: '2026-08-23T00:00:00.000Z',
+      latitude: 35.1,
+      longitude: 139.1,
+    };
+    const rawPoint = pointOutsideHome('2026-08-23T00:00:10.000Z');
+    mockGetState.mockResolvedValue({ ...initialPersistedState, lastVisitedGridPoint: previousVisitedGridPoint });
+    mockShouldSave.mockReturnValue(false);
+    mockGetVisitedCells.mockReturnValue([]);
+
+    await recordLocationObservation(input(rawPoint));
+
+    expect(mockUpsertState).toHaveBeenCalledWith(
+      expect.objectContaining({ lastVisitedGridPoint: previousVisitedGridPoint }),
       '2026-08-23T01:00:00.000Z',
       mockTxn,
     );
@@ -272,7 +329,6 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
 
     await expect(recordLocationObservation(input(pointAtHome('2026-08-23T00:00:20.000Z')))).resolves.toEqual({
       status: 'stale',
-      visitedCellPoint: null,
     });
     expect(mockGetLatest).not.toHaveBeenCalled();
     expect(mockUpsertState).not.toHaveBeenCalled();
@@ -283,9 +339,8 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
   it('滞在場所取得失敗時は生座標を使い吸着状態を維持する', async () => {
     const rawPoint = pointOutsideHome('2026-08-23T00:00:10.000Z');
     const activePersistedState = {
+      ...initialPersistedState,
       activeStayPlaceId: home.id,
-      candidateStayPlaceId: null,
-      candidateCount: 0,
       outsideCount: 2,
       lastObservedAt: '2026-08-23T00:00:00.000Z',
     };
@@ -315,9 +370,8 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
   it('保存済み吸着先が有効一覧から外れた場合は次の正常観測で解除する', async () => {
     const rawPoint = pointAtHome('2026-08-23T00:00:10.000Z');
     mockGetState.mockResolvedValue({
+      ...initialPersistedState,
       activeStayPlaceId: home.id,
-      candidateStayPlaceId: null,
-      candidateCount: 0,
       outsideCount: 2,
       lastObservedAt: '2026-08-23T00:00:00.000Z',
     });
@@ -340,7 +394,7 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     mockGetVisitedCells.mockReturnValue([cell]);
     mockInsert.mockResolvedValue(null);
 
-    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'duplicate', visitedCellPoint: null });
+    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'duplicate' });
 
     expect(mockInsert).toHaveBeenCalledWith(expect.any(Object), '2026-08-23T01:00:00.000Z', mockTxn);
     expect(mockUpsertVisitedCells).not.toHaveBeenCalled();

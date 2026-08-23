@@ -22,17 +22,13 @@ export type RecordLocationObservationInput = {
   rawPoint: NewLocationPoint;
   /** 当該観測で利用できる有効滞在場所一覧、または一時的な取得失敗。 */
   activeStayPlaces: ActiveStayPlacesSnapshot;
-  /** Visited Gridの高速移動補間で使う直前のセル開放対象点。 */
-  previousVisitedCellPoint: NewLocationPoint | null;
   /** DB更新日時。未指定時は呼び出し時刻を使う。 */
   now?: string;
 };
 
 /** 原子的な位置観測記録の結果。 */
 export type RecordLocationObservationResult =
-  | { status: 'saved'; point: NewLocationPoint; locationPointId: number; visitedCellPoint: NewLocationPoint | null }
-  | { status: 'not-saved'; visitedCellPoint: NewLocationPoint | null }
-  | { status: 'stale' | 'duplicate'; visitedCellPoint: null };
+  { status: 'saved'; point: NewLocationPoint; locationPointId: number } | { status: 'not-saved' } | { status: 'stale' | 'duplicate' };
 
 /** トランザクション内で求めた結果をコールバック外へ受け渡す箱。 */
 type RecordLocationObservationResultHolder = {
@@ -70,7 +66,7 @@ function preserveSnapState(state: PersistedLocationRecordingState): StayPlaceSna
  * 生座標を記録しながら既存の吸着カウンターを次の正常取得まで維持する。
  */
 export async function recordLocationObservation(input: RecordLocationObservationInput): Promise<RecordLocationObservationResult> {
-  const { rawPoint, activeStayPlaces, previousVisitedCellPoint } = input;
+  const { rawPoint, activeStayPlaces } = input;
   const now = input.now ?? new Date().toISOString();
   const result: RecordLocationObservationResultHolder = { value: null };
 
@@ -78,7 +74,7 @@ export async function recordLocationObservation(input: RecordLocationObservation
     const persistedState = await getLocationRecordingStateInCurrentTransaction(txn);
 
     if (persistedState.lastObservedAt != null && rawPoint.recordedAt <= persistedState.lastObservedAt) {
-      result.value = { status: 'stale', visitedCellPoint: null };
+      result.value = { status: 'stale' };
       return;
     }
 
@@ -91,14 +87,14 @@ export async function recordLocationObservation(input: RecordLocationObservation
     const latestSavedPoint = await getLatestLocationPointInCurrentTransaction(txn);
     const previousSavedPoint = latestSavedPoint ? toEffectiveLocationPoint(latestSavedPoint) : null;
     const shouldSave = shouldSaveLocationPoint(effectivePoint, previousSavedPoint);
-    const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, effectivePoint);
+    const visitedCells = getVisitedCellsForLocationPoint(persistedState.lastVisitedGridPoint, effectivePoint);
 
     let locationPointId: number | null = null;
     if (shouldSave) {
       const inserted = await insertLocationPointInCurrentTransaction(point, now, txn);
 
       if (!inserted) {
-        result.value = { status: 'duplicate', visitedCellPoint: null };
+        result.value = { status: 'duplicate' };
         return;
       }
 
@@ -109,11 +105,17 @@ export async function recordLocationObservation(input: RecordLocationObservation
       await upsertVisitedCellsInCurrentTransaction(visitedCells, rawPoint.recordedAt, txn);
     }
 
-    await upsertLocationRecordingStateInCurrentTransaction({ ...snapResult.state, lastObservedAt: rawPoint.recordedAt }, now, txn);
+    const lastVisitedGridPoint =
+      visitedCells.length > 0
+        ? { recordedAt: effectivePoint.recordedAt, latitude: effectivePoint.latitude, longitude: effectivePoint.longitude }
+        : persistedState.lastVisitedGridPoint;
+    await upsertLocationRecordingStateInCurrentTransaction(
+      { ...snapResult.state, lastObservedAt: rawPoint.recordedAt, lastVisitedGridPoint },
+      now,
+      txn,
+    );
 
-    const visitedCellPoint = visitedCells.length > 0 ? effectivePoint : null;
-    result.value =
-      locationPointId == null ? { status: 'not-saved', visitedCellPoint } : { status: 'saved', point, locationPointId, visitedCellPoint };
+    result.value = locationPointId == null ? { status: 'not-saved' } : { status: 'saved', point, locationPointId };
   });
 
   if (!result.value) {

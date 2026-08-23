@@ -180,6 +180,9 @@ async function runDatabaseInitialization(): Promise<void> {
       candidate_count INTEGER NOT NULL DEFAULT 0,
       outside_count INTEGER NOT NULL DEFAULT 0,
       last_observed_at TEXT NULL,
+      last_visited_grid_recorded_at TEXT NULL,
+      last_visited_grid_latitude REAL NULL,
+      last_visited_grid_longitude REAL NULL,
       updated_at TEXT NOT NULL
     );
 
@@ -227,6 +230,9 @@ async function runDatabaseInitialization(): Promise<void> {
   await ensureColumn('location_points', 'effective_latitude', 'REAL NULL');
   await ensureColumn('location_points', 'effective_longitude', 'REAL NULL');
   await ensureColumn('location_points', 'snapped_stay_place_id', 'INTEGER NULL');
+  await ensureColumn('location_recording_state', 'last_visited_grid_recorded_at', 'TEXT NULL');
+  await ensureColumn('location_recording_state', 'last_visited_grid_latitude', 'REAL NULL');
+  await ensureColumn('location_recording_state', 'last_visited_grid_longitude', 'REAL NULL');
   await db.execAsync(`
     CREATE INDEX IF NOT EXISTS idx_achievement_unlocks_unlocked_local_date
       ON achievement_unlocks(unlocked_local_date);

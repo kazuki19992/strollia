@@ -1,6 +1,6 @@
 import type { LocationObject } from 'expo-location';
 
-import type { LocationPoint, NewLocationPoint } from '@/types/gps';
+import type { NewLocationPoint } from '@/types/gps';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
 import { beginGpxImportPriority, resetGpxImportPriorityForTest } from '@/features/location/gpxImportPriority';
@@ -31,22 +31,6 @@ jest.mock('@/features/location/locationObservationRecorder', () => ({
 jest.mock('@/features/location/locationMapper', () => ({
   toLocationPoint: (...args: unknown[]) => mockToLocationPoint(...args),
 }));
-
-const latestPoint: LocationPoint = {
-  id: 10,
-  recordedAt: '2026-06-19T00:00:00.000Z',
-  localDate: '2026-06-19',
-  latitude: 35,
-  longitude: 139,
-  effectiveLatitude: 35,
-  effectiveLongitude: 139,
-  snappedStayPlaceId: null,
-  altitude: null,
-  speed: 1,
-  heading: null,
-  accuracy: 5,
-  altitudeAccuracy: null,
-};
 
 const firstPoint: NewLocationPoint = {
   recordedAt: '2026-06-19T00:00:10.000Z',
@@ -101,31 +85,23 @@ describe('位置情報保存セッション', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockInitializeDatabase.mockResolvedValue(undefined);
-    mockGetLatestLocationPoint.mockResolvedValue(latestPoint);
     mockToLocationPoint.mockImplementation((item: LocationObject) => (item.timestamp === 1 ? firstPoint : secondPoint));
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', visitedCellPoint: null });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved' });
     mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
   });
 
-  it('セッション開始時に最新点を一度だけ取得し、Grid補間起点を次の呼び出しへ引き継ぐ', async () => {
-    mockRecordLocationObservation
-      .mockResolvedValueOnce({ status: 'not-saved', visitedCellPoint: firstPoint })
-      .mockResolvedValueOnce({ status: 'not-saved', visitedCellPoint: secondPoint });
+  it('セッション開始時に最新GPS点を取得せず、RecorderへGrid補間起点を渡さない', async () => {
     const session = await createLocationRecordingSession();
 
     await session.recordLocations([firstLocation]);
     await session.recordLocations([secondLocation]);
 
     expect(mockInitializeDatabase).toHaveBeenCalledTimes(1);
-    expect(mockGetLatestLocationPoint).toHaveBeenCalledTimes(1);
-    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ rawPoint: firstPoint, previousVisitedCellPoint: latestPoint }),
-    );
-    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({ rawPoint: secondPoint, previousVisitedCellPoint: firstPoint }),
-    );
+    expect(mockGetLatestLocationPoint).not.toHaveBeenCalled();
+    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(1, expect.objectContaining({ rawPoint: firstPoint }));
+    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(2, expect.objectContaining({ rawPoint: secondPoint }));
+    expect(mockRecordLocationObservation.mock.calls[0][0]).not.toHaveProperty('previousVisitedCellPoint');
+    expect(mockRecordLocationObservation.mock.calls[1][0]).not.toHaveProperty('previousVisitedCellPoint');
   });
 
   it('受信順が前後したバッチを観測日時順にRecorderへ渡す', async () => {
@@ -172,23 +148,11 @@ describe('位置情報保存セッション', () => {
     warn.mockRestore();
   });
 
-  it('Recorderが返したセル開放済み観測を次の補間起点へ渡す', async () => {
-    mockRecordLocationObservation
-      .mockResolvedValueOnce({ status: 'not-saved', visitedCellPoint: firstPoint })
-      .mockResolvedValueOnce({ status: 'not-saved', visitedCellPoint: secondPoint });
-    const session = await createLocationRecordingSession();
-
-    await session.recordLocations([firstLocation, secondLocation]);
-
-    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(2, expect.objectContaining({ previousVisitedCellPoint: firstPoint }));
-  });
-
   it('保存確定した点だけを実績処理へ渡す', async () => {
     mockRecordLocationObservation.mockResolvedValue({
       status: 'saved',
       point: effectivePoint,
       locationPointId: 11,
-      visitedCellPoint: effectivePoint,
     });
     const session = await createLocationRecordingSession();
 
@@ -202,7 +166,6 @@ describe('位置情報保存セッション', () => {
       status: 'saved',
       point: effectivePoint,
       locationPointId: 11,
-      visitedCellPoint: effectivePoint,
     });
     mockProcessAchievementsForSavedPoint.mockRejectedValueOnce(new Error('achievement failed'));
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -249,9 +212,8 @@ describe('GPXインポート優先モードのバッファリング', () => {
     jest.clearAllMocks();
     resetGpxImportPriorityForTest();
     mockInitializeDatabase.mockResolvedValue(undefined);
-    mockGetLatestLocationPoint.mockResolvedValue(latestPoint);
     mockToLocationPoint.mockImplementation((item: LocationObject) => (item.timestamp === 1 ? firstPoint : secondPoint));
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', visitedCellPoint: null });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved' });
     mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
   });
 
@@ -305,9 +267,9 @@ describe('GPXインポート優先モードのバッファリング', () => {
   it('ソート後の未処理観測だけを失敗時に再キューする', async () => {
     mockToLocationPoint.mockImplementation((item: LocationObject) => point(String(item.timestamp).padStart(3, '0')));
     mockRecordLocationObservation
-      .mockResolvedValueOnce({ status: 'not-saved', visitedCellPoint: null })
+      .mockResolvedValueOnce({ status: 'not-saved' })
       .mockRejectedValueOnce(new Error('database is locked'))
-      .mockResolvedValue({ status: 'not-saved', visitedCellPoint: null });
+      .mockResolvedValue({ status: 'not-saved' });
     const session = await createLocationRecordingSession();
 
     await expect(session.recordLocations([location(20), location(10)])).rejects.toThrow('database is locked');
@@ -322,7 +284,7 @@ describe('GPXインポート優先モードのバッファリング', () => {
     beginGpxImportPriority();
     await session.recordLocations([firstLocation]);
 
-    mockGetLatestLocationPoint.mockRejectedValueOnce(new Error('database is locked'));
+    mockInitializeDatabase.mockRejectedValueOnce(new Error('database is locked'));
     await expect(flushLocationsBufferedDuringGpxImport()).rejects.toThrow('database is locked');
 
     await session.recordLocations([secondLocation]);
@@ -333,9 +295,7 @@ describe('GPXインポート優先モードのバッファリング', () => {
   });
 
   it('flush中の記録失敗ではrecordLocations側だけがバッファへ戻し、二重復元しない', async () => {
-    mockRecordLocationObservation
-      .mockRejectedValueOnce(new Error('database is locked'))
-      .mockResolvedValue({ status: 'not-saved', visitedCellPoint: null });
+    mockRecordLocationObservation.mockRejectedValueOnce(new Error('database is locked')).mockResolvedValue({ status: 'not-saved' });
     const session = await createLocationRecordingSession();
     beginGpxImportPriority();
     await session.recordLocations([firstLocation]);

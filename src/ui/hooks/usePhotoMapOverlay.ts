@@ -85,9 +85,9 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
 
   const loadPhotosForRegion = useCallback(
     async (shouldForceReload: boolean): Promise<void> => {
-      const loadSeq = ++photoLoadSeqRef.current;
-
       if (!enabled) {
+        // OFFは明示的な取り消しなので、実行中の読み込みの結果を捨てさせるためシーケンス番号を進める
+        photoLoadSeqRef.current += 1;
         assetSyncPromiseRef.current = null;
         fetchedBoundsRef.current = null;
         setPhotos([]);
@@ -99,10 +99,14 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
       const fetchedBounds = fetchedBoundsRef.current;
 
       // 余白の内側に収まっている間は、取得済みの写真がそのまま使えるため再検索しない。
+      // ここでシーケンス番号を進めてはいけない。範囲外→範囲内と戻っただけで実行中の読み込みが
+      // 取り消され、`fetchedBoundsRef` が古いまま残ったり読み込み表示が先に消えたりするため。
       if (!shouldForceReload && fetchedBounds !== null && isPhotoViewportBoundsContained(fetchedBounds, getPhotoViewportBounds(region))) {
-        setIsLoadingPhotos(false);
         return;
       }
+
+      // 実際に読み込みを開始する時点でだけシーケンス番号を進める(先行する読み込みを取り消す)
+      const loadSeq = ++photoLoadSeqRef.current;
 
       setIsLoadingPhotos(true);
       setPhotoErrorMessage(null);

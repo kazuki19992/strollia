@@ -151,6 +151,40 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     expect(loadGeotaggedPhotos).toHaveBeenCalledTimes(1);
   });
 
+  it('余白の内側へ戻る再レンダーは、実行中の読み込みを取り消さない', async () => {
+    let resolveSecondSearch: (photos: MapPhoto[]) => void = () => undefined;
+    (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValueOnce([]).mockReturnValueOnce(
+      new Promise<MapPhoto[]>((resolve) => {
+        resolveSecondSearch = resolve;
+      }),
+    );
+
+    const { result, rerender } = renderHook(({ region }: { region: Region }) => usePhotoMapOverlay(true, region), {
+      initialProps: { region: baseRegion },
+    });
+    await flushPromises();
+
+    // 余白の外へ出て2回目の読み込みを開始する
+    await act(async () => {
+      rerender({ region: { ...baseRegion, longitude: 139.5 } });
+    });
+    expect(loadGeotaggedPhotosInBounds).toHaveBeenCalledTimes(2);
+
+    // 取得済み範囲の内側へ戻ると早期returnするが、実行中の読み込みは取り消してはいけない
+    await act(async () => {
+      rerender({ region: baseRegion });
+    });
+    expect(result.current.isLoadingPhotos).toBe(true);
+
+    await act(async () => {
+      resolveSecondSearch([photo]);
+    });
+    await flushPromises();
+
+    expect(result.current.photos).toEqual([photo]);
+    expect(result.current.isLoadingPhotos).toBe(false);
+  });
+
   it('読み込み中に無効化された場合は古い読み込み結果を反映しない', async () => {
     let resolvePhotos: (photos: MapPhoto[]) => void = () => undefined;
     (loadGeotaggedPhotosInBounds as jest.Mock).mockReturnValue(

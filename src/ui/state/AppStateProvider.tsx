@@ -610,6 +610,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     const today = toLocalDate(new Date());
     return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
   }, [dailyLogs]);
+  // 写真の検索範囲もGrid取得と同じく、ユーザー操作中に更新されない gridOverlayRegion を使う。
   const {
     showPhotosOnMap,
     isUpdatingPhotoSetting,
@@ -618,7 +619,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     photoErrorMessage,
     initializePhotoSetting,
     updateShowPhotosOnMap,
-  } = usePhotoMapCrashBreaker({ isReady, isMapReady });
+  } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion });
   // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
   const photoClusters = usePhotoClusters(photos, visibleRegion);
   // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。

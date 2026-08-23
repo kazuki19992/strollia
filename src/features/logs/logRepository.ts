@@ -225,7 +225,12 @@ export async function getLocationPointsByDate(localDate: string): Promise<Locati
   );
 }
 
-/** ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。 */
+/**
+ * ユーザー操作による全ユーザーデータ削除を1トランザクションで実行する。
+ *
+ * ジオタグ付き写真のメタデータ(`photo_assets`)も対象に含める。写真本体は複製していないが、
+ * 撮影位置は端末内に残る個人データであるため、全削除の取りこぼしを作らない。
+ */
 export async function deleteAllUserData(): Promise<void> {
   await withExclusiveTransaction(async (txn) => {
     await txn.runAsync('DELETE FROM visited_cells');
@@ -236,5 +241,6 @@ export async function deleteAllUserData(): Promise<void> {
     await txn.runAsync('DELETE FROM stay_places');
     await txn.runAsync('DELETE FROM location_points');
     await txn.runAsync('DELETE FROM daily_logs');
+    await txn.runAsync('DELETE FROM photo_assets');
   });
 }

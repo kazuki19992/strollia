@@ -144,6 +144,12 @@ function toFiniteCoordinate(value: unknown): number | null {
  * 緯度経度はここで数値へ変換する(理由は `toFiniteCoordinate` のJSDocを参照)。
  * 数値として解釈できない座標の写真は地図に置けないため、ジオタグなしと同様に除外する。
  *
+ * **表示用URIには `localUri` だけを使い、`asset.uri`(iOS: `ph://…`)へフォールバックしない。**
+ * `ph://` は `<Image>` で描画できず白紙のマーカーになるだけで、表示用の値としては
+ * 「無い」のと変わらない。iCloudに本体がある写真では `localUri` が得られないため、
+ * ここでnullへ倒してプレースホルダ描画へ回す(設計書 §5.2)。
+ * DBへ保存する安定した識別子は `toPhotoAssetRecord` が別途 `asset.uri` から作る。
+ *
  * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
  * @returns 有効なジオタグがある写真の場合はMapPhoto、ない場合はnull。
  */
@@ -161,7 +167,7 @@ export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
 
   return {
     id: asset.id,
-    uri: asset.localUri ?? asset.uri,
+    uri: asset.localUri ?? null,
     latitude,
     longitude,
     creationTime: asset.creationTime,
@@ -173,9 +179,11 @@ export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
 /**
  * MediaLibraryの詳細アセットを `photo_assets` の保存レコードへ変換する。
  *
- * `MapPhoto.uri` が `localUri ?? uri` を採るのに対し、**保存するのは `asset.uri` だけ**である。
+ * `MapPhoto.uri` が表示できる `localUri` だけを採るのに対し、**保存するのは `asset.uri` だけ**である。
  * `localUri` は `requestContentEditingInput` が返す一時パスで、アプリ再起動をまたいで
  * 有効である保証がないため永続化してはいけない(親設計書 §4.2)。
+ * 逆に `asset.uri`(`ph://…`)は表示には使えないが識別子としては安定しているので、
+ * 表示用の値と保存用の値はここで意図的に分かれる。
  *
  * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
  * @returns 有効なジオタグがある写真の場合は保存レコード、ない場合はnull。

@@ -107,11 +107,16 @@ describe('地図写真変換 toMapPhoto', () => {
     });
   });
 
-  it('localUriがない場合はasset.uriを使用する', () => {
+  it('localUriがある場合は表示用URIとしてそのまま使う', () => {
+    expect(toMapPhoto(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))?.uri).toBe('file:///asset-1.jpg');
+  });
+
+  it('localUriがない場合はph://へフォールバックせず、画像なし(uri=null)にする', () => {
     const asset = createAssetInfo('asset-1', { latitude: 35, longitude: 139 });
     delete asset.localUri;
 
-    expect(toMapPhoto(asset)?.uri).toBe('ph://asset-1');
+    // ph:// は <Image> で描画できず白紙になる。画像なしとして扱いプレースホルダ描画へ回す
+    expect(toMapPhoto(asset)?.uri).toBeNull();
   });
 
   it('ジオタグがない写真はnullを返す', () => {
@@ -166,8 +171,17 @@ describe('写真メタデータ変換 toPhotoAssetRecord', () => {
       width: 100,
       height: 80,
     });
-    // MapPhoto.uri は localUri を優先するが、保存する値とは別物である
+    // MapPhoto.uri は localUri を使うが、保存する値とは別物である
     expect(toMapPhoto(asset)?.uri).toBe('file:///asset-1.jpg');
+  });
+
+  it('localUriが無い写真でも、保存するuriはph://のまま変わらない', () => {
+    const asset = createAssetInfo('asset-1', { latitude: 35, longitude: 139 });
+    delete asset.localUri;
+
+    // 表示用URIは画像なし(null)に倒すが、DBに持つ安定した識別子は ph:// のままにする
+    expect(toPhotoAssetRecord(asset)?.uri).toBe('ph://asset-1');
+    expect(toMapPhoto(asset)?.uri).toBeNull();
   });
 
   it('撮影日時が取得できない場合はtakenAtをnullにする', () => {

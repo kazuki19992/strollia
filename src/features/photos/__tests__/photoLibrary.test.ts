@@ -1,7 +1,9 @@
+import { Asset } from 'expo-media-library';
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
+import { clearPhotoDisplayUriCache } from '@/features/photos/photoDisplayUri';
 import {
   hasFullPhotoAccess,
   loadGeotaggedPhotos,
@@ -23,6 +25,11 @@ jest.mock('@/features/photos/photoAssetRepository', () => ({
   getPhotoAssetsInBounds: jest.fn().mockResolvedValue([]),
 }));
 
+// 表示用URIの解決に使う新API(クラスベース)。`new Asset(uri).getUri()` の形をモックで再現する
+jest.mock('expo-media-library', () => ({
+  Asset: jest.fn(),
+}));
+
 jest.mock('expo-media-library/legacy', () => ({
   getAssetsAsync: jest.fn(),
   getAssetInfoAsync: jest.fn(),
@@ -41,6 +48,20 @@ jest.mock('expo-media-library/legacy', () => ({
  * `number | string` のどちらも渡せるようにしている。
  */
 type TestAssetLocation = { latitude: number | string; longitude: number | string };
+
+/**
+ * `new Asset(uri).getUri()` の解決結果を差し替える。
+ *
+ * `clearMocks: true` により実装はテストごとに消えるため、必要なテストのbeforeEachで入れ直す。
+ *
+ * @param resolver - `new Asset()` に渡されたURIから表示用URIを返す関数。
+ */
+function mockAssetUri(resolver: (uri: string) => Promise<string>): void {
+  (Asset as unknown as jest.Mock).mockImplementation((uri: string) => ({
+    id: uri,
+    getUri: () => resolver(uri),
+  }));
+}
 
 /**
  * テスト用の写真アセット詳細を作る。
@@ -190,7 +211,7 @@ describe('保存済み写真の地図表示変換 toMapPhotoFromPhotoAsset', () 
     };
   }
 
-  it('保存済みの安定したuriをそのまま表示用URIとして使う', () => {
+  it('保存済みの安定したuriを表示用URI解決前の値として持つ', () => {
     expect(toMapPhotoFromPhotoAsset(record())).toEqual({
       id: 'asset-1',
       uri: 'ph://asset-1',
@@ -220,27 +241,40 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
     crossesAntimeridian: false,
   };
 
+  /**
+   * `photo_assets` の保存済みレコードを組み立てる。
+   *
+   * `uri` は実機(iOS)と同じく `ph://<localIdentifier>` 形式にする。
+   *
+   * @param assetId - アセットID。
+   * @returns 保存済みレコード。
+   */
+  function savedRecord(assetId: string): PhotoAssetRecord {
+    return {
+      assetId,
+      latitude: 35,
+      longitude: 139,
+      takenAt: '2026-08-21T00:00:00.000Z',
+      uri: `ph://${assetId}`,
+      width: 100,
+      height: 80,
+    };
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
+    clearPhotoDisplayUriCache();
+    mockAssetUri(async (uri) => `file:///tmp/${uri.replace('ph://', '')}.jpg`);
   });
 
-  it('表示範囲で絞り込んだ保存済み写真を地図表示用データへ変換して返す', async () => {
-    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([
-      {
-        assetId: 'asset-1',
-        latitude: 35,
-        longitude: 139,
-        takenAt: '2026-08-21T00:00:00.000Z',
-        uri: 'ph://asset-1',
-        width: 100,
-        height: 80,
-      },
-    ]);
+  it('表示範囲で絞り込んだ保存済み写真を、描画できる表示用URIへ解決して返す', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1')]);
 
     await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
       {
         id: 'asset-1',
-        uri: 'ph://asset-1',
+        // ph:// のままでは <Image> が描画できないため file:// へ解決されている必要がある
+        uri: 'file:///tmp/asset-1.jpg',
         latitude: 35,
         longitude: 139,
         creationTime: Date.parse('2026-08-21T00:00:00.000Z'),
@@ -249,6 +283,53 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
       },
     ]);
     expect(getPhotoAssetsInBounds).toHaveBeenCalledWith(bounds);
+  });
+
+  it('同じ写真を再度読み込んでも表示用URIの解決は1回しか走らない', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1')]);
+
+    await loadGeotaggedPhotosInBounds(bounds);
+    await loadGeotaggedPhotosInBounds(bounds);
+
+    expect(Asset).toHaveBeenCalledTimes(1);
+  });
+
+  it('一部の写真で表示用URIを解決できなくても、残りの写真は表示する', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1'), savedRecord('asset-2')]);
+    mockAssetUri(async (uri) => {
+      if (uri === 'ph://asset-1') {
+        throw new Error('asset not found');
+      }
+
+      return 'file:///tmp/asset-2.jpg';
+    });
+
+    await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
+      expect.objectContaining({ id: 'asset-2', uri: 'file:///tmp/asset-2.jpg' }),
+    ]);
+  });
+
+  it('表示用URI解決の同時実行数がPHOTO_INFO_CONCURRENCYを超えない', async () => {
+    const assetCount = 10;
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue(
+      Array.from({ length: assetCount }, (_, index) => savedRecord(`asset-${index}`)),
+    );
+
+    let runningCount = 0;
+    let maxRunningCount = 0;
+    mockAssetUri(async (uri) => {
+      runningCount += 1;
+      maxRunningCount = Math.max(maxRunningCount, runningCount);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      runningCount -= 1;
+
+      return `file:///tmp/${uri.replace('ph://', '')}.jpg`;
+    });
+
+    await loadGeotaggedPhotosInBounds(bounds);
+
+    expect(maxRunningCount).toBeLessThanOrEqual(PHOTO_INFO_CONCURRENCY);
+    expect(Asset).toHaveBeenCalledTimes(assetCount);
   });
 
   it('写真ライブラリの走査は行わない', async () => {

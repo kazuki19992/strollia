@@ -121,24 +121,22 @@ GPSログ上に写真を重ねることで、ユーザーが「いつ・どこ�
 
 ### 9.1 `photo_assets`
 
-| カラム         | 型        | 説明                                             |
-| -------------- | --------- | ------------------------------------------------ |
-| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID             |
-| `latitude`     | REAL      | 緯度                                             |
-| `longitude`    | REAL      | 経度                                             |
-| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可   |
-| `uri`          | TEXT      | 表示用URI（iOS: `ph://…` / Android: `file://…`） |
-| `width`        | INTEGER   | 写真の横幅                                       |
-| `height`       | INTEGER   | 写真の高さ                                       |
-| `last_seen_at` | TEXT      | 最終確認日時                                     |
-| `created_at`   | TEXT      | 作成日時                                         |
-| `updated_at`   | TEXT      | 更新日時                                         |
+| カラム         | 型        | 説明                                                     |
+| -------------- | --------- | -------------------------------------------------------- |
+| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID                     |
+| `latitude`     | REAL      | 緯度                                                     |
+| `longitude`    | REAL      | 経度                                                     |
+| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可           |
+| `uri`          | TEXT      | 安定した識別用URI（iOS: `ph://…` / Android: `file://…`） |
+| `width`        | INTEGER   | 写真の横幅                                               |
+| `height`       | INTEGER   | 写真の高さ                                               |
+| `last_seen_at` | TEXT      | 最終確認日時                                             |
+| `created_at`   | TEXT      | 作成日時                                                 |
+| `updated_at`   | TEXT      | 更新日時                                                 |
 
 ジオタグがない写真はこのテーブルに保存しない。
 
-**`local_uri` は保存しない。** `getAssetInfoAsync` が返す `localUri` は一時パスであり、アプリ再起動をまたいで有効である保証がないため。代わりに `getAssetsAsync` が返す安定した `uri` を保存する。
-
-> `uri` 単独でサムネイルを描画できるかは実機未検証である。描画できない場合は、表示直前に `getAssetInfoAsync` で `localUri` を都度解決する方式へ切り替える。切り替え箇所は `toMapPhotoFromPhotoAsset`（`src/features/photos/photoLibrary.ts`）の1箇所に閉じてある。
+**`local_uri` は保存しない。** `getAssetInfoAsync` が返す `localUri` は一時パスであり、アプリ再起動をまたいで有効である保証がないため。代わりに `getAssetsAsync` が返す安定した `uri` を保存する。ただし**保存した `uri` はそのままでは `<Image>` で描画できない**。表示に使うURIの解決方法は §9.5 を参照する。
 
 `taken_at` とそのインデックスは §7 のGPSログ時刻連動に向けた準備工事であり、現時点では絞り込みに使わない。
 
@@ -200,6 +198,26 @@ GPSログ上に写真を重ねることで、ユーザーが「いつ・どこ�
 - 走査後にジオタグが付与された写真（窓の内側は再走査しないため）
 - 撮影位置・撮影日時が写真アプリ側で編集された場合の追従
 
+### 9.5 表示用URIは保存せず、表示のたびに解決する
+
+**保存した `uri` をそのまま `<Image>` へ渡しても描画できない。** iOS の `ph://<localIdentifier>` を描画するには `RCTPhotoLibraryImageLoader` が必要だが、**React Native 0.86 にこのローダーは存在しない**（`RCTImageLoader.mm` のコメント内で名前が言及されているだけ）。実機では「マーカーは正しい位置に出てクラスタ数も正しいのに、画像だけが白紙」という形で現れる。
+
+したがって表示用URIは、**ビューポート検索の結果に対してのみ都度解決する**。
+
+| 値                       | どこに置くか    | 理由                                                    |
+| ------------------------ | --------------- | ------------------------------------------------------- |
+| `ph://<localIdentifier>` | SQLite（`uri`） | 再起動をまたいで安定した識別子。DBに持つべき値          |
+| 解決後の `file://…`      | メモリのみ      | `requestContentEditingInput` が返す一時パス。永続化不可 |
+
+**解決には SDK 57 のクラスベース新API（`expo-media-library` ルートの `Asset`）を使う。** 旧APIの `getAssetInfoAsync` は `requestContentEditingInput` に加えて `CIImage(contentsOf:)` でフル解像度デコードを行い、これが 2026-08-08 の App Hang の原因だった（§10）。新APIの `Asset#getUri()` は `UriExtractor` 経由で `fullSizeImageURL` を読むだけでデコードを伴わない（デコードするのは `getExif()` のみ）。**表示のたびに旧APIを呼んではいけない。**
+
+実装（`src/features/photos/photoDisplayUri.ts` と `photoLibrary.ts` の `loadGeotaggedPhotosInBounds`）の要点は以下のとおり。
+
+- 解決結果は**セッション内のメモリキャッシュ**（`Map<assetId, 表示用URI>`）に載せる。一時パスなのでSQLiteへ保存してはいけない（保存すると次回起動時に存在しないパスを渡して再び白紙になる）。地図のパン・ズームで検索が走っても、同じ写真の解決は1回で済む
+- 解決は `mapWithConcurrency` で `PHOTO_INFO_CONCURRENCY` 件までに絞る。デコードは伴わないが `requestContentEditingInput` 自体はI/Oであり、一斉並列にする理由がない
+- 解決に失敗した写真は**結果から除外し、マーカーを出さない**。URIの無い写真を返すと空のバブルが地図に残り続けるため。失敗はキャッシュしないので、次回の読み込みで再試行される
+- `ph://` 以外のURI（Androidの `file://`）は `<Image>` でそのまま描画できるため、ネイティブへ問い合わせず素通しする。Androidの新API `Asset` は `contentUri` を前提とするので、`file://` を渡してはいけないという事情もある
+
 ## 10. パフォーマンス方針
 
 写真ライブラリ全体を毎回走査すると重くなる可能性があるため、以下を検討する。
@@ -220,6 +238,9 @@ GPSログ上に写真を重ねることで、ユーザーが「いつ・どこ�
 このため `loadGeotaggedPhotos` は `getAssetInfoAsync` の同時実行数を 4 に制限して呼び出す。
 メインスレッドを塞がない範囲で走査するための暫定対応であり、走査上限(200件)自体の撤廃は
 別途対応する。
+
+同じ上限(`PHOTO_INFO_CONCURRENCY`)を、§9.5 の表示用URI解決でも共有する。解決はフル解像度デコードを
+伴わないが、`requestContentEditingInput` はそれ自体がI/Oであり、一斉並列で発行する理由がないため。
 
 ### 座標の型がOSで食い違う問題(必ず境界で数値へ変換する)
 

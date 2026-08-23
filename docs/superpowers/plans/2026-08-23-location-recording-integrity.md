@@ -4,7 +4,7 @@
 
 **Goal:** バックグラウンドを含むライブGPS記録で吸着状態を永続化し、GPS点・日別距離・Visited Gridを原子的に更新して異常な距離加算を防ぐ。
 
-**Architecture:** `location_recording_state` の単一行をSQLiteへ保存し、前景・背景・セッション再生成で同じ吸着状態を共有する。1観測の吸着判定、保存判定、GPS点、日別集計、Visited Grid、状態更新を1つの排他トランザクションへまとめ、セッションはバッファ・順序・実績処理だけを調整する。
+**Architecture:** `location_recording_state` の単一行をSQLiteへ保存し、前景・背景・セッション再生成で同じ吸着状態とVisited Grid補間起点を共有する。1観測の吸着判定、保存判定、GPS点、日別集計、Visited Grid、状態更新を1つの排他トランザクションへまとめ、セッションはバッファ・順序・実績処理だけを調整する。端末時計の巻き戻り、GPS点の重複、既存NULL距離をそれぞれ明示的な安全側の契約で扱う。
 
 **Tech Stack:** Expo 57、React Native 0.86、TypeScript 6 strict、expo-location、expo-task-manager、expo-sqlite、Jest 29 / jest-expo
 
@@ -24,6 +24,10 @@
 - 滞在ポイント・課金状態の取得失敗時は生座標を使い、永続吸着状態を変更しない。
 - 古いライブ観測は保存せず、吸着状態も巻き戻さない。
 - 新しいnpm依存を追加しない。
+- Visited Grid補間起点は最後にセル更新へ利用できた有効座標・観測日時をSQLiteへ保存し、既存行を埋め戻さない。
+- `last_observed_at` が処理時刻より1時間を超えて未来なら単調増加ガードを無効として扱い、正常観測で上書きする。
+- GPS点の重複観測は吸着状態とVisited Gridを進めず、一意制約以外の制約違反は例外として伝播する。
+- 既存の `daily_logs.distance_meters` がNULLなら、ライブ差分で非NULLへ変換しない。
 - 関数・型・自明でない変数へ日本語JSDocを付け、テスト説明文は日本語にする。
 - Task 1開始時に `.agents/skills/db-schema-change/SKILL.md` を読み、DB変更手順を守る。
 
@@ -837,3 +841,327 @@ PR本文の検証欄へ次を未確認チェックとして記載し、実機確
 - [ ] 両OS: 長時間静止しても日別距離が異常増加しない
 - [ ] 両OS: Plus解約時は無料版で有効な1件だけへ吸着する
 ```
+
+---
+
+## PR #163 レビュー対応
+
+### Task 6: Visited Grid補間起点をSQLiteへ永続化
+
+**Files:**
+
+- Modify: `src/db/database.ts`
+- Modify: `src/db/__tests__/database.test.ts`
+- Modify: `src/features/location/locationRecordingStateRepository.ts`
+- Modify: `src/features/location/__tests__/locationRecordingStateRepository.test.ts`
+- Modify: `src/features/location/grid/gridInterpolation.ts`
+- Modify: `src/features/location/grid/__tests__/gridInterpolation.test.ts`
+- Modify: `src/features/location/locationObservationRecorder.ts`
+- Modify: `src/features/location/__tests__/locationObservationRecorder.test.ts`
+- Modify: `src/features/location/locationRecordingSession.ts`
+- Modify: `src/features/location/__tests__/locationRecordingSession.test.ts`
+- Modify: `src/features/location/__tests__/backgroundLocationTask.test.ts`
+- Modify: `docs/data-storage.md`
+- Modify: `docs/architecture.md`
+
+**Interfaces:**
+
+- Produces: `VisitedGridInterpolationPoint = Pick<NewLocationPoint, 'recordedAt' | 'latitude' | 'longitude'>`
+- Changes: `getVisitedCellsForLocationPoint(previous: VisitedGridInterpolationPoint | null, next: NewLocationPoint): GridCell[]`
+- Extends: `PersistedLocationRecordingState.lastVisitedGridPoint: VisitedGridInterpolationPoint | null`
+- Changes: `RecordLocationObservationInput` から `previousVisitedCellPoint` を削除
+- Changes: `RecordLocationObservationResult` から `visitedCellPoint` を削除
+- Removes: セッションの `getLatestLocationPoint()` と `previousVisitedCellPoint`
+
+- [ ] **Step 1: スキーマと状態リポジトリの失敗テストを書く**
+
+`database.test.ts` で新規CREATEに3列が含まれ、既存DBでは `ensureColumn` 相当の `ALTER TABLE` が各列へ1回だけ実行されることを検証する。`locationRecordingStateRepository.test.ts` では3列が揃う行を点へ変換し、いずれかがNULLなら補間起点をNULLとして扱い、UPSERTで3値を保存することを検証する。
+
+```typescript
+expect(createSql).toContain('last_visited_grid_recorded_at TEXT NULL');
+expect(createSql).toContain('last_visited_grid_latitude REAL NULL');
+expect(createSql).toContain('last_visited_grid_longitude REAL NULL');
+
+expect(state.lastVisitedGridPoint).toEqual({
+  recordedAt: '2026-08-23T00:00:10.000Z',
+  latitude: 35,
+  longitude: 139,
+});
+```
+
+- [ ] **Step 2: 状態テストを実行してREDを確認する**
+
+Run:
+
+```bash
+npm test -- --runInBand src/db/__tests__/database.test.ts src/features/location/__tests__/locationRecordingStateRepository.test.ts
+```
+
+Expected: 新しい3列と `lastVisitedGridPoint` が存在せずFAIL。
+
+- [ ] **Step 3: 冪等な列追加と状態変換を実装する**
+
+`location_recording_state` のCREATEへ次を追加し、CREATE後にも `ensureColumn` で既存DBへ追加する。埋め戻しUPDATEは行わない。
+
+```sql
+last_visited_grid_recorded_at TEXT NULL,
+last_visited_grid_latitude REAL NULL,
+last_visited_grid_longitude REAL NULL
+```
+
+リポジトリでは3値がすべて非NULLで緯度経度が有限かつ範囲内の場合だけ `lastVisitedGridPoint` を返す。UPSERTではオブジェクトを3列へ展開し、NULLなら3列すべてNULLにする。`gridInterpolation.ts` では補間起点を `VisitedGridInterpolationPoint` として公開し、現在点だけにaccuracy上限を適用する。永続化する起点は、過去にセル更新へ利用できた有効点だけなので再検証不要とする。
+
+`gridInterpolation.test.ts` にはaccuracyを持たない永続補間起点から高速移動セルを補間できるケースを追加する。
+
+- [ ] **Step 4: 別セッションの保存対象外観測を再現するRecorder失敗テストを書く**
+
+1回目の `recordLocationObservation` を保存対象外にし、そのUPSERT状態を次の独立呼び出しの読取値へ渡す。2回目が、最初の有効座標をGrid補間起点に使うことを検証する。
+
+```typescript
+expect(mockGetVisitedCells).toHaveBeenNthCalledWith(
+  2,
+  { recordedAt: first.recordedAt, latitude: first.latitude, longitude: first.longitude },
+  expect.objectContaining({ recordedAt: second.recordedAt }),
+);
+```
+
+同時に、セル生成が0件の観測では以前の補間起点を保持し、stale・duplicateでは状態を書かないテストを維持する。
+
+- [ ] **Step 5: Recorderテストを実行してREDを確認する**
+
+Run: `npm test -- --runInBand src/features/location/__tests__/locationObservationRecorder.test.ts`
+
+Expected: Recorderが入力引数のセッション点を使い、状態へ補間起点を保存しないためFAIL。
+
+- [ ] **Step 6: Recorderを永続補間起点へ接続する**
+
+`previousVisitedCellPoint` 入力を削除し、`persistedState.lastVisitedGridPoint` を `getVisitedCellsForLocationPoint` へ渡す。セル更新できた観測だけ、次の状態へ現在の有効座標と観測日時を保存する。
+
+```typescript
+const visitedCells = getVisitedCellsForLocationPoint(persistedState.lastVisitedGridPoint, effectivePoint);
+const lastVisitedGridPoint =
+  visitedCells.length > 0
+    ? { recordedAt: effectivePoint.recordedAt, latitude: effectivePoint.latitude, longitude: effectivePoint.longitude }
+    : persistedState.lastVisitedGridPoint;
+```
+
+- [ ] **Step 7: セッション状態削除の失敗テストを書く**
+
+`locationRecordingSession.test.ts` でセッション生成時に最新GPS点を取得せず、Recorderへ `previousVisitedCellPoint` を渡さないことを検証する。`backgroundLocationTask.test.ts` は1点ずつ別セッションでもRecorderへ委譲する契約を維持する。
+
+- [ ] **Step 8: セッションからGrid cursorを削除する**
+
+`getLatestLocationPoint` / `toEffectiveLocationPoint` のimport、初期SELECT、`previousVisitedCellPoint` 変数、Recorder結果からの更新を削除する。セッションはバッファ、安定ソート、滞在場所スナップショット、実績処理だけを担当する。
+
+- [ ] **Step 9: ドキュメントを同期する**
+
+`docs/data-storage.md` の状態テーブルへ3列と「既存行を埋め戻さない」規則を追加する。`docs/architecture.md` は、保存判定用最新点とGrid補間起点の両方を観測ごとの排他トランザクション内で読むと記載する。
+
+- [ ] **Step 10: Task 6を検証してコミットする**
+
+Run:
+
+```bash
+npm test -- --runInBand src/db/__tests__/database.test.ts src/features/location/__tests__/locationRecordingStateRepository.test.ts src/features/location/grid/__tests__/gridInterpolation.test.ts src/features/location/__tests__/locationObservationRecorder.test.ts src/features/location/__tests__/locationRecordingSession.test.ts src/features/location/__tests__/backgroundLocationTask.test.ts
+npm run typecheck
+npm run format:check
+git diff --check
+```
+
+Commit:
+
+```bash
+git add src/db/database.ts src/db/__tests__/database.test.ts src/features/location/locationRecordingStateRepository.ts src/features/location/__tests__/locationRecordingStateRepository.test.ts src/features/location/grid/gridInterpolation.ts src/features/location/grid/__tests__/gridInterpolation.test.ts src/features/location/locationObservationRecorder.ts src/features/location/__tests__/locationObservationRecorder.test.ts src/features/location/locationRecordingSession.ts src/features/location/__tests__/locationRecordingSession.test.ts src/features/location/__tests__/backgroundLocationTask.test.ts docs/data-storage.md docs/architecture.md
+git commit -m "fix(location): Visited Grid補間起点を永続化"
+```
+
+### Task 7: 端末時計巻き戻り後の観測記録を復旧
+
+**Files:**
+
+- Create: `src/features/location/locationObservationOrder.ts`
+- Create: `src/features/location/__tests__/locationObservationOrder.test.ts`
+- Modify: `src/features/location/locationObservationRecorder.ts`
+- Modify: `src/features/location/__tests__/locationObservationRecorder.test.ts`
+- Modify: `docs/data-storage.md`
+
+**Interfaces:**
+
+- Produces: `MAX_FUTURE_OBSERVATION_SKEW_MS = 60 * 60 * 1000`
+- Produces: `isStaleLocationObservation(lastObservedAt: string | null, recordedAt: string, processedAt: string): boolean`
+- Preserves: 信頼できる同時刻・過去観測はstale、未来へ進みすぎた永続ガードは無効
+
+- [ ] **Step 1: 観測順序の失敗テストを書く**
+
+```typescript
+it('最終観測日時が処理時刻より1時間を超えて未来ならガードを無効にする', () => {
+  expect(isStaleLocationObservation('2026-08-24T12:00:00.000Z', '2026-08-23T12:00:00.000Z', '2026-08-23T12:00:01.000Z')).toBe(false);
+});
+
+it('信頼できる最終観測日時以前の観測は古いと判定する', () => {
+  expect(isStaleLocationObservation('2026-08-23T12:00:00.000Z', '2026-08-23T11:59:59.000Z', '2026-08-23T12:00:01.000Z')).toBe(true);
+});
+```
+
+- [ ] **Step 2: 観測順序テストを実行してREDを確認する**
+
+Run: `npm test -- --runInBand src/features/location/__tests__/locationObservationOrder.test.ts`
+
+Expected: モジュールが存在せずFAIL。
+
+- [ ] **Step 3: 純粋な観測順序判定を実装する**
+
+3日時を `Date.parse` し、永続ガードと処理時刻が有限で差が1時間以内の場合だけ、ISO日時の単調増加判定を適用する。不正または1時間超の未来ガードは記録を恒久停止させないため無効とする。
+
+- [ ] **Step 4: Recorder復旧の失敗テストを書く**
+
+未来の `lastObservedAt` と現在の `rawPoint` / `now` を渡し、`stale` にならずGPS点・Grid・状態を更新し、状態の `lastObservedAt` が現在観測へ戻ることを検証する。通常のstaleテストは維持する。
+
+- [ ] **Step 5: Recorderへ観測順序判定を接続する**
+
+直接の文字列比較を `isStaleLocationObservation` へ置き換える。重複観測は同じ配信を3点として数えないため状態・Gridを進めない契約をJSDocへ明記し、既存duplicateテストを維持する。
+
+- [ ] **Step 6: Task 7を検証してコミットする**
+
+Run:
+
+```bash
+npm test -- --runInBand src/features/location/__tests__/locationObservationOrder.test.ts src/features/location/__tests__/locationObservationRecorder.test.ts
+npm run typecheck
+npm run format:check
+git diff --check
+```
+
+Commit:
+
+```bash
+git add src/features/location/locationObservationOrder.ts src/features/location/__tests__/locationObservationOrder.test.ts src/features/location/locationObservationRecorder.ts src/features/location/__tests__/locationObservationRecorder.test.ts docs/data-storage.md
+git commit -m "fix(location): 端末時計巻き戻り後の記録を復旧"
+```
+
+### Task 8: GPS点挿入と日別距離更新を安全側へ統一
+
+**Files:**
+
+- Modify: `src/features/logs/logRepository.ts`
+- Modify: `src/features/logs/__tests__/logRepository.test.ts`
+- Modify: `docs/data-storage.md`
+
+**Interfaces:**
+
+- Preserves: `insertLocationPointInCurrentTransaction(...): Promise<InsertedLocationPointResult | null>`
+- Removes: 未使用の `insertLocationPoint(point): Promise<number>`
+- Changes: 重複だけ `null`、他のSQLite制約違反はreject
+- Changes: 既存NULL距離はNULLを維持
+
+- [ ] **Step 1: 制約・NULL距離・不明changesの失敗テストを書く**
+
+`logRepository.test.ts` に次を追加・更新する。
+
+```typescript
+expect(insertSql).not.toContain('INSERT OR IGNORE');
+expect(insertSql).toContain('ON CONFLICT(recorded_at, latitude, longitude) DO NOTHING');
+
+mockTxn.runAsync.mockRejectedValueOnce(new Error('NOT NULL constraint failed'));
+const invalidPoint = { ...point(35, 139), latitude: null as unknown as number };
+await expect(insertLocationPointInCurrentTransaction(invalidPoint, '2026-08-23T00:00:30.000Z', mockTxn as never)).rejects.toThrow(
+  'NOT NULL constraint failed',
+);
+
+expect(dailySql).toContain('WHEN daily_logs.distance_meters IS NULL THEN NULL');
+```
+
+`changes` が `undefined` の結果では前後点と日別集計へ進まずNULLを返すこと、前後点SELECTの2回目が1回目の解決後に呼ばれることも検証する。
+
+- [ ] **Step 2: Repositoryテストを実行してREDを確認する**
+
+Run: `npm test -- --runInBand src/features/logs/__tests__/logRepository.test.ts`
+
+Expected: `INSERT OR IGNORE`、COALESCE、成功側フォールバック、並行SELECTのためFAIL。
+
+- [ ] **Step 3: 挿入SQLと結果判定を修正する**
+
+```sql
+INSERT INTO location_points (...) VALUES (...)
+ON CONFLICT(recorded_at, latitude, longitude) DO NOTHING
+```
+
+`(insertResult.changes ?? 0) === 0` ならNULLを返す。これにより一意制約だけ既存データ優先とし、NOT NULLなど他の失敗は例外として呼び出し元へ伝える。
+
+- [ ] **Step 4: 前後点を逐次取得しNULL距離を維持する**
+
+`Promise.all` を2つの `await runner.getFirstAsync` へ置き換える。日別集計の競合更新は次に変更する。
+
+```sql
+distance_meters = CASE
+  WHEN daily_logs.distance_meters IS NULL THEN NULL
+  ELSE daily_logs.distance_meters + excluded.distance_meters
+END
+```
+
+- [ ] **Step 5: 未使用の単発挿入APIを削除する**
+
+`insertLocationPoint` と、それだけを対象にした例外契約を削除する。距離計算テストは `insertLocationPointInCurrentTransaction` を直接呼ぶ形へ維持し、時系列途中挿入が将来の利用でも壊れない安全網であることをJSDocへ記載する。
+
+- [ ] **Step 6: ドキュメントを同期する**
+
+`docs/data-storage.md` に、一意制約だけが既存データ優先であることと、NULL距離は全点フォールバックのためNULLを維持することを明記する。
+
+- [ ] **Step 7: Task 8を検証してコミットする**
+
+Run:
+
+```bash
+npm test -- --runInBand src/features/logs/__tests__/logRepository.test.ts src/features/logs/__tests__/locationDistanceDelta.test.ts src/features/location/__tests__/locationRecordingSession.test.ts
+npm run typecheck
+npm run format:check
+git diff --check
+```
+
+Commit:
+
+```bash
+git add src/features/logs/logRepository.ts src/features/logs/__tests__/logRepository.test.ts docs/data-storage.md
+git commit -m "fix(logs): GPS点挿入とNULL距離更新を安全化"
+```
+
+### Task 9: PRレビュー対応の最終検証とスレッド解決
+
+**Files:**
+
+- None: コードとドキュメントはTask 6〜8で確定し、このTaskはread-only検証とGitHubスレッド操作だけを行う
+
+**Interfaces:**
+
+- Consumes: Task 6〜8の確定したスキーマ・観測・GPS保存契約
+- Produces: PR #163 headの全体検証証跡と9スレッドへの技術的返信
+
+- [ ] **Step 1: 対象テストをまとめて実行する**
+
+Run:
+
+```bash
+npm test -- --runInBand src/db/__tests__/database.test.ts src/features/location/__tests__/locationRecordingStateRepository.test.ts src/features/location/__tests__/locationObservationOrder.test.ts src/features/location/__tests__/locationObservationRecorder.test.ts src/features/location/__tests__/locationRecordingSession.test.ts src/features/location/__tests__/backgroundLocationTask.test.ts src/features/logs/__tests__/logRepository.test.ts src/features/logs/__tests__/locationDistanceDelta.test.ts src/features/location/__tests__/visitedCellRepository.test.ts
+```
+
+- [ ] **Step 2: 静的検証と全Jestを実行する**
+
+Run:
+
+```bash
+npm run typecheck
+npm run lint
+npm run format:check
+git diff --check
+npm test -- --runInBand --silent
+```
+
+Expected: 全コマンドexit 0、lint error 0、全suite / test PASS。
+
+- [ ] **Step 3: pushして各レビューへ返信する**
+
+Task 6〜8のコミットを `codex/location-recording-integrity` へpushする。各スレッドへ対応コミットと検証内容を返信する。重複観測のスレッドには、同一観測の再配信だけで3点連続を満たさないため現行挙動を維持し、JSDocとテストで契約を明記したことを説明する。
+
+- [ ] **Step 4: 対応済みスレッドをresolveする**
+
+返信済みの9スレッドだけをresolveし、GraphQLで `isResolved: false` が0件、PR headとローカル/remote headが一致することを確認する。

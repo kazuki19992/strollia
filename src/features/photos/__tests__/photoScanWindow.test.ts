@@ -83,7 +83,23 @@ describe('突き合わせ条件の組み立て createPhotoAssetReconciliation', 
         outcomes: [outcome({ assetId: 'asset-1' })],
         hasNextPage: true,
       }),
-    ).toEqual({ scannedEntireLibrary: false, oldestTakenAt: new Date(1000).toISOString(), retainedAssetIds: ['asset-1'] });
+    ).toEqual({ scannedEntireLibrary: false, exclusiveOldestTakenAt: new Date(1000).toISOString(), retainedAssetIds: ['asset-1'] });
+  });
+
+  it('下限は排他として返すため、ページ内最古と同じ撮影日時の写真は窓の外に置かれる', () => {
+    // バースト撮影などで同一時刻の写真がページ境界をまたぐと、次ページ側の未走査写真を
+    // 「確認できなかった」と誤判定して削除してしまう。下限を排他にして境界時刻を窓から外す
+    const reconciliation = createPhotoAssetReconciliation({
+      assets: [{ creationTime: 2000 }, { creationTime: 1000 }, { creationTime: 1000 }],
+      outcomes: [outcome({ assetId: 'asset-1' })],
+      hasNextPage: true,
+    });
+
+    expect(reconciliation).toEqual({
+      scannedEntireLibrary: false,
+      exclusiveOldestTakenAt: new Date(1000).toISOString(),
+      retainedAssetIds: ['asset-1'],
+    });
   });
 
   it('続きのページがあり下限を計算できない場合は突き合わせを行わない', () => {
@@ -126,6 +142,6 @@ describe('突き合わせ条件の組み立て createPhotoAssetReconciliation', 
         outcomes: [outcome({ assetId: 'asset-1' })],
         hasNextPage: undefined as unknown as boolean,
       }),
-    ).toEqual({ scannedEntireLibrary: false, oldestTakenAt: new Date(1000).toISOString(), retainedAssetIds: ['asset-1'] });
+    ).toEqual({ scannedEntireLibrary: false, exclusiveOldestTakenAt: new Date(1000).toISOString(), retainedAssetIds: ['asset-1'] });
   });
 });

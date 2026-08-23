@@ -52,8 +52,12 @@ export type PhotoAssetReconciliation = {
   | {
       /** ライブラリ全体を走査し終えたか。 */
       scannedEntireLibrary: false;
-      /** 走査済み時間窓の下限(ISO 8601)。この日時以降の `taken_at` を持つ行だけが対象。 */
-      oldestTakenAt: string;
+      /**
+       * 走査済み時間窓の**排他**下限(ISO 8601)。この日時**より新しい** `taken_at` を持つ行だけが対象。
+       *
+       * 境界時刻ちょうどの行は対象にしない。理由は `resolveScannedWindowOldestTakenAt` のJSDocを参照。
+       */
+      exclusiveOldestTakenAt: string;
     }
 );
 
@@ -76,8 +80,14 @@ export type CreatePhotoAssetReconciliationParams = {
  *
  * 撮影日時を持たないアセット(iOSに実在する)や0以下・非有限の値は、時刻として信用できないため除外する。
  *
+ * **この下限は排他として扱う**(`taken_at > 下限` のみ対象)。`creationTime` は一意なカーソルではなく、
+ * バースト撮影などで同一時刻の写真が複数枚あると、それがページ境界をまたぎうる。境界時刻を両端閉区間で
+ * 含めると、次ページ側の**実在するが未走査の写真**が `retainedAssetIds` に無いため削除され、走査上限の
+ * 外なので後の走査でも復活しない。「削除された写真が境界時刻ぶんだけ残りうる」ことを受け入れる代わりに
+ * 「実在する写真を消さない」を選ぶ、意図的な安全側の判断である。
+ *
  * @param assets - `getAssetsAsync` が返したページ内の全アセット。
- * @returns 最も古い撮影日時のISO 8601文字列。ひとつも算出できない場合はnull。
+ * @returns 最も古い撮影日時のISO 8601文字列(排他下限)。ひとつも算出できない場合はnull。
  */
 export function resolveScannedWindowOldestTakenAt(assets: readonly ScannedAsset[]): string | null {
   let oldestCreationTime: number | null = null;
@@ -125,8 +135,8 @@ export function resolveRetainedAssetIds(outcomes: readonly ScannedAssetOutcome[]
  * - `hasNextPage === false`: ライブラリ全体を見終わったので窓は全期間になる。
  *   撮影日時が取れなくても突き合わせできる(`taken_at` がNULLの行も対象)。
  *   ページが空のままここへ来た場合は「ライブラリが空」を意味し、保存済みの行はすべて削除対象になる
- * - `hasNextPage === true`: 窓は下限付きになる。下限を計算できない場合は窓の内外を判定できないため、
- *   **突き合わせ自体を行わない**(nullを返す)
+ * - `hasNextPage === true`: 窓は排他下限付きになる(境界時刻ちょうどの行は対象外)。下限を計算できない
+ *   場合は窓の内外を判定できないため、**突き合わせ自体を行わない**(nullを返す)
  * - `hasNextPage` が真偽値として得られない想定外の場合も、`=== false` でのみ全期間と判定することで
  *   「全部見た」と誤認した削除を防ぐ
  *
@@ -144,11 +154,11 @@ export function createPhotoAssetReconciliation({
     return { scannedEntireLibrary: true, retainedAssetIds };
   }
 
-  const oldestTakenAt = resolveScannedWindowOldestTakenAt(assets);
+  const exclusiveOldestTakenAt = resolveScannedWindowOldestTakenAt(assets);
 
-  if (oldestTakenAt === null) {
+  if (exclusiveOldestTakenAt === null) {
     return null;
   }
 
-  return { scannedEntireLibrary: false, oldestTakenAt, retainedAssetIds };
+  return { scannedEntireLibrary: false, exclusiveOldestTakenAt, retainedAssetIds };
 }

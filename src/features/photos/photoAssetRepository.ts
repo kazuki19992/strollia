@@ -44,6 +44,9 @@ const photoAssetColumns = `
  * 窓の中にありながら `retainedAssetIds` に含まれない行は、写真ライブラリから削除されたか
  * ジオタグを失ったかのどちらかである。残しておくと画像の読み込みに失敗し、地図上に空のバブルが出る。
  *
+ * 窓の下限は**排他**(`taken_at > ?`)である。境界時刻ちょうどの行を消さないことで、同一撮影日時の
+ * 写真がページ境界をまたいだときに実在する写真を削除してしまう事故を防ぐ。
+ *
  * `taken_at` はすべて `new Date(ms).toISOString()` 由来のUTC固定長表記なので、辞書順比較が時刻順比較と一致する。
  *
  * **SQLパラメータ数について**: `NOT IN` のプレースホルダはアセット1件につき1つ増える。現状は1ページ
@@ -64,8 +67,10 @@ async function deleteUnconfirmedPhotoAssets(txn: ExclusiveTransaction, reconcili
   if (!reconciliation.scannedEntireLibrary) {
     // 撮影日時が不明な行は窓の内外を判定できないため、明示的に対象から外す(安全側)
     conditions.push('taken_at IS NOT NULL');
-    conditions.push('taken_at >= ?');
-    params.push(reconciliation.oldestTakenAt);
+    // 下限は排他。境界時刻ちょうどの行は「未走査の次ページに実在する写真」でありうるため消さない
+    // (理由は `resolveScannedWindowOldestTakenAt` のJSDocを参照)
+    conditions.push('taken_at > ?');
+    params.push(reconciliation.exclusiveOldestTakenAt);
   }
 
   if (reconciliation.retainedAssetIds.length > 0) {

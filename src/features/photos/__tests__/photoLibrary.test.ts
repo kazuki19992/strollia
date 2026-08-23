@@ -423,7 +423,7 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
 
     expect(reconciliationArgument()).toEqual({
       scannedEntireLibrary: false,
-      oldestTakenAt: new Date(2000).toISOString(),
+      exclusiveOldestTakenAt: new Date(2000).toISOString(),
       retainedAssetIds: ['asset-1'],
     });
   });
@@ -479,7 +479,7 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
 
     await loadGeotaggedPhotos();
 
-    expect(reconciliationArgument()).toMatchObject({ oldestTakenAt: new Date(1000).toISOString() });
+    expect(reconciliationArgument()).toMatchObject({ exclusiveOldestTakenAt: new Date(1000).toISOString() });
   });
 
   it('ライブラリ末尾まで走査した場合は全期間の突き合わせになる', async () => {

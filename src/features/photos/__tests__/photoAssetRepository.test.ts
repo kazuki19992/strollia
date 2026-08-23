@@ -134,23 +134,36 @@ describe('写真メタデータリポジトリ savePhotoAssets の走査済み�
     expect(findDeleteCall()?.sql).toContain('DELETE FROM photo_assets');
   });
 
-  it('窓が部分的な場合は下限以降かつ残す対象以外の行だけを削除する', async () => {
+  it('窓が部分的な場合は下限より新しくかつ残す対象以外の行だけを削除する', async () => {
     await savePhotoAssets([], {
       scannedEntireLibrary: false,
-      oldestTakenAt: '2026-08-01T00:00:00.000Z',
+      exclusiveOldestTakenAt: '2026-08-01T00:00:00.000Z',
       retainedAssetIds: ['asset-1', 'asset-2'],
     });
 
     const deleteCall = findDeleteCall();
-    expect(deleteCall?.sql).toContain('taken_at >= ?');
+    expect(deleteCall?.sql).toContain('taken_at > ?');
     expect(deleteCall?.sql).toContain('asset_id NOT IN (?, ?)');
     expect(deleteCall?.params).toEqual(['2026-08-01T00:00:00.000Z', 'asset-1', 'asset-2']);
+  });
+
+  it('窓の下限と同じ撮影日時の行は削除しない(ページ境界の同時刻写真を消さないため)', async () => {
+    await savePhotoAssets([], {
+      scannedEntireLibrary: false,
+      exclusiveOldestTakenAt: '2026-08-01T00:00:00.000Z',
+      retainedAssetIds: [],
+    });
+
+    // creationTime は一意なカーソルではないため、境界時刻ちょうどの行は
+    // 「未走査の次ページに実在する写真」でありうる。両端閉区間(>=)にすると実在する写真を消す
+    expect(findDeleteCall()?.sql).not.toContain('taken_at >= ?');
+    expect(findDeleteCall()?.sql).toContain('taken_at > ?');
   });
 
   it('窓が部分的な場合はtaken_atがNULLの行を削除対象にしない', async () => {
     await savePhotoAssets([], {
       scannedEntireLibrary: false,
-      oldestTakenAt: '2026-08-01T00:00:00.000Z',
+      exclusiveOldestTakenAt: '2026-08-01T00:00:00.000Z',
       retainedAssetIds: [],
     });
 

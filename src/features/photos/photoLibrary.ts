@@ -1,6 +1,9 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
+import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
+import { createPhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
+import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 import { mapWithConcurrency } from '@/utils/concurrency';
 
 /** 地図上に表示するジオタグ付き写真。 */
@@ -19,6 +22,21 @@ export type MapPhoto = {
   width: number;
   /** 写真の高さ。 */
   height: number;
+};
+
+/**
+ * 写真ライブラリ走査の結果。
+ *
+ * 走査できた写真と、その結果を `photo_assets` へ保存できたかを**分けて**返す。
+ * 保存に失敗すると `photo_assets` は空のままなので、呼び出し側がビューポート検索に切り替えると
+ * 「走査はできているのに1枚も表示されない」状態になってしまう。保存の成否を伝えることで、
+ * 呼び出し側が走査結果をそのまま表示するフォールバックへ倒せるようにしている。
+ */
+export type GeotaggedPhotoScanResult = {
+  /** 走査で得られたジオタグ付き写真。 */
+  photos: MapPhoto[];
+  /** 走査結果を `photo_assets` へ保存できたかどうか。falseの場合キャッシュは最新化されていない。 */
+  isCacheSaved: boolean;
 };
 
 const DEFAULT_PHOTO_SCAN_LIMIT = 200;
@@ -41,6 +59,32 @@ export const PHOTO_INFO_CONCURRENCY = 4;
  */
 export function hasFullPhotoAccess(permission: MediaLibrary.PermissionResponse): boolean {
   return permission.granted && permission.accessPrivileges !== 'limited' && permission.accessPrivileges !== 'none';
+}
+
+/**
+ * 走査済み時間窓との突き合わせ(削除)を行ってよい権限状態かを判定する。
+ *
+ * **限定アクセスでは突き合わせを行ってはいけない。** 限定アクセスの `getAssetsAsync` は
+ * ユーザーが選択した写真だけを、しかも `hasNextPage: false` で返す。その結果を素直に突き合わせると
+ * 「ライブラリ全体を見終えた」と誤認し、選択されていない写真の行をすべて削除してしまう。
+ * 未選択の写真がライブラリに実在するのか削除されたのかは限定アクセスでは**区別できない**ため、
+ * `getAssetInfoAsync` が reject したアセットの行を残すのと同じく「判断できないものは消さない」に倒す。
+ *
+ * 権限の参照自体に失敗した場合もフルアクセスと言い切れないため、同様に突き合わせを行わない。
+ *
+ * @returns 突き合わせを行ってよい場合はtrue。
+ */
+async function canReconcilePhotoAssets(): Promise<boolean> {
+  try {
+    // 参照のみ。権限の要求(ダイアログ表示)は写真表示をONにする導線の責務なので、ここでは行わない
+    const permission = await MediaLibrary.getPermissionsAsync();
+
+    return hasFullPhotoAccess(permission);
+  } catch (error: unknown) {
+    console.warn('Failed to read photo library permission:', error);
+
+    return false;
+  }
 }
 
 /**
@@ -115,15 +159,101 @@ export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
 }
 
 /**
+ * MediaLibraryの詳細アセットを `photo_assets` の保存レコードへ変換する。
+ *
+ * `MapPhoto.uri` が `localUri ?? uri` を採るのに対し、**保存するのは `asset.uri` だけ**である。
+ * `localUri` は `requestContentEditingInput` が返す一時パスで、アプリ再起動をまたいで
+ * 有効である保証がないため永続化してはいけない(親設計書 §4.2)。
+ *
+ * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
+ * @returns 有効なジオタグがある写真の場合は保存レコード、ない場合はnull。
+ */
+export function toPhotoAssetRecord(asset: MediaLibrary.AssetInfo): PhotoAssetRecord | null {
+  if (!asset.location) {
+    return null;
+  }
+
+  const latitude = toFiniteCoordinate(asset.location.latitude);
+  const longitude = toFiniteCoordinate(asset.location.longitude);
+
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return {
+    assetId: asset.id,
+    latitude,
+    longitude,
+    // iOSの PHAsset.creationDate は optional で、取得できないアセットが存在する。
+    // 0 や不正値をエポック時刻として保存しないよう null へ倒す
+    takenAt: Number.isFinite(asset.creationTime) && asset.creationTime > 0 ? new Date(asset.creationTime).toISOString() : null,
+    uri: asset.uri,
+    width: asset.width,
+    height: asset.height,
+  };
+}
+
+/**
+ * `photo_assets` に保存済みのメタデータを地図表示用写真へ変換する。
+ *
+ * **保存済みデータから `MapPhoto` を組み立てる箇所はここ1つに閉じている。**
+ * 表示に使うURIの決め方(現状は保存した安定URIをそのまま使う)を変えるときは、必ずこの関数だけを
+ * 直す。親設計書 §9-2 のとおり「`uri` 単独でサムネイル表示できるか」は実機未検証であり、
+ * 描画できなかった場合は表示直前に `getAssetInfoAsync` で `localUri` を解決する方式へ
+ * 切り替える必要がある。その手戻りをこの関数の内側だけに閉じ込めるため、
+ * 呼び出し側でURIを組み立て直してはいけない。
+ *
+ * @param record - `photo_assets` から取得したメタデータ。
+ * @returns 地図表示用の写真。
+ */
+export function toMapPhotoFromPhotoAsset(record: PhotoAssetRecord): MapPhoto {
+  const creationTime = record.takenAt === null ? Number.NaN : Date.parse(record.takenAt);
+
+  return {
+    id: record.assetId,
+    uri: record.uri,
+    latitude: record.latitude,
+    longitude: record.longitude,
+    // 撮影日時を持たないアセットは iOS に実在する。表示順の基準として 0(最古扱い)へ倒す
+    creationTime: Number.isNaN(creationTime) ? 0 : creationTime,
+    width: record.width,
+    height: record.height,
+  };
+}
+
+/**
+ * 表示範囲に含まれるジオタグ付き写真を `photo_assets` から読み込む。
+ *
+ * 写真ライブラリの走査(重いデコードを伴う)は行わず、保存済みメタデータだけを参照する。
+ *
+ * @param bounds - 検索対象の緯度経度境界。
+ * @returns 範囲内の地図表示用写真。
+ */
+export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): Promise<MapPhoto[]> {
+  const records = await getPhotoAssetsInBounds(bounds);
+
+  return records.map(toMapPhotoFromPhotoAsset);
+}
+
+/**
  * 写真ライブラリからジオタグ付き写真だけを読み込む。
+ *
+ * 読み込んだメタデータは `photo_assets` へ保存し、ビューポート検索の対象にする。
+ * 保存は表示の付随処理であり、失敗しても写真表示そのものは継続させる(ログのみ残す)。
+ * ただし保存の成否は `isCacheSaved` として返す。保存できていないままビューポート検索へ進むと
+ * 空のキャッシュを引いてしまうため、呼び出し側が走査結果を直接表示できるようにするためである。
+ *
+ * あわせて、走査済みの時間窓に限って保存済みの行と突き合わせる。窓の中にありながら今回の走査で
+ * 確認できなかった行は、写真ライブラリから削除されたかジオタグを失ったものなので削除する
+ * (残すと画像を読めず地図上に空のバブルが出る)。判定条件は `createPhotoAssetReconciliation` を参照。
  *
  * 実機でのみ再現する「写真が表示されない」不具合の切り分けのため、末尾で件数の診断を
  * Sentryへ送る(調査用の一時的な計装。詳細は `docs/photo-geotag.md`)。
  *
  * @param limit - 走査する最新写真の最大件数。初期表示の重さを抑えるため上限を持つ。
- * @returns 地図上に表示可能なジオタグ付き写真一覧。
+ * @returns 地図上に表示可能なジオタグ付き写真一覧と、キャッシュ保存の成否。
  */
-export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<MapPhoto[]> {
+export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<GeotaggedPhotoScanResult> {
   const startedAtMs = Date.now();
 
   const page = await MediaLibrary.getAssetsAsync({
@@ -145,6 +275,38 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     return photo ? [photo] : [];
   });
 
+  const assetRecords = details.flatMap((result) => {
+    if (result.status !== 'fulfilled') {
+      return [];
+    }
+
+    const record = toPhotoAssetRecord(result.value);
+    return record ? [record] : [];
+  });
+
+  // 走査済み時間窓との突き合わせ用に、ページ内アセットごとの結果を組み立てる。
+  // `mapWithConcurrency` は入力順を保つため、`details[index]` は `page.assets[index]` の結果である。
+  const savedAssetIds = new Set(assetRecords.map((record) => record.assetId));
+  const outcomes = page.assets.map((asset, index) => ({
+    assetId: asset.id,
+    isInfoResolved: details[index].status === 'fulfilled',
+    isSaved: savedAssetIds.has(asset.id),
+  }));
+  // フルアクセスが無いときは走査結果が「ライブラリの実態」を表さないため、突き合わせ(削除)を丸ごと
+  // スキップして保存(UPSERT)だけ行う。理由は `canReconcilePhotoAssets` を参照
+  const reconciliation = (await canReconcilePhotoAssets())
+    ? createPhotoAssetReconciliation({ assets: page.assets, outcomes, hasNextPage: page.hasNextPage })
+    : null;
+
+  const isCacheSaved = await savePhotoAssets(assetRecords, reconciliation).then(
+    () => true,
+    (error: unknown) => {
+      console.warn('Failed to save photo assets:', error);
+
+      return false;
+    },
+  );
+
   const assetInfoFulfilledCount = details.filter((result) => result.status === 'fulfilled').length;
 
   reportPhotoMapDiagnostics('load', {
@@ -157,5 +319,5 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     durationMs: Date.now() - startedAtMs,
   });
 
-  return photos;
+  return { photos, isCacheSaved };
 }

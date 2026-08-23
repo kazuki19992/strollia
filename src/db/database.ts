@@ -186,6 +186,19 @@ async function runDatabaseInitialization(): Promise<void> {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS photo_assets (
+      asset_id TEXT PRIMARY KEY,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      taken_at TEXT NULL,
+      uri TEXT NOT NULL,
+      width INTEGER NOT NULL,
+      height INTEGER NOT NULL,
+      last_seen_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 
@@ -224,6 +237,12 @@ async function runDatabaseInitialization(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_stay_places_created_at_id
       ON stay_places(created_at, id);
+
+    CREATE INDEX IF NOT EXISTS idx_photo_assets_latitude_longitude
+      ON photo_assets(latitude, longitude);
+
+    CREATE INDEX IF NOT EXISTS idx_photo_assets_taken_at
+      ON photo_assets(taken_at);
   `);
 
   await ensureColumn('achievement_unlocks', 'unlocked_local_date', 'TEXT NULL');

@@ -137,6 +137,22 @@ describe('database initializeDatabase マイグレーション', () => {
       expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS import_history');
     });
 
+    it('photo_assets テーブルと検索用インデックスが含まれる', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS photo_assets');
+      expect(firstCall).toContain('asset_id TEXT PRIMARY KEY');
+      // ビューポート絞り込み(緯度経度のBETWEEN)を効かせるための複合インデックス
+      expect(firstCall).toContain('idx_photo_assets_latitude_longitude');
+      expect(firstCall).toContain('ON photo_assets(latitude, longitude)');
+      // taken_at のインデックスは 2-c 以降の期間絞り込みに向けた準備工事
+      expect(firstCall).toContain('idx_photo_assets_taken_at');
+      expect(firstCall).toContain('ON photo_assets(taken_at)');
+    });
+
     it('stay_places テーブルと作成順インデックスが含まれる', async () => {
       (db.getAllAsync as jest.Mock).mockResolvedValue([]);
 

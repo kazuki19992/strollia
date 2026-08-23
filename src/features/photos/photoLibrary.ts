@@ -2,6 +2,7 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
+import { resolvePhotoDisplayUri } from '@/features/photos/photoDisplayUri';
 import { createPhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
 import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 import { mapWithConcurrency } from '@/utils/concurrency';
@@ -42,12 +43,16 @@ export type GeotaggedPhotoScanResult = {
 const DEFAULT_PHOTO_SCAN_LIMIT = 200;
 
 /**
- * getAssetInfoAsync の同時実行数。
+ * 写真ライブラリへの問い合わせ(`getAssetInfoAsync` / 表示用URIの解決)の同時実行数。
  *
- * ネイティブ実装(iOS)は完了ブロック内でフル解像度画像をメインキュー上でデコードするため、
- * 一斉並列で発行するとメインスレッドが長時間ブロックされ App Hang を引き起こす
+ * `getAssetInfoAsync` のネイティブ実装(iOS)は完了ブロック内でフル解像度画像をメインキュー上で
+ * デコードするため、一斉並列で発行するとメインスレッドが長時間ブロックされ App Hang を引き起こす
  * (2026-08-08 Sentry 観測: 200並列でメインスレッドが2秒以上停止)。
  * 同時実行数を絞ることでメインキューへ一度に積まれるデコード量を抑える。
+ *
+ * 表示用URIの解決(`resolvePhotoDisplayUri`)はデコードを伴わないが、`requestContentEditingInput` は
+ * それ自体がI/Oを伴う非同期処理であり、ビューポート内の写真ぶんが一斉に走ると同じ轍を踏みうる。
+ * 別の値を持つ理由もないため同じ上限を共有する。
  */
 export const PHOTO_INFO_CONCURRENCY = 4;
 
@@ -197,14 +202,12 @@ export function toPhotoAssetRecord(asset: MediaLibrary.AssetInfo): PhotoAssetRec
  * `photo_assets` に保存済みのメタデータを地図表示用写真へ変換する。
  *
  * **保存済みデータから `MapPhoto` を組み立てる箇所はここ1つに閉じている。**
- * 表示に使うURIの決め方(現状は保存した安定URIをそのまま使う)を変えるときは、必ずこの関数だけを
- * 直す。親設計書 §9-2 のとおり「`uri` 単独でサムネイル表示できるか」は実機未検証であり、
- * 描画できなかった場合は表示直前に `getAssetInfoAsync` で `localUri` を解決する方式へ
- * 切り替える必要がある。その手戻りをこの関数の内側だけに閉じ込めるため、
- * 呼び出し側でURIを組み立て直してはいけない。
+ * ここで入る `uri` は保存した安定URI(iOS: `ph://…`)であり、**そのままでは `<Image>` で描画できない**
+ * (親設計書 §9-2 は検証の結果「できない」で確定した)。描画できる形への変換は
+ * `resolveMapPhotoDisplayUris` が担うため、この関数の結果を直接表示へ流してはいけない。
  *
  * @param record - `photo_assets` から取得したメタデータ。
- * @returns 地図表示用の写真。
+ * @returns 表示用URI未解決の地図表示用写真。
  */
 export function toMapPhotoFromPhotoAsset(record: PhotoAssetRecord): MapPhoto {
   const creationTime = record.takenAt === null ? Number.NaN : Date.parse(record.takenAt);
@@ -222,17 +225,45 @@ export function toMapPhotoFromPhotoAsset(record: PhotoAssetRecord): MapPhoto {
 }
 
 /**
+ * 保存済みの安定URIを、`<Image>` で描画できる表示用URIへ置き換える。
+ *
+ * 解決に失敗した写真は**結果から除外する**。URIが解決できない写真をそのまま返すと、地図上に
+ * 画像の出ない空のバブルが残り続けてしまう(今回直した不具合そのもの)。除外すればマーカー自体が
+ * 出ないだけで済み、失敗はキャッシュされないため次回の読み込みで復帰できる。
+ *
+ * 解決を一斉並列で発行しないよう、写真ライブラリへの他の問い合わせと同じ上限で絞る。
+ *
+ * @param photos - 表示用URI未解決の写真。
+ * @returns 表示用URIを解決できた写真のみ。入力順を保つ。
+ */
+async function resolveMapPhotoDisplayUris(photos: MapPhoto[]): Promise<MapPhoto[]> {
+  const resolvedUris = await mapWithConcurrency(photos, PHOTO_INFO_CONCURRENCY, (photo) => resolvePhotoDisplayUri(photo.id, photo.uri));
+
+  return photos.flatMap((photo, index) => {
+    const result = resolvedUris[index];
+    if (result.status !== 'fulfilled') {
+      return [];
+    }
+
+    return [{ ...photo, uri: result.value }];
+  });
+}
+
+/**
  * 表示範囲に含まれるジオタグ付き写真を `photo_assets` から読み込む。
  *
  * 写真ライブラリの走査(重いデコードを伴う)は行わず、保存済みメタデータだけを参照する。
+ * ただし保存されている `ph://` URIは `<Image>` で描画できないため、表示用URIだけは都度解決する
+ * (理由は `resolvePhotoDisplayUri` を参照)。解決結果はセッション内のメモリキャッシュに載るため、
+ * パンやズームを繰り返しても同じ写真の解決は1回で済む。
  *
  * @param bounds - 検索対象の緯度経度境界。
- * @returns 範囲内の地図表示用写真。
+ * @returns 範囲内の地図表示用写真。表示用URIを解決できなかった写真は含まない。
  */
 export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): Promise<MapPhoto[]> {
   const records = await getPhotoAssetsInBounds(bounds);
 
-  return records.map(toMapPhotoFromPhotoAsset);
+  return resolveMapPhotoDisplayUris(records.map(toMapPhotoFromPhotoAsset));
 }
 
 /**

@@ -61,6 +61,9 @@ export async function createLocationRecordingSession(options: LocationRecordingS
       const activeStayPlaces: ActiveStayPlacesSnapshot = await getActiveStayPlacesSnapshot(options.getActiveStayPlaces);
       /** 保存を完了した位置情報の数。途中失敗時に未確定分をバッファへ戻すために追跡する。 */
       let processedCount = 0;
+      /** 後続観測が失敗しても、先に確定した点の実績処理後に元のエラーを返すため保持する。 */
+      let recordingError: unknown = undefined;
+      let hasRecordingError = false;
 
       try {
         for (const location of locationsToProcess) {
@@ -80,7 +83,8 @@ export async function createLocationRecordingSession(options: LocationRecordingS
         // 保存が成功するまで位置情報を失わないよう、未確定分(処理中に失敗した点を含む)を
         // バッファへ戻して次の記録時に受信順を保って再試行する。
         requeueLocationsToBuffer(locationsToProcess.slice(processedCount));
-        throw error;
+        recordingError = error;
+        hasRecordingError = true;
       }
 
       // GPSポイントを確定してから、逆ジオコーディングを含む実績処理を行う。
@@ -88,6 +92,10 @@ export async function createLocationRecordingSession(options: LocationRecordingS
         await processAchievementsForSavedPoint(point, locationPointId).catch((error: unknown) => {
           console.warn('Achievement processing failed:', error);
         });
+      }
+
+      if (hasRecordingError) {
+        throw recordingError;
       }
     },
   };

@@ -279,6 +279,43 @@ describe('GPXインポート優先モードのバッファリング', () => {
     expect(mockRecordLocationObservation.mock.calls[2][0].rawPoint.recordedAt).toBe(point('020').recordedAt);
   });
 
+  it('後続Recorderが失敗しても確定済み点を実績処理し、失敗観測以降だけを再キューする', async () => {
+    const recordingError = new Error('second observation failed');
+    mockRecordLocationObservation
+      .mockResolvedValueOnce({ status: 'saved', point: effectivePoint, locationPointId: 11 })
+      .mockRejectedValueOnce(recordingError)
+      .mockResolvedValue({ status: 'not-saved' });
+    const session = await createLocationRecordingSession();
+
+    await expect(session.recordLocations([firstLocation, secondLocation])).rejects.toBe(recordingError);
+
+    expect(mockProcessAchievementsForSavedPoint).toHaveBeenCalledTimes(1);
+    expect(mockProcessAchievementsForSavedPoint).toHaveBeenCalledWith(effectivePoint, 11);
+
+    await session.recordLocations([]);
+
+    expect(mockRecordLocationObservation).toHaveBeenCalledTimes(3);
+    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(3, expect.objectContaining({ rawPoint: secondPoint }));
+    expect(mockProcessAchievementsForSavedPoint).toHaveBeenCalledTimes(1);
+  });
+
+  it('確定済み点の実績処理が失敗しても後続Recorderの元エラーを再throwする', async () => {
+    const recordingError = new Error('second observation failed');
+    const achievementError = new Error('achievement failed');
+    mockRecordLocationObservation
+      .mockResolvedValueOnce({ status: 'saved', point: effectivePoint, locationPointId: 11 })
+      .mockRejectedValueOnce(recordingError);
+    mockProcessAchievementsForSavedPoint.mockRejectedValueOnce(achievementError);
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const session = await createLocationRecordingSession();
+
+    await expect(session.recordLocations([firstLocation, secondLocation])).rejects.toBe(recordingError);
+
+    expect(mockProcessAchievementsForSavedPoint).toHaveBeenCalledWith(effectivePoint, 11);
+    expect(warn).toHaveBeenCalledWith('Achievement processing failed:', achievementError);
+    warn.mockRestore();
+  });
+
   it('flushが失敗した場合は退避分をバッファへ戻し、次の記録時に受信順を保って回収する', async () => {
     const session = await createLocationRecordingSession();
     beginGpxImportPriority();

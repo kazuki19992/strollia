@@ -93,9 +93,11 @@ describe('GPSポイント保存 insertLocationPointInCurrentTransaction', () => 
     expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(2);
     const insertSql = mockTxn.runAsync.mock.calls[0][0] as string;
     const dailySql = mockTxn.runAsync.mock.calls[1][0] as string;
+    const normalizedDailySql = dailySql.replace(/\s+/g, ' ').trim();
     expect(insertSql).not.toContain('INSERT OR IGNORE');
     expect(insertSql).toContain('ON CONFLICT(recorded_at, latitude, longitude) DO NOTHING');
-    expect(dailySql).toContain('WHEN daily_logs.distance_meters IS NULL THEN NULL');
+    expect(normalizedDailySql).toContain('WHEN daily_logs.distance_meters IS NULL THEN NULL');
+    expect(normalizedDailySql).toContain('ELSE daily_logs.distance_meters + excluded.distance_meters');
     expect(mockTxn.runAsync.mock.calls[1][4]).toBe(result?.distanceDeltaMeters);
     expect(db.getFirstAsync).not.toHaveBeenCalled();
   });

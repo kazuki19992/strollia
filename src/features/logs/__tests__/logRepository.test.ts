@@ -6,7 +6,6 @@ import {
   getLocationPointsBounds,
   getLocationPointsByMonth,
   insertLocationPointInCurrentTransaction,
-  insertLocationPoint,
 } from '@/features/logs/logRepository';
 
 const mockTxn = {
@@ -37,7 +36,7 @@ function point(latitude: number, longitude: number): NewLocationPoint {
   };
 }
 
-describe('GPSポイント保存 insertLocationPoint', () => {
+describe('GPSポイント保存 insertLocationPointInCurrentTransaction', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -49,7 +48,9 @@ describe('GPSポイント保存 insertLocationPoint', () => {
     });
     mockTxn.getFirstAsync.mockResolvedValueOnce(null);
 
-    await expect(insertLocationPoint(point(35.001, 139))).resolves.toBe(100);
+    await expect(
+      insertLocationPointInCurrentTransaction(point(35.001, 139), '2026-08-23T00:00:30.000Z', mockTxn as never),
+    ).resolves.toEqual(expect.objectContaining({ locationPointId: 100 }));
 
     expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
     const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
@@ -73,7 +74,7 @@ describe('GPSポイント保存 insertLocationPoint', () => {
       snappedStayPlaceId: 1,
     } as NewLocationPoint;
 
-    await insertLocationPoint(snappedPoint);
+    await insertLocationPointInCurrentTransaction(snappedPoint, '2026-08-23T00:00:30.000Z', mockTxn as never);
 
     const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
     expect(dailySummaryArgs[4]).toBe(0);
@@ -90,9 +91,25 @@ describe('GPSポイント保存 insertLocationPoint', () => {
 
     expect(result).toEqual(expect.objectContaining({ locationPointId: 100, previousPoint, nextPoint }));
     expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(2);
-    expect(mockTxn.runAsync.mock.calls[1][0]).toContain('distance_meters = COALESCE');
+    const insertSql = mockTxn.runAsync.mock.calls[0][0] as string;
+    const dailySql = mockTxn.runAsync.mock.calls[1][0] as string;
+    expect(insertSql).not.toContain('INSERT OR IGNORE');
+    expect(insertSql).toContain('ON CONFLICT(recorded_at, latitude, longitude) DO NOTHING');
+    expect(dailySql).toContain('WHEN daily_logs.distance_meters IS NULL THEN NULL');
     expect(mockTxn.runAsync.mock.calls[1][4]).toBe(result?.distanceDeltaMeters);
     expect(db.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('GPS点のNOT NULL制約違反は呼び出し元へ伝播する', async () => {
+    mockTxn.runAsync.mockRejectedValueOnce(new Error('NOT NULL constraint failed'));
+    const invalidPoint = { ...point(35, 139), latitude: null as unknown as number };
+
+    await expect(insertLocationPointInCurrentTransaction(invalidPoint, '2026-08-23T00:00:30.000Z', mockTxn as never)).rejects.toThrow(
+      'NOT NULL constraint failed',
+    );
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.getFirstAsync).not.toHaveBeenCalled();
   });
 
   it('重複点のINSERTが無視された場合は日別集計を更新しない', async () => {
@@ -102,6 +119,35 @@ describe('GPSポイント保存 insertLocationPoint', () => {
 
     expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
     expect(mockTxn.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('INSERT結果のchangesが不明な場合は挿入成功と推測せず日別集計を更新しない', async () => {
+    mockTxn.runAsync.mockResolvedValueOnce({ lastInsertRowId: 100 });
+
+    await expect(insertLocationPointInCurrentTransaction(point(35, 139), '2026-08-23T00:00:30.000Z', mockTxn as never)).resolves.toBeNull();
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('同じrunnerの前後点SELECTは直前点の解決後に直後点を取得する', async () => {
+    const previousPoint: LocationPoint = { ...point(35, 139), id: 1 };
+    let resolvePreviousPoint: (value: LocationPoint | null) => void = () => undefined;
+    const previousPointPromise = new Promise<LocationPoint | null>((resolve) => {
+      resolvePreviousPoint = resolve;
+    });
+    mockTxn.getFirstAsync.mockImplementationOnce(() => previousPointPromise).mockResolvedValueOnce(null);
+
+    const insertion = insertLocationPointInCurrentTransaction(point(35.001, 139), '2026-08-23T00:00:30.000Z', mockTxn as never);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(1);
+
+    resolvePreviousPoint(previousPoint);
+    await insertion;
+
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(2);
   });
 });
 

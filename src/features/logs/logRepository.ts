@@ -28,24 +28,6 @@ export type InsertedLocationPointResult = {
   distanceDeltaMeters: number;
 };
 
-/** GPSポイントを保存し、日別サマリーの点数と距離を同じ排他トランザクションで更新する。 */
-export async function insertLocationPoint(point: NewLocationPoint): Promise<number> {
-  const now = new Date().toISOString();
-  const result: { inserted: InsertedLocationPointResult | null } = { inserted: null };
-
-  await withExclusiveTransaction(async (txn) => {
-    result.inserted = await insertLocationPointInCurrentTransaction(point, now, txn);
-  });
-
-  const inserted = result.inserted;
-
-  if (!inserted) {
-    throw new Error('Location point already exists.');
-  }
-
-  return inserted.locationPointId;
-}
-
 /** 同一トランザクションで最新の保存済みGPSポイントを取得する。 */
 export async function getLatestLocationPointInCurrentTransaction(runner: SQLite.SQLiteDatabase): Promise<LocationPoint | null> {
   const point = await runner.getFirstAsync<LocationPoint>(
@@ -61,7 +43,9 @@ export async function getLatestLocationPointInCurrentTransaction(runner: SQLite.
 /**
  * GPSポイントをトランザクション内で挿入し、前後区間を考慮した日別距離を更新する。
  *
- * INSERT OR IGNOREで重複を既存データ優先にし、重複時は日別集計を変更しない。
+ * GPS点の一意制約だけを既存データ優先にし、重複時は日別集計を変更しない。
+ * 通常のライブ記録は末尾追加だが、将来トランザクション内から時系列途中へ挿入されても
+ * 既存区間との距離差分だけを反映する安全網を維持する。
  */
 export async function insertLocationPointInCurrentTransaction(
   point: NewLocationPoint,
@@ -69,7 +53,7 @@ export async function insertLocationPointInCurrentTransaction(
   runner: SQLite.SQLiteDatabase,
 ): Promise<InsertedLocationPointResult | null> {
   const insertResult = await runner.runAsync(
-    `INSERT OR IGNORE INTO location_points (
+    `INSERT INTO location_points (
       recorded_at,
       local_date,
       latitude,
@@ -84,7 +68,8 @@ export async function insertLocationPointInCurrentTransaction(
       altitude_accuracy,
       source,
       created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'expo-location', ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'expo-location', ?)
+    ON CONFLICT(recorded_at, latitude, longitude) DO NOTHING`,
     point.recordedAt,
     point.localDate,
     point.latitude,
@@ -100,37 +85,35 @@ export async function insertLocationPointInCurrentTransaction(
     now,
   );
 
-  if ((insertResult.changes ?? 1) === 0) {
+  if ((insertResult.changes ?? 0) === 0) {
     return null;
   }
 
   const locationPointId = insertResult.lastInsertRowId;
-  const [previousPoint, nextPoint] = await Promise.all([
-    runner.getFirstAsync<LocationPoint>(
-      `SELECT ${pointColumns}
-       FROM location_points
-       WHERE local_date = ?
-         AND (recorded_at < ? OR (recorded_at = ? AND id < ?))
-       ORDER BY recorded_at DESC, id DESC
-       LIMIT 1`,
-      point.localDate,
-      point.recordedAt,
-      point.recordedAt,
-      locationPointId,
-    ),
-    runner.getFirstAsync<LocationPoint>(
-      `SELECT ${pointColumns}
-       FROM location_points
-       WHERE local_date = ?
-         AND (recorded_at > ? OR (recorded_at = ? AND id > ?))
-       ORDER BY recorded_at ASC, id ASC
-       LIMIT 1`,
-      point.localDate,
-      point.recordedAt,
-      point.recordedAt,
-      locationPointId,
-    ),
-  ]);
+  const previousPoint = await runner.getFirstAsync<LocationPoint>(
+    `SELECT ${pointColumns}
+     FROM location_points
+     WHERE local_date = ?
+       AND (recorded_at < ? OR (recorded_at = ? AND id < ?))
+     ORDER BY recorded_at DESC, id DESC
+     LIMIT 1`,
+    point.localDate,
+    point.recordedAt,
+    point.recordedAt,
+    locationPointId,
+  );
+  const nextPoint = await runner.getFirstAsync<LocationPoint>(
+    `SELECT ${pointColumns}
+     FROM location_points
+     WHERE local_date = ?
+       AND (recorded_at > ? OR (recorded_at = ? AND id > ?))
+     ORDER BY recorded_at ASC, id ASC
+     LIMIT 1`,
+    point.localDate,
+    point.recordedAt,
+    point.recordedAt,
+    locationPointId,
+  );
   const distanceDeltaMeters = calculateInsertedPointDistanceDeltaMeters(previousPoint ?? null, point, nextPoint ?? null);
 
   await runner.runAsync(
@@ -155,7 +138,10 @@ export async function insertLocationPointInCurrentTransaction(
         ELSE daily_logs.ended_at
       END,
       point_count = daily_logs.point_count + 1,
-      distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
+      distance_meters = CASE
+        WHEN daily_logs.distance_meters IS NULL THEN NULL
+        ELSE daily_logs.distance_meters + excluded.distance_meters
+      END,
       updated_at = excluded.updated_at`,
     point.localDate,
     point.recordedAt,

@@ -3,6 +3,7 @@ import type { Region } from 'react-native-maps';
 import {
   getPhotoViewportBounds,
   isPhotoViewportBoundsContained,
+  isWithinPhotoViewportBounds,
   PHOTO_VIEWPORT_PADDING_RATIO,
   type PhotoViewportBounds,
 } from '@/features/photos/photoViewportBounds';
@@ -11,6 +12,48 @@ import {
 function region(latitude: number, longitude: number, latitudeDelta: number, longitudeDelta: number): Region {
   return { latitude, longitude, latitudeDelta, longitudeDelta };
 }
+
+/** テスト用の緯度経度境界を作る。 */
+function bounds(overrides: Partial<PhotoViewportBounds> = {}): PhotoViewportBounds {
+  return {
+    minLatitude: 34,
+    maxLatitude: 36,
+    westLongitude: 138,
+    eastLongitude: 140,
+    crossesAntimeridian: false,
+    ...overrides,
+  };
+}
+
+describe('写真座標の範囲内判定 isWithinPhotoViewportBounds', () => {
+  it('境界の内側にある座標はtrueを返す', () => {
+    expect(isWithinPhotoViewportBounds(bounds(), 35, 139)).toBe(true);
+  });
+
+  it('境界そのものの座標は範囲内として扱う(SQLのBETWEENと同じ両端閉区間)', () => {
+    expect(isWithinPhotoViewportBounds(bounds(), 34, 138)).toBe(true);
+    expect(isWithinPhotoViewportBounds(bounds(), 36, 140)).toBe(true);
+  });
+
+  it('緯度が範囲外の座標はfalseを返す', () => {
+    expect(isWithinPhotoViewportBounds(bounds(), 33.9, 139)).toBe(false);
+    expect(isWithinPhotoViewportBounds(bounds(), 36.1, 139)).toBe(false);
+  });
+
+  it('経度が範囲外の座標はfalseを返す', () => {
+    expect(isWithinPhotoViewportBounds(bounds(), 35, 137.9)).toBe(false);
+    expect(isWithinPhotoViewportBounds(bounds(), 35, 140.1)).toBe(false);
+  });
+
+  it('日付変更線をまたぐ場合は西端以上または東端以下を範囲内とする', () => {
+    const crossing = bounds({ westLongitude: 170, eastLongitude: -170, crossesAntimeridian: true });
+
+    expect(isWithinPhotoViewportBounds(crossing, 35, 175)).toBe(true);
+    expect(isWithinPhotoViewportBounds(crossing, 35, -175)).toBe(true);
+    // またぐ範囲の「反対側」(=範囲外)は除外する
+    expect(isWithinPhotoViewportBounds(crossing, 35, 0)).toBe(false);
+  });
+});
 
 describe('写真ビューポート範囲 getPhotoViewportBounds', () => {
   it('余白を指定しない場合は表示範囲そのままの緯度経度境界を返す', () => {

@@ -301,7 +301,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
     (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({ assets: [{ id: 'asset-1' }] });
     (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
 
-    await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+    await expect(loadGeotaggedPhotos()).resolves.toEqual({ photos: [expect.objectContaining({ id: 'asset-1' })], isCacheSaved: false });
     expect(warnSpy).toHaveBeenCalled();
 
     warnSpy.mockRestore();
@@ -315,17 +315,20 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
       .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
       .mockResolvedValueOnce(createAssetInfo('asset-2'));
 
-    await expect(loadGeotaggedPhotos()).resolves.toEqual([
-      {
-        id: 'asset-1',
-        uri: 'file:///asset-1.jpg',
-        latitude: 35,
-        longitude: 139,
-        creationTime: 1,
-        width: 100,
-        height: 80,
-      },
-    ]);
+    await expect(loadGeotaggedPhotos()).resolves.toEqual({
+      photos: [
+        {
+          id: 'asset-1',
+          uri: 'file:///asset-1.jpg',
+          latitude: 35,
+          longitude: 139,
+          creationTime: 1,
+          width: 100,
+          height: 80,
+        },
+      ],
+      isCacheSaved: true,
+    });
     expect(MediaLibrary.getAssetsAsync).toHaveBeenCalledWith(expect.objectContaining({ mediaType: MediaLibrary.MediaType.photo }));
   });
 
@@ -338,7 +341,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
       // 座標として解釈できないアセットは地図に置けないため除外する
       .mockResolvedValueOnce(createAssetInfo('asset-2', { latitude: 'abc', longitude: 'def' }));
 
-    const photos = await loadGeotaggedPhotos();
+    const { photos } = await loadGeotaggedPhotos();
 
     expect(photos).toEqual([
       {
@@ -356,7 +359,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
   it('写真ライブラリが空の場合は空配列を返す', async () => {
     (MediaLibrary.getAssetsAsync as jest.Mock).mockResolvedValue({ assets: [] });
 
-    await expect(loadGeotaggedPhotos()).resolves.toEqual([]);
+    await expect(loadGeotaggedPhotos()).resolves.toEqual({ photos: [], isCacheSaved: true });
     expect(MediaLibrary.getAssetInfoAsync).not.toHaveBeenCalled();
   });
 
@@ -368,7 +371,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
       .mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }))
       .mockRejectedValueOnce(new Error('broken asset'));
 
-    await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+    await expect(loadGeotaggedPhotos()).resolves.toEqual(expect.objectContaining({ photos: [expect.objectContaining({ id: 'asset-1' })] }));
   });
 
   it('getAssetInfoAsyncの同時実行数がPHOTO_INFO_CONCURRENCYを超えない', async () => {
@@ -520,7 +523,11 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
     });
     (MediaLibrary.getAssetInfoAsync as jest.Mock).mockResolvedValueOnce(createAssetInfo('asset-1', { latitude: 35, longitude: 139 }));
 
-    await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+    // 保存に失敗したことは呼び出し側へ伝える(キャッシュが空でも走査結果を表示できるようにするため)
+    await expect(loadGeotaggedPhotos()).resolves.toEqual({
+      photos: [expect.objectContaining({ id: 'asset-1' })],
+      isCacheSaved: false,
+    });
     expect(warnSpy).toHaveBeenCalled();
 
     warnSpy.mockRestore();
@@ -604,7 +611,7 @@ describe('写真ライブラリ権限による突き合わせの抑止 loadGeota
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (MediaLibrary.getPermissionsAsync as jest.Mock).mockRejectedValueOnce(new Error('permission unavailable'));
 
-    await expect(loadGeotaggedPhotos()).resolves.toHaveLength(1);
+    await expect(loadGeotaggedPhotos()).resolves.toEqual(expect.objectContaining({ photos: [expect.objectContaining({ id: 'asset-1' })] }));
     expect(reconciliationArgument()).toBeNull();
 
     warnSpy.mockRestore();

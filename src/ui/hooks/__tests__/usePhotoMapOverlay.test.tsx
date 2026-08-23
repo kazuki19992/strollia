@@ -35,7 +35,7 @@ async function flushPromises(): Promise<void> {
 describe('写真マップ表示hook usePhotoMapOverlay', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue([]);
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [], isCacheSaved: true });
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([]);
   });
 
@@ -59,11 +59,45 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     expect(bounds.maxLatitude).toBeCloseTo(35.075, 10);
   });
 
+  it('キャッシュ保存に成功した場合はビューポート検索の結果を表示する', async () => {
+    const scannedPhoto: MapPhoto = { ...photo, id: 'scanned-only' };
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [scannedPhoto], isCacheSaved: true });
+    (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([photo]);
+
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await flushPromises();
+
+    expect(result.current.photos).toEqual([photo]);
+  });
+
+  it('キャッシュ保存に失敗した場合は走査結果をそのまま表示する', async () => {
+    // SQLiteのロック等で保存に失敗しても、走査できた写真は地図に出す(2-b導入前の挙動へのフォールバック)
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [photo], isCacheSaved: false });
+    (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([]);
+
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await flushPromises();
+
+    expect(result.current.photos).toEqual([photo]);
+    expect(result.current.photoErrorMessage).toBeNull();
+    expect(result.current.isLoadingPhotos).toBe(false);
+  });
+
+  it('キャッシュ保存に失敗した場合も表示範囲の外にある走査結果は表示しない', async () => {
+    const farPhoto: MapPhoto = { ...photo, id: 'photo-far', latitude: 10, longitude: 100 };
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [photo, farPhoto], isCacheSaved: false });
+
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await flushPromises();
+
+    expect(result.current.photos).toEqual([photo]);
+  });
+
   it('写真ライブラリを走査してphoto_assetsへ反映してから検索する', async () => {
     const callOrder: string[] = [];
     (loadGeotaggedPhotos as jest.Mock).mockImplementation(async () => {
       callOrder.push('scan');
-      return [];
+      return { photos: [], isCacheSaved: true };
     });
     (loadGeotaggedPhotosInBounds as jest.Mock).mockImplementation(async () => {
       callOrder.push('search');

@@ -24,6 +24,21 @@ export type MapPhoto = {
   height: number;
 };
 
+/**
+ * 写真ライブラリ走査の結果。
+ *
+ * 走査できた写真と、その結果を `photo_assets` へ保存できたかを**分けて**返す。
+ * 保存に失敗すると `photo_assets` は空のままなので、呼び出し側がビューポート検索に切り替えると
+ * 「走査はできているのに1枚も表示されない」状態になってしまう。保存の成否を伝えることで、
+ * 呼び出し側が走査結果をそのまま表示するフォールバックへ倒せるようにしている。
+ */
+export type GeotaggedPhotoScanResult = {
+  /** 走査で得られたジオタグ付き写真。 */
+  photos: MapPhoto[];
+  /** 走査結果を `photo_assets` へ保存できたかどうか。falseの場合キャッシュは最新化されていない。 */
+  isCacheSaved: boolean;
+};
+
 const DEFAULT_PHOTO_SCAN_LIMIT = 200;
 
 /**
@@ -225,6 +240,8 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): 
  *
  * 読み込んだメタデータは `photo_assets` へ保存し、ビューポート検索の対象にする。
  * 保存は表示の付随処理であり、失敗しても写真表示そのものは継続させる(ログのみ残す)。
+ * ただし保存の成否は `isCacheSaved` として返す。保存できていないままビューポート検索へ進むと
+ * 空のキャッシュを引いてしまうため、呼び出し側が走査結果を直接表示できるようにするためである。
  *
  * あわせて、走査済みの時間窓に限って保存済みの行と突き合わせる。窓の中にありながら今回の走査で
  * 確認できなかった行は、写真ライブラリから削除されたかジオタグを失ったものなので削除する
@@ -234,9 +251,9 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): 
  * Sentryへ送る(調査用の一時的な計装。詳細は `docs/photo-geotag.md`)。
  *
  * @param limit - 走査する最新写真の最大件数。初期表示の重さを抑えるため上限を持つ。
- * @returns 地図上に表示可能なジオタグ付き写真一覧。
+ * @returns 地図上に表示可能なジオタグ付き写真一覧と、キャッシュ保存の成否。
  */
-export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<MapPhoto[]> {
+export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<GeotaggedPhotoScanResult> {
   const startedAtMs = Date.now();
 
   const page = await MediaLibrary.getAssetsAsync({
@@ -281,9 +298,14 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     ? createPhotoAssetReconciliation({ assets: page.assets, outcomes, hasNextPage: page.hasNextPage })
     : null;
 
-  await savePhotoAssets(assetRecords, reconciliation).catch((error: unknown) => {
-    console.warn('Failed to save photo assets:', error);
-  });
+  const isCacheSaved = await savePhotoAssets(assetRecords, reconciliation).then(
+    () => true,
+    (error: unknown) => {
+      console.warn('Failed to save photo assets:', error);
+
+      return false;
+    },
+  );
 
   const assetInfoFulfilledCount = details.filter((result) => result.status === 'fulfilled').length;
 
@@ -297,5 +319,5 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     durationMs: Date.now() - startedAtMs,
   });
 
-  return photos;
+  return { photos, isCacheSaved };
 }

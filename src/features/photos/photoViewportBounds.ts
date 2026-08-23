@@ -93,6 +93,30 @@ export function getPhotoViewportBounds(region: Region, options: PhotoViewportBou
 }
 
 /**
+ * 座標が境界の内側にあるかを返す。
+ *
+ * `getPhotoAssetsInBounds` のSQL条件(緯度の `BETWEEN` + 日付変更線をまたぐ場合のOR分岐)と
+ * **同じ判定をJS側でも行うための関数**である。`photo_assets` への保存に失敗してキャッシュを
+ * 引けないとき、走査結果をメモリ上で同じ範囲へ絞り込んで表示するために使う。
+ * 判定条件をSQLとJSで食い違わせないよう、境界の意味を持つこのファイルに置いている。
+ *
+ * @param bounds - 判定に使う緯度経度境界。
+ * @param latitude - 判定する座標の緯度。
+ * @param longitude - 判定する座標の経度。-180〜180に正規化済みであること。
+ * @returns 境界の内側(端を含む)にある場合はtrue。
+ */
+export function isWithinPhotoViewportBounds(bounds: PhotoViewportBounds, latitude: number, longitude: number): boolean {
+  if (latitude < bounds.minLatitude || latitude > bounds.maxLatitude) {
+    return false;
+  }
+
+  // またぐ場合は西端〜180度線と-180度線〜東端の2区間になるため、AND ではなく OR で判定する
+  return bounds.crossesAntimeridian
+    ? longitude >= bounds.westLongitude || longitude <= bounds.eastLongitude
+    : longitude >= bounds.westLongitude && longitude <= bounds.eastLongitude;
+}
+
+/**
  * 境界の経度を、日付変更線で分割した連続区間の一覧へ変換する。
  *
  * またぐ場合は `[west, 180]` と `[-180, east]` の2区間になる。

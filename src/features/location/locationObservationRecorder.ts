@@ -10,6 +10,7 @@ import { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { NewLocationPoint } from '@/types/gps';
 import { toEffectiveLocationPoint } from './effectiveLocationPoint';
 import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
+import { isStaleLocationObservation } from './locationObservationOrder';
 import { shouldSaveLocationPoint } from './locationSaveFilter';
 import { upsertVisitedCellsInCurrentTransaction } from './visitedCellRepository';
 
@@ -62,7 +63,8 @@ function preserveSnapState(state: PersistedLocationRecordingState): StayPlaceSna
 /**
  * 1件のライブ位置観測について、吸着状態・GPSログ・日別集計・Visited Gridを原子的に更新する。
  *
- * 古い観測とGPS一意制約の重複はどの状態も進めず、滞在場所取得失敗時だけは
+ * 古い観測とGPS一意制約の重複はどの状態も進めない。同一GPS観測の再配信だけで
+ * 吸着の3点連続やVisited Gridを進めないためであり、滞在場所取得失敗時だけは
  * 生座標を記録しながら既存の吸着カウンターを次の正常取得まで維持する。
  */
 export async function recordLocationObservation(input: RecordLocationObservationInput): Promise<RecordLocationObservationResult> {
@@ -73,7 +75,7 @@ export async function recordLocationObservation(input: RecordLocationObservation
   await withExclusiveTransaction(async (txn) => {
     const persistedState = await getLocationRecordingStateInCurrentTransaction(txn);
 
-    if (persistedState.lastObservedAt != null && rawPoint.recordedAt <= persistedState.lastObservedAt) {
+    if (isStaleLocationObservation(persistedState.lastObservedAt, rawPoint.recordedAt, now)) {
       result.value = { status: 'stale' };
       return;
     }

@@ -336,6 +336,29 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     expect(mockUpsertVisitedCells).not.toHaveBeenCalled();
   });
 
+  it('端末時計巻き戻りで最終観測日時が1時間超未来でも現在の観測へ復旧する', async () => {
+    const rawPoint = pointAtHome('2026-08-23T12:00:00.000Z');
+    mockGetState.mockResolvedValue({
+      ...initialPersistedState,
+      candidateStayPlaceId: home.id,
+      candidateCount: 2,
+      lastObservedAt: '2026-08-23T13:00:01.000Z',
+    });
+    mockGetVisitedCells.mockReturnValue([cell]);
+
+    await expect(recordLocationObservation({ ...input(rawPoint), now: '2026-08-23T12:00:00.000Z' })).resolves.toEqual(
+      expect.objectContaining({ status: 'saved' }),
+    );
+
+    expect(mockInsert).toHaveBeenCalledWith(expect.any(Object), '2026-08-23T12:00:00.000Z', mockTxn);
+    expect(mockUpsertVisitedCells).toHaveBeenCalledWith([cell], rawPoint.recordedAt, mockTxn);
+    expect(mockUpsertState).toHaveBeenCalledWith(
+      expect.objectContaining({ lastObservedAt: rawPoint.recordedAt }),
+      '2026-08-23T12:00:00.000Z',
+      mockTxn,
+    );
+  });
+
   it('滞在場所取得失敗時は生座標を使い吸着状態を維持する', async () => {
     const rawPoint = pointOutsideHome('2026-08-23T00:00:10.000Z');
     const activePersistedState = {

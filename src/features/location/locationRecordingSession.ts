@@ -2,11 +2,12 @@ import type * as Location from 'expo-location';
 
 import { initializeDatabase } from '@/db/database';
 import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
-import { getLatestLocationPoint, insertLocationPoint } from '@/features/logs/logRepository';
-import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
-import { INITIAL_STAY_PLACE_SNAP_STATE, resolveStayPlaceSnap, StayPlaceSnapState } from '@/features/stayPlaces/stayPlaceSnapResolver';
-import { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
-import { NewLocationPoint } from '@/types/gps';
+import {
+  ActiveStayPlacesSnapshot,
+  recordLocationObservation,
+  RecordLocationObservationResult,
+} from '@/features/location/locationObservationRecorder';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import {
   bufferLocationsDuringGpxImport,
   drainBufferedLocations,
@@ -14,38 +15,28 @@ import {
   isGpxImportPriorityActive,
   requeueLocationsToBuffer,
 } from './gpxImportPriority';
-import { getVisitedCellsForLocationPoint } from './grid/gridInterpolation';
 import { toLocationPoint } from './locationMapper';
-import { shouldSaveLocationPoint } from './locationSaveFilter';
-import { upsertVisitedCells } from './visitedCellRepository';
 
 /** 前景・背景の位置情報を同じ保存規則で処理するセッション。 */
 export type LocationRecordingSession = {
-  /** 位置情報を受信順に処理し、前回点を次回呼び出しへ引き継ぐ。 */
+  /** 位置情報を観測日時順に原子的なRecorderへ渡す。 */
   recordLocations: (locations: Location.LocationObject[]) => Promise<void>;
 };
 
 /** 記録中の各観測点で有効な滞在場所を取得する依存。 */
 export type LocationRecordingSessionOptions = {
-  /** 課金状態・設定変更を次の観測から反映するため、ポイントごとに取得する。 */
+  /** 課金状態・設定変更を次の配信バッチから反映するため、配信バッチごとに取得する。 */
   getActiveStayPlaces?: () => Promise<StayPlace[]>;
 };
 
 /**
- * 最新保存点を一度だけ読み込み、位置情報を継続的に保存するセッションを作る。
+ * SQLite初期化後、前景・背景で共通の記録処理を行うセッションを作る。
  *
- * 前景監視では位置情報が1件ずつ届くため、呼び出し間で前回点を保持して
- * 距離・時系列判定とVisited Grid補間を背景タスクの一括処理と一致させる。
+ * 吸着・GPS保存判定・Visited Grid補間起点は観測ごとにSQLiteの最新状態を読む
+ * Recorderへ委譲し、セッションを跨ぐ前景・背景配信でも同じ永続状態を使う。
  */
 export async function createLocationRecordingSession(options: LocationRecordingSessionOptions = {}): Promise<LocationRecordingSession> {
   await initializeDatabase();
-
-  const latestSavedPoint = await getLatestLocationPoint();
-  let previousSavedPoint: Parameters<typeof shouldSaveLocationPoint>[1] = latestSavedPoint
-    ? toEffectiveLocationPoint(latestSavedPoint)
-    : null;
-  let previousVisitedCellPoint: NewLocationPoint | null = latestSavedPoint ? toEffectiveLocationPoint(latestSavedPoint) : null;
-  let snapState: StayPlaceSnapState = INITIAL_STAY_PLACE_SNAP_STATE;
 
   return {
     async recordLocations(locations) {
@@ -56,44 +47,34 @@ export async function createLocationRecordingSession(options: LocationRecordingS
         return;
       }
 
-      // flush失敗などでバッファに残った位置情報があれば、受信順を保って先に処理する(取りこぼし防止)
+      // flush失敗などでバッファに残った位置情報も含め、永続状態を時系列順に進める。
       const pendingLocations = drainBufferedLocations();
-      const locationsToProcess = pendingLocations.length > 0 ? [...pendingLocations, ...locations] : locations;
+      const combinedLocations = pendingLocations.length > 0 ? [...pendingLocations, ...locations] : locations;
+      const locationsToProcess = combinedLocations
+        .map((location, originalIndex) => ({ location, originalIndex }))
+        .sort((left, right) => left.location.timestamp - right.location.timestamp || left.originalIndex - right.originalIndex)
+        .map(({ location }) => location);
 
       const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
       // Expoは複数観測を1回のタスク配信へまとめる。設定DBを点ごとに読むと不要な
       // ロック競合を増やすため、この配信全体では同じ有効滞在場所を使う。
-      const activeStayPlaces = await getActiveStayPlacesSafely(options.getActiveStayPlaces);
+      const activeStayPlaces: ActiveStayPlacesSnapshot = await getActiveStayPlacesSnapshot(options.getActiveStayPlaces);
       /** 保存を完了した位置情報の数。途中失敗時に未確定分をバッファへ戻すために追跡する。 */
       let processedCount = 0;
+      /** 後続観測が失敗しても、先に確定した点の実績処理後に元のエラーを返すため保持する。 */
+      let recordingError: unknown = undefined;
+      let hasRecordingError = false;
 
       try {
         for (const location of locationsToProcess) {
           const rawPoint = toLocationPoint(location);
-          const snapResult = resolveStayPlaceSnap({
-            state: snapState,
-            raw: rawPoint,
+          const result: RecordLocationObservationResult = await recordLocationObservation({
+            rawPoint,
             activeStayPlaces,
           });
-          snapState = snapResult.state;
-          const point: NewLocationPoint = {
-            ...rawPoint,
-            effectiveLatitude: snapResult.effective.latitude,
-            effectiveLongitude: snapResult.effective.longitude,
-            snappedStayPlaceId: snapResult.snappedStayPlaceId,
-          };
-          const effectivePoint = toEffectiveLocationPoint(point);
-          const visitedCells = getVisitedCellsForLocationPoint(previousVisitedCellPoint, effectivePoint);
 
-          if (visitedCells.length > 0) {
-            await upsertVisitedCells(visitedCells, effectivePoint.recordedAt);
-            previousVisitedCellPoint = effectivePoint;
-          }
-
-          if (shouldSaveLocationPoint(effectivePoint, previousSavedPoint)) {
-            const locationPointId = await insertLocationPoint(point);
-            savedPoints.push({ point, locationPointId });
-            previousSavedPoint = effectivePoint;
+          if (result.status === 'saved') {
+            savedPoints.push({ point: result.point, locationPointId: result.locationPointId });
           }
 
           processedCount += 1;
@@ -102,7 +83,8 @@ export async function createLocationRecordingSession(options: LocationRecordingS
         // 保存が成功するまで位置情報を失わないよう、未確定分(処理中に失敗した点を含む)を
         // バッファへ戻して次の記録時に受信順を保って再試行する。
         requeueLocationsToBuffer(locationsToProcess.slice(processedCount));
-        throw error;
+        recordingError = error;
+        hasRecordingError = true;
       }
 
       // GPSポイントを確定してから、逆ジオコーディングを含む実績処理を行う。
@@ -111,21 +93,27 @@ export async function createLocationRecordingSession(options: LocationRecordingS
           console.warn('Achievement processing failed:', error);
         });
       }
+
+      if (hasRecordingError) {
+        throw recordingError;
+      }
     },
   };
 }
 
-/** 滞在場所一覧の読込失敗時も生座標の記録を止めないため、吸着なしへ安全にフォールバックする。 */
-async function getActiveStayPlacesSafely(getActiveStayPlaces: (() => Promise<StayPlace[]>) | undefined): Promise<StayPlace[]> {
+/** 滞在場所一覧の読込結果を、Recorderが取得失敗と空一覧を区別できる形式へ変換する。 */
+async function getActiveStayPlacesSnapshot(
+  getActiveStayPlaces: (() => Promise<StayPlace[]>) | undefined,
+): Promise<ActiveStayPlacesSnapshot> {
   if (!getActiveStayPlaces) {
-    return [];
+    return { status: 'ready', stayPlaces: [] };
   }
 
   try {
-    return await getActiveStayPlaces();
+    return { status: 'ready', stayPlaces: await getActiveStayPlaces() };
   } catch (error: unknown) {
     console.warn('Stay place loading failed:', error);
-    return [];
+    return { status: 'unavailable' };
   }
 }
 

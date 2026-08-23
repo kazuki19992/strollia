@@ -1,5 +1,5 @@
 import { NewLocationPoint } from '@/types/gps';
-import { getVisitedCellsForLocationPoint } from '@/features/location/grid/gridInterpolation';
+import { getVisitedCellsForLocationPoint, VisitedGridInterpolationPoint } from '@/features/location/grid/gridInterpolation';
 
 function point(latitude: number, longitude: number, recordedAt: string, options: Partial<NewLocationPoint> = {}): NewLocationPoint {
   return {
@@ -28,6 +28,20 @@ describe('Visited Grid高速補間 gridInterpolation', () => {
 
   it('150km/h以上の高速移動では点間セルを補間する', () => {
     const previous = point(35, 139, '2026-05-23T00:00:00.000Z');
+    const next = point(35.05, 139, '2026-05-23T00:01:00.000Z');
+
+    const cells = getVisitedCellsForLocationPoint(previous, next);
+
+    expect(cells.length).toBeGreaterThan(2);
+    expect(new Set(cells.map((cell) => cell.cellId)).size).toBe(cells.length);
+  });
+
+  it('accuracyを持たない永続補間起点から高速移動セルを補間する', () => {
+    const previous: VisitedGridInterpolationPoint = {
+      recordedAt: '2026-05-23T00:00:00.000Z',
+      latitude: 35,
+      longitude: 139,
+    };
     const next = point(35.05, 139, '2026-05-23T00:01:00.000Z');
 
     const cells = getVisitedCellsForLocationPoint(previous, next);

@@ -7,6 +7,9 @@ const VISITED_CELL_MAX_ACCURACY_METERS = 100;
 /** 高速補間の仮想点間隔。単位は割合。 */
 const HIGH_SPEED_INTERPOLATION_STEP_RATIO = 0.02;
 
+/** Visited Gridの高速補間で使う、最後にセル更新へ利用できた有効座標。 */
+export type VisitedGridInterpolationPoint = Pick<NewLocationPoint, 'recordedAt' | 'latitude' | 'longitude'>;
+
 /**
  * GPS点からvisited cellを生成する。
  *
@@ -16,14 +19,14 @@ const HIGH_SPEED_INTERPOLATION_STEP_RATIO = 0.02;
  * @param next - 現在のGPS点。
  * @returns 開放対象のvisited cell。
  */
-export function getVisitedCellsForLocationPoint(previous: NewLocationPoint | null, next: NewLocationPoint): GridCell[] {
+export function getVisitedCellsForLocationPoint(previous: VisitedGridInterpolationPoint | null, next: NewLocationPoint): GridCell[] {
   if (!canOpenVisitedCell(next)) {
     return [];
   }
 
   const nextCell = coordinateToGridCell(next);
 
-  if (!previous || !canOpenVisitedCell(previous)) {
+  if (!previous) {
     return [nextCell];
   }
 
@@ -44,7 +47,7 @@ function canOpenVisitedCell(point: NewLocationPoint): boolean {
   return point.accuracy == null || point.accuracy <= VISITED_CELL_MAX_ACCURACY_METERS;
 }
 
-function interpolateCoordinates(previous: NewLocationPoint, next: NewLocationPoint): NewLocationPoint[] {
+function interpolateCoordinates(previous: VisitedGridInterpolationPoint, next: NewLocationPoint): NewLocationPoint[] {
   const coordinates: NewLocationPoint[] = [];
 
   for (let ratio = HIGH_SPEED_INTERPOLATION_STEP_RATIO; ratio < 1; ratio += HIGH_SPEED_INTERPOLATION_STEP_RATIO) {

@@ -357,7 +357,7 @@ Visited Grid Overlayでは、有効な観測が存在した100mセルを `visite
 
 描画時は生データを直接Polylineへ渡さず、簡略化した描画用データを使う。
 
-日別の推定移動距離は、表示のたびに全GPS点を走査して再計算しない。ライブ観測では時系列の前後点検索、GPS点挿入、Visited Grid、吸着状態、日別距離の差分加算を同じ排他トランザクションで確定する。GPS点は`(recorded_at, latitude, longitude)`の一意制約に一致する重複だけを既存データ優先で無視し、NOT NULLなど他のSQLite制約違反は例外としてトランザクションをロールバックする。距離、保存判定、Visited Gridには有効座標を使い、生座標は`location_points.latitude` / `longitude`へ維持する。保存対象外の観測でもVisited Gridと吸着状態は更新する。
+日別の推定移動距離は、表示のたびに全GPS点を走査して再計算しない。ライブ観測では時系列の前後点検索、GPS点挿入、Visited Grid、吸着状態、日別距離の差分加算を同じ排他トランザクションで確定する。重複は生観測の`(recorded_at, latitude, longitude)`で判定し、保存対象候補ではINSERTの一意制約競合、保存対象外では同じトランザクション内の存在確認を使う。どちらの重複も吸着状態、Visited Grid、日別集計を更新せず、NOT NULLなど他のSQLite制約違反は例外としてトランザクションをロールバックする。距離、保存判定、Visited Gridには有効座標を使い、生座標は`location_points.latitude` / `longitude`へ維持する。重複ではない保存対象外の観測はVisited Gridと吸着状態を更新する。
 
 同日の末尾へ保存する点は直前点との距離を加え、時系列途中へ保存する点は既存区間を置き換える差分だけを加算する。既存の`daily_logs.distance_meters`がNULLなら、新しい区間の部分差分で置き換えずNULLを維持し、表示側で全GPS点からフォールバック計算する。既存距離はマイグレーションで再計算・修復しない。
 

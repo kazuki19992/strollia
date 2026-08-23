@@ -1,5 +1,9 @@
 import { withExclusiveTransaction } from '@/db/database';
-import { getLatestLocationPointInCurrentTransaction, insertLocationPointInCurrentTransaction } from '@/features/logs/logRepository';
+import {
+  getLatestLocationPointInCurrentTransaction,
+  hasLocationPointRawIdentityInCurrentTransaction,
+  insertLocationPointInCurrentTransaction,
+} from '@/features/logs/logRepository';
 import {
   getLocationRecordingStateInCurrentTransaction,
   PersistedLocationRecordingState,
@@ -89,6 +93,12 @@ export async function recordLocationObservation(input: RecordLocationObservation
     const latestSavedPoint = await getLatestLocationPointInCurrentTransaction(txn);
     const previousSavedPoint = latestSavedPoint ? toEffectiveLocationPoint(latestSavedPoint) : null;
     const shouldSave = shouldSaveLocationPoint(effectivePoint, previousSavedPoint);
+
+    if (!shouldSave && (await hasLocationPointRawIdentityInCurrentTransaction(rawPoint, txn))) {
+      result.value = { status: 'duplicate' };
+      return;
+    }
+
     const visitedCells = getVisitedCellsForLocationPoint(persistedState.lastVisitedGridPoint, effectivePoint);
 
     let locationPointId: number | null = null;

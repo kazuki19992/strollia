@@ -5,6 +5,7 @@ import {
   getDailyLogs,
   getLocationPointsBounds,
   getLocationPointsByMonth,
+  hasLocationPointRawIdentityInCurrentTransaction,
   insertLocationPointInCurrentTransaction,
 } from '@/features/logs/logRepository';
 
@@ -35,6 +36,34 @@ function point(latitude: number, longitude: number): NewLocationPoint {
     altitudeAccuracy: null,
   };
 }
+
+describe('GPSポイント生観測一致 hasLocationPointRawIdentityInCurrentTransaction', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    mockTxn.getFirstAsync.mockReset();
+  });
+
+  it('recorded_at・latitude・longitudeが一致する行を同じrunnerで検索する', async () => {
+    const rawPoint = point(35, 139);
+    mockTxn.getFirstAsync.mockResolvedValueOnce({ found: 1 });
+
+    await expect(hasLocationPointRawIdentityInCurrentTransaction(rawPoint, mockTxn as never)).resolves.toBe(true);
+
+    const sql = String(mockTxn.getFirstAsync.mock.calls[0][0]).replace(/\s+/g, ' ').trim();
+    expect(sql).toContain('WHERE recorded_at = ? AND latitude = ? AND longitude = ?');
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledWith(expect.any(String), rawPoint.recordedAt, rawPoint.latitude, rawPoint.longitude);
+    expect(db.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('一致する行がない場合はfalseを返す', async () => {
+    mockTxn.getFirstAsync.mockResolvedValueOnce(null);
+
+    await expect(hasLocationPointRawIdentityInCurrentTransaction(point(35, 139), mockTxn as never)).resolves.toBe(false);
+  });
+});
 
 describe('GPSポイント保存 insertLocationPointInCurrentTransaction', () => {
   beforeEach(() => {

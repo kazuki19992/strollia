@@ -28,6 +28,31 @@ export type InsertedLocationPointResult = {
   distanceDeltaMeters: number;
 };
 
+/**
+ * 同一トランザクションで、生観測の一意キーに一致するGPSポイントが存在するか確認する。
+ *
+ * 有効座標ではなくDBの一意制約と同じrecorded_at・latitude・longitudeを使い、
+ * INSERTへ進まない保存対象外観測の再配信も重複として判定できるようにする。
+ */
+export async function hasLocationPointRawIdentityInCurrentTransaction(
+  point: Pick<NewLocationPoint, 'recordedAt' | 'latitude' | 'longitude'>,
+  runner: SQLite.SQLiteDatabase,
+): Promise<boolean> {
+  const row = await runner.getFirstAsync<{ found: 1 }>(
+    `SELECT 1 as found
+     FROM location_points
+     WHERE recorded_at = ?
+       AND latitude = ?
+       AND longitude = ?
+     LIMIT 1`,
+    point.recordedAt,
+    point.latitude,
+    point.longitude,
+  );
+
+  return row != null;
+}
+
 /** 同一トランザクションで最新の保存済みGPSポイントを取得する。 */
 export async function getLatestLocationPointInCurrentTransaction(runner: SQLite.SQLiteDatabase): Promise<LocationPoint | null> {
   const point = await runner.getFirstAsync<LocationPoint>(

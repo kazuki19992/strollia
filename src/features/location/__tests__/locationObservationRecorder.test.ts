@@ -14,6 +14,7 @@ const mockTxn = {
 const mockGetState = jest.fn();
 const mockUpsertState = jest.fn();
 const mockGetLatest = jest.fn();
+const mockHasRawIdentity = jest.fn();
 const mockInsert = jest.fn();
 const mockShouldSave = jest.fn();
 const mockGetVisitedCells = jest.fn();
@@ -30,6 +31,7 @@ jest.mock('@/features/location/locationRecordingStateRepository', () => ({
 
 jest.mock('@/features/logs/logRepository', () => ({
   getLatestLocationPointInCurrentTransaction: (...args: unknown[]) => mockGetLatest(...args),
+  hasLocationPointRawIdentityInCurrentTransaction: (...args: unknown[]) => mockHasRawIdentity(...args),
   insertLocationPointInCurrentTransaction: (...args: unknown[]) => mockInsert(...args),
 }));
 
@@ -113,6 +115,7 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     mockGetState.mockResolvedValue({ ...initialPersistedState });
     mockUpsertState.mockResolvedValue(undefined);
     mockGetLatest.mockResolvedValue(null);
+    mockHasRawIdentity.mockResolvedValue(false);
     mockInsert.mockResolvedValue({ locationPointId: 1, previousPoint: null, nextPoint: null, distanceDeltaMeters: 0 });
     mockShouldSave.mockReturnValue(true);
     mockGetVisitedCells.mockReturnValue([]);
@@ -261,6 +264,7 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
 
     await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'not-saved' });
 
+    expect(mockHasRawIdentity).toHaveBeenCalledWith(rawPoint, mockTxn);
     expect(mockInsert).not.toHaveBeenCalled();
     expect(mockUpsertVisitedCells).toHaveBeenCalledWith([cell], rawPoint.recordedAt, mockTxn);
     expect(mockUpsertState).toHaveBeenCalledWith(
@@ -275,6 +279,22 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
       '2026-08-23T01:00:00.000Z',
       mockTxn,
     );
+  });
+
+  it('GPSログ保存対象外でも既存の同一生観測なら状態とVisited Gridを更新しない', async () => {
+    const rawPoint = pointAt(home.latitude + 0.0001, home.longitude + 0.0001, '2026-08-23T00:00:10.000Z');
+    mockGetState.mockResolvedValue({ ...initialPersistedState, activeStayPlaceId: home.id });
+    mockShouldSave.mockReturnValue(false);
+    mockHasRawIdentity.mockResolvedValue(true);
+    mockGetVisitedCells.mockReturnValue([cell]);
+
+    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'duplicate' });
+
+    expect(mockHasRawIdentity).toHaveBeenCalledWith(rawPoint, mockTxn);
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockGetVisitedCells).not.toHaveBeenCalled();
+    expect(mockUpsertVisitedCells).not.toHaveBeenCalled();
+    expect(mockUpsertState).not.toHaveBeenCalled();
   });
 
   it('別セッション相当の保存対象外観測でも永続補間起点を次の観測へ引き継ぐ', async () => {
@@ -419,6 +439,7 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
 
     await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'duplicate' });
 
+    expect(mockHasRawIdentity).not.toHaveBeenCalled();
     expect(mockInsert).toHaveBeenCalledWith(expect.any(Object), '2026-08-23T01:00:00.000Z', mockTxn);
     expect(mockUpsertVisitedCells).not.toHaveBeenCalled();
     expect(mockUpsertState).not.toHaveBeenCalled();

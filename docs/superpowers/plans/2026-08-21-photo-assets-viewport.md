@@ -53,6 +53,12 @@ Phase 2 の段階リリース 2-a / 2-b / 2-c のうち **2-b**。
 この分岐は `MapPhoto` を組み立てる箇所に閉じるよう実装すること。**手戻り範囲を1箇所に閉じ込めるのが
 このリスクに対する唯一の対策**なので、`uri` の採用箇所を散らさないこと。
 
+> **結果(2026-08-23)**: 実機確認で**描画できないことが確定**した。RN 0.86 に `RCTPhotoLibraryImageLoader`
+> が無いためである。想定どおり切り替え先へ倒したが、解決には旧API `getAssetInfoAsync` ではなく
+> SDK 57 のクラスベース新API `Asset#getUri()` を使った(旧APIはフル解像度デコードを伴い App Hang を招くため)。
+> 変更は `loadGeotaggedPhotosInBounds` と `src/features/photos/photoDisplayUri.ts` に閉じており、
+> `photo_assets` のスキーマは変更していない。詳細は `docs/photo-geotag.md` §9.5。
+
 ## 実装
 
 ### Task 1: `photo_assets` テーブルとインデックス

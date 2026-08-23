@@ -25,11 +25,11 @@ iCloud に本体がありローカルへダウンロードされていない写�
 
 利用可能な API がどれも**オリジナル本体**を要求し、かつネットワークアクセスを行わないため。
 
-| 経路 | 実際の挙動 |
-| --- | --- |
-| 旧 `getAssetInfoAsync` | `requestContentEditingInput` の `fullSizeImageURL`。当アプリは App Hang 対策で `shouldDownloadFromNetwork: false` を明示（PR #136） |
-| 新 `Asset.getUri()` | `UriExtractor` が `PHContentEditingInputRequestOptions()` の**既定値**（ネットワーク不許可）で要求 |
-| `expo-file-system` の `ph://` コピー | `PHAssetResourceManager.writeData` を `options: nil` で呼ぶ。同じ制約 |
+| 経路                                 | 実際の挙動                                                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 旧 `getAssetInfoAsync`               | `requestContentEditingInput` の `fullSizeImageURL`。当アプリは App Hang 対策で `shouldDownloadFromNetwork: false` を明示（PR #136） |
+| 新 `Asset.getUri()`                  | `UriExtractor` が `PHContentEditingInputRequestOptions()` の**既定値**（ネットワーク不許可）で要求                                  |
+| `expo-file-system` の `ph://` コピー | `PHAssetResourceManager.writeData` を `options: nil` で呼ぶ。同じ制約                                                               |
 
 オリジナルが端末に無ければ `fullSizeImageURL` は nil になり、いずれも失敗する。
 
@@ -131,14 +131,14 @@ PR #164 では「解決できなかった写真は**除外**」としたが、�
 
 ## 6. 変更対象ファイル
 
-| ファイル | 変更内容 |
-| --- | --- |
-| `modules/photo-thumbnail/` | 新設。ローカル Expo モジュール（iOS 実装 + TS インターフェース） |
-| `src/features/photos/photoDisplayUri.ts` | サムネイル取得経由へ変更。失敗時は null を返す |
-| `src/features/photos/photoLibrary.ts` | 画像を取得できなかった写真を除外しない |
-| `src/ui/components/PhotoClusterMarker.tsx` | 画像が無い場合のプレースホルダ描画 |
-| `src/ui/appStyles.ts` | プレースホルダ用スタイル |
-| `docs/photo-geotag.md` | サムネイル取得方式・iCloud 未ダウンロード時の挙動 |
+| ファイル                                   | 変更内容                                                         |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| `modules/photo-thumbnail/`                 | 新設。ローカル Expo モジュール（iOS 実装 + TS インターフェース） |
+| `src/features/photos/photoDisplayUri.ts`   | サムネイル取得経由へ変更。失敗時は null を返す                   |
+| `src/features/photos/photoLibrary.ts`      | 画像を取得できなかった写真を除外しない                           |
+| `src/ui/components/PhotoClusterMarker.tsx` | 画像が無い場合のプレースホルダ描画                               |
+| `src/ui/appStyles.ts`                      | プレースホルダ用スタイル                                         |
+| `docs/photo-geotag.md`                     | サムネイル取得方式・iCloud 未ダウンロード時の挙動                |
 
 ## 7. テスト方針
 
@@ -154,16 +154,31 @@ PR #164 では「解決できなかった写真は**除外**」としたが、�
 
 ## 8. リスク
 
-| リスク | 対応 |
-| --- | --- |
-| ネイティブモジュールのビルド失敗でリリースが止まる | モジュールは最小限に保つ。JS 側はモジュール未解決でも落ちない |
-| OTA 更新で配れない（要ネイティブビルド） | 元よりネイティブ追加は避けられない。リリース手順に影響する旨を周知 |
-| ローカルサムネイルすら無い写真がありうる | 画像なしマーカーで表示。除外はしない |
-| キャッシュディレクトリの肥大 | 要求サイズを小さく固定する。OS によるキャッシュ削除に委ねる |
+| リスク                                             | 対応                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------ |
+| ネイティブモジュールのビルド失敗でリリースが止まる | モジュールは最小限に保つ。JS 側はモジュール未解決でも落ちない      |
+| OTA 更新で配れない（要ネイティブビルド）           | 元よりネイティブ追加は避けられない。リリース手順に影響する旨を周知 |
+| ローカルサムネイルすら無い写真がありうる           | 画像なしマーカーで表示。除外はしない                               |
+| キャッシュディレクトリの肥大                       | 要求サイズを小さく固定する。OS によるキャッシュ削除に委ねる        |
 
 ## 9. 承認が必要な点
+
+以下の4点は**すべて承認済み**であり、この設計のとおり実装した。
 
 1. **ローカル Expo モジュールを追加すること**（AGENTS.md §4）
 2. **iOS 専用実装とし、Android は現行の素通しのままにすること**（issue #76 のスコープ）
 3. **画像を取得できなかった写真を除外せず、画像なしマーカーとして表示すること**（PR #164 からの仕様変更）
 4. **サムネイルをキャッシュディレクトリへ書き出すこと**（base64 を採らない判断）
+
+## 10. 実装結果
+
+| 対象                       | 実装                                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `modules/photo-thumbnail/` | `expo-module.config.json` / `index.ts` / `ios/PhotoThumbnail.podspec` / `ios/PhotoThumbnailModule.swift` |
+| ネイティブモジュール名     | `PhotoThumbnail`（`requireOptionalNativeModule('PhotoThumbnail')`）                                      |
+| 要求サイズ                 | 512px（`PHOTO_THUMBNAIL_SIZE`）。マーカーと拡大表示を1つのサムネイルで賄う                               |
+| `deliveryMode`             | `.fastFormat`（結果ハンドラが1回だけ呼ばれる。ローカルにある表現を優先して返す）                         |
+| JS からの参照              | `@modules/*` エイリアス（`tsconfig.json` の `paths` と jest の `moduleNameMapper` に追加）               |
+| prebuild への組み込み      | expo-modules-autolinking の既定 `nativeModulesDir`（`./modules`）で自動検出される                        |
+
+ユーザー向けの仕様は `docs/photo-geotag.md` §9.5〜9.7 に反映済み。実機確認手順は §9.7 を参照。

@@ -39,20 +39,37 @@ const region: Region = {
   longitudeDelta: 0.01,
 };
 
+/** 緯度1度あたりのおおよその距離(m)。段階半径が表示範囲に対して何割かを確かめるために使う。 */
+const METERS_PER_LATITUDE_DEGREE = 111_000;
+
+/** 段階の境界となる latitudeDelta と、その境界未満で使う半径メートル。 */
+const stageBoundaries = [
+  { boundary: 0.003, radiusMeters: 30 },
+  { boundary: 0.009, radiusMeters: 90 },
+  { boundary: 0.0225, radiusMeters: 225 },
+  { boundary: 0.045, radiusMeters: 450 },
+  { boundary: 0.09, radiusMeters: 900 },
+  { boundary: 0.225, radiusMeters: 2250 },
+  { boundary: 0.45, radiusMeters: 4500 },
+  { boundary: 0.9, radiusMeters: 9000 },
+  { boundary: 2.25, radiusMeters: 22500 },
+  { boundary: 4.5, radiusMeters: 45000 },
+];
+
 describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
   it('全段階の境界でちょうど切り替わる', () => {
     // 境界未満は手前の段階、境界以上は次の段階になる。
     const transitions = [
-      { boundary: 0.003, previousRadius: 10, nextRadius: 30 },
-      { boundary: 0.009, previousRadius: 30, nextRadius: 75 },
-      { boundary: 0.0225, previousRadius: 75, nextRadius: 150 },
-      { boundary: 0.045, previousRadius: 150, nextRadius: 300 },
-      { boundary: 0.09, previousRadius: 300, nextRadius: 750 },
-      { boundary: 0.225, previousRadius: 750, nextRadius: 1500 },
-      { boundary: 0.45, previousRadius: 1500, nextRadius: 3000 },
-      { boundary: 0.9, previousRadius: 3000, nextRadius: 7500 },
-      { boundary: 2.25, previousRadius: 7500, nextRadius: 15000 },
-      { boundary: 4.5, previousRadius: 15000, nextRadius: 50000 },
+      { boundary: 0.003, previousRadius: 30, nextRadius: 90 },
+      { boundary: 0.009, previousRadius: 90, nextRadius: 225 },
+      { boundary: 0.0225, previousRadius: 225, nextRadius: 450 },
+      { boundary: 0.045, previousRadius: 450, nextRadius: 900 },
+      { boundary: 0.09, previousRadius: 900, nextRadius: 2250 },
+      { boundary: 0.225, previousRadius: 2250, nextRadius: 4500 },
+      { boundary: 0.45, previousRadius: 4500, nextRadius: 9000 },
+      { boundary: 0.9, previousRadius: 9000, nextRadius: 22500 },
+      { boundary: 2.25, previousRadius: 22500, nextRadius: 45000 },
+      { boundary: 4.5, previousRadius: 45000, nextRadius: 50000 },
     ];
 
     for (const { boundary, previousRadius, nextRadius } of transitions) {
@@ -61,17 +78,34 @@ describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
     }
   });
 
-  it('極端に狭い表示範囲では最小段階(10m)になる', () => {
-    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 })).toBe(10);
+  // 「マーカーが視覚的に重なるなら、まとまる」ための基準。マーカーは画面高さの約10%を占めるため、
+  // クラスタ半径も表示範囲の高さの約10%でなければ、見た目が重なってもまとまらない。
+  it('各段階の半径は、その段階の表示範囲の高さの約1割になる', () => {
+    for (const { boundary, radiusMeters } of stageBoundaries) {
+      const viewportHeightMeters = boundary * METERS_PER_LATITUDE_DEGREE;
+
+      expect(radiusMeters / viewportHeightMeters).toBeCloseTo(0.09, 2);
+      expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: boundary - 0.000001 })).toBe(radiusMeters);
+    }
   });
 
-  it('最終段階(15000m, 境界4.5)を超える広域表示では世界地図相当のフォールバック値になる', () => {
+  // 空間ハッシュの等価性を保証できる上限が50,000m。最大段階がこれを超えると
+  // フォールバックとの関係(段階 → フォールバックへ滑らかに移る)が壊れる。
+  it('最大段階は世界地図相当のフォールバック値(50,000m)を超えない', () => {
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.4999 })).toBeLessThanOrEqual(50_000);
+  });
+
+  it('極端に狭い表示範囲では最小段階(30m)になる', () => {
+    expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.00001 })).toBe(30);
+  });
+
+  it('最終段階(45000m, 境界4.5)を超える広域表示では世界地図相当のフォールバック値になる', () => {
     expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 4.5 })).toBe(50_000);
     expect(getPhotoClusterRadiusMeters({ ...region, latitudeDelta: 180 })).toBe(50_000);
   });
 
   it('表示範囲がない場合は近距離用の既定値(latitudeDelta=0.01相当)を使う', () => {
-    expect(getPhotoClusterRadiusMeters(null)).toBe(75);
+    expect(getPhotoClusterRadiusMeters(null)).toBe(225);
   });
 
   // パン(中心移動のみ)でクラスタを再計算しないメモ化は、この性質が前提になっている。
@@ -85,42 +119,42 @@ describe('写真クラスタ半径 getPhotoClusterRadiusMeters', () => {
 
 describe('写真クラスタ半径のヒステリシス getStablePhotoClusterRadiusMeters', () => {
   it('前回値がない場合は段階選択した値をそのまま返す', () => {
-    expect(getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, null)).toBe(150);
+    expect(getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, null)).toBe(450);
   });
 
   it('段階境界をわずかに超えるだけならヒステリシス帯の範囲内で前回値を維持する', () => {
-    // 段階3(150m)→4(300m)の境界は0.045。ヒステリシス比率0.2により、
+    // 段階3(450m)→4(900m)の境界は0.045。ヒステリシス比率0.2により、
     // 0.045 * 1.2 = 0.054 未満なら前回値を維持する。
-    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.05 }, 150);
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.05 }, 450);
 
-    expect(stableRadius).toBe(150);
+    expect(stableRadius).toBe(450);
   });
 
   it('ヒステリシス帯を明確に超えたら次の段階へ切り替える', () => {
-    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.06 }, 150);
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.06 }, 450);
 
-    expect(stableRadius).toBe(300);
+    expect(stableRadius).toBe(900);
   });
 
   it('段階を縮小方向にまたぐときも同じヒステリシスが働く', () => {
-    // 境界0.045未満、かつヒステリシス帯の下限(0.045 * 0.8 = 0.036)以上なら前回値(300)を維持する。
-    const stableWithinBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, 300);
-    expect(stableWithinBand).toBe(300);
+    // 境界0.045未満、かつヒステリシス帯の下限(0.045 * 0.8 = 0.036)以上なら前回値(900)を維持する。
+    const stableWithinBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.04 }, 900);
+    expect(stableWithinBand).toBe(900);
 
-    const stableBelowBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.03 }, 300);
-    expect(stableBelowBand).toBe(150);
+    const stableBelowBand = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.03 }, 900);
+    expect(stableBelowBand).toBe(450);
   });
 
   it('2段階以上離れた変化ではヒステリシスを無視して即座に切り替える', () => {
-    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 }, 75);
+    const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.08 }, 225);
 
-    expect(stableRadius).toBe(300);
+    expect(stableRadius).toBe(900);
   });
 
   it('前回値が段階テーブルに存在しない場合は素直に段階選択した値を返す', () => {
     const stableRadius = getStablePhotoClusterRadiusMeters({ ...region, latitudeDelta: 0.05 }, 999);
 
-    expect(stableRadius).toBe(300);
+    expect(stableRadius).toBe(900);
   });
 });
 
@@ -189,18 +223,18 @@ describe('写真クラスタ clusterMapPhotos', () => {
   });
 
   it('同じ場所と言えない距離の写真は別クラスタに分ける', () => {
-    // 緯度差0.0009°(約100m)。段階量子化後の既定半径(75m)より明確に離す。
-    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.001, 139.0001, 2)], region);
+    // 緯度差0.0027°(約300m)。段階量子化後の既定半径(225m)より明確に離す。
+    const clusters = clusterMapPhotos([createPhoto('a', 35.0001, 139.0001, 1), createPhoto('b', 35.0028, 139.0001, 2)], region);
 
     expect(clusters).toHaveLength(2);
   });
 
   it('連鎖的に離れた写真を巨大クラスタにまとめない', () => {
-    // a-b、b-cはそれぞれ約50m(新半径75m以内で直接隣接可能。境界から25m の余裕)だが、
-    // a-c間は約100m(新半径75mを25m超える)。b経由で連鎖してもseedはaのまま動かないため、
+    // a-b、b-cはそれぞれ約150m(既定半径225m以内で直接隣接可能。境界から75mの余裕)だが、
+    // a-c間は約300m(既定半径225mを75m超える)。b経由で連鎖してもseedはaのまま動かないため、
     // cはaとの直接距離で判定され別クラスタになる(連鎖防止の検証)。
     const clusters = clusterMapPhotos(
-      [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00055, 139.0001, 2), createPhoto('c', 35.001, 139.0001, 1)],
+      [createPhoto('a', 35.0001, 139.0001, 3), createPhoto('b', 35.00145, 139.0001, 2), createPhoto('c', 35.0028, 139.0001, 1)],
       region,
     );
 
@@ -326,7 +360,7 @@ describe('新実装(空間ハッシュ)と参照実装(O(N^2))の等価性', () 
       return createPhoto(`photo-${index}`, latitude, longitude, index);
     });
 
-    for (const clusterRadiusMeters of [10, 75, 300, 1500, 7500]) {
+    for (const clusterRadiusMeters of [30, 225, 900, 4500, 22500, 45000]) {
       const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
       const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
 
@@ -344,7 +378,7 @@ describe('新実装(空間ハッシュ)と参照実装(O(N^2))の等価性', () 
       return createPhoto(`photo-${index}`, latitude, longitude, index);
     });
 
-    for (const clusterRadiusMeters of [75, 300, 1500]) {
+    for (const clusterRadiusMeters of [225, 900, 4500, 45000]) {
       const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
       const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
 
@@ -365,7 +399,7 @@ describe('新実装(空間ハッシュ)と参照実装(O(N^2))の等価性', () 
       return createPhoto(`photo-${index}`, latitude, longitude, index);
     });
 
-    for (const clusterRadiusMeters of [75, 300, 1500]) {
+    for (const clusterRadiusMeters of [225, 900, 4500]) {
       const actual = normalizeClustersForComparison(clusterMapPhotosByRadius(photos, clusterRadiusMeters));
       const expected = normalizeClustersForComparison(referenceClusterMapPhotosByRadius(photos, clusterRadiusMeters));
 

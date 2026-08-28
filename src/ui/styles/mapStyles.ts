@@ -691,6 +691,18 @@ export function createMapStyles(theme: AppTheme) {
       height: '100%',
       width: '100%',
     },
+    // サムネイルを取得できなかった写真のマーカー。除外して消すより、画像なしで存在を示す
+    photoMarkerPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: colors.cardStrong,
+      borderRadius: 7,
+      height: '100%',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    photoMarkerPlaceholderIcon: {
+      color: colors.mutedText,
+    },
     photoClusterBadge: {
       alignItems: 'center',
       backgroundColor: colors.primary,
@@ -737,6 +749,15 @@ export function createMapStyles(theme: AppTheme) {
       height: 50,
       width: 50,
     },
+    // サムネイルを取得できなかった写真の一覧表示。白紙のマスにしない
+    photoClusterGridPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      height: '100%',
+      justifyContent: 'center',
+      width: '100%',
+    },
     photoClusterMarkerBubble: {
       backgroundColor: colors.surfaceOverlay,
       borderColor: colors.card,
@@ -763,6 +784,15 @@ export function createMapStyles(theme: AppTheme) {
       fontWeight: '800',
       textAlign: 'center',
     },
+    // 吹き出しの「後ろ」に敷く閉じる用の当たり判定。吹き出しの祖先にしないことで、
+    // グリッドの余白でもScrollViewがパンを取れるようにしている(PhotoPreviewModals を参照)
+    photoClusterBackdrop: {
+      bottom: 0,
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+    },
     photoClusterOverlay: {
       alignItems: 'center',
       backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.34)' : 'rgba(45, 36, 22, 0.18)',
@@ -770,10 +800,18 @@ export function createMapStyles(theme: AppTheme) {
       justifyContent: 'center',
       padding: 24,
     },
+    // 3×3グリッド1ページ分。50pxのマス3つ + gap 6px×2 = 162px の正方形。
+    // 写真が9枚に満たないページでも高さを固定するのは、余ったマスの領域も
+    // ScrollView のコンテンツに含めてページ送りのスワイプを受け取れるようにするため。
+    // 高さを指定しないと、写真3枚のページは1行分(50px)まで縮み、
+    // その下の空白がスワイプに反応しなくなる。
+    // alignContent を先頭寄せにしないと、flexWrap が残りの高さへ行を分散させてしまう。
     photoClusterPage: {
+      alignContent: 'flex-start',
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 6,
+      height: 162,
       width: 162,
     },
     photoClusterPager: {
@@ -807,6 +845,28 @@ export function createMapStyles(theme: AppTheme) {
     photoPreviewImage: {
       height: '88%',
       width: '100%',
+    },
+    // 高解像度(iCloudからのダウンロードを含む)取得中の待機表示。サムネイルの上に重ねる
+    photoPreviewLoading: {
+      alignSelf: 'center',
+      position: 'absolute',
+    },
+    photoPreviewLoadingIndicator: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、インジケータも固定の白にする
+      color: '#ffffff',
+    },
+    // サムネイルを取得できなかった写真の拡大表示。暗転した背景に何も出ない状態を避ける
+    photoPreviewPlaceholder: {
+      alignItems: 'center',
+      gap: 12,
+      height: '88%',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    photoPreviewPlaceholderText: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、文字色も固定の白にする
+      color: '#ffffff',
+      fontSize: 14,
     },
     photoStatusCard: {
       alignSelf: 'center',

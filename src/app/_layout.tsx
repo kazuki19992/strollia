@@ -140,6 +140,8 @@ function RootLayoutContent(): React.ReactElement {
         selectedPhotoCluster={s.selectedPhotoCluster}
         selectedPhotoClusterPages={s.selectedPhotoClusterPages}
         selectedPhoto={s.selectedPhoto}
+        selectedPhotoPreviewUri={s.selectedPhotoPreviewUri}
+        isSelectedPhotoPreviewLoading={s.isSelectedPhotoPreviewLoading}
         styles={s.styles}
         onSelectPhotoCluster={s.setSelectedPhotoCluster}
         onSelectPhoto={s.setSelectedPhoto}

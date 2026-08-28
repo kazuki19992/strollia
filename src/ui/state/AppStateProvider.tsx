@@ -58,6 +58,7 @@ import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
 import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiagnostics';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
+import { usePhotoPreviewUri } from '@/ui/hooks/usePhotoPreviewUri';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
@@ -224,6 +225,10 @@ export type AppStateContextValue = {
   updateShowPhotosOnMap: (show: boolean) => Promise<void>;
   /** 選択された写真(単体プレビュー用)。 */
   selectedPhoto: MapPhoto | null;
+  /** 拡大表示に使うURI。高解像度を取得できるまではサムネイルのまま。 */
+  selectedPhotoPreviewUri: string | null;
+  /** 拡大表示用の高解像度画像を取得中かどうか。 */
+  isSelectedPhotoPreviewLoading: boolean;
   /** 選択された写真クラスタ(複数プレビュー用)。 */
   selectedPhotoCluster: MapPhotoCluster | null;
   /** ページ分割済み選択クラスタ写真一覧。 */
@@ -625,6 +630,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
   usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, isLoadingPhotos, photos, clusters: photoClusters });
   const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
+  // 拡大表示のときだけ高解像度を取りに行く(この経路だけiCloudからのダウンロードを許可する)。
+  const { previewUri: selectedPhotoPreviewUri, isLoadingPreview: isSelectedPhotoPreviewLoading } = usePhotoPreviewUri(selectedPhoto);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
@@ -1150,6 +1157,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     photoErrorMessage,
     updateShowPhotosOnMap,
     selectedPhoto,
+    selectedPhotoPreviewUri,
+    isSelectedPhotoPreviewLoading,
     selectedPhotoCluster,
     selectedPhotoClusterPages,
     setSelectedPhotoCluster,

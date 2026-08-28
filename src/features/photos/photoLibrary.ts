@@ -11,8 +11,15 @@ import { mapWithConcurrency } from '@/utils/concurrency';
 export type MapPhoto = {
   /** 写真ライブラリ内のアセットID。 */
   id: string;
-  /** サムネイルや全画面表示に使うURI。 */
-  uri: string;
+  /**
+   * サムネイルや全画面表示に使うURI。表示できる画像を用意できなかった場合はnull。
+   *
+   * nullを許すのは、iCloudにしか本体が無いなど**サムネイルを取得できない写真が実在する**ため。
+   * かつてはそうした写真を結果から除外していたが、全件失敗する環境(「iPhoneのストレージを最適化」)で
+   * 地図から写真マーカーが丸ごと消えてしまった。写真がそこにあるという情報自体に地図上の価値が
+   * あるため、画像なしのマーカーとして描画する(設計書 §5.2)。
+   */
+  uri: string | null;
   /** 写真の緯度。 */
   latitude: number;
   /** 写真の経度。 */
@@ -50,9 +57,9 @@ const DEFAULT_PHOTO_SCAN_LIMIT = 200;
  * (2026-08-08 Sentry 観測: 200並列でメインスレッドが2秒以上停止)。
  * 同時実行数を絞ることでメインキューへ一度に積まれるデコード量を抑える。
  *
- * 表示用URIの解決(`resolvePhotoDisplayUri`)はデコードを伴わないが、`requestContentEditingInput` は
- * それ自体がI/Oを伴う非同期処理であり、ビューポート内の写真ぶんが一斉に走ると同じ轍を踏みうる。
- * 別の値を持つ理由もないため同じ上限を共有する。
+ * 表示用URIの解決(`resolvePhotoDisplayUri`)はフル解像度デコードを伴わないが、
+ * `PHImageManager.requestImage` はサムネイルのデコードとJPEGの書き出しを行う。
+ * ビューポート内の写真ぶんが一斉に走ると同じ轍を踏みうるため、別の値を持つ理由もなく同じ上限を共有する。
  */
 export const PHOTO_INFO_CONCURRENCY = 4;
 
@@ -137,6 +144,12 @@ function toFiniteCoordinate(value: unknown): number | null {
  * 緯度経度はここで数値へ変換する(理由は `toFiniteCoordinate` のJSDocを参照)。
  * 数値として解釈できない座標の写真は地図に置けないため、ジオタグなしと同様に除外する。
  *
+ * **表示用URIには `localUri` だけを使い、`asset.uri`(iOS: `ph://…`)へフォールバックしない。**
+ * `ph://` は `<Image>` で描画できず白紙のマーカーになるだけで、表示用の値としては
+ * 「無い」のと変わらない。iCloudに本体がある写真では `localUri` が得られないため、
+ * ここでnullへ倒してプレースホルダ描画へ回す(設計書 §5.2)。
+ * DBへ保存する安定した識別子は `toPhotoAssetRecord` が別途 `asset.uri` から作る。
+ *
  * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
  * @returns 有効なジオタグがある写真の場合はMapPhoto、ない場合はnull。
  */
@@ -154,7 +167,7 @@ export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
 
   return {
     id: asset.id,
-    uri: asset.localUri ?? asset.uri,
+    uri: asset.localUri ?? null,
     latitude,
     longitude,
     creationTime: asset.creationTime,
@@ -166,9 +179,11 @@ export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
 /**
  * MediaLibraryの詳細アセットを `photo_assets` の保存レコードへ変換する。
  *
- * `MapPhoto.uri` が `localUri ?? uri` を採るのに対し、**保存するのは `asset.uri` だけ**である。
+ * `MapPhoto.uri` が表示できる `localUri` だけを採るのに対し、**保存するのは `asset.uri` だけ**である。
  * `localUri` は `requestContentEditingInput` が返す一時パスで、アプリ再起動をまたいで
  * 有効である保証がないため永続化してはいけない(親設計書 §4.2)。
+ * 逆に `asset.uri`(`ph://…`)は表示には使えないが識別子としては安定しているので、
+ * 表示用の値と保存用の値はここで意図的に分かれる。
  *
  * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
  * @returns 有効なジオタグがある写真の場合は保存レコード、ない場合はnull。
@@ -227,25 +242,28 @@ export function toMapPhotoFromPhotoAsset(record: PhotoAssetRecord): MapPhoto {
 /**
  * 保存済みの安定URIを、`<Image>` で描画できる表示用URIへ置き換える。
  *
- * 解決に失敗した写真は**結果から除外する**。URIが解決できない写真をそのまま返すと、地図上に
- * 画像の出ない空のバブルが残り続けてしまう(今回直した不具合そのもの)。除外すればマーカー自体が
- * 出ないだけで済み、失敗はキャッシュされないため次回の読み込みで復帰できる。
+ * **解決できなかった写真も除外せず、`uri: null` のまま返す。** かつては除外していたが、
+ * 「iPhoneのストレージを最適化」が有効な端末では解決が全件失敗し、地図から写真マーカーが
+ * 丸ごと消えるという最悪の症状になった。画像が無いだけのマーカーとして描画すれば、
+ * 少なくとも「そこに写真がある」ことは伝わる(設計書 §5.2)。失敗はキャッシュされないため、
+ * 次回の読み込みで画像つきへ復帰できる。
  *
  * 解決を一斉並列で発行しないよう、写真ライブラリへの他の問い合わせと同じ上限で絞る。
  *
  * @param photos - 表示用URI未解決の写真。
- * @returns 表示用URIを解決できた写真のみ。入力順を保つ。
+ * @returns 表示用URIを解決した写真。解決できなかった写真は `uri: null` になる。入力順と件数を保つ。
  */
 async function resolveMapPhotoDisplayUris(photos: MapPhoto[]): Promise<MapPhoto[]> {
-  const resolvedUris = await mapWithConcurrency(photos, PHOTO_INFO_CONCURRENCY, (photo) => resolvePhotoDisplayUri(photo.id, photo.uri));
+  const resolvedUris = await mapWithConcurrency(photos, PHOTO_INFO_CONCURRENCY, (photo) =>
+    photo.uri === null ? Promise.resolve(null) : resolvePhotoDisplayUri(photo.id, photo.uri),
+  );
 
-  return photos.flatMap((photo, index) => {
+  return photos.map((photo, index) => {
     const result = resolvedUris[index];
-    if (result.status !== 'fulfilled') {
-      return [];
-    }
 
-    return [{ ...photo, uri: result.value }];
+    // 解決処理は本来nullを返して失敗を伝えるが、想定外の例外でも写真を落とさないよう
+    // rejected も「画像なし」として扱う
+    return { ...photo, uri: result.status === 'fulfilled' ? result.value : null };
   });
 }
 
@@ -258,7 +276,7 @@ async function resolveMapPhotoDisplayUris(photos: MapPhoto[]): Promise<MapPhoto[
  * パンやズームを繰り返しても同じ写真の解決は1回で済む。
  *
  * @param bounds - 検索対象の緯度経度境界。
- * @returns 範囲内の地図表示用写真。表示用URIを解決できなかった写真は含まない。
+ * @returns 範囲内の地図表示用写真。表示用URIを解決できなかった写真も `uri: null` で含む。
  */
 export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): Promise<MapPhoto[]> {
   const records = await getPhotoAssetsInBounds(bounds);

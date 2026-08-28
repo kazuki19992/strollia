@@ -58,6 +58,7 @@ import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSettin
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
 import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiagnostics';
+import { usePhotoDisplayLimitSetting } from '@/ui/hooks/usePhotoDisplayLimitSetting';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
 import { usePhotoPreviewUri } from '@/ui/hooks/usePhotoPreviewUri';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
@@ -78,6 +79,7 @@ import type { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import type { RefreshDataResult } from '@/ui/hooks/useLocationRecordingSync';
 import type { AppColorPresetId } from '@/features/customization/colorPresets';
 import type { UserLocationIconId } from '@/features/customization/customizationOptions';
+import type { PhotoDisplayLimitId } from '@/features/settings/photoDisplayLimit';
 import { hasEnabledDevelopmentFlags } from '@/config/developmentFlags';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
@@ -218,10 +220,20 @@ export type AppStateContextValue = {
   isUpdatingPhotoSetting: boolean;
   /** 地図上に表示する写真クラスタ一覧。 */
   photoClusters: MapPhotoCluster[];
-  /** 写真読み込み中かどうか。 */
+  /** 保存済み写真(`photo_assets`)の読み込み中かどうか。 */
   isLoadingPhotos: boolean;
+  /**
+   * 背後で写真ライブラリの差分走査が動いているかどうか。
+   *
+   * 走査は表示をブロックしないため、読み込み表示とは分けて「邪魔にならない形」で示す(設計書 §4.2)。
+   */
+  isScanningPhotoLibrary: boolean;
   /** 写真取得エラーメッセージ。 */
   photoErrorMessage: string | null;
+  /** 選択中の「地図に表示する写真」設定。 */
+  photoDisplayLimitId: PhotoDisplayLimitId;
+  /** 「地図に表示する写真」設定を更新する。 */
+  updatePhotoDisplayLimitId: (id: PhotoDisplayLimitId) => Promise<void>;
   /**
    * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
    *
@@ -624,17 +636,20 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     const today = toLocalDate(new Date());
     return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
   }, [dailyLogs]);
+  // 表示上限は地図のパン・ズームのたびに読み直さず、UI層で保持した値を検索へ渡す。
+  const { photoDisplayLimitId, photoDisplayLimit, updatePhotoDisplayLimitId } = usePhotoDisplayLimitSetting();
   // 写真の検索範囲もGrid取得と同じく、ユーザー操作中に更新されない gridOverlayRegion を使う。
   const {
     showPhotosOnMap,
     isUpdatingPhotoSetting,
     photos,
     isLoadingPhotos,
+    isScanningPhotoLibrary,
     photoErrorMessage,
     photoScanMetrics,
     initializePhotoSetting,
     updateShowPhotosOnMap,
-  } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion });
+  } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion, photoDisplayLimit });
   // 計測フラグが無効なら常にnull(=画面に何も出さない)。判定は createPhotoScanMetricsLines に閉じている
   const photoScanMetricsLines = useMemo(() => createPhotoScanMetricsLines(photoScanMetrics), [photoScanMetrics]);
   // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
@@ -1166,7 +1181,10 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     isUpdatingPhotoSetting,
     photoClusters,
     isLoadingPhotos,
+    isScanningPhotoLibrary,
     photoErrorMessage,
+    photoDisplayLimitId,
+    updatePhotoDisplayLimitId,
     photoScanMetricsLines,
     updateShowPhotosOnMap,
     selectedPhoto,

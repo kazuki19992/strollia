@@ -13,6 +13,7 @@ import {
   SPEED_METER_ARC_CIRCUMFERENCE,
 } from '@/ui/components/MapBottomDashboard';
 import { MapScreen } from '@/ui/components/MapScreen';
+import { PHOTO_LIBRARY_SCANNING_MESSAGE } from '@/ui/appText';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -96,6 +97,7 @@ function createProps() {
     shouldOpenSettingsForPermission: false,
     photoErrorMessage: null,
     isLoadingPhotos: false,
+    isScanningPhotoLibrary: false,
     photoScanMetricsLines: null as string[] | null,
     distance: 1234,
     todayDistance: 456,
@@ -163,6 +165,26 @@ describe('地図画面 MapScreen', () => {
     expect(StyleSheet.flatten(name!.props.style)).toMatchObject({ fontWeight: '700' });
     expect(screen.getByLabelText('家のTwemojiアイコン')).toBeTruthy();
     expect(screen.getByText('非表示範囲: 1km')).toBeTruthy();
+  });
+
+  test('走査中は保存済み写真を表示したまま、走査中であることを控えめに知らせる', () => {
+    render(<MapScreen {...createProps()} showPhotosOnMap isLoadingPhotos={false} isScanningPhotoLibrary />);
+
+    expect(screen.getByText(PHOTO_LIBRARY_SCANNING_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText('ジオタグ付き写真を読み込んでいます...')).toBeNull();
+  });
+
+  test('キャッシュ検索中は走査中の案内を重ねて出さない', () => {
+    render(<MapScreen {...createProps()} showPhotosOnMap isLoadingPhotos isScanningPhotoLibrary />);
+
+    expect(screen.getByText('ジオタグ付き写真を読み込んでいます...')).toBeTruthy();
+    expect(screen.queryByText(PHOTO_LIBRARY_SCANNING_MESSAGE)).toBeNull();
+  });
+
+  test('写真表示がOFFなら走査中でも案内を出さない', () => {
+    render(<MapScreen {...createProps()} showPhotosOnMap={false} isScanningPhotoLibrary />);
+
+    expect(screen.queryByText(PHOTO_LIBRARY_SCANNING_MESSAGE)).toBeNull();
   });
 
   test('計測表示行が無い場合は写真走査の計測結果を表示しない', () => {

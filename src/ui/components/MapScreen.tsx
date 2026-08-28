@@ -9,6 +9,7 @@ import { MapPhotoCluster } from '@/features/photos/photoClusters';
 import { getStayPlaceEmoji } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
 import { formatStayPlacePrivacyRadius } from '@/features/stayPlaces/stayPlacePrivacy';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import { PHOTO_LIBRARY_SCANNING_MESSAGE } from '@/ui/appText';
 import { AreaLabel } from '@/ui/areaName';
 import { AppTheme } from '@/theme/theme';
 import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
@@ -82,8 +83,14 @@ export type MapScreenProps = {
   isWhileInUseOnlyMode: boolean;
   /** 写真エラーメッセージ。 */
   photoErrorMessage: string | null;
-  /** 写真読み込み中か。 */
+  /** 保存済み写真の読み込み中か。 */
   isLoadingPhotos: boolean;
+  /**
+   * 背後で写真ライブラリの差分走査が動いているか。
+   *
+   * 走査は表示をブロックしないため、読み込み中の表示とは分けて控えめに知らせる(設計書 §4.2)。
+   */
+  isScanningPhotoLibrary: boolean;
   /**
    * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
    *
@@ -155,6 +162,7 @@ export function MapScreen({
   isWhileInUseOnlyMode,
   photoErrorMessage,
   isLoadingPhotos,
+  isScanningPhotoLibrary,
   photoScanMetricsLines,
   distance,
   todayDistance,
@@ -333,6 +341,18 @@ export function MapScreen({
           <View style={styles.photoStatusCard}>
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionText}>
               ジオタグ付き写真を読み込んでいます...
+            </Text>
+          </View>
+        )}
+
+        {/*
+          走査は保存済み写真の表示をブロックしない。読み込み中の帯と二重に出さないよう、
+          キャッシュ検索が終わってから控えめに知らせる
+        */}
+        {showPhotosOnMap && !isLoadingPhotos && isScanningPhotoLibrary && (
+          <View style={styles.photoStatusCard}>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionText}>
+              {PHOTO_LIBRARY_SCANNING_MESSAGE}
             </Text>
           </View>
         )}

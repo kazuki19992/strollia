@@ -389,7 +389,16 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
         height: 80,
       },
     ]);
-    expect(getPhotoAssetsInBounds).toHaveBeenCalledWith(bounds);
+    // 表示上限を指定しない場合は上限なし(内部の安全上限だけが効く)
+    expect(getPhotoAssetsInBounds).toHaveBeenCalledWith(bounds, { displayLimit: null });
+  });
+
+  it('表示上限をビューポート検索へ渡す', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([]);
+
+    await loadGeotaggedPhotosInBounds(bounds, 1000);
+
+    expect(getPhotoAssetsInBounds).toHaveBeenCalledWith(bounds, { displayLimit: 1000 });
   });
 
   it('同じ写真を再度読み込んでも表示用URIの解決は1回しか走らない', async () => {

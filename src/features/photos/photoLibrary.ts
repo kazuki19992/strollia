@@ -412,11 +412,16 @@ async function updatePhotoScanBaseline(assets: readonly AssetMetadata[], previou
  * (理由は `resolvePhotoDisplayUri` を参照)。解決結果はセッション内のメモリキャッシュに載るため、
  * パンやズームを繰り返しても同じ写真の解決は1回で済む。
  *
+ * 表示上限(「地図に表示する写真」の設定)は呼び出し側から件数として受け取る。設定の読み込みを
+ * ここで行うと、地図のパン・ズームのたびに設定読み込みのDBアクセスが増えるため、
+ * 設定を保持しているUI層が解決済みの件数を渡す形にしている。
+ *
  * @param bounds - 検索対象の緯度経度境界。
+ * @param displayLimit - 表示する写真の上限(全体の最新N件)。上限なしの場合はnull。
  * @returns 範囲内の地図表示用写真。表示用URIを解決できなかった写真も `uri: null` で含む。
  */
-export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): Promise<MapPhoto[]> {
-  const records = await getPhotoAssetsInBounds(bounds);
+export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds, displayLimit: number | null = null): Promise<MapPhoto[]> {
+  const records = await getPhotoAssetsInBounds(bounds, { displayLimit });
 
   return resolveMapPhotoDisplayUris(records.map(toMapPhotoFromPhotoAsset));
 }

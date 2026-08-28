@@ -14,6 +14,7 @@ import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
 import { resolvePhotoDisplayUri } from '@/features/photos/photoDisplayUri';
 import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
+import { getPhotoScanBaselineMs, resolveNextPhotoScanBaselineMs, savePhotoScanBaselineMs } from '@/features/photos/photoScanState';
 import { createPhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
 import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 import { mapWithConcurrency } from '@/utils/concurrency';
@@ -70,22 +71,54 @@ export type GeotaggedPhotoScanResult = {
    * `createPhotoScanMetricsLines` がフラグで切り替える。
    */
   metrics: PhotoScanMetrics;
+  /**
+   * 実際に走った走査モード。
+   *
+   * 差分走査を要求しても基準時刻が無ければ全件走査へフォールバックするため、**要求したモードと
+   * 一致するとは限らない**。呼び出し側が「今回は全件を見た」と判断できるよう結果として返す。
+   */
+  mode: PhotoScanMode;
 };
 
-/** 走査する最新写真の既定の上限。初期表示の重さを抑えるために持つ。 */
-export const DEFAULT_PHOTO_SCAN_LIMIT = 200;
+/**
+ * 写真ライブラリの走査モード。
+ *
+ * 実測(設計書 §2)では全ライブラリ18,000枚の走査が24秒かかり、しかも走査中に地図を操作すると
+ * 1.6倍まで悪化する。自動で走る走査を差分に絞り、重い全件走査はユーザーの明示操作にだけ限ることで、
+ * 通常利用で走査コストが見えないようにする。
+ */
+export type PhotoScanMode =
+  /** 前回の走査より新しい写真だけを対象にする。起動時・写真表示ON時に自動で走る軽量な走査。 */
+  | 'incremental'
+  /** ライブラリ全体を対象にする。ユーザーが「ライブラリを再読み込み」を選んだときだけ走る。 */
+  | 'full';
+
+/** `loadGeotaggedPhotos` の実行条件。 */
+export type PhotoScanOptions = {
+  /** 走査モード。省略時は全件走査。 */
+  mode?: PhotoScanMode;
+  /**
+   * 走査する最新写真の上限。nullは上限なし。
+   *
+   * 省略時は `resolvePhotoScanLimit()`(計測フラグが無ければ上限なし)を使う。
+   */
+  limit?: number | null;
+};
 
 /**
  * 今回の走査で使う上限を決める。
  *
- * 通常は既定の上限を使う。計測用に `EXPO_PUBLIC_PHOTO_SCAN_LIMIT` が設定されている場合だけ、
- * その値へ差し替える(**上限撤廃の実コストを実機で測るための一時的な仕組み**)。
- * 不正値の解釈は `getPhotoScanLimitOverride` 側で吸収済みで、ここへはnullか有効な件数しか来ない。
+ * **既定は上限なし(null)である。** かつては最新200件に絞っていたが、実測で全件走査のコストが
+ * 想定の約1/40であることが分かったため上限を撤廃した(設計書 §2)。
  *
- * @returns 走査に使う上限件数。
+ * 計測用に `EXPO_PUBLIC_PHOTO_SCAN_LIMIT` が設定されている場合だけ、その値を上限にする
+ * (**走査コストを実機で測り続けるための仕組み**として残している)。不正値の解釈は
+ * `getPhotoScanLimitOverride` 側で吸収済みで、ここへはnullか有効な件数しか来ない。
+ *
+ * @returns 走査に使う上限件数。上限を掛けない場合はnull。
  */
-export function resolvePhotoScanLimit(): number {
-  return getPhotoScanLimitOverride() ?? DEFAULT_PHOTO_SCAN_LIMIT;
+export function resolvePhotoScanLimit(): number | null {
+  return getPhotoScanLimitOverride();
 }
 
 /**
@@ -343,6 +376,35 @@ async function resolveMapPhotoDisplayUris(photos: MapPhoto[]): Promise<MapPhoto[
 }
 
 /**
+ * 次回の差分走査の基準時刻を更新する。
+ *
+ * 走査したアセットの最新の撮影日時を基準にする。差分走査はこの時刻より新しい写真だけを対象にするため、
+ * ここを進めることで次回の走査が数件〜数十件で済むようになる。
+ *
+ * **保存に失敗しても走査そのものは成功として扱う**(ログのみ)。基準時刻を進め損ねても、
+ * 次回の走査が同じ範囲をもう一度見るだけで、データが壊れることはないため。
+ *
+ * 計測フラグ(`EXPO_PUBLIC_PHOTO_SCAN_LIMIT`)で上限を掛けている場合、走査は最新N件で打ち切られる。
+ * それでも「基準時刻より新しい写真はすべて見た」ことに変わりはないため基準時刻は進めてよいが、
+ * 打ち切られた古い範囲は差分走査では拾えない(全件走査でのみ回収される)。
+ *
+ * @param assets - 今回走査したアセット。
+ * @param previousBaselineMs - 今回の走査で使った基準時刻。全件走査の場合はnull。
+ * @returns なし。
+ */
+async function updatePhotoScanBaseline(assets: readonly AssetMetadata[], previousBaselineMs: number | null): Promise<void> {
+  const nextBaselineMs = resolveNextPhotoScanBaselineMs(assets, previousBaselineMs);
+
+  if (nextBaselineMs === null || nextBaselineMs === previousBaselineMs) {
+    return;
+  }
+
+  await savePhotoScanBaselineMs(nextBaselineMs).catch((error: unknown) => {
+    console.warn('Failed to save photo scan baseline:', error);
+  });
+}
+
+/**
  * 表示範囲に含まれるジオタグ付き写真を `photo_assets` から読み込む。
  *
  * 写真ライブラリの走査(重いデコードを伴う)は行わず、保存済みメタデータだけを参照する。
@@ -379,24 +441,40 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): 
  *
  * 走査コストの内訳は常に計測して返す(理由は `GeotaggedPhotoScanResult.metrics` を参照)。
  *
- * @param limit - 走査する最新写真の最大件数。省略時は `resolvePhotoScanLimit()` の結果を使う。
- * @returns ジオタグ付き写真一覧、キャッシュ保存の成否、走査の計測値。表示用URIの解決状態は `GeotaggedPhotoScanResult` を参照。
+ * @param options - 走査モードと上限。省略時は上限なしの全件走査。
+ * @returns ジオタグ付き写真一覧、キャッシュ保存の成否、走査の計測値、実際に走ったモード。表示用URIの解決状態は `GeotaggedPhotoScanResult` を参照。
  */
-export async function loadGeotaggedPhotos(limit = resolvePhotoScanLimit()): Promise<GeotaggedPhotoScanResult> {
+export async function loadGeotaggedPhotos({
+  mode = 'full',
+  limit = resolvePhotoScanLimit(),
+}: PhotoScanOptions = {}): Promise<GeotaggedPhotoScanResult> {
   const startedAtMs = Date.now();
 
-  // 新APIに `hasNextPage` は無い。上限より1件多く要求し、その1件が返るかどうかで
-  // 「さらに古い写真が残っているか」を判定する(設計書 §4.2)
-  const probedMetadata = await new Query()
-    .eq(AssetField.MEDIA_TYPE, MediaType.IMAGE)
-    .orderBy({ key: AssetField.CREATION_TIME, ascending: false })
-    .limit(limit + 1)
-    .exeForMetadata();
+  // 差分走査は前回の基準時刻を起点にする。基準時刻が無い(初回・壊れた値・読み込み失敗)場合は、
+  // 差分の起点が無いので全件走査へフォールバックする
+  const baselineMs = mode === 'incremental' ? await getPhotoScanBaselineMs() : null;
+  const scanMode: PhotoScanMode = mode === 'incremental' && baselineMs !== null ? 'incremental' : 'full';
+
+  let query = new Query().eq(AssetField.MEDIA_TYPE, MediaType.IMAGE).orderBy({ key: AssetField.CREATION_TIME, ascending: false });
+
+  if (scanMode === 'incremental' && baselineMs !== null) {
+    // 基準時刻ちょうどの写真は前回走査済みなので、排他(gt)で除く
+    query = query.gt(AssetField.CREATION_TIME, baselineMs);
+  }
+
+  if (limit !== null) {
+    // 新APIに `hasNextPage` は無い。上限より1件多く要求し、その1件が返るかどうかで
+    // 「さらに古い写真が残っているか」を判定する(設計書 §4.2)。
+    // 上限を掛けないときはこのプロービング自体が不要である(常にライブラリを見切る)
+    query = query.limit(limit + 1);
+  }
+
+  const probedMetadata = await query.exeForMetadata();
 
   const metadataDurationMs = Date.now() - startedAtMs;
-  const hasNextPage = probedMetadata.length > limit;
+  const hasNextPage = limit !== null && probedMetadata.length > limit;
   // プロービング用の超過分は走査対象に含めない。含めると保存件数も往復回数も上限を超えてしまう
-  const scannedMetadata = hasNextPage ? probedMetadata.slice(0, limit) : probedMetadata;
+  const scannedMetadata = hasNextPage && limit !== null ? probedMetadata.slice(0, limit) : probedMetadata;
 
   // 位置情報だけは `exeForMetadata()` に含まれないため、アセットごとに取得する。
   // `getLocation()` は `phAsset.location` を読むだけでデコードもI/Oも伴わない
@@ -438,10 +516,15 @@ export async function loadGeotaggedPhotos(limit = resolvePhotoScanLimit()): Prom
     isInfoResolved: locations[index].status === 'fulfilled',
     isSaved: savedAssetIds.has(metadata.id),
   }));
+  // **差分走査は「ライブラリを見切った」扱いにしてはいけない。** 基準時刻より古い範囲は走査して
+  // いないため、全期間の突き合わせにすると保存済みの古い写真の行をすべて削除してしまう。
+  // 走査していない古い範囲が残っている点は次ページがある場合と同じなので、同じ扱いへ寄せることで
+  // 突き合わせ対象を「走査したページ内の最古の撮影日時より新しい範囲」だけに閉じる(設計書 §4.3)
+  const hasUnscannedOlderAssets = hasNextPage || scanMode === 'incremental';
   // フルアクセスが無いときは走査結果が「ライブラリの実態」を表さないため、突き合わせ(削除)を丸ごと
   // スキップして保存(UPSERT)だけ行う。理由は `canReconcilePhotoAssets` を参照
   const reconciliation = (await canReconcilePhotoAssets())
-    ? createPhotoAssetReconciliation({ assets: scannedMetadata, outcomes, hasNextPage })
+    ? createPhotoAssetReconciliation({ assets: scannedMetadata, outcomes, hasNextPage: hasUnscannedOlderAssets })
     : null;
 
   const isCacheSaved = await savePhotoAssets(assetRecords, reconciliation).then(
@@ -454,6 +537,12 @@ export async function loadGeotaggedPhotos(limit = resolvePhotoScanLimit()): Prom
   );
 
   const saveDurationMs = Date.now() - saveStartedAtMs;
+
+  // **保存できたときだけ基準時刻を進める。** 保存に失敗した範囲を走査済みにしてしまうと、
+  // 次回以降の差分走査がその範囲を二度と拾わなくなる
+  if (isCacheSaved) {
+    await updatePhotoScanBaseline(scannedMetadata, baselineMs);
+  }
 
   // 保存できた場合、呼び出し側はビューポート検索へ進みこの配列を使わない。使われるのは保存に失敗した
   // フォールバックのときだけなので、そのときだけ表示用URIを解決する。常に解決すると、表示範囲の外にある
@@ -468,9 +557,11 @@ export async function loadGeotaggedPhotos(limit = resolvePhotoScanLimit()): Prom
   // 移ったが、「アセットごとの詳細取得が何件成功/失敗したか」という意味は同じであり、
   // 移行前後の値を同じグラフで比較できるようにするため
   reportPhotoMapDiagnostics('load', {
-    requestedLimit: limit,
+    // 上限なしは0で表す。送信キーの構成を変えずに「上限を掛けていない」ことを示せる
+    requestedLimit: limit ?? 0,
     scannedAssetCount: scannedMetadata.length,
     hasNextPage,
+    isIncrementalScan: scanMode === 'incremental',
     assetInfoFulfilledCount,
     assetInfoRejectedCount: locationRejectedCount,
     geotaggedPhotoCount: photos.length,
@@ -480,6 +571,7 @@ export async function loadGeotaggedPhotos(limit = resolvePhotoScanLimit()): Prom
   return {
     photos: resolvedPhotos,
     isCacheSaved,
+    mode: scanMode,
     metrics: {
       scannedAssetCount: scannedMetadata.length,
       geotaggedPhotoCount: photos.length,

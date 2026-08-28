@@ -13,9 +13,9 @@ import {
   toMapPhoto,
   toMapPhotoFromPhotoAsset,
   toPhotoAssetRecord,
-  DEFAULT_PHOTO_SCAN_LIMIT,
   PHOTO_INFO_CONCURRENCY,
 } from '@/features/photos/photoLibrary';
+import { getPhotoScanBaselineMs, savePhotoScanBaselineMs } from '@/features/photos/photoScanState';
 import type { PhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
 import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
@@ -25,6 +25,8 @@ const mockQueryEq = jest.fn();
 const mockQueryOrderBy = jest.fn();
 /** `Query.limit` の呼び出しを記録するスパイ。`limit + 1` のプロービング検証に使う。 */
 const mockQueryLimit = jest.fn();
+/** `Query.gt` の呼び出しを記録するスパイ。差分走査の基準時刻による絞り込みの検証に使う。 */
+const mockQueryGt = jest.fn();
 /** `Query.exeForMetadata` の戻り値を差し替えるスパイ。 */
 const mockExeForMetadata = jest.fn<Promise<AssetMetadata[]>, []>();
 /** `Asset.getLocation` の戻り値を差し替えるスパイ。引数はアセットID。 */
@@ -38,9 +40,24 @@ jest.mock('@/config/sentry', () => ({
   reportPhotoMapDiagnostics: jest.fn(),
 }));
 
-// 走査上限の計測用上書き。既定(null)ではモジュール既定の200件が使われる
+// 走査上限の計測用上書き。既定(null)では上限なしで走査する
 jest.mock('@/config/developmentFlags', () => ({
   getPhotoScanLimitOverride: jest.fn(() => null),
+}));
+
+// このテストはDBに触れない(リポジトリはすべてモック)が、モジュール読み込み時にSQLite接続を開く
+// `@/db/database` を経由するため、接続の生成だけ差し替える
+jest.mock('@/db/database', () => ({
+  db: {},
+  withExclusiveTransaction: jest.fn(),
+}));
+
+// 差分走査の基準時刻。DBに触れる読み書きだけ差し替え、基準時刻の算出(純粋関数)は実物を使う。
+// 既定(null)は初回相当で、差分走査を要求しても全件走査へフォールバックする
+jest.mock('@/features/photos/photoScanState', () => ({
+  ...jest.requireActual('@/features/photos/photoScanState'),
+  getPhotoScanBaselineMs: jest.fn().mockResolvedValue(null),
+  savePhotoScanBaselineMs: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/features/photos/photoAssetRepository', () => ({
@@ -82,6 +99,12 @@ jest.mock('expo-media-library', () => ({
     /** @returns チェーン用に自分自身。 */
     limit(count: number) {
       mockQueryLimit(count);
+      return this;
+    }
+
+    /** @returns チェーン用に自分自身。 */
+    gt(field: string, value: number) {
+      mockQueryGt(field, value);
       return this;
     }
 
@@ -466,7 +489,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
   it('次ページの有無を判定するため上限より1件多く要求する', async () => {
     mockScan([]);
 
-    await loadGeotaggedPhotos(50);
+    await loadGeotaggedPhotos({ limit: 50 });
 
     expect(mockQueryLimit).toHaveBeenCalledWith(51);
   });
@@ -671,7 +694,7 @@ describe('次ページ判定のプロービング loadGeotaggedPhotos', () => {
       async () => tokyoLocation,
     );
 
-    const { photos } = await loadGeotaggedPhotos(2);
+    const { photos } = await loadGeotaggedPhotos({ limit: 2 });
 
     expect(photos.map((photo) => photo.id)).toEqual(['ph://asset-1', 'ph://asset-2']);
     // 切り詰めた1件には位置情報を問い合わせない(往復回数を上限どおりに保つ)
@@ -692,7 +715,7 @@ describe('次ページ判定のプロービング loadGeotaggedPhotos', () => {
       async () => tokyoLocation,
     );
 
-    await loadGeotaggedPhotos(2);
+    await loadGeotaggedPhotos({ limit: 2 });
 
     // 次ページありなので全期間の突き合わせにはせず、走査済み窓(切り詰め後の最古)の下限を持つ
     expect((savePhotoAssets as jest.Mock).mock.calls[0][1]).toEqual({
@@ -708,7 +731,7 @@ describe('次ページ判定のプロービング loadGeotaggedPhotos', () => {
       async () => tokyoLocation,
     );
 
-    await loadGeotaggedPhotos(2);
+    await loadGeotaggedPhotos({ limit: 2 });
 
     expect((savePhotoAssets as jest.Mock).mock.calls[0][1]).toEqual({
       scannedEntireLibrary: true,
@@ -741,7 +764,7 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
       async () => tokyoLocation,
     );
 
-    await loadGeotaggedPhotos(1);
+    await loadGeotaggedPhotos({ limit: 1 });
 
     expect(reconciliationArgument()).toEqual({
       scannedEntireLibrary: false,
@@ -791,7 +814,7 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
       async (assetId) => (assetId === 'ph://asset-1' ? tokyoLocation : null),
     );
 
-    await loadGeotaggedPhotos(2);
+    await loadGeotaggedPhotos({ limit: 2 });
 
     expect(reconciliationArgument()).toMatchObject({ exclusiveOldestTakenAt: new Date(1000).toISOString() });
   });
@@ -818,7 +841,7 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
       async () => tokyoLocation,
     );
 
-    await loadGeotaggedPhotos(1);
+    await loadGeotaggedPhotos({ limit: 1 });
 
     expect(reconciliationArgument()).toBeNull();
   });
@@ -938,7 +961,7 @@ describe('ジオタグ付き写真読み込みの診断計装', () => {
       async (assetId) => (assetId === 'ph://asset-1' ? tokyoLocation : null),
     );
 
-    await loadGeotaggedPhotos(2);
+    await loadGeotaggedPhotos({ limit: 2 });
 
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(1);
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('load', {
@@ -946,11 +969,30 @@ describe('ジオタグ付き写真読み込みの診断計装', () => {
       // 切り詰めたあとの件数(次ページ判定用の1件は含めない)
       scannedAssetCount: 2,
       hasNextPage: true,
+      isIncrementalScan: false,
       assetInfoFulfilledCount: 2,
       assetInfoRejectedCount: 0,
       geotaggedPhotoCount: 1,
       durationMs: expect.any(Number),
     });
+  });
+
+  it('上限なしで走査した場合はrequestedLimitを0として送る', async () => {
+    mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
+
+    await loadGeotaggedPhotos();
+
+    // 送信キーの構成を変えずに「上限を掛けていない」ことを表す
+    expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('load', expect.objectContaining({ requestedLimit: 0, hasNextPage: false }));
+  });
+
+  it('差分走査かどうかを診断へ含める', async () => {
+    (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(3000);
+    mockScan([createAssetMetadata('asset-1', { creationTime: 5000 })], async () => tokyoLocation);
+
+    await loadGeotaggedPhotos({ mode: 'incremental' });
+
+    expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('load', expect.objectContaining({ isIncrementalScan: true }));
   });
 
   it('位置情報取得の一部が失敗した場合はfulfilled/rejectedの件数を分けて送る', async () => {
@@ -989,6 +1031,7 @@ describe('ジオタグ付き写真読み込みの診断計装', () => {
       'durationMs',
       'geotaggedPhotoCount',
       'hasNextPage',
+      'isIncrementalScan',
       'requestedLimit',
       'scannedAssetCount',
     ]);
@@ -1003,15 +1046,28 @@ describe('走査上限の解決 resolvePhotoScanLimit', () => {
     mockScan([]);
   });
 
-  it('上書きが無い場合は既定の200件を上限にする', async () => {
+  it('上書きが無い場合は上限なし(null)になる', async () => {
     (getPhotoScanLimitOverride as jest.Mock).mockReturnValue(null);
 
-    expect(resolvePhotoScanLimit()).toBe(DEFAULT_PHOTO_SCAN_LIMIT);
+    expect(resolvePhotoScanLimit()).toBeNull();
 
     await loadGeotaggedPhotos();
 
-    // 次ページ判定のため上限より1件多く要求する
-    expect(mockQueryLimit).toHaveBeenCalledWith(DEFAULT_PHOTO_SCAN_LIMIT + 1);
+    // 上限を掛けないため件数の絞り込み自体を行わない(200件上限の撤廃)
+    expect(mockQueryLimit).not.toHaveBeenCalled();
+  });
+
+  it('上限なしで走査した場合はライブラリを見切ったとして扱う', async () => {
+    (getPhotoScanLimitOverride as jest.Mock).mockReturnValue(null);
+    mockScan([createAssetMetadata('asset-1', { creationTime: 2000 })], async () => tokyoLocation);
+
+    await loadGeotaggedPhotos();
+
+    // 次ページ判定のプロービングは上限を掛けるときだけ必要。上限なしなら常に全期間の突き合わせになる
+    expect((savePhotoAssets as jest.Mock).mock.calls[0][1]).toEqual({
+      scannedEntireLibrary: true,
+      retainedAssetIds: ['ph://asset-1'],
+    });
   });
 
   it('計測用の上書きがある場合はその値を上限にする', async () => {
@@ -1027,9 +1083,111 @@ describe('走査上限の解決 resolvePhotoScanLimit', () => {
   it('引数で上限を明示した場合は上書きより引数を優先する', async () => {
     (getPhotoScanLimitOverride as jest.Mock).mockReturnValue(2000);
 
-    await loadGeotaggedPhotos(50);
+    await loadGeotaggedPhotos({ limit: 50 });
 
     expect(mockQueryLimit).toHaveBeenCalledWith(51);
+  });
+});
+
+describe('走査モード loadGeotaggedPhotos', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetPermissionsAsync.mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+    mockScan([createAssetMetadata('asset-1', { creationTime: 5000 })], async () => tokyoLocation);
+    (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(null);
+  });
+
+  it('全件モードでは撮影日時での絞り込みを行わない', async () => {
+    await loadGeotaggedPhotos({ mode: 'full' });
+
+    expect(mockQueryGt).not.toHaveBeenCalled();
+    expect(getPhotoScanBaselineMs).not.toHaveBeenCalled();
+  });
+
+  it('差分モードでは基準時刻より新しい写真だけを要求する', async () => {
+    (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(3000);
+
+    await expect(loadGeotaggedPhotos({ mode: 'incremental' })).resolves.toEqual(expect.objectContaining({ mode: 'incremental' }));
+
+    expect(mockQueryGt).toHaveBeenCalledWith(AssetField.CREATION_TIME, 3000);
+  });
+
+  it('差分モードでも基準時刻が無い(初回)場合は全件走査へフォールバックする', async () => {
+    (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(null);
+
+    await expect(loadGeotaggedPhotos({ mode: 'incremental' })).resolves.toEqual(expect.objectContaining({ mode: 'full' }));
+
+    expect(mockQueryGt).not.toHaveBeenCalled();
+  });
+
+  it('差分モードでは走査した範囲だけを突き合わせ対象にする', async () => {
+    (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(3000);
+    mockScan(
+      [createAssetMetadata('asset-1', { creationTime: 5000 }), createAssetMetadata('asset-2', { creationTime: 4000 })],
+      async () => tokyoLocation,
+    );
+
+    await loadGeotaggedPhotos({ mode: 'incremental' });
+
+    // 基準時刻より古い範囲は走査していない。全期間扱いにするとキャッシュ済みの古い写真を全部消してしまう
+    expect((savePhotoAssets as jest.Mock).mock.calls[0][1]).toEqual({
+      scannedEntireLibrary: false,
+      exclusiveOldestTakenAt: new Date(4000).toISOString(),
+      retainedAssetIds: ['ph://asset-1', 'ph://asset-2'],
+    });
+  });
+
+  it('差分モードで新しい写真が1枚も無い場合は突き合わせを行わない', async () => {
+    (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(3000);
+    mockScan([]);
+
+    await loadGeotaggedPhotos({ mode: 'incremental' });
+
+    // 走査範囲の下限を計算できないため、保存済みの行を消してはいけない
+    expect(savePhotoAssets).toHaveBeenCalledWith([], null);
+  });
+
+  it('保存に成功した場合は走査した最新の撮影日時を次回の基準時刻として保存する', async () => {
+    mockScan(
+      [createAssetMetadata('asset-1', { creationTime: 5000 }), createAssetMetadata('asset-2', { creationTime: 4000 })],
+      async () => tokyoLocation,
+    );
+
+    await loadGeotaggedPhotos({ mode: 'full' });
+
+    expect(savePhotoScanBaselineMs).toHaveBeenCalledWith(5000);
+  });
+
+  it('保存に失敗した場合は基準時刻を進めない', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (savePhotoAssets as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
+
+    await loadGeotaggedPhotos({ mode: 'full' });
+
+    // 進めてしまうと、保存できなかった範囲を差分走査が二度と拾えなくなる
+    expect(savePhotoScanBaselineMs).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
+  it('基準時刻の保存に失敗しても走査結果は返す', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (savePhotoScanBaselineMs as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
+
+    await expect(loadGeotaggedPhotos({ mode: 'full' })).resolves.toEqual(
+      expect.objectContaining({ photos: [expect.objectContaining({ id: 'ph://asset-1' })], isCacheSaved: true }),
+    );
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
+  it('走査結果から基準時刻を算出できない場合は保存しない', async () => {
+    mockScan([createAssetMetadata('asset-1', { creationTime: null })], async () => tokyoLocation);
+
+    await loadGeotaggedPhotos({ mode: 'full' });
+
+    expect(savePhotoScanBaselineMs).not.toHaveBeenCalled();
   });
 });
 
@@ -1071,7 +1229,7 @@ describe('走査コストの計測 loadGeotaggedPhotos', () => {
   it('上限で切り詰めた場合は切り詰めたあとの件数を走査件数にする', async () => {
     mockScan([createAssetMetadata('asset-1'), createAssetMetadata('asset-2'), createAssetMetadata('asset-3')], async () => tokyoLocation);
 
-    const { metrics } = await loadGeotaggedPhotos(2);
+    const { metrics } = await loadGeotaggedPhotos({ limit: 2 });
 
     // 次ページ判定用に取得した3件目は走査対象ではない
     expect(metrics.scannedAssetCount).toBe(2);

@@ -32,21 +32,33 @@ type PhotoClusterRadiusStage = {
 /**
  * 写真クラスタ半径の段階テーブル。連続値だった半径を離散段階へ丸めることで、
  * Web Mercator投影の緯度歪みによりパン時にlatitudeDeltaがbit単位で変化しても
- * メモ化(usePhotoClusters)がヒットしやすくなる。境界は旧来の連続式
- * (radius = latitudeDelta × METERS_PER_LATITUDE_DEGREE × REGION_CLUSTER_RATIO)の
- * 傾きに沿って選んでいるため、量子化以外の挙動変化を最小にしている。
+ * メモ化(usePhotoClusters)がヒットしやすくなる。
+ *
+ * **半径は「その段階の表示範囲の高さの約1割」になるようにしている。**
+ * 緯度1度は約111kmなので、段階の上限 latitudeDelta と半径の比はおよそ 1:10000 である
+ * (例: 0.003 → 30m。0.003 × 111,000m = 333m の表示高さに対して約9%)。
+ *
+ * この比率にする理由は、**「マーカーが視覚的に重なるなら、まとまる」という一貫した基準にするため**である。
+ * 地図上の写真マーカーは画面上で60〜70px、画面高さ700pxに対して約10%を占める。
+ * 以前は半径が表示範囲の約3%しかなく、見た目には重なっているのにまとまらない状態だった
+ * (もっと縮小してようやくまとまる)。半径を3倍にして視覚サイズと基準を揃えている。
+ *
+ * 境界(maxLatitudeDelta)ではなく半径の側を3倍にしたのは、境界を1/3にすると
+ * フォールバック(50,000m)へ移る latitudeDelta まで1/3になり、最終段階からフォールバックへの
+ * 飛びが 15,000m → 50,000m と大きくなってしまうためである。半径を3倍にすれば
+ * 最終段階は45,000mとなり、等価性を保証できる上限(50,000m)を超えないまま滑らかに繋がる。
  */
 const PHOTO_CLUSTER_RADIUS_STAGES: PhotoClusterRadiusStage[] = [
-  { radiusMeters: 10, maxLatitudeDelta: 0.003 },
-  { radiusMeters: 30, maxLatitudeDelta: 0.009 },
-  { radiusMeters: 75, maxLatitudeDelta: 0.0225 },
-  { radiusMeters: 150, maxLatitudeDelta: 0.045 },
-  { radiusMeters: 300, maxLatitudeDelta: 0.09 },
-  { radiusMeters: 750, maxLatitudeDelta: 0.225 },
-  { radiusMeters: 1500, maxLatitudeDelta: 0.45 },
-  { radiusMeters: 3000, maxLatitudeDelta: 0.9 },
-  { radiusMeters: 7500, maxLatitudeDelta: 2.25 },
-  { radiusMeters: 15000, maxLatitudeDelta: 4.5 },
+  { radiusMeters: 30, maxLatitudeDelta: 0.003 },
+  { radiusMeters: 90, maxLatitudeDelta: 0.009 },
+  { radiusMeters: 225, maxLatitudeDelta: 0.0225 },
+  { radiusMeters: 450, maxLatitudeDelta: 0.045 },
+  { radiusMeters: 900, maxLatitudeDelta: 0.09 },
+  { radiusMeters: 2250, maxLatitudeDelta: 0.225 },
+  { radiusMeters: 4500, maxLatitudeDelta: 0.45 },
+  { radiusMeters: 9000, maxLatitudeDelta: 0.9 },
+  { radiusMeters: 22500, maxLatitudeDelta: 2.25 },
+  { radiusMeters: 45000, maxLatitudeDelta: 4.5 },
 ];
 
 /**

@@ -1,4 +1,4 @@
-import * as MediaLibrary from 'expo-media-library/legacy';
+import { getPermissionsAsync, requestPermissionsAsync } from 'expo-media-library';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import type { Region } from 'react-native-maps';
@@ -140,7 +140,7 @@ export function usePhotoMapCrashBreaker({
    * @returns なし。
    */
   const restorePhotosOnMapIfPermitted = useCallback(async (): Promise<void> => {
-    const permission = await MediaLibrary.getPermissionsAsync();
+    const permission = await getPermissionsAsync();
 
     if (!hasFullPhotoAccess(permission)) {
       await resetPhotoMapPersistedState();
@@ -174,7 +174,7 @@ export function usePhotoMapCrashBreaker({
           return;
         }
 
-        const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+        const permission = await requestPermissionsAsync(false, ['photo']);
 
         // 実機で「ONにしても写真が出ない」原因が権限段階かを切り分けるための調査用計装。
         // 保存済み設定からの復元経路は権限要求を通らないため、この経路だけで送る。

@@ -21,6 +21,7 @@ jest.mock('expo-sqlite', () => ({
   openDatabaseSync: jest.fn(() => ({
     execAsync: jest.fn().mockResolvedValue(undefined),
     getAllAsync: jest.fn(),
+    getFirstAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue(undefined),
     withExclusiveTransactionAsync: jest.fn(),
   })),
@@ -36,6 +37,9 @@ describe('database initializeDatabase マイグレーション', () => {
     (db.execAsync as jest.Mock).mockClear();
     (db.execAsync as jest.Mock).mockResolvedValue(undefined);
     (db.getAllAsync as jest.Mock).mockClear();
+    (db.getFirstAsync as jest.Mock).mockClear();
+    // 既定は「写真キャッシュ削除マイグレーション未実行」。実行済みの挙動は該当テストで上書きする
+    (db.getFirstAsync as jest.Mock).mockResolvedValue(null);
     (db.runAsync as jest.Mock).mockClear();
     (db.runAsync as jest.Mock).mockResolvedValue(undefined);
   });
@@ -347,6 +351,72 @@ describe('database initializeDatabase マイグレーション', () => {
         .map(([sql]) => sql as string)
         .filter((sql) => sql.includes('ALTER TABLE location_recording_state'));
       expect(alterStatements).toEqual([]);
+    });
+  });
+
+  describe('写真キャッシュのリセット（expo-media-library新API移行）', () => {
+    /**
+     * `db.runAsync` へ渡されたSQL文を全て取り出す。
+     *
+     * @returns 実行されたSQL文の配列。
+     */
+    function runStatements(): string[] {
+      return (db.runAsync as jest.Mock).mock.calls.map(([sql]) => String(sql));
+    }
+
+    it('未実行の場合は photo_assets の全行を削除する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      // asset_id の値の形が ph:// 前置へ変わったため、旧形式の行を一度捨てて再走査で作り直す
+      expect(runStatements()).toContain('DELETE FROM photo_assets');
+    });
+
+    it('photo_assets 以外のテーブルは削除しない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      // GPSログや実績など、再構築できないデータを巻き込まないことを保証する
+      const deleteStatements = [...runStatements(), ...(db.execAsync as jest.Mock).mock.calls.map(([sql]) => String(sql))].filter((sql) =>
+        /DELETE\s+FROM/i.test(sql),
+      );
+      expect(deleteStatements).toEqual(['DELETE FROM photo_assets']);
+    });
+
+    it('削除したあとに実行済みマーカーを app_settings へ保存する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const markerCall = (db.runAsync as jest.Mock).mock.calls.find(([sql]) =>
+        String(sql).includes('INSERT INTO app_settings'),
+      ) as unknown[];
+      expect(markerCall).toBeDefined();
+      expect(markerCall[1]).toBe('photoAssetsResetForMediaLibraryNextApi');
+    });
+
+    it('削除より先にマーカーを保存しない（削除が失敗したら次回起動で再試行できるようにする）', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const statements = runStatements();
+      const deleteIndex = statements.indexOf('DELETE FROM photo_assets');
+      const markerIndex = statements.findIndex((sql) => sql.includes('INSERT INTO app_settings'));
+      expect(deleteIndex).toBeGreaterThanOrEqual(0);
+      expect(deleteIndex).toBeLessThan(markerIndex);
+    });
+
+    it('実行済みマーカーがある場合は削除もマーカー保存も行わない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+      (db.getFirstAsync as jest.Mock).mockResolvedValue({ value: 'true' });
+
+      await initializeDatabase();
+
+      expect(runStatements()).not.toContain('DELETE FROM photo_assets');
+      expect(runStatements().some((sql) => sql.includes('INSERT INTO app_settings'))).toBe(false);
     });
   });
 

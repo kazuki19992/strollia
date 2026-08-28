@@ -230,5 +230,6 @@ export function useAppInitialization({
     setIsFirstLaunchTutorialVisible,
     setKeepScreenAwake,
     setCrashReportingEnabled,
+    setShowStayPlacesOnMap,
   ]);
 }

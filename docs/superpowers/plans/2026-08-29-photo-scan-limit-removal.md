@@ -50,10 +50,10 @@ export async function isPhotoAssetAvailableAsync(assetId: string): Promise<boole
 
 `src/features/photos/photoLibrary.ts` の走査に**モード**を導入する。
 
-| モード | 対象 | いつ |
-| --- | --- | --- |
-| 差分 | 前回の基準時刻より新しい写真だけ（`Query.gt(CREATION_TIME, …)`） | 自動（起動時・写真表示ON時） |
-| 全件 | ライブラリ全体（**上限なし**） | ユーザーの明示操作のみ |
+| モード | 対象                                                             | いつ                         |
+| ------ | ---------------------------------------------------------------- | ---------------------------- |
+| 差分   | 前回の基準時刻より新しい写真だけ（`Query.gt(CREATION_TIME, …)`） | 自動（起動時・写真表示ON時） |
+| 全件   | ライブラリ全体（**上限なし**）                                   | ユーザーの明示操作のみ       |
 
 - **`DEFAULT_PHOTO_SCAN_LIMIT`（200件）の上限を撤廃する。** 全件モードは上限を掛けない
 - 計測用の `EXPO_PUBLIC_PHOTO_SCAN_LIMIT` は**残す**（今後の計測に使うため）。

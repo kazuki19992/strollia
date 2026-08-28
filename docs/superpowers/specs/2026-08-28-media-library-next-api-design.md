@@ -159,10 +159,12 @@ issue #160 の教訓をテストごと残しておく価値があるため。
   **移行時に `photo_assets` を一度だけ全削除する**（`initializeDatabase()` の
   `resetPhotoAssetsForMediaLibraryNextApi()`。実行済みは `app_settings` のキーで記録）。
   `asset_id` の値を変換する案は採らない。Android の `file://` → `content://` が機械的に変換できないため
-- **走査結果の `MapPhoto.uri` は `ph://…`（表示用URI未解決）になる。** 旧APIは `localUri` を
+- **走査結果の `MapPhoto.uri` は既定では `ph://…`（表示用URI未解決）になる。** 旧APIは `localUri` を
   `getAssetInfoAsync` のついでに得ていたが、新APIにその手段が無い（`getUri()` は使えない）。
-  この値が描画へ回るのはキャッシュ保存に失敗したときのフォールバック経路だけで、その場合は
-  画像なしのプレースホルダ表示になる。**唯一の挙動差**であり、2-c で扱いを見直す
+  この値が描画へ回るのはキャッシュ保存に失敗したときのフォールバック経路だけなので、
+  **その経路に限り `resolveMapPhotoDisplayUris` を通して解決する**。これで `ph://` が `<Image>` へ
+  到達しうる経路は無くなり、旧実装と同じく画像つきで表示される。保存に成功した場合は走査結果が
+  描画に使われないため解決せず、表示範囲の外にある写真ぶんの無駄なサムネイル書き出しを避ける
 - **Android では保存する `uri` の形が `file://…` から `content://…` へ変わる。** 新APIの `Asset.id` は
   Android では contentUri だからである（§8 の「Android 実装の変更はしない」はコードの話で、
   値の形は API 差し替えの結果として変わる）。`resolvePhotoDisplayUri` は `ph://` 以外を素通しし、

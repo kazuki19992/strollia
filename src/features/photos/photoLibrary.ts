@@ -53,8 +53,9 @@ export type GeotaggedPhotoScanResult = {
   /**
    * 走査で得られたジオタグ付き写真。
    *
-   * `uri` は走査で得た安定URI(iOS: `ph://…`)のままで、**表示用URIは解決されていない**。
-   * 描画に使う場合は `resolveMapPhotoDisplayUris` を通すこと。
+   * **`isCacheSaved` が false のときだけ、表示用URIを解決済みでそのまま描画に使える。**
+   * true のときはビューポート検索を使うのが正しく、この配列は参照されない前提なので、
+   * `uri` は走査で得た安定URI(iOS: `ph://…`)のままにしてサムネイル書き出しのコストを避ける。
    */
   photos: MapPhoto[];
   /** 走査結果を `photo_assets` へ保存できたかどうか。falseの場合キャッシュは最新化されていない。 */
@@ -353,7 +354,7 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): 
  * まとめて取り、位置情報だけをアセットごとに取得する二段構えである。
  *
  * @param limit - 走査する最新写真の最大件数。初期表示の重さを抑えるため上限を持つ。
- * @returns ジオタグ付き写真一覧(表示用URIは未解決)と、キャッシュ保存の成否。
+ * @returns ジオタグ付き写真一覧と、キャッシュ保存の成否。表示用URIの解決状態は `GeotaggedPhotoScanResult` を参照。
  */
 export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<GeotaggedPhotoScanResult> {
   const startedAtMs = Date.now();
@@ -419,6 +420,11 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     },
   );
 
+  // 保存できた場合、呼び出し側はビューポート検索へ進みこの配列を使わない。使われるのは保存に失敗した
+  // フォールバックのときだけなので、そのときだけ表示用URIを解決する。常に解決すると、表示範囲の外にある
+  // 写真ぶんまでサムネイルを書き出すことになり走査のたびに無駄なコストがかかる
+  const resolvedPhotos = isCacheSaved ? photos : await resolveMapPhotoDisplayUris(photos);
+
   const assetInfoFulfilledCount = locations.filter((result) => result.status === 'fulfilled').length;
 
   // 送信キーは旧API時代から変えない。`assetInfo*` の実体は `getAssetInfoAsync` から `getLocation()` へ
@@ -434,5 +440,5 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     durationMs: Date.now() - startedAtMs,
   });
 
-  return { photos, isCacheSaved };
+  return { photos: resolvedPhotos, isCacheSaved };
 }

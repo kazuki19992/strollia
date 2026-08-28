@@ -440,6 +440,8 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
 describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // 保存失敗時のフォールバックは表示用URIを解決するため、解決結果をテスト間へ持ち越さない
+    clearPhotoDisplayUriCache();
     // 既定はフルアクセス。突き合わせを抑止するケースだけ各テストで上書きする
     mockGetPermissionsAsync.mockResolvedValue({ granted: true, accessPrivileges: 'all' });
   });
@@ -589,6 +591,55 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
   });
 });
 
+describe('キャッシュ保存に失敗したときのフォールバック loadGeotaggedPhotos', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    clearPhotoDisplayUriCache();
+    mockGetPermissionsAsync.mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+    mockPhotoThumbnail(async (uri) => `file:///tmp/${uri.replace('ph://', '')}.jpg`);
+  });
+
+  it('保存に失敗した場合、返る写真の表示用URIが解決済みになっている', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (savePhotoAssets as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
+    mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
+
+    // この結果は呼び出し側がそのまま描画へ回す。ph:// のままでは <Image> が何も描画できない
+    await expect(loadGeotaggedPhotos()).resolves.toEqual({
+      photos: [expect.objectContaining({ id: 'ph://asset-1', uri: 'file:///tmp/asset-1.jpg' })],
+      isCacheSaved: false,
+    });
+
+    warnSpy.mockRestore();
+  });
+
+  it('表示用URIを解決できなかった写真も、画像なし(uri=null)として結果に残す', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (savePhotoAssets as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
+    mockScan([createAssetMetadata('asset-1'), createAssetMetadata('asset-2')], async () => tokyoLocation);
+    mockPhotoThumbnail(async (uri) => (uri === 'ph://asset-1' ? null : 'file:///tmp/asset-2.jpg'));
+
+    // 除外すると「マーカーごと消える」ため、画像が無いだけのマーカーとして表示する
+    const { photos } = await loadGeotaggedPhotos();
+
+    expect(photos).toEqual([
+      expect.objectContaining({ id: 'ph://asset-1', uri: null }),
+      expect.objectContaining({ id: 'ph://asset-2', uri: 'file:///tmp/asset-2.jpg' }),
+    ]);
+
+    warnSpy.mockRestore();
+  });
+
+  it('保存に成功した場合は表示用URIを解決しない(呼び出し側が走査結果を使わないため)', async () => {
+    mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
+
+    await loadGeotaggedPhotos();
+
+    // 表示しない写真ぶんまでサムネイルを書き出すと、走査のたびに無駄なコストがかかる
+    expect(getPhotoThumbnailAsync).not.toHaveBeenCalled();
+  });
+});
+
 describe('次ページ判定のプロービング loadGeotaggedPhotos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -655,6 +706,8 @@ describe('次ページ判定のプロービング loadGeotaggedPhotos', () => {
 describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // 保存失敗時のフォールバックは表示用URIを解決するため、解決結果をテスト間へ持ち越さない
+    clearPhotoDisplayUriCache();
     mockGetPermissionsAsync.mockResolvedValue({ granted: true, accessPrivileges: 'all' });
   });
 

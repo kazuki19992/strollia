@@ -153,9 +153,12 @@ issue #160 の教訓をテストごと残しておく価値があるため。
 実装で新たに確定した点を以下に記す。
 
 - **`photo_assets.asset_id` にも `AssetMetadata.id`（`ph://…`）を入れる。** 旧APIの `asset.id` は
-  `ph://` を含まない localIdentifier だったため、`asset_id` の値の形が変わる。移行後の初回走査で、
-  走査済み時間窓の突き合わせが旧形式の行を同一トランザクション内で削除するため、地図上に重複マーカーは出ない。
-  ただし窓の外（走査上限より古い）にある旧形式の行は残る。`uri` は従来どおり `ph://…` なので表示は成立する
+  `ph://` を含まない localIdentifier だったため、`asset_id` の値の形が変わる。
+  走査済み時間窓の突き合わせは窓の中しか掃除しないので、**窓の外（走査上限より古い）に残った旧形式の行は
+  二度と掃除されず、2-c で深く走査したときに重複マーカーになる**。このため
+  **移行時に `photo_assets` を一度だけ全削除する**（`initializeDatabase()` の
+  `resetPhotoAssetsForMediaLibraryNextApi()`。実行済みは `app_settings` のキーで記録）。
+  `asset_id` の値を変換する案は採らない。Android の `file://` → `content://` が機械的に変換できないため
 - **走査結果の `MapPhoto.uri` は `ph://…`（表示用URI未解決）になる。** 旧APIは `localUri` を
   `getAssetInfoAsync` のついでに得ていたが、新APIにその手段が無い（`getUri()` は使えない）。
   この値が描画へ回るのはキャッシュ保存に失敗したときのフォールバック経路だけで、その場合は

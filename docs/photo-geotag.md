@@ -367,6 +367,8 @@ new Query()
 **`uri` は `AssetMetadata.id`（iOS: `ph://<localIdentifier>`）をそのまま使う。**
 `Asset.getUri()` は `requestContentEditingInput` を伴い、iCloud にしか本体が無い写真では失敗する。`id` は I/O 無しで得られるうえ `photo_assets.uri` に保存する値と同一なので、走査では `getUri()` を**使ってはいけない**。
 
+**移行時に `photo_assets` を一度だけ空にする。** `asset_id` に入る値の形が旧APIから変わったため、旧形式の行を残すと同じ写真が新旧2行として共存し、地図に重複マーカーが出る。`photo_assets` は再走査で作り直せるキャッシュなので、`initializeDatabase()` で一度だけ全行を削除する（`docs/data-storage.md` §4.8）。
+
 **「さらに古いページが残っているか」は `limit + 1` のプロービングで判定する。** 新APIに `hasNextPage` は無いため、上限より1件多く要求し、
 
 - 返却件数が上限を超える → さらに古い写真が残っている。**保存対象は先頭の上限件数へ切り詰める**（超過分には `getLocation()` を発行しない）

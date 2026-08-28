@@ -10,7 +10,7 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('expo-media-library/legacy', () => ({
+jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ accessPrivileges: 'all' }),
 }));
 

@@ -51,7 +51,7 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('expo-media-library/legacy', () => ({
+jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ accessPrivileges: 'all' }),
   // 保存済み設定の復元経路は権限を参照して再確認するため、フルアクセスを返しておく
   getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),

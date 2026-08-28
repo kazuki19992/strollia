@@ -13,7 +13,7 @@ jest.mock('@/config/sentry', () => ({
   reportPhotoMapDiagnostics: jest.fn(),
 }));
 
-jest.mock('expo-media-library/legacy', () => ({
+jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),
   // 復元経路は権限を「参照するだけ」で確認する(ダイアログを出さない)
   getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),
@@ -105,7 +105,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('写真ライブラリのフルアクセスが許可されているとき true を渡すと showPhotosOnMap が true になる', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { requestPermissionsAsync } = require('expo-media-library');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
@@ -118,7 +118,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('写真ライブラリのアクセスが限定的なとき true を渡しても showPhotosOnMap は false のまま', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { requestPermissionsAsync } = require('expo-media-library');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
@@ -131,7 +131,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('有効化中に setSetting が reject した場合、showPhotosOnMap が false に戻り設定キーがクリアされる', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { requestPermissionsAsync } = require('expo-media-library');
       const { setSetting } = require('@/features/settings/settingsRepository');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
       // pending フラグ保存(1回目)は reject させて enableShowPhotosOnMapWithCrashBreaker を失敗させる
@@ -152,7 +152,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('有効化に失敗してOFFへ巻き戻したとき、理由をAlertでユーザーへ通知する', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { requestPermissionsAsync } = require('expo-media-library');
       const { setSetting } = require('@/features/settings/settingsRepository');
       const { Alert } = require('react-native');
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
@@ -189,7 +189,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     }
 
     it('フルアクセスのままなら保存済みの写真表示ONを復元する', async () => {
-      const { getPermissionsAsync } = require('expo-media-library/legacy');
+      const { getPermissionsAsync } = require('expo-media-library');
       (getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
@@ -199,7 +199,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('フルアクセスから限定アクセスへ変更されていた場合は写真表示をOFFへ戻す', async () => {
-      const { getPermissionsAsync } = require('expo-media-library/legacy');
+      const { getPermissionsAsync } = require('expo-media-library');
       const { setSetting } = require('@/features/settings/settingsRepository');
       (getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
 
@@ -213,7 +213,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('権限が取り消されていた場合も写真表示をOFFへ戻す', async () => {
-      const { getPermissionsAsync } = require('expo-media-library/legacy');
+      const { getPermissionsAsync } = require('expo-media-library');
       (getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: false, accessPrivileges: 'none' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
@@ -223,7 +223,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('復元経路では権限ダイアログを出さず、参照のみで確認する', async () => {
-      const { getPermissionsAsync, requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { getPermissionsAsync, requestPermissionsAsync } = require('expo-media-library');
       (getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
@@ -234,7 +234,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('復元経路でOFFへ戻すときはAlertを出さない', async () => {
-      const { getPermissionsAsync } = require('expo-media-library/legacy');
+      const { getPermissionsAsync } = require('expo-media-library');
       const { Alert } = require('react-native');
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
       (getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
@@ -247,7 +247,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('復元経路では権限の診断計装を送らない', async () => {
-      const { getPermissionsAsync } = require('expo-media-library/legacy');
+      const { getPermissionsAsync } = require('expo-media-library');
       (getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
@@ -259,7 +259,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
 
   describe('権限取得結果の診断計装', () => {
     it('フルアクセスのとき hasFullAccess: true で permission ステージを送る', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { requestPermissionsAsync } = require('expo-media-library');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'all' });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));
@@ -276,7 +276,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('限定アクセスのとき hasFullAccess: false で送り、既存のAlert挙動は変えない', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { requestPermissionsAsync } = require('expo-media-library');
       const { Alert } = require('react-native');
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true, accessPrivileges: 'limited' });
@@ -296,7 +296,7 @@ describe('写真表示クラッシュブレーカーフック usePhotoMapCrashBr
     });
 
     it('accessPrivileges が未定義の場合は null として送る', async () => {
-      const { requestPermissionsAsync } = require('expo-media-library/legacy');
+      const { requestPermissionsAsync } = require('expo-media-library');
       (requestPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
 
       const { result } = renderHook(() => usePhotoMapCrashBreaker(crashBreakerParams));

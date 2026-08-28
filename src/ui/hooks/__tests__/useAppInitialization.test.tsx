@@ -91,6 +91,7 @@ function makeOptions(overrides: Partial<UseAppInitializationOptions> = {}): UseA
     snapshotPremiumAccessUpdateVersion: jest.fn().mockReturnValue(0),
     setKeepScreenAwake: jest.fn(),
     setCrashReportingEnabled: jest.fn(),
+    setShowStayPlacesOnMap: jest.fn(),
     setMessage: jest.fn(),
     setIsWhileInUseToastVisible: jest.fn(),
     setIsReady: jest.fn(),
@@ -221,6 +222,29 @@ describe('起動初期化フック useAppInitialization', () => {
   });
 
   describe('設定の読み込みと適用', () => {
+    it('滞在場所表示設定をデフォルトONで読み込む', async () => {
+      const setShowStayPlacesOnMap = jest.fn();
+      const options = { ...makeOptions(), setShowStayPlacesOnMap };
+
+      renderHook(() => useAppInitialization(options));
+      await flushPromises();
+
+      expect(getBooleanSetting).toHaveBeenCalledWith('showStayPlacesOnMap', true);
+    });
+
+    it('保存済みの滞在場所表示設定を適用する', async () => {
+      (getBooleanSetting as jest.Mock).mockImplementation(async (key: string, fallback: boolean) => {
+        return key === 'showStayPlacesOnMap' ? false : fallback;
+      });
+      const setShowStayPlacesOnMap = jest.fn();
+      const options = { ...makeOptions(), setShowStayPlacesOnMap };
+
+      renderHook(() => useAppInitialization(options));
+      await flushPromises();
+
+      expect(setShowStayPlacesOnMap).toHaveBeenCalledWith(false);
+    });
+
     it('keepScreenAwake が true で保存されている場合 setKeepScreenAwake(true) が呼ばれる', async () => {
       (getBooleanSetting as jest.Mock).mockImplementation(async (key: string) => {
         return key === 'keepScreenAwake' ? true : false;

@@ -883,6 +883,22 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(setSetting).toHaveBeenCalledWith('showPhotosOnMapEnablePending', false);
   });
 
+  test('滞在場所表示設定を更新してSQLiteへ保存する', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => Promise.resolve(fallback));
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(true);
+
+    await act(async () => {
+      await mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+    });
+
+    expect(setSetting).toHaveBeenCalledWith('showStayPlacesOnMap', false);
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(false);
+  });
+
   test('保存済みの写真表示ONは地図準備完了後にpendingを立ててから有効化する', async () => {
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
       if (key === 'showPhotosOnMap') {

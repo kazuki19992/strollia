@@ -90,6 +90,8 @@ function createProps() {
     isUpdatingPhotoSetting: false,
     photoClusters: [],
     activeStayPlaces: null as StayPlace[] | null,
+    hasStayPlaces: true,
+    showStayPlacesOnMap: true,
     hasAnyLocationPoints: false,
     hasRequiredPermission: true,
     isWhileInUseOnlyMode: false,
@@ -112,6 +114,7 @@ function createProps() {
     onOpenMonthlyReport: jest.fn(),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
+    onUpdateShowStayPlacesOnMap: jest.fn().mockResolvedValue(undefined),
     onOpenSettings: jest.fn(),
     onRequestLocationPermission: jest.fn(),
     onRecenterOnUserLocation: jest.fn(),
@@ -162,6 +165,23 @@ describe('地図画面 MapScreen', () => {
     expect(StyleSheet.flatten(name!.props.style)).toMatchObject({ fontWeight: '700' });
     expect(screen.getByLabelText('家のTwemojiアイコン')).toBeTruthy();
     expect(screen.getByText('非表示範囲: 1km')).toBeTruthy();
+  });
+
+  test('滞在場所表示設定がOFFの場合は有効な滞在場所のマーカーを表示しない', () => {
+    const place: StayPlace = {
+      id: 1,
+      name: '自宅',
+      iconHexcode: '1F3E0',
+      latitude: 35,
+      longitude: 139,
+      privacyRadiusMeters: 1000,
+      createdAt: '2026-08-20T00:00:00.000Z',
+      updatedAt: '2026-08-20T00:00:00.000Z',
+    };
+
+    render(<MapScreen {...createProps()} activeStayPlaces={[place]} showStayPlacesOnMap={false} />);
+
+    expect(screen.queryByLabelText('自宅を開く')).toBeNull();
   });
 
   test('記録状態とスピードメーターを表示する', () => {

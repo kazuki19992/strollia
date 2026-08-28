@@ -10,6 +10,8 @@ import {
   CRASH_REPORTING_TOGGLE_LABEL,
   STAY_PLACES_SETTING_DESCRIPTION,
   STAY_PLACES_SETTING_LABEL,
+  SHOW_STAY_PLACES_ON_MAP_DESCRIPTION,
+  SHOW_STAY_PLACES_ON_MAP_LABEL,
 } from '@/ui/appText';
 import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '@/features/customization/customizationOptions';
 import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '@/features/customization/colorPresets';
@@ -53,6 +55,10 @@ export type SettingsScreenProps = {
   showPhotosOnMap: boolean;
   /** 写真表示設定を保存中か。 */
   isUpdatingPhotoSetting: boolean;
+  /** 滞在場所が1件以上登録されているか。 */
+  hasStayPlaces: boolean;
+  /** 滞在場所アイコンを地図に表示するか。 */
+  showStayPlacesOnMap: boolean;
   /** GPXインポート処理中か。 */
   isImportingGpx: boolean;
   /** Plus権限状態。 */
@@ -91,6 +97,8 @@ export type SettingsScreenProps = {
   onToggleMapType: () => void;
   /** 写真表示設定の更新処理。 */
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
+  /** 滞在場所表示設定の更新処理。 */
+  onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
   /** 現在地アイコン更新処理。 */
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
   /** 選択中のアプリカラープリセットID。 */
@@ -155,6 +163,8 @@ export function SettingsScreen({
   mapType,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
+  hasStayPlaces,
+  showStayPlacesOnMap,
   isImportingGpx,
   premiumAccessState,
   revenueCatAppUserId,
@@ -177,6 +187,7 @@ export function SettingsScreen({
   onUpdateCrashReportingEnabled,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
+  onUpdateShowStayPlacesOnMap,
   onUpdateUserLocationIcon,
   onOpenAboutAppScreen,
   onOpenFirstLaunchTutorial,
@@ -279,6 +290,29 @@ export function SettingsScreen({
               thumbColor="#ffffff"
             />
           </View>
+
+          {hasStayPlaces ? (
+            <View style={styles.settingsInlineRow}>
+              <View style={styles.settingsInlineText}>
+                <Text style={styles.formItemTitle}>{SHOW_STAY_PLACES_ON_MAP_LABEL}</Text>
+                <Text style={styles.formItemDescription}>{SHOW_STAY_PLACES_ON_MAP_DESCRIPTION}</Text>
+              </View>
+              <Switch
+                accessibilityLabel={SHOW_STAY_PLACES_ON_MAP_LABEL}
+                value={showStayPlacesOnMap}
+                onValueChange={(value) => {
+                  onUpdateShowStayPlacesOnMap(value).catch((error: unknown) => {
+                    Alert.alert(
+                      '滞在場所表示設定失敗',
+                      error instanceof Error ? error.message : '滞在場所表示設定を保存できませんでした。',
+                    );
+                  });
+                }}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor="#ffffff"
+              />
+            </View>
+          ) : null}
 
           <OptionGroup styles={styles} title="マップのテーマ">
             <SelectionTile

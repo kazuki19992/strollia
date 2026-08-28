@@ -26,6 +26,8 @@ export default function SettingsRoute(): React.ReactElement {
       mapType={s.mapType}
       showPhotosOnMap={s.showPhotosOnMap}
       isUpdatingPhotoSetting={s.isUpdatingPhotoSetting}
+      hasStayPlaces={s.stayPlaces.length > 0}
+      showStayPlacesOnMap={s.showStayPlacesOnMap}
       isImportingGpx={s.isImportingGpx}
       premiumAccessState={s.premiumAccessState}
       revenueCatAppUserId={s.revenueCatAppUserId}
@@ -46,6 +48,7 @@ export default function SettingsRoute(): React.ReactElement {
       onUpdateCrashReportingEnabled={s.updateCrashReportingEnabled}
       onToggleMapType={s.toggleMapType}
       onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
+      onUpdateShowStayPlacesOnMap={s.updateShowStayPlacesOnMap}
       selectedAppColorPresetId={s.selectedAppColorPresetId}
       onUpdateAppColorPreset={s.updateAppColorPreset}
       onUpdateUserLocationIcon={(iconId) => s.updateUserLocationIcon(iconId, s.premiumAccessState, s.showPremiumLockedMessage)}

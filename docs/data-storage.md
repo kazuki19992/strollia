@@ -435,3 +435,4 @@ GPSログは端末内に保存し、ユーザーの明示操作なしに外部�
 | `keepScreenAwake`       | boolean | アプリがフォアグラウンドの場合に画面ロックを抑止するか                     |
 | `appThemePreference`    | string  | 画面テーマ設定。`system` / `light` / `dark` のいずれか                     |
 | `crashReportingEnabled` | boolean | 不具合レポート(App Hang/クラッシュ)を開発者へ送信するか。デフォルト `true` |
+| `showStayPlacesOnMap`   | boolean | 滞在場所アイコンをマップ上に表示するか。デフォルト `true`                  |

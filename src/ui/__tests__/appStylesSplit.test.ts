@@ -135,14 +135,14 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全379キーが存在する（過不足なし）', () => {
+    test('全381キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
       // 分割前の総キー数と一致することを確認する（将来のキー追加で差分が出た場合に検知できる）
       // 内訳: 分割前352キー + topToast系2キー + lockedOverlay 1キー + 滞在場所設定12キー + 地図マーカー7キー
-      //       + 画像を取得できない写真のプレースホルダ5キー
-      expect(keys.length).toBe(379);
+      //       + 画像を取得できない写真のプレースホルダ5キー + 拡大表示の高解像度取得中インジケータ2キー
+      expect(keys.length).toBe(381);
     });
   });
 });

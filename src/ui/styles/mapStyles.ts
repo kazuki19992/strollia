@@ -829,6 +829,15 @@ export function createMapStyles(theme: AppTheme) {
       height: '88%',
       width: '100%',
     },
+    // 高解像度(iCloudからのダウンロードを含む)取得中の待機表示。サムネイルの上に重ねる
+    photoPreviewLoading: {
+      alignSelf: 'center',
+      position: 'absolute',
+    },
+    photoPreviewLoadingIndicator: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、インジケータも固定の白にする
+      color: '#ffffff',
+    },
     // サムネイルを取得できなかった写真の拡大表示。暗転した背景に何も出ない状態を避ける
     photoPreviewPlaceholder: {
       alignItems: 'center',

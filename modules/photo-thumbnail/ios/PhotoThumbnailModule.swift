@@ -38,6 +38,14 @@ private final class ResolveOnceFlag: @unchecked Sendable {
  * 「iPhoneのストレージを最適化」でオリジナルが iCloud へ退避された写真では、これらは nil になり
  * 地図上のマーカーに何も表示できない。`PHImageManager.requestImage` はオリジナルが端末に無くても
  * ローカルのサムネイルを返せるため、写真アプリと同じ経路でサムネイルだけを取得する。
+ *
+ * 公開するのは2つの関数だけである。
+ *
+ * - `getPhotoThumbnailAsync` — 地図マーカー用。**通信しない**(`isNetworkAccessAllowed = false`)
+ * - `getPhotoPreviewAsync` — 拡大表示用。**ここだけ通信を許可する**(`isNetworkAccessAllowed = true`)
+ *
+ * 通信を許すのを拡大表示だけに限るのは、地図描画中に通信が走ると通信量と App Hang の問題が
+ * 再発するためである。拡大表示は「ユーザーが写真を明示的にタップした」ときにしか走らない。
  */
 public class PhotoThumbnailModule: Module {
   /** `photo_assets` に保存している iOS のフォトライブラリURIの接頭辞。 */
@@ -54,25 +62,103 @@ public class PhotoThumbnailModule: Module {
   /** JPEG の圧縮品質。マーカー表示に十分な画質を保ちつつ、キャッシュ容量を抑える。 */
   private static let jpegCompressionQuality: CGFloat = 0.8
 
+  /**
+   * 拡大表示用画像の JPEG 圧縮品質。
+   *
+   * 全画面に引き伸ばして見る画像なので、マーカー用サムネイルより高い品質を使う。
+   * 拡大表示は1枚ずつしか作らないため、容量への影響も限定的である。
+   */
+  private static let previewJpegCompressionQuality: CGFloat = 0.9
+
   public func definition() -> ModuleDefinition {
     Name("PhotoThumbnail")
 
     AsyncFunction("getPhotoThumbnailAsync") { (assetId: String, size: Double, promise: Promise) in
-      Self.requestThumbnail(assetId: assetId, size: size, promise: promise)
+      Self.requestImage(assetId: assetId, size: size, variant: .thumbnail, promise: promise)
+    }
+
+    AsyncFunction("getPhotoPreviewAsync") { (assetId: String, size: Double, promise: Promise) in
+      Self.requestImage(assetId: assetId, size: size, variant: .preview, promise: promise)
     }
   }
 
   /**
-   * アセットのサムネイルを書き出し、その `file://` パスで Promise を解決する。
+   * 取得する画像の用途。用途ごとに「ネットワークアクセスの可否」と画質の要求が異なる。
    *
-   * 取得できない場合(アセットが見つからない・ローカルにサムネイルが無い・書き出しに失敗した)は
-   * **例外を投げず null で解決する**。呼び出し側が「その写真は画像なしで扱う」と判断できるようにするため。
+   * この2つを1つの enum に集約しているのは、**ネットワークアクセスを許すのは拡大表示だけ**という
+   * 線引きをコード上の1箇所で見えるようにするためである。地図マーカー用のサムネイル取得で
+   * 通信が走ると、元の App Hang / 通信量の問題が再発する。
+   */
+  private enum ImageVariant {
+    /** 地図マーカー用サムネイル。通信は行わず、ローカルにある表現だけを使う。 */
+    case thumbnail
+    /** ユーザーが写真をタップして開いた拡大表示用画像。iCloud からのダウンロードを許可する。 */
+    case preview
+
+    /** 書き出すファイル名の接頭辞。用途ごとにキャッシュを分け、取り違えを防ぐ。 */
+    var fileNamePrefix: String {
+      switch self {
+      case .thumbnail: return "thumb"
+      case .preview: return "preview"
+      }
+    }
+
+    /** JPEG の圧縮品質。 */
+    var compressionQuality: CGFloat {
+      switch self {
+      case .thumbnail: return PhotoThumbnailModule.jpegCompressionQuality
+      case .preview: return PhotoThumbnailModule.previewJpegCompressionQuality
+      }
+    }
+
+    /**
+     * `PHImageManager` へ渡すリクエストオプション。
+     *
+     * **`isNetworkAccessAllowed` を true にするのは `.preview` だけ**である。
+     * 地図描画中に走るサムネイル取得で通信を許すと、通信量・待ち時間・App Hang の
+     * リスクをすべて負い直すことになる(設計書 §4.2)。拡大表示は
+     * 「ユーザーが写真を明示的にタップした」ときにしか走らず、待たせても意図が伝わるため、
+     * ここだけを例外として iCloud からのダウンロードを許可する。
+     */
+    var requestOptions: PHImageRequestOptions {
+      let options = PHImageRequestOptions()
+      options.isSynchronous = false
+
+      switch self {
+      case .thumbnail:
+        // iCloud からのダウンロードは行わない。ローカルに残っているサムネイルだけを使う
+        options.isNetworkAccessAllowed = false
+        // .opportunistic は結果ハンドラが複数回呼ばれ Promise の二重解決になるため使わない。
+        // .fastFormat は結果ハンドラが必ず1回だけ呼ばれ、かつ「すぐ用意できる表現」を返すので、
+        // ローカルのサムネイルを取りに行く本用途に合う
+        options.deliveryMode = .fastFormat
+        options.resizeMode = .fast
+      case .preview:
+        // ここだけ true。オリジナルが iCloud にしか無い写真でも、拡大表示では正規の画像を出す
+        options.isNetworkAccessAllowed = true
+        // .highQualityFormat も結果ハンドラは1回だけ呼ばれる。ダウンロードを待ってでも
+        // 最終品質の画像を1回で受け取る
+        options.deliveryMode = .highQualityFormat
+        options.resizeMode = .exact
+      }
+
+      return options
+    }
+  }
+
+  /**
+   * アセットの画像を用途に応じた条件で書き出し、その `file://` パスで Promise を解決する。
+   *
+   * 取得できない場合(アセットが見つからない・ローカルにも iCloud にも表現が無い・
+   * ダウンロードに失敗した・書き出しに失敗した)は**例外を投げず null で解決する**。
+   * 呼び出し側が「その写真は画像なしで扱う」「サムネイルのままにする」と判断できるようにするため。
    *
    * @param assetId `ph://<localIdentifier>` 形式のアセットURI。
-   * @param size 要求するサムネイルの一辺のピクセル数。
+   * @param size 要求する画像の一辺のピクセル数。
+   * @param variant 取得する画像の用途。ネットワークアクセスの可否はここで決まる。
    * @param promise 解決先の Promise。
    */
-  private static func requestThumbnail(assetId: String, size: Double, promise: Promise) {
+  private static func requestImage(assetId: String, size: Double, variant: ImageVariant, promise: Promise) {
     let localIdentifier = assetId.hasPrefix(photoLibraryUriScheme)
       ? String(assetId.dropFirst(photoLibraryUriScheme.count))
       : assetId
@@ -82,7 +168,7 @@ public class PhotoThumbnailModule: Module {
       return
     }
 
-    guard let destinationUrl = thumbnailFileUrl(localIdentifier: localIdentifier, size: size) else {
+    guard let destinationUrl = imageFileUrl(localIdentifier: localIdentifier, size: size, variant: variant) else {
       promise.resolve()
       return
     }
@@ -100,25 +186,16 @@ public class PhotoThumbnailModule: Module {
       return
     }
 
-    let options = PHImageRequestOptions()
-    // iCloud からのダウンロードは行わない。ローカルに残っているサムネイルだけを使う。
-    // true にすると通信・待ち時間・App Hang のリスクをすべて負い直すことになるため、
-    // ここは本モジュールの設計上の肝であり変更しない(設計書 §4.2)
-    options.isNetworkAccessAllowed = false
-    // .opportunistic は結果ハンドラが複数回呼ばれ Promise の二重解決になるため使わない。
-    // .fastFormat は結果ハンドラが必ず1回だけ呼ばれ、かつ「すぐ用意できる表現」を返すので、
-    // ローカルのサムネイルを取りに行く本用途に合う
-    options.deliveryMode = .fastFormat
-    options.resizeMode = .fast
-    options.isSynchronous = false
-
     let resolveOnce = ResolveOnceFlag()
+    // 拡大表示は全画面へ引き伸ばすため、切り取らず収まるように .aspectFit を使う。
+    // マーカーは正方形の枠へ敷き詰めるので従来どおり .aspectFill のまま
+    let contentMode: PHImageContentMode = variant == .preview ? .aspectFit : .aspectFill
 
     PHImageManager.default().requestImage(
       for: asset,
       targetSize: CGSize(width: size, height: size),
-      contentMode: .aspectFill,
-      options: options
+      contentMode: contentMode,
+      options: variant.requestOptions
     ) { image, _ in
       guard resolveOnce.acquire() else {
         return
@@ -132,8 +209,8 @@ public class PhotoThumbnailModule: Module {
       // 結果ハンドラはメインキューで呼ばれうる。JPEG エンコードとファイル書き出しをそのまま行うと
       // メインスレッドを止めて App Hang になるため、別キューへ逃がす
       DispatchQueue.global(qos: .utility).async {
-        if let thumbnailUri = writeThumbnail(image: image, to: destinationUrl) {
-          promise.resolve(thumbnailUri)
+        if let imageUri = writeImage(image: image, to: destinationUrl, variant: variant) {
+          promise.resolve(imageUri)
         } else {
           promise.resolve()
         }
@@ -142,16 +219,17 @@ public class PhotoThumbnailModule: Module {
   }
 
   /**
-   * サムネイルの書き出し先URLを、アセットと要求サイズから決定的に導く。
+   * 画像の書き出し先URLを、アセット・要求サイズ・用途から決定的に導く。
    *
    * `localIdentifier` は `XXXXXXXX-…/L0/001` のようにスラッシュを含みそのままファイル名にできないため、
    * 英数字以外を `-` へ置き換える。置換は決定的なので、同じ要求からは常に同じパスが得られる。
    *
    * @param localIdentifier `PHAsset.localIdentifier`。
-   * @param size 要求するサムネイルの一辺のピクセル数。
+   * @param size 要求する画像の一辺のピクセル数。
+   * @param variant 取得する画像の用途。ファイル名の接頭辞に反映する。
    * @return 書き出し先URL。キャッシュディレクトリを取得できない場合は nil。
    */
-  private static func thumbnailFileUrl(localIdentifier: String, size: Double) -> URL? {
+  private static func imageFileUrl(localIdentifier: String, size: Double, variant: ImageVariant) -> URL? {
     guard let cachesUrl = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
       return nil
     }
@@ -160,18 +238,19 @@ public class PhotoThumbnailModule: Module {
 
     return cachesUrl
       .appendingPathComponent(thumbnailDirectoryName, isDirectory: true)
-      .appendingPathComponent("\(safeIdentifier)-\(Int(size)).jpg")
+      .appendingPathComponent("\(variant.fileNamePrefix)-\(safeIdentifier)-\(Int(size)).jpg")
   }
 
   /**
-   * サムネイル画像を JPEG としてキャッシュディレクトリへ書き出す。
+   * 画像を JPEG としてキャッシュディレクトリへ書き出す。
    *
    * @param image 書き出す画像。
    * @param destinationUrl 書き出し先URL。
+   * @param variant 取得する画像の用途。圧縮品質を決めるために使う。
    * @return 書き出せた場合は `file://` パス。失敗した場合は nil。
    */
-  private static func writeThumbnail(image: UIImage, to destinationUrl: URL) -> String? {
-    guard let jpegData = image.jpegData(compressionQuality: jpegCompressionQuality) else {
+  private static func writeImage(image: UIImage, to destinationUrl: URL, variant: ImageVariant) -> String? {
+    guard let jpegData = image.jpegData(compressionQuality: variant.compressionQuality) else {
       return nil
     }
 

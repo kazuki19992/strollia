@@ -9,6 +9,13 @@ type PhotoThumbnailNativeModule = {
    * @param size - 要求するサムネイルの一辺のピクセル数。
    */
   getPhotoThumbnailAsync: (assetId: string, size: number) => Promise<string | null>;
+  /**
+   * 拡大表示用の高解像度画像を書き出してそのパスを返す。取得できない場合はnull。
+   *
+   * @param assetId - `ph://<localIdentifier>` 形式のアセットURI。
+   * @param size - 要求する画像の一辺のピクセル数。
+   */
+  getPhotoPreviewAsync: (assetId: string, size: number) => Promise<string | null>;
 };
 
 /**
@@ -48,6 +55,38 @@ export async function getPhotoThumbnailAsync(assetId: string, size: number): Pro
     return await photoThumbnailModule.getPhotoThumbnailAsync(assetId, size);
   } catch (error: unknown) {
     console.warn('Failed to get photo thumbnail:', error);
+
+    return null;
+  }
+}
+
+/**
+ * 拡大表示用の高解像度画像を取得し、キャッシュディレクトリ上のパスを返す。
+ *
+ * **この関数だけ iCloud からのダウンロードを許可する**(`isNetworkAccessAllowed = true`)。
+ * マーカー用の `getPhotoThumbnailAsync` は従来どおり通信を行わない。地図描画中に通信が走ると
+ * 通信量と App Hang の問題が再発するため、ネットワークアクセスは「ユーザーが写真を明示的に
+ * タップして拡大表示した」ときだけに限る、というのがこの2関数を分けている理由である。
+ *
+ * ダウンロードには数秒かかりうるので、呼び出し側は取得を待つ間もサムネイルを表示し続け、
+ * 取得できたときにだけ差し替える。
+ *
+ * **失敗しても例外を投げずnullを返す。** 機内モードや圏外では取得できないのが正常な結果であり、
+ * その場合は呼び出し側がサムネイル表示のままにできる。
+ *
+ * @param assetId - `ph://<localIdentifier>` 形式のアセットURI、またはその `localIdentifier`。
+ * @param size - 要求する画像の一辺のピクセル数。
+ * @returns 書き出した画像の `file://` パス。取得できない場合はnull。
+ */
+export async function getPhotoPreviewAsync(assetId: string, size: number): Promise<string | null> {
+  if (photoThumbnailModule === null) {
+    return null;
+  }
+
+  try {
+    return await photoThumbnailModule.getPhotoPreviewAsync(assetId, size);
+  } catch (error: unknown) {
+    console.warn('Failed to get photo preview:', error);
 
     return null;
   }

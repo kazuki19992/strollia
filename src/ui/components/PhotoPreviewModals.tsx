@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { MapPhotoCluster } from '@/features/photos/photoClusters';
 import { MapPhoto } from '@/features/photos/photoLibrary';
@@ -13,6 +13,14 @@ export type PhotoPreviewModalsProps = {
   selectedPhotoClusterPages: MapPhoto[][];
   /** 選択中の単体写真。 */
   selectedPhoto: MapPhoto | null;
+  /**
+   * 拡大表示に使うURI。高解像度を取得できるまでは `selectedPhoto.uri`(サムネイル)と同じ値になる。
+   *
+   * 解決は端末APIを叩くため、コンポーネント内では行わずここへ渡してもらう。
+   */
+  selectedPhotoPreviewUri: string | null;
+  /** 高解像度の取得中かどうか。iCloudからのダウンロードは数秒かかりうるため待機表示を出す。 */
+  isSelectedPhotoPreviewLoading: boolean;
   /** 画面共通スタイル。 */
   styles: AppStyles;
   /** 写真クラスタ選択を変更する処理。 */
@@ -27,11 +35,16 @@ export type PhotoPreviewModalsProps = {
  * サムネイルを取得できなかった写真(`uri` がnull)は、白紙のマスや真っ黒な画面にせず
  * プレースホルダを描画する。地図側で除外せず表示している以上、開いた先でも
  * 「画像は出せないが写真は存在する」と分かる必要があるため(設計書 §5.2)。
+ *
+ * 拡大表示はサムネイルではなく `selectedPhotoPreviewUri`(高解像度)を使う。高解像度が
+ * 届くまではサムネイルが渡ってくるので、開いた瞬間から何かが見えている状態を保てる。
  */
 export function PhotoPreviewModals({
   selectedPhotoCluster,
   selectedPhotoClusterPages,
   selectedPhoto,
+  selectedPhotoPreviewUri,
+  isSelectedPhotoPreviewLoading,
   styles,
   onSelectPhotoCluster,
   onSelectPhoto,
@@ -82,14 +95,22 @@ export function PhotoPreviewModals({
         <View style={styles.photoPreviewBackdrop}>
           <Pressable onPress={() => onSelectPhoto(null)} style={styles.photoPreviewCloseArea}>
             {selectedPhoto &&
-              (selectedPhoto.uri === null ? (
+              (selectedPhotoPreviewUri === null ? (
                 <View style={styles.photoPreviewPlaceholder}>
                   <MaterialCommunityIcons name="image-off-outline" size={48} color={styles.photoPreviewPlaceholderText.color} />
                   <Text style={styles.photoPreviewPlaceholderText}>この写真の画像を表示できません</Text>
                 </View>
               ) : (
-                <Image source={{ uri: selectedPhoto.uri }} style={styles.photoPreviewImage} resizeMode="contain" />
+                <Image source={{ uri: selectedPhotoPreviewUri }} style={styles.photoPreviewImage} resizeMode="contain" />
               ))}
+            {isSelectedPhotoPreviewLoading && (
+              <ActivityIndicator
+                accessibilityLabel="高解像度の写真を読み込み中"
+                accessibilityRole="progressbar"
+                color={styles.photoPreviewLoadingIndicator.color}
+                style={styles.photoPreviewLoading}
+              />
+            )}
             <Text style={styles.photoPreviewHint}>タップして閉じる</Text>
           </Pressable>
         </View>

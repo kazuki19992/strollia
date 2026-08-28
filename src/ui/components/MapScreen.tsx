@@ -84,6 +84,13 @@ export type MapScreenProps = {
   photoErrorMessage: string | null;
   /** 写真読み込み中か。 */
   isLoadingPhotos: boolean;
+  /**
+   * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
+   *
+   * **計測用の開発フラグが有効なときだけ非nullになる**(判定は `createPhotoScanMetricsLines`)。
+   * 走査上限の撤廃を実測で設計するための一時的な表示なので、通常は何も描画しない。
+   */
+  photoScanMetricsLines: string[] | null;
   /** 表示距離。 */
   distance: number;
   /** 今日の移動距離。 */
@@ -148,6 +155,7 @@ export function MapScreen({
   isWhileInUseOnlyMode,
   photoErrorMessage,
   isLoadingPhotos,
+  photoScanMetricsLines,
   distance,
   todayDistance,
   currentSpeedKmh,
@@ -326,6 +334,17 @@ export function MapScreen({
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionText}>
               ジオタグ付き写真を読み込んでいます...
             </Text>
+          </View>
+        )}
+
+        {/* 走査コスト計測用の一時表示。スクリーンショットから読み取る前提なので読み込み帯と同じ場所・見た目に置く */}
+        {photoScanMetricsLines !== null && (
+          <View style={styles.photoStatusCard}>
+            {photoScanMetricsLines.map((line) => (
+              <Text {...FIXED_MAP_UI_TEXT_PROPS} key={line} style={styles.photoScanMetricsText}>
+                {line}
+              </Text>
+            ))}
           </View>
         )}
 

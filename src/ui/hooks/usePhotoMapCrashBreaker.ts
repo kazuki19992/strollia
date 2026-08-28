@@ -8,6 +8,7 @@ import { hasFullPhotoAccess } from '@/features/photos/photoLibrary';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { usePhotoMapOverlay } from './usePhotoMapOverlay';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
+import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
 
 /** マップ上の写真表示設定をSQLiteへ保存するキー。 */
 export const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
@@ -54,6 +55,12 @@ export type UsePhotoMapCrashBreakerResult = {
   /** 写真取得でエラーが発生した場合のメッセージ。 */
   photoErrorMessage: string | null;
   /**
+   * 直近の写真ライブラリ走査の計測値。走査前・写真表示OFF時はnull。
+   *
+   * 走査上限の撤廃(Phase 2-c)を実測で設計するための一時的な計測値を、画面まで素通しする。
+   */
+  photoScanMetrics: PhotoScanMetrics | null;
+  /**
    * 初回起動時の設定読み込み完了後に呼ぶ初期化関数。
    * App.tsx の初期化 effect から savedShowPhotosOnMap / savedShowPhotosOnMapEnablePending の
    * 読み込み結果を受けて呼ぶ。
@@ -97,7 +104,7 @@ export function usePhotoMapCrashBreaker({
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
 
   // 写真データ取得フック。showPhotosOnMap が true のときのみ写真を取得する。
-  const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap, photoOverlayRegion);
+  const { photos, isLoadingPhotos, photoErrorMessage, photoScanMetrics } = usePhotoMapOverlay(showPhotosOnMap, photoOverlayRegion);
 
   /**
    * 写真表示を有効化する前にpendingを保存し、ネイティブクラッシュ後の次回起動で復旧できるようにする。
@@ -295,6 +302,7 @@ export function usePhotoMapCrashBreaker({
     photos,
     isLoadingPhotos,
     photoErrorMessage,
+    photoScanMetrics,
     initializePhotoSetting,
     updateShowPhotosOnMap,
   };

@@ -868,6 +868,12 @@ export function createMapStyles(theme: AppTheme) {
       color: '#ffffff',
       fontSize: 14,
     },
+    // 走査コスト計測の一時表示。スクリーンショットから数字を読み取るため、本文より小さくしない
+    photoScanMetricsText: {
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 20,
+    },
     photoStatusCard: {
       alignSelf: 'center',
       backgroundColor: colors.surfaceOverlay,

@@ -96,6 +96,7 @@ function createProps() {
     shouldOpenSettingsForPermission: false,
     photoErrorMessage: null,
     isLoadingPhotos: false,
+    photoScanMetricsLines: null as string[] | null,
     distance: 1234,
     todayDistance: 456,
     currentSpeedKmh: 7,
@@ -162,6 +163,30 @@ describe('地図画面 MapScreen', () => {
     expect(StyleSheet.flatten(name!.props.style)).toMatchObject({ fontWeight: '700' });
     expect(screen.getByLabelText('家のTwemojiアイコン')).toBeTruthy();
     expect(screen.getByText('非表示範囲: 1km')).toBeTruthy();
+  });
+
+  test('計測表示行が無い場合は写真走査の計測結果を表示しない', () => {
+    // 計測フラグが無効なとき(=通常のユーザー)は行が渡されない。既存の見た目を変えないこと
+    render(<MapScreen {...createProps()} showPhotosOnMap isLoadingPhotos={false} />);
+
+    expect(screen.queryByText(/走査 /)).toBeNull();
+    expect(screen.queryByText(/メタデータ /)).toBeNull();
+  });
+
+  test('計測表示行がある場合は写真走査の計測結果を帯に表示する', () => {
+    const lines = ['走査 2000件 / ジオタグ 143件 / 失敗 2件', 'メタデータ 0.3s / 位置 11.8s / 保存 1.2s / 合計 13.3s'];
+    render(<MapScreen {...createProps()} showPhotosOnMap photoScanMetricsLines={lines} />);
+
+    expect(screen.getByText(lines[0])).toBeTruthy();
+    expect(screen.getByText(lines[1])).toBeTruthy();
+  });
+
+  test('計測結果はスクリーンショットで読める文字サイズで表示する', () => {
+    const lines = ['走査 2000件 / ジオタグ 143件 / 失敗 2件'];
+    render(<MapScreen {...createProps()} showPhotosOnMap photoScanMetricsLines={lines} />);
+
+    const metricsText = screen.getByText(lines[0]);
+    expect(StyleSheet.flatten(metricsText.props.style).fontSize).toBeGreaterThanOrEqual(14);
   });
 
   test('記録状態とスピードメーターを表示する', () => {

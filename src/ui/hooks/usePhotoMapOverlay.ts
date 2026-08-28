@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Region } from 'react-native-maps';
 
 import { loadGeotaggedPhotos, loadGeotaggedPhotosInBounds, MapPhoto } from '@/features/photos/photoLibrary';
+import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
 import {
   getPhotoViewportBounds,
   isPhotoViewportBoundsContained,
@@ -17,8 +18,23 @@ export type PhotoMapOverlayState = {
   isLoadingPhotos: boolean;
   /** 写真読み込み時に発生したエラーメッセージ。 */
   photoErrorMessage: string | null;
+  /**
+   * 直近の写真ライブラリ走査の計測値。走査前・無効時はnull。
+   *
+   * 走査上限の撤廃(Phase 2-c)を実測で設計するための一時的な計測値で、表示するかどうかは
+   * `createPhotoScanMetricsLines` が開発フラグで判断する。
+   */
+  photoScanMetrics: PhotoScanMetrics | null;
   /** 写真一覧を手動で再読み込みする関数。写真ライブラリの走査からやり直す。 */
   reloadPhotos: () => Promise<void>;
+};
+
+/** 写真ライブラリ走査の同期結果。 */
+type PhotoAssetSyncResult = {
+  /** キャッシュ保存に失敗した場合に代わりに表示する走査結果。保存できた場合はnull。 */
+  fallbackPhotos: MapPhoto[] | null;
+  /** 走査コストの計測値。 */
+  metrics: PhotoScanMetrics;
 };
 
 /**
@@ -44,6 +60,7 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
   const [photos, setPhotos] = useState<MapPhoto[]>([]);
   const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [photoErrorMessage, setPhotoErrorMessage] = useState<string | null>(null);
+  const [photoScanMetrics, setPhotoScanMetrics] = useState<PhotoScanMetrics | null>(null);
   const photoLoadSeqRef = useRef(0);
   /**
    * 写真ライブラリ走査の進行中/完了済みPromise。
@@ -51,10 +68,11 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
    * 表示範囲の変化で読み込みが再入しても走査を二重に走らせないため、Promiseを共有する。
    * 失敗時はnullへ戻し、次回の読み込みで再試行できるようにする。
    *
-   * 解決値は「キャッシュを引けない場合に代わりに表示する走査結果」で、キャッシュ保存に
-   * 成功した場合はnull(= ビューポート検索を使う)になる。
+   * 解決値の `fallbackPhotos` は「キャッシュを引けない場合に代わりに表示する走査結果」で、
+   * キャッシュ保存に成功した場合はnull(= ビューポート検索を使う)になる。
+   * `metrics` は走査コストの計測値で、表示範囲が変わっても再走査しない限り同じ値を保つ。
    */
-  const assetSyncPromiseRef = useRef<Promise<MapPhoto[] | null> | null>(null);
+  const assetSyncPromiseRef = useRef<Promise<PhotoAssetSyncResult> | null>(null);
   /** 直近で `photo_assets` を検索した範囲(余白込み)。 */
   const fetchedBoundsRef = useRef<PhotoViewportBounds | null>(null);
 
@@ -66,15 +84,15 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
    * 直接表示できるようにする(2-b導入前の「走査結果を直接表示する」挙動へのフォールバック)。
    *
    * @param shouldForce - 完了済みでも走査をやり直すかどうか。
-   * @returns キャッシュ保存に失敗した場合は走査結果、成功した場合はnull。
+   * @returns 表示へ回す走査結果(保存に成功した場合はnull)と、走査コストの計測値。
    */
-  const syncPhotoAssets = useCallback(async (shouldForce: boolean): Promise<MapPhoto[] | null> => {
+  const syncPhotoAssets = useCallback(async (shouldForce: boolean): Promise<PhotoAssetSyncResult> => {
     if (shouldForce) {
       assetSyncPromiseRef.current = null;
     }
 
     assetSyncPromiseRef.current ??= loadGeotaggedPhotos()
-      .then((result) => (result.isCacheSaved ? null : result.photos))
+      .then((result) => ({ fallbackPhotos: result.isCacheSaved ? null : result.photos, metrics: result.metrics }))
       .catch((error: unknown) => {
         assetSyncPromiseRef.current = null;
         throw error;
@@ -92,6 +110,7 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
         fetchedBoundsRef.current = null;
         setPhotos([]);
         setPhotoErrorMessage(null);
+        setPhotoScanMetrics(null);
         setIsLoadingPhotos(false);
         return;
       }
@@ -112,7 +131,7 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
       setPhotoErrorMessage(null);
 
       try {
-        const scannedPhotosFallback = await syncPhotoAssets(shouldForceReload);
+        const { fallbackPhotos: scannedPhotosFallback, metrics } = await syncPhotoAssets(shouldForceReload);
 
         const searchBounds = getPhotoViewportBounds(region, { paddingRatio: PHOTO_VIEWPORT_PADDING_RATIO });
         // キャッシュ保存に失敗した場合はDBを引かず、メモリ上の走査結果を同じ範囲で絞り込む。
@@ -125,6 +144,7 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
         if (loadSeq === photoLoadSeqRef.current) {
           fetchedBoundsRef.current = searchBounds;
           setPhotos(loadedPhotos);
+          setPhotoScanMetrics(metrics);
         }
       } catch (error: unknown) {
         if (loadSeq === photoLoadSeqRef.current) {
@@ -151,5 +171,5 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region): PhotoMapOv
 
   const reloadPhotos = useCallback((): Promise<void> => loadPhotosForRegion(true), [loadPhotosForRegion]);
 
-  return { photos, isLoadingPhotos, photoErrorMessage, reloadPhotos };
+  return { photos, isLoadingPhotos, photoErrorMessage, photoScanMetrics, reloadPhotos };
 }

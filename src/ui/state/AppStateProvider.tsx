@@ -36,6 +36,7 @@ import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
 import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
+import { createPhotoScanMetricsLines } from '@/features/photos/photoScanMetrics';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
 import { getAppTheme, applyColorPreset } from '@/theme/theme';
@@ -221,6 +222,14 @@ export type AppStateContextValue = {
   isLoadingPhotos: boolean;
   /** 写真取得エラーメッセージ。 */
   photoErrorMessage: string | null;
+  /**
+   * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
+   *
+   * **計測用の開発フラグ(`EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS`)が有効なときだけ非nullになる。**
+   * 走査上限の撤廃(Phase 2-c)を実機の実測値で設計するための一時的な導線で、通常のユーザーには
+   * 一切表示しない。
+   */
+  photoScanMetricsLines: string[] | null;
   /** 写真表示設定を更新する。 */
   updateShowPhotosOnMap: (show: boolean) => Promise<void>;
   /** 選択された写真(単体プレビュー用)。 */
@@ -622,9 +631,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     photos,
     isLoadingPhotos,
     photoErrorMessage,
+    photoScanMetrics,
     initializePhotoSetting,
     updateShowPhotosOnMap,
   } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion });
+  // 計測フラグが無効なら常にnull(=画面に何も出さない)。判定は createPhotoScanMetricsLines に閉じている
+  const photoScanMetricsLines = useMemo(() => createPhotoScanMetricsLines(photoScanMetrics), [photoScanMetrics]);
   // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
   const photoClusters = usePhotoClusters(photos, visibleRegion);
   // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
@@ -1155,6 +1167,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     photoClusters,
     isLoadingPhotos,
     photoErrorMessage,
+    photoScanMetricsLines,
     updateShowPhotosOnMap,
     selectedPhoto,
     selectedPhotoPreviewUri,

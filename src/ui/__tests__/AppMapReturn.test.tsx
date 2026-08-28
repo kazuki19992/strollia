@@ -371,7 +371,9 @@ jest.mock('@/config/developmentFlags', () => ({
     enablePremiumAccessWithoutRevenueCat: false,
     resetAchievementsOnLaunch: false,
     logVisitedGridMetrics: false,
+    logPhotoScanMetrics: false,
   },
+  getPhotoScanLimitOverride: jest.fn(() => null),
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));

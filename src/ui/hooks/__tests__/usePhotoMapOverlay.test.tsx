@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import type { Region } from 'react-native-maps';
 
 import { loadGeotaggedPhotos, loadGeotaggedPhotosInBounds, MapPhoto } from '@/features/photos/photoLibrary';
+import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
 import { usePhotoMapOverlay } from '@/ui/hooks/usePhotoMapOverlay';
 
 jest.mock('@/features/photos/photoLibrary', () => ({
@@ -11,6 +12,17 @@ jest.mock('@/features/photos/photoLibrary', () => ({
 
 /** テスト用の表示範囲。 */
 const baseRegion: Region = { latitude: 35, longitude: 139, latitudeDelta: 0.1, longitudeDelta: 0.1 };
+
+/** テスト用の走査計測値。 */
+const metrics: PhotoScanMetrics = {
+  scannedAssetCount: 200,
+  geotaggedPhotoCount: 12,
+  locationRejectedCount: 1,
+  metadataDurationMs: 100,
+  locationDurationMs: 900,
+  saveDurationMs: 200,
+  totalDurationMs: 1300,
+};
 
 /** テスト用のジオタグ付き写真。 */
 const photo: MapPhoto = {
@@ -35,8 +47,36 @@ async function flushPromises(): Promise<void> {
 describe('写真マップ表示hook usePhotoMapOverlay', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [], isCacheSaved: true });
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [], isCacheSaved: true, metrics });
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([]);
+  });
+
+  it('走査の計測値を状態として公開する', async () => {
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await flushPromises();
+
+    expect(result.current.photoScanMetrics).toEqual(metrics);
+  });
+
+  it('走査前は計測値を持たない', () => {
+    const { result } = renderHook(() => usePhotoMapOverlay(false, baseRegion));
+
+    expect(result.current.photoScanMetrics).toBeNull();
+  });
+
+  it('無効化した場合は計測値を捨てる', async () => {
+    const { result, rerender } = renderHook(({ enabled }: { enabled: boolean }) => usePhotoMapOverlay(enabled, baseRegion), {
+      initialProps: { enabled: true },
+    });
+    await flushPromises();
+    expect(result.current.photoScanMetrics).toEqual(metrics);
+
+    await act(async () => {
+      rerender({ enabled: false });
+    });
+    await flushPromises();
+
+    expect(result.current.photoScanMetrics).toBeNull();
   });
 
   it('有効な場合は表示範囲に含まれる保存済み写真を読み込む', async () => {

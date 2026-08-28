@@ -207,6 +207,25 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     );
   });
 
+  it('既存セルより古い訪問を取り込むとfirstVisitedAtを古い時刻へ更新するSQLを使う', async () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+
+    await upsertVisitedCellVisitsInCurrentTransaction([{ cell, visitedAt: '2026-05-22T23:55:00.000Z' }], mockTxn as never);
+
+    expect(mockTxn.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('WHEN excluded.first_visited_at < visited_cells.first_visited_at THEN excluded.first_visited_at'),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      '2026-05-22T23:55:00.000Z',
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
   it('deleteAllVisitedCellsはvisited_cellsを全削除する', async () => {
     await deleteAllVisitedCells();
 

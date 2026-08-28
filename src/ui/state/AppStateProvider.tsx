@@ -1029,12 +1029,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         return;
       }
 
-      // 同期的なパースに入る前に1フレーム譲り、ブロッキングダイアログを確実に描画させる。
+      // 同期的なパースに入る前に解析中表示へ切り替え、1フレーム譲って描画を確実にする。
       // （パースは同期処理のため、譲らないと大きなGPXでは旧画面のまま固まる）
+      setGpxImportProgressStage('parsing');
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => resolve());
       });
-      setGpxImportProgressStage('parsing');
       const pointsToImport = parseGpxToLocationPoints(pickedFile.content);
 
       if (pointsToImport.length === 0) {

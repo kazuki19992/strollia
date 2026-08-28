@@ -120,6 +120,10 @@ export async function upsertVisitedCellVisitsInCurrentTransaction(
         updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, 'gps', ?, ?)
       ON CONFLICT(cell_id) DO UPDATE SET
+        first_visited_at = CASE
+          WHEN excluded.first_visited_at < visited_cells.first_visited_at THEN excluded.first_visited_at
+          ELSE visited_cells.first_visited_at
+        END,
         last_visited_at = CASE
           WHEN excluded.last_visited_at > visited_cells.last_visited_at THEN excluded.last_visited_at
           ELSE visited_cells.last_visited_at

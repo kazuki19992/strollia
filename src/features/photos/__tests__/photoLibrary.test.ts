@@ -1,6 +1,7 @@
 import { AssetField, MediaType, type AssetMetadata, type Location, type PermissionResponse } from 'expo-media-library';
 import { getPhotoThumbnailAsync } from '@modules/photo-thumbnail';
 
+import { getPhotoScanLimitOverride } from '@/config/developmentFlags';
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
 import { clearPhotoDisplayUriCache } from '@/features/photos/photoDisplayUri';
@@ -8,9 +9,11 @@ import {
   hasFullPhotoAccess,
   loadGeotaggedPhotos,
   loadGeotaggedPhotosInBounds,
+  resolvePhotoScanLimit,
   toMapPhoto,
   toMapPhotoFromPhotoAsset,
   toPhotoAssetRecord,
+  DEFAULT_PHOTO_SCAN_LIMIT,
   PHOTO_INFO_CONCURRENCY,
 } from '@/features/photos/photoLibrary';
 import type { PhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
@@ -33,6 +36,11 @@ const mockRequestPermissionsAsync = jest.fn();
 
 jest.mock('@/config/sentry', () => ({
   reportPhotoMapDiagnostics: jest.fn(),
+}));
+
+// 走査上限の計測用上書き。既定(null)ではモジュール既定の200件が使われる
+jest.mock('@/config/developmentFlags', () => ({
+  getPhotoScanLimitOverride: jest.fn(() => null),
 }));
 
 jest.mock('@/features/photos/photoAssetRepository', () => ({
@@ -494,10 +502,12 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
     (savePhotoAssets as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
     mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
 
-    await expect(loadGeotaggedPhotos()).resolves.toEqual({
-      photos: [expect.objectContaining({ id: 'ph://asset-1' })],
-      isCacheSaved: false,
-    });
+    await expect(loadGeotaggedPhotos()).resolves.toEqual(
+      expect.objectContaining({
+        photos: [expect.objectContaining({ id: 'ph://asset-1' })],
+        isCacheSaved: false,
+      }),
+    );
     expect(warnSpy).toHaveBeenCalled();
 
     warnSpy.mockRestore();
@@ -508,20 +518,22 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
       assetId === 'ph://asset-1' ? tokyoLocation : null,
     );
 
-    await expect(loadGeotaggedPhotos()).resolves.toEqual({
-      photos: [
-        {
-          id: 'ph://asset-1',
-          uri: 'ph://asset-1',
-          latitude: 35,
-          longitude: 139,
-          creationTime: 1,
-          width: 100,
-          height: 80,
-        },
-      ],
-      isCacheSaved: true,
-    });
+    await expect(loadGeotaggedPhotos()).resolves.toEqual(
+      expect.objectContaining({
+        photos: [
+          {
+            id: 'ph://asset-1',
+            uri: 'ph://asset-1',
+            latitude: 35,
+            longitude: 139,
+            creationTime: 1,
+            width: 100,
+            height: 80,
+          },
+        ],
+        isCacheSaved: true,
+      }),
+    );
   });
 
   it('型宣言に反して文字列座標が返ってきても数値のMapPhotoとして返す', async () => {
@@ -550,7 +562,7 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
   it('写真ライブラリが空の場合は空配列を返す', async () => {
     mockScan([]);
 
-    await expect(loadGeotaggedPhotos()).resolves.toEqual({ photos: [], isCacheSaved: true });
+    await expect(loadGeotaggedPhotos()).resolves.toEqual(expect.objectContaining({ photos: [], isCacheSaved: true }));
     expect(mockGetLocation).not.toHaveBeenCalled();
   });
 
@@ -605,10 +617,12 @@ describe('キャッシュ保存に失敗したときのフォールバック loa
     mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
 
     // この結果は呼び出し側がそのまま描画へ回す。ph:// のままでは <Image> が何も描画できない
-    await expect(loadGeotaggedPhotos()).resolves.toEqual({
-      photos: [expect.objectContaining({ id: 'ph://asset-1', uri: 'file:///tmp/asset-1.jpg' })],
-      isCacheSaved: false,
-    });
+    await expect(loadGeotaggedPhotos()).resolves.toEqual(
+      expect.objectContaining({
+        photos: [expect.objectContaining({ id: 'ph://asset-1', uri: 'file:///tmp/asset-1.jpg' })],
+        isCacheSaved: false,
+      }),
+    );
 
     warnSpy.mockRestore();
   });
@@ -815,10 +829,12 @@ describe('走査済み窓との突き合わせ loadGeotaggedPhotos', () => {
     mockScan([createAssetMetadata('asset-1', { creationTime: 2000 })], async () => tokyoLocation);
 
     // 保存に失敗したことは呼び出し側へ伝える(キャッシュが空でも走査結果を表示できるようにするため)
-    await expect(loadGeotaggedPhotos()).resolves.toEqual({
-      photos: [expect.objectContaining({ id: 'ph://asset-1' })],
-      isCacheSaved: false,
-    });
+    await expect(loadGeotaggedPhotos()).resolves.toEqual(
+      expect.objectContaining({
+        photos: [expect.objectContaining({ id: 'ph://asset-1' })],
+        isCacheSaved: false,
+      }),
+    );
     expect(warnSpy).toHaveBeenCalled();
 
     warnSpy.mockRestore();
@@ -977,5 +993,101 @@ describe('ジオタグ付き写真読み込みの診断計装', () => {
       'scannedAssetCount',
     ]);
     expect(Object.values(payload).every((value) => typeof value === 'number' || typeof value === 'boolean')).toBe(true);
+  });
+});
+
+describe('走査上限の解決 resolvePhotoScanLimit', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetPermissionsAsync.mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+    mockScan([]);
+  });
+
+  it('上書きが無い場合は既定の200件を上限にする', async () => {
+    (getPhotoScanLimitOverride as jest.Mock).mockReturnValue(null);
+
+    expect(resolvePhotoScanLimit()).toBe(DEFAULT_PHOTO_SCAN_LIMIT);
+
+    await loadGeotaggedPhotos();
+
+    // 次ページ判定のため上限より1件多く要求する
+    expect(mockQueryLimit).toHaveBeenCalledWith(DEFAULT_PHOTO_SCAN_LIMIT + 1);
+  });
+
+  it('計測用の上書きがある場合はその値を上限にする', async () => {
+    (getPhotoScanLimitOverride as jest.Mock).mockReturnValue(2000);
+
+    expect(resolvePhotoScanLimit()).toBe(2000);
+
+    await loadGeotaggedPhotos();
+
+    expect(mockQueryLimit).toHaveBeenCalledWith(2001);
+  });
+
+  it('引数で上限を明示した場合は上書きより引数を優先する', async () => {
+    (getPhotoScanLimitOverride as jest.Mock).mockReturnValue(2000);
+
+    await loadGeotaggedPhotos(50);
+
+    expect(mockQueryLimit).toHaveBeenCalledWith(51);
+  });
+});
+
+describe('走査コストの計測 loadGeotaggedPhotos', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetPermissionsAsync.mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+  });
+
+  it('走査件数・ジオタグ件数・位置情報の失敗件数を計測値として返す', async () => {
+    mockScan([createAssetMetadata('asset-1'), createAssetMetadata('asset-2'), createAssetMetadata('asset-3')], async (assetId) => {
+      if (assetId === 'ph://asset-3') {
+        throw new Error('broken asset');
+      }
+
+      return assetId === 'ph://asset-1' ? tokyoLocation : null;
+    });
+
+    const { metrics } = await loadGeotaggedPhotos();
+
+    expect(metrics.scannedAssetCount).toBe(3);
+    expect(metrics.geotaggedPhotoCount).toBe(1);
+    expect(metrics.locationRejectedCount).toBe(1);
+  });
+
+  it('走査コストを外挿できるよう所要時間を内訳ごとに返す', async () => {
+    mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
+
+    const { metrics } = await loadGeotaggedPhotos();
+
+    expect(metrics.metadataDurationMs).toEqual(expect.any(Number));
+    expect(metrics.locationDurationMs).toEqual(expect.any(Number));
+    expect(metrics.saveDurationMs).toEqual(expect.any(Number));
+    expect(metrics.totalDurationMs).toEqual(expect.any(Number));
+    expect(metrics.metadataDurationMs).toBeGreaterThanOrEqual(0);
+    expect(metrics.totalDurationMs).toBeGreaterThanOrEqual(metrics.metadataDurationMs);
+  });
+
+  it('上限で切り詰めた場合は切り詰めたあとの件数を走査件数にする', async () => {
+    mockScan([createAssetMetadata('asset-1'), createAssetMetadata('asset-2'), createAssetMetadata('asset-3')], async () => tokyoLocation);
+
+    const { metrics } = await loadGeotaggedPhotos(2);
+
+    // 次ページ判定用に取得した3件目は走査対象ではない
+    expect(metrics.scannedAssetCount).toBe(2);
+    expect(metrics.geotaggedPhotoCount).toBe(2);
+  });
+
+  it('保存に失敗した場合も計測値は返す', async () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (savePhotoAssets as jest.Mock).mockRejectedValueOnce(new Error('database is locked'));
+    mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
+
+    const { metrics } = await loadGeotaggedPhotos();
+
+    expect(metrics.scannedAssetCount).toBe(1);
+    expect(metrics.saveDurationMs).toEqual(expect.any(Number));
+
+    warnSpy.mockRestore();
   });
 });

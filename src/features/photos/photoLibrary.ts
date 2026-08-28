@@ -9,9 +9,11 @@ import {
   type PermissionResponse,
 } from 'expo-media-library';
 
+import { getPhotoScanLimitOverride } from '@/config/developmentFlags';
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
 import { resolvePhotoDisplayUri } from '@/features/photos/photoDisplayUri';
+import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
 import { createPhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
 import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 import { mapWithConcurrency } from '@/utils/concurrency';
@@ -60,9 +62,31 @@ export type GeotaggedPhotoScanResult = {
   photos: MapPhoto[];
   /** 走査結果を `photo_assets` へ保存できたかどうか。falseの場合キャッシュは最新化されていない。 */
   isCacheSaved: boolean;
+  /**
+   * 走査の内訳(件数・所要時間)。
+   *
+   * 走査上限の撤廃(Phase 2-c)を実測で設計するための計測値。**フラグに関係なく常に計測する**
+   * (`Date.now()` の差分なのでコストは無視できる)。表示するかどうかだけを
+   * `createPhotoScanMetricsLines` がフラグで切り替える。
+   */
+  metrics: PhotoScanMetrics;
 };
 
-const DEFAULT_PHOTO_SCAN_LIMIT = 200;
+/** 走査する最新写真の既定の上限。初期表示の重さを抑えるために持つ。 */
+export const DEFAULT_PHOTO_SCAN_LIMIT = 200;
+
+/**
+ * 今回の走査で使う上限を決める。
+ *
+ * 通常は既定の上限を使う。計測用に `EXPO_PUBLIC_PHOTO_SCAN_LIMIT` が設定されている場合だけ、
+ * その値へ差し替える(**上限撤廃の実コストを実機で測るための一時的な仕組み**)。
+ * 不正値の解釈は `getPhotoScanLimitOverride` 側で吸収済みで、ここへはnullか有効な件数しか来ない。
+ *
+ * @returns 走査に使う上限件数。
+ */
+export function resolvePhotoScanLimit(): number {
+  return getPhotoScanLimitOverride() ?? DEFAULT_PHOTO_SCAN_LIMIT;
+}
 
 /**
  * 写真ライブラリへの問い合わせ(位置情報の取得 / 表示用URIの解決)の同時実行数。
@@ -353,10 +377,12 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): 
  * 走査は SDK 57 のクラスベース新API(`Query` / `Asset`)で行う。軽量メタデータを1回のクエリで
  * まとめて取り、位置情報だけをアセットごとに取得する二段構えである。
  *
- * @param limit - 走査する最新写真の最大件数。初期表示の重さを抑えるため上限を持つ。
- * @returns ジオタグ付き写真一覧と、キャッシュ保存の成否。表示用URIの解決状態は `GeotaggedPhotoScanResult` を参照。
+ * 走査コストの内訳は常に計測して返す(理由は `GeotaggedPhotoScanResult.metrics` を参照)。
+ *
+ * @param limit - 走査する最新写真の最大件数。省略時は `resolvePhotoScanLimit()` の結果を使う。
+ * @returns ジオタグ付き写真一覧、キャッシュ保存の成否、走査の計測値。表示用URIの解決状態は `GeotaggedPhotoScanResult` を参照。
  */
-export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<GeotaggedPhotoScanResult> {
+export async function loadGeotaggedPhotos(limit = resolvePhotoScanLimit()): Promise<GeotaggedPhotoScanResult> {
   const startedAtMs = Date.now();
 
   // 新APIに `hasNextPage` は無い。上限より1件多く要求し、その1件が返るかどうかで
@@ -367,13 +393,16 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     .limit(limit + 1)
     .exeForMetadata();
 
+  const metadataDurationMs = Date.now() - startedAtMs;
   const hasNextPage = probedMetadata.length > limit;
   // プロービング用の超過分は走査対象に含めない。含めると保存件数も往復回数も上限を超えてしまう
   const scannedMetadata = hasNextPage ? probedMetadata.slice(0, limit) : probedMetadata;
 
   // 位置情報だけは `exeForMetadata()` に含まれないため、アセットごとに取得する。
   // `getLocation()` は `phAsset.location` を読むだけでデコードもI/Oも伴わない
+  const locationStartedAtMs = Date.now();
   const locations = await mapWithConcurrency(scannedMetadata, PHOTO_INFO_CONCURRENCY, (metadata) => new Asset(metadata.id).getLocation());
+  const locationDurationMs = Date.now() - locationStartedAtMs;
 
   const photos = scannedMetadata.flatMap((metadata, index) => {
     const result = locations[index];
@@ -396,6 +425,10 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     const record = toPhotoAssetRecord(metadata, result.value);
     return record ? [record] : [];
   });
+
+  // 保存フェーズの計測はここから。突き合わせ条件の組み立てと権限参照も保存の一部として含める
+  // (2-c で「DB保存が効いてくるのは何件からか」を見るには、UPSERT単体ではなく保存経路全体のコストが要る)
+  const saveStartedAtMs = Date.now();
 
   // 走査済み時間窓との突き合わせ用に、走査したアセットごとの結果を組み立てる。
   // `mapWithConcurrency` は入力順を保つため、`locations[index]` は `scannedMetadata[index]` の結果である。
@@ -420,12 +453,16 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     },
   );
 
+  const saveDurationMs = Date.now() - saveStartedAtMs;
+
   // 保存できた場合、呼び出し側はビューポート検索へ進みこの配列を使わない。使われるのは保存に失敗した
   // フォールバックのときだけなので、そのときだけ表示用URIを解決する。常に解決すると、表示範囲の外にある
   // 写真ぶんまでサムネイルを書き出すことになり走査のたびに無駄なコストがかかる
   const resolvedPhotos = isCacheSaved ? photos : await resolveMapPhotoDisplayUris(photos);
 
   const assetInfoFulfilledCount = locations.filter((result) => result.status === 'fulfilled').length;
+  const locationRejectedCount = locations.length - assetInfoFulfilledCount;
+  const totalDurationMs = Date.now() - startedAtMs;
 
   // 送信キーは旧API時代から変えない。`assetInfo*` の実体は `getAssetInfoAsync` から `getLocation()` へ
   // 移ったが、「アセットごとの詳細取得が何件成功/失敗したか」という意味は同じであり、
@@ -435,10 +472,22 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     scannedAssetCount: scannedMetadata.length,
     hasNextPage,
     assetInfoFulfilledCount,
-    assetInfoRejectedCount: locations.length - assetInfoFulfilledCount,
+    assetInfoRejectedCount: locationRejectedCount,
     geotaggedPhotoCount: photos.length,
-    durationMs: Date.now() - startedAtMs,
+    durationMs: totalDurationMs,
   });
 
-  return { photos: resolvedPhotos, isCacheSaved };
+  return {
+    photos: resolvedPhotos,
+    isCacheSaved,
+    metrics: {
+      scannedAssetCount: scannedMetadata.length,
+      geotaggedPhotoCount: photos.length,
+      locationRejectedCount,
+      metadataDurationMs,
+      locationDurationMs,
+      saveDurationMs,
+      totalDurationMs,
+    },
+  };
 }

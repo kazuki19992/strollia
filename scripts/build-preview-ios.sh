@@ -56,6 +56,21 @@ export EXPO_PUBLIC_ENABLE_PREMIUM_ACCESS_WITHOUT_REVENUECAT=false
 export EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH=false
 export EAS_LOCAL_BUILD_ARTIFACTS_DIR="${BUILDS_DIR}"
 
+# 写真走査コストの計測フラグ(一時)。Phase 2-c の設計に使う実測値を実機で取るためのもので、
+# 上の2つと違い .env.local の値をそのままビルドへ渡す。未設定なら既定の挙動(計測表示なし・上限200件)。
+# 計測が終わったらこのブロックごと削除する。詳細は docs/photo-geotag.md を参照
+PHOTO_SCAN_METRICS_FLAG="$(read_env_value EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS)"
+if [[ -n "${PHOTO_SCAN_METRICS_FLAG}" ]]; then
+  export EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS="${PHOTO_SCAN_METRICS_FLAG}"
+  echo "計測フラグ: EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS=${PHOTO_SCAN_METRICS_FLAG}"
+fi
+
+PHOTO_SCAN_LIMIT="$(read_env_value EXPO_PUBLIC_PHOTO_SCAN_LIMIT)"
+if [[ -n "${PHOTO_SCAN_LIMIT}" ]]; then
+  export EXPO_PUBLIC_PHOTO_SCAN_LIMIT="${PHOTO_SCAN_LIMIT}"
+  echo "走査上限: EXPO_PUBLIC_PHOTO_SCAN_LIMIT=${PHOTO_SCAN_LIMIT}"
+fi
+
 # preview は eas.json で SENTRY_DISABLE_AUTO_UPLOAD=true のためソースマップを送らず、
 # SENTRY_AUTH_TOKEN は必須ではない。設定されている場合だけ渡す。
 SENTRY_AUTH_TOKEN="$(read_env_value SENTRY_AUTH_TOKEN)"

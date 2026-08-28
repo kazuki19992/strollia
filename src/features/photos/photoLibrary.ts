@@ -1,4 +1,13 @@
-import * as MediaLibrary from 'expo-media-library/legacy';
+import {
+  Asset,
+  AssetField,
+  getPermissionsAsync,
+  MediaType,
+  Query,
+  type AssetMetadata,
+  type Location,
+  type PermissionResponse,
+} from 'expo-media-library';
 
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
@@ -41,7 +50,12 @@ export type MapPhoto = {
  * 呼び出し側が走査結果をそのまま表示するフォールバックへ倒せるようにしている。
  */
 export type GeotaggedPhotoScanResult = {
-  /** 走査で得られたジオタグ付き写真。 */
+  /**
+   * 走査で得られたジオタグ付き写真。
+   *
+   * `uri` は走査で得た安定URI(iOS: `ph://…`)のままで、**表示用URIは解決されていない**。
+   * 描画に使う場合は `resolveMapPhotoDisplayUris` を通すこと。
+   */
   photos: MapPhoto[];
   /** 走査結果を `photo_assets` へ保存できたかどうか。falseの場合キャッシュは最新化されていない。 */
   isCacheSaved: boolean;
@@ -50,12 +64,16 @@ export type GeotaggedPhotoScanResult = {
 const DEFAULT_PHOTO_SCAN_LIMIT = 200;
 
 /**
- * 写真ライブラリへの問い合わせ(`getAssetInfoAsync` / 表示用URIの解決)の同時実行数。
+ * 写真ライブラリへの問い合わせ(位置情報の取得 / 表示用URIの解決)の同時実行数。
  *
- * `getAssetInfoAsync` のネイティブ実装(iOS)は完了ブロック内でフル解像度画像をメインキュー上で
- * デコードするため、一斉並列で発行するとメインスレッドが長時間ブロックされ App Hang を引き起こす
+ * 旧APIの `getAssetInfoAsync` はネイティブ実装(iOS)が完了ブロック内でフル解像度画像をメインキュー上で
+ * デコードするため、一斉並列で発行するとメインスレッドが長時間ブロックされ App Hang を引き起こしていた
  * (2026-08-08 Sentry 観測: 200並列でメインスレッドが2秒以上停止)。
  * 同時実行数を絞ることでメインキューへ一度に積まれるデコード量を抑える。
+ *
+ * 新APIの `Asset.getLocation()` は `phAsset.location` を直接読むだけでデコードを伴わないため、
+ * この上限は緩められる余地がある。ただし**実測してから**変えるべきなので、新API移行では値を据え置く
+ * (設計書 `docs/superpowers/specs/2026-08-28-media-library-next-api-design.md` §4.1)。
  *
  * 表示用URIの解決(`resolvePhotoDisplayUri`)はフル解像度デコードを伴わないが、
  * `PHImageManager.requestImage` はサムネイルのデコードとJPEGの書き出しを行う。
@@ -69,18 +87,18 @@ export const PHOTO_INFO_CONCURRENCY = 4;
  * @param permission - expo-media-libraryの権限レスポンス。
  * @returns フルアクセスで読み取り可能な場合はtrue。
  */
-export function hasFullPhotoAccess(permission: MediaLibrary.PermissionResponse): boolean {
+export function hasFullPhotoAccess(permission: PermissionResponse): boolean {
   return permission.granted && permission.accessPrivileges !== 'limited' && permission.accessPrivileges !== 'none';
 }
 
 /**
  * 走査済み時間窓との突き合わせ(削除)を行ってよい権限状態かを判定する。
  *
- * **限定アクセスでは突き合わせを行ってはいけない。** 限定アクセスの `getAssetsAsync` は
- * ユーザーが選択した写真だけを、しかも `hasNextPage: false` で返す。その結果を素直に突き合わせると
- * 「ライブラリ全体を見終えた」と誤認し、選択されていない写真の行をすべて削除してしまう。
+ * **限定アクセスでは突き合わせを行ってはいけない。** 限定アクセスの走査はユーザーが選択した写真だけを
+ * 返すため、上限に満たない件数で返ってきて「ライブラリ全体を見終えた」と誤認し、選択されていない写真の
+ * 行をすべて削除してしまう。
  * 未選択の写真がライブラリに実在するのか削除されたのかは限定アクセスでは**区別できない**ため、
- * `getAssetInfoAsync` が reject したアセットの行を残すのと同じく「判断できないものは消さない」に倒す。
+ * `getLocation()` が reject したアセットの行を残すのと同じく「判断できないものは消さない」に倒す。
  *
  * 権限の参照自体に失敗した場合もフルアクセスと言い切れないため、同様に突き合わせを行わない。
  *
@@ -89,7 +107,7 @@ export function hasFullPhotoAccess(permission: MediaLibrary.PermissionResponse):
 async function canReconcilePhotoAssets(): Promise<boolean> {
   try {
     // 参照のみ。権限の要求(ダイアログ表示)は写真表示をONにする導線の責務なので、ここでは行わない
-    const permission = await MediaLibrary.getPermissionsAsync();
+    const permission = await getPermissionsAsync();
 
     return hasFullPhotoAccess(permission);
   } catch (error: unknown) {
@@ -102,21 +120,22 @@ async function canReconcilePhotoAssets(): Promise<boolean> {
 /**
  * MediaLibrary由来の座標値を有限な数値へ正規化する。
  *
- * expo-media-library の型定義(`Location`)は緯度経度を `number` と宣言しているが、**iOSのネイティブ
- * 実装は文字列を返す**。`ios/MediaLibraryUtilities.swift` の `exportLocation` が
- * `["latitude": "\(...)"]` という `[String: String]` を返し、JS側(`build/legacy/MediaLibrary.js` の
- * `getAssetInfoAsync`)にも正規化が無いため、実行時は `latitude: "35.6812"` になる。
- * Androidは `putDouble` で数値を返すため、OSによって実際の型が食い違う。
- *
+ * **新APIの `Asset.getLocation()` は `Double` を返すため、本来この変換は不要である。**
+ * それでも残しているのは、旧APIで「型定義は `number` なのに iOS のネイティブ実装は文字列を返す」
+ * という食い違いが実際に起き、例外もエラーも出さずにマーカーだけが描画されない不具合(issue #160)に
+ * なった経緯があるためである。原因は `ios/MediaLibraryUtilities.swift` の `exportLocation` が
+ * `["latitude": "\(...)"]` という `[String: String]` を返し、JS側にも正規化が無かったこと。
  * 文字列のまま `<Marker coordinate>` まで到達すると、クラスタリング計算(乗除算のみ)は暗黙の数値変換で
- * 動いてしまう一方、New Architecture の codegen が Double を期待するため座標を解決できず、
- * 例外もエラーも出さずにマーカーだけが描画されない(issue #160)。
- * このため境界であるこの関数で数値へ寄せ、アプリ内部は数値のみを扱う。
+ * 動いてしまう一方、New Architecture の codegen が Double を期待するため座標を解決できない。
+ *
+ * コストがほぼゼロである一方、「ライブラリの型宣言と実装は食い違いうる」という教訓を
+ * テストごと残す価値があるため、新API移行後も境界のこの関数で数値へ寄せる
+ * (設計書 `docs/superpowers/specs/2026-08-28-media-library-next-api-design.md` §4.4)。
  *
  * 実行時の型がライブラリ型定義と一致しない前提の関数なので、引数は `unknown` で受けて
  * null / undefined / オブジェクトなど想定外の値も安全側(null)へ倒す。
  *
- * @param value - ネイティブ由来の緯度または経度。実行時はnumberまたはstring。
+ * @param value - ネイティブ由来の緯度または経度。型宣言上はnumberだが、実行時はstringでもありうる。
  * @returns 有限な数値へ変換できた場合はその値、できない場合はnull。
  */
 function toFiniteCoordinate(value: unknown): number | null {
@@ -139,77 +158,108 @@ function toFiniteCoordinate(value: unknown): number | null {
 }
 
 /**
- * MediaLibraryの詳細アセットを地図表示用写真へ変換する。
+ * 走査で得た緯度経度を、地図に置ける数値の組へ正規化する。
+ *
+ * ジオタグが無い(location が null)場合と、座標として解釈できない場合を同じ「地図に置けない」として
+ * まとめる。呼び出し側はこの結果がnullなら写真を除外する。
+ *
+ * @param location - `Asset.getLocation()` の結果。ジオタグが無い場合はnull。
+ * @returns 有効な座標の場合は数値の組、それ以外はnull。
+ */
+function toMapCoordinate(location: Location | null): { latitude: number; longitude: number } | null {
+  if (!location) {
+    return null;
+  }
+
+  const latitude = toFiniteCoordinate(location.latitude);
+  const longitude = toFiniteCoordinate(location.longitude);
+
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return { latitude, longitude };
+}
+
+/**
+ * 走査で得た寸法を数値へ正規化する。
+ *
+ * `AssetMetadata.width` / `height` は、メディアストアが値を持たない場合(Android)にnullになる。
+ * 寸法は地図表示の判断には使っておらず欠けても実害がないため、0へ倒して型を単純に保つ。
+ *
+ * @param size - メタデータ上の寸法。取得できない場合はnull。
+ * @returns 数値の寸法。取得できない場合は0。
+ */
+function toFiniteSize(size: number | null): number {
+  return size !== null && Number.isFinite(size) ? size : 0;
+}
+
+/**
+ * 走査結果(メタデータ + 位置情報)を地図表示用写真へ変換する。
  *
  * 緯度経度はここで数値へ変換する(理由は `toFiniteCoordinate` のJSDocを参照)。
  * 数値として解釈できない座標の写真は地図に置けないため、ジオタグなしと同様に除外する。
  *
- * **表示用URIには `localUri` だけを使い、`asset.uri`(iOS: `ph://…`)へフォールバックしない。**
- * `ph://` は `<Image>` で描画できず白紙のマーカーになるだけで、表示用の値としては
- * 「無い」のと変わらない。iCloudに本体がある写真では `localUri` が得られないため、
- * ここでnullへ倒してプレースホルダ描画へ回す(設計書 §5.2)。
- * DBへ保存する安定した識別子は `toPhotoAssetRecord` が別途 `asset.uri` から作る。
+ * **`uri` には `AssetMetadata.id`(`ph://<localIdentifier>`)をそのまま使う。**
+ * 新APIの `Asset.getUri()` は `requestContentEditingInput` を伴い、iCloudにしか本体が無い写真では
+ * 失敗する(PR #165 で対処した不具合の原因)。`id` はI/O無しで得られるうえ `photo_assets.uri` に
+ * 保存している値と同一なので、走査ではこちらを安定URIとして使う。
+ * ここで入る `ph://` は `<Image>` では描画できず、描画できる形への変換は
+ * `resolveMapPhotoDisplayUris` が担う(`toMapPhotoFromPhotoAsset` と同じ扱い)。
  *
- * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
+ * @param metadata - `Query.exeForMetadata()` が返した軽量メタデータ。
+ * @param location - `Asset.getLocation()` の結果。ジオタグが無い場合はnull。
  * @returns 有効なジオタグがある写真の場合はMapPhoto、ない場合はnull。
  */
-export function toMapPhoto(asset: MediaLibrary.AssetInfo): MapPhoto | null {
-  if (!asset.location) {
-    return null;
-  }
+export function toMapPhoto(metadata: AssetMetadata, location: Location | null): MapPhoto | null {
+  const coordinate = toMapCoordinate(location);
 
-  const latitude = toFiniteCoordinate(asset.location.latitude);
-  const longitude = toFiniteCoordinate(asset.location.longitude);
-
-  if (latitude === null || longitude === null) {
+  if (coordinate === null) {
     return null;
   }
 
   return {
-    id: asset.id,
-    uri: asset.localUri ?? null,
-    latitude,
-    longitude,
-    creationTime: asset.creationTime,
-    width: asset.width,
-    height: asset.height,
+    id: metadata.id,
+    uri: metadata.id,
+    latitude: coordinate.latitude,
+    longitude: coordinate.longitude,
+    // 撮影日時を持たないアセットは iOS に実在する。表示順の基準として 0(最古扱い)へ倒す
+    creationTime: metadata.creationTime ?? 0,
+    width: toFiniteSize(metadata.width),
+    height: toFiniteSize(metadata.height),
   };
 }
 
 /**
- * MediaLibraryの詳細アセットを `photo_assets` の保存レコードへ変換する。
+ * 走査結果(メタデータ + 位置情報)を `photo_assets` の保存レコードへ変換する。
  *
- * `MapPhoto.uri` が表示できる `localUri` だけを採るのに対し、**保存するのは `asset.uri` だけ**である。
- * `localUri` は `requestContentEditingInput` が返す一時パスで、アプリ再起動をまたいで
- * 有効である保証がないため永続化してはいけない(親設計書 §4.2)。
- * 逆に `asset.uri`(`ph://…`)は表示には使えないが識別子としては安定しているので、
- * 表示用の値と保存用の値はここで意図的に分かれる。
+ * `assetId` と `uri` はどちらも `AssetMetadata.id` である。新APIの `id` は
+ * `ph://<localIdentifier>` 形式(`ios/next/objects/asset/Asset.swift`)で、識別子としても
+ * 表示用URIの解決元としても安定しているため、両者を分ける理由が無くなった。
  *
- * @param asset - MediaLibrary.getAssetInfoAsyncで取得した詳細アセット。
+ * @param metadata - `Query.exeForMetadata()` が返した軽量メタデータ。
+ * @param location - `Asset.getLocation()` の結果。ジオタグが無い場合はnull。
  * @returns 有効なジオタグがある写真の場合は保存レコード、ない場合はnull。
  */
-export function toPhotoAssetRecord(asset: MediaLibrary.AssetInfo): PhotoAssetRecord | null {
-  if (!asset.location) {
+export function toPhotoAssetRecord(metadata: AssetMetadata, location: Location | null): PhotoAssetRecord | null {
+  const coordinate = toMapCoordinate(location);
+
+  if (coordinate === null) {
     return null;
   }
 
-  const latitude = toFiniteCoordinate(asset.location.latitude);
-  const longitude = toFiniteCoordinate(asset.location.longitude);
-
-  if (latitude === null || longitude === null) {
-    return null;
-  }
+  const creationTime = metadata.creationTime;
 
   return {
-    assetId: asset.id,
-    latitude,
-    longitude,
+    assetId: metadata.id,
+    latitude: coordinate.latitude,
+    longitude: coordinate.longitude,
     // iOSの PHAsset.creationDate は optional で、取得できないアセットが存在する。
     // 0 や不正値をエポック時刻として保存しないよう null へ倒す
-    takenAt: Number.isFinite(asset.creationTime) && asset.creationTime > 0 ? new Date(asset.creationTime).toISOString() : null,
-    uri: asset.uri,
-    width: asset.width,
-    height: asset.height,
+    takenAt: creationTime !== null && Number.isFinite(creationTime) && creationTime > 0 ? new Date(creationTime).toISOString() : null,
+    uri: metadata.id,
+    width: toFiniteSize(metadata.width),
+    height: toFiniteSize(metadata.height),
   };
 }
 
@@ -299,52 +349,65 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds): 
  * 実機でのみ再現する「写真が表示されない」不具合の切り分けのため、末尾で件数の診断を
  * Sentryへ送る(調査用の一時的な計装。詳細は `docs/photo-geotag.md`)。
  *
+ * 走査は SDK 57 のクラスベース新API(`Query` / `Asset`)で行う。軽量メタデータを1回のクエリで
+ * まとめて取り、位置情報だけをアセットごとに取得する二段構えである。
+ *
  * @param limit - 走査する最新写真の最大件数。初期表示の重さを抑えるため上限を持つ。
- * @returns 地図上に表示可能なジオタグ付き写真一覧と、キャッシュ保存の成否。
+ * @returns ジオタグ付き写真一覧(表示用URIは未解決)と、キャッシュ保存の成否。
  */
 export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Promise<GeotaggedPhotoScanResult> {
   const startedAtMs = Date.now();
 
-  const page = await MediaLibrary.getAssetsAsync({
-    first: limit,
-    mediaType: MediaLibrary.MediaType.photo,
-    sortBy: [[MediaLibrary.SortBy.creationTime, false]],
-  });
+  // 新APIに `hasNextPage` は無い。上限より1件多く要求し、その1件が返るかどうかで
+  // 「さらに古い写真が残っているか」を判定する(設計書 §4.2)
+  const probedMetadata = await new Query()
+    .eq(AssetField.MEDIA_TYPE, MediaType.IMAGE)
+    .orderBy({ key: AssetField.CREATION_TIME, ascending: false })
+    .limit(limit + 1)
+    .exeForMetadata();
 
-  const details = await mapWithConcurrency(page.assets, PHOTO_INFO_CONCURRENCY, (asset) =>
-    MediaLibrary.getAssetInfoAsync(asset, { shouldDownloadFromNetwork: false }),
-  );
+  const hasNextPage = probedMetadata.length > limit;
+  // プロービング用の超過分は走査対象に含めない。含めると保存件数も往復回数も上限を超えてしまう
+  const scannedMetadata = hasNextPage ? probedMetadata.slice(0, limit) : probedMetadata;
 
-  const photos = details.flatMap((result) => {
+  // 位置情報だけは `exeForMetadata()` に含まれないため、アセットごとに取得する。
+  // `getLocation()` は `phAsset.location` を読むだけでデコードもI/Oも伴わない
+  const locations = await mapWithConcurrency(scannedMetadata, PHOTO_INFO_CONCURRENCY, (metadata) => new Asset(metadata.id).getLocation());
+
+  const photos = scannedMetadata.flatMap((metadata, index) => {
+    const result = locations[index];
+
     if (result.status !== 'fulfilled') {
       return [];
     }
 
-    const photo = toMapPhoto(result.value);
+    const photo = toMapPhoto(metadata, result.value);
     return photo ? [photo] : [];
   });
 
-  const assetRecords = details.flatMap((result) => {
+  const assetRecords = scannedMetadata.flatMap((metadata, index) => {
+    const result = locations[index];
+
     if (result.status !== 'fulfilled') {
       return [];
     }
 
-    const record = toPhotoAssetRecord(result.value);
+    const record = toPhotoAssetRecord(metadata, result.value);
     return record ? [record] : [];
   });
 
-  // 走査済み時間窓との突き合わせ用に、ページ内アセットごとの結果を組み立てる。
-  // `mapWithConcurrency` は入力順を保つため、`details[index]` は `page.assets[index]` の結果である。
+  // 走査済み時間窓との突き合わせ用に、走査したアセットごとの結果を組み立てる。
+  // `mapWithConcurrency` は入力順を保つため、`locations[index]` は `scannedMetadata[index]` の結果である。
   const savedAssetIds = new Set(assetRecords.map((record) => record.assetId));
-  const outcomes = page.assets.map((asset, index) => ({
-    assetId: asset.id,
-    isInfoResolved: details[index].status === 'fulfilled',
-    isSaved: savedAssetIds.has(asset.id),
+  const outcomes = scannedMetadata.map((metadata, index) => ({
+    assetId: metadata.id,
+    isInfoResolved: locations[index].status === 'fulfilled',
+    isSaved: savedAssetIds.has(metadata.id),
   }));
   // フルアクセスが無いときは走査結果が「ライブラリの実態」を表さないため、突き合わせ(削除)を丸ごと
   // スキップして保存(UPSERT)だけ行う。理由は `canReconcilePhotoAssets` を参照
   const reconciliation = (await canReconcilePhotoAssets())
-    ? createPhotoAssetReconciliation({ assets: page.assets, outcomes, hasNextPage: page.hasNextPage })
+    ? createPhotoAssetReconciliation({ assets: scannedMetadata, outcomes, hasNextPage })
     : null;
 
   const isCacheSaved = await savePhotoAssets(assetRecords, reconciliation).then(
@@ -356,14 +419,17 @@ export async function loadGeotaggedPhotos(limit = DEFAULT_PHOTO_SCAN_LIMIT): Pro
     },
   );
 
-  const assetInfoFulfilledCount = details.filter((result) => result.status === 'fulfilled').length;
+  const assetInfoFulfilledCount = locations.filter((result) => result.status === 'fulfilled').length;
 
+  // 送信キーは旧API時代から変えない。`assetInfo*` の実体は `getAssetInfoAsync` から `getLocation()` へ
+  // 移ったが、「アセットごとの詳細取得が何件成功/失敗したか」という意味は同じであり、
+  // 移行前後の値を同じグラフで比較できるようにするため
   reportPhotoMapDiagnostics('load', {
     requestedLimit: limit,
-    scannedAssetCount: page.assets.length,
-    hasNextPage: page.hasNextPage,
+    scannedAssetCount: scannedMetadata.length,
+    hasNextPage,
     assetInfoFulfilledCount,
-    assetInfoRejectedCount: details.length - assetInfoFulfilledCount,
+    assetInfoRejectedCount: locations.length - assetInfoFulfilledCount,
     geotaggedPhotoCount: photos.length,
     durationMs: Date.now() - startedAtMs,
   });

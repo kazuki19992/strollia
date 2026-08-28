@@ -26,13 +26,20 @@ export type PhotoPreviewUriState = {
  * @returns 拡大表示に使うURIと取得状況。
  */
 export function usePhotoPreviewUri(photo: MapPhoto | null): PhotoPreviewUriState {
-  const [highResolutionUri, setHighResolutionUri] = useState<string | null>(null);
+  /**
+   * 取得済みの高解像度URIを、それが「どの写真のものか」と対で保持する。
+   *
+   * URIだけを持つと、写真を切り替えたレンダーで前の写真のURIを返してしまう。
+   * `useEffect` はコミット後に走るため、リセットが間に合わずその1フレームが描画されうる。
+   * assetId と対で持ち、現在の写真と一致するときだけ使うことで構造的に防ぐ。
+   */
+  const [highResolution, setHighResolution] = useState<{ assetId: string; uri: string } | null>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const assetId = photo?.id ?? null;
 
   useEffect(() => {
     if (assetId === null) {
-      setHighResolutionUri(null);
+      setHighResolution(null);
       setIsLoadingPreview(false);
       return;
     }
@@ -40,13 +47,13 @@ export function usePhotoPreviewUri(photo: MapPhoto | null): PhotoPreviewUriState
     // 別の写真へ切り替わったあとに前の写真の結果が届いても反映しないためのフラグ。
     // 拡大表示は写真をまたいで使い回されるため、遅れて届いた結果で上書きすると別の写真が出てしまう
     let isActive = true;
-    setHighResolutionUri(null);
+    setHighResolution(null);
     setIsLoadingPreview(true);
 
     resolvePhotoPreviewUri(assetId)
       .then((resolvedUri) => {
         if (isActive) {
-          setHighResolutionUri(resolvedUri);
+          setHighResolution(resolvedUri === null ? null : { assetId, uri: resolvedUri });
           setIsLoadingPreview(false);
         }
       })
@@ -64,5 +71,8 @@ export function usePhotoPreviewUri(photo: MapPhoto | null): PhotoPreviewUriState
     };
   }, [assetId]);
 
-  return { previewUri: highResolutionUri ?? photo?.uri ?? null, isLoadingPreview };
+  // 保持している高解像度が現在の写真のものでなければ使わない(切替直後の1フレーム対策)
+  const currentHighResolutionUri = highResolution !== null && highResolution.assetId === assetId ? highResolution.uri : null;
+
+  return { previewUri: currentHighResolutionUri ?? photo?.uri ?? null, isLoadingPreview };
 }

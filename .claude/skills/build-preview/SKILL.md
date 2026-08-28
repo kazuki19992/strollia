@@ -33,7 +33,9 @@ description: Use when creating a preview (internal distribution) build of Stroll
    npx eas build --profile preview --platform android
    ```
 
-5. **結果確認**: ビルドURLでステータス確認。成功したら内部配布リンクを共有
+5. **結果確認**: ビルド方法によって確認先が異なる
+   - **ローカルビルド**: 成果物は `builds/` に出力される。スクリプトが表示するパスの `.ipa` / `.apk` を確認し、実機へインストールする(iOS は Apple Configurator か Xcode の Devices and Simulators、Android はスクリプトが `adb install` まで行う)。ビルドURLも内部配布リンクも発行されない
+   - **クラウドビルド**: ビルドURLでステータスを確認し、成功したら内部配布リンクを共有する
 
 ## 注意
 

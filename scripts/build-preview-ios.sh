@@ -73,6 +73,11 @@ mkdir -p "${BUILDS_DIR}"
 echo "=== iOS preview ビルド（ローカル）を開始します ==="
 echo "成果物の出力先: ${BUILDS_DIR}"
 
+# eas-cli は実行時の作業ディレクトリから eas.json と package.json を解決する。
+# リポジトリ外から絶対パスで起動された場合に設定を解決できない(または別プロジェクトを
+# 対象にする)ことがあるため、リポジトリ直下へ移動してから実行する
+cd "${REPO_ROOT}"
+
 eas build \
   --platform ios \
   --profile preview \

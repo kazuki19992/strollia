@@ -113,4 +113,30 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-preview.jpg');
   });
+
+  it('写真を切り替えた直後のレンダーで、前の写真の高解像度URIを返さない', async () => {
+    // 本番では useEffect がコミット後に走るため、切替直後のレンダー結果がそのまま描画されうる。
+    // 高解像度URIを assetId と切り離して保持すると、その1フレームだけ前の写真が出てしまう。
+    // rerender は act() で effect まで流し切ってしまうので、レンダー本体で値を記録して中間状態を見る
+    const renderedUris: (string | null)[] = [];
+
+    (resolvePhotoPreviewUri as jest.Mock).mockResolvedValue('file:///caches/asset-1-preview.jpg');
+
+    const { rerender } = renderHook(
+      ({ photo }: { photo: MapPhoto }) => {
+        const state = usePhotoPreviewUri(photo);
+        renderedUris.push(state.previewUri);
+        return state;
+      },
+      { initialProps: { photo: createPhoto('asset-1', 'file:///caches/asset-1-512.jpg') } },
+    );
+    await flushPromises();
+
+    (resolvePhotoPreviewUri as jest.Mock).mockReturnValue(new Promise(() => undefined));
+    const switchedAtIndex = renderedUris.length;
+    rerender({ photo: createPhoto('asset-2', 'file:///caches/asset-2-512.jpg') });
+
+    // 切替後のどのレンダーでも、写真1の高解像度URIが出てはいけない
+    expect(renderedUris.slice(switchedAtIndex)).not.toContain('file:///caches/asset-1-preview.jpg');
+  });
 });

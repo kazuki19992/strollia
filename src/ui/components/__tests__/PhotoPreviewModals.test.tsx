@@ -101,21 +101,28 @@ describe('写真プレビュー PhotoPreviewModals', () => {
     expect(screen.UNSAFE_getByType(Image).props.source).toEqual({ uri: 'file:///tmp/asset-1.jpg' });
   });
 
-  test('横スワイプを妨げないよう、ScrollViewを押下判定のあるPressableで二重に包まない', () => {
+  test('グリッドの余白でもスワイプできるよう、ScrollViewの祖先がタッチを掴まない', () => {
     const photo = createPhoto('asset-1', 'file:///tmp/asset-1.jpg');
     renderModals({
       selectedPhotoCluster: { id: 'cluster-1', latitude: 35, longitude: 139, photos: [photo] },
       selectedPhotoClusterPages: [[photo], [photo]],
     });
 
-    const pressableAncestors = getAncestorNames(screen.UNSAFE_getByType(ScrollView)).filter((name) => name === 'Pressable');
+    const scrollView = screen.UNSAFE_getByType(ScrollView);
 
-    // 許されるのは「オーバーレイ外タップで閉じる」1つだけ。
-    // 吹き出し側にも Pressable を置くと押下判定の解決までパンが奪われ、指の追従が悪くなる
-    expect(pressableAncestors).toHaveLength(1);
+    // 祖先に Pressable があると、押下判定が解決するまでパンが奪われる
+    expect(getAncestorNames(scrollView).filter((name) => name === 'Pressable')).toHaveLength(0);
+
+    // onStartShouldSetResponder で掴む祖先も同じ問題を起こす。写真サムネイルのように
+    // 自前でレスポンダを取る子の上でしかパンが成立せず、グリッドの余白で反応しなくなる
+    let node = scrollView.parent;
+    while (node !== null) {
+      expect(node.props.onStartShouldSetResponder).toBeUndefined();
+      node = node.parent;
+    }
   });
 
-  test('吹き出しの中をタップしてもオーバーレイまで伝播せず、閉じない', () => {
+  test('吹き出しの中をタップしても閉じない（背景は吹き出しの後ろに敷いた兄弟）', () => {
     const photo = createPhoto('asset-1', 'file:///tmp/asset-1.jpg');
     const onSelectPhotoCluster = jest.fn();
     renderModals({
@@ -127,7 +134,8 @@ describe('写真プレビュー PhotoPreviewModals', () => {
     // 吹き出しは押下可能要素ではないためラベルで特定できない。スタイルで引き当てる
     const callout = screen.UNSAFE_getAllByProps({ style: styles.photoClusterCallout })[0];
 
-    expect(callout.props.onStartShouldSetResponder()).toBe(true);
+    // 閉じる当たり判定は吹き出しの祖先ではなく兄弟なので、内側のタップは背景へ届かない
+    expect(getAncestorNames(callout).filter((name) => name === 'Pressable')).toHaveLength(0);
     expect(onSelectPhotoCluster).not.toHaveBeenCalled();
   });
 

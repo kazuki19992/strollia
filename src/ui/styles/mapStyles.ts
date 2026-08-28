@@ -784,6 +784,15 @@ export function createMapStyles(theme: AppTheme) {
       fontWeight: '800',
       textAlign: 'center',
     },
+    // 吹き出しの「後ろ」に敷く閉じる用の当たり判定。吹き出しの祖先にしないことで、
+    // グリッドの余白でもScrollViewがパンを取れるようにしている(PhotoPreviewModals を参照)
+    photoClusterBackdrop: {
+      bottom: 0,
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+    },
     photoClusterOverlay: {
       alignItems: 'center',
       backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.34)' : 'rgba(45, 36, 22, 0.18)',

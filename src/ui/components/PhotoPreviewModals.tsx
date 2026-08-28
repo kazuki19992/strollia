@@ -52,18 +52,22 @@ export function PhotoPreviewModals({
   return (
     <>
       <Modal visible={selectedPhotoCluster != null} transparent animationType="fade" onRequestClose={() => onSelectPhotoCluster(null)}>
-        <Pressable
-          accessibilityLabel="写真一覧を閉じる"
-          accessibilityRole="button"
-          onPress={() => onSelectPhotoCluster(null)}
-          style={styles.photoClusterOverlay}
-        >
-          {/*
-            吹き出しは「オーバーレイのタップを外側へ通さない」ためだけの器で、押せる要素ではない。
-            ここに Pressable を置くと押下判定が解決するまで内側のScrollViewがパンを取れず、
-            横スワイプの追従が目に見えて悪くなる。レスポンダを掴むだけのViewで足りる
-          */}
-          <View onStartShouldSetResponder={() => true} style={styles.photoClusterCallout}>
+        {/*
+          背景は吹き出しの「祖先」ではなく「後ろに敷いた兄弟」にしている。
+          祖先がタッチを掴む形(Pressable や onStartShouldSetResponder)にすると、
+          写真サムネイルのように自前でレスポンダを取る子の上でしかパンが成立せず、
+          グリッドの余白ではScrollViewへパンが渡らない(=余白でスワイプできない)。
+          兄弟にすれば吹き出しは何も掴まないので、ScrollViewが全面でパンを取れる。
+          吹き出しは背景より後ろに描画されないため、内側のタップが背景へ抜けることもない
+        */}
+        <View style={styles.photoClusterOverlay}>
+          <Pressable
+            accessibilityLabel="写真一覧を閉じる"
+            accessibilityRole="button"
+            onPress={() => onSelectPhotoCluster(null)}
+            style={styles.photoClusterBackdrop}
+          />
+          <View style={styles.photoClusterCallout}>
             <Text style={styles.photoClusterTitle}>この場所の写真</Text>
             <ScrollView
               horizontal
@@ -102,7 +106,7 @@ export function PhotoPreviewModals({
             </ScrollView>
             {selectedPhotoClusterPages.length > 1 && <Text style={styles.photoClusterMoreText}>横にスワイプして他の写真を見る</Text>}
           </View>
-        </Pressable>
+        </View>
       </Modal>
 
       <Modal visible={selectedPhoto != null} transparent animationType="fade" onRequestClose={() => onSelectPhoto(null)}>

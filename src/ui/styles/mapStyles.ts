@@ -791,10 +791,18 @@ export function createMapStyles(theme: AppTheme) {
       justifyContent: 'center',
       padding: 24,
     },
+    // 3×3グリッド1ページ分。50pxのマス3つ + gap 6px×2 = 162px の正方形。
+    // 写真が9枚に満たないページでも高さを固定するのは、余ったマスの領域も
+    // ScrollView のコンテンツに含めてページ送りのスワイプを受け取れるようにするため。
+    // 高さを指定しないと、写真3枚のページは1行分(50px)まで縮み、
+    // その下の空白がスワイプに反応しなくなる。
+    // alignContent を先頭寄せにしないと、flexWrap が残りの高さへ行を分散させてしまう。
     photoClusterPage: {
+      alignContent: 'flex-start',
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 6,
+      height: 162,
       width: 162,
     },
     photoClusterPager: {

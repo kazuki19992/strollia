@@ -194,4 +194,12 @@ describe('写真プレビュー PhotoPreviewModals', () => {
 
     expect(screen.queryByLabelText('高解像度の写真を読み込み中')).toBeNull();
   });
+
+  test('写真が9枚に満たないページも高さが縮まず、余白領域でもスワイプできる', () => {
+    // 写真3枚のページで高さが1行分へ縮むと、その下の空白がScrollViewのコンテンツ外になり
+    // ページ送りのスワイプを受け取れなくなる。高さを固定してページ全体を操作対象に保つ
+    expect(styles.photoClusterPage.height).toBe(styles.photoClusterPage.width);
+    // flexWrap は高さが余ると行を分散させるため、先頭寄せにして見た目を保つ
+    expect(styles.photoClusterPage.alignContent).toBe('flex-start');
+  });
 });

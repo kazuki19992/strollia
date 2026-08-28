@@ -52,12 +52,26 @@ export function PhotoPreviewModals({
   return (
     <>
       <Modal visible={selectedPhotoCluster != null} transparent animationType="fade" onRequestClose={() => onSelectPhotoCluster(null)}>
-        <Pressable onPress={() => onSelectPhotoCluster(null)} style={styles.photoClusterOverlay}>
-          <Pressable onPress={() => undefined} style={styles.photoClusterCallout}>
+        <Pressable
+          accessibilityLabel="写真一覧を閉じる"
+          accessibilityRole="button"
+          onPress={() => onSelectPhotoCluster(null)}
+          style={styles.photoClusterOverlay}
+        >
+          {/*
+            吹き出しは「オーバーレイのタップを外側へ通さない」ためだけの器で、押せる要素ではない。
+            ここに Pressable を置くと押下判定が解決するまで内側のScrollViewがパンを取れず、
+            横スワイプの追従が目に見えて悪くなる。レスポンダを掴むだけのViewで足りる
+          */}
+          <View onStartShouldSetResponder={() => true} style={styles.photoClusterCallout}>
             <Text style={styles.photoClusterTitle}>この場所の写真</Text>
             <ScrollView
               horizontal
               pagingEnabled
+              // ページ境界で素早く止め、指を離したあとのもたつきを減らす
+              decelerationRate="fast"
+              // 斜めに動かしたときに縦方向へ持っていかれないようにする
+              directionalLockEnabled
               showsHorizontalScrollIndicator={selectedPhotoClusterPages.length > 1}
               style={styles.photoClusterPager}
             >
@@ -87,7 +101,7 @@ export function PhotoPreviewModals({
               ))}
             </ScrollView>
             {selectedPhotoClusterPages.length > 1 && <Text style={styles.photoClusterMoreText}>横にスワイプして他の写真を見る</Text>}
-          </Pressable>
+          </View>
         </Pressable>
       </Modal>
 

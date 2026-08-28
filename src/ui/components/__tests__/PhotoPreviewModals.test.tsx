@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Image } from 'react-native';
+import { Image, ScrollView } from 'react-native';
 
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import { lightTheme } from '@/theme/theme';
@@ -45,6 +45,34 @@ function renderModals(overrides: Partial<PhotoPreviewModalsProps>) {
   return render(<PhotoPreviewModals {...props} />);
 }
 
+/**
+ * ある要素の祖先コンポーネント名を根まで列挙する。
+ *
+ * 横スワイプのもたつきは「ScrollViewの祖先に押下判定を持つPressableが積まれている」ことで起きるため、
+ * 祖先の顔ぶれ自体が検証対象になる。RNTLに祖先を辿るクエリが無いので親リンクを自前で辿る。
+ *
+ * @param element - 起点の要素。
+ * @returns 祖先のコンポーネント名(ホスト要素はタグ名)。
+ */
+function getAncestorNames(element: { parent: unknown }): string[] {
+  const names: string[] = [];
+  let current = element.parent as { type?: unknown; parent?: unknown } | null;
+
+  while (current) {
+    const type = current.type;
+    if (typeof type === 'string') {
+      names.push(type);
+    } else if (typeof type === 'function' || (typeof type === 'object' && type !== null)) {
+      const named = type as { displayName?: string; name?: string };
+      names.push(named.displayName ?? named.name ?? 'anonymous');
+    }
+
+    current = (current.parent ?? null) as { type?: unknown; parent?: unknown } | null;
+  }
+
+  return names;
+}
+
 describe('写真プレビュー PhotoPreviewModals', () => {
   test('クラスタ一覧で画像が無い写真はプレースホルダにし、押せば拡大表示へ進める', () => {
     const photoWithoutImage = createPhoto('asset-1', null);
@@ -71,6 +99,63 @@ describe('写真プレビュー PhotoPreviewModals', () => {
 
     // Imageのsourceは利用者に見えない実装詳細のため、ここだけ型検索でURIを確認する
     expect(screen.UNSAFE_getByType(Image).props.source).toEqual({ uri: 'file:///tmp/asset-1.jpg' });
+  });
+
+  test('横スワイプを妨げないよう、ScrollViewを押下判定のあるPressableで二重に包まない', () => {
+    const photo = createPhoto('asset-1', 'file:///tmp/asset-1.jpg');
+    renderModals({
+      selectedPhotoCluster: { id: 'cluster-1', latitude: 35, longitude: 139, photos: [photo] },
+      selectedPhotoClusterPages: [[photo], [photo]],
+    });
+
+    const pressableAncestors = getAncestorNames(screen.UNSAFE_getByType(ScrollView)).filter((name) => name === 'Pressable');
+
+    // 許されるのは「オーバーレイ外タップで閉じる」1つだけ。
+    // 吹き出し側にも Pressable を置くと押下判定の解決までパンが奪われ、指の追従が悪くなる
+    expect(pressableAncestors).toHaveLength(1);
+  });
+
+  test('吹き出しの中をタップしてもオーバーレイまで伝播せず、閉じない', () => {
+    const photo = createPhoto('asset-1', 'file:///tmp/asset-1.jpg');
+    const onSelectPhotoCluster = jest.fn();
+    renderModals({
+      selectedPhotoCluster: { id: 'cluster-1', latitude: 35, longitude: 139, photos: [photo] },
+      selectedPhotoClusterPages: [[photo]],
+      onSelectPhotoCluster,
+    });
+
+    // 吹き出しは押下可能要素ではないためラベルで特定できない。スタイルで引き当てる
+    const callout = screen.UNSAFE_getAllByProps({ style: styles.photoClusterCallout })[0];
+
+    expect(callout.props.onStartShouldSetResponder()).toBe(true);
+    expect(onSelectPhotoCluster).not.toHaveBeenCalled();
+  });
+
+  test('ページ送りが指切れよく止まるよう、横スクロールの減速と方向ロックを設定する', () => {
+    const photo = createPhoto('asset-1', 'file:///tmp/asset-1.jpg');
+    renderModals({
+      selectedPhotoCluster: { id: 'cluster-1', latitude: 35, longitude: 139, photos: [photo] },
+      selectedPhotoClusterPages: [[photo], [photo]],
+    });
+
+    const scrollView = screen.UNSAFE_getByType(ScrollView);
+
+    expect(scrollView.props.decelerationRate).toBe('fast');
+    expect(scrollView.props.directionalLockEnabled).toBe(true);
+  });
+
+  test('オーバーレイの外側をタップすれば従来どおり閉じる', () => {
+    const photo = createPhoto('asset-1', 'file:///tmp/asset-1.jpg');
+    const onSelectPhotoCluster = jest.fn();
+    renderModals({
+      selectedPhotoCluster: { id: 'cluster-1', latitude: 35, longitude: 139, photos: [photo] },
+      selectedPhotoClusterPages: [[photo]],
+      onSelectPhotoCluster,
+    });
+
+    fireEvent.press(screen.getByLabelText('写真一覧を閉じる'));
+
+    expect(onSelectPhotoCluster).toHaveBeenCalledWith(null);
   });
 
   test('拡大表示で画像が無い場合は白紙にせず、取得できない旨を表示する', () => {

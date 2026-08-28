@@ -184,7 +184,7 @@ GPX / KML インポート履歴を保存するテーブル。
 
 **expo-media-library 新API移行時に一度だけ全行を削除する。** 走査APIの移行で `asset_id` に入る値の形が変わった（旧: `ph://` を含まない localIdentifier / 新: `ph://<localIdentifier>`）。旧形式の行を残すと同じ写真が新旧2行として共存し、地図に重複マーカーが出る。`photo_assets` は再走査で作り直せるキャッシュなので、`initializeDatabase()` の `resetPhotoAssetsForMediaLibraryNextApi()` で一度だけ空にする。実行済みかどうかは `app_settings` の `photoAssetsResetForMediaLibraryNextApi` で記録し、削除→マーカーの順に実行して途中失敗時は次回起動でやり直す。他のテーブルには一切触れない。
 
-> 保存した `uri` はそのままでは `<Image>` で描画できない（検証済み）。描画できる表示用URIは保存せず、ビューポート検索の結果に対して `resolvePhotoDisplayUri`（`src/features/photos/photoDisplayUri.ts`）でサムネイルとして都度解決する。詳細は `docs/photo-geotag.md` §9.5 を参照する。
+> **iOS では**保存した `uri`（`ph://…`）をそのままでは `<Image>` で描画できない（検証済み）。描画できる表示用URIは保存せず、`resolvePhotoDisplayUri`（`src/features/photos/photoDisplayUri.ts`）でサムネイルとして都度解決する。Android の `content://…` はそのまま描画できる見込みのため素通しする（未リリースのため実機未確認。issue #76）。詳細は `docs/photo-geotag.md` §9.5 を参照する。
 
 `taken_at` とそのインデックスは、GPSログとの時刻連動（`docs/photo-geotag.md` §7）に向けた準備工事である。後から実装するときにスキーマ変更と写真ライブラリの全件再走査が要らないよう、絞り込みに使う前から保存する。
 

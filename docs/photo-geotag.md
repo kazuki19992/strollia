@@ -125,18 +125,18 @@ iCloud にしか本体が無い写真などが該当する。判断基準は「�
 
 ### 9.1 `photo_assets`
 
-| カラム         | 型        | 説明                                                     |
-| -------------- | --------- | -------------------------------------------------------- |
-| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID（`uri` と同値）     |
-| `latitude`     | REAL      | 緯度                                                     |
-| `longitude`    | REAL      | 経度                                                     |
-| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可           |
-| `uri`          | TEXT      | 安定した識別用URI（iOS: `ph://…` / Android: `file://…`） |
-| `width`        | INTEGER   | 写真の横幅                                               |
-| `height`       | INTEGER   | 写真の高さ                                               |
-| `last_seen_at` | TEXT      | 最終確認日時                                             |
-| `created_at`   | TEXT      | 作成日時                                                 |
-| `updated_at`   | TEXT      | 更新日時                                                 |
+| カラム         | 型        | 説明                                                        |
+| -------------- | --------- | ----------------------------------------------------------- |
+| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID（`uri` と同値）        |
+| `latitude`     | REAL      | 緯度                                                        |
+| `longitude`    | REAL      | 経度                                                        |
+| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可              |
+| `uri`          | TEXT      | 安定した識別用URI（iOS: `ph://…` / Android: `content://…`） |
+| `width`        | INTEGER   | 写真の横幅                                                  |
+| `height`       | INTEGER   | 写真の高さ                                                  |
+| `last_seen_at` | TEXT      | 最終確認日時                                                |
+| `created_at`   | TEXT      | 作成日時                                                    |
+| `updated_at`   | TEXT      | 更新日時                                                    |
 
 ジオタグがない写真はこのテーブルに保存しない。
 
@@ -240,8 +240,9 @@ Expo モジュール `modules/photo-thumbnail/` を自前で追加している**
   モジュールが無くても import 時に落ちず、「取得できなかった」と同じ扱いになる
 - **ネイティブモジュールを含むため、この修正は OTA では配れない。ネイティブビルドが必要になる**
 
-Android 実装は持たない。Android の `photo_assets` には `file://` が入っており `<Image>` でそのまま描画できるため、
-JS 側が `ph://` 以外を素通しする。Android のサムネイル API（`ContentResolver.loadThumbnail`）対応は issue #76 のスコープ。
+Android 実装は持たない。Android の `photo_assets` には `content://` が入っており `<Image>` でそのまま描画できる見込みのため、
+JS 側が `ph://` 以外を素通しする（**Android は未リリースのため実機未確認**。issue #76）。
+Android のサムネイル API（`ContentResolver.loadThumbnail`）対応も issue #76 のスコープ。
 
 #### 拡大表示のときだけ iCloud からのダウンロードを許可する
 
@@ -282,7 +283,7 @@ UI 側（`usePhotoPreviewUri` → `PhotoPreviewModals`）の振る舞い。
 - **サムネイルを取得できなかった写真も結果から除外せず、`uri: null` のまま返す**（§9.6）
 - `ph://` 以外のURI（Androidの `file://`）は `<Image>` でそのまま描画できるため、ネイティブへ問い合わせず素通しする
 - 失敗はキャッシュしないので、次回の読み込みで再試行される
-- **走査経路のフォールバック（`isCacheSaved` が false のとき走査結果を直接表示する経路）でも `ph://` を表示に使わない。** `toMapPhoto` は `localUri` が無ければ `uri: null` とし、`ph://` へフォールバックしない（`ph://` は白紙になるだけで、表示用の値としては「無い」のと変わらないため）。DBへ保存する `uri` は従来どおり `ph://` のまま（§9.1）
+- **走査経路のフォールバック（`isCacheSaved` が false のとき走査結果を直接表示する経路）でも `ph://` を表示に使わない。** 新APIへの移行後、`toMapPhoto` は `Asset.id`（iOS では `ph://…`）をそのまま `uri` に入れる。そのためフォールバック経路でも `resolveMapPhotoDisplayUris` を通して表示用URIへ解決し、解決できなければ `uri: null`（プレースホルダ表示）とする。`ph://` が `<Image>` へ到達しうる経路は残さない（§9.5）。DBへ保存する `uri` は従来どおり `ph://` のまま（§9.1）
 
 ### 9.6 画像を取得できなかった写真はプレースホルダで表示する（除外しない）
 
@@ -376,7 +377,7 @@ new Query()
 
 この真偽値をそのまま §9.3 の突き合わせへ渡す。
 
-位置情報だけは `exeForMetadata()` に含まれないため、アセットごとに `getLocation()` が必要である。往復回数は旧APIと同じだが、`getLocation()` は `phAsset.location` を直接読むだけでフル解像度デコードも I/O も伴わないため、1回あたりのコストは桁違いに安い。
+位置情報だけは `exeForMetadata()` に含まれないため、アセットごとに `getLocation()` が必要である。往復回数は旧APIと同じだが、`getLocation()` は `phAsset.location` を直接読み取るだけでフル解像度デコードも I/O も伴わないため、1回あたりのコストは桁違いに安い。
 
 **新旧で `PHFetchOptions` の設定が異なる。** 旧 `getAllAssets()` は `includeAssetSourceTypes = .typeUserLibrary` を指定していたが、新 `Query` は指定しない（`Query` に相当するフィルタが無い）。iTunes 同期アセットや共有アルバムの写真まで対象に入り、**新APIの方が多く返す可能性がある**。共有アルバムの写真は `getLocation()` や表示用URIの解決に失敗しうるが、取得できない写真はプレースホルダ表示になるため壊れはしない（§9.5・§3）。
 

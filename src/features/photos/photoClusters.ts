@@ -282,8 +282,12 @@ export function getPhotoClusterRepresentativePhotos(clusters: readonly MapPhotoC
  * クラスタのID・座標は変えない。マーカーの位置とまとまり方は解決前後で同じであるべきで、
  * ここが変わるとネイティブ地図側のマーカーが作り直されてしまう。
  *
- * 反映する対応が無いときは**入力配列の参照をそのまま返す**。クラスタは参照の同一性でメモ化して
- * いるため、内容が変わらないのに新しい配列を作ると不要な再描画を招く。
+ * 反映する対応が無いときは**入力配列の参照をそのまま返す**。写真が差し替わったクラスタだけを
+ * 作り直し、変わらないクラスタは参照ごと保つ。クラスタは参照の同一性でメモ化しているため、
+ * 内容が変わらないのに新しいオブジェクトを作ると不要な再描画を招く。
+ *
+ * 解決結果が空でなくても、現在のクラスタに一致する写真が1枚も無いことはある(非同期の解決中に
+ * 地図を動かした場合)。件数ではなく、実際に差し替わったかどうかで判定する。
  *
  * @param clusters - 反映対象のクラスタ一覧。
  * @param resolvedUris - アセットID → 表示用URI の対応。
@@ -297,7 +301,21 @@ export function applyResolvedPhotoUrisToClusters(
     return clusters as MapPhotoCluster[];
   }
 
-  return clusters.map((cluster) => ({ ...cluster, photos: applyResolvedPhotoUris(cluster.photos, resolvedUris) }));
+  let hasAppliedUri = false;
+  const appliedClusters = clusters.map((cluster) => {
+    const appliedPhotos = applyResolvedPhotoUris(cluster.photos, resolvedUris);
+
+    // `applyResolvedPhotoUris` は差し替えが無ければ入力の参照を返す。参照比較で変化を見分けられる
+    if (appliedPhotos === cluster.photos) {
+      return cluster;
+    }
+
+    hasAppliedUri = true;
+
+    return { ...cluster, photos: appliedPhotos };
+  });
+
+  return hasAppliedUri ? appliedClusters : (clusters as MapPhotoCluster[]);
 }
 
 /**

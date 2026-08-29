@@ -198,4 +198,21 @@ describe('解決済み表示用URIの反映 applyResolvedPhotoUris', () => {
 
     expect(applyResolvedPhotoUris(photos, new Map())).toBe(photos);
   });
+
+  it('解決結果が空でなくても、一致する写真が無ければ入力をそのまま返す', () => {
+    const photos = [savedPhoto('asset-1')];
+
+    // 非同期解決の途中で地図を動かすと、解決結果と現在の写真がまったく重ならないことがある。
+    // ここで新しい配列を作ると、内容は同じなのに再クラスタリングとマーカー再描画が走る
+    expect(applyResolvedPhotoUris(photos, new Map([['asset-999', 'file:///tmp/asset-999.jpg']]))).toBe(photos);
+  });
+
+  it('一致する写真がある場合は、差し替えた写真だけ新しいオブジェクトにする', () => {
+    const photos = [savedPhoto('asset-1'), savedPhoto('asset-2')];
+
+    const applied = applyResolvedPhotoUris(photos, new Map([['asset-1', 'file:///tmp/asset-1.jpg']]));
+
+    expect(applied).not.toBe(photos);
+    expect(applied[1]).toBe(photos[1]);
+  });
 });

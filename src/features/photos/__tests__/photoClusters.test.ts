@@ -453,4 +453,28 @@ describe('クラスタへの表示用URI反映 applyResolvedPhotoUrisToClusters'
 
     expect(applyResolvedPhotoUrisToClusters(clusters, new Map())).toBe(clusters);
   });
+
+  it('解決結果が空でなくても、一致する写真が無ければクラスタ配列をそのまま返す', () => {
+    const clusters = clusterMapPhotosByRadius([{ ...createPhoto('a', 35, 139, 1), uri: null }], 30);
+
+    // 非同期解決の途中で地図を動かすと、解決結果と現在のクラスタがまったく重ならないことがある
+    expect(applyResolvedPhotoUrisToClusters(clusters, new Map([['zzz', 'file:///tmp/zzz.jpg']]))).toBe(clusters);
+  });
+
+  it('写真が変わったクラスタだけを作り直す', () => {
+    const clusters = clusterMapPhotosByRadius(
+      [
+        { ...createPhoto('a', 35, 139, 1), uri: null },
+        { ...createPhoto('b', 40, 141, 1), uri: null },
+      ],
+      30,
+    );
+
+    const resolved = applyResolvedPhotoUrisToClusters(clusters, new Map([[clusters[0].photos[0].id, 'file:///tmp/resolved.jpg']]));
+
+    expect(resolved).not.toBe(clusters);
+    expect(resolved[0]).not.toBe(clusters[0]);
+    // 変わっていないクラスタは参照ごと保つ。作り直すとネイティブ側のマーカーまで再生成されうる
+    expect(resolved[1]).toBe(clusters[1]);
+  });
 });

@@ -129,9 +129,13 @@ export async function resolvePhotoDisplayUriMap(photos: readonly MapPhoto[]): Pr
 /**
  * 解決済みの表示用URIを写真へ反映する。
  *
- * 対応が無い写真は入力のまま残す(未解決なら未解決のまま)。解決結果が空のときは**入力配列の参照を
- * そのまま返す**。地図のクラスタは参照の同一性でメモ化しているため、内容が変わらないのに新しい配列を
- * 作ると不要な再クラスタリング・再描画を招く。
+ * 対応が無い写真は入力のまま残す(未解決なら未解決のまま)。**1枚も差し替わらないときは入力配列の
+ * 参照をそのまま返す**。地図のクラスタは参照の同一性でメモ化しているため、内容が変わらないのに
+ * 新しい配列を作ると不要な再クラスタリング・再描画を招く。
+ *
+ * **解決結果が空でないことは「差し替わる」ことを意味しない。** 非同期の解決中に地図を動かすと、
+ * 解決結果と現在表示している写真がまったく重ならないことがある。件数ではなく、実際に差し替えた
+ * 写真があったかどうかで判定する。
  *
  * @param photos - 反映対象の写真。
  * @param resolvedUris - アセットID → 表示用URI の対応。
@@ -142,5 +146,16 @@ export function applyResolvedPhotoUris(photos: readonly MapPhoto[], resolvedUris
     return photos as MapPhoto[];
   }
 
-  return photos.map((photo) => (resolvedUris.has(photo.id) ? { ...photo, uri: resolvedUris.get(photo.id) ?? null } : photo));
+  let hasAppliedUri = false;
+  const appliedPhotos = photos.map((photo) => {
+    if (!resolvedUris.has(photo.id)) {
+      return photo;
+    }
+
+    hasAppliedUri = true;
+
+    return { ...photo, uri: resolvedUris.get(photo.id) ?? null };
+  });
+
+  return hasAppliedUri ? appliedPhotos : (photos as MapPhoto[]);
 }

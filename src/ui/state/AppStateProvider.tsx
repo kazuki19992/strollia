@@ -259,7 +259,7 @@ export type AppStateContextValue = {
   /** 削除済み写真のモーダルを閉じる。 */
   dismissPhotoDeletedDialog: () => void;
   /** 削除済み写真の案内から全件再読み込みを実行し、完了後にプレビューを閉じる。 */
-  reloadPhotoLibraryFromUnavailableDialog: () => Promise<void>;
+  reloadPhotoLibraryFromDeletedDialog: () => Promise<void>;
   /**
    * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
    *
@@ -756,7 +756,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
    * 削除された写真を表示し続けないための後始末である。走査が失敗した場合も閉じる。
    * どちらにせよその写真は表示できず、壊れたプレビューを残しておく意味がないため。
    */
-  const reloadPhotoLibraryFromUnavailableDialog = useCallback(async (): Promise<void> => {
+  const reloadPhotoLibraryFromDeletedDialog = useCallback(async (): Promise<void> => {
     dismissPhotoDeletedDialog();
     await startPhotoLibrarySync();
     setSelectedPhoto(null);
@@ -1295,7 +1295,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     startPhotoLibrarySync,
     photoUnavailableReason,
     dismissPhotoDeletedDialog,
-    reloadPhotoLibraryFromUnavailableDialog,
+    reloadPhotoLibraryFromDeletedDialog,
     photoScanMetricsLines,
     updateShowPhotosOnMap,
     selectedPhoto: resolvedSelectedPhoto,

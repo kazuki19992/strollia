@@ -77,7 +77,7 @@ jest.mock('@/ui/state/AppStateProvider', () => {
       photoLibrarySyncProgress: null,
       photoUnavailableReason: null,
       dismissPhotoDeletedDialog: jest.fn(),
-      reloadPhotoLibraryFromUnavailableDialog: jest.fn().mockResolvedValue(undefined),
+      reloadPhotoLibraryFromDeletedDialog: jest.fn().mockResolvedValue(undefined),
       openPremiumCustomerCenter: jest.fn(),
       ...mockAppStateOverrides,
     }),

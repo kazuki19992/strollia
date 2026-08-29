@@ -159,7 +159,7 @@ function RootLayoutContent(): React.ReactElement {
         styles={s.styles}
         onClose={s.dismissPhotoDeletedDialog}
         onReloadPhotoLibrary={() => {
-          s.reloadPhotoLibraryFromUnavailableDialog().catch((error: unknown) => {
+          s.reloadPhotoLibraryFromDeletedDialog().catch((error: unknown) => {
             console.warn('Failed to reload photo library from unavailable dialog:', error);
           });
         }}

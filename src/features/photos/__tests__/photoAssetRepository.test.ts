@@ -1,6 +1,6 @@
 import { db, withExclusiveTransaction } from '@/db/database';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
-import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
+import { PHOTO_VIEWPORT_SAFETY_LIMIT, type PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
 /** トランザクションrunnerのモック。withExclusiveTransaction のコールバックへ渡す。 */
 const mockTxn = {
@@ -204,7 +204,7 @@ describe('写真メタデータリポジトリ getPhotoAssetsInBounds', () => {
     expect(sql).toContain('FROM photo_assets');
     expect(sql).toContain('latitude BETWEEN ? AND ?');
     expect(sql).toContain('longitude BETWEEN ? AND ?');
-    expect(params).toEqual([34, 36, 138, 140]);
+    expect(params).toEqual([34, 36, 138, 140, PHOTO_VIEWPORT_SAFETY_LIMIT]);
   });
 
   it('日付変更線をまたぐ場合はBETWEENではなくOR条件で絞り込む', async () => {
@@ -214,12 +214,61 @@ describe('写真メタデータリポジトリ getPhotoAssetsInBounds', () => {
     // min > max の BETWEEN は空集合になるため、OR条件へ分岐する必要がある
     expect(sql).not.toContain('longitude BETWEEN ? AND ?');
     expect(sql).toContain('(longitude >= ? OR longitude <= ?)');
-    expect(params).toEqual([34, 36, 170, -170]);
+    expect(params).toEqual([34, 36, 170, -170, PHOTO_VIEWPORT_SAFETY_LIMIT]);
   });
 
   it('取得した行をcamelCaseのレコードとして返す', async () => {
     (db.getAllAsync as jest.Mock).mockResolvedValue([record()]);
 
     await expect(getPhotoAssetsInBounds(bounds())).resolves.toEqual([record()]);
+  });
+
+  it('新しい撮影日時の順で返す', async () => {
+    await getPhotoAssetsInBounds(bounds());
+
+    const [sql] = (db.getAllAsync as jest.Mock).mock.calls[0];
+    expect(sql).toContain('ORDER BY taken_at DESC');
+  });
+});
+
+describe('ビューポート検索の上限 getPhotoAssetsInBounds', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+  });
+
+  it('表示上限を指定しない場合でも内部の安全上限を掛ける', async () => {
+    await getPhotoAssetsInBounds(bounds());
+
+    const [sql, ...params] = (db.getAllAsync as jest.Mock).mock.calls[0];
+    // 設定が「すべて」でも、一度にJSへ載る件数はユーザーから見えない保険で抑える
+    expect(sql).toContain('LIMIT ?');
+    expect(params).toEqual([34, 36, 138, 140, PHOTO_VIEWPORT_SAFETY_LIMIT]);
+  });
+
+  it('表示上限は表示範囲ごとではなく全体の最新N件へ掛ける', async () => {
+    await getPhotoAssetsInBounds(bounds(), { displayLimit: 200 });
+
+    const [sql, ...params] = (db.getAllAsync as jest.Mock).mock.calls[0];
+    // 「表示範囲ごとに最新200件」ではなく「全体の最新200件のうち表示範囲に入るもの」。
+    // 先に範囲で絞ってから200件にすると、設定のラベルと挙動が食い違う
+    expect(sql).toMatch(/FROM \(\s*SELECT \* FROM photo_assets\s+ORDER BY taken_at DESC\s+LIMIT \?/);
+    expect(params[0]).toBe(200);
+    expect(params.slice(1)).toEqual([34, 36, 138, 140, PHOTO_VIEWPORT_SAFETY_LIMIT]);
+  });
+
+  it('表示上限つきでも日付変更線をまたぐ場合のOR条件を保つ', async () => {
+    await getPhotoAssetsInBounds(bounds({ westLongitude: 170, eastLongitude: -170, crossesAntimeridian: true }), { displayLimit: 1000 });
+
+    const [sql, ...params] = (db.getAllAsync as jest.Mock).mock.calls[0];
+    expect(sql).toContain('(longitude >= ? OR longitude <= ?)');
+    expect(params).toEqual([1000, 34, 36, 170, -170, PHOTO_VIEWPORT_SAFETY_LIMIT]);
+  });
+
+  it('表示上限が安全上限より小さい場合でも安全上限は据え置く(結果は表示上限で決まる)', async () => {
+    await getPhotoAssetsInBounds(bounds(), { displayLimit: 200 });
+
+    const [, ...params] = (db.getAllAsync as jest.Mock).mock.calls[0];
+    expect(params[params.length - 1]).toBe(PHOTO_VIEWPORT_SAFETY_LIMIT);
   });
 });

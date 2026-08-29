@@ -16,7 +16,7 @@ jest.mock('@/features/photos/photoPreviewUri', () => ({
  * @returns 地図表示用写真。
  */
 function createPhoto(id: string, uri: string | null): MapPhoto {
-  return { id, uri, latitude: 35, longitude: 139, creationTime: 0, width: 100, height: 80 };
+  return { id, uri, storedUri: `ph://${id}`, latitude: 35, longitude: 139, creationTime: 0, width: 100, height: 80 };
 }
 
 /** マイクロタスクを流し切って非同期stateの反映を待つ。 */
@@ -50,6 +50,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-preview.jpg');
     expect(result.current.isLoadingPreview).toBe(false);
+    expect(result.current.hasHighResolutionPreview).toBe(true);
   });
 
   it('高解像度を取得できなくてもサムネイルのまま表示を続ける(真っ黒にしない)', async () => {
@@ -62,6 +63,26 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
     expect(result.current.isLoadingPreview).toBe(false);
   });
 
+  it('サムネイルへフォールバックしている間は高解像度を取得できていないと伝える', async () => {
+    // previewUri だけでは判別できない。サムネイルがある限り non-null になり、
+    // 端末未ダウンロードの写真を「表示できている」と誤認してしまう
+    (resolvePhotoPreviewUri as jest.Mock).mockResolvedValue(null);
+
+    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+    await flushPromises();
+
+    expect(result.current.previewUri).toBe('file:///caches/asset-1-512.jpg');
+    expect(result.current.hasHighResolutionPreview).toBe(false);
+  });
+
+  it('取得中は高解像度を取得できていないと伝える', () => {
+    (resolvePhotoPreviewUri as jest.Mock).mockReturnValue(new Promise(() => undefined));
+
+    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+
+    expect(result.current.hasHighResolutionPreview).toBe(false);
+  });
+
   it('取得が失敗しても例外にせずサムネイルのまま表示を続ける', async () => {
     // 失敗時の console.warn はテスト出力を汚すだけなので握りつぶす
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -72,6 +93,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-512.jpg');
     expect(result.current.isLoadingPreview).toBe(false);
+    expect(result.current.hasHighResolutionPreview).toBe(false);
   });
 
   it('写真を閉じている間は取得せず、URIも持たない', () => {

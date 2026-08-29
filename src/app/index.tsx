@@ -68,6 +68,8 @@ export default function MapRoute(): React.ReactElement {
           isWhileInUseOnlyMode={s.isWhileInUseRecordingMode}
           photoErrorMessage={s.photoErrorMessage}
           isLoadingPhotos={s.isLoadingPhotos}
+          isScanningPhotoLibrary={s.isScanningPhotoLibrary}
+          photoScanMetricsLines={s.photoScanMetricsLines}
           distance={s.distance}
           todayDistance={s.todayDistanceMeters}
           currentSpeedKmh={s.currentSpeedKmh}

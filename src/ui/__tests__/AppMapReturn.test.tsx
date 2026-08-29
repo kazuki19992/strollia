@@ -51,7 +51,7 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('expo-media-library/legacy', () => ({
+jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ accessPrivileges: 'all' }),
   // 保存済み設定の復元経路は権限を参照して再確認するため、フルアクセスを返しておく
   getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),
@@ -371,7 +371,9 @@ jest.mock('@/config/developmentFlags', () => ({
     enablePremiumAccessWithoutRevenueCat: false,
     resetAchievementsOnLaunch: false,
     logVisitedGridMetrics: false,
+    logPhotoScanMetrics: false,
   },
+  getPhotoScanLimitOverride: jest.fn(() => null),
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));
@@ -468,6 +470,7 @@ jest.mock('@/features/import/gpxImporter', () => ({
 }));
 
 jest.mock('@/features/import/importRepository', () => ({
+  GpxImportInterruptedError: class GpxImportInterruptedError extends Error {},
   importLocationPointsFromGpx: jest.fn().mockResolvedValue({ importedPointCount: 0, skippedPointCount: 0 }),
 }));
 
@@ -508,14 +511,18 @@ jest.mock('@/features/premium/revenueCatAccess', () => ({
 }));
 
 jest.mock('@/features/photos/photoClusters', () => ({
+  applyResolvedPhotoUrisToClusters: jest.fn((clusters) => clusters),
   clusterMapPhotosByRadius: jest.fn(() => []),
   getPhotoClusterRadiusMeters: jest.fn(() => 10),
+  getPhotoClusterRepresentativePhotos: jest.fn(() => []),
   getStablePhotoClusterRadiusMeters: jest.fn(() => 10),
   paginateMapPhotos: jest.fn(() => []),
 }));
 
 jest.mock('@/features/photos/photoLibrary', () => ({
+  applyResolvedPhotoUris: jest.fn((photos) => photos),
   hasFullPhotoAccess: jest.fn(() => true),
+  resolvePhotoDisplayUriMap: jest.fn().mockResolvedValue(new Map()),
 }));
 
 jest.mock('@/features/location/visitedCellRepository', () => ({
@@ -1930,6 +1937,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('GPXインポート押下直後に実績反映範囲の注意を表示し、OKを押してからファイル選択を開く', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    }) as typeof global.requestAnimationFrame;
     const callOrder: string[] = [];
     /** 注意ダイアログのOKボタン。ユーザーが閉じる操作をテスト側から再現するために保持する。 */
     let confirmAlertButton: (() => void) | undefined;
@@ -1942,35 +1954,39 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return null;
     });
 
-    renderRouter('src/app');
-    await flushPromises();
+    try {
+      renderRouter('src/app');
+      await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
 
-    let importPromise: Promise<void> = Promise.resolve();
-    await act(async () => {
-      importPromise = mockLatestSettingsScreenProps.onImportGpx();
-      await Promise.resolve();
-    });
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
 
-    // ダイアログのOKを押すまではファイル選択を開かない
-    expect(callOrder).toEqual([
-      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
-    ]);
-    expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+      // ダイアログのOKを押すまではファイル選択を開かない
+      expect(callOrder).toEqual([
+        'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+      ]);
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
 
-    await act(async () => {
-      confirmAlertButton?.();
-      await importPromise;
-    });
+      await act(async () => {
+        confirmAlertButton?.();
+        await importPromise;
+      });
 
-    expect(callOrder).toEqual([
-      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
-      'pick',
-    ]);
-    expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+      expect(callOrder).toEqual([
+        'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+        'pick',
+      ]);
+      expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
   });
 
   test('GPX取り込み処理中だけブロッキングダイアログを表示し、完了後(finally)に閉じる', async () => {
@@ -2026,6 +2042,148 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
       // finally で処理中フラグが下り、ダイアログは閉じる。
       expect(isImportDialogVisible()).toBe(false);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  test('ファイル選択後は解析開始前に解析中の進捗段階を描画する', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    global.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.[0]?.onPress?.();
+    });
+    (pickAndReadGpxFile as jest.Mock).mockResolvedValue({ content: '<gpx/>', fileName: 'a.gpx' });
+    (parseGpxToLocationPoints as jest.Mock).mockReturnValue([]);
+
+    try {
+      renderRouter('src/app');
+      await flushPromises();
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
+      await flushPromises();
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
+
+      expect(rafCallbacks).toHaveLength(1);
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+      expect(parseGpxToLocationPoints).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+
+      // 大容量GPXの同期パースがJSスレッドを塞ぐ前に、解析中表示がコミットされている必要がある。
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.stage).toBe('parsing');
+      expect(parseGpxToLocationPoints).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+      });
+      expect(parseGpxToLocationPoints).toHaveBeenCalledTimes(1);
+      await importPromise;
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  test('ファイルピッカー表示前にアプリをロックし、キャンセル時に解除する', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    global.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.[0]?.onPress?.();
+    });
+    (pickAndReadGpxFile as jest.Mock).mockResolvedValue(null);
+
+    try {
+      renderRouter('src/app');
+      await flushPromises();
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
+      await flushPromises();
+
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
+
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(true);
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await importPromise;
+      });
+
+      expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(false);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  test('ファイル選択の失敗時にアプリの操作ロックを解除する', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    global.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.[0]?.onPress?.();
+    });
+    (pickAndReadGpxFile as jest.Mock).mockRejectedValue(new Error('GPXファイルを読み込めませんでした。'));
+
+    try {
+      renderRouter('src/app');
+      await flushPromises();
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
+      await flushPromises();
+
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(true);
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await importPromise;
+      });
+
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(false);
     } finally {
       global.requestAnimationFrame = originalRaf;
     }

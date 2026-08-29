@@ -9,7 +9,7 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('expo-media-library/legacy', () => ({
+jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ accessPrivileges: 'all' }),
 }));
 
@@ -79,7 +79,9 @@ jest.mock('@/config/developmentFlags', () => ({
     enablePremiumAccessWithoutRevenueCat: false,
     resetAchievementsOnLaunch: false,
     logVisitedGridMetrics: false,
+    logPhotoScanMetrics: false,
   },
+  getPhotoScanLimitOverride: jest.fn(() => null),
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));
@@ -210,14 +212,18 @@ jest.mock('@/features/premium/revenueCatAccess', () => ({
 }));
 
 jest.mock('@/features/photos/photoClusters', () => ({
+  applyResolvedPhotoUrisToClusters: jest.fn((clusters) => clusters),
   clusterMapPhotosByRadius: jest.fn(() => []),
   getPhotoClusterRadiusMeters: jest.fn(() => 10),
+  getPhotoClusterRepresentativePhotos: jest.fn(() => []),
   getStablePhotoClusterRadiusMeters: jest.fn(() => 10),
   paginateMapPhotos: jest.fn(() => []),
 }));
 
 jest.mock('@/features/photos/photoLibrary', () => ({
+  applyResolvedPhotoUris: jest.fn((photos) => photos),
   hasFullPhotoAccess: jest.fn(() => true),
+  resolvePhotoDisplayUriMap: jest.fn().mockResolvedValue(new Map()),
 }));
 
 jest.mock('@/features/location/visitedCellRepository', () => ({

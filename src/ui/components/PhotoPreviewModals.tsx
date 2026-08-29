@@ -4,6 +4,7 @@ import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, View } fr
 import { MapPhotoCluster } from '@/features/photos/photoClusters';
 import { MapPhoto } from '@/features/photos/photoLibrary';
 import { AppStyles } from '@/ui/appStyles';
+import { PHOTO_UNAVAILABLE_INLINE_MESSAGE } from '@/ui/appText';
 
 /** 写真プレビュー系モーダルのprops。 */
 export type PhotoPreviewModalsProps = {
@@ -21,6 +22,13 @@ export type PhotoPreviewModalsProps = {
   selectedPhotoPreviewUri: string | null;
   /** 高解像度の取得中かどうか。iCloudからのダウンロードは数秒かかりうるため待機表示を出す。 */
   isSelectedPhotoPreviewLoading: boolean;
+  /**
+   * 写真は存在するが高解像度を取得できていないかどうか(iCloud未ダウンロードなど)。
+   *
+   * trueのときは拡大表示の中へ案内を出す。モーダルにしないのは、未ダウンロードの写真を
+   * 開くたびに操作を止められると邪魔になるためである(設計書 §4.5)。
+   */
+  isSelectedPhotoUnavailable: boolean;
   /** 画面共通スタイル。 */
   styles: AppStyles;
   /** 写真クラスタ選択を変更する処理。 */
@@ -38,6 +46,9 @@ export type PhotoPreviewModalsProps = {
  *
  * 拡大表示はサムネイルではなく `selectedPhotoPreviewUri`(高解像度)を使う。高解像度が
  * 届くまではサムネイルが渡ってくるので、開いた瞬間から何かが見えている状態を保てる。
+ *
+ * 高解像度を取得できなかった写真(iCloud未ダウンロード)は、サムネイルを出したまま拡大表示の中で
+ * 理由を案内する。モーダルで止めないのは、開くたびに操作を遮られると邪魔になるためである(設計書 §4.5)。
  */
 export function PhotoPreviewModals({
   selectedPhotoCluster,
@@ -45,6 +56,7 @@ export function PhotoPreviewModals({
   selectedPhoto,
   selectedPhotoPreviewUri,
   isSelectedPhotoPreviewLoading,
+  isSelectedPhotoUnavailable,
   styles,
   onSelectPhotoCluster,
   onSelectPhoto,
@@ -114,13 +126,23 @@ export function PhotoPreviewModals({
           <Pressable onPress={() => onSelectPhoto(null)} style={styles.photoPreviewCloseArea}>
             {selectedPhoto &&
               (selectedPhotoPreviewUri === null ? (
-                <View style={styles.photoPreviewPlaceholder}>
+                <View style={[styles.photoPreviewPlaceholder, isSelectedPhotoUnavailable && styles.photoPreviewShrunkForNotice]}>
                   <MaterialCommunityIcons name="image-off-outline" size={48} color={styles.photoPreviewPlaceholderText.color} />
                   <Text style={styles.photoPreviewPlaceholderText}>この写真の画像を表示できません</Text>
                 </View>
               ) : (
-                <Image source={{ uri: selectedPhotoPreviewUri }} style={styles.photoPreviewImage} resizeMode="contain" />
+                <Image
+                  source={{ uri: selectedPhotoPreviewUri }}
+                  // 案内を出すときは高さを譲り、文章が写真の上に重ならないようにする
+                  style={[styles.photoPreviewImage, isSelectedPhotoUnavailable && styles.photoPreviewShrunkForNotice]}
+                  resizeMode="contain"
+                />
               ))}
+            {isSelectedPhotoUnavailable && (
+              <View style={styles.photoPreviewNotice}>
+                <Text style={styles.photoPreviewNoticeText}>{PHOTO_UNAVAILABLE_INLINE_MESSAGE}</Text>
+              </View>
+            )}
             {isSelectedPhotoPreviewLoading && (
               <ActivityIndicator
                 accessibilityLabel="高解像度の写真を読み込み中"

@@ -8,11 +8,20 @@ import { PlusAdImage } from './PlusAdImage';
 import {
   CRASH_REPORTING_SETTING_DESCRIPTION,
   CRASH_REPORTING_TOGGLE_LABEL,
+  PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION,
+  PHOTO_DISPLAY_LIMIT_SETTING_LABEL,
+  PHOTO_LIBRARY_RELOAD_DESCRIPTION,
+  PHOTO_LIBRARY_RELOAD_LABEL,
   STAY_PLACES_SETTING_DESCRIPTION,
   STAY_PLACES_SETTING_LABEL,
   SHOW_STAY_PLACES_ON_MAP_DESCRIPTION,
   SHOW_STAY_PLACES_ON_MAP_LABEL,
 } from '@/ui/appText';
+import {
+  DEFAULT_PHOTO_DISPLAY_LIMIT_ID,
+  PHOTO_DISPLAY_LIMIT_OPTIONS,
+  type PhotoDisplayLimitId,
+} from '@/features/settings/photoDisplayLimitOptions';
 import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '@/features/customization/customizationOptions';
 import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
@@ -59,6 +68,10 @@ export type SettingsScreenProps = {
   hasStayPlaces: boolean;
   /** 滞在場所アイコンを地図に表示するか。 */
   showStayPlacesOnMap: boolean;
+  /** 選択中の「地図に表示する写真」設定。 */
+  photoDisplayLimitId: PhotoDisplayLimitId;
+  /** 写真ライブラリの全件再読み込み中か。 */
+  isSyncingPhotoLibrary: boolean;
   /** GPXインポート処理中か。 */
   isImportingGpx: boolean;
   /** Plus権限状態。 */
@@ -99,6 +112,10 @@ export type SettingsScreenProps = {
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
   /** 滞在場所表示設定の更新処理。 */
   onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
+  /** 「地図に表示する写真」設定の更新処理。 */
+  onUpdatePhotoDisplayLimitId: (id: PhotoDisplayLimitId) => Promise<void>;
+  /** 写真ライブラリの全件再読み込みを開始する処理。 */
+  onReloadPhotoLibrary: () => void;
   /** 現在地アイコン更新処理。 */
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
   /** 選択中のアプリカラープリセットID。 */
@@ -165,6 +182,8 @@ export function SettingsScreen({
   isUpdatingPhotoSetting,
   hasStayPlaces,
   showStayPlacesOnMap,
+  photoDisplayLimitId,
+  isSyncingPhotoLibrary,
   isImportingGpx,
   premiumAccessState,
   revenueCatAppUserId,
@@ -188,6 +207,8 @@ export function SettingsScreen({
   onToggleMapType,
   onUpdateShowPhotosOnMap,
   onUpdateShowStayPlacesOnMap,
+  onUpdatePhotoDisplayLimitId,
+  onReloadPhotoLibrary,
   onUpdateUserLocationIcon,
   onOpenAboutAppScreen,
   onOpenFirstLaunchTutorial,
@@ -313,6 +334,24 @@ export function SettingsScreen({
               />
             </View>
           ) : null}
+
+          <PhotoDisplayLimitPicker
+            photoDisplayLimitId={photoDisplayLimitId}
+            styles={styles}
+            theme={theme}
+            onUpdatePhotoDisplayLimitId={onUpdatePhotoDisplayLimitId}
+          />
+
+          <InfoBlock description={PHOTO_LIBRARY_RELOAD_DESCRIPTION} styles={styles} title={PHOTO_LIBRARY_RELOAD_LABEL} />
+          <ActionPill
+            alignLeft
+            disabled={isSyncingPhotoLibrary}
+            icon={<MaterialCommunityIcons name="image-sync-outline" size={22} color={theme.colors.text} />}
+            label={isSyncingPhotoLibrary ? '読み込み中...' : PHOTO_LIBRARY_RELOAD_LABEL}
+            accessibilityLabel={PHOTO_LIBRARY_RELOAD_LABEL}
+            styles={styles}
+            onPress={onReloadPhotoLibrary}
+          />
 
           <OptionGroup styles={styles} title="マップのテーマ">
             <SelectionTile
@@ -744,6 +783,39 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
           <View style={[styles.colorPresetDot, { backgroundColor: theme.name === 'dark' ? preset.dark.primary : preset.light.primary }]} />
         )}
         onSelect={(preset) => onUpdatePreset(preset.id)}
+      />
+    </OptionGroup>
+  );
+}
+
+type PhotoDisplayLimitPickerProps = Pick<SettingsScreenProps, 'styles' | 'theme' | 'photoDisplayLimitId' | 'onUpdatePhotoDisplayLimitId'>;
+
+/**
+ * 「地図に表示する写真」の上限を選ぶドロップダウン。
+ *
+ * 基準は**全体の最新N件**であり、表示範囲ごとのN件ではない。ラベルと挙動を一致させるためで、
+ * 古い場所へ移動すると何も表示されないという副作用は、設定した本人には理解できる挙動である(設計書 §4.6)。
+ */
+function PhotoDisplayLimitPicker({ styles, theme, photoDisplayLimitId, onUpdatePhotoDisplayLimitId }: PhotoDisplayLimitPickerProps) {
+  const selectedOption =
+    PHOTO_DISPLAY_LIMIT_OPTIONS.find((option) => option.id === photoDisplayLimitId) ??
+    PHOTO_DISPLAY_LIMIT_OPTIONS.find((option) => option.id === DEFAULT_PHOTO_DISPLAY_LIMIT_ID)!;
+
+  return (
+    <OptionGroup styles={styles} title={PHOTO_DISPLAY_LIMIT_SETTING_LABEL} note={PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION}>
+      <SelectionDropdown
+        accessibilityLabel={`${PHOTO_DISPLAY_LIMIT_SETTING_LABEL}を選択`}
+        getKey={(option) => option.id}
+        getLabel={(option) => option.label}
+        options={PHOTO_DISPLAY_LIMIT_OPTIONS}
+        selectedValue={selectedOption}
+        styles={styles}
+        theme={theme}
+        onSelect={(option) => {
+          onUpdatePhotoDisplayLimitId(option.id).catch((error: unknown) => {
+            Alert.alert('設定保存失敗', error instanceof Error ? error.message : '設定を保存できませんでした。');
+          });
+        }}
       />
     </OptionGroup>
   );

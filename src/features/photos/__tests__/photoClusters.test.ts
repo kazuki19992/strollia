@@ -2,9 +2,11 @@ import { Region } from 'react-native-maps';
 
 import { MapPhoto } from '@/features/photos/photoLibrary';
 import {
+  applyResolvedPhotoUrisToClusters,
   clusterMapPhotos,
   clusterMapPhotosByRadius,
   getPhotoClusterRadiusMeters,
+  getPhotoClusterRepresentativePhotos,
   getStablePhotoClusterRadiusMeters,
   MapPhotoCluster,
   paginateMapPhotos,
@@ -24,6 +26,7 @@ function createPhoto(id: string, latitude: number, longitude: number, creationTi
   return {
     id,
     uri: `file:///${id}.jpg`,
+    storedUri: `ph://${id}`,
     latitude,
     longitude,
     creationTime,
@@ -405,5 +408,73 @@ describe('新実装(空間ハッシュ)と参照実装(O(N^2))の等価性', () 
 
       expect(actual).toEqual(expected);
     }
+  });
+});
+
+describe('クラスタ代表写真の抽出 getPhotoClusterRepresentativePhotos', () => {
+  it('各クラスタの先頭写真だけを返す', () => {
+    const clusters = clusterMapPhotosByRadius(
+      [createPhoto('a', 35, 139, 3), createPhoto('b', 35.00001, 139.00001, 2), createPhoto('c', 36, 140, 1)],
+      30,
+    );
+
+    // 地図に見えるのは代表1枚だけなので、表示用URIの解決もここへ絞る(設計書 §4.8)
+    expect(getPhotoClusterRepresentativePhotos(clusters).map((photo) => photo.id)).toEqual(['a', 'c']);
+  });
+
+  it('写真を持たないクラスタは代表を返さない', () => {
+    const emptyCluster: MapPhotoCluster = { id: 'empty', latitude: 35, longitude: 139, photos: [] };
+
+    expect(getPhotoClusterRepresentativePhotos([emptyCluster])).toEqual([]);
+  });
+});
+
+describe('クラスタへの表示用URI反映 applyResolvedPhotoUrisToClusters', () => {
+  it('クラスタ内の写真へ解決済みの表示用URIを反映する', () => {
+    const clusters = clusterMapPhotosByRadius([{ ...createPhoto('a', 35, 139, 1), uri: null }], 30);
+
+    const resolved = applyResolvedPhotoUrisToClusters(clusters, new Map([['a', 'file:///tmp/a.jpg']]));
+
+    expect(resolved[0].photos[0].uri).toBe('file:///tmp/a.jpg');
+  });
+
+  it('クラスタの座標とIDは変えない(マーカーの再描画を増やさないため)', () => {
+    const clusters = clusterMapPhotosByRadius([{ ...createPhoto('a', 35, 139, 1), uri: null }], 30);
+
+    const resolved = applyResolvedPhotoUrisToClusters(clusters, new Map([['a', 'file:///tmp/a.jpg']]));
+
+    expect(resolved[0].id).toBe(clusters[0].id);
+    expect(resolved[0].latitude).toBe(clusters[0].latitude);
+    expect(resolved[0].longitude).toBe(clusters[0].longitude);
+  });
+
+  it('解決結果が空ならクラスタ配列をそのまま返す(不要な再レンダーを避けるため)', () => {
+    const clusters = clusterMapPhotosByRadius([createPhoto('a', 35, 139, 1)], 30);
+
+    expect(applyResolvedPhotoUrisToClusters(clusters, new Map())).toBe(clusters);
+  });
+
+  it('解決結果が空でなくても、一致する写真が無ければクラスタ配列をそのまま返す', () => {
+    const clusters = clusterMapPhotosByRadius([{ ...createPhoto('a', 35, 139, 1), uri: null }], 30);
+
+    // 非同期解決の途中で地図を動かすと、解決結果と現在のクラスタがまったく重ならないことがある
+    expect(applyResolvedPhotoUrisToClusters(clusters, new Map([['zzz', 'file:///tmp/zzz.jpg']]))).toBe(clusters);
+  });
+
+  it('写真が変わったクラスタだけを作り直す', () => {
+    const clusters = clusterMapPhotosByRadius(
+      [
+        { ...createPhoto('a', 35, 139, 1), uri: null },
+        { ...createPhoto('b', 40, 141, 1), uri: null },
+      ],
+      30,
+    );
+
+    const resolved = applyResolvedPhotoUrisToClusters(clusters, new Map([[clusters[0].photos[0].id, 'file:///tmp/resolved.jpg']]));
+
+    expect(resolved).not.toBe(clusters);
+    expect(resolved[0]).not.toBe(clusters[0]);
+    // 変わっていないクラスタは参照ごと保つ。作り直すとネイティブ側のマーカーまで再生成されうる
+    expect(resolved[1]).toBe(clusters[1]);
   });
 });

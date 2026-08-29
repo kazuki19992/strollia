@@ -16,6 +16,15 @@ type PhotoThumbnailNativeModule = {
    * @param size - 要求する画像の一辺のピクセル数。
    */
   getPhotoPreviewAsync: (assetId: string, size: number) => Promise<string | null>;
+  /**
+   * 写真ライブラリにアセットが存在するかを返す。
+   *
+   * **旧ビルドのネイティブモジュールには存在しない**ため optional で宣言する。
+   * ネイティブとJSの更新タイミングがずれても、呼び出し側が縮退できるようにするため。
+   *
+   * @param assetId - `ph://<localIdentifier>` 形式のアセットURI。
+   */
+  isPhotoAssetAvailableAsync?: (assetId: string) => Promise<boolean>;
 };
 
 /**
@@ -89,5 +98,37 @@ export async function getPhotoPreviewAsync(assetId: string, size: number): Promi
     console.warn('Failed to get photo preview:', error);
 
     return null;
+  }
+}
+
+/**
+ * 写真ライブラリにアセットが存在するかを返す。
+ *
+ * 画像を取得できない原因が「写真ライブラリから削除された」のか「iCloudにあり端末に本体が無い」のかを
+ * 区別するために使う。区別せずに「削除されています」と案内すると、オフラインのユーザーへ誤情報を出す
+ * ことになる(設計書 §4.5)。iOS 側は `PHAsset.fetchAssets(withLocalIdentifiers:)` の結果が空かどうかを
+ * 見るだけで、画像のI/Oもデコードも行わない。
+ *
+ * **判定できない場合は必ず `true`(存在する)を返す。** モジュールが解決できない環境(Expo Go・jest・
+ * Android・旧ビルド)や呼び出しが失敗した場合に「削除された」と誤判定してユーザーへ誤情報を出すより、
+ * 案内を出さないほうが安全なためである。
+ *
+ * @param assetId - `ph://<localIdentifier>` 形式のアセットURI。
+ * @returns 存在が確認できた場合と判定できない場合はtrue、削除が確認できた場合のみfalse。
+ */
+export async function isPhotoAssetAvailableAsync(assetId: string): Promise<boolean> {
+  const isAvailableAsync = photoThumbnailModule?.isPhotoAssetAvailableAsync;
+
+  if (isAvailableAsync === undefined) {
+    return true;
+  }
+
+  try {
+    // ネイティブの戻り値が真偽値と限らない前提(issue #160)で、falseと言い切れる場合だけfalseにする
+    return (await isAvailableAsync(assetId)) === false ? false : true;
+  } catch (error: unknown) {
+    console.warn('Failed to check photo asset availability:', error);
+
+    return true;
   }
 }

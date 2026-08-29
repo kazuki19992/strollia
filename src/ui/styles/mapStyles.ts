@@ -855,6 +855,22 @@ export function createMapStyles(theme: AppTheme) {
       // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、インジケータも固定の白にする
       color: '#ffffff',
     },
+    // 端末未ダウンロードの写真に出す案内。画像の下へ流し込み、写真の上には重ねない
+    photoPreviewNotice: {
+      backgroundColor: 'rgba(255, 255, 255, 0.14)',
+      borderRadius: 14,
+      marginTop: 14,
+      maxWidth: 320,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    photoPreviewNoticeText: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、文字色も固定の白にする
+      color: '#ffffff',
+      fontSize: 13,
+      lineHeight: 19,
+      textAlign: 'center',
+    },
     // サムネイルを取得できなかった写真の拡大表示。暗転した背景に何も出ない状態を避ける
     photoPreviewPlaceholder: {
       alignItems: 'center',
@@ -867,6 +883,21 @@ export function createMapStyles(theme: AppTheme) {
       // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、文字色も固定の白にする
       color: '#ffffff',
       fontSize: 14,
+    },
+    /**
+     * 案内を出すときに画像・プレースホルダへ重ねる高さの上書き。
+     *
+     * 画像は既定で高さ88%を占めるため、案内を流し込むと「タップして閉じる」まで含めて縦が溢れる。
+     * 案内の分だけ高さを譲ることで、文章を写真の上に重ねずに済ませる。
+     */
+    photoPreviewShrunkForNotice: {
+      height: '72%',
+    },
+    // 走査コスト計測の一時表示。スクリーンショットから数字を読み取るため、本文より小さくしない
+    photoScanMetricsText: {
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 20,
     },
     photoStatusCard: {
       alignSelf: 'center',

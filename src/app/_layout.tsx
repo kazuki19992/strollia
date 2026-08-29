@@ -9,7 +9,9 @@ import { AchievementDialog } from '@/ui/components/AchievementDialog';
 import { AchievementUnlockModal } from '@/ui/components/AchievementUnlockModal';
 import { FirstLaunchTutorialDialog } from '@/ui/components/FirstLaunchTutorialDialog';
 import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
+import { PhotoLibrarySyncDialog } from '@/ui/components/PhotoLibrarySyncDialog';
 import { PhotoPreviewModals } from '@/ui/components/PhotoPreviewModals';
+import { PhotoDeletedDialog } from '@/ui/components/PhotoDeletedDialog';
 import { PremiumPaywallModal } from '@/ui/components/PremiumPaywallModal';
 import { TopToast } from '@/ui/components/TopToast';
 import { AppStateProvider, useAppState } from '@/ui/state/AppStateProvider';
@@ -142,12 +144,34 @@ function RootLayoutContent(): React.ReactElement {
         selectedPhoto={s.selectedPhoto}
         selectedPhotoPreviewUri={s.selectedPhotoPreviewUri}
         isSelectedPhotoPreviewLoading={s.isSelectedPhotoPreviewLoading}
+        // 取得不可は拡大表示の中で案内する。開くたびにモーダルが出ると邪魔になるため(設計書 §4.5)
+        isSelectedPhotoUnavailable={s.photoUnavailableReason === 'unavailable'}
         styles={s.styles}
         onSelectPhotoCluster={s.setSelectedPhotoCluster}
         onSelectPhoto={s.setSelectedPhoto}
       />
 
-      <GpxImportProgressDialog visible={s.isProcessingGpxImport} styles={s.styles} theme={s.theme} />
+      <GpxImportProgressDialog
+        visible={s.isProcessingGpxImport}
+        styles={s.styles}
+        theme={s.theme}
+        odometerDistanceMeters={s.gpxImportOdometerDistanceMeters}
+        stage={s.gpxImportProgressStage}
+      />
+
+      {/* 削除済みのときだけモーダルで止め、再読み込み導線を出す(設計書 §4.5) */}
+      <PhotoDeletedDialog
+        visible={s.photoUnavailableReason === 'deleted'}
+        styles={s.styles}
+        onClose={s.dismissPhotoDeletedDialog}
+        onReloadPhotoLibrary={() => {
+          s.reloadPhotoLibraryFromDeletedDialog().catch((error: unknown) => {
+            console.warn('Failed to reload photo library from unavailable dialog:', error);
+          });
+        }}
+      />
+
+      <PhotoLibrarySyncDialog visible={s.isSyncingPhotoLibrary} progress={s.photoLibrarySyncProgress} styles={s.styles} />
     </>
   );
 }

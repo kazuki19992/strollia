@@ -9,6 +9,14 @@ export type PhotoPreviewUriState = {
   previewUri: string | null;
   /** 高解像度の取得中かどうか。iCloudからのダウンロードは数秒かかりうるため、待機表示に使う。 */
   isLoadingPreview: boolean;
+  /**
+   * 現在の写真の高解像度を取得できているかどうか。
+   *
+   * **`previewUri` では判別できない。** サムネイルへフォールバックする仕様のため、サムネイルが
+   * ある限り `previewUri` は non-null になる。「本体が端末に無い」ことを検知する側は
+   * サムネイルの有無ではなく高解像度の可否で判断する必要がある(設計書 §4.5)。
+   */
+  hasHighResolutionPreview: boolean;
 };
 
 /**
@@ -74,5 +82,9 @@ export function usePhotoPreviewUri(photo: MapPhoto | null): PhotoPreviewUriState
   // 保持している高解像度が現在の写真のものでなければ使わない(切替直後の1フレーム対策)
   const currentHighResolutionUri = highResolution !== null && highResolution.assetId === assetId ? highResolution.uri : null;
 
-  return { previewUri: currentHighResolutionUri ?? photo?.uri ?? null, isLoadingPreview };
+  return {
+    previewUri: currentHighResolutionUri ?? photo?.uri ?? null,
+    isLoadingPreview,
+    hasHighResolutionPreview: currentHighResolutionUri !== null,
+  };
 }

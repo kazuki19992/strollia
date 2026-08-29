@@ -162,29 +162,46 @@ GPX / KML インポート履歴を保存するテーブル。
 
 写真本体はDBに保存しない。ジオタグがない写真も保存しない。
 
-| カラム         | 型        | 説明                                             |
-| -------------- | --------- | ------------------------------------------------ |
-| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID             |
-| `latitude`     | REAL      | 緯度                                             |
-| `longitude`    | REAL      | 経度                                             |
-| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可   |
-| `uri`          | TEXT      | 表示用URI（iOS: `ph://…` / Android: `file://…`） |
-| `width`        | INTEGER   | 写真の横幅                                       |
-| `height`       | INTEGER   | 写真の高さ                                       |
-| `last_seen_at` | TEXT      | 最終確認日時                                     |
-| `created_at`   | TEXT      | 作成日時                                         |
-| `updated_at`   | TEXT      | 更新日時                                         |
+| カラム         | 型        | 説明                                                        |
+| -------------- | --------- | ----------------------------------------------------------- |
+| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID（`uri` と同値）        |
+| `latitude`     | REAL      | 緯度                                                        |
+| `longitude`    | REAL      | 経度                                                        |
+| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可              |
+| `uri`          | TEXT      | 安定した識別用URI（iOS: `ph://…` / Android: `content://…`） |
+| `width`        | INTEGER   | 写真の横幅                                                  |
+| `height`       | INTEGER   | 写真の高さ                                                  |
+| `last_seen_at` | TEXT      | 最終確認日時                                                |
+| `created_at`   | TEXT      | 作成日時                                                    |
+| `updated_at`   | TEXT      | 更新日時                                                    |
 
 保存は `asset_id` を主キーとしたUPSERTで行う。`created_at` は初回保存時の値を保ち、`updated_at` と `last_seen_at` は毎回更新する（`visited_cells` と同じ方針）。
 
-**行の削除**: 保存と同じトランザクションで、走査済みの時間窓（今回の走査で確実に見た撮影日時の範囲）にある行を走査結果と突き合わせ、確認できなかった行を `DELETE` する。写真ライブラリから削除された写真やジオタグを失った写真の行が残ると、画像を読めず地図上に空のバブルが出るため。判定条件と端の扱いは `docs/photo-geotag.md` §9.3 を参照する。`getAssetInfoAsync` が reject したアセットは「存在するが判断できない」ものとして削除対象から外し、実在する写真の行を消さないようにしている。
+**行の削除**: 保存と同じトランザクションで、走査済みの時間窓（今回の走査で確実に見た撮影日時の範囲）にある行を走査結果と突き合わせ、確認できなかった行を `DELETE` する。写真ライブラリから削除された写真やジオタグを失った写真の行が残ると、画像を読めず地図上に空のバブルが出るため。判定条件と端の扱いは `docs/photo-geotag.md` §9.3 を参照する。位置情報の取得（`Asset.getLocation()`）が reject したアセットは「存在するが判断できない」ものとして削除対象から外し、実在する写真の行を消さないようにしている。
 
-**`local_uri` / `thumbnail_uri` は保存しない。** `getAssetInfoAsync` が返す `localUri` は
-`requestContentEditingInput` の `fullSizeImageURL` に由来する一時パスで、アプリ再起動をまたいで有効である保証がない。代わりに `getAssetsAsync` が返す安定した `uri` を保存する。
+**`local_uri` / `thumbnail_uri` は保存しない。** 表示できる一時パス（旧APIの `localUri`）は
+`requestContentEditingInput` の `fullSizeImageURL` に由来し、アプリ再起動をまたいで有効である保証がない。代わりに走査で得た安定URI（`Asset.id`）を `asset_id` と `uri` の双方へ保存する。
 
-> 表示時に `uri` 単独でサムネイルを描画できるかは実機未検証である。描画できない場合は、`local_uri` を「保存しないが表示直前に都度取得する値」として扱い、ビューポート検索の結果に対してのみ `getAssetInfoAsync` で解決する方式へ切り替える。切り替え箇所は `toMapPhotoFromPhotoAsset`（`src/features/photos/photoLibrary.ts`）1箇所に閉じている。
+**expo-media-library 新API移行時に一度だけ全行を削除する。** 走査APIの移行で `asset_id` に入る値の形が変わった（旧: `ph://` を含まない localIdentifier / 新: `ph://<localIdentifier>`）。旧形式の行を残すと同じ写真が新旧2行として共存し、地図に重複マーカーが出る。`photo_assets` は再走査で作り直せるキャッシュなので、`initializeDatabase()` の `resetPhotoAssetsForMediaLibraryNextApi()` で一度だけ空にする。実行済みかどうかは `app_settings` の `photoAssetsResetForMediaLibraryNextApi` で記録し、削除→マーカーの順に実行して途中失敗時は次回起動でやり直す。他のテーブルには一切触れない。
 
-`taken_at` とそのインデックスは、GPSログとの時刻連動（`docs/photo-geotag.md` §7）に向けた準備工事である。後から実装するときにスキーマ変更と写真ライブラリの全件再走査が要らないよう、絞り込みに使う前から保存する。
+> **iOS では**保存した `uri`（`ph://…`）をそのままでは `<Image>` で描画できない（検証済み）。描画できる表示用URIは保存せず、`resolvePhotoDisplayUri`（`src/features/photos/photoDisplayUri.ts`）でサムネイルとして都度解決する。Android の `content://…` はそのまま描画できる見込みのため素通しする（未リリースのため実機未確認。issue #76）。詳細は `docs/photo-geotag.md` §9.5 を参照する。
+
+`taken_at` とそのインデックスは、GPSログとの時刻連動（`docs/photo-geotag.md` §7）に向けた準備工事として入れたが、**表示上限の絞り込みで実際に使うようになった**（後述）。
+
+**読み出しには2種類の上限が掛かる。** 役割が異なるので混同しないこと。
+
+| 上限                                          | 出どころ                           | 掛かり方                                                                 |
+| --------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------ |
+| **表示上限**                                  | ユーザー設定「地図に表示する写真」 | 先に全体を `ORDER BY taken_at DESC LIMIT N` で絞り、そのうち範囲内を返す |
+| **安全上限**（`PHOTO_VIEWPORT_SAFETY_LIMIT`） | 内部固定（現在 5000 件）           | 設定が「すべて」でも常に掛かる。ユーザーからは見えない保険               |
+
+表示上限を範囲で絞る**前**に掛けるのは、後に掛けると「表示範囲ごとの最新N件」になり設定のラベルと挙動がずれるためである。`photo_assets` にはジオタグ付き写真しか入らないので、`ORDER BY taken_at DESC LIMIT N` がそのまま「最新N件のジオタグ写真」になる（`idx_photo_assets_taken_at` が効く）。
+
+`taken_at` は `new Date(ms).toISOString()` 由来のUTC固定長表記なので辞書順＝時刻順であり、撮影日時が不明（NULL）の行は `DESC` で末尾に来る。最新N件の絞り込みに紛れ込むことはない。
+
+安全上限は「設定が『すべて』でも一度にJSへ載る件数を抑える」ためのもので、全写真にジオタグを付けるユーザーが広域を表示したときにメモリと描画が際限なく膨らむのを防ぐ。実測（写真18,218枚）ではジオタグ付きが1,400件だったので、通常利用では存在しないのと同じ挙動になる。
+
+**差分走査の基準時刻は `app_settings` に持つ。** 前回の走査で確認できた最新の撮影日時を保存し、次回の差分走査の起点にする（`photoLibraryLastScannedTakenAt`）。`photo_assets` のスキーマは変更していない。詳細は `docs/photo-geotag.md` §8.2 を参照する。
 
 ### 4.9 `app_settings`
 
@@ -309,7 +326,7 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `visited_cells(last_visited_at)`
 - `stay_places(created_at, id)` （滞在場所を作成順で安定して取得するため）
 - `photo_assets(latitude, longitude)` （マップ表示範囲での絞り込みに使う）
-- `photo_assets(taken_at)` （撮影期間での絞り込みに向けた準備）
+- `photo_assets(taken_at)` （表示上限「全体の最新N件」の絞り込みと、撮影期間での絞り込みに使う）
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 

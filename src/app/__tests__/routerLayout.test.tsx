@@ -24,6 +24,13 @@ jest.mock('react-native-safe-area-context', () => {
 /** AppStateProvider が受け取った props の記録。配線検証に使う。 */
 const mockProviderProps: Record<string, unknown>[] = [];
 
+/** useAppState の戻り値へ当てる差分。写真の案内の出し分けなど、状態依存の配線検証に使う。 */
+let mockAppStateOverrides: Record<string, unknown> = {};
+
+/** グローバルモーダルが受け取った props の記録。 */
+const mockPhotoPreviewModalsProps: Record<string, unknown>[] = [];
+const mockPhotoDeletedDialogProps: Record<string, unknown>[] = [];
+
 // wrapWithSentry はコンポーネントをそのまま返すスタブ
 jest.mock('@/config/sentry', () => ({
   wrapWithSentry: (component: unknown) => component,
@@ -66,7 +73,13 @@ jest.mock('@/ui/state/AppStateProvider', () => {
       setSelectedPhotoCluster: jest.fn(),
       setSelectedPhoto: jest.fn(),
       isProcessingGpxImport: false,
+      isSyncingPhotoLibrary: false,
+      photoLibrarySyncProgress: null,
+      photoUnavailableReason: null,
+      dismissPhotoDeletedDialog: jest.fn(),
+      reloadPhotoLibraryFromDeletedDialog: jest.fn().mockResolvedValue(undefined),
       openPremiumCustomerCenter: jest.fn(),
+      ...mockAppStateOverrides,
     }),
   };
 });
@@ -77,13 +90,27 @@ jest.mock('@/ui/components/AchievementUnlockModal', () => ({ AchievementUnlockMo
 jest.mock('@/ui/components/AchievementDialog', () => ({ AchievementDialog: () => null }));
 jest.mock('@/ui/components/PremiumPaywallModal', () => ({ PremiumPaywallModal: () => null }));
 jest.mock('@/ui/components/FirstLaunchTutorialDialog', () => ({ FirstLaunchTutorialDialog: () => null }));
-jest.mock('@/ui/components/PhotoPreviewModals', () => ({ PhotoPreviewModals: () => null }));
+jest.mock('@/ui/components/PhotoPreviewModals', () => ({
+  PhotoPreviewModals: (props: Record<string, unknown>) => {
+    mockPhotoPreviewModalsProps.push(props);
+    return null;
+  },
+}));
+jest.mock('@/ui/components/PhotoDeletedDialog', () => ({
+  PhotoDeletedDialog: (props: Record<string, unknown>) => {
+    mockPhotoDeletedDialogProps.push(props);
+    return null;
+  },
+}));
 jest.mock('@/ui/components/GpxImportProgressDialog', () => ({ GpxImportProgressDialog: () => null }));
 
 describe('expo-router ルートレイアウト (_layout)', () => {
   beforeEach(() => {
     mockPathname = '/';
     mockProviderProps.length = 0;
+    mockPhotoPreviewModalsProps.length = 0;
+    mockPhotoDeletedDialogProps.length = 0;
+    mockAppStateOverrides = {};
     mockPush.mockClear();
     mockBack.mockClear();
   });
@@ -116,6 +143,25 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     render(<RootLayout />);
 
     expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('map');
+  });
+
+  test('削除済みと判定した写真ではモーダルで案内する', () => {
+    mockAppStateOverrides = { photoUnavailableReason: 'deleted' };
+
+    render(<RootLayout />);
+
+    expect(mockPhotoDeletedDialogProps.at(-1)?.visible).toBe(true);
+    expect(mockPhotoPreviewModalsProps.at(-1)?.isSelectedPhotoUnavailable).toBe(false);
+  });
+
+  test('端末に本体が無い写真ではモーダルを出さず拡大表示の中で案内する', () => {
+    mockAppStateOverrides = { photoUnavailableReason: 'unavailable' };
+
+    render(<RootLayout />);
+
+    // 未ダウンロードの写真を開くたびにモーダルが出ると操作の邪魔になる
+    expect(mockPhotoDeletedDialogProps.at(-1)?.visible).toBe(false);
+    expect(mockPhotoPreviewModalsProps.at(-1)?.isSelectedPhotoUnavailable).toBe(true);
   });
 
   test('滞在場所設定へのナビゲーターをAppStateProviderへ渡す', () => {

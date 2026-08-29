@@ -80,6 +80,40 @@ public class PhotoThumbnailModule: Module {
     AsyncFunction("getPhotoPreviewAsync") { (assetId: String, size: Double, promise: Promise) in
       Self.requestImage(assetId: assetId, size: size, variant: .preview, promise: promise)
     }
+
+    AsyncFunction("isPhotoAssetAvailableAsync") { (assetId: String) -> Bool in
+      Self.isAssetAvailable(assetId: assetId)
+    }
+  }
+
+  /**
+   * 写真ライブラリにアセットが存在するかを返す。
+   *
+   * 画像を取得できない原因が「削除された」のか「iCloudにあり端末に本体が無い」のかを区別するために使う。
+   * `PHAsset.fetchAssets(withLocalIdentifiers:)` は**画像のI/Oもデコードも行わない**ため、
+   * 拡大表示の失敗時に呼んでも表示を止めない。
+   *
+   * **判定できない場合は true(存在する)へ倒す。** フルアクセスが無い状態では、実在する写真でも
+   * フェッチ結果が空になる(限定アクセスでは未選択の写真が見えない)。それを「削除された」と扱うと
+   * ユーザーへ誤情報を出すことになるため、フルアクセスのときだけ削除を断定する。
+   *
+   * @param assetId `ph://<localIdentifier>` 形式のアセットURI、またはその `localIdentifier`。
+   * @return 存在する場合と判定できない場合は true、削除が確認できた場合のみ false。
+   */
+  private static func isAssetAvailable(assetId: String) -> Bool {
+    let localIdentifier = assetId.hasPrefix(photoLibraryUriScheme)
+      ? String(assetId.dropFirst(photoLibraryUriScheme.count))
+      : assetId
+
+    guard !localIdentifier.isEmpty else {
+      return true
+    }
+
+    guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized else {
+      return true
+    }
+
+    return PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil).firstObject != nil
   }
 
   /**

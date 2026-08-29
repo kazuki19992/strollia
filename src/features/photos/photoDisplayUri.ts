@@ -1,5 +1,9 @@
 import { getPhotoThumbnailAsync } from '@modules/photo-thumbnail';
 
+import { PHOTO_INFO_CONCURRENCY } from '@/features/photos/photoScanConcurrency';
+import { mapWithConcurrency } from '@/utils/concurrency';
+import type { MapPhoto } from '@/features/photos/photoLibrary';
+
 /**
  * iOSのフォトライブラリURIの接頭辞。
  *
@@ -84,4 +88,74 @@ export async function resolvePhotoDisplayUri(assetId: string, storedUri: string)
  */
 export function clearPhotoDisplayUriCache(): void {
   displayUriCache.clear();
+}
+
+/**
+ * 保存済みの安定URI(`storedUri`)から、`<Image>` で描画できる表示用URIを解決する。
+ *
+ * **呼び出し側は「地図に実際に出る写真」だけを渡すこと。** 解決1件につきネイティブ側でサムネイルの
+ * デコードとJPEGの書き出しが走る。地図に見えるのはクラスタの代表1枚だけなので、`+187` のクラスタで
+ * 188枚ぶん解決するのは丸ごと無駄になる(設計書 §4.8)。
+ *
+ * **解決できなかった写真もキーは残し、値を `null` にして返す。** かつては除外していたが、
+ * 「iPhoneのストレージを最適化」が有効な端末では解決が全件失敗し、地図から写真マーカーが
+ * 丸ごと消えるという最悪の症状になった。画像が無いだけのマーカーとして描画すれば、
+ * 少なくとも「そこに写真がある」ことは伝わる(設計書 §5.2)。失敗はキャッシュされないため、
+ * 次回の読み込みで画像つきへ復帰できる。
+ *
+ * 解決を一斉並列で発行しないよう、写真ライブラリへの他の問い合わせと同じ上限で絞る。
+ *
+ * @param photos - 解決対象の写真。`uri` が解決済みの写真は問い合わせない。
+ * @returns アセットID → 表示用URI の対応。解決できなかった写真の値はnull。
+ */
+export async function resolvePhotoDisplayUriMap(photos: readonly MapPhoto[]): Promise<Map<string, string | null>> {
+  // 解決済みの写真をもう一度書き出させない。同じ写真が複数回要求されても1回に畳む
+  const pendingPhotos = [...new Map(photos.filter((photo) => photo.uri === null).map((photo) => [photo.id, photo])).values()];
+  const resolvedUris = await mapWithConcurrency(pendingPhotos, PHOTO_INFO_CONCURRENCY, (photo) =>
+    resolvePhotoDisplayUri(photo.id, photo.storedUri),
+  );
+
+  return new Map(
+    pendingPhotos.map((photo, index) => {
+      const result = resolvedUris[index];
+
+      // 解決処理は本来nullを返して失敗を伝えるが、想定外の例外でも写真を落とさないよう
+      // rejected も「画像なし」として扱う
+      return [photo.id, result.status === 'fulfilled' ? result.value : null];
+    }),
+  );
+}
+
+/**
+ * 解決済みの表示用URIを写真へ反映する。
+ *
+ * 対応が無い写真は入力のまま残す(未解決なら未解決のまま)。**1枚も差し替わらないときは入力配列の
+ * 参照をそのまま返す**。地図のクラスタは参照の同一性でメモ化しているため、内容が変わらないのに
+ * 新しい配列を作ると不要な再クラスタリング・再描画を招く。
+ *
+ * **解決結果が空でないことは「差し替わる」ことを意味しない。** 非同期の解決中に地図を動かすと、
+ * 解決結果と現在表示している写真がまったく重ならないことがある。件数ではなく、実際に差し替えた
+ * 写真があったかどうかで判定する。
+ *
+ * @param photos - 反映対象の写真。
+ * @param resolvedUris - アセットID → 表示用URI の対応。
+ * @returns 表示用URIを反映した写真。反映する対応が無い場合は入力そのもの。
+ */
+export function applyResolvedPhotoUris(photos: readonly MapPhoto[], resolvedUris: ReadonlyMap<string, string | null>): MapPhoto[] {
+  if (resolvedUris.size === 0) {
+    return photos as MapPhoto[];
+  }
+
+  let hasAppliedUri = false;
+  const appliedPhotos = photos.map((photo) => {
+    if (!resolvedUris.has(photo.id)) {
+      return photo;
+    }
+
+    hasAppliedUri = true;
+
+    return { ...photo, uri: resolvedUris.get(photo.id) ?? null };
+  });
+
+  return hasAppliedUri ? appliedPhotos : (photos as MapPhoto[]);
 }

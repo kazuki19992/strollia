@@ -107,3 +107,57 @@ describe('高解像度写真取得 getPhotoPreviewAsync', () => {
     await expect(getPhotoPreviewAsync('ph://asset-1', 2796)).resolves.toBeNull();
   });
 });
+
+describe('アセット存在確認 isPhotoAssetAvailableAsync', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('ライブラリに存在する場合はtrueを返す', async () => {
+    const nativeIsPhotoAssetAvailableAsync = jest.fn().mockResolvedValue(true);
+    const { isPhotoAssetAvailableAsync } = loadModule({ isPhotoAssetAvailableAsync: nativeIsPhotoAssetAvailableAsync });
+
+    await expect(isPhotoAssetAvailableAsync('ph://asset-1')).resolves.toBe(true);
+    expect(nativeIsPhotoAssetAvailableAsync).toHaveBeenCalledWith('ph://asset-1');
+  });
+
+  it('ライブラリから削除されている場合はfalseを返す', async () => {
+    const { isPhotoAssetAvailableAsync } = loadModule({ isPhotoAssetAvailableAsync: jest.fn().mockResolvedValue(false) });
+
+    await expect(isPhotoAssetAvailableAsync('ph://asset-1')).resolves.toBe(false);
+  });
+
+  it('モジュールが解決できない環境(Expo Go・テスト・Android)では存在する扱い(true)にする', async () => {
+    const { isPhotoAssetAvailableAsync } = loadModule(null);
+
+    // 確認できないことを「削除された」と誤判定すると、オフラインのユーザーへ誤情報を出してしまう
+    await expect(isPhotoAssetAvailableAsync('ph://asset-1')).resolves.toBe(true);
+  });
+
+  it('ネイティブ呼び出しが例外を投げた場合も存在する扱い(true)にする', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { isPhotoAssetAvailableAsync } = loadModule({
+      isPhotoAssetAvailableAsync: jest.fn().mockRejectedValue(new Error('photo library unavailable')),
+    });
+
+    await expect(isPhotoAssetAvailableAsync('ph://asset-1')).resolves.toBe(true);
+  });
+
+  it('関数を持たない旧ビルドのネイティブモジュールでも落ちずに存在する扱い(true)にする', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { isPhotoAssetAvailableAsync } = loadModule({ getPhotoThumbnailAsync: jest.fn() });
+
+    await expect(isPhotoAssetAvailableAsync('ph://asset-1')).resolves.toBe(true);
+  });
+
+  it('真偽値以外が返ってきた場合も存在する扱い(true)にする', async () => {
+    const { isPhotoAssetAvailableAsync } = loadModule({ isPhotoAssetAvailableAsync: jest.fn().mockResolvedValue(undefined) });
+
+    // ネイティブとJSの型宣言が食い違いうる前提(issue #160)で、falseと言い切れない値は存在扱いにする
+    await expect(isPhotoAssetAvailableAsync('ph://asset-1')).resolves.toBe(true);
+  });
+});

@@ -1151,6 +1151,51 @@ describe('走査モード loadGeotaggedPhotos', () => {
   });
 });
 
+describe('走査の進捗通知 loadGeotaggedPhotos', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetPermissionsAsync.mockResolvedValue({ granted: true, accessPrivileges: 'all' });
+  });
+
+  it('総数が確定した時点で処理済み0件を通知する', async () => {
+    mockScan([createAssetMetadata('asset-1'), createAssetMetadata('asset-2')], async () => tokyoLocation);
+    const onProgress = jest.fn();
+
+    await loadGeotaggedPhotos({ onProgress });
+
+    // 「N件中M件」を出せるのは exeForMetadata() で総数が分かってから(設計書 §4.4)
+    expect(onProgress).toHaveBeenNthCalledWith(1, { totalAssetCount: 2, processedAssetCount: 0 });
+  });
+
+  it('位置取得が進むたびに処理済み件数を通知する', async () => {
+    mockScan([createAssetMetadata('asset-1'), createAssetMetadata('asset-2')], async () => tokyoLocation);
+    const onProgress = jest.fn();
+
+    await loadGeotaggedPhotos({ onProgress });
+
+    expect(onProgress).toHaveBeenCalledWith({ totalAssetCount: 2, processedAssetCount: 1 });
+    expect(onProgress).toHaveBeenLastCalledWith({ totalAssetCount: 2, processedAssetCount: 2 });
+  });
+
+  it('位置取得に失敗したアセットも処理済みとして数える', async () => {
+    mockScan([createAssetMetadata('asset-1')], async () => {
+      throw new Error('asset not found');
+    });
+    const onProgress = jest.fn();
+
+    await loadGeotaggedPhotos({ onProgress });
+
+    // 失敗を数えないと進捗が総数に届かず、いつまでも終わらないように見える
+    expect(onProgress).toHaveBeenLastCalledWith({ totalAssetCount: 1, processedAssetCount: 1 });
+  });
+
+  it('通知先を渡さなくても走査できる', async () => {
+    mockScan([createAssetMetadata('asset-1')], async () => tokyoLocation);
+
+    await expect(loadGeotaggedPhotos()).resolves.toBeDefined();
+  });
+});
+
 describe('走査コストの計測 loadGeotaggedPhotos', () => {
   beforeEach(() => {
     jest.clearAllMocks();

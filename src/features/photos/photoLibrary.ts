@@ -112,6 +112,19 @@ export type PhotoScanMode =
   /** ライブラリ全体を対象にする。ユーザーが「ライブラリを再読み込み」を選んだときだけ走る。 */
   | 'full';
 
+/**
+ * 走査の進捗。
+ *
+ * 総数は `Query.exeForMetadata()` を終えて初めて分かる。それ以前は「何件あるのか」を答えられないため、
+ * 呼び出し側は最初の通知が届くまで不定形の表示にする(設計書 §4.4)。
+ */
+export type PhotoScanProgress = {
+  /** 走査対象のアセット総数。 */
+  totalAssetCount: number;
+  /** 位置情報の取得を終えたアセット数。取得に失敗したアセットも数える。 */
+  processedAssetCount: number;
+};
+
 /** `loadGeotaggedPhotos` の実行条件。 */
 export type PhotoScanOptions = {
   /** 走査モード。省略時は全件走査。 */
@@ -122,6 +135,13 @@ export type PhotoScanOptions = {
    * 省略時は `resolvePhotoScanLimit()`(計測フラグが無ければ上限なし)を使う。
    */
   limit?: number | null;
+  /**
+   * 走査の進捗通知。
+   *
+   * **1件処理するごとに呼ばれる。** 全件走査は数万件に達しうるので、そのままUIの状態更新へ繋ぐと
+   * 再レンダーで走査自体が遅くなる。間引きは呼び出し側(`usePhotoLibrarySync`)の責務とする。
+   */
+  onProgress?: (progress: PhotoScanProgress) => void;
 };
 
 /**
@@ -447,12 +467,13 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds, d
  *
  * 走査コストの内訳は常に計測して返す(理由は `GeotaggedPhotoScanResult.metrics` を参照)。
  *
- * @param options - 走査モードと上限。省略時は上限なしの全件走査。
+ * @param options - 走査モード・上限・進捗通知。省略時は上限なしの全件走査。
  * @returns ジオタグ付き写真一覧、キャッシュ保存の成否、走査の計測値、実際に走ったモード。表示用URIの解決状態は `GeotaggedPhotoScanResult` を参照。
  */
 export async function loadGeotaggedPhotos({
   mode = 'full',
   limit = resolvePhotoScanLimit(),
+  onProgress,
 }: PhotoScanOptions = {}): Promise<GeotaggedPhotoScanResult> {
   const startedAtMs = Date.now();
 
@@ -482,10 +503,22 @@ export async function loadGeotaggedPhotos({
   // プロービング用の超過分は走査対象に含めない。含めると保存件数も往復回数も上限を超えてしまう
   const scannedMetadata = hasNextPage && limit !== null ? probedMetadata.slice(0, limit) : probedMetadata;
 
+  // 総数が確定するのはここ。以降は「N件中M件」を出せる
+  onProgress?.({ totalAssetCount: scannedMetadata.length, processedAssetCount: 0 });
+
   // 位置情報だけは `exeForMetadata()` に含まれないため、アセットごとに取得する。
   // `getLocation()` は `phAsset.location` を読むだけでデコードもI/Oも伴わない
   const locationStartedAtMs = Date.now();
-  const locations = await mapWithConcurrency(scannedMetadata, PHOTO_INFO_CONCURRENCY, (metadata) => new Asset(metadata.id).getLocation());
+  let processedAssetCount = 0;
+  const locations = await mapWithConcurrency(scannedMetadata, PHOTO_INFO_CONCURRENCY, async (metadata) => {
+    try {
+      return await new Asset(metadata.id).getLocation();
+    } finally {
+      // 失敗したアセットも数える。数えないと進捗が総数へ届かず、終わらないように見える
+      processedAssetCount += 1;
+      onProgress?.({ totalAssetCount: scannedMetadata.length, processedAssetCount });
+    }
+  });
   const locationDurationMs = Date.now() - locationStartedAtMs;
 
   const photos = scannedMetadata.flatMap((metadata, index) => {

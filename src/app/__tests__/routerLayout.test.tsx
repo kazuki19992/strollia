@@ -66,6 +66,8 @@ jest.mock('@/ui/state/AppStateProvider', () => {
       setSelectedPhotoCluster: jest.fn(),
       setSelectedPhoto: jest.fn(),
       isProcessingGpxImport: false,
+      isSyncingPhotoLibrary: false,
+      photoLibrarySyncProgress: null,
       openPremiumCustomerCenter: jest.fn(),
     }),
   };

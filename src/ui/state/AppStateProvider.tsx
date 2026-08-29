@@ -41,7 +41,7 @@ import {
   paginateMapPhotos,
 } from '@/features/photos/photoClusters';
 import { applyResolvedPhotoUris } from '@/features/photos/photoDisplayUri';
-import type { MapPhoto } from '@/features/photos/photoLibrary';
+import type { MapPhoto, PhotoScanProgress } from '@/features/photos/photoLibrary';
 import { createPhotoScanMetricsLines } from '@/features/photos/photoScanMetrics';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
@@ -64,6 +64,7 @@ import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSettin
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
 import { usePhotoDisplayUris } from '@/ui/hooks/usePhotoDisplayUris';
+import { usePhotoLibrarySync } from '@/ui/hooks/usePhotoLibrarySync';
 import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiagnostics';
 import { usePhotoDisplayLimitSetting } from '@/ui/hooks/usePhotoDisplayLimitSetting';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
@@ -241,6 +242,12 @@ export type AppStateContextValue = {
   photoDisplayLimitId: PhotoDisplayLimitId;
   /** 「地図に表示する写真」設定を更新する。 */
   updatePhotoDisplayLimitId: (id: PhotoDisplayLimitId) => Promise<void>;
+  /** 写真ライブラリの全件再読み込み中かどうか(ブロッキングダイアログ表示用)。 */
+  isSyncingPhotoLibrary: boolean;
+  /** 全件再読み込みの進捗。総数が分かる前はnull。 */
+  photoLibrarySyncProgress: PhotoScanProgress | null;
+  /** 写真ライブラリの全件再読み込みを開始する。 */
+  startPhotoLibrarySync: () => Promise<void>;
   /**
    * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
    *
@@ -656,6 +663,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     photoScanMetrics,
     initializePhotoSetting,
     updateShowPhotosOnMap,
+    refreshPhotosFromCache,
   } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion, photoDisplayLimit });
   // 計測フラグが無効なら常にnull(=画面に何も出さない)。判定は createPhotoScanMetricsLines に閉じている
   const photoScanMetricsLines = useMemo(() => createPhotoScanMetricsLines(photoScanMetrics), [photoScanMetrics]);
@@ -663,7 +671,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const photoClusters = usePhotoClusters(photos, visibleRegion);
   // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
   usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, isLoadingPhotos, photos, clusters: photoClusters });
-  const { resolvedPhotoUris, requestPhotoDisplayUris } = usePhotoDisplayUris();
+  const { resolvedPhotoUris, requestPhotoDisplayUris, resetPhotoDisplayUris } = usePhotoDisplayUris();
 
   /**
    * 地図に画像として出る写真だけ、表示用URIの解決を要求する。
@@ -703,6 +711,23 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   // 拡大表示のときだけ高解像度を取りに行く(この経路だけiCloudからのダウンロードを許可する)。
   const { previewUri: selectedPhotoPreviewUri, isLoadingPreview: isSelectedPhotoPreviewLoading } =
     usePhotoPreviewUri(resolvedSelectedPhoto);
+
+  /**
+   * 全件再読み込みの完了後に、地図の表示を実態へ合わせ直す。
+   *
+   * 走査で削除済みの行が消えるため、引き直さないと地図にマーカーだけが残る。
+   * 解決済みの表示用URIも捨てる。削除された写真のサムネイルはキャッシュに残っており、
+   * そのままだと「もう無い写真」の画像が出続けてしまう(設計書 §4.5)。
+   */
+  const handlePhotoLibrarySyncCompleted = useCallback((): void => {
+    resetPhotoDisplayUris();
+    refreshPhotosFromCache();
+  }, [refreshPhotosFromCache, resetPhotoDisplayUris]);
+
+  const { isSyncingPhotoLibrary, photoLibrarySyncProgress, startPhotoLibrarySync } = usePhotoLibrarySync({
+    onCompleted: handlePhotoLibrarySyncCompleted,
+  });
+
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
@@ -1230,6 +1255,9 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     photoErrorMessage,
     photoDisplayLimitId,
     updatePhotoDisplayLimitId,
+    isSyncingPhotoLibrary,
+    photoLibrarySyncProgress,
+    startPhotoLibrarySync,
     photoScanMetricsLines,
     updateShowPhotosOnMap,
     selectedPhoto: resolvedSelectedPhoto,

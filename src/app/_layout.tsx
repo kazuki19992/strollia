@@ -9,6 +9,7 @@ import { AchievementDialog } from '@/ui/components/AchievementDialog';
 import { AchievementUnlockModal } from '@/ui/components/AchievementUnlockModal';
 import { FirstLaunchTutorialDialog } from '@/ui/components/FirstLaunchTutorialDialog';
 import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
+import { PhotoLibrarySyncDialog } from '@/ui/components/PhotoLibrarySyncDialog';
 import { PhotoPreviewModals } from '@/ui/components/PhotoPreviewModals';
 import { PremiumPaywallModal } from '@/ui/components/PremiumPaywallModal';
 import { TopToast } from '@/ui/components/TopToast';
@@ -148,6 +149,8 @@ function RootLayoutContent(): React.ReactElement {
       />
 
       <GpxImportProgressDialog visible={s.isProcessingGpxImport} styles={s.styles} theme={s.theme} />
+
+      <PhotoLibrarySyncDialog visible={s.isSyncingPhotoLibrary} progress={s.photoLibrarySyncProgress} styles={s.styles} />
     </>
   );
 }

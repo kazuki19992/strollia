@@ -40,6 +40,33 @@ export const STAY_PLACES_SETTING_DESCRIPTION =
  */
 export const PHOTO_LIBRARY_SCANNING_MESSAGE = '写真ライブラリの新しい写真を確認しています...';
 
+/** 写真ライブラリの全件再読み込み中に出すブロッキングダイアログの見出し。 */
+export const PHOTO_LIBRARY_SYNC_DIALOG_TITLE = '写真ライブラリを読み込んでいます...';
+
+/**
+ * 全件再読み込みダイアログの説明文。
+ *
+ * 走査中に地図を操作されると競合で1.6倍遅くなる(設計書 §2.1)。操作を止めていることが
+ * 不親切に見えないよう、待つ理由が伝わる文にする。
+ */
+export const PHOTO_LIBRARY_SYNC_DIALOG_DESCRIPTION = 'すべての写真を確認しています。読み込みが終わるまで、そのままお待ちください。';
+
+/** 全件再読み込みに失敗したときのタイトル。 */
+export const PHOTO_LIBRARY_SYNC_FAILURE_TITLE = '写真ライブラリを読み込めませんでした';
+
+/** 全件再読み込みに失敗したときの既定メッセージ。 */
+export const PHOTO_LIBRARY_SYNC_FAILURE_MESSAGE = '時間をおいて、もう一度お試しください。';
+
+/**
+ * 走査の進捗を「N件中M件」の文言にする。
+ *
+ * @param progress - 総数と処理済み件数。
+ * @returns 進捗を表す日本語の文言。
+ */
+export function formatPhotoLibrarySyncProgress(progress: { totalAssetCount: number; processedAssetCount: number }): string {
+  return `${progress.totalAssetCount}件中${progress.processedAssetCount}件`;
+}
+
 /** 設定画面の不具合レポート項目の説明文。 */
 export const CRASH_REPORTING_SETTING_DESCRIPTION =
   'アプリが固まったり、落ちたりしたときなどの不具合の記録を開発者に自動で送ります。あなたの位置情報や移動記録など、あなたを特定できてしまう情報は送りません。有効にしておくと不具合改善が早くなります。';

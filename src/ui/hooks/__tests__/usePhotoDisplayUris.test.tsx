@@ -139,6 +139,73 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
     expect(resolvePhotoDisplayUriMap).toHaveBeenCalledTimes(2);
   });
 
+  it('リセット前に始まった解決の結果は反映しない', async () => {
+    let resolvePendingRequest: (uris: Map<string, string | null>) => void = () => undefined;
+    (resolvePhotoDisplayUriMap as jest.Mock).mockReturnValue(
+      new Promise<Map<string, string | null>>((resolve) => {
+        resolvePendingRequest = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => usePhotoDisplayUris());
+
+    act(() => {
+      result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
+    });
+
+    // 解決の途中で「ライブラリを再読み込み」が完了し、全件を捨てる
+    act(() => {
+      result.current.resetPhotoDisplayUris();
+    });
+
+    // リセット後に古い解決が返る。反映すると削除済み写真のURIがMapへ復活してしまう
+    await act(async () => {
+      resolvePendingRequest(new Map([['photo-1', 'file:///tmp/photo-1.jpg']]));
+    });
+    await flushPromises();
+
+    expect(result.current.resolvedPhotoUris.size).toBe(0);
+  });
+
+  it('リセット前に始まった解決が失敗しても、リセット後の状態を壊さない', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    let rejectPendingRequest: (error: Error) => void = () => undefined;
+    (resolvePhotoDisplayUriMap as jest.Mock).mockReturnValueOnce(
+      new Promise<Map<string, string | null>>((_resolve, reject) => {
+        rejectPendingRequest = reject;
+      }),
+    );
+
+    const { result } = renderHook(() => usePhotoDisplayUris());
+
+    act(() => {
+      result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
+    });
+    act(() => {
+      result.current.resetPhotoDisplayUris();
+    });
+
+    // リセット後の要求はリセット前の失敗に巻き込まれず、そのまま解決できる
+    (resolvePhotoDisplayUriMap as jest.Mock).mockResolvedValue(new Map([['photo-1', 'file:///tmp/photo-1.jpg']]));
+    await act(async () => {
+      result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
+    });
+    await act(async () => {
+      rejectPendingRequest(new Error('native module unavailable'));
+    });
+    await flushPromises();
+
+    expect(result.current.resolvedPhotoUris.get('photo-1')).toBe('file:///tmp/photo-1.jpg');
+
+    await act(async () => {
+      result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
+    });
+    await flushPromises();
+
+    // リセット前の失敗が「要求済み」の記録まで巻き戻すと、解決済みの写真を無駄に問い合わせ直す
+    expect(resolvePhotoDisplayUriMap).toHaveBeenCalledTimes(2);
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
   });

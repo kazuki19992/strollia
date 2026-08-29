@@ -35,6 +35,14 @@ export function usePhotoDisplayUris(): PhotoDisplayUriState {
    * 「問い合わせたかどうか」は描画に影響しない実行時の記録であり、更新で再レンダーする必要がないため。
    */
   const requestedAssetIdsRef = useRef<Set<string>>(new Set());
+  /**
+   * リセットで進む解決の世代。
+   *
+   * **リセットは解決の途中でも起こる。** 「ライブラリを再読み込み」の完了時に全件を捨てるが、
+   * それ以前に始まった `resolvePhotoDisplayUriMap` の解決はあとから返ってくる。世代を見ずに反映すると、
+   * 削除済み写真のURIがリセット直後のMapへ復活してしまう。リセット前に始まった解決は結果ごと捨てる。
+   */
+  const resolveGenerationRef = useRef(0);
 
   const requestPhotoDisplayUris = useCallback((photos: readonly MapPhoto[]): void => {
     const pendingPhotos = photos.filter((photo) => photo.uri === null && !requestedAssetIdsRef.current.has(photo.id));
@@ -47,8 +55,15 @@ export function usePhotoDisplayUris(): PhotoDisplayUriState {
       requestedAssetIdsRef.current.add(photo.id);
     }
 
+    const generation = resolveGenerationRef.current;
+
     resolvePhotoDisplayUriMap(pendingPhotos)
       .then((resolved) => {
+        // リセット済みなら「要求済み」の記録もMapもすでに作り直されている。触れてはいけない
+        if (resolveGenerationRef.current !== generation) {
+          return;
+        }
+
         for (const [assetId, uri] of resolved) {
           // 解決失敗は一時的なことが多いので記録を消し、次の要求で再試行させる
           if (uri === null) {
@@ -62,6 +77,10 @@ export function usePhotoDisplayUris(): PhotoDisplayUriState {
         // 解決できないこと自体は表示を止める理由にならない(画像なしのマーカーとして描ける)
         console.warn('Failed to resolve photo display uris:', error);
 
+        if (resolveGenerationRef.current !== generation) {
+          return;
+        }
+
         for (const photo of pendingPhotos) {
           requestedAssetIdsRef.current.delete(photo.id);
         }
@@ -69,6 +88,7 @@ export function usePhotoDisplayUris(): PhotoDisplayUriState {
   }, []);
 
   const resetPhotoDisplayUris = useCallback((): void => {
+    resolveGenerationRef.current += 1;
     requestedAssetIdsRef.current = new Set();
     setResolvedPhotoUris(new Map());
     // 削除された写真の古いサムネイルを表示し続けないよう、モジュール側のキャッシュも捨てる

@@ -11,6 +11,7 @@ import { FirstLaunchTutorialDialog } from '@/ui/components/FirstLaunchTutorialDi
 import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
 import { PhotoLibrarySyncDialog } from '@/ui/components/PhotoLibrarySyncDialog';
 import { PhotoPreviewModals } from '@/ui/components/PhotoPreviewModals';
+import { PhotoUnavailableDialog } from '@/ui/components/PhotoUnavailableDialog';
 import { PremiumPaywallModal } from '@/ui/components/PremiumPaywallModal';
 import { TopToast } from '@/ui/components/TopToast';
 import { AppStateProvider, useAppState } from '@/ui/state/AppStateProvider';
@@ -149,6 +150,17 @@ function RootLayoutContent(): React.ReactElement {
       />
 
       <GpxImportProgressDialog visible={s.isProcessingGpxImport} styles={s.styles} theme={s.theme} />
+
+      <PhotoUnavailableDialog
+        reason={s.photoUnavailableReason}
+        styles={s.styles}
+        onClose={s.dismissPhotoUnavailableDialog}
+        onReloadPhotoLibrary={() => {
+          s.reloadPhotoLibraryFromUnavailableDialog().catch((error: unknown) => {
+            console.warn('Failed to reload photo library from unavailable dialog:', error);
+          });
+        }}
+      />
 
       <PhotoLibrarySyncDialog visible={s.isSyncingPhotoLibrary} progress={s.photoLibrarySyncProgress} styles={s.styles} />
     </>

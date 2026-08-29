@@ -67,6 +67,32 @@ export function formatPhotoLibrarySyncProgress(progress: { totalAssetCount: numb
   return `${progress.totalAssetCount}件中${progress.processedAssetCount}件`;
 }
 
+/** 写真ライブラリを全件読み込み直す操作のラベル。設定画面と削除済み写真の案内で共有する。 */
+export const PHOTO_LIBRARY_RELOAD_LABEL = 'ライブラリを再読み込み';
+
+/** 削除済みと判定できた写真を開いたときのタイトル。 */
+export const PHOTO_DELETED_DIALOG_TITLE = '削除済み写真';
+
+/**
+ * 削除済みと判定できた写真を開いたときのメッセージ。
+ *
+ * 断定的な言い方をするのは、`isPhotoAssetAvailableAsync` が false を返した
+ * (=写真ライブラリに存在しないと確認できた)場合だけである(設計書 §4.5)。
+ */
+export const PHOTO_DELETED_DIALOG_MESSAGE =
+  'この写真は削除されているようです。写真ライブラリと同期してください。同期にはインターネットに繋がった状態で行ってください。';
+
+/** 写真は存在するが画像を取得できないときのタイトル。 */
+export const PHOTO_UNAVAILABLE_DIALOG_TITLE = '写真を表示できません';
+
+/**
+ * 写真は存在するが画像を取得できないときのメッセージ。
+ *
+ * 再読み込みでは解決しない状況なので、削除済みの案内と文言も導線も分ける(設計書 §4.5)。
+ */
+export const PHOTO_UNAVAILABLE_DIALOG_MESSAGE =
+  'この写真の本体が端末にありません。iCloud からダウンロードするには、インターネットに繋がった状態でしばらく待ってから再度お試しください。';
+
 /** 設定画面の不具合レポート項目の説明文。 */
 export const CRASH_REPORTING_SETTING_DESCRIPTION =
   'アプリが固まったり、落ちたりしたときなどの不具合の記録を開発者に自動で送ります。あなたの位置情報や移動記録など、あなたを特定できてしまう情報は送りません。有効にしておくと不具合改善が早くなります。';

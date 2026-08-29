@@ -68,6 +68,9 @@ jest.mock('@/ui/state/AppStateProvider', () => {
       isProcessingGpxImport: false,
       isSyncingPhotoLibrary: false,
       photoLibrarySyncProgress: null,
+      photoUnavailableReason: null,
+      dismissPhotoUnavailableDialog: jest.fn(),
+      reloadPhotoLibraryFromUnavailableDialog: jest.fn().mockResolvedValue(undefined),
       openPremiumCustomerCenter: jest.fn(),
     }),
   };

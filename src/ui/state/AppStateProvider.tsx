@@ -69,6 +69,7 @@ import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiag
 import { usePhotoDisplayLimitSetting } from '@/ui/hooks/usePhotoDisplayLimitSetting';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
 import { usePhotoPreviewUri } from '@/ui/hooks/usePhotoPreviewUri';
+import { usePhotoUnavailableReason } from '@/ui/hooks/usePhotoUnavailableReason';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
@@ -87,6 +88,7 @@ import type { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import type { RefreshDataResult } from '@/ui/hooks/useLocationRecordingSync';
 import type { AppColorPresetId } from '@/features/customization/colorPresets';
 import type { UserLocationIconId } from '@/features/customization/customizationOptions';
+import type { PhotoUnavailableReason } from '@/ui/hooks/usePhotoUnavailableReason';
 import type { PhotoDisplayLimitId } from '@/features/settings/photoDisplayLimit';
 import { hasEnabledDevelopmentFlags } from '@/config/developmentFlags';
 
@@ -248,6 +250,12 @@ export type AppStateContextValue = {
   photoLibrarySyncProgress: PhotoScanProgress | null;
   /** 写真ライブラリの全件再読み込みを開始する。 */
   startPhotoLibrarySync: () => Promise<void>;
+  /** 拡大表示で画像を出せなかった理由。案内不要な場合はnull。 */
+  photoUnavailableReason: PhotoUnavailableReason | null;
+  /** 写真を表示できない案内を閉じる。 */
+  dismissPhotoUnavailableDialog: () => void;
+  /** 削除済み写真の案内から全件再読み込みを実行し、完了後にプレビューを閉じる。 */
+  reloadPhotoLibraryFromUnavailableDialog: () => Promise<void>;
   /**
    * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
    *
@@ -727,6 +735,26 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const { isSyncingPhotoLibrary, photoLibrarySyncProgress, startPhotoLibrarySync } = usePhotoLibrarySync({
     onCompleted: handlePhotoLibrarySyncCompleted,
   });
+
+  // 画像を出せなかった原因を存在確認で切り分け、削除済みと取得不可を出し分ける(設計書 §4.5)。
+  const { photoUnavailableReason, dismissPhotoUnavailableDialog } = usePhotoUnavailableReason({
+    photo: resolvedSelectedPhoto,
+    previewUri: selectedPhotoPreviewUri,
+    isLoadingPreview: isSelectedPhotoPreviewLoading,
+  });
+
+  /**
+   * 削除済み写真の案内から全件再読み込みを実行し、終わったら裏のプレビューを閉じる。
+   *
+   * 削除された写真を表示し続けないための後始末である。走査が失敗した場合も閉じる。
+   * どちらにせよその写真は表示できず、壊れたプレビューを残しておく意味がないため。
+   */
+  const reloadPhotoLibraryFromUnavailableDialog = useCallback(async (): Promise<void> => {
+    dismissPhotoUnavailableDialog();
+    await startPhotoLibrarySync();
+    setSelectedPhoto(null);
+    setSelectedPhotoCluster(null);
+  }, [dismissPhotoUnavailableDialog, startPhotoLibrarySync]);
 
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
@@ -1258,6 +1286,9 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     isSyncingPhotoLibrary,
     photoLibrarySyncProgress,
     startPhotoLibrarySync,
+    photoUnavailableReason,
+    dismissPhotoUnavailableDialog,
+    reloadPhotoLibraryFromUnavailableDialog,
     photoScanMetricsLines,
     updateShowPhotosOnMap,
     selectedPhoto: resolvedSelectedPhoto,

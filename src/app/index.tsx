@@ -60,6 +60,8 @@ export default function MapRoute(): React.ReactElement {
           isUpdatingPhotoSetting={s.isUpdatingPhotoSetting}
           photoClusters={s.photoClusters}
           activeStayPlaces={s.activeStayPlaces}
+          hasStayPlaces={s.stayPlaces.length > 0}
+          showStayPlacesOnMap={s.showStayPlacesOnMap}
           hasAnyLocationPoints={s.hasAnyLocationPoints}
           hasRequiredPermission={s.hasRequiredPermission}
           shouldOpenSettingsForPermission={s.shouldOpenSettingsForPermission}
@@ -84,6 +86,7 @@ export default function MapRoute(): React.ReactElement {
           onOpenMonthlyReport={s.openMonthlyReport}
           onToggleMapType={s.toggleMapType}
           onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
+          onUpdateShowStayPlacesOnMap={s.updateShowStayPlacesOnMap}
           onOpenSettings={s.openSettings}
           onRequestLocationPermission={s.requestLocationPermission}
           onRecenterOnUserLocation={s.recenterOnUserLocation}

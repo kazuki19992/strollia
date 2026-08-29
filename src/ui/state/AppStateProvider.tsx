@@ -33,7 +33,7 @@ import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlaceRecordingService';
 import type { SaveStayPlaceInput, StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { setSetting } from '@/features/settings/settingsRepository';
-import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
+import { CRASH_REPORTING_SETTING_KEY, SHOW_STAY_PLACES_ON_MAP_SETTING_KEY } from '@/ui/appText';
 import {
   applyResolvedPhotoUrisToClusters,
   getPhotoClusterRepresentativePhotos,
@@ -217,6 +217,10 @@ export type AppStateContextValue = {
   recenterOnUserLocation: () => void;
   /** 地図タイプを切り替える。 */
   toggleMapType: () => void;
+  /** 地図上に滞在場所を表示するかどうか。 */
+  showStayPlacesOnMap: boolean;
+  /** 滞在場所の地図表示設定を更新する。 */
+  updateShowStayPlacesOnMap: (show: boolean) => Promise<void>;
 
   // 訪問グリッド
   /** 訪問済みグリッドセル一覧。 */
@@ -527,6 +531,13 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const screenMode = currentScreenMode ?? internalScreenMode;
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [crashReportingEnabled, setCrashReportingEnabledState] = useState(true);
+  const [showStayPlacesOnMap, setShowStayPlacesOnMap] = useState(true);
+  /** SQLiteへの保存に成功した最後の滞在場所表示設定。 */
+  const persistedShowStayPlacesOnMapRef = useRef(true);
+  /** SQLiteへの滞在場所表示設定の書き込みを要求順に実行するチェーン。 */
+  const stayPlaceMapVisibilityWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
+  /** 保存失敗時に古い要求が最新UIを巻き戻さないための連番。 */
+  const stayPlaceMapVisibilityRequestIdRef = useRef(0);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
   const [gpxImportProgressStage, setGpxImportProgressStage] = useState<GpxImportProgressStage>('selecting');
@@ -927,6 +938,38 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     [keepScreenAwake],
   );
 
+  /** 起動時に読み込んだ滞在場所表示設定をUIと保存済み値へ反映する。 */
+  const initializeShowStayPlacesOnMap = useCallback((show: boolean): void => {
+    persistedShowStayPlacesOnMapRef.current = show;
+    setShowStayPlacesOnMap(show);
+  }, []);
+
+  /** 滞在場所アイコンの表示設定をUI状態とSQLiteへ要求順に反映する。 */
+  const updateShowStayPlacesOnMap = useCallback(async (show: boolean): Promise<void> => {
+    const requestId = stayPlaceMapVisibilityRequestIdRef.current + 1;
+    stayPlaceMapVisibilityRequestIdRef.current = requestId;
+    setShowStayPlacesOnMap(show);
+
+    const queuedWrite = stayPlaceMapVisibilityWriteQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        await setSetting(SHOW_STAY_PLACES_ON_MAP_SETTING_KEY, show);
+        persistedShowStayPlacesOnMapRef.current = show;
+      });
+    stayPlaceMapVisibilityWriteQueueRef.current = queuedWrite;
+
+    try {
+      await queuedWrite;
+    } catch (error: unknown) {
+      console.warn('Failed to persist stay place map visibility setting:', error);
+      if (requestId === stayPlaceMapVisibilityRequestIdRef.current) {
+        const rollbackValue = persistedShowStayPlacesOnMapRef.current;
+        setShowStayPlacesOnMap(rollbackValue);
+      }
+      throw error;
+    }
+  }, []);
+
   useAppInitialization({
     initializePremiumAccess,
     applySavedIconSettings,
@@ -939,6 +982,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     snapshotPremiumAccessUpdateVersion,
     setKeepScreenAwake,
     setCrashReportingEnabled: applyCrashReportingSetting,
+    setShowStayPlacesOnMap: initializeShowStayPlacesOnMap,
     setMessage,
     setIsWhileInUseToastVisible,
     setIsReady,
@@ -1304,6 +1348,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     handleMapReady,
     recenterOnUserLocation,
     toggleMapType,
+    showStayPlacesOnMap,
+    updateShowStayPlacesOnMap,
     visitedGridCells,
     gridOverlayOpacity,
     showPhotosOnMap,

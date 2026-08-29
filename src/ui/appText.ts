@@ -32,6 +32,15 @@ export const STAY_PLACES_SETTING_LABEL = '滞在場所';
 export const STAY_PLACES_SETTING_DESCRIPTION =
   '登録した場所の周辺ではGPSの揺れを抑え、共有するルートから指定した範囲を隠せます。無料版では最初に登録した1か所を使えます。';
 
+/** 滞在場所のマップ表示設定をSQLiteへ保存するキー。 */
+export const SHOW_STAY_PLACES_ON_MAP_SETTING_KEY = 'showStayPlacesOnMap';
+
+/** 設定画面とマップ表示設定で共通利用する滞在場所表示ラベル。 */
+export const SHOW_STAY_PLACES_ON_MAP_LABEL = 'マップ上に滞在場所を表示';
+
+/** 滞在場所表示設定の説明文。 */
+export const SHOW_STAY_PLACES_ON_MAP_DESCRIPTION = '登録した滞在場所のアイコンをマップ上に表示します。';
+
 /**
  * 地図の背後で写真ライブラリの差分走査が動いていることを知らせる文言。
  *

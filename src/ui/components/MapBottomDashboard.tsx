@@ -8,6 +8,7 @@ import { useState } from 'react';
 import type { AreaLabel } from '@/ui/areaName';
 import type { AppStyles } from '@/ui/appStyles';
 import type { AppTheme } from '@/theme/theme';
+import { SHOW_STAY_PLACES_ON_MAP_DESCRIPTION, SHOW_STAY_PLACES_ON_MAP_LABEL } from '@/ui/appText';
 import {
   DASHBOARD_BASE_TEXT,
   FIXED_MAP_UI_TEXT_PROPS,
@@ -66,6 +67,10 @@ export type MapBottomDashboardProps = {
   showPhotosOnMap: boolean;
   /** 写真表示設定を保存中か。 */
   isUpdatingPhotoSetting: boolean;
+  /** 滞在場所が1件以上登録されているか。 */
+  hasStayPlaces: boolean;
+  /** 滞在場所アイコンを地図に表示するか。 */
+  showStayPlacesOnMap: boolean;
   /** 現在地へ戻るハンドラ。 */
   onRecenterOnUserLocation: () => void;
   /** 日別ログ画面を開くハンドラ。 */
@@ -80,6 +85,8 @@ export type MapBottomDashboardProps = {
   onToggleMapType: () => void;
   /** 写真表示設定更新ハンドラ。 */
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
+  /** 滞在場所表示設定更新ハンドラ。 */
+  onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
 };
 
 /** マップ下部の速度計・距離計・画面遷移操作を描画する。 */
@@ -95,6 +102,8 @@ export function MapBottomDashboard({
   currentAreaLabel,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
+  hasStayPlaces,
+  showStayPlacesOnMap,
   onRecenterOnUserLocation,
   onOpenDailyLogs,
   onOpenAchievements,
@@ -102,6 +111,7 @@ export function MapBottomDashboard({
   onOpenSettings,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
+  onUpdateShowStayPlacesOnMap,
 }: MapBottomDashboardProps) {
   const [isMapDisplayPanelVisible, setIsMapDisplayPanelVisible] = useState(false);
   const { width } = ReactNative.useWindowDimensions();
@@ -267,6 +277,32 @@ export function MapBottomDashboard({
                 value={showPhotosOnMap}
               />
             </View>
+            {hasStayPlaces ? (
+              <View style={styles.mapDisplayPhotoRow}>
+                <View style={styles.mapDisplayPhotoTextColumn}>
+                  <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoTitle}>
+                    {SHOW_STAY_PLACES_ON_MAP_LABEL}
+                  </Text>
+                  <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoDescription}>
+                    {SHOW_STAY_PLACES_ON_MAP_DESCRIPTION}
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel={SHOW_STAY_PLACES_ON_MAP_LABEL}
+                  onValueChange={(enabled) => {
+                    onUpdateShowStayPlacesOnMap(enabled).catch((error: unknown) => {
+                      Alert.alert(
+                        '滞在場所表示設定失敗',
+                        error instanceof Error ? error.message : '滞在場所表示設定を保存できませんでした。',
+                      );
+                    });
+                  }}
+                  trackColor={{ false: '#767676', true: '#30d158' }}
+                  thumbColor="#ffffff"
+                  value={showStayPlacesOnMap}
+                />
+              </View>
+            ) : null}
           </View>
         )}
       </View>

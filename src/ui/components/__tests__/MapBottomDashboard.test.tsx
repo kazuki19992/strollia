@@ -58,6 +58,8 @@ function createProps() {
     currentAreaLabel: { primary: '船橋市', secondary: '行田' },
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
+    hasStayPlaces: true,
+    showStayPlacesOnMap: true,
     onRecenterOnUserLocation: jest.fn(),
     onOpenDailyLogs: jest.fn(),
     onOpenAchievements: jest.fn(),
@@ -65,6 +67,7 @@ function createProps() {
     onOpenSettings: jest.fn(),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
+    onUpdateShowStayPlacesOnMap: jest.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -125,6 +128,29 @@ describe('マップ下部ダッシュボード', () => {
     expect(screen.getByText('標準マップ')).toBeTruthy();
     expect(screen.getByText('航空写真')).toBeTruthy();
     expect(screen.getByText('マップ上に写真を表示')).toBeTruthy();
+    expect(screen.getByText('マップ上に滞在場所を表示')).toBeTruthy();
+  });
+
+  test('滞在場所がない場合は表示設定パネルに滞在場所表示設定を出さない', () => {
+    render(<MapBottomDashboard {...createProps()} hasStayPlaces={false} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    expect(screen.queryByText('マップ上に滞在場所を表示')).toBeNull();
+  });
+
+  test('表示設定パネルから滞在場所表示設定を切り替える', () => {
+    const props = createProps();
+    render(<MapBottomDashboard {...props} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+    fireEvent(screen.getByLabelText('マップ上に滞在場所を表示'), 'valueChange', false);
+
+    expect(props.onUpdateShowStayPlacesOnMap).toHaveBeenCalledWith(false);
   });
 
   test('地図種別の選択中バッジはViewで装飾しTextは文字だけ描画する', () => {

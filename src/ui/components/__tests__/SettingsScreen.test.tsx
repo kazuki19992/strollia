@@ -72,6 +72,8 @@ function createProps() {
     mapType: 'standard' as const,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
+    hasStayPlaces: true,
+    showStayPlacesOnMap: true,
     isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
     revenueCatAppUserId: null as string | null,
@@ -95,6 +97,7 @@ function createProps() {
     onUpdateCrashReportingEnabled: jest.fn().mockResolvedValue(undefined),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
+    onUpdateShowStayPlacesOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
     selectedAppColorPresetId: 'matcha' as AppColorPresetId,
     onUpdateAppColorPreset: jest.fn(),
@@ -149,6 +152,34 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     expect(props.onOpenStayPlaces).toHaveBeenCalledTimes(1);
+  });
+
+  test('滞在場所がある場合は写真関連項目の後かつマップのテーマ直前に滞在場所表示設定を表示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    const texts = screen.UNSAFE_getAllByType(Text).map((node) => node.props.children as unknown);
+    const photoReloadIndex = texts.lastIndexOf(PHOTO_LIBRARY_RELOAD_LABEL);
+    const stayPlaceIndex = texts.indexOf('マップ上に滞在場所を表示');
+    const mapThemeIndex = texts.indexOf('マップのテーマ');
+
+    expect(photoReloadIndex).toBeGreaterThanOrEqual(0);
+    expect(stayPlaceIndex).toBeGreaterThan(photoReloadIndex);
+    expect(mapThemeIndex).toBe(stayPlaceIndex + 2);
+  });
+
+  test('滞在場所がない場合は滞在場所表示設定を表示しない', () => {
+    render(<SettingsScreen {...createProps()} hasStayPlaces={false} />);
+
+    expect(screen.queryByText('マップ上に滞在場所を表示')).toBeNull();
+  });
+
+  test('滞在場所表示設定を切り替える', () => {
+    const props = createProps();
+    render(<SettingsScreen {...props} />);
+
+    fireEvent(screen.getByLabelText('マップ上に滞在場所を表示'), 'valueChange', false);
+
+    expect(props.onUpdateShowStayPlacesOnMap).toHaveBeenCalledWith(false);
   });
 
   test('このアプリについての下にチュートリアルを表示して開ける', () => {

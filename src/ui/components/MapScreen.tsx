@@ -73,6 +73,10 @@ export type MapScreenProps = {
   photoClusters: MapPhotoCluster[];
   /** 現在の契約状態で有効な滞在場所。読込中・失敗時はnull。 */
   activeStayPlaces: StayPlace[] | null;
+  /** 滞在場所が1件以上登録されているか。 */
+  hasStayPlaces: boolean;
+  /** 滞在場所アイコンを地図に表示するか。 */
+  showStayPlacesOnMap: boolean;
   /** GPS記録が1件以上あるか(空状態表示の判定用)。 */
   hasAnyLocationPoints: boolean;
   /** 位置情報権限が揃っているか。 */
@@ -130,6 +134,8 @@ export type MapScreenProps = {
   onToggleMapType: () => void;
   /** 写真表示設定更新ハンドラ。 */
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
+  /** 滞在場所表示設定更新ハンドラ。 */
+  onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
   /** 設定画面を開くハンドラ。 */
   onOpenSettings: () => void;
   /** 位置情報権限要求ハンドラ。 */
@@ -156,6 +162,8 @@ export function MapScreen({
   isUpdatingPhotoSetting,
   photoClusters,
   activeStayPlaces,
+  hasStayPlaces,
+  showStayPlacesOnMap,
   hasAnyLocationPoints,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
@@ -180,6 +188,7 @@ export function MapScreen({
   onOpenMonthlyReport,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
+  onUpdateShowStayPlacesOnMap,
   onOpenSettings,
   onRequestLocationPermission,
   onRecenterOnUserLocation,
@@ -245,9 +254,10 @@ export function MapScreen({
         mapPadding={MAP_PADDING}
       >
         {visitedGridPolygons}
-        {activeStayPlaces?.map((place) => (
-          <StayPlaceMapMarker key={place.id} place={place} styles={styles} onPress={setSelectedStayPlace} />
-        ))}
+        {showStayPlacesOnMap &&
+          activeStayPlaces?.map((place) => (
+            <StayPlaceMapMarker key={place.id} place={place} styles={styles} onPress={setSelectedStayPlace} />
+          ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker
             coordinate={userCoordinate}
@@ -380,6 +390,8 @@ export function MapScreen({
           currentAreaLabel={currentAreaLabel}
           showPhotosOnMap={showPhotosOnMap}
           isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+          hasStayPlaces={hasStayPlaces}
+          showStayPlacesOnMap={showStayPlacesOnMap}
           onRecenterOnUserLocation={onRecenterOnUserLocation}
           onOpenDailyLogs={onOpenDailyLogs}
           onOpenAchievements={onOpenAchievements}
@@ -387,6 +399,7 @@ export function MapScreen({
           onOpenSettings={onOpenSettings}
           onToggleMapType={onToggleMapType}
           onUpdateShowPhotosOnMap={onUpdateShowPhotosOnMap}
+          onUpdateShowStayPlacesOnMap={onUpdateShowStayPlacesOnMap}
         />
       </SafeAreaView>
     </View>

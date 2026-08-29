@@ -31,7 +31,7 @@ jest.mock('react-native-maps', () => {
  * @returns 地図表示用写真。
  */
 function createPhoto(id: string, uri: string | null): MapPhoto {
-  return { id, uri, latitude: 35, longitude: 139, creationTime: 0, width: 100, height: 80 };
+  return { id, uri, storedUri: `ph://${id}`, latitude: 35, longitude: 139, creationTime: 0, width: 100, height: 80 };
 }
 
 /**

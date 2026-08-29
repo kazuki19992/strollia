@@ -34,8 +34,15 @@ import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlace
 import type { SaveStayPlaceInput, StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
-import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
-import type { MapPhoto } from '@/features/photos/photoLibrary';
+import {
+  applyResolvedPhotoUrisToClusters,
+  getPhotoClusterRepresentativePhotos,
+  MapPhotoCluster,
+  paginateMapPhotos,
+} from '@/features/photos/photoClusters';
+import { applyResolvedPhotoUris } from '@/features/photos/photoDisplayUri';
+import type { GeotaggedPhotoScanResult, MapPhoto, PhotoScanProgress } from '@/features/photos/photoLibrary';
+import { createPhotoScanMetricsLines } from '@/features/photos/photoScanMetrics';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
 import { getAppTheme, applyColorPreset } from '@/theme/theme';
@@ -56,9 +63,13 @@ import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyRepor
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
+import { usePhotoDisplayUris } from '@/ui/hooks/usePhotoDisplayUris';
+import { usePhotoLibrarySync } from '@/ui/hooks/usePhotoLibrarySync';
 import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiagnostics';
+import { usePhotoDisplayLimitSetting } from '@/ui/hooks/usePhotoDisplayLimitSetting';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
 import { usePhotoPreviewUri } from '@/ui/hooks/usePhotoPreviewUri';
+import { usePhotoUnavailableReason } from '@/ui/hooks/usePhotoUnavailableReason';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
@@ -77,6 +88,8 @@ import type { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import type { RefreshDataResult } from '@/ui/hooks/useLocationRecordingSync';
 import type { AppColorPresetId } from '@/features/customization/colorPresets';
 import type { UserLocationIconId } from '@/features/customization/customizationOptions';
+import type { PhotoUnavailableReason } from '@/ui/hooks/usePhotoUnavailableReason';
+import type { PhotoDisplayLimitId } from '@/features/settings/photoDisplayLimit';
 import { hasEnabledDevelopmentFlags } from '@/config/developmentFlags';
 import type { GpxImportProgressStage } from '@/ui/components/GpxImportProgressDialog';
 
@@ -218,10 +231,44 @@ export type AppStateContextValue = {
   isUpdatingPhotoSetting: boolean;
   /** 地図上に表示する写真クラスタ一覧。 */
   photoClusters: MapPhotoCluster[];
-  /** 写真読み込み中かどうか。 */
+  /** 保存済み写真(`photo_assets`)の読み込み中かどうか。 */
   isLoadingPhotos: boolean;
+  /**
+   * 背後で写真ライブラリの差分走査が動いているかどうか。
+   *
+   * 走査は表示をブロックしないため、読み込み表示とは分けて「邪魔にならない形」で示す(設計書 §4.2)。
+   */
+  isScanningPhotoLibrary: boolean;
   /** 写真取得エラーメッセージ。 */
   photoErrorMessage: string | null;
+  /** 選択中の「地図に表示する写真」設定。 */
+  photoDisplayLimitId: PhotoDisplayLimitId;
+  /** 「地図に表示する写真」設定を更新する。 */
+  updatePhotoDisplayLimitId: (id: PhotoDisplayLimitId) => Promise<void>;
+  /** 写真ライブラリの全件再読み込み中かどうか(ブロッキングダイアログ表示用)。 */
+  isSyncingPhotoLibrary: boolean;
+  /** 全件再読み込みの進捗。総数が分かる前はnull。 */
+  photoLibrarySyncProgress: PhotoScanProgress | null;
+  /** 写真ライブラリの全件再読み込みを開始する。 */
+  startPhotoLibrarySync: () => Promise<void>;
+  /**
+   * 拡大表示で高解像度を出せなかった理由。案内不要な場合はnull。
+   *
+   * `deleted` はモーダル、`unavailable` は拡大表示の中のインライン案内として出す(設計書 §4.5)。
+   */
+  photoUnavailableReason: PhotoUnavailableReason | null;
+  /** 削除済み写真のモーダルを閉じる。 */
+  dismissPhotoDeletedDialog: () => void;
+  /** 削除済み写真の案内から全件再読み込みを実行し、完了後にプレビューを閉じる。 */
+  reloadPhotoLibraryFromDeletedDialog: () => Promise<void>;
+  /**
+   * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
+   *
+   * **計測用の開発フラグ(`EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS`)が有効なときだけ非nullになる。**
+   * 走査上限の撤廃(Phase 2-c)を実機の実測値で設計するための一時的な導線で、通常のユーザーには
+   * 一切表示しない。
+   */
+  photoScanMetricsLines: string[] | null;
   /** 写真表示設定を更新する。 */
   updateShowPhotosOnMap: (show: boolean) => Promise<void>;
   /** 選択された写真(単体プレビュー用)。 */
@@ -622,23 +669,112 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     const today = toLocalDate(new Date());
     return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
   }, [dailyLogs]);
+  // 表示上限は地図のパン・ズームのたびに読み直さず、UI層で保持した値を検索へ渡す。
+  const { photoDisplayLimitId, photoDisplayLimit, updatePhotoDisplayLimitId } = usePhotoDisplayLimitSetting();
   // 写真の検索範囲もGrid取得と同じく、ユーザー操作中に更新されない gridOverlayRegion を使う。
   const {
     showPhotosOnMap,
     isUpdatingPhotoSetting,
     photos,
     isLoadingPhotos,
+    isScanningPhotoLibrary,
     photoErrorMessage,
+    photoScanMetrics,
     initializePhotoSetting,
     updateShowPhotosOnMap,
-  } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion });
+    refreshPhotosFromCache,
+  } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion, photoDisplayLimit });
+  // 計測フラグが無効なら常にnull(=画面に何も出さない)。判定は createPhotoScanMetricsLines に閉じている
+  const photoScanMetricsLines = useMemo(() => createPhotoScanMetricsLines(photoScanMetrics), [photoScanMetrics]);
   // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
   const photoClusters = usePhotoClusters(photos, visibleRegion);
   // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
   usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, isLoadingPhotos, photos, clusters: photoClusters });
-  const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
+  const { resolvedPhotoUris, requestPhotoDisplayUris, resetPhotoDisplayUris } = usePhotoDisplayUris();
+
+  /**
+   * 地図に画像として出る写真だけ、表示用URIの解決を要求する。
+   *
+   * 対象は「クラスタの代表写真」「開いているクラスタの写真」「拡大表示中の写真」の3つに限る。
+   * ビューポート検索の結果を全件解決すると、`+187` のクラスタで188枚ぶん書き出すことになる
+   * (設計書 §4.8)。要求は解決済み・要求済みの写真を内部で除くため、重複して呼んでよい。
+   *
+   * 解決前の写真は `uri: null` としてプレースホルダで描かれる。これは画像を取得できない写真の
+   * 既存の見せ方と同じなので、解決が届くまでの見た目は破綻しない。
+   */
+  useEffect(() => {
+    requestPhotoDisplayUris(getPhotoClusterRepresentativePhotos(photoClusters));
+  }, [photoClusters, requestPhotoDisplayUris]);
+
+  useEffect(() => {
+    requestPhotoDisplayUris(selectedPhotoCluster?.photos ?? []);
+  }, [requestPhotoDisplayUris, selectedPhotoCluster]);
+
+  useEffect(() => {
+    requestPhotoDisplayUris(selectedPhoto === null ? [] : [selectedPhoto]);
+  }, [requestPhotoDisplayUris, selectedPhoto]);
+
+  const resolvedPhotoClusters = useMemo(
+    () => applyResolvedPhotoUrisToClusters(photoClusters, resolvedPhotoUris),
+    [photoClusters, resolvedPhotoUris],
+  );
+  const selectedPhotoClusterPages = useMemo(
+    () => paginateMapPhotos(applyResolvedPhotoUris(selectedPhotoCluster?.photos ?? [], resolvedPhotoUris)),
+    [resolvedPhotoUris, selectedPhotoCluster],
+  );
+  // 拡大表示を開いたあとに解決が届くこともあるため、選択中の写真にも解決結果を反映する。
+  const resolvedSelectedPhoto = useMemo(
+    () => (selectedPhoto === null ? null : applyResolvedPhotoUris([selectedPhoto], resolvedPhotoUris)[0]),
+    [resolvedPhotoUris, selectedPhoto],
+  );
   // 拡大表示のときだけ高解像度を取りに行く(この経路だけiCloudからのダウンロードを許可する)。
-  const { previewUri: selectedPhotoPreviewUri, isLoadingPreview: isSelectedPhotoPreviewLoading } = usePhotoPreviewUri(selectedPhoto);
+  const {
+    previewUri: selectedPhotoPreviewUri,
+    isLoadingPreview: isSelectedPhotoPreviewLoading,
+    hasHighResolutionPreview: hasSelectedPhotoHighResolutionPreview,
+  } = usePhotoPreviewUri(resolvedSelectedPhoto);
+
+  /**
+   * 全件再読み込みの完了後に、地図の表示を実態へ合わせ直す。
+   *
+   * 走査で削除済みの行が消えるため、引き直さないと地図にマーカーだけが残る。
+   * 解決済みの表示用URIも捨てる。削除された写真のサムネイルはキャッシュに残っており、
+   * そのままだと「もう無い写真」の画像が出続けてしまう(設計書 §4.5)。
+   */
+  const handlePhotoLibrarySyncCompleted = useCallback(
+    (result: GeotaggedPhotoScanResult): void => {
+      resetPhotoDisplayUris();
+      // 全件走査でもキャッシュ保存は失敗しうる。その場合だけ走査結果をフォールバックへ張り替える
+      // (保存できていれば null を渡し、差分走査で残っていた古いフォールバックを解除する)
+      refreshPhotosFromCache(result.isCacheSaved ? null : result.photos);
+    },
+    [refreshPhotosFromCache, resetPhotoDisplayUris],
+  );
+
+  const { isSyncingPhotoLibrary, photoLibrarySyncProgress, startPhotoLibrarySync } = usePhotoLibrarySync({
+    onCompleted: handlePhotoLibrarySyncCompleted,
+  });
+
+  // 高解像度を出せなかった原因を存在確認で切り分け、削除済みと取得不可を出し分ける(設計書 §4.5)。
+  const { photoUnavailableReason, dismissPhotoDeletedDialog } = usePhotoUnavailableReason({
+    photo: resolvedSelectedPhoto,
+    hasHighResolutionPreview: hasSelectedPhotoHighResolutionPreview,
+    isLoadingPreview: isSelectedPhotoPreviewLoading,
+  });
+
+  /**
+   * 削除済み写真の案内から全件再読み込みを実行し、終わったら裏のプレビューを閉じる。
+   *
+   * 削除された写真を表示し続けないための後始末である。走査が失敗した場合も閉じる。
+   * どちらにせよその写真は表示できず、壊れたプレビューを残しておく意味がないため。
+   */
+  const reloadPhotoLibraryFromDeletedDialog = useCallback(async (): Promise<void> => {
+    dismissPhotoDeletedDialog();
+    await startPhotoLibrarySync();
+    setSelectedPhoto(null);
+    setSelectedPhotoCluster(null);
+  }, [dismissPhotoDeletedDialog, startPhotoLibrarySync]);
+
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
@@ -1172,11 +1308,22 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     gridOverlayOpacity,
     showPhotosOnMap,
     isUpdatingPhotoSetting,
-    photoClusters,
+    // 地図へ渡すのは表示用URIを反映した方。未解決の写真はプレースホルダで描かれる
+    photoClusters: resolvedPhotoClusters,
     isLoadingPhotos,
+    isScanningPhotoLibrary,
     photoErrorMessage,
+    photoDisplayLimitId,
+    updatePhotoDisplayLimitId,
+    isSyncingPhotoLibrary,
+    photoLibrarySyncProgress,
+    startPhotoLibrarySync,
+    photoUnavailableReason,
+    dismissPhotoDeletedDialog,
+    reloadPhotoLibraryFromDeletedDialog,
+    photoScanMetricsLines,
     updateShowPhotosOnMap,
-    selectedPhoto,
+    selectedPhoto: resolvedSelectedPhoto,
     selectedPhotoPreviewUri,
     isSelectedPhotoPreviewLoading,
     selectedPhotoCluster,

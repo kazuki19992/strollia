@@ -23,7 +23,16 @@ jest.mock('@/features/photos/photoClusters', () => {
  * @returns テスト用MapPhoto。
  */
 function createPhoto(id: string): MapPhoto {
-  return { id, uri: `file:///${id}.jpg`, latitude: 35.0001, longitude: 139.0001, creationTime: 1, width: 100, height: 100 };
+  return {
+    id,
+    uri: `file:///${id}.jpg`,
+    storedUri: `ph://${id}`,
+    latitude: 35.0001,
+    longitude: 139.0001,
+    creationTime: 1,
+    width: 100,
+    height: 100,
+  };
 }
 
 const baseRegion: Region = { latitude: 35, longitude: 139, latitudeDelta: 0.01, longitudeDelta: 0.01 };

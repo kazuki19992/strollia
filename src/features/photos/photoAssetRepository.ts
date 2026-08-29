@@ -1,6 +1,6 @@
 import { db, withExclusiveTransaction, type ExclusiveTransaction } from '@/db/database';
 import type { PhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
-import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
+import { PHOTO_VIEWPORT_SAFETY_LIMIT, type PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
 /**
  * `photo_assets` に保存するジオタグ付き写真のメタデータ。
@@ -151,27 +151,64 @@ export async function savePhotoAssets(records: PhotoAssetRecord[], reconciliatio
   });
 }
 
+/** `getPhotoAssetsInBounds` の絞り込み条件。 */
+export type GetPhotoAssetsInBoundsOptions = {
+  /**
+   * 地図に表示する写真の上限(全体の最新N件)。nullは上限なし。
+   *
+   * **表示範囲ごとのN件ではない。** 設定のラベル(「最新200件」)と挙動を一致させるため、
+   * 先に全体を新しい順でN件に絞り、そのうち表示範囲に入るものだけを返す。
+   */
+  displayLimit?: number | null;
+};
+
 /**
  * 表示範囲に含まれるジオタグ付き写真のメタデータを取得する。
  *
  * 日付変更線をまたぐ範囲では西端 > 東端になり、`BETWEEN` が空集合を返してしまう。
  * そのためまたぐ場合だけ OR 条件へ分岐する(`getGridBoundsForRegion` と同じ考え方)。
  *
+ * 上限は2種類あり、役割が異なる。
+ *
+ * - **表示上限**(`displayLimit`): ユーザー設定。全体の最新N件へ先に絞ってから範囲で絞り込む
+ * - **安全上限**(`PHOTO_VIEWPORT_SAFETY_LIMIT`): 内部固定。設定が「すべて」でも常に掛ける
+ *
+ * `taken_at` は `new Date(ms).toISOString()` 由来のUTC固定長表記なので辞書順=時刻順であり、
+ * NULL(撮影日時不明)は `DESC` で末尾に来る。最新N件の絞り込みで撮影日時不明の写真が
+ * 先頭に紛れ込むことはない。
+ *
  * @param bounds - 検索対象の緯度経度境界。
+ * @param options - 表示上限などの絞り込み条件。
  * @returns 範囲内の写真メタデータ。新しい撮影日時が先頭に来る。
  */
-export async function getPhotoAssetsInBounds(bounds: PhotoViewportBounds): Promise<PhotoAssetRecord[]> {
+export async function getPhotoAssetsInBounds(
+  bounds: PhotoViewportBounds,
+  { displayLimit = null }: GetPhotoAssetsInBoundsOptions = {},
+): Promise<PhotoAssetRecord[]> {
   const longitudeCondition = bounds.crossesAntimeridian ? '(longitude >= ? OR longitude <= ?)' : 'longitude BETWEEN ? AND ?';
+  // 表示上限は範囲で絞る**前**に掛ける。後に掛けると「表示範囲ごとの最新N件」になり設定の意味が変わる
+  const source =
+    displayLimit === null
+      ? 'photo_assets'
+      : `(
+       SELECT * FROM photo_assets
+       ORDER BY taken_at DESC
+       LIMIT ?
+     )`;
+  const displayLimitParams = displayLimit === null ? [] : [displayLimit];
 
   return db.getAllAsync<PhotoAssetRecord>(
     `SELECT ${photoAssetColumns}
-     FROM photo_assets
+     FROM ${source}
      WHERE latitude BETWEEN ? AND ?
        AND ${longitudeCondition}
-     ORDER BY taken_at DESC`,
+     ORDER BY taken_at DESC
+     LIMIT ?`,
+    ...displayLimitParams,
     bounds.minLatitude,
     bounds.maxLatitude,
     bounds.westLongitude,
     bounds.eastLongitude,
+    PHOTO_VIEWPORT_SAFETY_LIMIT,
   );
 }

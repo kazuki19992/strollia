@@ -3,6 +3,7 @@ import { Image, ScrollView } from 'react-native';
 
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import { lightTheme } from '@/theme/theme';
+import { PHOTO_UNAVAILABLE_INLINE_MESSAGE } from '@/ui/appText';
 import { createStyles } from '@/ui/appStyles';
 import { PhotoPreviewModals, PhotoPreviewModalsProps } from '@/ui/components/PhotoPreviewModals';
 
@@ -18,7 +19,7 @@ jest.mock('@expo/vector-icons', () => ({
  * @returns 地図表示用写真。
  */
 function createPhoto(id: string, uri: string | null): MapPhoto {
-  return { id, uri, latitude: 35, longitude: 139, creationTime: 0, width: 100, height: 80 };
+  return { id, uri, storedUri: `ph://${id}`, latitude: 35, longitude: 139, creationTime: 0, width: 100, height: 80 };
 }
 
 const styles = createStyles(lightTheme);
@@ -36,6 +37,7 @@ function renderModals(overrides: Partial<PhotoPreviewModalsProps>) {
     selectedPhoto: null,
     selectedPhotoPreviewUri: null,
     isSelectedPhotoPreviewLoading: false,
+    isSelectedPhotoUnavailable: false,
     styles,
     onSelectPhotoCluster: jest.fn(),
     onSelectPhoto: jest.fn(),
@@ -201,6 +203,40 @@ describe('写真プレビュー PhotoPreviewModals', () => {
     });
 
     expect(screen.queryByLabelText('高解像度の写真を読み込み中')).toBeNull();
+  });
+
+  test('端末に本体が無い写真では、サムネイルを出したまま拡大表示の中で案内する', () => {
+    renderModals({
+      selectedPhoto: createPhoto('asset-1', 'file:///caches/asset-1-512.jpg'),
+      selectedPhotoPreviewUri: 'file:///caches/asset-1-512.jpg',
+      isSelectedPhotoUnavailable: true,
+    });
+
+    // 開くたびにモーダルが出ると邪魔になるため、拡大表示の中へ控えめに出す
+    expect(screen.getByText(PHOTO_UNAVAILABLE_INLINE_MESSAGE)).toBeTruthy();
+    expect(screen.UNSAFE_getByType(Image).props.source).toEqual({ uri: 'file:///caches/asset-1-512.jpg' });
+  });
+
+  test('取得できている写真では案内を出さない', () => {
+    renderModals({
+      selectedPhoto: createPhoto('asset-1', 'file:///caches/asset-1-512.jpg'),
+      selectedPhotoPreviewUri: 'file:///caches/asset-1-preview.jpg',
+      isSelectedPhotoUnavailable: false,
+    });
+
+    expect(screen.queryByText(PHOTO_UNAVAILABLE_INLINE_MESSAGE)).toBeNull();
+  });
+
+  test('案内を出すときは画像を縮め、写真の上に文章を重ねない', () => {
+    renderModals({
+      selectedPhoto: createPhoto('asset-1', 'file:///caches/asset-1-512.jpg'),
+      selectedPhotoPreviewUri: 'file:///caches/asset-1-512.jpg',
+      isSelectedPhotoUnavailable: true,
+    });
+
+    // 案内は画像の下に流し込むため、画像の高さを案内の分だけ譲る必要がある
+    expect(screen.UNSAFE_getByType(Image).props.style).toEqual([styles.photoPreviewImage, styles.photoPreviewShrunkForNotice]);
+    expect(parseFloat(String(styles.photoPreviewShrunkForNotice.height))).toBeLessThan(parseFloat(String(styles.photoPreviewImage.height)));
   });
 
   test('写真が9枚に満たないページも高さが縮まず、余白領域でもスワイプできる', () => {

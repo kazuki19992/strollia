@@ -124,7 +124,7 @@ iCloud にしか本体が無い写真などが該当する。判断基準は「�
 
 なお、サムネイルの見え方は状況で変わる。同一セッション中に削除された写真はメモリキャッシュと書き出し済みファイルが残るためサムネイルが出続け、アプリ再起動後は再解決に失敗して画像なしのプレースホルダになる。どちらでもマーカーは地図に残るため、**拡大表示しようとした時点**で気づける。全件走査の完了時には表示用URIのメモリキャッシュも捨て、削除済み写真の古いサムネイルが残らないようにする。
 
-文言は `src/ui/appText.ts` に集約し、削除済みのモーダルは `src/ui/components/PhotoUnavailableDialog.tsx`、取得不可のインライン案内は `src/ui/components/PhotoPreviewModals.tsx`、判定は `src/ui/hooks/usePhotoUnavailableReason.ts`（高解像度の可否は `src/ui/hooks/usePhotoPreviewUri.ts` の `hasHighResolutionPreview`）が受け持つ。
+文言は `src/ui/appText.ts` に集約し、削除済みのモーダルは `src/ui/components/PhotoDeletedDialog.tsx`、取得不可のインライン案内は `src/ui/components/PhotoPreviewModals.tsx`、判定は `src/ui/hooks/usePhotoUnavailableReason.ts`（高解像度の可否は `src/ui/hooks/usePhotoPreviewUri.ts` の `hasHighResolutionPreview`）が受け持つ。
 
 ## 7. GPSログとの時刻連動
 

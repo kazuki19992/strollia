@@ -213,7 +213,7 @@
 | `src/ui/hooks/usePhotoMapOverlay.ts`                   | キャッシュ先読み、走査の後追い更新                        |
 | `src/ui/hooks/usePhotoLibrarySync.ts`（新設）          | 明示的な全件スキャンの実行と進捗                          |
 | `src/ui/components/PhotoLibrarySyncDialog.tsx`（新設） | ブロッキング進捗ダイアログ                                |
-| `src/ui/components/PhotoUnavailableDialog.tsx`（新設） | 削除済み / 取得不可の案内                                 |
+| `src/ui/components/PhotoDeletedDialog.tsx`（新設）     | 削除済みの案内（モーダル）                                |
 | `src/ui/components/SettingsScreen.tsx`                 | 表示上限ドロップダウン、再読み込み行                      |
 | `src/ui/components/PhotoClusterMarker.tsx` 周辺        | 代表写真だけ解決する経路へ                                |
 | `src/ui/appText.ts`                                    | 文言定数                                                  |

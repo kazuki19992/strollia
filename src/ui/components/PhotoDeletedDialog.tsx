@@ -5,7 +5,7 @@ import { PHOTO_DELETED_DIALOG_MESSAGE, PHOTO_DELETED_DIALOG_TITLE, PHOTO_LIBRARY
 import { ActionPill } from './ActionPill';
 import { Dialog } from './Dialog';
 
-export type PhotoUnavailableDialogProps = {
+export type PhotoDeletedDialogProps = {
   /** 削除済みと確認できた写真を開いているかどうか。 */
   visible: boolean;
   /** 画面共通スタイル。 */
@@ -26,7 +26,7 @@ export type PhotoUnavailableDialogProps = {
  * @param props - 表示可否、スタイル、閉じる処理、再読み込み処理。
  * @returns 案内ダイアログ。
  */
-export function PhotoUnavailableDialog({ visible, styles, onClose, onReloadPhotoLibrary }: PhotoUnavailableDialogProps) {
+export function PhotoDeletedDialog({ visible, styles, onClose, onReloadPhotoLibrary }: PhotoDeletedDialogProps) {
   return (
     <Dialog visible={visible} swipeToClose={false} styles={styles} onClose={onClose}>
       <View style={styles.gifRangeContent}>

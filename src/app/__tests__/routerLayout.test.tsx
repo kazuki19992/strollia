@@ -29,7 +29,7 @@ let mockAppStateOverrides: Record<string, unknown> = {};
 
 /** グローバルモーダルが受け取った props の記録。 */
 const mockPhotoPreviewModalsProps: Record<string, unknown>[] = [];
-const mockPhotoUnavailableDialogProps: Record<string, unknown>[] = [];
+const mockPhotoDeletedDialogProps: Record<string, unknown>[] = [];
 
 // wrapWithSentry はコンポーネントをそのまま返すスタブ
 jest.mock('@/config/sentry', () => ({
@@ -76,7 +76,7 @@ jest.mock('@/ui/state/AppStateProvider', () => {
       isSyncingPhotoLibrary: false,
       photoLibrarySyncProgress: null,
       photoUnavailableReason: null,
-      dismissPhotoUnavailableDialog: jest.fn(),
+      dismissPhotoDeletedDialog: jest.fn(),
       reloadPhotoLibraryFromUnavailableDialog: jest.fn().mockResolvedValue(undefined),
       openPremiumCustomerCenter: jest.fn(),
       ...mockAppStateOverrides,
@@ -96,9 +96,9 @@ jest.mock('@/ui/components/PhotoPreviewModals', () => ({
     return null;
   },
 }));
-jest.mock('@/ui/components/PhotoUnavailableDialog', () => ({
-  PhotoUnavailableDialog: (props: Record<string, unknown>) => {
-    mockPhotoUnavailableDialogProps.push(props);
+jest.mock('@/ui/components/PhotoDeletedDialog', () => ({
+  PhotoDeletedDialog: (props: Record<string, unknown>) => {
+    mockPhotoDeletedDialogProps.push(props);
     return null;
   },
 }));
@@ -109,7 +109,7 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     mockPathname = '/';
     mockProviderProps.length = 0;
     mockPhotoPreviewModalsProps.length = 0;
-    mockPhotoUnavailableDialogProps.length = 0;
+    mockPhotoDeletedDialogProps.length = 0;
     mockAppStateOverrides = {};
     mockPush.mockClear();
     mockBack.mockClear();
@@ -150,7 +150,7 @@ describe('expo-router ルートレイアウト (_layout)', () => {
 
     render(<RootLayout />);
 
-    expect(mockPhotoUnavailableDialogProps.at(-1)?.visible).toBe(true);
+    expect(mockPhotoDeletedDialogProps.at(-1)?.visible).toBe(true);
     expect(mockPhotoPreviewModalsProps.at(-1)?.isSelectedPhotoUnavailable).toBe(false);
   });
 
@@ -160,7 +160,7 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     render(<RootLayout />);
 
     // 未ダウンロードの写真を開くたびにモーダルが出ると操作の邪魔になる
-    expect(mockPhotoUnavailableDialogProps.at(-1)?.visible).toBe(false);
+    expect(mockPhotoDeletedDialogProps.at(-1)?.visible).toBe(false);
     expect(mockPhotoPreviewModalsProps.at(-1)?.isSelectedPhotoUnavailable).toBe(true);
   });
 

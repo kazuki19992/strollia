@@ -38,7 +38,7 @@ export type PhotoUnavailableReasonState = {
   /** 案内すべき理由。案内不要な場合はnull。 */
   photoUnavailableReason: PhotoUnavailableReason | null;
   /** 削除済み写真のモーダルを閉じる。同じ写真では再表示しない。 */
-  dismissPhotoUnavailableDialog: () => void;
+  dismissPhotoDeletedDialog: () => void;
 };
 
 /**
@@ -112,9 +112,9 @@ export function usePhotoUnavailableReason({
     };
   }, [assetId, hasHighResolutionPreview, isLoadingPreview, storedUri]);
 
-  const dismissPhotoUnavailableDialog = useCallback((): void => {
+  const dismissPhotoDeletedDialog = useCallback((): void => {
     setPhotoUnavailableReason(null);
   }, []);
 
-  return { photoUnavailableReason, dismissPhotoUnavailableDialog };
+  return { photoUnavailableReason, dismissPhotoDeletedDialog };
 }

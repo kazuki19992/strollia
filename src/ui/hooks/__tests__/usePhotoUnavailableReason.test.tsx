@@ -128,7 +128,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     expect(result.current.photoUnavailableReason).toBe('unavailable');
 
     await act(async () => {
-      result.current.dismissPhotoUnavailableDialog();
+      result.current.dismissPhotoDeletedDialog();
     });
     await flushPromises();
 
@@ -140,7 +140,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     await flushPromises();
 
     await act(async () => {
-      result.current.dismissPhotoUnavailableDialog();
+      result.current.dismissPhotoDeletedDialog();
     });
     (isPhotoAssetAvailableAsync as jest.Mock).mockResolvedValue(false);
 

@@ -11,7 +11,7 @@ import { FirstLaunchTutorialDialog } from '@/ui/components/FirstLaunchTutorialDi
 import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
 import { PhotoLibrarySyncDialog } from '@/ui/components/PhotoLibrarySyncDialog';
 import { PhotoPreviewModals } from '@/ui/components/PhotoPreviewModals';
-import { PhotoUnavailableDialog } from '@/ui/components/PhotoUnavailableDialog';
+import { PhotoDeletedDialog } from '@/ui/components/PhotoDeletedDialog';
 import { PremiumPaywallModal } from '@/ui/components/PremiumPaywallModal';
 import { TopToast } from '@/ui/components/TopToast';
 import { AppStateProvider, useAppState } from '@/ui/state/AppStateProvider';
@@ -154,10 +154,10 @@ function RootLayoutContent(): React.ReactElement {
       <GpxImportProgressDialog visible={s.isProcessingGpxImport} styles={s.styles} theme={s.theme} />
 
       {/* 削除済みのときだけモーダルで止め、再読み込み導線を出す(設計書 §4.5) */}
-      <PhotoUnavailableDialog
+      <PhotoDeletedDialog
         visible={s.photoUnavailableReason === 'deleted'}
         styles={s.styles}
-        onClose={s.dismissPhotoUnavailableDialog}
+        onClose={s.dismissPhotoDeletedDialog}
         onReloadPhotoLibrary={() => {
           s.reloadPhotoLibraryFromUnavailableDialog().catch((error: unknown) => {
             console.warn('Failed to reload photo library from unavailable dialog:', error);

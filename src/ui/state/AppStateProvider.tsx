@@ -257,7 +257,7 @@ export type AppStateContextValue = {
    */
   photoUnavailableReason: PhotoUnavailableReason | null;
   /** 削除済み写真のモーダルを閉じる。 */
-  dismissPhotoUnavailableDialog: () => void;
+  dismissPhotoDeletedDialog: () => void;
   /** 削除済み写真の案内から全件再読み込みを実行し、完了後にプレビューを閉じる。 */
   reloadPhotoLibraryFromUnavailableDialog: () => Promise<void>;
   /**
@@ -744,7 +744,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   });
 
   // 高解像度を出せなかった原因を存在確認で切り分け、削除済みと取得不可を出し分ける(設計書 §4.5)。
-  const { photoUnavailableReason, dismissPhotoUnavailableDialog } = usePhotoUnavailableReason({
+  const { photoUnavailableReason, dismissPhotoDeletedDialog } = usePhotoUnavailableReason({
     photo: resolvedSelectedPhoto,
     hasHighResolutionPreview: hasSelectedPhotoHighResolutionPreview,
     isLoadingPreview: isSelectedPhotoPreviewLoading,
@@ -757,11 +757,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
    * どちらにせよその写真は表示できず、壊れたプレビューを残しておく意味がないため。
    */
   const reloadPhotoLibraryFromUnavailableDialog = useCallback(async (): Promise<void> => {
-    dismissPhotoUnavailableDialog();
+    dismissPhotoDeletedDialog();
     await startPhotoLibrarySync();
     setSelectedPhoto(null);
     setSelectedPhotoCluster(null);
-  }, [dismissPhotoUnavailableDialog, startPhotoLibrarySync]);
+  }, [dismissPhotoDeletedDialog, startPhotoLibrarySync]);
 
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
@@ -1294,7 +1294,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     photoLibrarySyncProgress,
     startPhotoLibrarySync,
     photoUnavailableReason,
-    dismissPhotoUnavailableDialog,
+    dismissPhotoDeletedDialog,
     reloadPhotoLibraryFromUnavailableDialog,
     photoScanMetricsLines,
     updateShowPhotosOnMap,

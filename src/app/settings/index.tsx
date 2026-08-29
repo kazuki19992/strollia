@@ -46,6 +46,14 @@ export default function SettingsRoute(): React.ReactElement {
       onUpdateCrashReportingEnabled={s.updateCrashReportingEnabled}
       onToggleMapType={s.toggleMapType}
       onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
+      photoDisplayLimitId={s.photoDisplayLimitId}
+      onUpdatePhotoDisplayLimitId={s.updatePhotoDisplayLimitId}
+      isSyncingPhotoLibrary={s.isSyncingPhotoLibrary}
+      onReloadPhotoLibrary={() => {
+        s.startPhotoLibrarySync().catch((error: unknown) => {
+          console.warn('Failed to start photo library sync:', error);
+        });
+      }}
       selectedAppColorPresetId={s.selectedAppColorPresetId}
       onUpdateAppColorPreset={s.updateAppColorPreset}
       onUpdateUserLocationIcon={(iconId) => s.updateUserLocationIcon(iconId, s.premiumAccessState, s.showPremiumLockedMessage)}

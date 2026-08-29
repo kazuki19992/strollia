@@ -70,6 +70,27 @@ export function formatPhotoLibrarySyncProgress(progress: { totalAssetCount: numb
 /** 写真ライブラリを全件読み込み直す操作のラベル。設定画面と削除済み写真の案内で共有する。 */
 export const PHOTO_LIBRARY_RELOAD_LABEL = 'ライブラリを再読み込み';
 
+/** 「地図に表示する写真」設定の見出し。 */
+export const PHOTO_DISPLAY_LIMIT_SETTING_LABEL = '地図に表示する写真';
+
+/**
+ * 「地図に表示する写真」設定の説明文。
+ *
+ * 走査対象ではなく表示枚数の話であることが伝わるようにする。走査は常にライブラリ全体を見ており、
+ * この設定は `photo_assets` から何件を地図へ出すかだけを決める(設計書 §4.1 / §4.6)。
+ */
+export const PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION =
+  'ジオタグ付き写真が多いと地図が重くなることがあります。地図に表示する枚数を新しい順で制限できます。';
+
+/**
+ * 設定画面の「ライブラリを再読み込み」の説明文。
+ *
+ * 通常の起動時は差分だけを見ているため、古い範囲の削除や後から入った古い写真は反映されない。
+ * この操作が何を直すためのものかを伝える(設計書 §4.3 / §4.4)。
+ */
+export const PHOTO_LIBRARY_RELOAD_DESCRIPTION =
+  '写真ライブラリ全体を読み込み直します。削除した写真が地図に残っているときや、あとから取り込んだ古い写真が出てこないときに使ってください。読み込みが終わるまで他の操作はできません。';
+
 /** 削除済みと判定できた写真を開いたときのタイトル。 */
 export const PHOTO_DELETED_DIALOG_TITLE = '削除済み写真';
 

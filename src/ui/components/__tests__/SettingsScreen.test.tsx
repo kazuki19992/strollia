@@ -6,6 +6,13 @@ import { AppColorPresetId } from '@/features/customization/colorPresets';
 import { darkTheme, lightTheme } from '@/theme/theme';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import { DEFAULT_USER_LOCATION_ICON_ID } from '@/features/customization/customizationOptions';
+import { DEFAULT_PHOTO_DISPLAY_LIMIT_ID } from '@/features/settings/photoDisplayLimitOptions';
+import {
+  PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION,
+  PHOTO_DISPLAY_LIMIT_SETTING_LABEL,
+  PHOTO_LIBRARY_RELOAD_DESCRIPTION,
+  PHOTO_LIBRARY_RELOAD_LABEL,
+} from '@/ui/appText';
 import { createStyles } from '@/ui/appStyles';
 
 import { SettingsScreen, getSubscriptionStoreName } from '@/ui/components/SettingsScreen';
@@ -76,6 +83,10 @@ function createProps() {
     isPresentingPremiumCustomerCenter: false,
     isRestoringPremiumPurchases: false,
     selectedUserLocationIconId: DEFAULT_USER_LOCATION_ICON_ID,
+    photoDisplayLimitId: DEFAULT_PHOTO_DISPLAY_LIMIT_ID,
+    isSyncingPhotoLibrary: false,
+    onUpdatePhotoDisplayLimitId: jest.fn().mockResolvedValue(undefined),
+    onReloadPhotoLibrary: jest.fn(),
     onBackToMap: jest.fn(),
     onStartRecording: jest.fn(),
     onRequestLocationPermission: jest.fn(),
@@ -736,5 +747,83 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     expect(alertSpy).toHaveBeenCalledWith('設定保存失敗', '保存に失敗しました');
+  });
+});
+
+describe('設定画面 地図に表示する写真', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('見出しと説明を表示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    expect(screen.getByText(PHOTO_DISPLAY_LIMIT_SETTING_LABEL)).toBeTruthy();
+    expect(screen.getByText(PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION)).toBeTruthy();
+  });
+
+  test('選択中の上限をドロップダウンに表示する', () => {
+    render(<SettingsScreen {...createProps()} photoDisplayLimitId="1000" />);
+
+    expect(screen.getByText('最新1000件')).toBeTruthy();
+  });
+
+  test('選択肢を選ぶと保存処理を呼ぶ', () => {
+    const onUpdatePhotoDisplayLimitId = jest.fn().mockResolvedValue(undefined);
+    render(<SettingsScreen {...createProps()} onUpdatePhotoDisplayLimitId={onUpdatePhotoDisplayLimitId} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('地図に表示する写真を選択'));
+    });
+    act(() => {
+      fireEvent.press(screen.getByLabelText('最新200件'));
+    });
+
+    expect(onUpdatePhotoDisplayLimitId).toHaveBeenCalledWith('200');
+  });
+
+  test('すべての選択肢を提示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('地図に表示する写真を選択'));
+    });
+
+    expect(screen.getByLabelText('すべて')).toBeTruthy();
+    expect(screen.getByLabelText('最新200件')).toBeTruthy();
+    expect(screen.getByLabelText('最新1000件')).toBeTruthy();
+    expect(screen.getByLabelText('最新3000件')).toBeTruthy();
+    expect(screen.getByLabelText('最新10000件')).toBeTruthy();
+  });
+});
+
+describe('設定画面 ライブラリを再読み込み', () => {
+  test('操作と説明を表示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    expect(screen.getByText(PHOTO_LIBRARY_RELOAD_DESCRIPTION)).toBeTruthy();
+    expect(screen.getByLabelText(PHOTO_LIBRARY_RELOAD_LABEL)).toBeTruthy();
+  });
+
+  test('押すと全件再読み込みを開始する', () => {
+    const onReloadPhotoLibrary = jest.fn();
+    render(<SettingsScreen {...createProps()} onReloadPhotoLibrary={onReloadPhotoLibrary} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText(PHOTO_LIBRARY_RELOAD_LABEL));
+    });
+
+    expect(onReloadPhotoLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  test('実行中は再度押せないようにする', () => {
+    render(<SettingsScreen {...createProps()} isSyncingPhotoLibrary />);
+
+    // Pressable の disabled は accessibilityState へマッピングされ props.disabled では検証できない
+    expect(screen.getByLabelText(PHOTO_LIBRARY_RELOAD_LABEL).props.accessibilityState).toMatchObject({ disabled: true });
   });
 });

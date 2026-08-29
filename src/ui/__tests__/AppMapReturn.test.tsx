@@ -1064,7 +1064,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(true);
   });
 
-  test('初回チュートリアル完了時に表示済み設定を保存する', async () => {
+  test('初回チュートリアル完了時に表示済み設定を原子的に保存する', async () => {
     renderRouter('src/app');
     await flushPromises();
 
@@ -1072,7 +1072,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     });
 
-    expect(setSetting).toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
+    expect(setSettings).toHaveBeenCalledWith([{ key: 'firstLaunchTutorialCompleted', value: true }]);
   });
 
   test('初回チュートリアル未完了の場合は通知権限要求を完了後まで遅らせる', async () => {

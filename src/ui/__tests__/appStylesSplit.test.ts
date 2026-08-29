@@ -30,6 +30,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.achievementAutoCloseTrack).toBeDefined();
       expect(styles.firstLaunchTutorialButton).toBeDefined();
       expect(styles.dialogSwipeHint).toBeDefined();
+      expect(styles.appUpdateNoticeDialogScroll).toBeDefined();
+      expect(styles.appUpdateNoticeDialogContent).toBeDefined();
       expect(styles.confettiLayer).toBeDefined();
       expect(styles.confettiPiece).toBeDefined();
     });
@@ -115,6 +117,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.achievementModalCard).toBeDefined();
       expect(styles.confettiLayer).toBeDefined();
       expect(styles.firstLaunchTutorialButton).toBeDefined();
+      expect(styles.appUpdateNoticeDialogScroll).toBeDefined();
+      expect(styles.appUpdateNoticeDialogContent).toBeDefined();
       // mapStyles
       expect(styles.dashboardNavPanel).toBeDefined();
       expect(styles.permissionCard).toBeDefined();
@@ -135,7 +139,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全391キーが存在する（過不足なし）', () => {
+    test('全393キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -144,7 +148,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 画像を取得できない写真のプレースホルダ5キー + 拡大表示の高解像度取得中インジケータ2キー
       //       + 写真一覧の背景(photoClusterBackdrop)1キー + 写真走査の計測表示(photoScanMetricsText)1キー
       //       + 端末未ダウンロード写真のインライン案内3キー + GPXインポートODO表示5キー
-      expect(keys.length).toBe(391);
+      //       + 更新通知ダイアログ2キー
+      expect(keys.length).toBe(393);
     });
   });
 });

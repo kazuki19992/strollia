@@ -34,7 +34,13 @@ import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlace
 import type { SaveStayPlaceInput, StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
-import { MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
+import {
+  applyResolvedPhotoUrisToClusters,
+  getPhotoClusterRepresentativePhotos,
+  MapPhotoCluster,
+  paginateMapPhotos,
+} from '@/features/photos/photoClusters';
+import { applyResolvedPhotoUris } from '@/features/photos/photoDisplayUri';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
 import { createPhotoScanMetricsLines } from '@/features/photos/photoScanMetrics';
 import type { DailyLogSummary } from '@/types/gps';
@@ -57,6 +63,7 @@ import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyRepor
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
+import { usePhotoDisplayUris } from '@/ui/hooks/usePhotoDisplayUris';
 import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiagnostics';
 import { usePhotoDisplayLimitSetting } from '@/ui/hooks/usePhotoDisplayLimitSetting';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
@@ -656,9 +663,46 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const photoClusters = usePhotoClusters(photos, visibleRegion);
   // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
   usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, isLoadingPhotos, photos, clusters: photoClusters });
-  const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
+  const { resolvedPhotoUris, requestPhotoDisplayUris } = usePhotoDisplayUris();
+
+  /**
+   * 地図に画像として出る写真だけ、表示用URIの解決を要求する。
+   *
+   * 対象は「クラスタの代表写真」「開いているクラスタの写真」「拡大表示中の写真」の3つに限る。
+   * ビューポート検索の結果を全件解決すると、`+187` のクラスタで188枚ぶん書き出すことになる
+   * (設計書 §4.8)。要求は解決済み・要求済みの写真を内部で除くため、重複して呼んでよい。
+   *
+   * 解決前の写真は `uri: null` としてプレースホルダで描かれる。これは画像を取得できない写真の
+   * 既存の見せ方と同じなので、解決が届くまでの見た目は破綻しない。
+   */
+  useEffect(() => {
+    requestPhotoDisplayUris(getPhotoClusterRepresentativePhotos(photoClusters));
+  }, [photoClusters, requestPhotoDisplayUris]);
+
+  useEffect(() => {
+    requestPhotoDisplayUris(selectedPhotoCluster?.photos ?? []);
+  }, [requestPhotoDisplayUris, selectedPhotoCluster]);
+
+  useEffect(() => {
+    requestPhotoDisplayUris(selectedPhoto === null ? [] : [selectedPhoto]);
+  }, [requestPhotoDisplayUris, selectedPhoto]);
+
+  const resolvedPhotoClusters = useMemo(
+    () => applyResolvedPhotoUrisToClusters(photoClusters, resolvedPhotoUris),
+    [photoClusters, resolvedPhotoUris],
+  );
+  const selectedPhotoClusterPages = useMemo(
+    () => paginateMapPhotos(applyResolvedPhotoUris(selectedPhotoCluster?.photos ?? [], resolvedPhotoUris)),
+    [resolvedPhotoUris, selectedPhotoCluster],
+  );
+  // 拡大表示を開いたあとに解決が届くこともあるため、選択中の写真にも解決結果を反映する。
+  const resolvedSelectedPhoto = useMemo(
+    () => (selectedPhoto === null ? null : applyResolvedPhotoUris([selectedPhoto], resolvedPhotoUris)[0]),
+    [resolvedPhotoUris, selectedPhoto],
+  );
   // 拡大表示のときだけ高解像度を取りに行く(この経路だけiCloudからのダウンロードを許可する)。
-  const { previewUri: selectedPhotoPreviewUri, isLoadingPreview: isSelectedPhotoPreviewLoading } = usePhotoPreviewUri(selectedPhoto);
+  const { previewUri: selectedPhotoPreviewUri, isLoadingPreview: isSelectedPhotoPreviewLoading } =
+    usePhotoPreviewUri(resolvedSelectedPhoto);
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
@@ -1179,7 +1223,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     gridOverlayOpacity,
     showPhotosOnMap,
     isUpdatingPhotoSetting,
-    photoClusters,
+    // 地図へ渡すのは表示用URIを反映した方。未解決の写真はプレースホルダで描かれる
+    photoClusters: resolvedPhotoClusters,
     isLoadingPhotos,
     isScanningPhotoLibrary,
     photoErrorMessage,
@@ -1187,7 +1232,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     updatePhotoDisplayLimitId,
     photoScanMetricsLines,
     updateShowPhotosOnMap,
-    selectedPhoto,
+    selectedPhoto: resolvedSelectedPhoto,
     selectedPhotoPreviewUri,
     isSelectedPhotoPreviewLoading,
     selectedPhotoCluster,

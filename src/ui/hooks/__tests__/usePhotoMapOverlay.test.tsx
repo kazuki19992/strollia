@@ -27,7 +27,8 @@ const metrics: PhotoScanMetrics = {
 /** テスト用のジオタグ付き写真。 */
 const photo: MapPhoto = {
   id: 'photo-1',
-  uri: 'ph://photo-1',
+  uri: null,
+  storedUri: 'ph://photo-1',
   latitude: 35,
   longitude: 139,
   creationTime: 1,

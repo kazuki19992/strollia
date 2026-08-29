@@ -19,6 +19,7 @@ function createPhoto(id: string): MapPhoto {
   return {
     id,
     uri: `file:///${id}.jpg`,
+    storedUri: `ph://${id}`,
     latitude: 35,
     longitude: 139,
     creationTime: 1,

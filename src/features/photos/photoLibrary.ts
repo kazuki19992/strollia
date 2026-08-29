@@ -12,7 +12,8 @@ import {
 import { getPhotoScanLimitOverride } from '@/config/developmentFlags';
 import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
-import { resolvePhotoDisplayUri } from '@/features/photos/photoDisplayUri';
+import { applyResolvedPhotoUris, resolvePhotoDisplayUriMap } from '@/features/photos/photoDisplayUri';
+import { PHOTO_INFO_CONCURRENCY } from '@/features/photos/photoScanConcurrency';
 import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
 import { getPhotoScanBaselineMs, resolveNextPhotoScanBaselineMs, savePhotoScanBaselineMs } from '@/features/photos/photoScanState';
 import { createPhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
@@ -24,14 +25,32 @@ export type MapPhoto = {
   /** 写真ライブラリ内のアセットID。 */
   id: string;
   /**
-   * サムネイルや全画面表示に使うURI。表示できる画像を用意できなかった場合はnull。
+   * サムネイルや全画面表示に使う表示用URI。**未解決または解決できなかった場合はnull。**
    *
-   * nullを許すのは、iCloudにしか本体が無いなど**サムネイルを取得できない写真が実在する**ため。
-   * かつてはそうした写真を結果から除外していたが、全件失敗する環境(「iPhoneのストレージを最適化」)で
-   * 地図から写真マーカーが丸ごと消えてしまった。写真がそこにあるという情報自体に地図上の価値が
-   * あるため、画像なしのマーカーとして描画する(設計書 §5.2)。
+   * nullを許す理由は2つある。
+   *
+   * 1. iCloudにしか本体が無いなど**サムネイルを取得できない写真が実在する**。かつてはそうした
+   *    写真を結果から除外していたが、全件失敗する環境(「iPhoneのストレージを最適化」)で地図から
+   *    写真マーカーが丸ごと消えてしまった。写真がそこにあるという情報自体に地図上の価値が
+   *    あるため、画像なしのマーカーとして描画する(設計書 §5.2)
+   * 2. 表示用URIの解決は**地図に実際に出るクラスタの代表写真だけ**へ絞っている(設計書 §4.8)。
+   *    ビューポート検索の直後は全件が未解決(null)で、代表になった写真とクラスタを開いた写真だけが
+   *    あとから解決される
+   *
+   * どちらも「画像なしのプレースホルダを描く」という同じ扱いで済むため、状態を分けていない。
    */
   uri: string | null;
+  /**
+   * `photo_assets` に保存した安定URI(iOS: `ph://…`)。表示用URIの解決元。
+   *
+   * **`id` と同じとは限らない。** PR #167 より前に保存された行は `assetId` に `localIdentifier`、
+   * `uri` に `ph://<localIdentifier>` が入っており、両者が食い違う。解決には保存された値の方が
+   * 要るため、`id` とは別に持つ。
+   *
+   * この値は `<Image>` では描画できない(親設計書 §9-2 は検証の結果「できない」で確定した)。
+   * 描画できる形への変換は `resolvePhotoDisplayUriMap` が担う。
+   */
+  storedUri: string;
   /** 写真の緯度。 */
   latitude: number;
   /** 写真の経度。 */
@@ -58,7 +77,7 @@ export type GeotaggedPhotoScanResult = {
    *
    * **`isCacheSaved` が false のときだけ、表示用URIを解決済みでそのまま描画に使える。**
    * true のときはビューポート検索を使うのが正しく、この配列は参照されない前提なので、
-   * `uri` は走査で得た安定URI(iOS: `ph://…`)のままにしてサムネイル書き出しのコストを避ける。
+   * `uri` は未解決(null)のままにしてサムネイル書き出しのコストを避ける。
    */
   photos: MapPhoto[];
   /** 走査結果を `photo_assets` へ保存できたかどうか。falseの場合キャッシュは最新化されていない。 */
@@ -122,22 +141,12 @@ export function resolvePhotoScanLimit(): number | null {
 }
 
 /**
- * 写真ライブラリへの問い合わせ(位置情報の取得 / 表示用URIの解決)の同時実行数。
+ * 写真ライブラリへの問い合わせの同時実行数。
  *
- * 旧APIの `getAssetInfoAsync` はネイティブ実装(iOS)が完了ブロック内でフル解像度画像をメインキュー上で
- * デコードするため、一斉並列で発行するとメインスレッドが長時間ブロックされ App Hang を引き起こしていた
- * (2026-08-08 Sentry 観測: 200並列でメインスレッドが2秒以上停止)。
- * 同時実行数を絞ることでメインキューへ一度に積まれるデコード量を抑える。
- *
- * 新APIの `Asset.getLocation()` は `phAsset.location` を直接読むだけでデコードを伴わないため、
- * この上限は緩められる余地がある。ただし**実測してから**変えるべきなので、新API移行では値を据え置く
- * (設計書 `docs/superpowers/specs/2026-08-28-media-library-next-api-design.md` §4.1)。
- *
- * 表示用URIの解決(`resolvePhotoDisplayUri`)はフル解像度デコードを伴わないが、
- * `PHImageManager.requestImage` はサムネイルのデコードとJPEGの書き出しを行う。
- * ビューポート内の写真ぶんが一斉に走ると同じ轍を踏みうるため、別の値を持つ理由もなく同じ上限を共有する。
+ * 実体は `photoScanConcurrency.ts` にあり、走査と表示用URIの解決で共有する。
+ * 既存の import 経路を保つためここから再エクスポートする。
  */
-export const PHOTO_INFO_CONCURRENCY = 4;
+export { PHOTO_INFO_CONCURRENCY };
 
 /**
  * 写真ライブラリ権限がフルアクセスかどうかを判定する。
@@ -258,12 +267,12 @@ function toFiniteSize(size: number | null): number {
  * 緯度経度はここで数値へ変換する(理由は `toFiniteCoordinate` のJSDocを参照)。
  * 数値として解釈できない座標の写真は地図に置けないため、ジオタグなしと同様に除外する。
  *
- * **`uri` には `AssetMetadata.id`(`ph://<localIdentifier>`)をそのまま使う。**
+ * **`storedUri` には `AssetMetadata.id`(`ph://<localIdentifier>`)をそのまま使う。**
  * 新APIの `Asset.getUri()` は `requestContentEditingInput` を伴い、iCloudにしか本体が無い写真では
  * 失敗する(PR #165 で対処した不具合の原因)。`id` はI/O無しで得られるうえ `photo_assets.uri` に
  * 保存している値と同一なので、走査ではこちらを安定URIとして使う。
  * ここで入る `ph://` は `<Image>` では描画できず、描画できる形への変換は
- * `resolveMapPhotoDisplayUris` が担う(`toMapPhotoFromPhotoAsset` と同じ扱い)。
+ * `resolvePhotoDisplayUriMap` が担う(`toMapPhotoFromPhotoAsset` と同じ扱い)。
  *
  * @param metadata - `Query.exeForMetadata()` が返した軽量メタデータ。
  * @param location - `Asset.getLocation()` の結果。ジオタグが無い場合はnull。
@@ -278,7 +287,9 @@ export function toMapPhoto(metadata: AssetMetadata, location: Location | null): 
 
   return {
     id: metadata.id,
-    uri: metadata.id,
+    // 表示用URIの解決はクラスタの代表写真だけへ絞るため、走査の時点では未解決にしておく
+    uri: null,
+    storedUri: metadata.id,
     latitude: coordinate.latitude,
     longitude: coordinate.longitude,
     // 撮影日時を持たないアセットは iOS に実在する。表示順の基準として 0(最古扱い)へ倒す
@@ -325,19 +336,22 @@ export function toPhotoAssetRecord(metadata: AssetMetadata, location: Location |
  * `photo_assets` に保存済みのメタデータを地図表示用写真へ変換する。
  *
  * **保存済みデータから `MapPhoto` を組み立てる箇所はここ1つに閉じている。**
- * ここで入る `uri` は保存した安定URI(iOS: `ph://…`)であり、**そのままでは `<Image>` で描画できない**
- * (親設計書 §9-2 は検証の結果「できない」で確定した)。描画できる形への変換は
- * `resolveMapPhotoDisplayUris` が担うため、この関数の結果を直接表示へ流してはいけない。
+ * 保存された安定URI(iOS: `ph://…`)は `storedUri` へ移し、`uri`(表示用URI)は未解決の null にする。
+ * `ph://` は**そのままでは `<Image>` で描画できない**(親設計書 §9-2 は検証の結果「できない」で確定した)
+ * ため、`uri` にそのまま入れると白紙のマーカーになってしまう。描画できる形への変換は
+ * `resolvePhotoDisplayUriMap` が担う。
  *
  * @param record - `photo_assets` から取得したメタデータ。
- * @returns 表示用URI未解決の地図表示用写真。
+ * @returns 表示用URI未解決(`uri: null`)の地図表示用写真。
  */
 export function toMapPhotoFromPhotoAsset(record: PhotoAssetRecord): MapPhoto {
   const creationTime = record.takenAt === null ? Number.NaN : Date.parse(record.takenAt);
 
   return {
     id: record.assetId,
-    uri: record.uri,
+    // 表示用URIは未解決。解決はクラスタの代表写真とクラスタを開いた写真だけへ絞る(設計書 §4.8)
+    uri: null,
+    storedUri: record.uri,
     latitude: record.latitude,
     longitude: record.longitude,
     // 撮影日時を持たないアセットは iOS に実在する。表示順の基準として 0(最古扱い)へ倒す
@@ -348,31 +362,16 @@ export function toMapPhotoFromPhotoAsset(record: PhotoAssetRecord): MapPhoto {
 }
 
 /**
- * 保存済みの安定URIを、`<Image>` で描画できる表示用URIへ置き換える。
+ * 表示用URIを解決した写真を返す。
  *
- * **解決できなかった写真も除外せず、`uri: null` のまま返す。** かつては除外していたが、
- * 「iPhoneのストレージを最適化」が有効な端末では解決が全件失敗し、地図から写真マーカーが
- * 丸ごと消えるという最悪の症状になった。画像が無いだけのマーカーとして描画すれば、
- * 少なくとも「そこに写真がある」ことは伝わる(設計書 §5.2)。失敗はキャッシュされないため、
- * 次回の読み込みで画像つきへ復帰できる。
- *
- * 解決を一斉並列で発行しないよう、写真ライブラリへの他の問い合わせと同じ上限で絞る。
+ * 走査結果を `photo_assets` へ保存できなかったときのフォールバック表示にだけ使う。通常の表示経路は
+ * ビューポート検索 → クラスタリング → 代表写真だけ解決、という順序で `resolvePhotoDisplayUriMap` を使う。
  *
  * @param photos - 表示用URI未解決の写真。
  * @returns 表示用URIを解決した写真。解決できなかった写真は `uri: null` になる。入力順と件数を保つ。
  */
 async function resolveMapPhotoDisplayUris(photos: MapPhoto[]): Promise<MapPhoto[]> {
-  const resolvedUris = await mapWithConcurrency(photos, PHOTO_INFO_CONCURRENCY, (photo) =>
-    photo.uri === null ? Promise.resolve(null) : resolvePhotoDisplayUri(photo.id, photo.uri),
-  );
-
-  return photos.map((photo, index) => {
-    const result = resolvedUris[index];
-
-    // 解決処理は本来nullを返して失敗を伝えるが、想定外の例外でも写真を落とさないよう
-    // rejected も「画像なし」として扱う
-    return { ...photo, uri: result.status === 'fulfilled' ? result.value : null };
-  });
+  return applyResolvedPhotoUris(photos, await resolvePhotoDisplayUriMap(photos));
 }
 
 /**
@@ -408,9 +407,11 @@ async function updatePhotoScanBaseline(assets: readonly AssetMetadata[], previou
  * 表示範囲に含まれるジオタグ付き写真を `photo_assets` から読み込む。
  *
  * 写真ライブラリの走査(重いデコードを伴う)は行わず、保存済みメタデータだけを参照する。
- * ただし保存されている `ph://` URIは `<Image>` で描画できないため、表示用URIだけは都度解決する
- * (理由は `resolvePhotoDisplayUri` を参照)。解決結果はセッション内のメモリキャッシュに載るため、
- * パンやズームを繰り返しても同じ写真の解決は1回で済む。
+ *
+ * **表示用URIの解決はここでは行わない。** 保存されている `ph://` URIは `<Image>` で描画できないが、
+ * 解決には1枚ごとにサムネイルの書き出しが伴う。地図に見えるのはクラスタの代表1枚だけなので、
+ * 検索結果の全件を解決すると大半が無駄になる。クラスタリングを終えたUI層が、代表写真と
+ * 開いたクラスタの写真だけを `resolvePhotoDisplayUriMap` で解決する(設計書 §4.8)。
  *
  * 表示上限(「地図に表示する写真」の設定)は呼び出し側から件数として受け取る。設定の読み込みを
  * ここで行うと、地図のパン・ズームのたびに設定読み込みのDBアクセスが増えるため、
@@ -418,12 +419,12 @@ async function updatePhotoScanBaseline(assets: readonly AssetMetadata[], previou
  *
  * @param bounds - 検索対象の緯度経度境界。
  * @param displayLimit - 表示する写真の上限(全体の最新N件)。上限なしの場合はnull。
- * @returns 範囲内の地図表示用写真。表示用URIを解決できなかった写真も `uri: null` で含む。
+ * @returns 範囲内の地図表示用写真。表示用URIは未解決(`uri: null`)。
  */
 export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds, displayLimit: number | null = null): Promise<MapPhoto[]> {
   const records = await getPhotoAssetsInBounds(bounds, { displayLimit });
 
-  return resolveMapPhotoDisplayUris(records.map(toMapPhotoFromPhotoAsset));
+  return records.map(toMapPhotoFromPhotoAsset);
 }
 
 /**

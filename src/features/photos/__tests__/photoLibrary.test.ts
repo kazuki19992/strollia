@@ -197,6 +197,26 @@ function mockScan(metadata: AssetMetadata[], locations: (assetId: string) => Pro
 /** ジオタグ付き写真の位置情報(東京)。 */
 const tokyoLocation = asLocation({ latitude: 35, longitude: 139 });
 
+/**
+ * `photo_assets` の保存済みレコードを組み立てる。
+ *
+ * `uri` は実機(iOS)と同じく `ph://<localIdentifier>` 形式にする。
+ *
+ * @param assetId - アセットID。
+ * @returns 保存済みレコード。
+ */
+function savedRecord(assetId: string): PhotoAssetRecord {
+  return {
+    assetId,
+    latitude: 35,
+    longitude: 139,
+    takenAt: '2026-08-21T00:00:00.000Z',
+    uri: `ph://${assetId}`,
+    width: 100,
+    height: 80,
+  };
+}
+
 describe('写真ライブラリ権限 hasFullPhotoAccess', () => {
   it('フルアクセスが許可されている場合はtrueを返す', () => {
     expect(hasFullPhotoAccess({ granted: true, accessPrivileges: 'all' } as PermissionResponse)).toBe(true);
@@ -212,7 +232,8 @@ describe('地図写真変換 toMapPhoto', () => {
   it('ジオタグがある写真を地図表示用データへ変換する', () => {
     expect(toMapPhoto(createAssetMetadata('asset-1'), tokyoLocation)).toEqual({
       id: 'ph://asset-1',
-      uri: 'ph://asset-1',
+      uri: null,
+      storedUri: 'ph://asset-1',
       latitude: 35,
       longitude: 139,
       creationTime: 1,
@@ -221,10 +242,12 @@ describe('地図写真変換 toMapPhoto', () => {
     });
   });
 
-  it('uriにはAssetMetadata.idのph://をそのまま使う', () => {
+  it('storedUriにはAssetMetadata.idのph://をそのまま使い、表示用URIは未解決にする', () => {
     // `Asset.getUri()` は requestContentEditingInput を伴い、iCloudにしか本体が無い写真で失敗する。
     // 走査ではI/Oの要らない `id` をそのまま安定URIとして使う
-    expect(toMapPhoto(createAssetMetadata('asset-1'), tokyoLocation)?.uri).toBe('ph://asset-1');
+    expect(toMapPhoto(createAssetMetadata('asset-1'), tokyoLocation)?.storedUri).toBe('ph://asset-1');
+    // 表示用URIの解決はマーカーに出す写真だけへ絞るため、走査の時点では解決しない
+    expect(toMapPhoto(createAssetMetadata('asset-1'), tokyoLocation)?.uri).toBeNull();
   });
 
   it('ジオタグがない写真はnullを返す', () => {
@@ -318,10 +341,11 @@ describe('保存済み写真の地図表示変換 toMapPhotoFromPhotoAsset', () 
     };
   }
 
-  it('保存済みの安定したuriを表示用URI解決前の値として持つ', () => {
+  it('保存済みの安定したuriをstoredUriへ移し、表示用URIは未解決にする', () => {
     expect(toMapPhotoFromPhotoAsset(record())).toEqual({
       id: 'asset-1',
-      uri: 'ph://asset-1',
+      uri: null,
+      storedUri: 'ph://asset-1',
       latitude: 35,
       longitude: 139,
       creationTime: Date.parse('2026-08-21T00:00:00.000Z'),
@@ -348,40 +372,21 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
     crossesAntimeridian: false,
   };
 
-  /**
-   * `photo_assets` の保存済みレコードを組み立てる。
-   *
-   * `uri` は実機(iOS)と同じく `ph://<localIdentifier>` 形式にする。
-   *
-   * @param assetId - アセットID。
-   * @returns 保存済みレコード。
-   */
-  function savedRecord(assetId: string): PhotoAssetRecord {
-    return {
-      assetId,
-      latitude: 35,
-      longitude: 139,
-      takenAt: '2026-08-21T00:00:00.000Z',
-      uri: `ph://${assetId}`,
-      width: 100,
-      height: 80,
-    };
-  }
-
   beforeEach(() => {
     jest.clearAllMocks();
     clearPhotoDisplayUriCache();
     mockPhotoThumbnail(async (uri) => `file:///tmp/${uri.replace('ph://', '')}.jpg`);
   });
 
-  it('表示範囲で絞り込んだ保存済み写真を、描画できる表示用URIへ解決して返す', async () => {
+  it('表示範囲で絞り込んだ保存済み写真を、表示用URI未解決のまま返す', async () => {
     (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1')]);
 
     await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
       {
         id: 'asset-1',
-        // ph:// のままでは <Image> が描画できないため file:// へ解決されている必要がある
-        uri: 'file:///tmp/asset-1.jpg',
+        // 地図に見えるのはクラスタの代表1枚だけなので、検索の時点では解決しない(設計書 §4.8)
+        uri: null,
+        storedUri: 'ph://asset-1',
         latitude: 35,
         longitude: 139,
         creationTime: Date.parse('2026-08-21T00:00:00.000Z'),
@@ -393,78 +398,21 @@ describe('表示範囲の写真読み込み loadGeotaggedPhotosInBounds', () => 
     expect(getPhotoAssetsInBounds).toHaveBeenCalledWith(bounds, { displayLimit: null });
   });
 
+  it('検索の時点ではサムネイルを1枚も書き出さない', async () => {
+    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1'), savedRecord('asset-2')]);
+
+    await loadGeotaggedPhotosInBounds(bounds);
+
+    // 「+187」のクラスタでも書き出すのは代表1枚だけにするため、検索では解決を走らせない
+    expect(getPhotoThumbnailAsync).not.toHaveBeenCalled();
+  });
+
   it('表示上限をビューポート検索へ渡す', async () => {
     (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([]);
 
     await loadGeotaggedPhotosInBounds(bounds, 1000);
 
     expect(getPhotoAssetsInBounds).toHaveBeenCalledWith(bounds, { displayLimit: 1000 });
-  });
-
-  it('同じ写真を再度読み込んでも表示用URIの解決は1回しか走らない', async () => {
-    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1')]);
-
-    await loadGeotaggedPhotosInBounds(bounds);
-    await loadGeotaggedPhotosInBounds(bounds);
-
-    expect(getPhotoThumbnailAsync).toHaveBeenCalledTimes(1);
-  });
-
-  it('サムネイルを取得できなかった写真も、画像なし(uri=null)として結果に残す', async () => {
-    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1')]);
-    mockPhotoThumbnail(async () => null);
-
-    // 除外すると「マーカーごと消える」ため、画像が無いだけのマーカーとして表示する
-    await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([expect.objectContaining({ id: 'asset-1', uri: null })]);
-  });
-
-  it('一部の写真だけサムネイルを取得できた場合、取得できた写真は画像あり・できなかった写真は画像なしで返す', async () => {
-    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1'), savedRecord('asset-2')]);
-    mockPhotoThumbnail(async (uri) => (uri === 'ph://asset-1' ? null : 'file:///tmp/asset-2.jpg'));
-
-    await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
-      expect.objectContaining({ id: 'asset-1', uri: null }),
-      expect.objectContaining({ id: 'asset-2', uri: 'file:///tmp/asset-2.jpg' }),
-    ]);
-  });
-
-  it('表示用URIの解決が例外で失敗した写真も、画像なしとして結果に残す', async () => {
-    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue([savedRecord('asset-1'), savedRecord('asset-2')]);
-    mockPhotoThumbnail(async (uri) => {
-      if (uri === 'ph://asset-1') {
-        throw new Error('asset not found');
-      }
-
-      return 'file:///tmp/asset-2.jpg';
-    });
-
-    await expect(loadGeotaggedPhotosInBounds(bounds)).resolves.toEqual([
-      expect.objectContaining({ id: 'asset-1', uri: null }),
-      expect.objectContaining({ id: 'asset-2', uri: 'file:///tmp/asset-2.jpg' }),
-    ]);
-  });
-
-  it('表示用URI解決の同時実行数がPHOTO_INFO_CONCURRENCYを超えない', async () => {
-    const assetCount = 10;
-    (getPhotoAssetsInBounds as jest.Mock).mockResolvedValue(
-      Array.from({ length: assetCount }, (_, index) => savedRecord(`asset-${index}`)),
-    );
-
-    let runningCount = 0;
-    let maxRunningCount = 0;
-    mockPhotoThumbnail(async (uri) => {
-      runningCount += 1;
-      maxRunningCount = Math.max(maxRunningCount, runningCount);
-      await new Promise((resolve) => setTimeout(resolve, 5));
-      runningCount -= 1;
-
-      return `file:///tmp/${uri.replace('ph://', '')}.jpg`;
-    });
-
-    await loadGeotaggedPhotosInBounds(bounds);
-
-    expect(maxRunningCount).toBeLessThanOrEqual(PHOTO_INFO_CONCURRENCY);
-    expect(getPhotoThumbnailAsync).toHaveBeenCalledTimes(assetCount);
   });
 
   it('写真ライブラリの走査は行わない', async () => {
@@ -555,7 +503,9 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
         photos: [
           {
             id: 'ph://asset-1',
-            uri: 'ph://asset-1',
+            // 保存に成功する経路では表示用URIを解決しない(呼び出し側はビューポート検索を使う)
+            uri: null,
+            storedUri: 'ph://asset-1',
             latitude: 35,
             longitude: 139,
             creationTime: 1,
@@ -581,7 +531,8 @@ describe('ジオタグ付き写真読み込み loadGeotaggedPhotos', () => {
     expect(photos).toEqual([
       {
         id: 'ph://asset-1',
-        uri: 'ph://asset-1',
+        uri: null,
+        storedUri: 'ph://asset-1',
         latitude: 35.6812,
         longitude: 139.7671,
         creationTime: 1,

@@ -1,6 +1,7 @@
 import { Region } from 'react-native-maps';
 
-import { MapPhoto } from './photoLibrary';
+import { applyResolvedPhotoUris } from './photoDisplayUri';
+import type { MapPhoto } from './photoLibrary';
 import { coordinateToGridCell, getGridWorldColumnCount } from '@/features/location/grid/gridCell';
 import { distanceMeters } from '@/utils/distance';
 
@@ -259,6 +260,44 @@ export function clusterMapPhotosByRadius(photos: MapPhoto[], clusterRadiusMeters
     longitude: cluster.seed.longitude,
     photos: cluster.photos,
   }));
+}
+
+/**
+ * 各クラスタの代表写真(先頭)だけを取り出す。
+ *
+ * 地図に画像として出るのはクラスタの代表1枚だけである。表示用URIの解決対象をここへ絞ることで、
+ * 解決回数が「画面上のマーカー数」に比例するようになり、ライブラリが何万枚あっても
+ * 表示コストがほぼ一定になる(設計書 §4.8)。
+ *
+ * @param clusters - 地図上のクラスタ一覧。
+ * @returns 各クラスタの代表写真。写真を持たないクラスタは含まない。
+ */
+export function getPhotoClusterRepresentativePhotos(clusters: readonly MapPhotoCluster[]): MapPhoto[] {
+  return clusters.flatMap((cluster) => (cluster.photos.length > 0 ? [cluster.photos[0]] : []));
+}
+
+/**
+ * 解決済みの表示用URIをクラスタ内の写真へ反映する。
+ *
+ * クラスタのID・座標は変えない。マーカーの位置とまとまり方は解決前後で同じであるべきで、
+ * ここが変わるとネイティブ地図側のマーカーが作り直されてしまう。
+ *
+ * 反映する対応が無いときは**入力配列の参照をそのまま返す**。クラスタは参照の同一性でメモ化して
+ * いるため、内容が変わらないのに新しい配列を作ると不要な再描画を招く。
+ *
+ * @param clusters - 反映対象のクラスタ一覧。
+ * @param resolvedUris - アセットID → 表示用URI の対応。
+ * @returns 表示用URIを反映したクラスタ一覧。反映する対応が無い場合は入力そのもの。
+ */
+export function applyResolvedPhotoUrisToClusters(
+  clusters: readonly MapPhotoCluster[],
+  resolvedUris: ReadonlyMap<string, string | null>,
+): MapPhotoCluster[] {
+  if (resolvedUris.size === 0) {
+    return clusters as MapPhotoCluster[];
+  }
+
+  return clusters.map((cluster) => ({ ...cluster, photos: applyResolvedPhotoUris(cluster.photos, resolvedUris) }));
 }
 
 /**

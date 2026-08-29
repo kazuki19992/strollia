@@ -70,6 +70,31 @@ describe('地図に表示する写真の上限設定hook usePhotoDisplayLimitSet
     expect(result.current.photoDisplayLimit).toBe(200);
   });
 
+  it('初期読み込みより先にユーザーが選び直した場合、遅れて届いた初期値で上書きしない', async () => {
+    let resolveInitialLoad: (id: string) => void = () => undefined;
+    (getPhotoDisplayLimitId as jest.Mock).mockReturnValue(
+      new Promise<string>((resolve) => {
+        resolveInitialLoad = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => usePhotoDisplayLimitSetting());
+
+    // 初期読み込みが未完了のうちに設定画面で選び直す
+    await act(async () => {
+      await result.current.updatePhotoDisplayLimitId('200');
+    });
+
+    // 遅れて初期値が返る。ここで上書きすると地図の写真検索にも古い上限が渡ってしまう
+    await act(async () => {
+      resolveInitialLoad('all');
+    });
+    await flushPromises();
+
+    expect(result.current.photoDisplayLimitId).toBe('200');
+    expect(result.current.photoDisplayLimit).toBe(200);
+  });
+
   it('保存に失敗した場合は選択を巻き戻して呼び出し側へ伝える', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (savePhotoDisplayLimitId as jest.Mock).mockRejectedValue(new Error('disk full'));

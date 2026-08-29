@@ -107,7 +107,7 @@ export type GeotaggedPhotoScanResult = {
  * 通常利用で走査コストが見えないようにする。
  */
 export type PhotoScanMode =
-  /** 前回の走査より新しい写真だけを対象にする。起動時・写真表示ON時に自動で走る軽量な走査。 */
+  /** 前回の基準時刻以降の写真を対象にする。起動時・写真表示ON時に自動で走る軽量な走査。 */
   | 'incremental'
   /** ライブラリ全体を対象にする。ユーザーが「ライブラリを再読み込み」を選んだときだけ走る。 */
   | 'full';
@@ -397,7 +397,7 @@ async function resolveMapPhotoDisplayUris(photos: MapPhoto[]): Promise<MapPhoto[
 /**
  * 次回の差分走査の基準時刻を更新する。
  *
- * 走査したアセットの最新の撮影日時を基準にする。差分走査はこの時刻より新しい写真だけを対象にするため、
+ * 走査したアセットの最新の撮影日時を基準にする。差分走査はこの時刻以降の写真を対象にするため、
  * ここを進めることで次回の走査が数件〜数十件で済むようになる。
  *
  * **保存に失敗しても走査そのものは成功として扱う**(ログのみ)。基準時刻を進め損ねても、
@@ -485,8 +485,12 @@ export async function loadGeotaggedPhotos({
   let query = new Query().eq(AssetField.MEDIA_TYPE, MediaType.IMAGE).orderBy({ key: AssetField.CREATION_TIME, ascending: false });
 
   if (scanMode === 'incremental' && baselineMs !== null) {
-    // 基準時刻ちょうどの写真は前回走査済みなので、排他(gt)で除く
-    query = query.gt(AssetField.CREATION_TIME, baselineMs);
+    // **基準時刻ちょうどの写真も含める(gte)。** `creationTime` は一意なカーソルではなく、
+    // バースト撮影では同じ撮影日時の写真が複数枚できる。排他(gt)にすると、基準時刻と同じ撮影日時の
+    // 新規写真(前回の走査より後にライブラリへ入ったもの)が差分走査から永久に外れてしまう。
+    // 境界の写真を毎回1回だけ見直すコストと引き換えに取りこぼしを無くす。保存はUPSERTなので、
+    // 同じ写真を再走査しても副作用は無い(`photoScanWindow.ts` の境界の扱いと同じ考え方)
+    query = query.gte(AssetField.CREATION_TIME, baselineMs);
   }
 
   if (limit !== null) {

@@ -25,8 +25,10 @@ const mockQueryEq = jest.fn();
 const mockQueryOrderBy = jest.fn();
 /** `Query.limit` の呼び出しを記録するスパイ。`limit + 1` のプロービング検証に使う。 */
 const mockQueryLimit = jest.fn();
-/** `Query.gt` の呼び出しを記録するスパイ。差分走査の基準時刻による絞り込みの検証に使う。 */
+/** `Query.gt` の呼び出しを記録するスパイ。差分走査が排他比較へ戻っていないことの検証に使う。 */
 const mockQueryGt = jest.fn();
+/** `Query.gte` の呼び出しを記録するスパイ。差分走査の基準時刻による絞り込みの検証に使う。 */
+const mockQueryGte = jest.fn();
 /** `Query.exeForMetadata` の戻り値を差し替えるスパイ。 */
 const mockExeForMetadata = jest.fn<Promise<AssetMetadata[]>, []>();
 /** `Asset.getLocation` の戻り値を差し替えるスパイ。引数はアセットID。 */
@@ -105,6 +107,12 @@ jest.mock('expo-media-library', () => ({
     /** @returns チェーン用に自分自身。 */
     gt(field: string, value: number) {
       mockQueryGt(field, value);
+      return this;
+    }
+
+    /** @returns チェーン用に自分自身。 */
+    gte(field: string, value: number) {
+      mockQueryGte(field, value);
       return this;
     }
 
@@ -191,6 +199,37 @@ function createAssetMetadata(localIdentifier: string, overrides: Partial<AssetMe
  */
 function mockScan(metadata: AssetMetadata[], locations: (assetId: string) => Promise<Location | null> = async () => null): void {
   mockExeForMetadata.mockImplementation(async () => metadata);
+  mockGetLocation.mockImplementation((assetId) => locations(assetId));
+}
+
+/**
+ * 撮影日時の比較条件を**実際に適用する**走査モック。
+ *
+ * 通常の `mockScan` は条件を無視して固定のメタデータを返すため、境界(基準時刻ちょうど)の
+ * 取りこぼしを検出できない。ここでは実装が組み立てた `gt` / `gte` をそのまま適用し、
+ * OS側の絞り込みを再現する。
+ *
+ * @param metadata - ライブラリに存在する全メタデータ(絞り込み前)。
+ * @param locations - アセットIDから位置情報を引く関数。省略時はジオタグなし。
+ */
+function mockScanWithCreationTimeFilter(
+  metadata: AssetMetadata[],
+  locations: (assetId: string) => Promise<Location | null> = async () => null,
+): void {
+  mockExeForMetadata.mockImplementation(async () => {
+    const exclusiveLowerBound = mockQueryGt.mock.calls.at(-1)?.[1] as number | undefined;
+    const inclusiveLowerBound = mockQueryGte.mock.calls.at(-1)?.[1] as number | undefined;
+
+    return metadata.filter((asset) => {
+      const creationTime = asset.creationTime ?? 0;
+
+      if (exclusiveLowerBound !== undefined && creationTime <= exclusiveLowerBound) {
+        return false;
+      }
+
+      return inclusiveLowerBound === undefined || creationTime >= inclusiveLowerBound;
+    });
+  });
   mockGetLocation.mockImplementation((assetId) => locations(assetId));
 }
 
@@ -1060,16 +1099,36 @@ describe('走査モード loadGeotaggedPhotos', () => {
   it('全件モードでは撮影日時での絞り込みを行わない', async () => {
     await loadGeotaggedPhotos({ mode: 'full' });
 
+    expect(mockQueryGte).not.toHaveBeenCalled();
     expect(mockQueryGt).not.toHaveBeenCalled();
     expect(getPhotoScanBaselineMs).not.toHaveBeenCalled();
   });
 
-  it('差分モードでは基準時刻より新しい写真だけを要求する', async () => {
+  it('差分モードでは基準時刻以降の写真を要求する(境界は包含)', async () => {
     (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(3000);
 
     await expect(loadGeotaggedPhotos({ mode: 'incremental' })).resolves.toEqual(expect.objectContaining({ mode: 'incremental' }));
 
-    expect(mockQueryGt).toHaveBeenCalledWith(AssetField.CREATION_TIME, 3000);
+    expect(mockQueryGte).toHaveBeenCalledWith(AssetField.CREATION_TIME, 3000);
+    // 排他(gt)に戻すと、基準時刻ちょうどの新規写真を差分走査が二度と拾えなくなる
+    expect(mockQueryGt).not.toHaveBeenCalled();
+  });
+
+  it('基準時刻と同じ撮影日時の新規アセットも差分走査で拾う', async () => {
+    (getPhotoScanBaselineMs as jest.Mock).mockResolvedValue(3000);
+    // バースト撮影などで `creationTime` は一意にならない。基準時刻ちょうどの位置に、前回未走査の
+    // 新規写真(asset-new)が入りうる。排他比較だと永久に取りこぼす。
+    // モックは実装が組み立てた比較条件(gt / gte)をそのまま適用し、OS側の絞り込みを再現する
+    mockScanWithCreationTimeFilter(
+      [createAssetMetadata('asset-new', { creationTime: 3000 }), createAssetMetadata('asset-older', { creationTime: 2000 })],
+      async () => tokyoLocation,
+    );
+
+    const result = await loadGeotaggedPhotos({ mode: 'incremental' });
+
+    expect(result.photos.map((photo) => photo.id)).toEqual(['ph://asset-new']);
+    // 再走査した写真の保存はUPSERTなので、境界を含めても重複や上書き事故にはならない
+    expect((savePhotoAssets as jest.Mock).mock.calls[0][0]).toEqual([expect.objectContaining({ assetId: 'ph://asset-new' })]);
   });
 
   it('差分モードでも基準時刻が無い(初回)場合は全件走査へフォールバックする', async () => {
@@ -1077,7 +1136,7 @@ describe('走査モード loadGeotaggedPhotos', () => {
 
     await expect(loadGeotaggedPhotos({ mode: 'incremental' })).resolves.toEqual(expect.objectContaining({ mode: 'full' }));
 
-    expect(mockQueryGt).not.toHaveBeenCalled();
+    expect(mockQueryGte).not.toHaveBeenCalled();
   });
 
   it('差分モードでは走査した範囲だけを突き合わせ対象にする', async () => {

@@ -14,6 +14,14 @@ export type VisitedCellRow = GridCell & {
   visitCount: number;
 };
 
+/** 1つのvisited cellを開放した時刻付きの更新要求。 */
+export type VisitedCellVisit = {
+  /** 開放対象の100mセル。 */
+  cell: GridCell;
+  /** セルを開放したGPS点の記録時刻。 */
+  visitedAt: string;
+};
+
 /** DB列名をアプリ内のcamelCaseプロパティへ揃えるSELECT句。 */
 const visitedCellColumns = `
   cell_id as cellId,
@@ -73,13 +81,28 @@ export async function upsertVisitedCellsInCurrentTransaction(
   visitedAt: string,
   runner: SQLite.SQLiteDatabase = db,
 ): Promise<void> {
-  if (cells.length === 0) {
+  await upsertVisitedCellVisitsInCurrentTransaction([...new Map(cells.map((cell) => [cell.cellId, { cell, visitedAt }])).values()], runner);
+}
+
+/**
+ * 呼び出し元のtransaction内で、時刻付きvisited cell更新をセル単位に集約して保存する。
+ *
+ * GPXインポートのように1トランザクションで多数の点を処理する場合でも、同じセルへの
+ * JS-to-native往復を1回に抑え、visit_countと最初・最後の訪問時刻を失わない。
+ */
+export async function upsertVisitedCellVisitsInCurrentTransaction(
+  visits: VisitedCellVisit[],
+  runner: SQLite.SQLiteDatabase = db,
+): Promise<void> {
+  const aggregatedVisits = aggregateVisits(visits);
+
+  if (aggregatedVisits.length === 0) {
     return;
   }
 
   const now = new Date().toISOString();
 
-  for (const cell of dedupeCells(cells)) {
+  for (const visit of aggregatedVisits) {
     await runner.runAsync(
       `INSERT INTO visited_cells (
         cell_id,
@@ -92,24 +115,58 @@ export async function upsertVisitedCellsInCurrentTransaction(
         source,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 1, 'gps', ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'gps', ?, ?)
       ON CONFLICT(cell_id) DO UPDATE SET
+        first_visited_at = CASE
+          WHEN excluded.first_visited_at < visited_cells.first_visited_at THEN excluded.first_visited_at
+          ELSE visited_cells.first_visited_at
+        END,
         last_visited_at = CASE
           WHEN excluded.last_visited_at > visited_cells.last_visited_at THEN excluded.last_visited_at
           ELSE visited_cells.last_visited_at
         END,
-        visit_count = visited_cells.visit_count + 1,
+        visit_count = visited_cells.visit_count + excluded.visit_count,
         updated_at = excluded.updated_at`,
-      cell.cellId,
-      cell.cellSizeMeters,
-      cell.x,
-      cell.y,
-      visitedAt,
-      visitedAt,
+      visit.cell.cellId,
+      visit.cell.cellSizeMeters,
+      visit.cell.x,
+      visit.cell.y,
+      visit.firstVisitedAt,
+      visit.lastVisitedAt,
+      visit.visitCount,
       now,
       now,
     );
   }
+}
+
+/** 同一セルの訪問を、時刻範囲と回数を保ったまま1行のupsertへ畳み込む。 */
+function aggregateVisits(visits: VisitedCellVisit[]): {
+  cell: GridCell;
+  firstVisitedAt: string;
+  lastVisitedAt: string;
+  visitCount: number;
+}[] {
+  const aggregated = new Map<string, { cell: GridCell; firstVisitedAt: string; lastVisitedAt: string; visitCount: number }>();
+
+  for (const visit of visits) {
+    const current = aggregated.get(visit.cell.cellId);
+    if (!current) {
+      aggregated.set(visit.cell.cellId, {
+        cell: visit.cell,
+        firstVisitedAt: visit.visitedAt,
+        lastVisitedAt: visit.visitedAt,
+        visitCount: 1,
+      });
+      continue;
+    }
+
+    current.firstVisitedAt = current.firstVisitedAt < visit.visitedAt ? current.firstVisitedAt : visit.visitedAt;
+    current.lastVisitedAt = current.lastVisitedAt > visit.visitedAt ? current.lastVisitedAt : visit.visitedAt;
+    current.visitCount += 1;
+  }
+
+  return [...aggregated.values()];
 }
 
 /**
@@ -210,8 +267,4 @@ export async function getVisitedCellsByIds(cellIds: string[]): Promise<VisitedCe
 /** すべてのvisited cellを削除する。 */
 export async function deleteAllVisitedCells(): Promise<void> {
   await db.runAsync('DELETE FROM visited_cells');
-}
-
-function dedupeCells(cells: GridCell[]): GridCell[] {
-  return [...new Map(cells.map((cell) => [cell.cellId, cell])).values()];
 }

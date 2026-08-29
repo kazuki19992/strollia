@@ -1,5 +1,6 @@
 import { db } from '@/db/database';
 import { importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { upsertVisitedCellVisitsInCurrentTransaction } from '@/features/location/visitedCellRepository';
 
 /** モック用のプリペアドステートメント。 */
 type MockPreparedStatement = {
@@ -46,6 +47,7 @@ jest.mock('@/db/database', () => {
 jest.mock('@/features/location/visitedCellRepository', () => ({
   upsertVisitedCells: jest.fn(),
   upsertVisitedCellsInCurrentTransaction: jest.fn(),
+  upsertVisitedCellVisitsInCurrentTransaction: jest.fn(),
 }));
 
 jest.mock('@/features/location/grid/gridInterpolation', () => ({
@@ -166,5 +168,18 @@ describe('GPXインポート保存 importRepository', () => {
     for (const statement of mockDbModule.__preparedStatements) {
       expect(statement.finalizeAsync).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it('チャンク内のvisited cell更新はまとめて実行する', async () => {
+    await importLocationPointsFromGpx([point, { ...point, recordedAt: '2026-05-01T00:01:00.000Z' }], 'walk.gpx');
+
+    expect(upsertVisitedCellVisitsInCurrentTransaction).toHaveBeenCalledTimes(1);
+    expect(upsertVisitedCellVisitsInCurrentTransaction).toHaveBeenCalledWith(
+      [
+        { cell: { cellId: '100:1:1', cellSizeMeters: 100, x: 1, y: 1 }, visitedAt: point.recordedAt },
+        { cell: { cellId: '100:1:1', cellSizeMeters: 100, x: 1, y: 1 }, visitedAt: '2026-05-01T00:01:00.000Z' },
+      ],
+      expect.anything(),
+    );
   });
 });

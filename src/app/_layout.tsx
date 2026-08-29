@@ -147,7 +147,13 @@ function RootLayoutContent(): React.ReactElement {
         onSelectPhoto={s.setSelectedPhoto}
       />
 
-      <GpxImportProgressDialog visible={s.isProcessingGpxImport} styles={s.styles} theme={s.theme} />
+      <GpxImportProgressDialog
+        visible={s.isProcessingGpxImport}
+        styles={s.styles}
+        theme={s.theme}
+        odometerDistanceMeters={s.gpxImportOdometerDistanceMeters}
+        stage={s.gpxImportProgressStage}
+      />
     </>
   );
 }

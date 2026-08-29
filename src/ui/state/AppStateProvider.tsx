@@ -78,6 +78,7 @@ import type { RefreshDataResult } from '@/ui/hooks/useLocationRecordingSync';
 import type { AppColorPresetId } from '@/features/customization/colorPresets';
 import type { UserLocationIconId } from '@/features/customization/customizationOptions';
 import { hasEnabledDevelopmentFlags } from '@/config/developmentFlags';
+import type { GpxImportProgressStage } from '@/ui/components/GpxImportProgressDialog';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -323,6 +324,10 @@ export type AppStateContextValue = {
   isImportingGpx: boolean;
   /** GPX処理中かどうか(ブロッキングダイアログ表示用)。 */
   isProcessingGpxImport: boolean;
+  /** GPXインポートの現在段階。 */
+  gpxImportProgressStage: GpxImportProgressStage;
+  /** GPXインポート開始時点の通算距離。単位はm。 */
+  gpxImportOdometerDistanceMeters: number;
   /** アプリバージョン文字列。 */
   appVersion: string | null;
   /** ビルド番号文字列。 */
@@ -477,6 +482,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const [crashReportingEnabled, setCrashReportingEnabledState] = useState(true);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
+  const [gpxImportProgressStage, setGpxImportProgressStage] = useState<GpxImportProgressStage>('selecting');
+  const [gpxImportOdometerDistanceMeters, setGpxImportOdometerDistanceMeters] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
@@ -1008,16 +1015,27 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
           { cancelable: false },
         );
       });
+      // ファイルピッカーを開く前からアプリ側をモーダルで覆う。Androidではピッカー表示まで
+      // 数秒かかる場合があるが、OSのピッカーは前面で操作でき、背面だけは操作不能になる。
+      setGpxImportProgressStage('selecting');
+      setGpxImportOdometerDistanceMeters(distance);
+      setIsProcessingGpxImport(true);
+      // JSのコミットだけでなくiOSのModal presentation開始後にDocumentPickerを開くため、
+      // 2フレーム待つ。1フレームではModalのネイティブ遷移中に競合するおそれがある。
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
       const pickedFile = await pickAndReadGpxFile();
 
       if (!pickedFile) {
         return;
       }
 
-      // ファイル選択後の取り込み処理中は、削除などの操作を防ぐためブロッキングダイアログを表示する。
-      setIsProcessingGpxImport(true);
-      // 同期的なパースに入る前に1フレーム譲り、ブロッキングダイアログを確実に描画させる。
+      // 同期的なパースに入る前に解析中表示へ切り替え、1フレーム譲って描画を確実にする。
       // （パースは同期処理のため、譲らないと大きなGPXでは旧画面のまま固まる）
+      setGpxImportProgressStage('parsing');
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => resolve());
       });
@@ -1032,6 +1050,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       beginGpxImportPriority();
       let result: GpxImportResult;
       try {
+        setGpxImportProgressStage('saving');
         result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
       } finally {
         // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
@@ -1039,6 +1058,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
           console.warn('Failed to flush buffered locations after GPX import:', error);
         });
       }
+      setGpxImportProgressStage('refreshing');
       await refreshData();
       // 取り込んだ大量データ(ルート・訪問グリッド)の再描画が終わるまでブロッキングダイアログを維持する。
       // 先に閉じると再描画中のフリーズが操作可能な画面のまま露出する。
@@ -1200,6 +1220,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openLegalLink,
     isImportingGpx,
     isProcessingGpxImport,
+    gpxImportProgressStage,
+    gpxImportOdometerDistanceMeters,
     appVersion: Application.nativeApplicationVersion,
     buildNumber: Application.nativeBuildVersion,
     isFirstLaunchTutorialVisible,

@@ -44,10 +44,15 @@ describe('GpxImportProgressDialog', () => {
 
     expect(screen.getByText('ODO')).toBeTruthy();
     expect(actualStyles.gpxImportOdometerInteger).toMatchObject({ fontFamily: NUMERIC_DISPLAY_FONT });
-    expect(actualStyles.gpxImportOdometerNumber).toMatchObject({ fontFamily: NUMERIC_DISPLAY_FONT });
     expect(actualStyles.gpxImportOdometerDecimal).toMatchObject({ fontFamily: NUMERIC_DISPLAY_FONT });
     expect(screen.getByText('km')).toBeTruthy();
     expect(actualStyles.gpxImportOdometer).toMatchObject({ justifyContent: 'center' });
+  });
+
+  test('ODO全体を自然な通算距離として読み上げる', () => {
+    render(<GpxImportProgressDialog {...baseProps} />);
+
+    expect(screen.getByLabelText('通算距離 123.45キロメートル')).toBeTruthy();
   });
 
   test('visible=false のとき Dialog を非表示にする', () => {

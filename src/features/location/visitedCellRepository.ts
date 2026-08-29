@@ -81,10 +81,7 @@ export async function upsertVisitedCellsInCurrentTransaction(
   visitedAt: string,
   runner: SQLite.SQLiteDatabase = db,
 ): Promise<void> {
-  await upsertVisitedCellVisitsInCurrentTransaction(
-    cells.map((cell) => ({ cell, visitedAt })),
-    runner,
-  );
+  await upsertVisitedCellVisitsInCurrentTransaction([...new Map(cells.map((cell) => [cell.cellId, { cell, visitedAt }])).values()], runner);
 }
 
 /**

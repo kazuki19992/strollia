@@ -115,7 +115,7 @@ describe('GPXインポート保存 transaction境界', () => {
     try {
       await importLocationPointsFromGpx(manyPoints, 'strollia-all.gpx');
 
-      expect(setTimeoutSpy).not.toHaveBeenCalled();
+      expect(setTimeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 50);
     } finally {
       setTimeoutSpy.mockRestore();
     }

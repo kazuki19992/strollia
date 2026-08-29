@@ -373,6 +373,23 @@ export function createDailyLogStyles(theme: AppTheme) {
       overflow: 'hidden',
       width: '100%' as unknown as number,
     },
+    gifRangeBody: {
+      color: colors.text,
+      fontSize: 13,
+      lineHeight: 18,
+      opacity: 0.8,
+      textAlign: 'center',
+    },
+    gifRangeContent: {
+      gap: 12,
+      width: '100%' as unknown as number,
+    },
+    gifRangeTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: '900',
+      textAlign: 'center',
+    },
     gpxImportOdometer: {
       alignItems: 'baseline',
       flexDirection: 'row',
@@ -396,34 +413,11 @@ export function createDailyLogStyles(theme: AppTheme) {
       fontSize: 13,
       marginRight: 5,
     },
-    gpxImportOdometerNumber: {
-      color: colors.text,
-      fontFamily: NUMERIC_DISPLAY_FONT,
-      fontSize: 22,
-      lineHeight: 26,
-    },
     gpxImportOdometerUnit: {
       color: colors.text,
       fontSize: 13,
       marginBottom: 1,
       marginLeft: 2,
-    },
-    gifRangeBody: {
-      color: colors.text,
-      fontSize: 13,
-      lineHeight: 18,
-      opacity: 0.8,
-      textAlign: 'center',
-    },
-    gifRangeContent: {
-      gap: 12,
-      width: '100%' as unknown as number,
-    },
-    gifRangeTitle: {
-      color: colors.text,
-      fontSize: 18,
-      fontWeight: '900',
-      textAlign: 'center',
     },
 
     // Top toast notification

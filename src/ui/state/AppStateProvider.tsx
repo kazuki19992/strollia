@@ -1020,8 +1020,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       setGpxImportProgressStage('selecting');
       setGpxImportOdometerDistanceMeters(distance);
       setIsProcessingGpxImport(true);
+      // JSのコミットだけでなくiOSのModal presentation開始後にDocumentPickerを開くため、
+      // 2フレーム待つ。1フレームではModalのネイティブ遷移中に競合するおそれがある。
       await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => resolve());
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
       });
       const pickedFile = await pickAndReadGpxFile();
 

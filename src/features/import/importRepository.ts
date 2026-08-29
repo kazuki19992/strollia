@@ -53,7 +53,6 @@ export class GpxImportInterruptedError extends Error {
 export const IMPORT_TRANSACTION_CHUNK_SIZE = 100;
 
 /**
-/**
  * GPX 由来の GPS ポイントを既存データ優先で SQLite へ取り込む。
  *
  * - ポイントは `recorded_at` 昇順にソートしてから挿入する。

@@ -2057,6 +2057,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
         rafCallbacks.shift()?.(0);
         await Promise.resolve();
       });
+      expect(parseGpxToLocationPoints).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
 
       // 大容量GPXの同期パースがJSスレッドを塞ぐ前に、解析中表示がコミットされている必要がある。
       expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.stage).toBe('parsing');
@@ -2103,6 +2109,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
       await act(async () => {
         rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
         await importPromise;
       });
 
@@ -2140,6 +2152,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       });
       expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(true);
 
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
       await act(async () => {
         rafCallbacks.shift()?.(0);
         await importPromise;

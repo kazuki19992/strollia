@@ -207,6 +207,26 @@ describe('Visited Grid保存 visitedCellRepository', () => {
     );
   });
 
+  it('単一時刻の公開APIでは重複セルを1訪問として保存する', async () => {
+    const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
+
+    await upsertVisitedCells([cell, cell], '2026-05-23T00:00:00.000Z');
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.runAsync).toHaveBeenCalledWith(
+      expect.any(String),
+      cell.cellId,
+      cell.cellSizeMeters,
+      cell.x,
+      cell.y,
+      '2026-05-23T00:00:00.000Z',
+      '2026-05-23T00:00:00.000Z',
+      1,
+      expect.any(String),
+      expect.any(String),
+    );
+  });
+
   it('既存セルより古い訪問を取り込むとfirstVisitedAtを古い時刻へ更新するSQLを使う', async () => {
     const cell = coordinateToGridCell({ latitude: 35.681236, longitude: 139.767125 });
 

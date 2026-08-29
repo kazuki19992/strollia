@@ -33,6 +33,7 @@ export default function SettingsRoute(): React.ReactElement {
       revenueCatAppUserId={s.revenueCatAppUserId}
       appVersion={s.appVersion}
       buildNumber={s.buildNumber}
+      hasCurrentAppUpdateNotice={s.currentAppUpdateNotice !== null}
       premiumOfferingSummary={s.premiumOfferingSummary}
       isLoadingPremiumOffering={s.isLoadingPremiumOffering}
       isPurchasingPremiumPackage={s.isPurchasingPremiumPackage}
@@ -62,6 +63,7 @@ export default function SettingsRoute(): React.ReactElement {
       onUpdateUserLocationIcon={(iconId) => s.updateUserLocationIcon(iconId, s.premiumAccessState, s.showPremiumLockedMessage)}
       onOpenStayPlaces={s.openStayPlaces}
       onOpenAboutAppScreen={() => router.push('/settings/about')}
+      onOpenLatestAppUpdateNotice={s.openLatestAppUpdateNotice}
       onOpenFirstLaunchTutorial={s.openFirstLaunchTutorial}
       onOpenFaqScreen={() => router.push('/settings/faq')}
       onOpenLicenseScreen={() => router.push('/settings/licenses')}

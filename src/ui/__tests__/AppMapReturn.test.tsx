@@ -92,7 +92,9 @@ let mockLatestSettingsScreenProps: any = null;
 let mockLatestMapScreenProps: any = null;
 let mockLatestMonthlyReportScreenProps: any = null;
 let mockLatestFirstLaunchTutorialProps: any = null;
+let mockLatestAppUpdateNoticeDialogProps: any = null;
 let mockLatestForegroundLocationOptions: any = null;
+let mockNativeApplicationVersion: string | null = '1.3.0';
 let mockPremiumCustomerInfoUpdate: ((state: { isPlusActive: boolean; entitlementId: string }) => void) | null = null;
 const mockPremiumUnsubscribe = jest.fn();
 
@@ -187,6 +189,25 @@ jest.mock('@/ui/components/MapScreen', () => ({
   },
 }));
 
+jest.mock('expo-application', () => ({
+  get nativeApplicationVersion() {
+    return mockNativeApplicationVersion;
+  },
+  nativeBuildVersion: '30',
+}));
+
+jest.mock('@/features/app-update/updateNotices', () => ({
+  ...jest.requireActual('@/features/app-update/updateNotices'),
+  LATEST_UPDATE_NOTICE: {
+    version: '1.3.0',
+    kind: 'feature',
+    heading: '新機能を\n追加しました',
+    sectionTitle: '主な新機能',
+    items: ['地図を改善'],
+    showMore: false,
+  },
+}));
+
 jest.mock('@/ui/components/DailyLogsScreen', () => ({
   DailyLogsScreen: (props: any) => {
     const { Pressable, Text } = require('react-native');
@@ -258,6 +279,28 @@ jest.mock('@/ui/components/FirstLaunchTutorialDialog', () => ({
   },
 }));
 
+jest.mock('@/ui/components/AppUpdateNoticeDialog', () => ({
+  AppUpdateNoticeDialog: (props: any) => {
+    const { Pressable, Text } = require('react-native');
+    mockLatestAppUpdateNoticeDialogProps = props;
+
+    if (!props.visible || !props.notice || !props.source) return null;
+
+    return (
+      <>
+        <Pressable accessibilityLabel="更新通知を閉じる" onPress={props.onClose}>
+          <Text>{`更新通知:${props.source}`}</Text>
+        </Pressable>
+        {props.source === 'settings' ? (
+          <Pressable accessibilityLabel="ストアページへ" onPress={props.onOpenStorePage}>
+            <Text>ストアページへ</Text>
+          </Pressable>
+        ) : null}
+      </>
+    );
+  },
+}));
+
 jest.mock('@/ui/components/PhotoPreviewModals', () => ({
   PhotoPreviewModals: () => null,
 }));
@@ -279,6 +322,11 @@ jest.mock('@/ui/components/SettingsScreen', () => ({
         <Pressable accessibilityLabel="チュートリアルを開く" onPress={props.onOpenFirstLaunchTutorial}>
           <Text>チュートリアル</Text>
         </Pressable>
+        {props.hasCurrentAppUpdateNotice ? (
+          <Pressable accessibilityLabel="最新の更新内容を見る" onPress={props.onOpenLatestAppUpdateNotice}>
+            <Text>最新の更新内容を見る</Text>
+          </Pressable>
+        ) : null}
         <Pressable accessibilityLabel="OSSライセンス" onPress={props.onOpenLicenseScreen}>
           <Text>OSSライセンス</Text>
         </Pressable>
@@ -555,8 +603,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
     mockLatestFirstLaunchTutorialProps = null;
+    mockLatestAppUpdateNoticeDialogProps = null;
     mockLatestForegroundLocationOptions = null;
     mockPremiumCustomerInfoUpdate = null;
+    mockNativeApplicationVersion = '1.3.0';
     (getLocationPermissionState as jest.Mock).mockResolvedValue({
       foregroundGranted: true,
       backgroundGranted: true,
@@ -867,6 +917,100 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(screen.getByLabelText('初回チュートリアルを完了')).toBeTruthy();
   });
 
+  test('初回チュートリアル完了済みの未読現在版は自動起点で表示し、閉じると既読版を保存する', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) =>
+      Promise.resolve(key === 'lastAcknowledgedUpdateNoticeVersion' ? '' : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.getByText('更新通知:automatic')).toBeTruthy();
+    expect(mockLatestAppUpdateNoticeDialogProps).toEqual(
+      expect.objectContaining({
+        visible: true,
+        source: 'automatic',
+        notice: expect.objectContaining({ version: '1.3.0' }),
+      }),
+    );
+    expect(screen.queryByLabelText('ストアページへ')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
+    });
+
+    expect(setSetting).toHaveBeenCalledWith('lastAcknowledgedUpdateNoticeVersion', '1.3.0');
+  });
+
+  test('設定画面からは設定起点で再表示し、ストア導線を出しても閉じるだけでは既読版を書き込まない', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) =>
+      Promise.resolve(key === 'lastAcknowledgedUpdateNoticeVersion' ? '1.3.0' : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.queryByText('更新通知:automatic')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+
+    expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(true);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('最新の更新内容を見る'));
+    });
+
+    expect(screen.getByText('更新通知:settings')).toBeTruthy();
+    expect(screen.getByLabelText('ストアページへ')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
+    });
+
+    expect(setSetting).not.toHaveBeenCalledWith('lastAcknowledgedUpdateNoticeVersion', expect.anything());
+  });
+
+  test('現在版と通知版が一致しないと設定導線と更新通知を表示しない', async () => {
+    mockNativeApplicationVersion = '1.3.1';
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.queryByLabelText('更新通知を閉じる')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+    expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(false);
+    expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
+  });
+
+  test('実行中のネイティブ版を取得できないと設定導線と更新通知を表示しない', async () => {
+    mockNativeApplicationVersion = null;
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.queryByLabelText('更新通知を閉じる')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+    expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(false);
+    expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
+  });
+
   test('前回の写真表示有効化が未完了なら起動時に写真表示を自動OFFへ戻す', async () => {
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
       if (key === 'showPhotosOnMap') {
@@ -1064,7 +1208,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(true);
   });
 
-  test('初回チュートリアル完了時に表示済み設定を原子的に保存する', async () => {
+  test('初回チュートリアル完了時に完了フラグと現在版通知の既読を原子的に保存する', async () => {
     renderRouter('src/app');
     await flushPromises();
 
@@ -1072,7 +1216,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     });
 
-    expect(setSettings).toHaveBeenCalledWith([{ key: 'firstLaunchTutorialCompleted', value: true }]);
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'firstLaunchTutorialCompleted', value: true },
+      { key: 'lastAcknowledgedUpdateNoticeVersion', value: '1.3.0' },
+    ]);
   });
 
   test('初回チュートリアル未完了の場合は通知権限要求を完了後まで遅らせる', async () => {

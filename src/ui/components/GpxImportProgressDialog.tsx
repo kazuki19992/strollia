@@ -35,7 +35,7 @@ export function GpxImportProgressDialog({ visible, styles, odometerDistanceMeter
         <Text style={styles.gifProgressTitle}>{getProgressTitle(stage)}</Text>
         <Text style={styles.gifProgressBody}>取り込みが終わるまで少しお待ちください。画面を閉じないでください。</Text>
         <IndeterminateProgressBar styles={styles} animating={visible} />
-        <View accessibilityLabel={`通算距離 ${integer}.${decimal}キロメートル`} style={styles.gpxImportOdometer}>
+        <View accessible accessibilityLabel={`通算距離 ${integer}.${decimal}キロメートル`} style={styles.gpxImportOdometer}>
           <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.gpxImportOdometerLabel}>
             ODO
           </Text>

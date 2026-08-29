@@ -52,7 +52,9 @@ describe('GpxImportProgressDialog', () => {
   test('ODO全体を自然な通算距離として読み上げる', () => {
     render(<GpxImportProgressDialog {...baseProps} />);
 
-    expect(screen.getByLabelText('通算距離 123.45キロメートル')).toBeTruthy();
+    const odometer = screen.getByLabelText('通算距離 123.45キロメートル');
+
+    expect(odometer.props.accessible).toBe(true);
   });
 
   test('visible=false のとき Dialog を非表示にする', () => {

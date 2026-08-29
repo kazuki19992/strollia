@@ -1,6 +1,10 @@
+/** 更新通知の内容種別。 */
 export type AppUpdateNoticeKind = 'feature' | 'fix';
+
+/** 更新通知を表示する導線。 */
 export type AppUpdateNoticeSource = 'automatic' | 'settings';
 
+/** アプリ更新時に表示する通知の定義。 */
 export type AppUpdateNotice = {
   version: string;
   kind: AppUpdateNoticeKind;
@@ -15,7 +19,10 @@ const KIND_CONTENT = {
   fix: { heading: '不具合を\nなおしました', sectionTitle: '修正した不具合' },
 } as const;
 
+/** 現行リリースに対応する更新通知。未提供のリリースではnullを維持する。 */
 export const LATEST_UPDATE_NOTICE: AppUpdateNotice | null = null;
+
+/** SQLiteのapp_settingsに保存する、更新通知の最終既読版キー。 */
 export const LAST_ACKNOWLEDGED_UPDATE_NOTICE_VERSION_SETTING_KEY = 'lastAcknowledgedUpdateNoticeVersion';
 
 /** 現在のアプリ版に対応し、表示内容の制約を満たす更新通知を解決する。 */

@@ -117,28 +117,54 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
   });
 
   it('進捗の反映は間引き、最後の1件は必ず反映する', async () => {
+    // 走査側の通知を1件ずつ手で送り、状態へ反映される刻みを直接見る。
+    // 通知を同期ループで撃つとReactが1回の再レンダーへまとめてしまい、間引きの有無を見分けられない
+    let notifyProgress: (progress: { totalAssetCount: number; processedAssetCount: number }) => void = () => undefined;
     (loadGeotaggedPhotos as jest.Mock).mockImplementation(async ({ onProgress }: PhotoScanOptions) => {
-      for (let processed = 0; processed <= 1000; processed += 1) {
-        onProgress?.({ totalAssetCount: 1000, processedAssetCount: processed });
-      }
+      notifyProgress = (progress) => onProgress?.(progress);
 
       return new Promise(() => undefined);
     });
 
-    const { result } = renderHook(() => usePhotoLibrarySync());
+    // 再レンダー数は**対象hookと同じroot**で数える。別のrenderHookで数えると、進捗stateの更新で
+    // 再レンダーされるのは対象hook側だけなので、そもそも数えられない
     let renderCount = 0;
-    renderHook(() => {
+    const { result } = renderHook(() => {
       renderCount += 1;
+
+      return usePhotoLibrarySync();
     });
 
     act(() => {
       void result.current.startPhotoLibrarySync();
     });
     await flushPromises();
+    const renderCountBeforeProgress = renderCount;
 
-    // 1件ごとに再レンダーすると走査そのものを遅くする。最終値だけは取りこぼさない
+    // 総数1000件なら1%刻み(10件ごと)。刻みに満たない通知は状態へ反映せず、再レンダーもさせない
+    await act(async () => {
+      notifyProgress({ totalAssetCount: 1000, processedAssetCount: 0 });
+    });
+    await act(async () => {
+      notifyProgress({ totalAssetCount: 1000, processedAssetCount: 5 });
+    });
+
+    // 刻みに届くまでは不定形の表示(null)のまま。再レンダーも起きない
+    expect(result.current.photoLibrarySyncProgress).toBeNull();
+    expect(renderCount).toBe(renderCountBeforeProgress);
+
+    await act(async () => {
+      notifyProgress({ totalAssetCount: 1000, processedAssetCount: 10 });
+    });
+
+    expect(result.current.photoLibrarySyncProgress).toEqual({ totalAssetCount: 1000, processedAssetCount: 10 });
+
+    // 最後の1件だけは間引かない。取りこぼすと「あと少し」で止まって見える
+    await act(async () => {
+      notifyProgress({ totalAssetCount: 1000, processedAssetCount: 1000 });
+    });
+
     expect(result.current.photoLibrarySyncProgress).toEqual({ totalAssetCount: 1000, processedAssetCount: 1000 });
-    expect(renderCount).toBeLessThan(1000);
   });
 
   it('完了したら呼び出し側へ通知する(地図の表示を最新化させるため)', async () => {
@@ -150,6 +176,22 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
     });
 
     expect(onCompleted).toHaveBeenCalledTimes(1);
+  });
+
+  it('完了通知には走査結果を渡す(キャッシュ保存の成否を呼び出し側が判断できるようにする)', async () => {
+    const scannedPhotos = [
+      { id: 'photo-1', uri: null, storedUri: 'ph://photo-1', latitude: 35, longitude: 139, creationTime: 1, width: 10, height: 10 },
+    ];
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: scannedPhotos, isCacheSaved: false, metrics, mode: 'full' });
+    const onCompleted = jest.fn();
+    const { result } = renderHook(() => usePhotoLibrarySync({ onCompleted }));
+
+    await act(async () => {
+      await result.current.startPhotoLibrarySync();
+    });
+
+    // 全件走査でもキャッシュ保存は失敗しうる。地図側はこの結果でフォールバック表示を張り替える
+    expect(onCompleted).toHaveBeenCalledWith(expect.objectContaining({ isCacheSaved: false, photos: scannedPhotos }));
   });
 
   it('走査に失敗した場合は通知し、完了コールバックを呼ばない', async () => {

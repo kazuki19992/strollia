@@ -209,6 +209,76 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     expect(result.current.photos).toEqual([photo]);
   });
 
+  it('キャッシュ保存に失敗した場合も表示上限を超えて地図へ渡さない', async () => {
+    // フォールバックでも設定した件数を守る。守らないと「最新200件」を選んでも全件が地図に出る
+    const newerPhoto: MapPhoto = { ...photo, id: 'photo-newer', creationTime: 3000 };
+    const olderPhoto: MapPhoto = { ...photo, id: 'photo-older', creationTime: 1000 };
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({
+      photos: [newerPhoto, olderPhoto],
+      isCacheSaved: false,
+      metrics,
+      mode: 'incremental',
+    });
+
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion, 1));
+    await flushPromises();
+
+    // キャッシュ検索と同じく「全体の最新N件」を先に絞る
+    expect(result.current.photos).toEqual([newerPhoto]);
+  });
+
+  it('キャッシュ保存に失敗した場合のフォールバックも新しい順に並べる', async () => {
+    const newerPhoto: MapPhoto = { ...photo, id: 'photo-newer', creationTime: 3000 };
+    const olderPhoto: MapPhoto = { ...photo, id: 'photo-older', creationTime: 1000 };
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({
+      photos: [olderPhoto, newerPhoto],
+      isCacheSaved: false,
+      metrics,
+      mode: 'incremental',
+    });
+
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await flushPromises();
+
+    expect(result.current.photos).toEqual([newerPhoto, olderPhoto]);
+  });
+
+  it('キャッシュ保存に失敗したあと、全件走査でキャッシュが最新化されたらフォールバックを解除する', async () => {
+    const stalePhoto: MapPhoto = { ...photo, id: 'photo-stale' };
+    const cachedPhoto: MapPhoto = { ...photo, id: 'photo-cached' };
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [stalePhoto], isCacheSaved: false, metrics, mode: 'incremental' });
+    (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([cachedPhoto]);
+
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await flushPromises();
+    expect(result.current.photos).toEqual([stalePhoto]);
+
+    // 明示的な全件走査が成功し、キャッシュが最新化された
+    await act(async () => {
+      result.current.refreshPhotosFromCache();
+    });
+    await flushPromises();
+
+    expect(result.current.photos).toEqual([cachedPhoto]);
+  });
+
+  it('全件走査でもキャッシュ保存に失敗した場合は、新しい走査結果をフォールバックに使う', async () => {
+    const stalePhoto: MapPhoto = { ...photo, id: 'photo-stale' };
+    const rescannedPhoto: MapPhoto = { ...photo, id: 'photo-rescanned' };
+    (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [stalePhoto], isCacheSaved: false, metrics, mode: 'incremental' });
+
+    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await flushPromises();
+    expect(result.current.photos).toEqual([stalePhoto]);
+
+    await act(async () => {
+      result.current.refreshPhotosFromCache([rescannedPhoto]);
+    });
+    await flushPromises();
+
+    expect(result.current.photos).toEqual([rescannedPhoto]);
+  });
+
   it('無効な場合は走査も検索もせず表示状態を空にする', async () => {
     const { result } = renderHook(() => usePhotoMapOverlay(false, baseRegion));
     await flushPromises();

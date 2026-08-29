@@ -41,7 +41,7 @@ import {
   paginateMapPhotos,
 } from '@/features/photos/photoClusters';
 import { applyResolvedPhotoUris } from '@/features/photos/photoDisplayUri';
-import type { MapPhoto, PhotoScanProgress } from '@/features/photos/photoLibrary';
+import type { GeotaggedPhotoScanResult, MapPhoto, PhotoScanProgress } from '@/features/photos/photoLibrary';
 import { createPhotoScanMetricsLines } from '@/features/photos/photoScanMetrics';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
@@ -741,10 +741,15 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
    * 解決済みの表示用URIも捨てる。削除された写真のサムネイルはキャッシュに残っており、
    * そのままだと「もう無い写真」の画像が出続けてしまう(設計書 §4.5)。
    */
-  const handlePhotoLibrarySyncCompleted = useCallback((): void => {
-    resetPhotoDisplayUris();
-    refreshPhotosFromCache();
-  }, [refreshPhotosFromCache, resetPhotoDisplayUris]);
+  const handlePhotoLibrarySyncCompleted = useCallback(
+    (result: GeotaggedPhotoScanResult): void => {
+      resetPhotoDisplayUris();
+      // 全件走査でもキャッシュ保存は失敗しうる。その場合だけ走査結果をフォールバックへ張り替える
+      // (保存できていれば null を渡し、差分走査で残っていた古いフォールバックを解除する)
+      refreshPhotosFromCache(result.isCacheSaved ? null : result.photos);
+    },
+    [refreshPhotosFromCache, resetPhotoDisplayUris],
+  );
 
   const { isSyncingPhotoLibrary, photoLibrarySyncProgress, startPhotoLibrarySync } = usePhotoLibrarySync({
     onCompleted: handlePhotoLibrarySyncCompleted,

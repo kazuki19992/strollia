@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { loadGeotaggedPhotos, type PhotoScanProgress } from '@/features/photos/photoLibrary';
+import { loadGeotaggedPhotos, type GeotaggedPhotoScanResult, type PhotoScanProgress } from '@/features/photos/photoLibrary';
 import { PHOTO_LIBRARY_SYNC_FAILURE_MESSAGE, PHOTO_LIBRARY_SYNC_FAILURE_TITLE } from '@/ui/appText';
 
 /**
@@ -19,8 +19,11 @@ export type UsePhotoLibrarySyncParams = {
    *
    * 地図の表示を `photo_assets` から引き直させるために使う(削除された写真の行が消えるため、
    * 引き直さないと地図に残ったままになる)。
+   *
+   * **走査結果をそのまま渡す。** 全件走査でもキャッシュ保存が失敗しうるため、呼び出し側は
+   * `isCacheSaved` を見てフォールバック表示へ倒すかどうかを判断する必要がある。
    */
-  onCompleted?: () => void;
+  onCompleted?: (result: GeotaggedPhotoScanResult) => void;
 };
 
 /** 写真ライブラリの全件再読み込みの状態と操作。 */
@@ -71,7 +74,7 @@ export function usePhotoLibrarySync({ onCompleted }: UsePhotoLibrarySyncParams =
     let reportedProcessedAssetCount = -1;
 
     try {
-      await loadGeotaggedPhotos({
+      const result = await loadGeotaggedPhotos({
         mode: 'full',
         // `limit` は渡さない。既定の解決に任せることで計測フラグ(EXPO_PUBLIC_PHOTO_SCAN_LIMIT)が生き続ける
         onProgress: (progress) => {
@@ -88,7 +91,7 @@ export function usePhotoLibrarySync({ onCompleted }: UsePhotoLibrarySyncParams =
         },
       });
 
-      onCompleted?.();
+      onCompleted?.(result);
     } catch (error: unknown) {
       // ユーザーが明示的に始めた操作なので、黙って終わらせずに理由を伝える
       console.warn('Failed to reload photo library:', error);

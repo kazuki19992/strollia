@@ -1,6 +1,6 @@
 import { db, withExclusiveTransaction, type ExclusiveTransaction } from '@/db/database';
 import type { PhotoAssetReconciliation } from '@/features/photos/photoScanWindow';
-import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
+import { PHOTO_VIEWPORT_SAFETY_LIMIT, type PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
 /**
  * `photo_assets` に保存するジオタグ付き写真のメタデータ。
@@ -150,18 +150,6 @@ export async function savePhotoAssets(records: PhotoAssetRecord[], reconciliatio
     }
   });
 }
-
-/**
- * ビューポート検索で一度にJSへ載せる件数の内部上限。
- *
- * 表示上限の設定が「すべて」でも効く**ユーザーからは見えない保険**である(設計書 §4.7)。
- * クラスタリングは空間ハッシュにより O(N) で動くため数千件でも問題ないが、全写真にジオタグを付ける
- * ユーザーが広域を表示したときに、際限なく行を読み込んでメモリと描画を圧迫することを防ぐ。
- *
- * 実測(設計書 §2)では18,000枚のライブラリでジオタグ付きは1,400件だった。この規模なら上限に届かず、
- * 通常利用では存在しないのと同じ挙動になる。
- */
-export const PHOTO_VIEWPORT_SAFETY_LIMIT = 5000;
 
 /** `getPhotoAssetsInBounds` の絞り込み条件。 */
 export type GetPhotoAssetsInBoundsOptions = {

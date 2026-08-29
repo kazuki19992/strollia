@@ -1,11 +1,6 @@
 import { db, withExclusiveTransaction } from '@/db/database';
-import {
-  getPhotoAssetsInBounds,
-  PHOTO_VIEWPORT_SAFETY_LIMIT,
-  savePhotoAssets,
-  type PhotoAssetRecord,
-} from '@/features/photos/photoAssetRepository';
-import type { PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
+import { getPhotoAssetsInBounds, savePhotoAssets, type PhotoAssetRecord } from '@/features/photos/photoAssetRepository';
+import { PHOTO_VIEWPORT_SAFETY_LIMIT, type PhotoViewportBounds } from '@/features/photos/photoViewportBounds';
 
 /** トランザクションrunnerのモック。withExclusiveTransaction のコールバックへ渡す。 */
 const mockTxn = {

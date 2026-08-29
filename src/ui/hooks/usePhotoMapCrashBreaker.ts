@@ -87,8 +87,9 @@ export type UsePhotoMapCrashBreakerResult = {
    * 写真ライブラリを走査せずに `photo_assets` を引き直す。
    *
    * 明示的な全件スキャンの完了後に、地図の表示を最新化するために使う。
+   * 引数の意味は `PhotoMapOverlayState.refreshPhotosFromCache` を参照。
    */
-  refreshPhotosFromCache: () => void;
+  refreshPhotosFromCache: (scanFallbackPhotos?: MapPhoto[] | null) => void;
 };
 
 /**

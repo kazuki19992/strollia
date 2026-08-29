@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Region } from 'react-native-maps';
 
 import { loadGeotaggedPhotos, loadGeotaggedPhotosInBounds, MapPhoto } from '@/features/photos/photoLibrary';
+import { filterFallbackPhotosInBounds, selectLatestFallbackPhotos } from '@/features/photos/photoScanFallback';
 import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
 import {
   getPhotoViewportBounds,
   isPhotoViewportBoundsContained,
-  isWithinPhotoViewportBounds,
   PHOTO_VIEWPORT_PADDING_RATIO,
   type PhotoViewportBounds,
 } from '@/features/photos/photoViewportBounds';
@@ -36,8 +36,12 @@ export type PhotoMapOverlayState = {
    * 写真ライブラリを走査せずに `photo_assets` を引き直す。
    *
    * 明示的な全件スキャン(`usePhotoLibrarySync`)の完了後に、地図の表示を最新化するために使う。
+   *
+   * **引数は全件スキャンの結果に応じたフォールバック写真である。** キャッシュ保存に成功していれば
+   * 省略(またはnull)し、失敗していればその走査結果を渡す。省略すると以前のフォールバックは
+   * 解除される。解除しないと、キャッシュが最新化されたあとも古い走査結果を表示し続けてしまう。
    */
-  refreshPhotosFromCache: () => void;
+  refreshPhotosFromCache: (scanFallbackPhotos?: MapPhoto[] | null) => void;
 };
 
 /**
@@ -95,9 +99,22 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region, displayLimi
    */
   const isScanStartedRef = useRef(false);
 
-  const refreshPhotosFromCache = useCallback((): void => {
+  const refreshPhotosFromCache = useCallback((nextScanFallbackPhotos: MapPhoto[] | null = null): void => {
+    // 引き直す前に古いフォールバックを張り替える。残すとキャッシュを最新化しても表示が古いままになる
+    setScanFallbackPhotos(nextScanFallbackPhotos);
     setCacheRefreshVersion((version) => version + 1);
   }, []);
+
+  /**
+   * フォールバック表示に使う、表示上限まで絞った走査結果。
+   *
+   * 表示上限は「全体の最新N件」なので、表示範囲での絞り込みより**前**に掛ける必要がある。
+   * 表示範囲が変わるたびに並べ替え直さないよう、上限までの絞り込みはここでメモ化する。
+   */
+  const limitedScanFallbackPhotos = useMemo(
+    () => (scanFallbackPhotos === null ? null : selectLatestFallbackPhotos(scanFallbackPhotos, displayLimit)),
+    [displayLimit, scanFallbackPhotos],
+  );
 
   const loadPhotosForRegion = useCallback(async (): Promise<void> => {
     if (!enabled) {
@@ -130,12 +147,12 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region, displayLimi
 
     try {
       const searchBounds = getPhotoViewportBounds(region, { paddingRatio: PHOTO_VIEWPORT_PADDING_RATIO });
-      // キャッシュ保存に失敗した場合はDBを引かず、メモリ上の走査結果を同じ範囲で絞り込む。
-      // 表示件数を増やさないため、フォールバックでもビューポートでの絞り込みは維持する
+      // キャッシュ保存に失敗した場合はDBを引かず、メモリ上の走査結果を同じ条件で絞り込む。
+      // 表示件数と並び順がDB経路と食い違わないよう、絞り込みは `photoScanFallback` に寄せている
       const loadedPhotos =
-        scanFallbackPhotos === null
+        limitedScanFallbackPhotos === null
           ? await loadGeotaggedPhotosInBounds(searchBounds, displayLimit)
-          : scanFallbackPhotos.filter((photo) => isWithinPhotoViewportBounds(searchBounds, photo.latitude, photo.longitude));
+          : filterFallbackPhotosInBounds(limitedScanFallbackPhotos, searchBounds);
 
       if (loadSeq === photoLoadSeqRef.current) {
         fetchedBoundsRef.current = searchBounds;
@@ -152,7 +169,7 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region, displayLimi
         setIsLoadingPhotos(false);
       }
     }
-  }, [displayLimit, enabled, region, scanFallbackPhotos]);
+  }, [displayLimit, enabled, limitedScanFallbackPhotos, region]);
 
   /**
    * 取得済み範囲の判定を無効化する。
@@ -163,7 +180,7 @@ export function usePhotoMapOverlay(enabled: boolean, region: Region, displayLimi
    */
   useEffect(() => {
     fetchedBoundsRef.current = null;
-  }, [cacheRefreshVersion, displayLimit, scanFallbackPhotos]);
+  }, [cacheRefreshVersion, displayLimit, limitedScanFallbackPhotos]);
 
   /**
    * 設定がONになったタイミングと表示範囲が余白の外へ出たタイミングで写真を読み込み、

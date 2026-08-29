@@ -390,6 +390,35 @@ export function createDailyLogStyles(theme: AppTheme) {
       fontWeight: '900',
       textAlign: 'center',
     },
+    gpxImportOdometer: {
+      alignItems: 'baseline',
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: -4,
+    },
+    gpxImportOdometerDecimal: {
+      color: colors.text,
+      fontFamily: NUMERIC_DISPLAY_FONT,
+      fontSize: 15,
+      lineHeight: 20,
+    },
+    gpxImportOdometerInteger: {
+      color: colors.text,
+      fontFamily: NUMERIC_DISPLAY_FONT,
+      fontSize: 22,
+      lineHeight: 26,
+    },
+    gpxImportOdometerLabel: {
+      color: colors.text,
+      fontSize: 13,
+      marginRight: 5,
+    },
+    gpxImportOdometerUnit: {
+      color: colors.text,
+      fontSize: 13,
+      marginBottom: 1,
+      marginLeft: 2,
+    },
 
     // Top toast notification
     topToastContainer: {

@@ -151,7 +151,13 @@ function RootLayoutContent(): React.ReactElement {
         onSelectPhoto={s.setSelectedPhoto}
       />
 
-      <GpxImportProgressDialog visible={s.isProcessingGpxImport} styles={s.styles} theme={s.theme} />
+      <GpxImportProgressDialog
+        visible={s.isProcessingGpxImport}
+        styles={s.styles}
+        theme={s.theme}
+        odometerDistanceMeters={s.gpxImportOdometerDistanceMeters}
+        stage={s.gpxImportProgressStage}
+      />
 
       {/* 削除済みのときだけモーダルで止め、再読み込み導線を出す(設計書 §4.5) */}
       <PhotoDeletedDialog

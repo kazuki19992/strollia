@@ -66,8 +66,8 @@ const photoScanLimitOverride: number | null = parsePhotoScanLimitOverride(proces
 /**
  * 写真ライブラリ走査の上限の上書き値を返す。
  *
- * **計測用の一時的な仕組み。** 未設定・不正値・0以下の場合はnullを返し、呼び出し側は既定の
- * 上限(`DEFAULT_PHOTO_SCAN_LIMIT`)を使う。
+ * **計測用の一時的な仕組み。** 未設定・不正値・0以下の場合はnullを返す。
+ * Phase 2-c で件数上限そのものを撤廃したため、nullは「上限なし(全件)」を意味する。
  *
  * @returns 上書きする走査上限。上書きしない場合はnull。
  */

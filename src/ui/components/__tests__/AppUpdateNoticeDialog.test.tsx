@@ -1,8 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { ScrollView } from 'react-native';
 
 import type { AppUpdateNotice } from '@/features/app-update/updateNotices';
 import { AppUpdateNoticeDialog } from '@/ui/components/AppUpdateNoticeDialog';
 import { Dialog } from '@/ui/components/Dialog';
+
+const mockUseWindowDimensions = jest.fn();
+
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: mockUseWindowDimensions,
+}));
 
 jest.mock('@expo/vector-icons', () => ({
   // Jest のモックファクトリはモジュール外の変数を参照できないため、既存のテストと同じ遅延requireを使う。
@@ -35,6 +43,7 @@ const baseProps = {
 describe('AppUpdateNoticeDialog', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseWindowDimensions.mockReturnValue({ width: 390, height: 800, scale: 3, fontScale: 1 });
   });
 
   test('自動表示ではスワイプで閉じられ、ストアページ導線を表示しない', () => {
@@ -46,6 +55,13 @@ describe('AppUpdateNoticeDialog', () => {
     expect(dialog.props.swipeToClose).toBe(true);
     expect(dialog.props.autoClose).toBe(false);
     expect(screen.queryByLabelText('ストアページへ')).toBeNull();
+  });
+
+  test('小さい画面でダイアログ本文を画面高の72%までに制限する', () => {
+    render(<AppUpdateNoticeDialog {...baseProps} />);
+
+    const scrollView = screen.UNSAFE_getByType(ScrollView);
+    expect(scrollView.props.style).toEqual(['appUpdateNoticeDialogScroll', { maxHeight: 576 }]);
   });
 
   test('設定画面から開くとストアページへのボタンを押せる', () => {

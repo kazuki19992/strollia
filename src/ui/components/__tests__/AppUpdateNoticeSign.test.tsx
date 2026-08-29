@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { View } from 'react-native';
 
 import type { AppUpdateNotice } from '@/features/app-update/updateNotices';
 import { AppUpdateNoticeSign } from '@/ui/components/AppUpdateNoticeSign';
@@ -91,5 +92,40 @@ describe('アプリ更新通知の工事看板 AppUpdateNoticeSign', () => {
     expect(screen.getByTestId('app-update-notice-sign-show-more').props.children).toBe('など……');
     expect(screen.getByTestId('app-update-notice-sign-version-pill')).toHaveProp('y', 244);
     expect(screen.getByTestId('app-update-notice-sign-footer')).toHaveProp('y', 289);
+  });
+
+  test('表示幅を80%にしてもSVG内の文字・線・座標は基準値を保つ', () => {
+    const notice = createFeatureNotice();
+    const renderAtWidth = (width: number) => (
+      <View testID="app-update-notice-sign-display-area" style={{ width }}>
+        <AppUpdateNoticeSign notice={notice} />
+      </View>
+    );
+    const { rerender } = render(renderAtWidth(329));
+
+    expect(screen.getByTestId('app-update-notice-sign-display-area').props.style.width).toBe(329);
+    expect(screen.getByTestId('app-update-notice-sign-top-copy')).toHaveProp('fontSize', 24);
+    expect(screen.getByTestId('app-update-notice-sign-top-copy')).toHaveProp('x', 164.5);
+    expect(screen.getByTestId('app-update-notice-sign-outer-border')).toHaveProp('strokeWidth', 4);
+    expect(screen.getByTestId('app-update-notice-sign-outer-border')).toHaveProp('x', 2);
+
+    rerender(renderAtWidth(263.2));
+
+    const scaledWidth = screen.getByTestId('app-update-notice-sign-display-area').props.style.width;
+    const scale = scaledWidth / 329;
+    const topCopy = screen.getByTestId('app-update-notice-sign-top-copy');
+    const outerBorder = screen.getByTestId('app-update-notice-sign-outer-border');
+    expect(scaledWidth).toBe(263.2);
+    expect(scale).toBeCloseTo(0.8);
+    expect(screen.getByTestId('app-update-notice-sign-canvas-container').props.style.aspectRatio).toBe(329 / 261);
+    expect(screen.getByTestId('app-update-notice-sign-canvas')).toHaveProp('viewBox', '0 0 329 261');
+    expect(topCopy).toHaveProp('fontSize', 24);
+    expect(topCopy).toHaveProp('x', 164.5);
+    expect(outerBorder).toHaveProp('strokeWidth', 4);
+    expect(outerBorder).toHaveProp('x', 2);
+    expect(topCopy.props.fontSize * scale).toBeCloseTo(19.2);
+    expect(topCopy.props.x * scale).toBeCloseTo(131.6);
+    expect(outerBorder.props.strokeWidth * scale).toBeCloseTo(3.2);
+    expect(outerBorder.props.x * scale).toBeCloseTo(1.6);
   });
 });

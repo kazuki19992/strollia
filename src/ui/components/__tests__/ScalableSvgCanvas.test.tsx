@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { View } from 'react-native';
 import { Rect } from 'react-native-svg';
 
 import { ScalableSvgCanvas } from '@/ui/components/ScalableSvgCanvas';
@@ -28,5 +29,31 @@ describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
     expect(screen.getByTestId('vector-canvas')).toHaveProp('preserveAspectRatio', 'xMidYMid meet');
     expect(screen.getByLabelText('更新通知')).toBeTruthy();
     expect(screen.getByTestId('vector-child')).toBeTruthy();
+  });
+
+  test('表示幅が80%になっても同じ縦横比でviewBox全体を線形縮小する', () => {
+    const renderAtWidth = (width: number) => (
+      <View testID="vector-display-area" style={{ width }}>
+        <ScalableSvgCanvas viewBoxWidth={329} viewBoxHeight={261} accessibilityLabel="更新通知" testID="vector-canvas">
+          <Rect testID="vector-child" x={0} y={0} width={329} height={261} />
+        </ScalableSvgCanvas>
+      </View>
+    );
+    const { rerender } = render(renderAtWidth(329));
+
+    const baseAspectRatio = screen.getByTestId('vector-canvas-container').props.style.aspectRatio;
+    expect(screen.getByTestId('vector-display-area').props.style.width).toBe(329);
+    expect(baseAspectRatio).toBe(329 / 261);
+    expect(329 / baseAspectRatio).toBeCloseTo(261);
+
+    rerender(renderAtWidth(263.2));
+
+    const scaledAspectRatio = screen.getByTestId('vector-canvas-container').props.style.aspectRatio;
+    expect(screen.getByTestId('vector-display-area').props.style.width).toBe(263.2);
+    expect(scaledAspectRatio).toBe(baseAspectRatio);
+    expect(263.2 / scaledAspectRatio).toBeCloseTo(208.8);
+    expect(screen.getByTestId('vector-canvas')).toHaveProp('viewBox', '0 0 329 261');
+    expect(screen.getByTestId('vector-canvas')).toHaveProp('width', '100%');
+    expect(screen.getByTestId('vector-canvas')).toHaveProp('height', '100%');
   });
 });

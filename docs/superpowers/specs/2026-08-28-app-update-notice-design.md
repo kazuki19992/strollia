@@ -91,9 +91,39 @@ lastAcknowledgedUpdateNoticeVersion
 
 ### 5.2 工事看板コンポーネント
 
-`src/ui/components/AppUpdateNoticeSign.tsx` を追加し、`react-native-svg` の `Svg`、`Rect`、`Text` で1枚のベクター看板として構成する。画像ファイルとして固定せず、版番号と更新項目を差し替えられる一方、描画上は背景、枠線、文字を含む看板全体を単一のSVG座標系として扱う。
+`src/ui/components/ScalableSvgCanvas.tsx` と `src/ui/components/AppUpdateNoticeSign.tsx` を追加する。前者が表示領域に合わせたSVG全体の線形拡大縮小、後者が工事看板固有の描画を担当する。
 
-#### 5.2.1 基準資料とスケーリング
+#### 5.2.1 汎用ベクターキャンバス
+
+`ScalableSvgCanvas` は、固定座標で記述したSVGコンポーネントを、親の利用可能幅へ縦横比を維持したまま表示する汎用コンポーネントとする。工事看板固有の色、座標、文言は持たない。
+
+```tsx
+type ScalableSvgCanvasProps = {
+  viewBoxWidth: number;
+  viewBoxHeight: number;
+  accessibilityLabel: string;
+  children: React.ReactNode;
+  testID?: string;
+};
+```
+
+- 外側コンテナは親の利用可能幅いっぱいに広がり、`aspectRatio: viewBoxWidth / viewBoxHeight` で高さを決める
+- 内部の `Svg` は `width="100%"`、`height="100%"`、`viewBox="0 0 {viewBoxWidth} {viewBoxHeight}"` とする
+- `preserveAspectRatio="xMidYMid meet"` を固定し、X方向とY方向へ同じ倍率を適用する
+- `accessibilityRole="image"` と、子の内容を要約した `accessibilityLabel` をSVG全体へ設定する
+- `children` には `react-native-svg` の `Rect`、`Text`、`Path`、`G` など、または最終的にそれらを返す独自コンポーネントだけを渡す
+- 通常のReact Native `View` やReact Native `Text` をSVGへ自動変換する責務は持たない
+- `ForeignObject`、描画後の画像化、端末別の個別倍率補正は使用しない
+
+この責務に限定することで、今後別の固定座標ベクターUIを追加するときも、個別に幅計測や倍率計算を実装せず、SVGアートワークだけを子として渡せるようにする。
+
+#### 5.2.2 工事看板アートワーク
+
+`AppUpdateNoticeSign` は `ScalableSvgCanvas` を使用し、子として `react-native-svg` の `Rect`、`Text`、`G` で構成した看板アートワークを渡す。画像ファイルとして固定せず、版番号と更新項目を差し替えられる一方、描画上は背景、枠線、文字を含む看板全体を単一のSVG座標系として扱う。
+
+看板固有のSVG要素は、同じファイル内の非公開関数 `AppUpdateNoticeSignArtwork` に分離する。`AppUpdateNoticeSign` はviewBoxの高さと読み上げ文を決め、`ScalableSvgCanvas` の子として `AppUpdateNoticeSignArtwork` を渡す。`AppUpdateNoticeSignArtwork` はSVGの `G` をルートにし、その配下で利用できるSVG要素だけを返す。
+
+#### 5.2.3 基準資料とスケーリング
 
 添付PDFを寸法・比率・配色の基準資料とする。PDFは1ページ、ページサイズ329×261ptで、144dpiでは添付PNGと同じ658×522pxになる。以降の寸法は、PDFの1ptをSVGの1ユーザー単位とした329単位幅の座標で記載する。
 
@@ -101,7 +131,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 
 拡大縮小はSVGの `viewBox` に任せる。実装側で文字サイズ、線幅、余白、角丸半径を個別に再計算しない。たとえば表示幅が基準幅の80%なら、24単位の上帯文字は見た目19.2px相当、4単位の外枠は3.2px相当になり、すべての要素が同じ0.8倍になる。表示幅が基準幅を超える場合も同じ規則で線形に拡大する。画面幅に応じてレイアウトを組み直したり、文字だけを一定サイズに保ったりしない。
 
-線幅を画面上で固定する `vectorEffect="non-scaling-stroke"` は使用しない。SVG直下へ倍率の異なる変形を重ねず、看板内にReact Nativeの `View` や `Text` を混在させない。これにより、外枠、内容欄の枠、文字、丸棒、余白の相対関係を常に同じにする。
+線幅を画面上で固定する `vectorEffect="non-scaling-stroke"` は使用しない。SVG直下へ倍率の異なる変形を重ねず、看板内にReact Nativeの `View` やReact Native `Text` を混在させない。これにより、外枠、内容欄の枠、文字、丸棒、余白の相対関係を常に同じにする。
 
 基準色は次の固定値とする。テーマ色へ置き換えない。
 
@@ -111,7 +141,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 | 看板面・白文字 | `#FFFFFF` |
 | 下部補足文 | `#303030` |
 
-#### 5.2.2 外形
+#### 5.2.4 外形
 
 - 1件表示時の基準サイズは幅329、高さ261
 - 背景は白
@@ -120,7 +150,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 - `overflow: hidden` や角丸マスクで四隅を切り抜かない
 - 左右の内側有効幅は321単位（外枠4単位を除いた範囲）
 
-#### 5.2.3 上帯
+#### 5.2.5 上帯
 
 - ページ上端から高さ31単位までを青で塗る。外枠上辺と連続した一枚の帯に見せる
 - 文言は水平中央、白、ゴシック系、`fontSize: 24`、`fontWeight: '900'`
@@ -130,7 +160,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 - 文字間隔を広げず、必ず1行で表示する。改行文字、複数の `TSpan`、自動折り返しを使用しない
 - 小さい表示領域では文字だけを縮めたり折り返したりせず、看板全体のSVG拡大縮小によって1行のまま縮小する
 
-#### 5.2.4 中央の大見出し
+#### 5.2.6 中央の大見出し
 
 - 上帯の下は白地とする
 - 青、水平中央、ゴシック系、`fontSize: 40`、`lineHeight: 40`、`fontWeight: '900'`
@@ -140,7 +170,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 - 端末の自動折り返しへ任せず、改行位置を固定する
 - 1行目と2行目の間に追加の段落余白を入れない
 
-#### 5.2.5 更新内容欄
+#### 5.2.7 更新内容欄
 
 - 基準の外接範囲は `x=9..321`、`y=145..201`（幅312、高さ56）
 - 白地に青い2単位の実線枠を付ける。144dpi画像では4pxに相当する
@@ -160,7 +190,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 | 2件 | 282 |
 | 2件 + 「など……」 | 298 |
 
-#### 5.2.6 バージョン丸棒
+#### 5.2.8 バージョン丸棒
 
 - 1件表示時の外接範囲は `x=9..321`、`y=207..232`（幅312、高さ25）
 - 内容欄の下端から6単位空ける
@@ -170,7 +200,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 - `Ver` と版番号の間には半角スペースを1つだけ入れる
 - 2件表示や「など……」表示では、内容欄の増加分だけ丸棒を下へ移動し、幅と高さは変えない
 
-#### 5.2.7 下部補足文
+#### 5.2.9 下部補足文
 
 丸棒の下には、feature／fixの両方で「詳しくはリリースノートをご確認ください」を必ず表示する。fixのPNG例とPDF書き出しに補足文がないのは資料側の出力漏れとして扱い、実装差分にはしない。
 
@@ -180,7 +210,7 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 - 丸棒下端からおよそ10単位空ける
 - 1行表示とし、折り返さない
 
-#### 5.2.8 タイポグラフィと可変文言
+#### 5.2.10 タイポグラフィと可変文言
 
 - 書体は明朝体や丸文字ではなく、端末標準の角ゴシック系を使う
 - 青文字・白文字は、基準画像の太く詰まった看板文字へ近づけるため `fontWeight: '900'` を基本とする
@@ -189,10 +219,10 @@ SVGの `viewBox` は、内容量に応じて `0 0 329 261`、`0 0 329 282`、`0 
 - SVG内の文字サイズはすべてviewBox上の固定値とし、Dynamic Typeや端末のフォント倍率を個別に適用しない。看板全体の表示倍率だけに従って線形に拡大縮小する
 - SVG自身には、上帯、見出し、更新内容、版番号、補足文を連結した読み上げ用の `accessibilityLabel` を設定し、装飾上分割された各 `Text` の重複読み上げを避ける
 
-#### 5.2.9 ダイアログ内での配置
+#### 5.2.11 ダイアログ内での配置
 
 - 看板は `Dialog` の利用可能な内容幅いっぱいに配置し、その幅とviewBoxの縦横比から表示高さを一意に決める
-- 親コンテナの `onLayout` で利用可能幅を取得し、`Svg` の `width` と `height` だけを更新する。SVG内部の座標値は表示幅が変わっても変更しない
+- `ScalableSvgCanvas` の外側コンテナが幅と縦横比を決める。SVG内部の座標値は表示幅が変わっても変更しない
 - 看板の周囲に独自のカード、影、追加の枠、角丸背景を重ねない
 - ダイアログの既存paddingは残し、看板とダイアログの閉じるボタンが重ならないよう上部余白を確保する
 - 小さい画面ではダイアログ内の内容領域を縦スクロール可能にし、看板、ストアボタン、スワイプ案内が欠けないようにする
@@ -244,6 +274,9 @@ TDDで次を検証する。
 
 ### コンポーネント
 
+- `ScalableSvgCanvas` が指定された幅・高さからviewBoxと外側コンテナの縦横比を構成する
+- `ScalableSvgCanvas` が子として渡されたSVGプリミティブと独自SVGコンポーネントを描画し、`preserveAspectRatio="xMidYMid meet"` を適用する
+- `ScalableSvgCanvas` がSVG全体へ読み上げラベルを設定する
 - 看板本体は角丸なし、バージョン帯だけ丸棒である
 - feature／fixで、上帯、大見出し、内容欄見出しの固定差分が反映され、下部補足文は両方に表示される
 - 上帯文言は、feature／fixとも単一のSVG `Text` 要素で1行表示される
@@ -267,6 +300,7 @@ TDDで次を検証する。
 
 - `src/features/app-update/updateNotices.ts`
 - `src/config/storeUrls.ts`
+- `src/ui/components/ScalableSvgCanvas.tsx`
 - `src/ui/components/AppUpdateNoticeSign.tsx`
 - `src/ui/components/AppUpdateNoticeDialog.tsx`
 - `src/ui/hooks/useAppInitialization.ts`

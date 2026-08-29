@@ -103,16 +103,14 @@ export const PHOTO_DELETED_DIALOG_TITLE = '削除済み写真';
 export const PHOTO_DELETED_DIALOG_MESSAGE =
   'この写真は削除されているようです。写真ライブラリと同期してください。同期にはインターネットに繋がった状態で行ってください。';
 
-/** 写真は存在するが画像を取得できないときのタイトル。 */
-export const PHOTO_UNAVAILABLE_DIALOG_TITLE = '写真を表示できません';
-
 /**
- * 写真は存在するが画像を取得できないときのメッセージ。
+ * 写真は存在するが高解像度を取得できないときに、拡大表示の中へ出す案内。
  *
- * 再読み込みでは解決しない状況なので、削除済みの案内と文言も導線も分ける(設計書 §4.5)。
+ * モーダルにしないのは、未ダウンロードの写真を開くたびに操作を止められると邪魔になるためである。
+ * サムネイルは表示できているので「表示できません」とも言わない(設計書 §4.5)。
  */
-export const PHOTO_UNAVAILABLE_DIALOG_MESSAGE =
-  'この写真の本体が端末にありません。iCloud からダウンロードするには、インターネットに繋がった状態でしばらく待ってから再度お試しください。';
+export const PHOTO_UNAVAILABLE_INLINE_MESSAGE =
+  'この写真は端末にダウンロードされていません。インターネットに繋がった状態でしばらく待つと、鮮明な画像を表示できます。';
 
 /** 設定画面の不具合レポート項目の説明文。 */
 export const CRASH_REPORTING_SETTING_DESCRIPTION =

@@ -144,6 +144,8 @@ function RootLayoutContent(): React.ReactElement {
         selectedPhoto={s.selectedPhoto}
         selectedPhotoPreviewUri={s.selectedPhotoPreviewUri}
         isSelectedPhotoPreviewLoading={s.isSelectedPhotoPreviewLoading}
+        // 取得不可は拡大表示の中で案内する。開くたびにモーダルが出ると邪魔になるため(設計書 §4.5)
+        isSelectedPhotoUnavailable={s.photoUnavailableReason === 'unavailable'}
         styles={s.styles}
         onSelectPhotoCluster={s.setSelectedPhotoCluster}
         onSelectPhoto={s.setSelectedPhoto}
@@ -151,8 +153,9 @@ function RootLayoutContent(): React.ReactElement {
 
       <GpxImportProgressDialog visible={s.isProcessingGpxImport} styles={s.styles} theme={s.theme} />
 
+      {/* 削除済みのときだけモーダルで止め、再読み込み導線を出す(設計書 §4.5) */}
       <PhotoUnavailableDialog
-        reason={s.photoUnavailableReason}
+        visible={s.photoUnavailableReason === 'deleted'}
         styles={s.styles}
         onClose={s.dismissPhotoUnavailableDialog}
         onReloadPhotoLibrary={() => {

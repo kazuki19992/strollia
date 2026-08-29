@@ -12,10 +12,11 @@ jest.mock('@modules/photo-thumbnail', () => ({
  * テスト用の写真を作る。
  *
  * @param id - アセットID。
+ * @param uri - サムネイルURI。サムネイルが出ている状況を再現する場合に渡す。
  * @returns 地図表示用写真。
  */
-function createPhoto(id: string): MapPhoto {
-  return { id, uri: null, storedUri: `ph://${id}`, latitude: 35, longitude: 139, creationTime: 1, width: 10, height: 10 };
+function createPhoto(id: string, uri: string | null = null): MapPhoto {
+  return { id, uri, storedUri: `ph://${id}`, latitude: 35, longitude: 139, creationTime: 1, width: 10, height: 10 };
 }
 
 /** マイクロタスクを流し切って非同期stateの反映を待つ。 */
@@ -29,7 +30,7 @@ async function flushPromises(): Promise<void> {
 
 /** 既定の引数に差分を当ててフックを描画する。 */
 function renderReason(overrides: Partial<Parameters<typeof usePhotoUnavailableReason>[0]> = {}) {
-  const props = { photo: createPhoto('photo-1'), previewUri: null, isLoadingPreview: false, ...overrides };
+  const props = { photo: createPhoto('photo-1'), hasHighResolutionPreview: false, isLoadingPreview: false, ...overrides };
 
   return renderHook((currentProps: typeof props) => usePhotoUnavailableReason(currentProps), { initialProps: props });
 }
@@ -40,8 +41,8 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     (isPhotoAssetAvailableAsync as jest.Mock).mockResolvedValue(true);
   });
 
-  it('画像を表示できていれば案内を出さない', async () => {
-    const { result } = renderReason({ previewUri: 'file:///tmp/photo-1.jpg' });
+  it('高解像度を取得できていれば案内を出さない', async () => {
+    const { result } = renderReason({ hasHighResolutionPreview: true });
     await flushPromises();
 
     expect(result.current.photoUnavailableReason).toBeNull();
@@ -62,6 +63,16 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
     expect(result.current.photoUnavailableReason).toBeNull();
     expect(isPhotoAssetAvailableAsync).not.toHaveBeenCalled();
+  });
+
+  it('サムネイルが表示されていても高解像度を取得できなければ存在確認を行う', async () => {
+    // 拡大表示はサムネイルへフォールバックするため、「何かが映っている」ことを条件にすると
+    // 端末未ダウンロードの写真で案内が一切出なくなる(実機で確認した不具合の回帰テスト)
+    const { result } = renderReason({ photo: createPhoto('photo-1', 'file:///caches/photo-1-512.jpg') });
+    await flushPromises();
+
+    expect(isPhotoAssetAvailableAsync).toHaveBeenCalledWith('ph://photo-1');
+    expect(result.current.photoUnavailableReason).toBe('unavailable');
   });
 
   it('アセットが存在しない場合は削除済みとして扱う', async () => {
@@ -104,7 +115,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     await flushPromises();
 
     await act(async () => {
-      rerender({ photo: createPhoto('photo-1'), previewUri: null, isLoadingPreview: false });
+      rerender({ photo: createPhoto('photo-1'), hasHighResolutionPreview: false, isLoadingPreview: false });
     });
     await flushPromises();
 
@@ -134,7 +145,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     (isPhotoAssetAvailableAsync as jest.Mock).mockResolvedValue(false);
 
     await act(async () => {
-      rerender({ photo: createPhoto('photo-2'), previewUri: null, isLoadingPreview: false });
+      rerender({ photo: createPhoto('photo-2'), hasHighResolutionPreview: false, isLoadingPreview: false });
     });
     await flushPromises();
 
@@ -146,7 +157,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     await flushPromises();
 
     await act(async () => {
-      rerender({ photo: null, previewUri: null, isLoadingPreview: false });
+      rerender({ photo: null, hasHighResolutionPreview: false, isLoadingPreview: false });
     });
     await flushPromises();
 

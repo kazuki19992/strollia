@@ -250,9 +250,13 @@ export type AppStateContextValue = {
   photoLibrarySyncProgress: PhotoScanProgress | null;
   /** 写真ライブラリの全件再読み込みを開始する。 */
   startPhotoLibrarySync: () => Promise<void>;
-  /** 拡大表示で画像を出せなかった理由。案内不要な場合はnull。 */
+  /**
+   * 拡大表示で高解像度を出せなかった理由。案内不要な場合はnull。
+   *
+   * `deleted` はモーダル、`unavailable` は拡大表示の中のインライン案内として出す(設計書 §4.5)。
+   */
   photoUnavailableReason: PhotoUnavailableReason | null;
-  /** 写真を表示できない案内を閉じる。 */
+  /** 削除済み写真のモーダルを閉じる。 */
   dismissPhotoUnavailableDialog: () => void;
   /** 削除済み写真の案内から全件再読み込みを実行し、完了後にプレビューを閉じる。 */
   reloadPhotoLibraryFromUnavailableDialog: () => Promise<void>;
@@ -717,8 +721,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     [resolvedPhotoUris, selectedPhoto],
   );
   // 拡大表示のときだけ高解像度を取りに行く(この経路だけiCloudからのダウンロードを許可する)。
-  const { previewUri: selectedPhotoPreviewUri, isLoadingPreview: isSelectedPhotoPreviewLoading } =
-    usePhotoPreviewUri(resolvedSelectedPhoto);
+  const {
+    previewUri: selectedPhotoPreviewUri,
+    isLoadingPreview: isSelectedPhotoPreviewLoading,
+    hasHighResolutionPreview: hasSelectedPhotoHighResolutionPreview,
+  } = usePhotoPreviewUri(resolvedSelectedPhoto);
 
   /**
    * 全件再読み込みの完了後に、地図の表示を実態へ合わせ直す。
@@ -736,10 +743,10 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     onCompleted: handlePhotoLibrarySyncCompleted,
   });
 
-  // 画像を出せなかった原因を存在確認で切り分け、削除済みと取得不可を出し分ける(設計書 §4.5)。
+  // 高解像度を出せなかった原因を存在確認で切り分け、削除済みと取得不可を出し分ける(設計書 §4.5)。
   const { photoUnavailableReason, dismissPhotoUnavailableDialog } = usePhotoUnavailableReason({
     photo: resolvedSelectedPhoto,
-    previewUri: selectedPhotoPreviewUri,
+    hasHighResolutionPreview: hasSelectedPhotoHighResolutionPreview,
     isLoadingPreview: isSelectedPhotoPreviewLoading,
   });
 

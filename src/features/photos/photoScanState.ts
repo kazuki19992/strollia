@@ -53,7 +53,12 @@ export function resolveNextPhotoScanBaselineMs(assets: readonly ScannedAsset[], 
  * ため、null は「差分走査できない」という安全側の結果になる(壊れた基準時刻で差分走査すると、
  * 取りこぼしに気づけないまま走査済み扱いになってしまう)。
  *
- * @returns 前回の基準時刻(Unixミリ秒)。未保存・不正値・読み込み失敗の場合はnull。
+ * **`Date.parse` が解釈できることだけでは採用しない。** `Date.parse` は ISO 8601 以外の形式を
+ * 実装依存で受け入れ、`'2026-08-29'` のような値をローカル時刻ともUTCとも解釈しうる。ずれた
+ * ミリ秒をそのまま差分走査の下限に使うと、有効な写真を静かに除外してしまう。保存形式
+ * (`new Date(ms).toISOString()`)へ書き戻して一致する値だけを採用し、それ以外は全件走査へ倒す。
+ *
+ * @returns 前回の基準時刻(Unixミリ秒)。未保存・保存形式と異なる値・読み込み失敗の場合はnull。
  */
 export async function getPhotoScanBaselineMs(): Promise<number | null> {
   const storedValue = await getStringSetting(PHOTO_SCAN_BASELINE_SETTING_KEY, '').catch((error: unknown) => {
@@ -68,7 +73,12 @@ export async function getPhotoScanBaselineMs(): Promise<number | null> {
 
   const parsed = Date.parse(storedValue);
 
-  return Number.isNaN(parsed) ? null : parsed;
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  // 書き戻して一致しない値は、この関数が書いたものではない(または壊れている)
+  return new Date(parsed).toISOString() === storedValue ? parsed : null;
 }
 
 /**

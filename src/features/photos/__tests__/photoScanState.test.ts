@@ -64,6 +64,19 @@ describe('差分走査の基準時刻の読み込み getPhotoScanBaselineMs', ()
     await expect(getPhotoScanBaselineMs()).resolves.toBeNull();
   });
 
+  it.each([
+    ['2026-08-29', '日付のみ(タイムゾーンの解釈が実装依存)'],
+    ['2026/08/29 09:00:00', 'スラッシュ区切り(非標準)'],
+    ['Sat Aug 29 2026 09:00:00 GMT+0900', 'DateのtoString形式(ミリ秒を落とす)'],
+    ['2026-08-29T00:00:00.000Z ', '末尾に空白が混ざった値'],
+  ])('保存形式と一致しない値(%s / %s)はnullを返す', async (storedValue) => {
+    // `Date.parse` は非標準形式を実装依存で受け入れる。意図しないミリ秒に解釈されると、
+    // 差分走査の下限がずれて有効な写真を除外してしまう。書き戻して一致する値だけを採用する
+    (getStringSetting as jest.Mock).mockResolvedValue(storedValue);
+
+    await expect(getPhotoScanBaselineMs()).resolves.toBeNull();
+  });
+
   it('読み込みに失敗した場合は全件走査へ倒せるようnullを返す', async () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (getStringSetting as jest.Mock).mockRejectedValue(new Error('database is locked'));

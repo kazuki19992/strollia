@@ -532,6 +532,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [crashReportingEnabled, setCrashReportingEnabledState] = useState(true);
   const [showStayPlacesOnMap, setShowStayPlacesOnMap] = useState(true);
+  /** SQLiteへの保存に成功した最後の滞在場所表示設定。 */
+  const persistedShowStayPlacesOnMapRef = useRef(true);
+  /** SQLiteへの滞在場所表示設定の書き込みを要求順に実行するチェーン。 */
+  const stayPlaceMapVisibilityWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
+  /** 保存失敗時に古い要求が最新UIを巻き戻さないための連番。 */
+  const stayPlaceMapVisibilityRequestIdRef = useRef(0);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
   const [gpxImportProgressStage, setGpxImportProgressStage] = useState<GpxImportProgressStage>('selecting');
@@ -932,21 +938,37 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     [keepScreenAwake],
   );
 
-  /** 滞在場所アイコンの表示設定をUI状態とSQLiteへ反映する。 */
-  const updateShowStayPlacesOnMap = useCallback(
-    async (show: boolean): Promise<void> => {
-      const previousValue = showStayPlacesOnMap;
-      setShowStayPlacesOnMap(show);
-      try {
+  /** 起動時に読み込んだ滞在場所表示設定をUIと保存済み値へ反映する。 */
+  const initializeShowStayPlacesOnMap = useCallback((show: boolean): void => {
+    persistedShowStayPlacesOnMapRef.current = show;
+    setShowStayPlacesOnMap(show);
+  }, []);
+
+  /** 滞在場所アイコンの表示設定をUI状態とSQLiteへ要求順に反映する。 */
+  const updateShowStayPlacesOnMap = useCallback(async (show: boolean): Promise<void> => {
+    const requestId = stayPlaceMapVisibilityRequestIdRef.current + 1;
+    stayPlaceMapVisibilityRequestIdRef.current = requestId;
+    setShowStayPlacesOnMap(show);
+
+    const queuedWrite = stayPlaceMapVisibilityWriteQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
         await setSetting(SHOW_STAY_PLACES_ON_MAP_SETTING_KEY, show);
-      } catch (error: unknown) {
-        console.warn('Failed to persist stay place map visibility setting:', error);
-        setShowStayPlacesOnMap(previousValue);
-        throw error;
+        persistedShowStayPlacesOnMapRef.current = show;
+      });
+    stayPlaceMapVisibilityWriteQueueRef.current = queuedWrite;
+
+    try {
+      await queuedWrite;
+    } catch (error: unknown) {
+      console.warn('Failed to persist stay place map visibility setting:', error);
+      if (requestId === stayPlaceMapVisibilityRequestIdRef.current) {
+        const rollbackValue = persistedShowStayPlacesOnMapRef.current;
+        setShowStayPlacesOnMap(rollbackValue);
       }
-    },
-    [showStayPlacesOnMap],
-  );
+      throw error;
+    }
+  }, []);
 
   useAppInitialization({
     initializePremiumAccess,
@@ -960,7 +982,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     snapshotPremiumAccessUpdateVersion,
     setKeepScreenAwake,
     setCrashReportingEnabled: applyCrashReportingSetting,
-    setShowStayPlacesOnMap,
+    setShowStayPlacesOnMap: initializeShowStayPlacesOnMap,
     setMessage,
     setIsWhileInUseToastVisible,
     setIsReady,

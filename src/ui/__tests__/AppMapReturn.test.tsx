@@ -906,6 +906,85 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(false);
   });
 
+  test('滞在場所表示設定を連続更新してもSQLiteへ要求順に保存する', async () => {
+    renderRouter('src/app');
+    await flushPromises();
+
+    let resolveFirstWrite: (() => void) | undefined;
+    const firstWrite = new Promise<void>((resolve) => {
+      resolveFirstWrite = resolve;
+    });
+    (setSetting as jest.Mock).mockClear();
+    (setSetting as jest.Mock).mockImplementation((key: string, value: boolean) => {
+      if (key === 'showStayPlacesOnMap' && value === false) {
+        return firstWrite;
+      }
+      return Promise.resolve();
+    });
+
+    let firstUpdate!: Promise<void>;
+    let secondUpdate!: Promise<void>;
+    act(() => {
+      firstUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+      secondUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(true);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(setSetting).toHaveBeenCalledTimes(1);
+    expect(setSetting).toHaveBeenNthCalledWith(1, 'showStayPlacesOnMap', false);
+
+    await act(async () => {
+      resolveFirstWrite?.();
+      await Promise.all([firstUpdate, secondUpdate]);
+    });
+
+    expect(setSetting).toHaveBeenNthCalledWith(2, 'showStayPlacesOnMap', true);
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(true);
+  });
+
+  test('古い滞在場所表示設定の保存失敗では最新の表示要求を巻き戻さない', async () => {
+    renderRouter('src/app');
+    await flushPromises();
+
+    let rejectFirstWrite: ((error: Error) => void) | undefined;
+    const firstWrite = new Promise<void>((_resolve, reject) => {
+      rejectFirstWrite = reject;
+    });
+    (setSetting as jest.Mock).mockClear();
+    (setSetting as jest.Mock).mockImplementationOnce(() => firstWrite).mockResolvedValueOnce(undefined);
+
+    let firstUpdate!: Promise<void>;
+    let secondUpdate!: Promise<void>;
+    act(() => {
+      firstUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+      secondUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+    });
+
+    await act(async () => {
+      rejectFirstWrite?.(new Error('save failed'));
+      await expect(firstUpdate).rejects.toThrow('save failed');
+      await secondUpdate;
+    });
+
+    expect(setSetting).toHaveBeenCalledTimes(2);
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(false);
+  });
+
+  test('最新の滞在場所表示設定を保存できない場合は保存済みの表示状態へ戻してエラーを返す', async () => {
+    renderRouter('src/app');
+    await flushPromises();
+
+    (setSetting as jest.Mock).mockRejectedValueOnce(new Error('save failed'));
+
+    await act(async () => {
+      await expect(mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false)).rejects.toThrow('save failed');
+    });
+
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(true);
+  });
+
   test('保存済みの写真表示ONは地図準備完了後にpendingを立ててから有効化する', async () => {
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
       if (key === 'showPhotosOnMap') {

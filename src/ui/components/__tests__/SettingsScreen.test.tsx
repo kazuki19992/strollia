@@ -154,15 +154,17 @@ describe('設定画面 SettingsScreen', () => {
     expect(props.onOpenStayPlaces).toHaveBeenCalledTimes(1);
   });
 
-  test('滞在場所がある場合は写真表示の直後に滞在場所表示設定を表示する', () => {
+  test('滞在場所がある場合は写真関連項目の後かつマップのテーマ直前に滞在場所表示設定を表示する', () => {
     render(<SettingsScreen {...createProps()} />);
 
     const texts = screen.UNSAFE_getAllByType(Text).map((node) => node.props.children as unknown);
-    const photoIndex = texts.indexOf('マップ上に写真を表示する');
+    const photoReloadIndex = texts.lastIndexOf(PHOTO_LIBRARY_RELOAD_LABEL);
     const stayPlaceIndex = texts.indexOf('マップ上に滞在場所を表示');
+    const mapThemeIndex = texts.indexOf('マップのテーマ');
 
-    expect(photoIndex).toBeGreaterThanOrEqual(0);
-    expect(stayPlaceIndex).toBe(photoIndex + 2);
+    expect(photoReloadIndex).toBeGreaterThanOrEqual(0);
+    expect(stayPlaceIndex).toBeGreaterThan(photoReloadIndex);
+    expect(mapThemeIndex).toBe(stayPlaceIndex + 2);
   });
 
   test('滞在場所がない場合は滞在場所表示設定を表示しない', () => {

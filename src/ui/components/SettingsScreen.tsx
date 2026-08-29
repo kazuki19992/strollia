@@ -312,6 +312,24 @@ export function SettingsScreen({
             />
           </View>
 
+          <PhotoDisplayLimitPicker
+            photoDisplayLimitId={photoDisplayLimitId}
+            styles={styles}
+            theme={theme}
+            onUpdatePhotoDisplayLimitId={onUpdatePhotoDisplayLimitId}
+          />
+
+          <InfoBlock description={PHOTO_LIBRARY_RELOAD_DESCRIPTION} styles={styles} title={PHOTO_LIBRARY_RELOAD_LABEL} />
+          <ActionPill
+            alignLeft
+            disabled={isSyncingPhotoLibrary}
+            icon={<MaterialCommunityIcons name="image-sync-outline" size={22} color={theme.colors.text} />}
+            label={isSyncingPhotoLibrary ? '読み込み中...' : PHOTO_LIBRARY_RELOAD_LABEL}
+            accessibilityLabel={PHOTO_LIBRARY_RELOAD_LABEL}
+            styles={styles}
+            onPress={onReloadPhotoLibrary}
+          />
+
           {hasStayPlaces ? (
             <View style={styles.settingsInlineRow}>
               <View style={styles.settingsInlineText}>
@@ -334,24 +352,6 @@ export function SettingsScreen({
               />
             </View>
           ) : null}
-
-          <PhotoDisplayLimitPicker
-            photoDisplayLimitId={photoDisplayLimitId}
-            styles={styles}
-            theme={theme}
-            onUpdatePhotoDisplayLimitId={onUpdatePhotoDisplayLimitId}
-          />
-
-          <InfoBlock description={PHOTO_LIBRARY_RELOAD_DESCRIPTION} styles={styles} title={PHOTO_LIBRARY_RELOAD_LABEL} />
-          <ActionPill
-            alignLeft
-            disabled={isSyncingPhotoLibrary}
-            icon={<MaterialCommunityIcons name="image-sync-outline" size={22} color={theme.colors.text} />}
-            label={isSyncingPhotoLibrary ? '読み込み中...' : PHOTO_LIBRARY_RELOAD_LABEL}
-            accessibilityLabel={PHOTO_LIBRARY_RELOAD_LABEL}
-            styles={styles}
-            onPress={onReloadPhotoLibrary}
-          />
 
           <OptionGroup styles={styles} title="マップのテーマ">
             <SelectionTile

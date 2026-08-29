@@ -119,6 +119,9 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
 
     act(() => {
       result.current.openLatestAppUpdateNotice();
+    });
+    expect(result.current.appUpdateNoticeDialogSource).toBe('settings');
+    act(() => {
       result.current.closeAppUpdateNotice();
     });
 

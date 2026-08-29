@@ -830,7 +830,6 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     isProcessingGpxImport,
   });
   /**
-  /**
    * RevenueCat App User IDをSentryのユーザーコンテキストへ反映する。
    * クラッシュレポートをSupport IDで問い合わせられるようにするために必要。
    */

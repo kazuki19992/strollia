@@ -465,6 +465,12 @@ export async function loadGeotaggedPhotosInBounds(bounds: PhotoViewportBounds, d
  * 走査は SDK 57 のクラスベース新API(`Query` / `Asset`)で行う。軽量メタデータを1回のクエリで
  * まとめて取り、位置情報だけをアセットごとに取得する二段構えである。
  *
+ * **`Asset.getLocation()` の権限はOSで差がある。** Android 10(API 29)以降は `ACCESS_MEDIA_LOCATION`
+ * が無いと EXIF の位置情報を読めず、**エラーにならずに位置情報が返らない**(=ジオタグ無しと同じ扱いに
+ * なり、地図にマーカーが出ない)。この権限は `app.json` で宣言し、写真表示をONにする導線が
+ * 写真ライブラリ権限とあわせて要求している(`usePhotoMapCrashBreaker`)。iOS にはこの権限が無く、
+ * フルアクセスが許可されていれば `PHAsset.location` をそのまま読める(`docs/photo-geotag.md` §4)。
+ *
  * 走査コストの内訳は常に計測して返す(理由は `GeotaggedPhotoScanResult.metrics` を参照)。
  *
  * @param options - 走査モード・上限・進捗通知。省略時は上限なしの全件走査。

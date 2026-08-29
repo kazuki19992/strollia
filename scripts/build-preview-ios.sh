@@ -57,7 +57,7 @@ export EXPO_PUBLIC_RESET_ACHIEVEMENTS_ON_LAUNCH=false
 export EAS_LOCAL_BUILD_ARTIFACTS_DIR="${BUILDS_DIR}"
 
 # 写真走査コストの計測フラグ(一時)。Phase 2-c の設計に使う実測値を実機で取るためのもので、
-# 上の2つと違い .env.local の値をそのままビルドへ渡す。未設定なら既定の挙動(計測表示なし・上限200件)。
+# 上の2つと違い .env.local の値をそのままビルドへ渡す。未設定なら既定の挙動(計測表示なし・上限なしの全件走査)。
 # 計測が終わったらこのブロックごと削除する。詳細は docs/photo-geotag.md を参照
 PHOTO_SCAN_METRICS_FLAG="$(read_env_value EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS)"
 if [[ -n "${PHOTO_SCAN_METRICS_FLAG}" ]]; then

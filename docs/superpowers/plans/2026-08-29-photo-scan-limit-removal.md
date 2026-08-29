@@ -154,6 +154,12 @@ setIsLoadingPhotos(true) → await syncPhotoAssets() → ビューポート検�
 
 ## Task 9: 削除済み / 取得不可のダイアログ
 
+> **実装時の申し送り（この計画を書いた時点の想定と実装は異なる）。** 本タスクは両方を
+> `PhotoUnavailableDialog.tsx` の1コンポーネントで扱う想定だったが、設計書 §4.5 に従い、
+> **削除済みだけをモーダル**（`src/ui/components/PhotoDeletedDialog.tsx`）にし、
+> **取得不可は拡大表示の中のインライン案内**（`src/ui/components/PhotoPreviewModals.tsx`）にした。
+> 文言も設計書 §4.5 のものが最終版である。現在の仕様は設計書を参照すること。
+
 `src/ui/components/PhotoUnavailableDialog.tsx`（新設）。
 
 写真の拡大表示で画像を取得できなかったとき、**Task 1 の存在確認で分岐**して案内を出す。

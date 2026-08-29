@@ -32,7 +32,7 @@ export function AppUpdateNoticeDialog({ visible, source, notice, styles, onClose
   const isVisible = visible && source !== null && notice !== null;
 
   return (
-    <Dialog visible={isVisible} swipeToClose autoClose={false} styles={styles} onClose={onClose}>
+    <Dialog visible={isVisible} swipeToClose swipeDirection="horizontal" autoClose={false} styles={styles} onClose={onClose}>
       {isVisible ? (
         <ScrollView
           style={[styles.appUpdateNoticeDialogScroll, { maxHeight: height * 0.72 }]}

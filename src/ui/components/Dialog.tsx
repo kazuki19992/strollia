@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, LayoutAnimation, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
 import { AppStyles } from '@/ui/appStyles';
+import { MODAL_EXIT_TRANSITION_DURATION_MS } from '@/ui/constants/modalTransitions';
 import { shouldDismissAchievementModalSwipe, shouldDismissAchievementModalTerminate } from './achievementUnlockModalLogic';
 import { ConfettiOverlay } from './ConfettiOverlay';
 
@@ -32,6 +33,9 @@ export type DialogChildHelpers = {
   pauseAutoClose: () => void;
 };
 
+/** ダイアログを閉じるスワイプとして取得する方向。 */
+export type DialogSwipeDirection = 'any' | 'horizontal';
+
 /** 汎用ダイアログのprops。 */
 export type DialogProps = {
   /** 表示状態。 */
@@ -44,6 +48,8 @@ export type DialogProps = {
   autoClose?: boolean;
   /** スワイプで閉じられるようにするか。trueのときヒント文言も表示する。 */
   swipeToClose?: boolean;
+  /** 閉じ操作として取得するスワイプ方向。縦スクロールを含む場合はhorizontalを使う。 */
+  swipeDirection?: DialogSwipeDirection;
   /** false のとき閉じる手段（×ボタン・スワイプ・背景/戻る）を無効化する。既定 true。 */
   dismissible?: boolean;
   /** 紙吹雪の再生キー。 */
@@ -66,6 +72,7 @@ export function Dialog({
   showConfetti = false,
   autoClose = false,
   swipeToClose = true,
+  swipeDirection = 'any',
   dismissible = true,
   animationKey = null,
   styles,
@@ -121,9 +128,9 @@ export function Dialog({
         onCloseRef.current();
       }
       Animated.parallel([
-        Animated.timing(modalProgress, { toValue: 0, duration: 500, useNativeDriver: true }),
-        Animated.timing(dragX, { toValue: 0, duration: 500, useNativeDriver: true }),
-        Animated.timing(dragY, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(modalProgress, { toValue: 0, duration: MODAL_EXIT_TRANSITION_DURATION_MS, useNativeDriver: true }),
+        Animated.timing(dragX, { toValue: 0, duration: MODAL_EXIT_TRANSITION_DURATION_MS, useNativeDriver: true }),
+        Animated.timing(dragY, { toValue: 0, duration: MODAL_EXIT_TRANSITION_DURATION_MS, useNativeDriver: true }),
       ]).start(({ finished }) => {
         if (finished && isMountedRef.current) {
           setIsRendered(false);
@@ -195,32 +202,46 @@ export function Dialog({
     }
 
     return PanResponder.create({
-      onStartShouldSetPanResponder: () => dismissible,
-      onMoveShouldSetPanResponder: (_, gestureState) => dismissible && (Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4),
+      onStartShouldSetPanResponder: () => dismissible && swipeDirection === 'any',
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        if (!dismissible) {
+          return false;
+        }
+
+        const horizontalDistance = Math.abs(gestureState.dx);
+        const verticalDistance = Math.abs(gestureState.dy);
+        if (swipeDirection === 'horizontal') {
+          return horizontalDistance > 4 && horizontalDistance > verticalDistance;
+        }
+
+        return horizontalDistance > 4 || verticalDistance > 4;
+      },
       onPanResponderGrant: () => {
         dragX.stopAnimation();
         dragY.stopAnimation();
       },
       onPanResponderMove: (_, gestureState) => {
         dragX.setValue(gestureState.dx);
-        dragY.setValue(gestureState.dy);
+        dragY.setValue(swipeDirection === 'horizontal' ? 0 : gestureState.dy);
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (swipeToClose && shouldDismissAchievementModalSwipe(gestureState)) {
+        const dismissGesture = swipeDirection === 'horizontal' ? { ...gestureState, dy: 0, vy: 0 } : gestureState;
+        if (swipeToClose && shouldDismissAchievementModalSwipe(dismissGesture)) {
           animateOut(true);
           return;
         }
         resetDragPosition();
       },
       onPanResponderTerminate: (_, gestureState) => {
-        if (swipeToClose && shouldDismissAchievementModalTerminate(gestureState)) {
+        const dismissGesture = swipeDirection === 'horizontal' ? { ...gestureState, dy: 0 } : gestureState;
+        if (swipeToClose && shouldDismissAchievementModalTerminate(dismissGesture)) {
           animateOut(true);
           return;
         }
         resetDragPosition();
       },
     });
-  }, [animateOut, dismissible, dragX, dragY, resetDragPosition, swipeToClose]);
+  }, [animateOut, dismissible, dragX, dragY, resetDragPosition, swipeDirection, swipeToClose]);
 
   const distanceOpacity = Animated.add(dragX, dragY).interpolate({
     inputRange: [-260, -90, 0, 90, 260],

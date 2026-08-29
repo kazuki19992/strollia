@@ -32,6 +32,17 @@ describe('アプリ更新通知定義', () => {
     expect(resolveCurrentAppUpdateNotice({ ...featureNotice, showMore: true, items: ['地図を改善'] }, '1.3.0')).toBeNull();
   });
 
+  test('更新項目が3件ある定義は表示しない', () => {
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['地図を改善', '検索を追加', '表示を改善'] }, '1.3.0')).toBeNull();
+  });
+
+  test('Unicode文字は10文字まで表示し、11文字は表示しない', () => {
+    const tenCodePoints = '🚀'.repeat(10);
+    const elevenCodePoints = '🚀'.repeat(11);
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [tenCodePoints], showMore: false }, '1.3.0')).not.toBeNull();
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [elevenCodePoints], showMore: false }, '1.3.0')).toBeNull();
+  });
+
   test('既存ユーザーかつ未読の現在版だけ自動表示する', () => {
     expect(
       shouldShowAutomaticAppUpdateNotice({

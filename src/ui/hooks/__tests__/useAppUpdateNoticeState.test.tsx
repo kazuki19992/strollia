@@ -49,6 +49,7 @@ type NoticeStateProps = { options: UseAppUpdateNoticeStateOptions };
 
 describe('更新通知状態フック useAppUpdateNoticeState', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     (setSetting as jest.Mock).mockResolvedValue(undefined);
     jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
@@ -56,6 +57,7 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
@@ -99,7 +101,7 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     ['写真プレビュー', { hasSelectedPhoto: true }],
     ['写真クラスタプレビュー', { hasSelectedPhotoCluster: true }],
     ['GPX処理', { isProcessingGpxImport: true }],
-  ])('%s の表示中は更新通知を待機し、解消後に表示する', (_label, blockingState) => {
+  ])('%s の表示中は更新通知を待機し、退場時間の経過後に表示する', (_label, blockingState) => {
     const { result, rerender } = renderHook(({ options }: NoticeStateProps) => useAppUpdateNoticeState(options), {
       initialProps: { options: makeOptions(blockingState) },
     });
@@ -111,6 +113,43 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
 
     rerender({ options: makeOptions() });
+    expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
+    act(() => {
+      jest.advanceTimersByTime(499);
+    });
+    expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
+    act(() => {
+      jest.advanceTimersByTime(1);
+    });
+    expect(result.current.isAppUpdateNoticeDialogVisible).toBe(true);
+  });
+
+  test('先行モーダルの退場待機中に別のブロッカーが現れたら待機をリセットする', () => {
+    const { result, rerender } = renderHook(({ options }: NoticeStateProps) => useAppUpdateNoticeState(options), {
+      initialProps: { options: makeOptions({ isFirstLaunchTutorialVisible: true }) },
+    });
+
+    act(() => {
+      result.current.openAutomaticAppUpdateNotice();
+    });
+    rerender({ options: makeOptions() });
+    act(() => {
+      jest.advanceTimersByTime(250);
+    });
+    rerender({ options: makeOptions({ isPremiumPaywallVisible: true }) });
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+    expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
+
+    rerender({ options: makeOptions() });
+    act(() => {
+      jest.advanceTimersByTime(499);
+    });
+    expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
+    act(() => {
+      jest.advanceTimersByTime(1);
+    });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(true);
   });
 

@@ -53,6 +53,7 @@ describe('AppUpdateNoticeDialog', () => {
     const dialog = screen.UNSAFE_getByType(Dialog);
     expect(dialog.props.visible).toBe(true);
     expect(dialog.props.swipeToClose).toBe(true);
+    expect(dialog.props.swipeDirection).toBe('horizontal');
     expect(dialog.props.autoClose).toBe(false);
     expect(screen.queryByLabelText('ストアページへ')).toBeNull();
   });

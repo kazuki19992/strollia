@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 
 import { getStrolliaStoreUrl } from '@/config/storeUrls';
@@ -10,6 +10,7 @@ import {
 import type { AppUpdateNotice, AppUpdateNoticeSource } from '@/features/app-update/updateNotices';
 import { setSetting } from '@/features/settings/settingsRepository';
 import type { AppSettingEntry } from '@/features/settings/settingsRepository';
+import { MODAL_EXIT_TRANSITION_DURATION_MS } from '@/ui/constants/modalTransitions';
 
 /** 更新通知の表示を待機させるグローバルモーダルの状態。 */
 export type AppUpdateNoticeBlockingModalState = {
@@ -92,7 +93,6 @@ export function useAppUpdateNoticeState({
     () => resolveCurrentAppUpdateNotice(latestUpdateNotice, nativeApplicationVersion),
     [latestUpdateNotice, nativeApplicationVersion],
   );
-  const [appUpdateNoticeDialogSource, setAppUpdateNoticeDialogSource] = useState<AppUpdateNoticeSource | null>(null);
   const hasBlockingGlobalModal = Boolean(
     isFirstLaunchTutorialVisible ||
     hasActiveAchievementNotification ||
@@ -102,7 +102,28 @@ export function useAppUpdateNoticeState({
     hasSelectedPhotoCluster ||
     isProcessingGpxImport,
   );
-  const isAppUpdateNoticeDialogVisible = appUpdateNoticeDialogSource !== null && currentAppUpdateNotice !== null && !hasBlockingGlobalModal;
+  const [appUpdateNoticeDialogSource, setAppUpdateNoticeDialogSource] = useState<AppUpdateNoticeSource | null>(null);
+  const [isBlockingModalExitSettled, setIsBlockingModalExitSettled] = useState(!hasBlockingGlobalModal);
+
+  useEffect(() => {
+    if (hasBlockingGlobalModal) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- blocker表示中にsettle済みを取り消し、解消直後の重複表示を防ぐ
+      setIsBlockingModalExitSettled(false);
+      return;
+    }
+    if (isBlockingModalExitSettled) {
+      return;
+    }
+
+    const settleTimer = setTimeout(() => {
+      setIsBlockingModalExitSettled(true);
+    }, MODAL_EXIT_TRANSITION_DURATION_MS);
+
+    return () => clearTimeout(settleTimer);
+  }, [hasBlockingGlobalModal, isBlockingModalExitSettled]);
+
+  const isAppUpdateNoticeDialogVisible =
+    appUpdateNoticeDialogSource !== null && currentAppUpdateNotice !== null && !hasBlockingGlobalModal && isBlockingModalExitSettled;
 
   /** 起動時の未読通知を自動表示として予約する。 */
   const openAutomaticAppUpdateNotice = useCallback((): void => {

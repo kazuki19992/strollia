@@ -166,6 +166,18 @@ describe('マップ下部ダッシュボード', () => {
     expect(props.onRecenterOnUserLocation).not.toHaveBeenCalled();
   });
 
+  test('表示設定パネルは暗幕をタップして閉じられる', () => {
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    fireEvent.press(screen.getByLabelText('マップ表示設定を閉じる'));
+
+    expect(screen.queryByText('マップ上に写真を表示')).toBeNull();
+  });
+
   test('滞在場所がない場合は表示設定パネルに滞在場所表示設定を出さない', () => {
     render(<MapBottomDashboard {...createProps()} hasStayPlaces={false} />);
 

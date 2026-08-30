@@ -20,10 +20,7 @@ jest.mock('@/config/storeUrls', () => ({
 const UPDATE_NOTICE: AppUpdateNotice = {
   version: '1.3.0',
   kind: 'feature',
-  heading: '新機能を\n追加しました',
-  sectionTitle: '主な新機能',
   items: ['地図を改善'],
-  showMore: false,
 };
 
 /** 更新通知状態フックの標準入力を作る。 */

@@ -1,4 +1,5 @@
 import {
+  getAppUpdateNoticeText,
   resolveCurrentAppUpdateNotice,
   shouldShowAutomaticAppUpdateNotice,
   type AppUpdateNotice,
@@ -7,10 +8,7 @@ import {
 const featureNotice: AppUpdateNotice = {
   version: '1.3.0',
   kind: 'feature',
-  heading: '新機能を\n追加しました',
-  sectionTitle: '主な新機能',
-  items: ['地図を改善', '検索を追加'],
-  showMore: true,
+  items: ['地図を改善', '検索を追加', '表示を改善'],
 };
 
 describe('アプリ更新通知定義', () => {
@@ -25,22 +23,25 @@ describe('アプリ更新通知定義', () => {
     expect(resolveCurrentAppUpdateNotice(null, '1.3.0')).toBeNull();
   });
 
-  test('項目数・文字数・種別固定文言が不正なら表示しない', () => {
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [] }, '1.3.0')).toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['12345678901'] }, '1.3.0')).toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, heading: '任意見出し' }, '1.3.0')).toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, showMore: true, items: ['地図を改善'] }, '1.3.0')).toBeNull();
+  test('種別から固定の見出しと内容欄見出しを導出する', () => {
+    expect(getAppUpdateNoticeText('feature')).toEqual({ heading: '新機能を\n追加しました', sectionTitle: '主な新機能' });
+    expect(getAppUpdateNoticeText('fix')).toEqual({ heading: '不具合を\nなおしました', sectionTitle: '修正した不具合' });
   });
 
-  test('更新項目が3件ある定義は表示しない', () => {
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['地図を改善', '検索を追加', '表示を改善'] }, '1.3.0')).toBeNull();
+  test('項目数または文字数が不正なら表示しない', () => {
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [] }, '1.3.0')).toBeNull();
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['12345678901'] }, '1.3.0')).toBeNull();
+  });
+
+  test('重要順の3件以上の更新項目を持つ定義も解決する', () => {
+    expect(resolveCurrentAppUpdateNotice(featureNotice, '1.3.0')).toEqual(featureNotice);
   });
 
   test('Unicode文字は10文字まで表示し、11文字は表示しない', () => {
     const tenCodePoints = '🚀'.repeat(10);
     const elevenCodePoints = '🚀'.repeat(11);
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [tenCodePoints], showMore: false }, '1.3.0')).not.toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [elevenCodePoints], showMore: false }, '1.3.0')).toBeNull();
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [tenCodePoints] }, '1.3.0')).not.toBeNull();
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [elevenCodePoints] }, '1.3.0')).toBeNull();
   });
 
   test('既存ユーザーかつ未読の現在版だけ自動表示する', () => {

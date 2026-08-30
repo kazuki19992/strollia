@@ -201,10 +201,7 @@ jest.mock('@/features/app-update/updateNotices', () => ({
   LATEST_UPDATE_NOTICE: {
     version: '1.3.0',
     kind: 'feature',
-    heading: '新機能を\n追加しました',
-    sectionTitle: '主な新機能',
     items: ['地図を改善'],
-    showMore: false,
   },
 }));
 

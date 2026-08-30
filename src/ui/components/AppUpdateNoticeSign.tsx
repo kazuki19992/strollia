@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { G, Rect, Text } from 'react-native-svg';
 
-import type { AppUpdateNotice } from '@/features/app-update/updateNotices';
+import { getAppUpdateNoticeText, type AppUpdateNotice } from '@/features/app-update/updateNotices';
 import { ScalableSvgCanvas } from '@/ui/components/ScalableSvgCanvas';
 
 /** 工事看板のSVG viewBoxにおける固定幅。 */
@@ -33,6 +33,8 @@ export type AppUpdateNoticeSignProps = {
 type AppUpdateNoticeSignArtworkProps = {
   /** 表示する版番号・種別・更新内容。 */
   notice: AppUpdateNotice;
+  /** 重要順の更新項目から看板へ描画する先頭2件。 */
+  displayedItems: readonly string[];
   /** 更新項目数と「など……」に対応する内容欄以降の下方向オフセット。 */
   lowerContentOffset: number;
   /** オフセットを含む看板全体の高さ。 */
@@ -52,12 +54,14 @@ function getHeadingLines(heading: string): readonly [string, string] {
 
 /** 読み上げ時に看板の内容を重複なく伝えるラベルを組み立てる。 */
 function getAccessibilityLabel(notice: AppUpdateNotice): string {
+  const { heading, sectionTitle } = getAppUpdateNoticeText(notice.kind);
+  const displayedItems = notice.items.slice(0, 2);
   return [
     getTopCopy(notice.kind),
-    notice.heading.replace('\n', '、'),
-    notice.sectionTitle,
-    ...notice.items,
-    notice.showMore ? 'など' : null,
+    heading.replace('\n', '、'),
+    sectionTitle,
+    ...displayedItems,
+    notice.items.length > displayedItems.length ? 'など' : null,
     `Ver ${notice.version}`,
     '詳しくはリリースノートをご確認ください',
   ]
@@ -71,9 +75,10 @@ function getAccessibilityLabel(notice: AppUpdateNotice): string {
  * SVG内の固定座標を維持して文字・線・余白を同時に拡大縮小するため、個別の端末幅調整は行わない。
  */
 export function AppUpdateNoticeSign({ notice, maxWidth, maxHeight }: AppUpdateNoticeSignProps): ReactElement {
-  const secondItemOffset = notice.items.length === 2 ? SECOND_ITEM_EXTENSION : 0;
-  const showMoreOffset = notice.showMore ? SHOW_MORE_EXTENSION : 0;
-  const lowerContentOffset = secondItemOffset + showMoreOffset;
+  const displayedItems = notice.items.slice(0, 2);
+  const secondItemOffset = displayedItems.length === 2 ? SECOND_ITEM_EXTENSION : 0;
+  const moreItemsOffset = notice.items.length > displayedItems.length ? SHOW_MORE_EXTENSION : 0;
+  const lowerContentOffset = secondItemOffset + moreItemsOffset;
   const signHeight = BASE_SIGN_HEIGHT + lowerContentOffset;
 
   return (
@@ -85,14 +90,26 @@ export function AppUpdateNoticeSign({ notice, maxWidth, maxHeight }: AppUpdateNo
       accessibilityLabel={getAccessibilityLabel(notice)}
       testID="app-update-notice-sign-canvas"
     >
-      <AppUpdateNoticeSignArtwork notice={notice} lowerContentOffset={lowerContentOffset} signHeight={signHeight} />
+      <AppUpdateNoticeSignArtwork
+        notice={notice}
+        displayedItems={displayedItems}
+        lowerContentOffset={lowerContentOffset}
+        signHeight={signHeight}
+      />
     </ScalableSvgCanvas>
   );
 }
 
 /** 固定座標で工事看板のSVG要素を描画する。 */
-function AppUpdateNoticeSignArtwork({ notice, lowerContentOffset, signHeight }: AppUpdateNoticeSignArtworkProps): ReactElement {
-  const [headingFirstLine, headingSecondLine] = getHeadingLines(notice.heading);
+function AppUpdateNoticeSignArtwork({
+  notice,
+  displayedItems,
+  lowerContentOffset,
+  signHeight,
+}: AppUpdateNoticeSignArtworkProps): ReactElement {
+  const { heading, sectionTitle } = getAppUpdateNoticeText(notice.kind);
+  const [headingFirstLine, headingSecondLine] = getHeadingLines(heading);
+  const hasMoreItems = notice.items.length > displayedItems.length;
 
   return (
     <G>
@@ -148,17 +165,17 @@ function AppUpdateNoticeSignArtwork({ notice, lowerContentOffset, signHeight }: 
         ry={0}
       />
       <Text x={21} y={168} fill={SIGN_BLUE} fontSize={14} fontWeight="900">
-        {notice.sectionTitle}
+        {sectionTitle}
       </Text>
       <Text x={21} y={189} fill={SIGN_BLUE} fontSize={14} fontWeight="900">
-        {notice.items[0]}
+        {displayedItems[0]}
       </Text>
-      {notice.items[1] ? (
+      {displayedItems[1] ? (
         <Text x={21} y={210} fill={SIGN_BLUE} fontSize={14} fontWeight="900">
-          {notice.items[1]}
+          {displayedItems[1]}
         </Text>
       ) : null}
-      {notice.showMore ? (
+      {hasMoreItems ? (
         <Text testID="app-update-notice-sign-show-more" x={21} y={226} fill={SIGN_BLUE} fontSize={11} fontWeight="900">
           など……
         </Text>

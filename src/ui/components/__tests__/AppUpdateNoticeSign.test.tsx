@@ -21,10 +21,7 @@ function createFeatureNotice(): AppUpdateNotice {
   return {
     version: '1.3.0',
     kind: 'feature',
-    heading: '新機能を\n追加しました',
-    sectionTitle: '主な新機能',
     items: ['地図を改善'],
-    showMore: false,
   };
 }
 
@@ -52,8 +49,6 @@ describe('アプリ更新通知の工事看板 AppUpdateNoticeSign', () => {
     const notice: AppUpdateNotice = {
       ...createFeatureNotice(),
       kind: 'fix',
-      heading: '不具合を\nなおしました',
-      sectionTitle: '修正した不具合',
     };
 
     render(<AppUpdateNoticeSign notice={notice} />);
@@ -77,11 +72,10 @@ describe('アプリ更新通知の工事看板 AppUpdateNoticeSign', () => {
     expect(screen.getByTestId('app-update-notice-sign-footer')).toHaveProp('y', 273);
   });
 
-  test('2件かつshowMoreの場合はさらに16単位伸ばし、小さい補足を描画する', () => {
+  test('重要順の3件以上の場合は先頭2件と小さい補足を描画する', () => {
     const notice: AppUpdateNotice = {
       ...createFeatureNotice(),
-      items: ['地図を改善', '検索を追加'],
-      showMore: true,
+      items: ['地図を改善', '検索を追加', '表示を改善'],
     };
 
     render(<AppUpdateNoticeSign notice={notice} />);
@@ -90,6 +84,7 @@ describe('アプリ更新通知の工事看板 AppUpdateNoticeSign', () => {
     expect(screen.getByTestId('app-update-notice-sign-content-box')).toHaveProp('height', 91);
     expect(screen.getByTestId('app-update-notice-sign-show-more')).toHaveProp('fontSize', 11);
     expect(screen.getByTestId('app-update-notice-sign-show-more').props.children).toBe('など……');
+    expect(screen.queryByText('表示を改善')).toBeNull();
     expect(screen.getByTestId('app-update-notice-sign-version-pill')).toHaveProp('y', 244);
     expect(screen.getByTestId('app-update-notice-sign-footer')).toHaveProp('y', 289);
   });

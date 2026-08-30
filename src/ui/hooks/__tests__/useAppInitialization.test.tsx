@@ -82,10 +82,7 @@ const DEFAULT_REFRESH_RESULT = {
 const UPDATE_NOTICE: AppUpdateNotice = {
   version: '1.3.0',
   kind: 'feature',
-  heading: '新機能を\n追加しました',
-  sectionTitle: '主な新機能',
   items: ['地図を改善'],
-  showMore: false,
 };
 
 /** テスト用の初期化オプションを生成する（各テストでオーバーライド可能）。 */

@@ -12,10 +12,10 @@
 
 ## Global Constraints
 
-- `LATEST_UPDATE_NOTICE` は今回 `null` のままとし、バージョンや未確定の更新文言を追加しない。
+- `LATEST_UPDATE_NOTICE` は動作確認中だけ対象版の仮データを入れ、確認完了後は未提供版として `null` に戻す。
 - 通知は `Application.nativeApplicationVersion` と通知の `version` が文字列で完全一致するときだけ有効とする。
 - 新規インストールでは初回チュートリアルだけを表示し、現在版を既読として原子的に保存する。
-- 更新項目は1〜2件、各1〜10 Unicode文字とし、`showMore: true` は2件表示時だけ許可する。
+- 更新項目は重要順に1件以上、各1〜10 Unicode文字とする。看板は先頭2件を表示し、3件目以降があれば「など……」を自動表示する。
 - 「アプリを新しくしました」「ご迷惑をおかけしました」は単一のSVG Textで必ず1行表示する。
 - feature／fixとも「詳しくはリリースノートをご確認ください」を表示する。
 - 看板は329単位幅のSVG viewBoxで描画し、文字、線、余白を含む全要素を同一倍率で線形拡大縮小する。
@@ -50,10 +50,7 @@ import {
 const featureNotice: AppUpdateNotice = {
   version: '1.3.0',
   kind: 'feature',
-  heading: '新機能を\n追加しました',
-  sectionTitle: '主な新機能',
-  items: ['地図を改善', '検索を追加'],
-  showMore: true,
+  items: ['地図を改善', '検索を追加', '表示を改善'],
 };
 
 describe('アプリ更新通知定義', () => {
@@ -68,11 +65,9 @@ describe('アプリ更新通知定義', () => {
     expect(resolveCurrentAppUpdateNotice(null, '1.3.0')).toBeNull();
   });
 
-  test('項目数・文字数・種別固定文言が不正なら表示しない', () => {
+  test('項目数または文字数が不正なら表示しない', () => {
     expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [] }, '1.3.0')).toBeNull();
     expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['12345678901'] }, '1.3.0')).toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, heading: '任意見出し' }, '1.3.0')).toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, showMore: true, items: ['地図を改善'] }, '1.3.0')).toBeNull();
   });
 
   test('既存ユーザーかつ未読の現在版だけ自動表示する', () => {
@@ -116,13 +111,10 @@ export type AppUpdateNoticeSource = 'automatic' | 'settings';
 export type AppUpdateNotice = {
   version: string;
   kind: AppUpdateNoticeKind;
-  heading: string;
-  sectionTitle: string;
   items: readonly string[];
-  showMore: boolean;
 };
 
-const KIND_CONTENT = {
+const KIND_TEXT = {
   feature: { heading: '新機能を\n追加しました', sectionTitle: '主な新機能' },
   fix: { heading: '不具合を\nなおしました', sectionTitle: '修正した不具合' },
 } as const;
@@ -135,11 +127,8 @@ export function resolveCurrentAppUpdateNotice(
   nativeApplicationVersion: string | null,
 ): AppUpdateNotice | null {
   if (!notice || !nativeApplicationVersion || notice.version !== nativeApplicationVersion) return null;
-  const expected = KIND_CONTENT[notice.kind];
   const lengths = notice.items.map((item) => Array.from(item).length);
-  if (notice.heading !== expected.heading || notice.sectionTitle !== expected.sectionTitle) return null;
-  if (notice.items.length < 1 || notice.items.length > 2 || lengths.some((length) => length < 1 || length > 10)) return null;
-  if (notice.showMore && notice.items.length !== 2) return null;
+  if (notice.items.length < 1 || lengths.some((length) => length < 1 || length > 10)) return null;
   return notice;
 }
 
@@ -285,7 +274,7 @@ expect(screen.getByTestId('app-update-notice-sign-top-copy').props.children).toB
 expect(screen.getByText('詳しくはリリースノートをご確認ください')).toBeTruthy();
 ```
 
-別ケースでfix上帯が「ご迷惑をおかけしました」の単一Textであること、2件でviewBox高282、2件かつ `showMore` で298、「など……」が `fontSize={11}` になることを検証する。
+別ケースでfix上帯が「ご迷惑をおかけしました」の単一Textであること、2件でviewBox高282、重要順の3件以上で298、「など……」が `fontSize={11}` になることを検証する。
 
 - [ ] **Step 2: テストを実行して未実装で失敗することを確認する**
 
@@ -310,9 +299,10 @@ const SIGN_FOOTER = '#303030';
 高さと下側オフセットは次の式だけで決める。
 
 ```ts
-const secondItemOffset = notice.items.length === 2 ? SECOND_ITEM_EXTENSION : 0;
-const showMoreOffset = notice.showMore ? SHOW_MORE_EXTENSION : 0;
-const lowerContentOffset = secondItemOffset + showMoreOffset;
+const displayedItems = notice.items.slice(0, 2);
+const secondItemOffset = displayedItems.length === 2 ? SECOND_ITEM_EXTENSION : 0;
+const moreItemsOffset = notice.items.length > displayedItems.length ? SHOW_MORE_EXTENSION : 0;
+const lowerContentOffset = secondItemOffset + moreItemsOffset;
 const signHeight = BASE_SIGN_HEIGHT + lowerContentOffset;
 ```
 

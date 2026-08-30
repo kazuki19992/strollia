@@ -25,10 +25,7 @@ const styles = new Proxy({}, { get: (_target, property) => property }) as never;
 const featureNotice: AppUpdateNotice = {
   version: '1.2.0',
   kind: 'feature',
-  heading: '新機能を\n追加しました',
-  sectionTitle: '主な新機能',
   items: ['新機能を追加'],
-  showMore: false,
 };
 
 const baseProps = {

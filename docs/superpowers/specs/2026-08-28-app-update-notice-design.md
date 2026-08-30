@@ -40,7 +40,7 @@ export const LATEST_UPDATE_NOTICE: AppUpdateNotice | null = null;
 
 - `version` が現在動作中の `Application.nativeApplicationVersion` と文字列で完全一致する。前方一致、範囲指定、メジャー／マイナーのみの一致は認めない
 - `items` は重要度順に1件以上を指定する。看板には先頭2件だけを表示する
-- 各 `item` は `Array.from(item).length` で10文字以内
+- 各 `item` は空文字を許可せず、`Array.from(item).length` で1文字以上10文字以内
 - 3件目以降がある場合は、看板が自動で小さい「など……」を表示する。定義に `showMore` は持たない
 - `heading` と `sectionTitle` は、`kind` に対応する次の固定値をUIが導出する。定義に持たない
 

@@ -20,7 +20,7 @@ export type ScalableSvgCanvasProps = {
   testID?: string;
 };
 
-/** 固定viewBoxのSVG要素を親幅いっぱいに縦横比を保って描画する。 */
+/** 固定viewBoxのSVG要素を親幅いっぱいに縦横比を保って描画する。viewBoxの幅・高さは正数を指定する。 */
 export function ScalableSvgCanvas({
   viewBoxWidth,
   viewBoxHeight,
@@ -30,12 +30,15 @@ export function ScalableSvgCanvas({
   children,
   testID,
 }: ScalableSvgCanvasProps): ReactElement {
-  const widthScale = maxWidth === undefined ? Number.POSITIVE_INFINITY : Math.max(0, maxWidth) / viewBoxWidth;
-  const heightScale = maxHeight === undefined ? Number.POSITIVE_INFINITY : Math.max(0, maxHeight) / viewBoxHeight;
+  const hasValidViewBox = viewBoxWidth > 0 && viewBoxHeight > 0;
+  const widthScale = !hasValidViewBox || maxWidth === undefined ? Number.POSITIVE_INFINITY : Math.max(0, maxWidth) / viewBoxWidth;
+  const heightScale = !hasValidViewBox || maxHeight === undefined ? Number.POSITIVE_INFINITY : Math.max(0, maxHeight) / viewBoxHeight;
   const containedScale = Math.min(widthScale, heightScale);
-  const containerStyle = Number.isFinite(containedScale)
-    ? { alignSelf: 'center' as const, width: viewBoxWidth * containedScale, height: viewBoxHeight * containedScale }
-    : { width: '100%' as const, aspectRatio: viewBoxWidth / viewBoxHeight };
+  const containerStyle = !hasValidViewBox
+    ? { alignSelf: 'center' as const, width: 0, height: 0 }
+    : Number.isFinite(containedScale)
+      ? { alignSelf: 'center' as const, width: viewBoxWidth * containedScale, height: viewBoxHeight * containedScale }
+      : { width: '100%' as const, aspectRatio: viewBoxWidth / viewBoxHeight };
 
   return (
     <View testID={testID ? `${testID}-container` : undefined} style={containerStyle}>

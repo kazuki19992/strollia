@@ -77,4 +77,21 @@ describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
     expect(containerStyle.height).toBeCloseTo(180);
     expect(screen.getByTestId('vector-canvas')).toHaveProp('preserveAspectRatio', 'xMidYMid meet');
   });
+
+  test('viewBoxの幅または高さが0でもNaN寸法を描画しない', () => {
+    render(
+      <ScalableSvgCanvas
+        viewBoxWidth={0}
+        viewBoxHeight={0}
+        maxWidth={200}
+        maxHeight={200}
+        accessibilityLabel="無効なSVG"
+        testID="invalid-canvas"
+      >
+        <Rect />
+      </ScalableSvgCanvas>,
+    );
+
+    expect(screen.getByTestId('invalid-canvas-container').props.style).toEqual({ alignSelf: 'center', width: 0, height: 0 });
+  });
 });

@@ -1,5 +1,6 @@
 import {
   getAppUpdateNoticeText,
+  LATEST_UPDATE_NOTICE,
   resolveCurrentAppUpdateNotice,
   shouldShowAutomaticAppUpdateNotice,
   type AppUpdateNotice,
@@ -23,6 +24,10 @@ describe('アプリ更新通知定義', () => {
     expect(resolveCurrentAppUpdateNotice(null, '1.3.0')).toBeNull();
   });
 
+  test('リリース準備前の既定通知は未提供(null)である', () => {
+    expect(LATEST_UPDATE_NOTICE).toBeNull();
+  });
+
   test('種別から固定の見出しと内容欄見出しを導出する', () => {
     expect(getAppUpdateNoticeText('feature')).toEqual({ heading: '新機能を\n追加しました', sectionTitle: '主な新機能' });
     expect(getAppUpdateNoticeText('fix')).toEqual({ heading: '不具合を\nなおしました', sectionTitle: '修正した不具合' });
@@ -30,7 +35,17 @@ describe('アプリ更新通知定義', () => {
 
   test('項目数または文字数が不正なら表示しない', () => {
     expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [] }, '1.3.0')).toBeNull();
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [''] }, '1.3.0')).toBeNull();
     expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['12345678901'] }, '1.3.0')).toBeNull();
+  });
+
+  test('不正な更新項目は開発時に内容を警告して表示しない', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [''] }, '1.3.0')).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith('App update notice is ignored due to invalid items:', ['']);
+
+    warnSpy.mockRestore();
   });
 
   test('重要順の3件以上の更新項目を持つ定義も解決する', () => {

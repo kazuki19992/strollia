@@ -5,6 +5,7 @@ import type { AppUpdateNotice } from '@/features/app-update/updateNotices';
 import { LAST_ACKNOWLEDGED_UPDATE_NOTICE_VERSION_SETTING_KEY } from '@/features/app-update/updateNotices';
 import { getStrolliaStoreUrl } from '@/config/storeUrls';
 import { setSetting } from '@/features/settings/settingsRepository';
+import { MODAL_EXIT_SETTLE_BUFFER_MS, MODAL_EXIT_TRANSITION_DURATION_MS } from '@/ui/constants/modalTransitions';
 import { appendFirstLaunchUpdateNoticeAcknowledgement, useAppUpdateNoticeState } from '@/ui/hooks/useAppUpdateNoticeState';
 import type { UseAppUpdateNoticeStateOptions } from '@/ui/hooks/useAppUpdateNoticeState';
 
@@ -116,7 +117,7 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     rerender({ options: makeOptions() });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
     act(() => {
-      jest.advanceTimersByTime(499);
+      jest.advanceTimersByTime(MODAL_EXIT_TRANSITION_DURATION_MS + MODAL_EXIT_SETTLE_BUFFER_MS - 1);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
     act(() => {
@@ -139,13 +140,13 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     });
     rerender({ options: makeOptions({ isPremiumPaywallVisible: true }) });
     act(() => {
-      jest.advanceTimersByTime(500);
+      jest.advanceTimersByTime(MODAL_EXIT_TRANSITION_DURATION_MS + MODAL_EXIT_SETTLE_BUFFER_MS);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
 
     rerender({ options: makeOptions() });
     act(() => {
-      jest.advanceTimersByTime(499);
+      jest.advanceTimersByTime(MODAL_EXIT_TRANSITION_DURATION_MS + MODAL_EXIT_SETTLE_BUFFER_MS - 1);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
     act(() => {

@@ -19,12 +19,8 @@ const KIND_TEXT = {
   fix: { heading: '不具合を\nなおしました', sectionTitle: '修正した不具合' },
 } as const;
 
-/** 動作確認用の現行リリースに対応する更新通知。確認後は未提供版としてnullへ戻す。 */
-export const LATEST_UPDATE_NOTICE: AppUpdateNotice | null = {
-  version: '1.2.0',
-  kind: 'feature',
-  items: ['更新通知を追加'],
-};
+/** 現行リリースに対応する更新通知。未提供のリリースではnullを維持する。 */
+export const LATEST_UPDATE_NOTICE: AppUpdateNotice | null = null;
 
 /** SQLiteのapp_settingsに保存する、更新通知の最終既読版キー。 */
 export const LAST_ACKNOWLEDGED_UPDATE_NOTICE_VERSION_SETTING_KEY = 'lastAcknowledgedUpdateNoticeVersion';
@@ -40,8 +36,16 @@ export function resolveCurrentAppUpdateNotice(
   nativeApplicationVersion: string | null,
 ): AppUpdateNotice | null {
   if (!notice || !nativeApplicationVersion || notice.version !== nativeApplicationVersion) return null;
-  const lengths = notice.items.map((item) => Array.from(item).length);
-  if (notice.items.length < 1 || lengths.some((length) => length < 1 || length > 10)) return null;
+  const invalidItems = notice.items.filter((item) => {
+    const length = Array.from(item).length;
+    return length < 1 || length > 10;
+  });
+  if (notice.items.length < 1 || invalidItems.length > 0) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('App update notice is ignored due to invalid items:', invalidItems);
+    }
+    return null;
+  }
   return notice;
 }
 

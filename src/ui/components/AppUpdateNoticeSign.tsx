@@ -48,7 +48,7 @@ function getTopCopy(kind: AppUpdateNotice['kind']): string {
 
 /** 改行で固定された見出しをSVGの2行へ分割する。 */
 function getHeadingLines(heading: string): readonly [string, string] {
-  const [firstLine, secondLine] = heading.split('\n');
+  const [firstLine, secondLine = ''] = heading.split('\n');
   return [firstLine, secondLine];
 }
 

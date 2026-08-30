@@ -10,7 +10,7 @@ import {
 import type { AppUpdateNotice, AppUpdateNoticeSource } from '@/features/app-update/updateNotices';
 import { setSetting } from '@/features/settings/settingsRepository';
 import type { AppSettingEntry } from '@/features/settings/settingsRepository';
-import { MODAL_EXIT_TRANSITION_DURATION_MS } from '@/ui/constants/modalTransitions';
+import { MODAL_EXIT_SETTLE_BUFFER_MS, MODAL_EXIT_TRANSITION_DURATION_MS } from '@/ui/constants/modalTransitions';
 
 /** 更新通知の表示を待機させるグローバルモーダルの状態。 */
 export type AppUpdateNoticeBlockingModalState = {
@@ -125,7 +125,7 @@ export function useAppUpdateNoticeState({
 
     const settleTimer = setTimeout(() => {
       setIsBlockingModalExitSettled(true);
-    }, MODAL_EXIT_TRANSITION_DURATION_MS);
+    }, MODAL_EXIT_TRANSITION_DURATION_MS + MODAL_EXIT_SETTLE_BUFFER_MS);
 
     return () => clearTimeout(settleTimer);
   }, [hasBlockingGlobalModal, isBlockingModalExitSettled]);

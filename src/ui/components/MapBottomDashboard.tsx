@@ -43,6 +43,12 @@ export {
 } from './dashboardScaling';
 export type { SpeedMeterArcStroke } from './dashboardScaling';
 
+/** 表示設定パネルは、ダッシュボードの左右8px余白を除いた幅に収める。 */
+const MAP_DISPLAY_PANEL_HORIZONTAL_INSET = 16;
+
+/** 表示設定パネルの通常時の最大幅。 */
+const MAP_DISPLAY_PANEL_MAX_WIDTH = 336;
+
 /** マップ下部ダッシュボードのprops。 */
 export type MapBottomDashboardProps = {
   /** 画面共通スタイル。 */
@@ -117,6 +123,7 @@ export function MapBottomDashboard({
   const { width } = ReactNative.useWindowDimensions();
   const dashboardScale = getDashboardScale(width);
   const dashboardLayout = getScaledDashboardLayout(dashboardScale);
+  const mapDisplayPanelWidth = Math.min(MAP_DISPLAY_PANEL_MAX_WIDTH, Math.max(0, width - MAP_DISPLAY_PANEL_HORIZONTAL_INSET));
   const iconSizes = getScaledDashboardIconSizes(dashboardScale);
   const speedMeter = getSpeedMeterAppearance(currentSpeedKmh, theme.colors.primary);
   const odometerParts = formatDistanceKilometers(distance).split('.');
@@ -258,7 +265,7 @@ export function MapBottomDashboard({
         </View>
 
         {isMapDisplayPanelVisible && (
-          <View style={styles.mapDisplayPanel}>
+          <View style={[styles.mapDisplayPanel, { width: mapDisplayPanelWidth }]}>
             <View style={styles.mapDisplayTypeRow}>
               <MapDisplayTypeButton
                 icon="map-outline"

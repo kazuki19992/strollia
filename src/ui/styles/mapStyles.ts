@@ -161,7 +161,6 @@ export function createMapStyles(theme: AppTheme) {
       shadowOpacity: 0.28,
       shadowRadius: 14,
       maxWidth: '100%',
-      width: 336,
       zIndex: 10,
     },
     mapDisplayBackgroundControlsDimmed: {

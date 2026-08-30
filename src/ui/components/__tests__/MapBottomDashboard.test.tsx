@@ -139,14 +139,25 @@ describe('マップ下部ダッシュボード', () => {
       fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    const panel = screen
-      .UNSAFE_getAllByProps({})
-      .find((node) => StyleSheet.flatten(node.props.style)?.width === styles.mapDisplayPanel.width);
+    const panel = screen.UNSAFE_getAllByProps({}).find((node) => StyleSheet.flatten(node.props.style)?.width === 336);
     const stayPlacesLabel = screen.getByText('マップ上に滞在場所を表示');
 
     expect(StyleSheet.flatten(panel?.props.style).width).toBeGreaterThanOrEqual(330);
     expect(stayPlacesLabel.props.numberOfLines).toBe(1);
     expect(stayPlacesLabel.props.adjustsFontSizeToFit).toBe(true);
+  });
+
+  test('狭い画面では表示設定パネルをダッシュボードの親幅に収める', () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 320, height: 667, scale: 2, fontScale: 1 });
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    const panel = screen.UNSAFE_getAllByProps({}).find((node) => StyleSheet.flatten(node.props.style)?.width === 304);
+
+    expect(panel).toBeDefined();
   });
 
   test('表示設定パネルを開いている間は背景のダッシュボード操作を無効化する', () => {
@@ -162,9 +173,15 @@ describe('マップ下部ダッシュボード', () => {
 
     fireEvent.press(screen.getByLabelText('実績'));
     fireEvent.press(screen.getByLabelText('現在地へ戻る'));
+    fireEvent.press(screen.getByLabelText('日ごとの記録'));
+    fireEvent.press(screen.getByLabelText('レポートを見る'));
+    fireEvent.press(screen.getByLabelText('設定'));
 
     expect(props.onOpenAchievements).not.toHaveBeenCalled();
     expect(props.onRecenterOnUserLocation).not.toHaveBeenCalled();
+    expect(props.onOpenDailyLogs).not.toHaveBeenCalled();
+    expect(props.onOpenMonthlyReport).not.toHaveBeenCalled();
+    expect(props.onOpenSettings).not.toHaveBeenCalled();
   });
 
   test('表示設定パネルは暗幕をタップして閉じられる', () => {

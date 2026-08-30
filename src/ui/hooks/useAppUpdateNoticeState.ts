@@ -28,6 +28,10 @@ export type AppUpdateNoticeBlockingModalState = {
   hasSelectedPhotoCluster: boolean;
   /** GPX処理用のブロッキングダイアログを表示中かどうか。 */
   isProcessingGpxImport: boolean;
+  /** 削除済み写真の案内ダイアログを表示中かどうか。 */
+  isPhotoDeletedDialogVisible: boolean;
+  /** 写真ライブラリの同期ダイアログを表示中かどうか。 */
+  isPhotoLibrarySyncDialogVisible: boolean;
 };
 
 /** 更新通知の状態フックに渡す値。 */
@@ -88,6 +92,8 @@ export function useAppUpdateNoticeState({
   hasSelectedPhoto,
   hasSelectedPhotoCluster,
   isProcessingGpxImport,
+  isPhotoDeletedDialogVisible,
+  isPhotoLibrarySyncDialogVisible,
 }: UseAppUpdateNoticeStateOptions): AppUpdateNoticeState {
   const currentAppUpdateNotice = useMemo(
     () => resolveCurrentAppUpdateNotice(latestUpdateNotice, nativeApplicationVersion),
@@ -100,7 +106,9 @@ export function useAppUpdateNoticeState({
     isPremiumPaywallVisible ||
     hasSelectedPhoto ||
     hasSelectedPhotoCluster ||
-    isProcessingGpxImport,
+    isProcessingGpxImport ||
+    isPhotoDeletedDialogVisible ||
+    isPhotoLibrarySyncDialogVisible,
   );
   const [appUpdateNoticeDialogSource, setAppUpdateNoticeDialogSource] = useState<AppUpdateNoticeSource | null>(null);
   const [isBlockingModalExitSettled, setIsBlockingModalExitSettled] = useState(!hasBlockingGlobalModal);

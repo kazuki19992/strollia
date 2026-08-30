@@ -828,6 +828,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     hasSelectedPhoto: selectedPhoto !== null,
     hasSelectedPhotoCluster: selectedPhotoCluster !== null,
     isProcessingGpxImport,
+    isPhotoDeletedDialogVisible: photoUnavailableReason === 'deleted',
+    isPhotoLibrarySyncDialogVisible: isSyncingPhotoLibrary,
   });
   /**
    * RevenueCat App User IDをSentryのユーザーコンテキストへ反映する。

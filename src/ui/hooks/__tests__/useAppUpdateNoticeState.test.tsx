@@ -38,6 +38,8 @@ function makeOptions(overrides: Partial<Parameters<typeof useAppUpdateNoticeStat
     hasSelectedPhoto: false,
     hasSelectedPhotoCluster: false,
     isProcessingGpxImport: false,
+    isPhotoDeletedDialogVisible: false,
+    isPhotoLibrarySyncDialogVisible: false,
     ...overrides,
   };
 }
@@ -101,6 +103,8 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     ['写真プレビュー', { hasSelectedPhoto: true }],
     ['写真クラスタプレビュー', { hasSelectedPhotoCluster: true }],
     ['GPX処理', { isProcessingGpxImport: true }],
+    ['削除済み写真の案内', { isPhotoDeletedDialogVisible: true }],
+    ['写真ライブラリの再読み込み', { isPhotoLibrarySyncDialogVisible: true }],
   ])('%s の表示中は更新通知を待機し、退場時間の経過後に表示する', (_label, blockingState) => {
     const { result, rerender } = renderHook(({ options }: NoticeStateProps) => useAppUpdateNoticeState(options), {
       initialProps: { options: makeOptions(blockingState) },

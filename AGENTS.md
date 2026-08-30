@@ -219,4 +219,4 @@ StrolliaはローカルファーストのGPSロガーである。
 | `release`            | `.claude/skills/release/SKILL.md`            | 新バージョンのリリース準備(バージョン更新、develop→mainのリリースPR)                |
 | `release-notes`      | `.claude/skills/release-notes/SKILL.md`      | main(リリース済み)とdevelop(リリース予定)の差分からユーザー向けリリースノートを作成 |
 | `tag-release`        | `.claude/skills/tag-release/SKILL.md`        | リリースPRマージ後、mainの最新コミットへバージョンタグを付与                        |
-| `worktree-setup`     | `.agents/skills/worktree-setup/SKILL.md`     | Footspot の新規 worktree 作成。`git gtr new` による `.env.local` のコピーを含む     |
+| `worktree-setup`     | `.claude/skills/worktree-setup/SKILL.md`     | Footspot の新規 worktree 作成。`git gtr new` による `.env.local` のコピーを含む     |

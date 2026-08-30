@@ -1,5 +1,5 @@
 import * as ReactNative from 'react-native';
-import { Animated, Text } from 'react-native';
+import { Animated, StyleSheet, Text } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -129,6 +129,41 @@ describe('マップ下部ダッシュボード', () => {
     expect(screen.getByText('航空写真')).toBeTruthy();
     expect(screen.getByText('マップ上に写真を表示')).toBeTruthy();
     expect(screen.getByText('マップ上に滞在場所を表示')).toBeTruthy();
+  });
+
+  test('表示設定パネルは滞在場所ラベルを1行で表示できる幅を確保する', () => {
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    const panel = screen
+      .UNSAFE_getAllByProps({})
+      .find((node) => StyleSheet.flatten(node.props.style)?.width === styles.mapDisplayPanel.width);
+    const stayPlacesLabel = screen.getByText('マップ上に滞在場所を表示');
+
+    expect(StyleSheet.flatten(panel?.props.style).width).toBeGreaterThanOrEqual(330);
+    expect(stayPlacesLabel.props.numberOfLines).toBe(1);
+    expect(stayPlacesLabel.props.adjustsFontSizeToFit).toBe(true);
+  });
+
+  test('表示設定パネルを開いている間は背景のダッシュボード操作を無効化する', () => {
+    const props = createProps();
+    render(<MapBottomDashboard {...props} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    const scrim = screen.getByLabelText('マップ表示設定を閉じる');
+    expect(StyleSheet.flatten(scrim.props.style).backgroundColor).toBe('rgba(0, 0, 0, 0.56)');
+
+    fireEvent.press(screen.getByLabelText('実績'));
+    fireEvent.press(screen.getByLabelText('現在地へ戻る'));
+
+    expect(props.onOpenAchievements).not.toHaveBeenCalled();
+    expect(props.onRecenterOnUserLocation).not.toHaveBeenCalled();
   });
 
   test('滞在場所がない場合は表示設定パネルに滞在場所表示設定を出さない', () => {

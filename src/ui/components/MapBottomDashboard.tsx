@@ -43,6 +43,12 @@ export {
 } from './dashboardScaling';
 export type { SpeedMeterArcStroke } from './dashboardScaling';
 
+/** 表示設定パネルは、ダッシュボードの左右8px余白を除いた幅に収める。 */
+const MAP_DISPLAY_PANEL_HORIZONTAL_INSET = 16;
+
+/** 表示設定パネルの通常時の最大幅。 */
+const MAP_DISPLAY_PANEL_MAX_WIDTH = 336;
+
 /** マップ下部ダッシュボードのprops。 */
 export type MapBottomDashboardProps = {
   /** 画面共通スタイル。 */
@@ -117,6 +123,7 @@ export function MapBottomDashboard({
   const { width } = ReactNative.useWindowDimensions();
   const dashboardScale = getDashboardScale(width);
   const dashboardLayout = getScaledDashboardLayout(dashboardScale);
+  const mapDisplayPanelWidth = Math.min(MAP_DISPLAY_PANEL_MAX_WIDTH, Math.max(0, width - MAP_DISPLAY_PANEL_HORIZONTAL_INSET));
   const iconSizes = getScaledDashboardIconSizes(dashboardScale);
   const speedMeter = getSpeedMeterAppearance(currentSpeedKmh, theme.colors.primary);
   const odometerParts = formatDistanceKilometers(distance).split('.');
@@ -134,15 +141,31 @@ export function MapBottomDashboard({
 
       <View pointerEvents="box-none" style={styles.bottomDashboard}>
         <Animated.View
-          pointerEvents={isFollowingUserLocation ? 'none' : 'auto'}
-          style={[styles.recenterButtonContainer, { opacity: recenterButtonOpacity }]}
+          pointerEvents={isMapDisplayPanelVisible || isFollowingUserLocation ? 'none' : 'auto'}
+          style={[
+            styles.recenterButtonContainer,
+            { opacity: recenterButtonOpacity },
+            isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
+          ]}
         >
-          <Pressable accessibilityLabel="現在地へ戻る" onPress={onRecenterOnUserLocation} style={styles.recenterButton}>
+          <Pressable
+            accessibilityLabel="現在地へ戻る"
+            disabled={isMapDisplayPanelVisible}
+            onPress={onRecenterOnUserLocation}
+            style={styles.recenterButton}
+          >
             <Feather name="navigation" size={28} color="#ffffff" />
           </Pressable>
         </Animated.View>
 
-        <View style={[styles.dashboardMeterCluster, dashboardLayout.meterCluster]}>
+        <View
+          pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
+          style={[
+            styles.dashboardMeterCluster,
+            dashboardLayout.meterCluster,
+            isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
+          ]}
+        >
           {/* 横幅は画面に追従し、高さだけ小画面倍率に合わせて速度メーター中心と揃える。 */}
           <Svg
             accessibilityElementsHidden
@@ -190,10 +213,18 @@ export function MapBottomDashboard({
         </View>
 
         <View style={[styles.dashboardActionsRow, dashboardLayout.actionsRow]}>
-          <View style={[styles.dashboardNavPanel, dashboardLayout.navPanel]}>
+          <View
+            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
+            style={[
+              styles.dashboardNavPanel,
+              dashboardLayout.navPanel,
+              isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
+            ]}
+          >
             <DashboardAction
               icon={<Feather name="calendar" size={iconSizes.calendar} color="#ffffff" />}
               label="日ごとの記録"
+              disabled={isMapDisplayPanelVisible}
               onPress={onOpenDailyLogs}
               scale={dashboardScale}
               styles={styles}
@@ -201,6 +232,7 @@ export function MapBottomDashboard({
             <DashboardAction
               icon={<MaterialCommunityIcons name="trophy-outline" size={iconSizes.trophy} color="#ffffff" />}
               label="実績"
+              disabled={isMapDisplayPanelVisible}
               onPress={onOpenAchievements}
               scale={dashboardScale}
               styles={styles}
@@ -208,6 +240,7 @@ export function MapBottomDashboard({
             <DashboardAction
               icon={<MaterialIcons name="history" size={iconSizes.history} color="#ffffff" />}
               label="レポートを見る"
+              disabled={isMapDisplayPanelVisible}
               onPress={onOpenMonthlyReport}
               scale={dashboardScale}
               styles={styles}
@@ -215,6 +248,7 @@ export function MapBottomDashboard({
             <DashboardAction
               icon={<Feather name="settings" size={iconSizes.settings} color="#ffffff" />}
               label="設定"
+              disabled={isMapDisplayPanelVisible}
               onPress={onOpenSettings}
               scale={dashboardScale}
               styles={styles}
@@ -231,7 +265,7 @@ export function MapBottomDashboard({
         </View>
 
         {isMapDisplayPanelVisible && (
-          <View style={styles.mapDisplayPanel}>
+          <View style={[styles.mapDisplayPanel, { width: mapDisplayPanelWidth }]}>
             <View style={styles.mapDisplayTypeRow}>
               <MapDisplayTypeButton
                 icon="map-outline"
@@ -258,7 +292,13 @@ export function MapBottomDashboard({
             </View>
             <View style={styles.mapDisplayPhotoRow}>
               <View style={styles.mapDisplayPhotoTextColumn}>
-                <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoTitle}>
+                <Text
+                  {...FIXED_MAP_UI_TEXT_PROPS}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.78}
+                  numberOfLines={1}
+                  style={styles.mapDisplayPhotoTitle}
+                >
                   マップ上に写真を表示
                 </Text>
                 <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoDescription}>
@@ -280,7 +320,13 @@ export function MapBottomDashboard({
             {hasStayPlaces ? (
               <View style={styles.mapDisplayPhotoRow}>
                 <View style={styles.mapDisplayPhotoTextColumn}>
-                  <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoTitle}>
+                  <Text
+                    {...FIXED_MAP_UI_TEXT_PROPS}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.78}
+                    numberOfLines={1}
+                    style={styles.mapDisplayPhotoTitle}
+                  >
                     {SHOW_STAY_PLACES_ON_MAP_LABEL}
                   </Text>
                   <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoDescription}>

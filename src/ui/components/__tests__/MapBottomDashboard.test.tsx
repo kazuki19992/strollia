@@ -129,6 +129,7 @@ describe('マップ下部ダッシュボード', () => {
     expect(screen.getByText('航空写真')).toBeTruthy();
     expect(screen.getByText('マップ上に写真を表示')).toBeTruthy();
     expect(screen.getByText('マップ上に滞在場所を表示')).toBeTruthy();
+    expect(screen.getByText('滞在場所のアイコンをマップ上に表示します')).toBeTruthy();
   });
 
   test('表示設定パネルは滞在場所ラベルを1行で表示できる幅を確保する', () => {
@@ -174,6 +175,18 @@ describe('マップ下部ダッシュボード', () => {
     });
 
     fireEvent.press(screen.getByLabelText('マップ表示設定を閉じる'));
+
+    expect(screen.queryByText('マップ上に写真を表示')).toBeNull();
+  });
+
+  test('表示設定パネルはマップの表示ボタンを再度タップして閉じられる', () => {
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    fireEvent.press(screen.getByLabelText('マップの表示'));
 
     expect(screen.queryByText('マップ上に写真を表示')).toBeNull();
   });

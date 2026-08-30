@@ -205,15 +205,15 @@ export function MapBottomDashboard({
           />
         </View>
 
-        <View
-          pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
-          style={[
-            styles.dashboardActionsRow,
-            dashboardLayout.actionsRow,
-            isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
-          ]}
-        >
-          <View style={[styles.dashboardNavPanel, dashboardLayout.navPanel]}>
+        <View style={[styles.dashboardActionsRow, dashboardLayout.actionsRow]}>
+          <View
+            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
+            style={[
+              styles.dashboardNavPanel,
+              dashboardLayout.navPanel,
+              isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
+            ]}
+          >
             <DashboardAction
               icon={<Feather name="calendar" size={iconSizes.calendar} color="#ffffff" />}
               label="日ごとの記録"
@@ -250,7 +250,6 @@ export function MapBottomDashboard({
           <Pressable
             accessibilityLabel="マップの表示"
             accessibilityRole="button"
-            disabled={isMapDisplayPanelVisible}
             onPress={() => setIsMapDisplayPanelVisible((visible) => !visible)}
             style={[styles.dashboardMapButton, dashboardLayout.mapButton]}
           >

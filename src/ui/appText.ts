@@ -39,7 +39,7 @@ export const SHOW_STAY_PLACES_ON_MAP_SETTING_KEY = 'showStayPlacesOnMap';
 export const SHOW_STAY_PLACES_ON_MAP_LABEL = 'マップ上に滞在場所を表示';
 
 /** 滞在場所表示設定の説明文。 */
-export const SHOW_STAY_PLACES_ON_MAP_DESCRIPTION = '登録した滞在場所のアイコンをマップ上に表示します。';
+export const SHOW_STAY_PLACES_ON_MAP_DESCRIPTION = '滞在場所のアイコンをマップ上に表示します';
 
 /**
  * 地図の背後で写真ライブラリの差分走査が動いていることを知らせる文言。

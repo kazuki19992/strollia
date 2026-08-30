@@ -23,6 +23,10 @@ const SIGN_FOOTER = '#303030';
 export type AppUpdateNoticeSignProps = {
   /** 表示する版番号・種別・更新内容。 */
   notice: AppUpdateNotice;
+  /** 看板を収める最大幅。 */
+  maxWidth?: number;
+  /** 看板を収める最大高。 */
+  maxHeight?: number;
 };
 
 /** SVGアートワークだけに必要な、算出済みの縦方向レイアウト値。 */
@@ -66,7 +70,7 @@ function getAccessibilityLabel(notice: AppUpdateNotice): string {
  *
  * SVG内の固定座標を維持して文字・線・余白を同時に拡大縮小するため、個別の端末幅調整は行わない。
  */
-export function AppUpdateNoticeSign({ notice }: AppUpdateNoticeSignProps): ReactElement {
+export function AppUpdateNoticeSign({ notice, maxWidth, maxHeight }: AppUpdateNoticeSignProps): ReactElement {
   const secondItemOffset = notice.items.length === 2 ? SECOND_ITEM_EXTENSION : 0;
   const showMoreOffset = notice.showMore ? SHOW_MORE_EXTENSION : 0;
   const lowerContentOffset = secondItemOffset + showMoreOffset;
@@ -76,6 +80,8 @@ export function AppUpdateNoticeSign({ notice }: AppUpdateNoticeSignProps): React
     <ScalableSvgCanvas
       viewBoxWidth={SIGN_WIDTH}
       viewBoxHeight={signHeight}
+      maxWidth={maxWidth}
+      maxHeight={maxHeight}
       accessibilityLabel={getAccessibilityLabel(notice)}
       testID="app-update-notice-sign-canvas"
     >

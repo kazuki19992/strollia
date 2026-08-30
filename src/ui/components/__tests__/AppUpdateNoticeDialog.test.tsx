@@ -53,16 +53,29 @@ describe('AppUpdateNoticeDialog', () => {
     const dialog = screen.UNSAFE_getByType(Dialog);
     expect(dialog.props.visible).toBe(true);
     expect(dialog.props.swipeToClose).toBe(true);
-    expect(dialog.props.swipeDirection).toBe('horizontal');
     expect(dialog.props.autoClose).toBe(false);
+    expect(screen.UNSAFE_queryAllByType(ScrollView)).toHaveLength(0);
     expect(screen.queryByLabelText('ストアページへ')).toBeNull();
   });
 
-  test('小さい画面でダイアログ本文を画面高の72%までに制限する', () => {
+  test('看板をモーダル内の利用可能な幅と高さへcontain表示する', () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 390, height: 320, scale: 3, fontScale: 1 });
     render(<AppUpdateNoticeDialog {...baseProps} />);
 
-    const scrollView = screen.UNSAFE_getByType(ScrollView);
-    expect(scrollView.props.style).toEqual(['appUpdateNoticeDialogScroll', { maxHeight: 576 }]);
+    const contentStyle = screen.getByTestId('app-update-notice-dialog-content').props.style;
+    const signStyle = screen.getByTestId('app-update-notice-sign-canvas-container').props.style;
+    expect(contentStyle[0]).toBe('appUpdateNoticeDialogContent');
+    expect(contentStyle[1].maxHeight).toBeCloseTo(200);
+    expect(signStyle.alignSelf).toBe('center');
+    expect(signStyle.height).toBeCloseTo(178);
+    expect(signStyle.width).toBeCloseTo((178 * 329) / 261);
+  });
+
+  test('設定起点ではストアボタンの領域を除いた高さへ看板を縮小する', () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 390, height: 320, scale: 3, fontScale: 1 });
+    render(<AppUpdateNoticeDialog {...baseProps} source="settings" />);
+
+    expect(screen.getByTestId('app-update-notice-sign-canvas-container').props.style.height).toBeCloseTo(126);
   });
 
   test('設定画面から開くとストアページへのボタンを押せる', () => {

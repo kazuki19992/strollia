@@ -255,10 +255,9 @@ export function createAchievementStyles(theme: AppTheme) {
       lineHeight: 19,
     },
     // App update notice dialog
-    appUpdateNoticeDialogScroll: {
-      alignSelf: 'stretch',
-    },
     appUpdateNoticeDialogContent: {
+      alignItems: 'center',
+      alignSelf: 'stretch',
       gap: 12,
       paddingTop: 22,
     },

@@ -445,7 +445,7 @@ Run: `npm test -- src/ui/components/__tests__/AppUpdateNoticeDialog.test.tsx --r
 
 Expected: FAIL with module-not-found for `AppUpdateNoticeDialog`.
 
-- [ ] **Step 3: スクロール可能なDialog内容を実装する**
+- [ ] **Step 3: Dialog内へcontain表示する内容を実装する**
 
 ```tsx
 export type AppUpdateNoticeDialogProps = {
@@ -458,16 +458,20 @@ export type AppUpdateNoticeDialogProps = {
 };
 ```
 
-`Dialog` は `swipeToClose`, `autoClose={false}` で使用する。内容は `useWindowDimensions().height * 0.72` を最大高とする `ScrollView` にし、`AppUpdateNoticeSign` と、`source === 'settings'` の場合だけ既存 `ActionPill label="ストアページへ"` を置く。看板周囲へ独自カード、影、角丸マスクを追加しない。
+`Dialog` は `swipeToClose`, `autoClose={false}` で使用する。内部に `ScrollView` は置かず、既存Dialogの全方向スワイプ閉じを維持する。画面高の72%と、画面高からDialog外側余白・カードpadding・要素間gap・スワイプ案内を除いた高さの小さい方を内容の最大高とする。画面幅からDialogの左右余白を除いた最大幅と合わせ、さらに小さい方の倍率で `AppUpdateNoticeSign` 全体を `object-fit: contain` 相当に縮小する。`source === 'settings'` の場合は既存 `ActionPill label="ストアページへ"` の領域を先に確保してから看板の最大高を決める。看板周囲へ独自カード、影、角丸マスクを追加しない。
 
 `createAchievementStyles` へ次の責務だけを追加する。
 
 ```ts
-appUpdateNoticeDialogScroll: { alignSelf: 'stretch' },
-appUpdateNoticeDialogContent: { gap: 12, paddingTop: 22 },
+appUpdateNoticeDialogContent: {
+  alignItems: 'center',
+  alignSelf: 'stretch',
+  gap: 12,
+  paddingTop: 22,
+},
 ```
 
-既存の閉じるボタンと看板が重ならないよう `paddingTop` を確保し、スワイプ案内は既存Dialog側に任せる。
+既存の閉じるボタンと看板が重ならないよう `paddingTop` を確保し、スワイプ案内と閉じ操作は既存Dialog側に任せる。SVGのviewBox、文字、線、余白は個別調整せず、看板全体を同じ倍率で線形に拡大縮小する。
 
 - [ ] **Step 4: コンポーネントとスタイル分割テストを通す**
 

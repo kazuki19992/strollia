@@ -10,6 +10,10 @@ export type ScalableSvgCanvasProps = {
   viewBoxHeight: number;
   /** SVG全体に設定する読み上げラベル。 */
   accessibilityLabel: string;
+  /** 表示領域の最大幅。最大高と合わせてcontain相当の寸法を決める。 */
+  maxWidth?: number;
+  /** 表示領域の最大高。最大幅と合わせてcontain相当の寸法を決める。 */
+  maxHeight?: number;
   /** SVGプリミティブ、またはSVGプリミティブを返すコンポーネント。 */
   children: ReactNode;
   /** テストや自動化で参照する識別子。 */
@@ -21,11 +25,20 @@ export function ScalableSvgCanvas({
   viewBoxWidth,
   viewBoxHeight,
   accessibilityLabel,
+  maxWidth,
+  maxHeight,
   children,
   testID,
 }: ScalableSvgCanvasProps): ReactElement {
+  const widthScale = maxWidth === undefined ? Number.POSITIVE_INFINITY : Math.max(0, maxWidth) / viewBoxWidth;
+  const heightScale = maxHeight === undefined ? Number.POSITIVE_INFINITY : Math.max(0, maxHeight) / viewBoxHeight;
+  const containedScale = Math.min(widthScale, heightScale);
+  const containerStyle = Number.isFinite(containedScale)
+    ? { alignSelf: 'center' as const, width: viewBoxWidth * containedScale, height: viewBoxHeight * containedScale }
+    : { width: '100%' as const, aspectRatio: viewBoxWidth / viewBoxHeight };
+
   return (
-    <View testID={testID ? `${testID}-container` : undefined} style={{ width: '100%', aspectRatio: viewBoxWidth / viewBoxHeight }}>
+    <View testID={testID ? `${testID}-container` : undefined} style={containerStyle}>
       <Svg
         testID={testID}
         accessible

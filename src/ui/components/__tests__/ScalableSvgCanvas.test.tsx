@@ -56,4 +56,25 @@ describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
     expect(screen.getByTestId('vector-canvas')).toHaveProp('width', '100%');
     expect(screen.getByTestId('vector-canvas')).toHaveProp('height', '100%');
   });
+
+  test('最大幅と最大高の内側へobject-fit contain相当で収める', () => {
+    render(
+      <ScalableSvgCanvas
+        viewBoxWidth={329}
+        viewBoxHeight={261}
+        maxWidth={263.2}
+        maxHeight={180}
+        accessibilityLabel="更新通知"
+        testID="vector-canvas"
+      >
+        <Rect testID="vector-child" x={0} y={0} width={329} height={261} />
+      </ScalableSvgCanvas>,
+    );
+
+    const containerStyle = screen.getByTestId('vector-canvas-container').props.style;
+    expect(containerStyle.alignSelf).toBe('center');
+    expect(containerStyle.width).toBeCloseTo((180 * 329) / 261);
+    expect(containerStyle.height).toBeCloseTo(180);
+    expect(screen.getByTestId('vector-canvas')).toHaveProp('preserveAspectRatio', 'xMidYMid meet');
+  });
 });

@@ -13,7 +13,7 @@ Strollia を正式にストアへリリースする手順。ブランチ運用�
 
 1. **バージョンを変更する**
    - `git log origin/main..origin/develop --oneline` で今回リリースに含まれる変更を確認し、バージョン番号(semver)を決める
-   - 最新の `develop` から作業ブランチ(worktree)を作成し、以下を更新
+   - 最新の `develop` から作業ブランチ(worktree)を作成する。新規 worktree は `worktree-setup` スキルに従い、`git gtr new` を使う（`git worktree add` は使わない）。
      - `package.json` の `version`
      - `app.json` の `expo.version`
      - 2つの値は必ず一致させる(ビルド番号は EAS の `autoIncrement` 管理なので触らない)

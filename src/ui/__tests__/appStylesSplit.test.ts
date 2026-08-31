@@ -119,6 +119,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.appUpdateNoticeDialogContent).toBeDefined();
       // mapStyles
       expect(styles.dashboardNavPanel).toBeDefined();
+      expect(styles.mapDisplayBackgroundControlsDimmed).toBeDefined();
       expect(styles.permissionCard).toBeDefined();
       expect(styles.photoClusterCallout).toBeDefined();
       // settingsStyles
@@ -137,7 +138,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全392キーが存在する（過不足なし）', () => {
+    test('全393キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -147,7 +148,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 写真一覧の背景(photoClusterBackdrop)1キー + 写真走査の計測表示(photoScanMetricsText)1キー
       //       + 端末未ダウンロード写真のインライン案内3キー + GPXインポートODO表示5キー
       //       + 更新通知ダイアログ1キー
-      expect(keys.length).toBe(392);
+      //       + マップ表示設定中の背景ダッシュボード減光1キー
+      expect(keys.length).toBe(393);
     });
   });
 });

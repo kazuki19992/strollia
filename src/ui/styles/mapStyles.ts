@@ -160,12 +160,15 @@ export function createMapStyles(theme: AppTheme) {
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.28,
       shadowRadius: 14,
-      width: 274,
+      maxWidth: '100%',
       zIndex: 10,
+    },
+    mapDisplayBackgroundControlsDimmed: {
+      opacity: 0.42,
     },
     mapDisplayPanelScrim: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: 'rgba(0, 0, 0, 0.32)',
+      backgroundColor: 'rgba(0, 0, 0, 0.56)',
       zIndex: 1,
     },
     mapDisplayPhotoDescription: {

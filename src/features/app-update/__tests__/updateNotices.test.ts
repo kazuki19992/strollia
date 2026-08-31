@@ -36,20 +36,24 @@ describe('アプリ更新通知定義', () => {
   test('項目数または文字数が不正なら表示しない', () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [] }, '1.3.0')).toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [''] }, '1.3.0')).toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['12345678901'] }, '1.3.0')).toBeNull();
-
-    warnSpy.mockRestore();
+    try {
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [] }, '1.3.0')).toBeNull();
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [''] }, '1.3.0')).toBeNull();
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['12345678901'] }, '1.3.0')).toBeNull();
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test('不正な更新項目は開発時に内容を警告して表示しない', () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [''] }, '1.3.0')).toBeNull();
-    expect(warnSpy).toHaveBeenCalledWith('App update notice is ignored due to invalid items:', ['']);
-
-    warnSpy.mockRestore();
+    try {
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [''] }, '1.3.0')).toBeNull();
+      expect(warnSpy).toHaveBeenCalledWith('App update notice is ignored due to invalid items:', ['']);
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test('重要順の3件以上の更新項目を持つ定義も解決する', () => {
@@ -61,10 +65,12 @@ describe('アプリ更新通知定義', () => {
     const elevenCodePoints = '🚀'.repeat(11);
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [tenCodePoints] }, '1.3.0')).not.toBeNull();
-    expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [elevenCodePoints] }, '1.3.0')).toBeNull();
-
-    warnSpy.mockRestore();
+    try {
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [tenCodePoints] }, '1.3.0')).not.toBeNull();
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [elevenCodePoints] }, '1.3.0')).toBeNull();
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   test('既存ユーザーかつ未読の現在版だけ自動表示する', () => {

@@ -20,7 +20,11 @@ const KIND_TEXT = {
 } as const;
 
 /** 現行リリースに対応する更新通知。未提供のリリースではnullを維持する。 */
-export const LATEST_UPDATE_NOTICE: AppUpdateNotice | null = null;
+export const LATEST_UPDATE_NOTICE: AppUpdateNotice | null = {
+  version: '1.2.0',
+  kind: 'feature',
+  items: ['滞在場所機能を追加', '地図・写真などアプリの高速化', 'GPX取込を高速化'],
+};
 
 /** SQLiteのapp_settingsに保存する、更新通知の最終既読版キー。 */
 export const LAST_ACKNOWLEDGED_UPDATE_NOTICE_VERSION_SETTING_KEY = 'lastAcknowledgedUpdateNoticeVersion';
@@ -38,7 +42,7 @@ export function resolveCurrentAppUpdateNotice(
   if (!notice || !nativeApplicationVersion || notice.version !== nativeApplicationVersion) return null;
   const invalidItems = notice.items.filter((item) => {
     const length = Array.from(item).length;
-    return length < 1 || length > 10;
+    return length < 1 || length > 20;
   });
   if (notice.items.length < 1 || invalidItems.length > 0) {
     if (process.env.NODE_ENV !== 'production') {

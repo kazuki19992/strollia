@@ -128,7 +128,7 @@ export function resolveCurrentAppUpdateNotice(
 ): AppUpdateNotice | null {
   if (!notice || !nativeApplicationVersion || notice.version !== nativeApplicationVersion) return null;
   const lengths = notice.items.map((item) => Array.from(item).length);
-  if (notice.items.length < 1 || lengths.some((length) => length < 1 || length > 10)) return null;
+  if (notice.items.length < 1 || lengths.some((length) => length < 1 || length > 20)) return null;
   return notice;
 }
 

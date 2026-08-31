@@ -24,8 +24,12 @@ describe('アプリ更新通知定義', () => {
     expect(resolveCurrentAppUpdateNotice(null, '1.3.0')).toBeNull();
   });
 
-  test('リリース準備前の既定通知は未提供(null)である', () => {
-    expect(LATEST_UPDATE_NOTICE).toBeNull();
+  test('v1.2.0の更新通知は承認済みの重要順で定義されている', () => {
+    expect(LATEST_UPDATE_NOTICE).toEqual({
+      version: '1.2.0',
+      kind: 'feature',
+      items: ['滞在場所機能を追加', '地図・写真などアプリの高速化', 'GPX取込を高速化'],
+    });
   });
 
   test('種別から固定の見出しと内容欄見出しを導出する', () => {
@@ -39,7 +43,7 @@ describe('アプリ更新通知定義', () => {
     try {
       expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [] }, '1.3.0')).toBeNull();
       expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [''] }, '1.3.0')).toBeNull();
-      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['12345678901'] }, '1.3.0')).toBeNull();
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: ['123456789012345678901'] }, '1.3.0')).toBeNull();
     } finally {
       warnSpy.mockRestore();
     }
@@ -60,14 +64,14 @@ describe('アプリ更新通知定義', () => {
     expect(resolveCurrentAppUpdateNotice(featureNotice, '1.3.0')).toEqual(featureNotice);
   });
 
-  test('Unicode文字は10文字まで表示し、11文字は表示しない', () => {
-    const tenCodePoints = '🚀'.repeat(10);
-    const elevenCodePoints = '🚀'.repeat(11);
+  test('Unicode文字は20文字まで表示し、21文字は表示しない', () => {
+    const twentyCodePoints = '🚀'.repeat(20);
+    const twentyOneCodePoints = '🚀'.repeat(21);
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     try {
-      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [tenCodePoints] }, '1.3.0')).not.toBeNull();
-      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [elevenCodePoints] }, '1.3.0')).toBeNull();
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [twentyCodePoints] }, '1.3.0')).not.toBeNull();
+      expect(resolveCurrentAppUpdateNotice({ ...featureNotice, items: [twentyOneCodePoints] }, '1.3.0')).toBeNull();
     } finally {
       warnSpy.mockRestore();
     }

@@ -82,6 +82,8 @@ export type SettingsScreenProps = {
   appVersion: string | null;
   /** アプリのビルド番号（例: 21）。未取得ならnull。 */
   buildNumber: string | null;
+  /** 現在版に対応する更新通知があるかどうか。 */
+  hasCurrentAppUpdateNotice: boolean;
   /** RevenueCat Offeringの商品概要。 */
   premiumOfferingSummary: PremiumOfferingSummary | null;
   /** 商品情報を読み込み中か。 */
@@ -126,6 +128,8 @@ export type SettingsScreenProps = {
   onOpenStayPlaces: () => void;
   /** このアプリについて画面を開く処理。 */
   onOpenAboutAppScreen: () => void;
+  /** 現在版の最新更新通知を設定起点で開く処理。 */
+  onOpenLatestAppUpdateNotice: () => void;
   /** 初回チュートリアルを再表示する処理。 */
   onOpenFirstLaunchTutorial: () => void;
   /** よくある質問画面を開く処理。 */
@@ -189,6 +193,7 @@ export function SettingsScreen({
   revenueCatAppUserId,
   appVersion,
   buildNumber,
+  hasCurrentAppUpdateNotice,
   premiumOfferingSummary,
   isLoadingPremiumOffering,
   isPurchasingPremiumPackage,
@@ -211,6 +216,7 @@ export function SettingsScreen({
   onReloadPhotoLibrary,
   onUpdateUserLocationIcon,
   onOpenAboutAppScreen,
+  onOpenLatestAppUpdateNotice,
   onOpenFirstLaunchTutorial,
   onOpenFaqScreen,
   onOpenLicenseScreen,
@@ -542,6 +548,15 @@ export function SettingsScreen({
             styles={styles}
             onPress={onOpenAboutAppScreen}
           />
+          {hasCurrentAppUpdateNotice ? (
+            <ActionPill
+              alignLeft
+              icon={<Feather name="gift" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+              label="最新の更新内容を見る"
+              styles={styles}
+              onPress={onOpenLatestAppUpdateNotice}
+            />
+          ) : null}
           <ActionPill
             alignLeft
             icon={<Feather name="book-open" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}

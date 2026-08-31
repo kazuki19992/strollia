@@ -5,6 +5,10 @@ import RootLayout from '@/app/_layout';
 let mockPathname = '/';
 const mockPush = jest.fn();
 const mockBack = jest.fn();
+const mockCloseAppUpdateNotice = jest.fn();
+const mockOpenAppStorePage = jest.fn();
+/** ルートから更新通知ダイアログへ渡された最新props。 */
+let mockLatestUpdateNoticeDialogProps: Record<string, unknown> | null = null;
 
 // expo-router の Stack / usePathname / useRouter をスタブ化する
 jest.mock('expo-router', () => ({
@@ -79,6 +83,15 @@ jest.mock('@/ui/state/AppStateProvider', () => {
       dismissPhotoDeletedDialog: jest.fn(),
       reloadPhotoLibraryFromDeletedDialog: jest.fn().mockResolvedValue(undefined),
       openPremiumCustomerCenter: jest.fn(),
+      currentAppUpdateNotice: {
+        version: '1.3.0',
+        kind: 'feature',
+        items: ['地図を改善'],
+      },
+      appUpdateNoticeDialogSource: 'automatic',
+      isAppUpdateNoticeDialogVisible: true,
+      closeAppUpdateNotice: mockCloseAppUpdateNotice,
+      openAppStorePage: mockOpenAppStorePage,
       ...mockAppStateOverrides,
     }),
   };
@@ -103,6 +116,12 @@ jest.mock('@/ui/components/PhotoDeletedDialog', () => ({
   },
 }));
 jest.mock('@/ui/components/GpxImportProgressDialog', () => ({ GpxImportProgressDialog: () => null }));
+jest.mock('@/ui/components/AppUpdateNoticeDialog', () => ({
+  AppUpdateNoticeDialog: (props: Record<string, unknown>) => {
+    mockLatestUpdateNoticeDialogProps = props;
+    return null;
+  },
+}));
 
 describe('expo-router ルートレイアウト (_layout)', () => {
   beforeEach(() => {
@@ -113,6 +132,9 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     mockAppStateOverrides = {};
     mockPush.mockClear();
     mockBack.mockClear();
+    mockCloseAppUpdateNotice.mockClear();
+    mockOpenAppStorePage.mockClear();
+    mockLatestUpdateNoticeDialogProps = null;
   });
 
   test('default export が存在しレンダリングできること', () => {
@@ -125,6 +147,21 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     render(<RootLayout />);
 
     expect(screen.getByTestId('root-safe-area-provider')).toBeTruthy();
+  });
+
+  test('グローバル更新通知ダイアログへContextの表示状態と操作を渡す', () => {
+    render(<RootLayout />);
+
+    expect(mockLatestUpdateNoticeDialogProps).toEqual(
+      expect.objectContaining({
+        visible: true,
+        source: 'automatic',
+        notice: expect.objectContaining({ version: '1.3.0' }),
+        styles: { container: {} },
+        onClose: mockCloseAppUpdateNotice,
+        onOpenStorePage: mockOpenAppStorePage,
+      }),
+    );
   });
 
   test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', () => {

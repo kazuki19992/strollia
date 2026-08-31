@@ -32,7 +32,8 @@ import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
 import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlaceRecordingService';
 import type { SaveStayPlaceInput, StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
-import { setSetting } from '@/features/settings/settingsRepository';
+import { setSetting, setSettings } from '@/features/settings/settingsRepository';
+import type { AppSettingEntry } from '@/features/settings/settingsRepository';
 import { CRASH_REPORTING_SETTING_KEY, SHOW_STAY_PLACES_ON_MAP_SETTING_KEY } from '@/ui/appText';
 import {
   applyResolvedPhotoUrisToClusters,
@@ -74,6 +75,7 @@ import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
+import { appendFirstLaunchUpdateNoticeAcknowledgement, useAppUpdateNoticeState } from '@/ui/hooks/useAppUpdateNoticeState';
 import { useStayPlaceState } from '@/ui/hooks/useStayPlaceState';
 import type { PremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import type { AchievementListItem, PendingAchievementNotification } from '@/features/achievements/achievementRepository';
@@ -90,6 +92,7 @@ import type { AppColorPresetId } from '@/features/customization/colorPresets';
 import type { UserLocationIconId } from '@/features/customization/customizationOptions';
 import type { PhotoUnavailableReason } from '@/ui/hooks/usePhotoUnavailableReason';
 import type { PhotoDisplayLimitId } from '@/features/settings/photoDisplayLimit';
+import type { AppUpdateNotice, AppUpdateNoticeSource } from '@/features/app-update/updateNotices';
 import { hasEnabledDevelopmentFlags } from '@/config/developmentFlags';
 import type { GpxImportProgressStage } from '@/ui/components/GpxImportProgressDialog';
 
@@ -383,6 +386,20 @@ export type AppStateContextValue = {
   appVersion: string | null;
   /** ビルド番号文字列。 */
   buildNumber: string | null;
+
+  // アプリ更新通知
+  /** 現在のネイティブ版に一致する更新通知。 */
+  currentAppUpdateNotice: AppUpdateNotice | null;
+  /** 更新通知を開いた導線。 */
+  appUpdateNoticeDialogSource: AppUpdateNoticeSource | null;
+  /** 他モーダルとの排他を反映した更新通知の表示可否。 */
+  isAppUpdateNoticeDialogVisible: boolean;
+  /** 設定画面から最新の更新通知を開く。 */
+  openLatestAppUpdateNotice: () => void;
+  /** 更新通知を閉じる。自動表示分だけ既読として保存する。 */
+  closeAppUpdateNotice: () => void;
+  /** 現在のOSに対応するストアページを開く。 */
+  openAppStorePage: () => Promise<void>;
 
   // チュートリアル
   /** 初回チュートリアル表示中かどうか。 */
@@ -794,7 +811,26 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const foregroundWatchEnabled = appState === 'active' && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
-  /**
+  const {
+    currentAppUpdateNotice,
+    appUpdateNoticeDialogSource,
+    isAppUpdateNoticeDialogVisible,
+    openAutomaticAppUpdateNotice,
+    openLatestAppUpdateNotice,
+    closeAppUpdateNotice,
+    openAppStorePage,
+  } = useAppUpdateNoticeState({
+    nativeApplicationVersion: Application.nativeApplicationVersion,
+    isFirstLaunchTutorialVisible,
+    hasActiveAchievementNotification: activeAchievementNotification !== null,
+    hasSelectedAchievement: selectedAchievement !== null,
+    isPremiumPaywallVisible,
+    hasSelectedPhoto: selectedPhoto !== null,
+    hasSelectedPhotoCluster: selectedPhotoCluster !== null,
+    isProcessingGpxImport,
+    isPhotoDeletedDialogVisible: photoUnavailableReason === 'deleted',
+    isPhotoLibrarySyncDialogVisible: isSyncingPhotoLibrary,
+  });
   /**
    * RevenueCat App User IDをSentryのユーザーコンテキストへ反映する。
    * クラッシュレポートをSupport IDで問い合わせられるようにするために必要。
@@ -988,6 +1024,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     setIsReady,
     setFirstLaunchTutorialMode,
     setIsFirstLaunchTutorialVisible,
+    currentAppUpdateNotice,
+    openAutomaticAppUpdateNotice,
   });
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
@@ -1283,8 +1321,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       return;
     }
 
-    setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
-      console.warn('Failed to persist first launch tutorial flag:', error);
+    const entries: AppSettingEntry[] = appendFirstLaunchUpdateNoticeAcknowledgement(
+      [{ key: FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, value: true }],
+      currentAppUpdateNotice,
+    );
+    setSettings(entries).catch((error: unknown) => {
+      console.warn('Failed to persist first launch tutorial state:', error);
     });
     requestAchievementNotificationPermissionIfNeeded()
       .then(() => syncMonthlyReportNotification(premiumAccessState.isPlusActive))
@@ -1417,6 +1459,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     gpxImportOdometerDistanceMeters,
     appVersion: Application.nativeApplicationVersion,
     buildNumber: Application.nativeBuildVersion,
+    currentAppUpdateNotice,
+    appUpdateNoticeDialogSource,
+    isAppUpdateNoticeDialogVisible,
+    openLatestAppUpdateNotice,
+    closeAppUpdateNotice,
+    openAppStorePage,
     isFirstLaunchTutorialVisible,
     firstLaunchTutorialMode,
     completeFirstLaunchTutorial,

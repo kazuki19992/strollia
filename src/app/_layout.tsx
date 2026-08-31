@@ -7,6 +7,7 @@ import { wrapWithSentry } from '@/config/sentry';
 import { updateSentryScreenContext } from '@/config/sentry';
 import { AchievementDialog } from '@/ui/components/AchievementDialog';
 import { AchievementUnlockModal } from '@/ui/components/AchievementUnlockModal';
+import { AppUpdateNoticeDialog } from '@/ui/components/AppUpdateNoticeDialog';
 import { FirstLaunchTutorialDialog } from '@/ui/components/FirstLaunchTutorialDialog';
 import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
 import { PhotoLibrarySyncDialog } from '@/ui/components/PhotoLibrarySyncDialog';
@@ -172,6 +173,15 @@ function RootLayoutContent(): React.ReactElement {
       />
 
       <PhotoLibrarySyncDialog visible={s.isSyncingPhotoLibrary} progress={s.photoLibrarySyncProgress} styles={s.styles} />
+
+      <AppUpdateNoticeDialog
+        visible={s.isAppUpdateNoticeDialogVisible}
+        source={s.appUpdateNoticeDialogSource}
+        notice={s.currentAppUpdateNotice}
+        styles={s.styles}
+        onClose={s.closeAppUpdateNotice}
+        onOpenStorePage={s.openAppStorePage}
+      />
     </>
   );
 }

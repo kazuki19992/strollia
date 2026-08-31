@@ -11,6 +11,10 @@ import { setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } 
 import { isWhileInUseOnlyMode } from '@/features/location/locationPermission';
 import { getDefaultPremiumAccessState, getConfirmedPremiumAccessState } from '@/features/premium/revenueCatAccess';
 import { resolveInitialPremiumAccess } from '@/features/premium/initialPremiumAccess';
+import {
+  LAST_ACKNOWLEDGED_UPDATE_NOTICE_VERSION_SETTING_KEY,
+  shouldShowAutomaticAppUpdateNotice,
+} from '@/features/app-update/updateNotices';
 import { getBooleanSetting, getStringSetting, setSetting } from '@/features/settings/settingsRepository';
 import { loadAppFonts } from '@/theme/fonts';
 import { CRASH_REPORTING_SETTING_KEY, SHOW_STAY_PLACES_ON_MAP_SETTING_KEY } from '@/ui/appText';
@@ -22,6 +26,7 @@ import {
 import { SHOW_PHOTOS_ON_MAP_SETTING_KEY, SHOW_PHOTOS_ON_MAP_ENABLE_PENDING_SETTING_KEY } from './usePhotoMapCrashBreaker';
 import type { LocationPermissionState } from '@/features/location/locationPermission';
 import type { RefreshDataResult } from './useLocationRecordingSync';
+import type { AppUpdateNotice } from '@/features/app-update/updateNotices';
 import { DEFAULT_USER_LOCATION_ICON_ID } from '@/features/customization/customizationOptions';
 import { DEFAULT_APP_COLOR_PRESET_ID } from '@/features/customization/colorPresets';
 
@@ -79,6 +84,10 @@ export type UseAppInitializationOptions = {
   setFirstLaunchTutorialMode: (mode: 'firstLaunch' | 'replay') => void;
   /** 初回チュートリアルの表示・非表示を設定する。 */
   setIsFirstLaunchTutorialVisible: (visible: boolean) => void;
+  /** 現在のネイティブ版に一致する更新通知。 */
+  currentAppUpdateNotice: AppUpdateNotice | null;
+  /** 初期化完了後に未読の更新通知を自動表示として予約する。 */
+  openAutomaticAppUpdateNotice: () => void;
 };
 
 /**
@@ -106,6 +115,8 @@ export function useAppInitialization({
   setIsReady,
   setFirstLaunchTutorialMode,
   setIsFirstLaunchTutorialVisible,
+  currentAppUpdateNotice,
+  openAutomaticAppUpdateNotice,
 }: UseAppInitializationOptions): void {
   useEffect(() => {
     const initializationController = new AbortController();
@@ -129,6 +140,7 @@ export function useAppInitialization({
           savedCustomIconImageUri,
           savedReviewPrompted,
           savedFirstLaunchTutorialCompleted,
+          savedLastAcknowledgedUpdateNoticeVersion,
           initialPremiumAccessResult,
         ] = await Promise.all([
           getBooleanSetting(KEEP_SCREEN_AWAKE_SETTING_KEY, false),
@@ -141,6 +153,7 @@ export function useAppInitialization({
           getStringSetting(CUSTOM_ICON_IMAGE_URI_SETTING_KEY, ''),
           getBooleanSetting('reviewPrompted', false),
           getBooleanSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, false),
+          getStringSetting(LAST_ACKNOWLEDGED_UPDATE_NOTICE_VERSION_SETTING_KEY, ''),
           resolveInitialPremiumAccess(initialPremiumAccessRequest, getDefaultPremiumAccessState(), { signal }),
         ]);
         if (signal.aborted) return;
@@ -200,6 +213,14 @@ export function useAppInitialization({
         if (!savedFirstLaunchTutorialCompleted) {
           setFirstLaunchTutorialMode('firstLaunch');
           setIsFirstLaunchTutorialVisible(true);
+        } else if (
+          shouldShowAutomaticAppUpdateNotice({
+            currentNotice: currentAppUpdateNotice,
+            firstLaunchTutorialCompleted: savedFirstLaunchTutorialCompleted,
+            lastAcknowledgedVersion: savedLastAcknowledgedUpdateNoticeVersion,
+          })
+        ) {
+          openAutomaticAppUpdateNotice();
         }
       })
       .catch((error: unknown) => {
@@ -228,6 +249,8 @@ export function useAppInitialization({
     synchronizeLocationRecordingMode,
     setFirstLaunchTutorialMode,
     setIsFirstLaunchTutorialVisible,
+    currentAppUpdateNotice,
+    openAutomaticAppUpdateNotice,
     setKeepScreenAwake,
     setCrashReportingEnabled,
     setShowStayPlacesOnMap,

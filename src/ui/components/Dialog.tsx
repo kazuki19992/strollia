@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, LayoutAnimation, Modal, PanResponder, Pressable, Text, View } from 'react-native';
 
 import { AppStyles } from '@/ui/appStyles';
+import { MODAL_EXIT_TRANSITION_DURATION_MS } from '@/ui/constants/modalTransitions';
 import { shouldDismissAchievementModalSwipe, shouldDismissAchievementModalTerminate } from './achievementUnlockModalLogic';
 import { ConfettiOverlay } from './ConfettiOverlay';
 
@@ -121,9 +122,9 @@ export function Dialog({
         onCloseRef.current();
       }
       Animated.parallel([
-        Animated.timing(modalProgress, { toValue: 0, duration: 500, useNativeDriver: true }),
-        Animated.timing(dragX, { toValue: 0, duration: 500, useNativeDriver: true }),
-        Animated.timing(dragY, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(modalProgress, { toValue: 0, duration: MODAL_EXIT_TRANSITION_DURATION_MS, useNativeDriver: true }),
+        Animated.timing(dragX, { toValue: 0, duration: MODAL_EXIT_TRANSITION_DURATION_MS, useNativeDriver: true }),
+        Animated.timing(dragY, { toValue: 0, duration: MODAL_EXIT_TRANSITION_DURATION_MS, useNativeDriver: true }),
       ]).start(({ finished }) => {
         if (finished && isMountedRef.current) {
           setIsRendered(false);

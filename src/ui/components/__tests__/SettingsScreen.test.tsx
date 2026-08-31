@@ -79,6 +79,7 @@ function createProps() {
     revenueCatAppUserId: null as string | null,
     appVersion: '1.1.0' as string | null,
     buildNumber: '21' as string | null,
+    hasCurrentAppUpdateNotice: false,
     premiumOfferingSummary: null as PremiumOfferingSummary | null,
     isLoadingPremiumOffering: false,
     isPurchasingPremiumPackage: false,
@@ -103,6 +104,7 @@ function createProps() {
     onUpdateAppColorPreset: jest.fn(),
     onOpenStayPlaces: jest.fn(),
     onOpenAboutAppScreen: jest.fn(),
+    onOpenLatestAppUpdateNotice: jest.fn(),
     onOpenFirstLaunchTutorial: jest.fn(),
     onOpenFaqScreen: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
@@ -205,6 +207,32 @@ describe('設定画面 SettingsScreen', () => {
 
     expect(props.onOpenAboutAppScreen).toHaveBeenCalledTimes(1);
     expect(props.onOpenFirstLaunchTutorial).toHaveBeenCalledTimes(1);
+  });
+
+  test('現在版の更新通知があるとこのアプリについての直後に最新の更新内容を表示して開ける', () => {
+    const props = { ...createProps(), hasCurrentAppUpdateNotice: true };
+    render(<SettingsScreen {...props} />);
+
+    const buttonLabels = screen.getAllByRole('button').map((node) => node.props.accessibilityLabel as unknown);
+    const aboutIndex = buttonLabels.indexOf('このアプリについて');
+    const updateNoticeIndex = buttonLabels.indexOf('最新の更新内容を見る');
+    const tutorialIndex = buttonLabels.indexOf('チュートリアル');
+
+    expect(aboutIndex).toBeGreaterThanOrEqual(0);
+    expect(updateNoticeIndex).toBe(aboutIndex + 1);
+    expect(updateNoticeIndex).toBeLessThan(tutorialIndex);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('最新の更新内容を見る'));
+    });
+
+    expect(props.onOpenLatestAppUpdateNotice).toHaveBeenCalledTimes(1);
+  });
+
+  test('現在版の更新通知がないと最新の更新内容を表示しない', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
   });
 
   test('チュートリアルの下によくある質問を表示して開ける', () => {

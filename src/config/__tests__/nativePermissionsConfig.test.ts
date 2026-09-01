@@ -24,8 +24,12 @@ describe('ネイティブ権限のExpo設定', () => {
     );
   });
 
-  test('位置情報では未使用のモーションアクティビティ権限を追加しない', () => {
-    expect(getPluginOptions('expo-location')).toEqual(expect.objectContaining({ motionUsagePermission: false }));
+  test('位置情報モジュールが含むモーションAPIの用途説明を追加する', () => {
+    expect(getPluginOptions('expo-location')).toEqual(
+      expect.objectContaining({
+        motionUsagePermission: 'すとろりあは、移動ルートを記録する際に端末の移動状態を利用する場合があります。',
+      }),
+    );
   });
 
   test('写真ライブラリでは未使用の保存権限を追加しない', () => {

@@ -93,7 +93,7 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true,
-          "motionUsagePermission": false
+          "motionUsagePermission": "すとろりあは、移動ルートを記録する際に端末の移動状態を利用する場合があります。"
         }
       ],
       [

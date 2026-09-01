@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 const PROJECT_ROOT = resolve(__dirname, '../../..');
 const EXPECTED_PHOTO_LIBRARY_DESCRIPTION =
   'すとろりあは、ジオタグ付き写真を地図上に表示したり、現在地アイコンに使用する画像を選択したりするために写真ライブラリを読み取ります。';
+const EXPECTED_MOTION_DESCRIPTION = 'すとろりあは、移動ルートを記録する際に端末の移動状態を利用する場合があります。';
 
 /** AndroidManifest.xmlから指定した権限のuses-permissionタグを抽出する。 */
 function findAndroidPermissionTags(manifest: string, permission: string): string[] {
@@ -53,16 +54,17 @@ describe('Expo prebuild後のネイティブ権限', () => {
     rmSync(temporaryProjectPath, { recursive: true, force: true });
   });
 
-  test('iOSでは位置情報と写真読み取りだけの用途説明を生成する', () => {
+  test('iOSでは位置情報・モーション・写真読み取りの用途説明を生成する', () => {
     expect(infoPlist).toContain('<key>NSLocationWhenInUseUsageDescription</key>');
     expect(infoPlist).toContain('<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>');
     expect(infoPlist).toContain('<key>NSLocationAlwaysUsageDescription</key>');
     expect(infoPlist).toContain('<key>NSPhotoLibraryUsageDescription</key>');
     expect(infoPlist).toContain(`<string>${EXPECTED_PHOTO_LIBRARY_DESCRIPTION}</string>`);
+    expect(infoPlist).toContain('<key>NSMotionUsageDescription</key>');
+    expect(infoPlist).toContain(`<string>${EXPECTED_MOTION_DESCRIPTION}</string>`);
 
     expect(infoPlist).not.toContain('<key>NSCameraUsageDescription</key>');
     expect(infoPlist).not.toContain('<key>NSMicrophoneUsageDescription</key>');
-    expect(infoPlist).not.toContain('<key>NSMotionUsageDescription</key>');
     expect(infoPlist).not.toContain('<key>NSPhotoLibraryAddUsageDescription</key>');
   });
 

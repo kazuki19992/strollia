@@ -2,7 +2,8 @@ import { forwardRef } from 'react';
 import { Image, Text, View } from 'react-native';
 import MapView, { Polyline, Region } from 'react-native-maps';
 
-import { toRenderRouteCoordinates } from '@/features/map/routeMapper';
+import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { AppTheme } from '@/theme/theme';
 import type { LocationPoint } from '@/types/gps';
 import type { AppStyles } from '@/ui/appStyles';
@@ -12,6 +13,8 @@ export type GifFrameRendererProps = {
   region: Region;
   /** このコマで表示する累積ポイント。 */
   points: LocationPoint[];
+  /** GIF共有時の非表示半径を適用する有効な滞在場所。未解決時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
   /** 左上に表示する時刻ラベル（スペース埋め H:MM）。 */
   timeLabel: string;
   /** 時刻の下に表示する日付ラベル（YYYY年M月D日 (曜)）。 */
@@ -26,10 +29,10 @@ export type GifFrameRendererProps = {
 
 /** 画面外にマウントしてGIFの1コマをキャプチャするための地図View。 */
 export const GifFrameRenderer = forwardRef<View, GifFrameRendererProps>(function GifFrameRenderer(
-  { region, points, timeLabel, dateLabel, styles, theme, onMapLoaded },
+  { region, points, activeStayPlaces, timeLabel, dateLabel, styles, theme, onMapLoaded },
   ref,
 ) {
-  const routeCoordinates = toRenderRouteCoordinates(points);
+  const routeSegments = activeStayPlaces == null ? [] : toPrivacyRouteSegments(points, activeStayPlaces);
 
   return (
     <View ref={ref} collapsable={false} style={styles.gifFrameContainer}>
@@ -42,9 +45,9 @@ export const GifFrameRenderer = forwardRef<View, GifFrameRendererProps>(function
         pitchEnabled={false}
         onMapLoaded={onMapLoaded}
       >
-        {routeCoordinates.length > 1 ? (
-          <Polyline coordinates={routeCoordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
-        ) : null}
+        {routeSegments.map((segment) => (
+          <Polyline key={segment.id} coordinates={segment.coordinates} strokeColor={theme.colors.mapLine} strokeWidth={5} />
+        ))}
       </MapView>
       <View style={styles.gifFrameTimeBadge}>
         <Text style={styles.gifFrameTimeText}>{timeLabel}</Text>

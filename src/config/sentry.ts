@@ -194,6 +194,39 @@ export function reportInvestigatedError(error: unknown, options: InvestigatedErr
 }
 
 /**
+ * 写真マップ表示パイプラインの調査で使う計装ステージ。
+ *
+ * `permission`(権限要求)→ `load`(ライブラリ読み込み)→ `cluster`(クラスタリング)の順に、
+ * どの段階で写真が消えているかを切り分けるために使う。
+ */
+export type PhotoMapDiagnosticsStage = 'permission' | 'load' | 'cluster';
+
+/**
+ * 写真マップ表示パイプラインの診断値をSentryへ送る。
+ *
+ * 実機(productionビルド)でしか再現しない「写真が表示されない」不具合の調査用。
+ * ローカルファースト方針(AGENTS.md §5)を守るため、座標・アセットID・URI・ファイル名は
+ * 一切含めず、件数・真偽値・所要時間だけを送る。
+ *
+ * 送信自体が失敗しても写真読み込みなど本来の処理を壊さないよう、内部で握りつぶす。
+ *
+ * @param stage - どの段階の診断値かを示すステージ名。
+ * @param data - 送信する件数・真偽値。個人を特定しうる値を入れてはいけない。
+ */
+export function reportPhotoMapDiagnostics(stage: PhotoMapDiagnosticsStage, data: Record<string, unknown>): void {
+  try {
+    Sentry.withScope((scope) => {
+      scope.setTag('investigation_area', 'photo-map');
+      scope.setTag('photo_map_stage', stage);
+      scope.setContext('photoMap', data);
+      Sentry.captureMessage(`photo-map: ${stage}`, 'info');
+    });
+  } catch (error: unknown) {
+    console.warn('Failed to report photo map diagnostics:', error);
+  }
+}
+
+/**
  * productionビルドだけRoot ComponentをSentryでwrapする。
  */
 export function wrapWithSentry<T extends RootComponent>(component: T): T {

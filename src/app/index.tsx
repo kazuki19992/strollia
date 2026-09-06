@@ -59,12 +59,17 @@ export default function MapRoute(): React.ReactElement {
           showPhotosOnMap={s.showPhotosOnMap}
           isUpdatingPhotoSetting={s.isUpdatingPhotoSetting}
           photoClusters={s.photoClusters}
+          activeStayPlaces={s.activeStayPlaces}
+          hasStayPlaces={s.stayPlaces.length > 0}
+          showStayPlacesOnMap={s.showStayPlacesOnMap}
           hasAnyLocationPoints={s.hasAnyLocationPoints}
           hasRequiredPermission={s.hasRequiredPermission}
           shouldOpenSettingsForPermission={s.shouldOpenSettingsForPermission}
           isWhileInUseOnlyMode={s.isWhileInUseRecordingMode}
           photoErrorMessage={s.photoErrorMessage}
           isLoadingPhotos={s.isLoadingPhotos}
+          isScanningPhotoLibrary={s.isScanningPhotoLibrary}
+          photoScanMetricsLines={s.photoScanMetricsLines}
           distance={s.distance}
           todayDistance={s.todayDistanceMeters}
           currentSpeedKmh={s.currentSpeedKmh}
@@ -81,6 +86,7 @@ export default function MapRoute(): React.ReactElement {
           onOpenMonthlyReport={s.openMonthlyReport}
           onToggleMapType={s.toggleMapType}
           onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
+          onUpdateShowStayPlacesOnMap={s.updateShowStayPlacesOnMap}
           onOpenSettings={s.openSettings}
           onRequestLocationPermission={s.requestLocationPermission}
           onRecenterOnUserLocation={s.recenterOnUserLocation}

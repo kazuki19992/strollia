@@ -1,6 +1,6 @@
+import { STROLLIA_APP_STORE_URL } from '@/config/storeUrls';
 import {
   ACHIEVEMENT_DEFINITIONS,
-  STROLLIA_APP_STORE_URL,
   createAchievementShareText,
   formatAchievementDistance,
   kilometersToMeters,

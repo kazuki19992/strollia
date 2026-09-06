@@ -155,7 +155,7 @@ StrolliaはローカルファーストのGPSロガーである。
 ### 10.1 worktree / ブランチ / PR
 
 - `develop` を開発中のデフォルトブランチ、`main` をリリース状態のブランチとして扱う。
-- 通常の開発作業は、先に最新の `develop` を取得し、`develop` から `.worktrees/` 配下に新しい worktree とエージェントごとの接頭辞を付けたブランチを作成してから作業する。Codex は `codex/`、Claude Code は `claude/` を使う。
+- 通常の開発作業は、先に最新の `develop` を取得し、`develop` から新しい worktree とエージェントごとの接頭辞を付けたブランチを作成してから作業する。新規 worktree の作成には `git worktree add` ではなく `git gtr new` を使い、`.env.local` をコピーするため `--no-copy` は使わない。Codex は `codex/`、Claude Code は `claude/` を使う。
 - `main` はリリース反映用のブランチとして扱い、通常の開発ブランチの起点にしない。リリース作業では `develop` から `main` への PR を作成する。
 - `develop` と `main` はどちらも PR 経由で変更し、直接 push しない。
 - `worktreeで作業` と依頼された場合も、通常のチェックアウトではなく分離 worktree を使う。
@@ -219,3 +219,4 @@ StrolliaはローカルファーストのGPSロガーである。
 | `release`            | `.claude/skills/release/SKILL.md`            | 新バージョンのリリース準備(バージョン更新、develop→mainのリリースPR)                |
 | `release-notes`      | `.claude/skills/release-notes/SKILL.md`      | main(リリース済み)とdevelop(リリース予定)の差分からユーザー向けリリースノートを作成 |
 | `tag-release`        | `.claude/skills/tag-release/SKILL.md`        | リリースPRマージ後、mainの最新コミットへバージョンタグを付与                        |
+| `worktree-setup`     | `.claude/skills/worktree-setup/SKILL.md`     | Footspot の新規 worktree 作成。`git gtr new` による `.env.local` のコピーを含む     |

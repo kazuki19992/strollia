@@ -2,16 +2,22 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Animated, Image, Platform, Pressable, SafeAreaView, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RefObject } from 'react';
 
 import { MapPhotoCluster } from '@/features/photos/photoClusters';
+import { getStayPlaceEmoji } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
+import { formatStayPlacePrivacyRadius } from '@/features/stayPlaces/stayPlacePrivacy';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import { PHOTO_LIBRARY_SCANNING_MESSAGE } from '@/ui/appText';
 import { AreaLabel } from '@/ui/areaName';
 import { AppTheme } from '@/theme/theme';
 import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import { AppStyles } from '@/ui/appStyles';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
+import { Dialog } from './Dialog';
+import { StayPlaceMapMarker } from './StayPlaceMapMarker';
 
 /** マップ上の補助UIはOS文字サイズで地図表示を覆わないよう固定する。 */
 const FIXED_MAP_UI_TEXT_PROPS = { allowFontScaling: false };
@@ -65,6 +71,12 @@ export type MapScreenProps = {
   isUpdatingPhotoSetting: boolean;
   /** 表示する写真クラスタ。 */
   photoClusters: MapPhotoCluster[];
+  /** 現在の契約状態で有効な滞在場所。読込中・失敗時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
+  /** 滞在場所が1件以上登録されているか。 */
+  hasStayPlaces: boolean;
+  /** 滞在場所アイコンを地図に表示するか。 */
+  showStayPlacesOnMap: boolean;
   /** GPS記録が1件以上あるか(空状態表示の判定用)。 */
   hasAnyLocationPoints: boolean;
   /** 位置情報権限が揃っているか。 */
@@ -75,8 +87,21 @@ export type MapScreenProps = {
   isWhileInUseOnlyMode: boolean;
   /** 写真エラーメッセージ。 */
   photoErrorMessage: string | null;
-  /** 写真読み込み中か。 */
+  /** 保存済み写真の読み込み中か。 */
   isLoadingPhotos: boolean;
+  /**
+   * 背後で写真ライブラリの差分走査が動いているか。
+   *
+   * 走査は表示をブロックしないため、読み込み中の表示とは分けて控えめに知らせる(設計書 §4.2)。
+   */
+  isScanningPhotoLibrary: boolean;
+  /**
+   * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
+   *
+   * **計測用の開発フラグが有効なときだけ非nullになる**(判定は `createPhotoScanMetricsLines`)。
+   * 走査上限の撤廃を実測で設計するための一時的な表示なので、通常は何も描画しない。
+   */
+  photoScanMetricsLines: string[] | null;
   /** 表示距離。 */
   distance: number;
   /** 今日の移動距離。 */
@@ -109,6 +134,8 @@ export type MapScreenProps = {
   onToggleMapType: () => void;
   /** 写真表示設定更新ハンドラ。 */
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
+  /** 滞在場所表示設定更新ハンドラ。 */
+  onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
   /** 設定画面を開くハンドラ。 */
   onOpenSettings: () => void;
   /** 位置情報権限要求ハンドラ。 */
@@ -134,12 +161,17 @@ export function MapScreen({
   showPhotosOnMap,
   isUpdatingPhotoSetting,
   photoClusters,
+  activeStayPlaces,
+  hasStayPlaces,
+  showStayPlacesOnMap,
   hasAnyLocationPoints,
   hasRequiredPermission,
   shouldOpenSettingsForPermission,
   isWhileInUseOnlyMode,
   photoErrorMessage,
   isLoadingPhotos,
+  isScanningPhotoLibrary,
+  photoScanMetricsLines,
   distance,
   todayDistance,
   currentSpeedKmh,
@@ -156,6 +188,7 @@ export function MapScreen({
   onOpenMonthlyReport,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
+  onUpdateShowStayPlacesOnMap,
   onOpenSettings,
   onRequestLocationPermission,
   onRecenterOnUserLocation,
@@ -165,6 +198,35 @@ export function MapScreen({
   // カスタム画像マーカーは画像ロード完了までネイティブスナップショットを更新し続ける。
   // ロード後はパフォーマンスのため更新を止める。
   const [isCustomMarkerRendered, setIsCustomMarkerRendered] = useState(false);
+  /** タップして詳細ダイアログを開いている滞在場所。 */
+  const [selectedStayPlace, setSelectedStayPlace] = useState<StayPlace | null>(null);
+  const selectedStayPlaceEmoji = selectedStayPlace ? getStayPlaceEmoji(selectedStayPlace.iconHexcode) : null;
+
+  /**
+   * Visited GridのPolygon要素。
+   *
+   * 追従モード中は現在地更新のたびにこのコンポーネントが再レンダーされる。要素配列をメモ化して
+   * 同じ参照を返すことで、visited cellに変化がない限りReactがPolygonサブツリーの再レンダーを
+   * スキップする。Polygonへ渡す値はvisitedGridCells以外に依存しない(tappable/zIndex/testIDは定数)。
+   */
+  const visitedGridPolygons = useMemo(() => {
+    if (!shouldRenderVisitedGrid) {
+      return null;
+    }
+
+    return visitedGridCells.map((cell) => (
+      <Polygon
+        key={cell.id}
+        coordinates={cell.coordinates}
+        fillColor={cell.fillColor}
+        strokeColor={cell.strokeColor}
+        strokeWidth={cell.strokeWidth}
+        testID="visited-grid-cell"
+        tappable={false}
+        zIndex={1}
+      />
+    ));
+  }, [shouldRenderVisitedGrid, visitedGridCells]);
 
   useEffect(() => {
     setIsCustomMarkerRendered(false);
@@ -191,24 +253,17 @@ export function MapScreen({
         onRegionChange={Platform.OS === 'android' ? onRegionChange : undefined}
         mapPadding={MAP_PADDING}
       >
-        {shouldRenderVisitedGrid &&
-          visitedGridCells.map((cell) => (
-            <Polygon
-              key={cell.id}
-              coordinates={cell.coordinates}
-              fillColor={cell.fillColor}
-              strokeColor={cell.strokeColor}
-              strokeWidth={cell.strokeWidth}
-              testID="visited-grid-cell"
-              tappable={false}
-              zIndex={1}
-            />
+        {visitedGridPolygons}
+        {showStayPlacesOnMap &&
+          activeStayPlaces?.map((place) => (
+            <StayPlaceMapMarker key={place.id} place={place} styles={styles} onPress={setSelectedStayPlace} />
           ))}
         {!userLocationIcon.useNativeUserLocation && userCoordinate && (
           <Marker
             coordinate={userCoordinate}
             anchor={{ x: 0.5, y: 0.5 }}
             tracksViewChanges={userLocationIcon.customImageUri ? !isCustomMarkerRendered : undefined}
+            zIndex={4}
           >
             {userLocationIcon.customImageUri ? (
               <Image
@@ -237,6 +292,24 @@ export function MapScreen({
             <PhotoClusterMarker key={cluster.id} cluster={cluster} styles={styles} onPress={onPhotoClusterPress} />
           ))}
       </MapView>
+
+      <Dialog visible={selectedStayPlace !== null} swipeToClose styles={styles} onClose={() => setSelectedStayPlace(null)}>
+        {selectedStayPlace ? (
+          <View style={styles.stayPlaceMapDialogContent}>
+            {selectedStayPlaceEmoji ? (
+              <Image
+                accessibilityLabel={`${selectedStayPlaceEmoji.label}のTwemojiアイコン`}
+                source={selectedStayPlaceEmoji.asset}
+                style={styles.stayPlaceMapDialogImage}
+              />
+            ) : null}
+            <Text style={styles.stayPlaceMapDialogTitle}>{selectedStayPlace.name}</Text>
+            <Text style={styles.stayPlaceMapDialogPrivacy}>
+              非表示範囲: {formatStayPlacePrivacyRadius(selectedStayPlace.privacyRadiusMeters)}
+            </Text>
+          </View>
+        ) : null}
+      </Dialog>
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
         {!hasAnyLocationPoints && (
@@ -282,6 +355,29 @@ export function MapScreen({
           </View>
         )}
 
+        {/*
+          走査は保存済み写真の表示をブロックしない。読み込み中の帯と二重に出さないよう、
+          キャッシュ検索が終わってから控えめに知らせる
+        */}
+        {showPhotosOnMap && !isLoadingPhotos && isScanningPhotoLibrary && (
+          <View style={styles.photoStatusCard}>
+            <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.permissionText}>
+              {PHOTO_LIBRARY_SCANNING_MESSAGE}
+            </Text>
+          </View>
+        )}
+
+        {/* 走査コスト計測用の一時表示。スクリーンショットから読み取る前提なので読み込み帯と同じ場所・見た目に置く */}
+        {photoScanMetricsLines !== null && (
+          <View style={styles.photoStatusCard}>
+            {photoScanMetricsLines.map((line) => (
+              <Text {...FIXED_MAP_UI_TEXT_PROPS} key={line} style={styles.photoScanMetricsText}>
+                {line}
+              </Text>
+            ))}
+          </View>
+        )}
+
         <MapBottomDashboard
           styles={styles}
           theme={theme}
@@ -294,6 +390,8 @@ export function MapScreen({
           currentAreaLabel={currentAreaLabel}
           showPhotosOnMap={showPhotosOnMap}
           isUpdatingPhotoSetting={isUpdatingPhotoSetting}
+          hasStayPlaces={hasStayPlaces}
+          showStayPlacesOnMap={showStayPlacesOnMap}
           onRecenterOnUserLocation={onRecenterOnUserLocation}
           onOpenDailyLogs={onOpenDailyLogs}
           onOpenAchievements={onOpenAchievements}
@@ -301,6 +399,7 @@ export function MapScreen({
           onOpenSettings={onOpenSettings}
           onToggleMapType={onToggleMapType}
           onUpdateShowPhotosOnMap={onUpdateShowPhotosOnMap}
+          onUpdateShowStayPlacesOnMap={onUpdateShowStayPlacesOnMap}
         />
       </SafeAreaView>
     </View>

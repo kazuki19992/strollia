@@ -157,6 +157,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={onOpenPremiumPaywall}
       />,
@@ -193,6 +194,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={onOpenPremiumPaywall}
       />,
@@ -311,6 +313,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={onOpenPremiumPaywall}
       />,
@@ -343,6 +346,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={onOpenPremiumPaywall}
       />,
@@ -364,6 +368,118 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/daily-log-detail.png', expect.objectContaining({ mimeType: 'image/png' }));
   });
 
+  test('滞在場所の読込中は共有画像とGIFを開始せず共有用地図もマウントしない', async () => {
+    const { captureRef } = require('react-native-view-shot');
+
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={null}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    await act(async () => {});
+
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
+    expect(screen.queryByLabelText('移動記録をGIFで出力')).toBeNull();
+
+    fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+
+    expect(captureRef).not.toHaveBeenCalled();
+    expect(screen.UNSAFE_queryAllByType(DailyLogShareCard)).toHaveLength(0);
+  });
+
+  test('滞在場所の読込失敗時は共有を無効化して安全なエラー状態を表示する', async () => {
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={null}
+        stayPlacesStatus="error"
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    await act(async () => {});
+
+    expect(screen.getByText('滞在場所を読み込めないため、共有を準備できません。')).toBeTruthy();
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
+  });
+
+  test('不正な共有時非表示半径を含む場合は日別共有をfail-closedにする', async () => {
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={[
+          {
+            id: 1,
+            name: '自宅',
+            iconHexcode: '1F3E0',
+            latitude: 35.681236,
+            longitude: 139.767125,
+            privacyRadiusMeters: 50,
+            createdAt: '2026-08-20T00:00:00.000Z',
+            updatedAt: '2026-08-20T00:00:00.000Z',
+          },
+        ]}
+        stayPlacesStatus="ready"
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    await act(async () => {});
+
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
+    expect(screen.queryByLabelText('移動記録をGIFで出力')).toBeNull();
+  });
+
+  test('共有画像には有効な滞在場所の非表示範囲を渡す', async () => {
+    const activeStayPlaces = [
+      {
+        id: 1,
+        name: '自宅',
+        iconHexcode: '1F3E0',
+        latitude: 35.681236,
+        longitude: 139.767125,
+        privacyRadiusMeters: 100,
+        createdAt: '2026-08-19T00:00:00.000Z',
+        updatedAt: '2026-08-19T00:00:00.000Z',
+      },
+    ];
+
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={activeStayPlaces}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+    });
+
+    // UNSAFE_getByType は画面外の共有専用コンポーネントへ渡したpropsを確認するために使う。
+    expect(screen.UNSAFE_getByType(DailyLogShareCard).props.activeStayPlaces).toEqual(activeStayPlaces);
+  });
+
   test('今日以外の日付はスライダーの最大値が 24:00 になる', async () => {
     render(
       <DailyLogDetailScreen
@@ -371,6 +487,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={onOpenPremiumPaywall}
       />,
@@ -441,6 +558,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
         styles={styles as never}
         theme={lightTheme}
         premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
         onBackToDailyLogs={jest.fn()}
         onOpenPremiumPaywall={onOpenPremiumPaywall}
       />,
@@ -448,7 +566,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    expect(screen.getByLabelText('この日の記録を共有').props.disabled).toBeFalsy();
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBeFalsy();
 
     act(() => {
       fireEvent.press(screen.getByLabelText('この日の記録を共有'));
@@ -465,7 +583,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       captureResolve!();
     });
 
-    expect(screen.getByLabelText('この日の記録を共有').props.disabled).toBeFalsy();
+    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBeFalsy();
   });
 
   test('Plusユーザーの場合はスライダー・訪問エリア・おもいでが表示される', async () => {

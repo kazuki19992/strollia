@@ -1,11 +1,14 @@
-import * as MediaLibrary from 'expo-media-library/legacy';
+import { getPermissionsAsync, requestPermissionsAsync } from 'expo-media-library';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { Alert } from 'react-native';
+import type { Region } from 'react-native-maps';
 
+import { reportPhotoMapDiagnostics } from '@/config/sentry';
 import { hasFullPhotoAccess } from '@/features/photos/photoLibrary';
 import { setSetting } from '@/features/settings/settingsRepository';
 import { usePhotoMapOverlay } from './usePhotoMapOverlay';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
+import type { PhotoScanMetrics } from '@/features/photos/photoScanMetrics';
 
 /** マップ上の写真表示設定をSQLiteへ保存するキー。 */
 export const SHOW_PHOTOS_ON_MAP_SETTING_KEY = 'showPhotosOnMap';
@@ -26,6 +29,17 @@ export type UsePhotoMapCrashBreakerParams = {
    * MapView 準備完了後に写真表示を復元する。
    */
   isMapReady: boolean;
+  /**
+   * 写真の検索範囲に使う地図表示範囲。
+   * ジェスチャー中に更新されない範囲(Visited Grid と同じもの)を渡す。
+   */
+  photoOverlayRegion: Region;
+  /**
+   * 「地図に表示する写真」設定から解決した表示上限。上限なしの場合はnull。
+   *
+   * 地図のパン・ズームのたびに設定を読み直さないよう、UI層で保持した値を受け取る。
+   */
+  photoDisplayLimit?: number | null;
 };
 
 /** `usePhotoMapCrashBreaker` が返す状態と操作の型。 */
@@ -42,10 +56,18 @@ export type UsePhotoMapCrashBreakerResult = {
   isUpdatingPhotoSetting: boolean;
   /** 地図上に表示するジオタグ付き写真。isLoadingPhotos が true の間は前回の値を保持する。 */
   photos: MapPhoto[];
-  /** 写真データを取得中かどうか。 */
+  /** 写真データ(`photo_assets`)を取得中かどうか。 */
   isLoadingPhotos: boolean;
+  /** 背後で写真ライブラリの差分走査が動いているかどうか。 */
+  isScanningPhotoLibrary: boolean;
   /** 写真取得でエラーが発生した場合のメッセージ。 */
   photoErrorMessage: string | null;
+  /**
+   * 直近の写真ライブラリ走査の計測値。走査前・写真表示OFF時はnull。
+   *
+   * 走査上限の撤廃(Phase 2-c)を実測で設計するための一時的な計測値を、画面まで素通しする。
+   */
+  photoScanMetrics: PhotoScanMetrics | null;
   /**
    * 初回起動時の設定読み込み完了後に呼ぶ初期化関数。
    * App.tsx の初期化 effect から savedShowPhotosOnMap / savedShowPhotosOnMapEnablePending の
@@ -61,6 +83,13 @@ export type UsePhotoMapCrashBreakerResult = {
    * @param enabled - マップ上の写真表示を有効にするかどうか。
    */
   updateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
+  /**
+   * 写真ライブラリを走査せずに `photo_assets` を引き直す。
+   *
+   * 明示的な全件スキャンの完了後に、地図の表示を最新化するために使う。
+   * 引数の意味は `PhotoMapOverlayState.refreshPhotosFromCache` を参照。
+   */
+  refreshPhotosFromCache: (scanFallbackPhotos?: MapPhoto[] | null) => void;
 };
 
 /**
@@ -78,7 +107,12 @@ export type UsePhotoMapCrashBreakerResult = {
  *
  * ユーザー向け挙動は App.tsx のそれと完全に同一に保つ。
  */
-export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCrashBreakerParams): UsePhotoMapCrashBreakerResult {
+export function usePhotoMapCrashBreaker({
+  isReady,
+  isMapReady,
+  photoOverlayRegion,
+  photoDisplayLimit = null,
+}: UsePhotoMapCrashBreakerParams): UsePhotoMapCrashBreakerResult {
   const isUpdatingPhotoSettingRef = useRef(false);
 
   const [showPhotosOnMap, setShowPhotosOnMap] = useState(false);
@@ -86,7 +120,8 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
   const [isUpdatingPhotoSetting, setIsUpdatingPhotoSetting] = useState(false);
 
   // 写真データ取得フック。showPhotosOnMap が true のときのみ写真を取得する。
-  const { photos, isLoadingPhotos, photoErrorMessage } = usePhotoMapOverlay(showPhotosOnMap);
+  const { photos, isLoadingPhotos, isScanningPhotoLibrary, photoErrorMessage, photoScanMetrics, refreshPhotosFromCache } =
+    usePhotoMapOverlay(showPhotosOnMap, photoOverlayRegion, photoDisplayLimit);
 
   /**
    * 写真表示を有効化する前にpendingを保存し、ネイティブクラッシュ後の次回起動で復旧できるようにする。
@@ -115,6 +150,31 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
   }, []);
 
   /**
+   * 保存済みの写真表示ONを、現在の権限を再確認したうえで復元する。
+   *
+   * **復元経路でも権限の確認が要る。** フルアクセスで `photo_assets` を作ったあとにOS設定で
+   * 「選択した写真」へ変更されると、保存済みの行には現在アクセスできない写真が含まれる。
+   * 権限を見ずに復元すると、ユーザーがアクセスを取り消した写真がビューポート検索経由で
+   * 地図へ再表示されてしまう(`docs/photo-geotag.md` §11「権限が取り消された場合は写真表示を停止する」)。
+   *
+   * 権限は `getPermissionsAsync` で**参照するだけ**にする。起動直後の復元でダイアログを出すのは
+   * 不親切であり、権限の要求は写真表示をONにする導線の責務であるため。
+   * 満たさない場合はUIと永続化をまとめてOFFへ戻し、Alertは出さない。
+   *
+   * @returns なし。
+   */
+  const restorePhotosOnMapIfPermitted = useCallback(async (): Promise<void> => {
+    const permission = await getPermissionsAsync();
+
+    if (!hasFullPhotoAccess(permission)) {
+      await resetPhotoMapPersistedState();
+      return;
+    }
+
+    await enableShowPhotosOnMapWithCrashBreaker();
+  }, [enableShowPhotosOnMapWithCrashBreaker, resetPhotoMapPersistedState]);
+
+  /**
    * 写真表示設定を切り替える。初回ON時は写真ライブラリのフルアクセス権限を要求する。
    *
    * @param enabled - マップ上の写真表示を有効にするかどうか。
@@ -138,7 +198,20 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
           return;
         }
 
-        const permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+        const permission = await requestPermissionsAsync(false, ['photo']);
+
+        // 実機で「ONにしても写真が出ない」原因が権限段階かを切り分けるための調査用計装。
+        // 保存済み設定からの復元経路は権限要求を通らないため、この経路だけで送る。
+        //
+        // accessPrivileges は expo-media-library の型上 optional で、OS/APIレベルによっては未設定になる
+        // (limited を返すのは iOS 14 以降 / Android 14 (API 34) 以降のみ)。未設定でも granted が true なら
+        // hasFullPhotoAccess はフルアクセス扱いとする。そのため診断値の null は「拒否」ではなく
+        // 「OS が accessPrivileges を返さなかった」を意味する。granted と併せて読むこと。
+        reportPhotoMapDiagnostics('permission', {
+          granted: permission.granted,
+          accessPrivileges: permission.accessPrivileges ?? null,
+          hasFullAccess: hasFullPhotoAccess(permission),
+        });
 
         if (!hasFullPhotoAccess(permission)) {
           setShouldRestorePhotosOnMapAfterMapReady(false);
@@ -169,6 +242,9 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
   /**
    * 保存済みの写真表示ONは、MapViewの準備完了後に初めて復元する。
    * 起動直後のネイティブ地図初期化中に写真マーカーを載せてクラッシュする経路を避けるため。
+   *
+   * 復元時には権限を再確認する(詳細は `restorePhotosOnMapIfPermitted` を参照)。
+   * 権限の参照自体に失敗した場合も、フルアクセスと言い切れないためcatchでOFFへ巻き戻す。
    */
   useEffect(() => {
     if (!shouldRestorePhotosOnMapAfterMapReady || !isReady || !isMapReady) {
@@ -182,7 +258,7 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
     isUpdatingPhotoSettingRef.current = true;
     setIsUpdatingPhotoSetting(true);
     setShouldRestorePhotosOnMapAfterMapReady(false);
-    enableShowPhotosOnMapWithCrashBreaker()
+    restorePhotosOnMapIfPermitted()
       .catch((error: unknown) => {
         console.warn('Failed to restore photo map overlay:', error);
         // resetPhotoMapPersistedState は内部で失敗をログに残すため fire-and-forget でよい
@@ -192,7 +268,7 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
         isUpdatingPhotoSettingRef.current = false;
         setIsUpdatingPhotoSetting(false);
       });
-  }, [enableShowPhotosOnMapWithCrashBreaker, isMapReady, isReady, resetPhotoMapPersistedState, shouldRestorePhotosOnMapAfterMapReady]);
+  }, [isMapReady, isReady, resetPhotoMapPersistedState, restorePhotosOnMapIfPermitted, shouldRestorePhotosOnMapAfterMapReady]);
 
   /**
    * 写真読み込みとマーカー描画が一定時間続いたら、前回クラッシュ判定用のpendingを解除する。
@@ -242,8 +318,11 @@ export function usePhotoMapCrashBreaker({ isReady, isMapReady }: UsePhotoMapCras
     isUpdatingPhotoSetting,
     photos,
     isLoadingPhotos,
+    isScanningPhotoLibrary,
     photoErrorMessage,
+    photoScanMetrics,
     initializePhotoSetting,
     updateShowPhotosOnMap,
+    refreshPhotosFromCache,
   };
 }

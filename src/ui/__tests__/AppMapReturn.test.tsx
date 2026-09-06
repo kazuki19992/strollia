@@ -51,8 +51,10 @@ jest.mock('expo-haptics', () => ({
   selectionAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('expo-media-library/legacy', () => ({
+jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn().mockResolvedValue({ accessPrivileges: 'all' }),
+  // 保存済み設定の復元経路は権限を参照して再確認するため、フルアクセスを返しておく
+  getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, accessPrivileges: 'all' }),
 }));
 
 jest.mock('expo-image-picker', () => ({
@@ -70,6 +72,7 @@ jest.mock('@/config/sentry', () => ({
   updateSentrySubscriptionContext: jest.fn(),
   updateSentryUserContext: jest.fn(),
   setCrashReportingEnabled: jest.fn(),
+  reportPhotoMapDiagnostics: jest.fn(),
 }));
 
 jest.mock('@expo/vector-icons', () => {
@@ -89,7 +92,9 @@ let mockLatestSettingsScreenProps: any = null;
 let mockLatestMapScreenProps: any = null;
 let mockLatestMonthlyReportScreenProps: any = null;
 let mockLatestFirstLaunchTutorialProps: any = null;
+let mockLatestAppUpdateNoticeDialogProps: any = null;
 let mockLatestForegroundLocationOptions: any = null;
+let mockNativeApplicationVersion: string | null = '1.3.0';
 let mockPremiumCustomerInfoUpdate: ((state: { isPlusActive: boolean; entitlementId: string }) => void) | null = null;
 const mockPremiumUnsubscribe = jest.fn();
 
@@ -157,6 +162,19 @@ jest.mock('@/ui/components/MapScreen', () => ({
         <Pressable accessibilityLabel="地図をドラッグ" onPress={props.onPanDrag}>
           <Text>地図をドラッグ</Text>
         </Pressable>
+        <Pressable
+          accessibilityLabel="ドラッグ中に地図範囲を更新"
+          onPress={() =>
+            props.onRegionChange({
+              latitude: 35.7,
+              longitude: 139.8,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            })
+          }
+        >
+          <Text>ドラッグ中に地図範囲を更新</Text>
+        </Pressable>
         <Pressable accessibilityLabel="日ごとの記録" onPress={props.onOpenDailyLogs}>
           <Text>日ごとの記録</Text>
         </Pressable>
@@ -168,6 +186,22 @@ jest.mock('@/ui/components/MapScreen', () => ({
         </Pressable>
       </>
     );
+  },
+}));
+
+jest.mock('expo-application', () => ({
+  get nativeApplicationVersion() {
+    return mockNativeApplicationVersion;
+  },
+  nativeBuildVersion: '30',
+}));
+
+jest.mock('@/features/app-update/updateNotices', () => ({
+  ...jest.requireActual('@/features/app-update/updateNotices'),
+  LATEST_UPDATE_NOTICE: {
+    version: '1.3.0',
+    kind: 'feature',
+    items: ['地図を改善'],
   },
 }));
 
@@ -242,6 +276,28 @@ jest.mock('@/ui/components/FirstLaunchTutorialDialog', () => ({
   },
 }));
 
+jest.mock('@/ui/components/AppUpdateNoticeDialog', () => ({
+  AppUpdateNoticeDialog: (props: any) => {
+    const { Pressable, Text } = require('react-native');
+    mockLatestAppUpdateNoticeDialogProps = props;
+
+    if (!props.visible || !props.notice || !props.source) return null;
+
+    return (
+      <>
+        <Pressable accessibilityLabel="更新通知を閉じる" onPress={props.onClose}>
+          <Text>{`更新通知:${props.source}`}</Text>
+        </Pressable>
+        {props.source === 'settings' ? (
+          <Pressable accessibilityLabel="ストアページへ" onPress={props.onOpenStorePage}>
+            <Text>ストアページへ</Text>
+          </Pressable>
+        ) : null}
+      </>
+    );
+  },
+}));
+
 jest.mock('@/ui/components/PhotoPreviewModals', () => ({
   PhotoPreviewModals: () => null,
 }));
@@ -263,6 +319,11 @@ jest.mock('@/ui/components/SettingsScreen', () => ({
         <Pressable accessibilityLabel="チュートリアルを開く" onPress={props.onOpenFirstLaunchTutorial}>
           <Text>チュートリアル</Text>
         </Pressable>
+        {props.hasCurrentAppUpdateNotice ? (
+          <Pressable accessibilityLabel="最新の更新内容を見る" onPress={props.onOpenLatestAppUpdateNotice}>
+            <Text>最新の更新内容を見る</Text>
+          </Pressable>
+        ) : null}
         <Pressable accessibilityLabel="OSSライセンス" onPress={props.onOpenLicenseScreen}>
           <Text>OSSライセンス</Text>
         </Pressable>
@@ -351,6 +412,13 @@ jest.mock('@/theme/fonts', () => ({
 }));
 
 jest.mock('@/config/developmentFlags', () => ({
+  developmentFlags: {
+    enablePremiumAccessWithoutRevenueCat: false,
+    resetAchievementsOnLaunch: false,
+    logVisitedGridMetrics: false,
+    logPhotoScanMetrics: false,
+  },
+  getPhotoScanLimitOverride: jest.fn(() => null),
   hasEnabledDevelopmentFlags: jest.fn(() => false),
   shouldResetAchievementsOnLaunch: jest.fn(() => false),
 }));
@@ -447,6 +515,7 @@ jest.mock('@/features/import/gpxImporter', () => ({
 }));
 
 jest.mock('@/features/import/importRepository', () => ({
+  GpxImportInterruptedError: class GpxImportInterruptedError extends Error {},
   importLocationPointsFromGpx: jest.fn().mockResolvedValue({ importedPointCount: 0, skippedPointCount: 0 }),
 }));
 
@@ -487,12 +556,18 @@ jest.mock('@/features/premium/revenueCatAccess', () => ({
 }));
 
 jest.mock('@/features/photos/photoClusters', () => ({
-  clusterMapPhotos: jest.fn(() => []),
+  applyResolvedPhotoUrisToClusters: jest.fn((clusters) => clusters),
+  clusterMapPhotosByRadius: jest.fn(() => []),
+  getPhotoClusterRadiusMeters: jest.fn(() => 10),
+  getPhotoClusterRepresentativePhotos: jest.fn(() => []),
+  getStablePhotoClusterRadiusMeters: jest.fn(() => 10),
   paginateMapPhotos: jest.fn(() => []),
 }));
 
 jest.mock('@/features/photos/photoLibrary', () => ({
+  applyResolvedPhotoUris: jest.fn((photos) => photos),
   hasFullPhotoAccess: jest.fn(() => true),
+  resolvePhotoDisplayUriMap: jest.fn().mockResolvedValue(new Map()),
 }));
 
 jest.mock('@/features/location/visitedCellRepository', () => ({
@@ -525,8 +600,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     mockLatestMapScreenProps = null;
     mockLatestMonthlyReportScreenProps = null;
     mockLatestFirstLaunchTutorialProps = null;
+    mockLatestAppUpdateNoticeDialogProps = null;
     mockLatestForegroundLocationOptions = null;
     mockPremiumCustomerInfoUpdate = null;
+    mockNativeApplicationVersion = '1.3.0';
     (getLocationPermissionState as jest.Mock).mockResolvedValue({
       foregroundGranted: true,
       backgroundGranted: true,
@@ -582,6 +659,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
 
     const callsBeforeReturn = mockAnimateToRegion.mock.calls.length;
+    // 直前の「現在地へ戻る」操作で既にuserRegionを引数にgetGridBoundsForRegion / getVisitedCellsInBoundsが
+    // 呼ばれているため、'地図へ'を押した後だけの呼び出しをスライスして検証する(順序依存の防御を保つ)。
+    const gridBoundsCallsBeforeReturn = (getGridBoundsForRegion as jest.Mock).mock.calls.length;
+    const visitedCellsCallsBeforeReturn = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
     await act(async () => {
       fireEvent.press(screen.getByLabelText('日ごとの記録'));
@@ -593,13 +674,24 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(callsBeforeReturn + 1);
     expect(mockAnimateToRegion).toHaveBeenLastCalledWith(userRegion, 250);
-    expect(getGridBoundsForRegion).toHaveBeenLastCalledWith(userRegion, expect.any(Object));
-    expect(getVisitedCellsInBounds).toHaveBeenCalledWith({
-      minX: Math.round(userRegion.latitude * 1000),
-      maxX: Math.round(userRegion.longitude * 1000),
-      minY: Math.round(userRegion.latitudeDelta * 1000),
-      maxY: Math.round(userRegion.longitudeDelta * 1000),
-    });
+
+    // DB取得(先読み余白あり)と画面外判定(余白なし)の2effectがそれぞれgetGridBoundsForRegionを呼ぶため、
+    // 'containToEqual'で少なくとも1回はuserRegionで呼ばれたことを確認する。呼び出し範囲を
+    // '地図へ'を押した後だけに絞ることで、直前の「現在地へ戻る」操作の呼び出しを誤って
+    // 合格根拠にしない(prepareMapRegionRestoreがgridSyncRegionを更新しなくなる退行を検出できる)。
+    const gridBoundsCallsAfterReturn = (getGridBoundsForRegion as jest.Mock).mock.calls.slice(gridBoundsCallsBeforeReturn);
+    expect(gridBoundsCallsAfterReturn).toContainEqual([userRegion, expect.any(Object)]);
+
+    const visitedCellsCallsAfterReturn = (getVisitedCellsInBounds as jest.Mock).mock.calls.slice(visitedCellsCallsBeforeReturn);
+    expect(visitedCellsCallsAfterReturn).toContainEqual([
+      {
+        minX: Math.round(userRegion.latitude * 1000),
+        maxX: Math.round(userRegion.longitude * 1000),
+        minY: Math.round(userRegion.latitudeDelta * 1000),
+        maxY: Math.round(userRegion.longitudeDelta * 1000),
+      },
+      expect.any(Number),
+    ]);
   });
 
   test('取得済み範囲内(isGridBoundsContained=true)の再移動ではvisited cellを再取得しない', async () => {
@@ -626,6 +718,27 @@ describe('App 地図復帰時の表示範囲復元', () => {
     } finally {
       (isGridBoundsContained as jest.Mock).mockReturnValue(false);
     }
+  });
+
+  test('地図ドラッグ中のonRegionChangeはgridSyncRegionを更新せずvisited cell再取得を増やさない', async () => {
+    // gridOverlayRegionが `gridSyncRegion ?? initialRegion` ではなく `visibleRegion ?? initialRegion` に
+    // 戻る退行が起きると、onPanDrag後でもonRegionChangeのたびにgridOverlayRegionが更新され、
+    // このテストがfailする(isGridBoundsContainedを常にfalseへモックしているため、
+    // regionが変わるたびに再取得条件を満たしてしまう)。
+    renderRouter('src/app');
+    await flushPromises();
+
+    const callsBeforeDrag = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('地図をドラッグ'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('ドラッグ中に地図範囲を更新'));
+    });
+    await flushPromises();
+
+    expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBe(callsBeforeDrag);
   });
 
   test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
@@ -801,6 +914,100 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(screen.getByLabelText('初回チュートリアルを完了')).toBeTruthy();
   });
 
+  test('初回チュートリアル完了済みの未読現在版は自動起点で表示し、閉じると既読版を保存する', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) =>
+      Promise.resolve(key === 'lastAcknowledgedUpdateNoticeVersion' ? '' : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.getByText('更新通知:automatic')).toBeTruthy();
+    expect(mockLatestAppUpdateNoticeDialogProps).toEqual(
+      expect.objectContaining({
+        visible: true,
+        source: 'automatic',
+        notice: expect.objectContaining({ version: '1.3.0' }),
+      }),
+    );
+    expect(screen.queryByLabelText('ストアページへ')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
+    });
+
+    expect(setSetting).toHaveBeenCalledWith('lastAcknowledgedUpdateNoticeVersion', '1.3.0');
+  });
+
+  test('設定画面からは設定起点で再表示し、ストア導線を出しても閉じるだけでは既読版を書き込まない', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+    (getStringSetting as jest.Mock).mockImplementation((key: string, fallback: string) =>
+      Promise.resolve(key === 'lastAcknowledgedUpdateNoticeVersion' ? '1.3.0' : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.queryByText('更新通知:automatic')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+
+    expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(true);
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('最新の更新内容を見る'));
+    });
+
+    expect(screen.getByText('更新通知:settings')).toBeTruthy();
+    expect(screen.getByLabelText('ストアページへ')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
+    });
+
+    expect(setSetting).not.toHaveBeenCalledWith('lastAcknowledgedUpdateNoticeVersion', expect.anything());
+  });
+
+  test('現在版と通知版が一致しないと設定導線と更新通知を表示しない', async () => {
+    mockNativeApplicationVersion = '1.3.1';
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.queryByLabelText('更新通知を閉じる')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+    expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(false);
+    expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
+  });
+
+  test('実行中のネイティブ版を取得できないと設定導線と更新通知を表示しない', async () => {
+    mockNativeApplicationVersion = null;
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
+      Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
+    );
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.queryByLabelText('更新通知を閉じる')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('設定'));
+    });
+    expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(false);
+    expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
+  });
+
   test('前回の写真表示有効化が未完了なら起動時に写真表示を自動OFFへ戻す', async () => {
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => {
       if (key === 'showPhotosOnMap') {
@@ -822,6 +1029,101 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(false);
     expect(setSetting).toHaveBeenCalledWith('showPhotosOnMap', false);
     expect(setSetting).toHaveBeenCalledWith('showPhotosOnMapEnablePending', false);
+  });
+
+  test('滞在場所表示設定を更新してSQLiteへ保存する', async () => {
+    (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => Promise.resolve(fallback));
+
+    renderRouter('src/app');
+    await flushPromises();
+
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(true);
+
+    await act(async () => {
+      await mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+    });
+
+    expect(setSetting).toHaveBeenCalledWith('showStayPlacesOnMap', false);
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(false);
+  });
+
+  test('滞在場所表示設定を連続更新してもSQLiteへ要求順に保存する', async () => {
+    renderRouter('src/app');
+    await flushPromises();
+
+    let resolveFirstWrite: (() => void) | undefined;
+    const firstWrite = new Promise<void>((resolve) => {
+      resolveFirstWrite = resolve;
+    });
+    (setSetting as jest.Mock).mockClear();
+    (setSetting as jest.Mock).mockImplementation((key: string, value: boolean) => {
+      if (key === 'showStayPlacesOnMap' && value === false) {
+        return firstWrite;
+      }
+      return Promise.resolve();
+    });
+
+    let firstUpdate!: Promise<void>;
+    let secondUpdate!: Promise<void>;
+    act(() => {
+      firstUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+      secondUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(true);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(setSetting).toHaveBeenCalledTimes(1);
+    expect(setSetting).toHaveBeenNthCalledWith(1, 'showStayPlacesOnMap', false);
+
+    await act(async () => {
+      resolveFirstWrite?.();
+      await Promise.all([firstUpdate, secondUpdate]);
+    });
+
+    expect(setSetting).toHaveBeenNthCalledWith(2, 'showStayPlacesOnMap', true);
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(true);
+  });
+
+  test('古い滞在場所表示設定の保存失敗では最新の表示要求を巻き戻さない', async () => {
+    renderRouter('src/app');
+    await flushPromises();
+
+    let rejectFirstWrite: ((error: Error) => void) | undefined;
+    const firstWrite = new Promise<void>((_resolve, reject) => {
+      rejectFirstWrite = reject;
+    });
+    (setSetting as jest.Mock).mockClear();
+    (setSetting as jest.Mock).mockImplementationOnce(() => firstWrite).mockResolvedValueOnce(undefined);
+
+    let firstUpdate!: Promise<void>;
+    let secondUpdate!: Promise<void>;
+    act(() => {
+      firstUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+      secondUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
+    });
+
+    await act(async () => {
+      rejectFirstWrite?.(new Error('save failed'));
+      await expect(firstUpdate).rejects.toThrow('save failed');
+      await secondUpdate;
+    });
+
+    expect(setSetting).toHaveBeenCalledTimes(2);
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(false);
+  });
+
+  test('最新の滞在場所表示設定を保存できない場合は保存済みの表示状態へ戻してエラーを返す', async () => {
+    renderRouter('src/app');
+    await flushPromises();
+
+    (setSetting as jest.Mock).mockRejectedValueOnce(new Error('save failed'));
+
+    await act(async () => {
+      await expect(mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false)).rejects.toThrow('save failed');
+    });
+
+    expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(true);
   });
 
   test('保存済みの写真表示ONは地図準備完了後にpendingを立ててから有効化する', async () => {
@@ -903,7 +1205,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(true);
   });
 
-  test('初回チュートリアル完了時に表示済み設定を保存する', async () => {
+  test('初回チュートリアル完了時に完了フラグと現在版通知の既読を原子的に保存する', async () => {
     renderRouter('src/app');
     await flushPromises();
 
@@ -911,7 +1213,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     });
 
-    expect(setSetting).toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
+    expect(setSettings).toHaveBeenCalledWith([
+      { key: 'firstLaunchTutorialCompleted', value: true },
+      { key: 'lastAcknowledgedUpdateNoticeVersion', value: '1.3.0' },
+    ]);
   });
 
   test('初回チュートリアル未完了の場合は通知権限要求を完了後まで遅らせる', async () => {
@@ -1855,6 +2160,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('GPXインポート押下直後に実績反映範囲の注意を表示し、OKを押してからファイル選択を開く', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    global.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    }) as typeof global.requestAnimationFrame;
     const callOrder: string[] = [];
     /** 注意ダイアログのOKボタン。ユーザーが閉じる操作をテスト側から再現するために保持する。 */
     let confirmAlertButton: (() => void) | undefined;
@@ -1867,35 +2177,39 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return null;
     });
 
-    renderRouter('src/app');
-    await flushPromises();
+    try {
+      renderRouter('src/app');
+      await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
 
-    let importPromise: Promise<void> = Promise.resolve();
-    await act(async () => {
-      importPromise = mockLatestSettingsScreenProps.onImportGpx();
-      await Promise.resolve();
-    });
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
 
-    // ダイアログのOKを押すまではファイル選択を開かない
-    expect(callOrder).toEqual([
-      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
-    ]);
-    expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+      // ダイアログのOKを押すまではファイル選択を開かない
+      expect(callOrder).toEqual([
+        'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+      ]);
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
 
-    await act(async () => {
-      confirmAlertButton?.();
-      await importPromise;
-    });
+      await act(async () => {
+        confirmAlertButton?.();
+        await importPromise;
+      });
 
-    expect(callOrder).toEqual([
-      'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
-      'pick',
-    ]);
-    expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+      expect(callOrder).toEqual([
+        'alert:GPXインポートと実績について:GPXインポートでは、総移動距離や記録日数など一部の実績だけが判定対象になります。訪問した地域など、実際の記録中に確認する実績には反映されません。',
+        'pick',
+      ]);
+      expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
   });
 
   test('GPX取り込み処理中だけブロッキングダイアログを表示し、完了後(finally)に閉じる', async () => {
@@ -1951,6 +2265,148 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
       // finally で処理中フラグが下り、ダイアログは閉じる。
       expect(isImportDialogVisible()).toBe(false);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  test('ファイル選択後は解析開始前に解析中の進捗段階を描画する', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    global.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.[0]?.onPress?.();
+    });
+    (pickAndReadGpxFile as jest.Mock).mockResolvedValue({ content: '<gpx/>', fileName: 'a.gpx' });
+    (parseGpxToLocationPoints as jest.Mock).mockReturnValue([]);
+
+    try {
+      renderRouter('src/app');
+      await flushPromises();
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
+      await flushPromises();
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
+
+      expect(rafCallbacks).toHaveLength(1);
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+      expect(parseGpxToLocationPoints).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+
+      // 大容量GPXの同期パースがJSスレッドを塞ぐ前に、解析中表示がコミットされている必要がある。
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.stage).toBe('parsing');
+      expect(parseGpxToLocationPoints).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+      });
+      expect(parseGpxToLocationPoints).toHaveBeenCalledTimes(1);
+      await importPromise;
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  test('ファイルピッカー表示前にアプリをロックし、キャンセル時に解除する', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    global.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.[0]?.onPress?.();
+    });
+    (pickAndReadGpxFile as jest.Mock).mockResolvedValue(null);
+
+    try {
+      renderRouter('src/app');
+      await flushPromises();
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
+      await flushPromises();
+
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
+
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(true);
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+      expect(pickAndReadGpxFile).not.toHaveBeenCalled();
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await importPromise;
+      });
+
+      expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(false);
+    } finally {
+      global.requestAnimationFrame = originalRaf;
+    }
+  });
+
+  test('ファイル選択の失敗時にアプリの操作ロックを解除する', async () => {
+    const originalRaf = global.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    global.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    }) as typeof global.requestAnimationFrame;
+    jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+      buttons?.[0]?.onPress?.();
+    });
+    (pickAndReadGpxFile as jest.Mock).mockRejectedValue(new Error('GPXファイルを読み込めませんでした。'));
+
+    try {
+      renderRouter('src/app');
+      await flushPromises();
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('設定'));
+      });
+      await flushPromises();
+
+      let importPromise: Promise<void> = Promise.resolve();
+      await act(async () => {
+        importPromise = mockLatestSettingsScreenProps.onImportGpx();
+        await Promise.resolve();
+      });
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(true);
+
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await Promise.resolve();
+      });
+      await act(async () => {
+        rafCallbacks.shift()?.(0);
+        await importPromise;
+      });
+
+      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(false);
     } finally {
       global.requestAnimationFrame = originalRaf;
     }

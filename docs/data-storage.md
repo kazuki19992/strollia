@@ -38,22 +38,44 @@ React Native + Expo では `expo-sqlite` の利用を第一候補とする。`ex
 
 GPSで取得した位置情報を保存する中心テーブル。
 
-| カラム              | 型        | 説明                                           |
-| ------------------- | --------- | ---------------------------------------------- |
-| `id`                | INTEGER   | 主キー                                         |
-| `recorded_at`       | TEXT      | 取得日時。ISO 8601形式                         |
-| `local_date`        | TEXT      | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
-| `latitude`          | REAL      | 緯度                                           |
-| `longitude`         | REAL      | 経度                                           |
-| `altitude`          | REAL NULL | 高度                                           |
-| `speed`             | REAL NULL | 速度                                           |
-| `heading`           | REAL NULL | 方位                                           |
-| `accuracy`          | REAL NULL | 水平方向の位置精度                             |
-| `altitude_accuracy` | REAL NULL | 高度の精度                                     |
-| `source`            | TEXT      | 取得元。例: `expo-location`                    |
-| `created_at`        | TEXT      | DB保存日時                                     |
+| カラム                  | 型           | 説明                                           |
+| ----------------------- | ------------ | ---------------------------------------------- |
+| `id`                    | INTEGER      | 主キー                                         |
+| `recorded_at`           | TEXT         | 取得日時。ISO 8601形式                         |
+| `local_date`            | TEXT         | 端末タイムゾーンに基づく日付。例: `2026-05-04` |
+| `latitude`              | REAL         | 緯度                                           |
+| `longitude`             | REAL         | 経度                                           |
+| `effective_latitude`    | REAL NULL    | 記録時に決定した有効緯度。旧ログはNULL         |
+| `effective_longitude`   | REAL NULL    | 記録時に決定した有効経度。旧ログはNULL         |
+| `snapped_stay_place_id` | INTEGER NULL | 吸着した滞在場所ID。吸着なし・旧ログはNULL     |
+| `altitude`              | REAL NULL    | 高度                                           |
+| `speed`                 | REAL NULL    | 速度                                           |
+| `heading`               | REAL NULL    | 方位                                           |
+| `accuracy`              | REAL NULL    | 水平方向の位置精度                             |
+| `altitude_accuracy`     | REAL NULL    | 高度の精度                                     |
+| `source`                | TEXT         | 取得元。例: `expo-location`                    |
+| `created_at`            | TEXT         | DB保存日時                                     |
 
-### 4.2 `daily_logs`
+### 4.2 `location_recording_state`
+
+ライブ位置情報の滞在場所吸着状態を保持する単一行テーブル。IDは常に`1`とし、最初のライブ観測を処理するときに作成する。
+
+| カラム                          | 型           | 説明                                                             |
+| ------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `id`                            | INTEGER      | 主キー。常に`1`                                                  |
+| `active_stay_place_id`          | INTEGER NULL | 現在吸着中の滞在場所ID。未吸着ならNULL                           |
+| `candidate_stay_place_id`       | INTEGER NULL | 入場判定中の候補ID。候補なしならNULL                             |
+| `candidate_count`               | INTEGER      | 同じ候補が50m以内に入った連続観測数                              |
+| `outside_count`                 | INTEGER      | 吸着先から50m外になった連続観測数                                |
+| `last_observed_at`              | TEXT NULL    | 状態へ反映済みの最新ライブ観測日時。初期状態ではNULL             |
+| `last_visited_grid_recorded_at` | TEXT NULL    | 最後にVisited Gridへ反映した有効座標の観測日時。初期状態ではNULL |
+| `last_visited_grid_latitude`    | REAL NULL    | 最後にVisited Gridへ反映した有効緯度。初期状態ではNULL           |
+| `last_visited_grid_longitude`   | REAL NULL    | 最後にVisited Gridへ反映した有効経度。初期状態ではNULL           |
+| `updated_at`                    | TEXT         | 状態行の最終更新日時                                             |
+
+ライブ位置情報の吸着状態とVisited Grid補間起点はID=`1`の単一行へ保存する。GPS点が保存対象外でも連続観測数、最終観測日時、セル更新へ利用できた有効座標を更新するため、前景・背景の切替とJSプロセス再生成後も同じ状態を引き継ぐ。ただし、GPS一意制約に一致する重複観測は再配信だけで吸着の3点連続やVisited Gridを進めないよう、状態と補間起点を更新しない。最終観測日時が処理時刻より1時間を超えて未来の場合は端末時計の巻き戻りとして順序ガードを無効にし、次の正常観測で上書きする。補間起点の3列は既存GPS点から埋め戻さず、いずれかがNULL、または緯度・経度が不正な場合は補間起点なしとして現在観測のセルだけを処理する。滞在場所IDには外部キーを設定しない。
+
+### 4.3 `daily_logs`
 
 日単位の記録概要を保存するテーブル。
 
@@ -68,7 +90,7 @@ GPSで取得した位置情報を保存する中心テーブル。
 | `created_at`      | TEXT      | 作成日時               |
 | `updated_at`      | TEXT      | 更新日時               |
 
-### 4.3 `recording_sessions`
+### 4.4 `recording_sessions`
 
 記録開始から停止までのまとまりを保存するテーブル。
 
@@ -84,7 +106,7 @@ GPSで取得した位置情報を保存する中心テーブル。
 | `created_at` | TEXT      | 作成日時                                |
 | `updated_at` | TEXT      | 更新日時                                |
 
-### 4.4 `export_history`
+### 4.5 `export_history`
 
 GPX / KML エクスポート履歴を保存するテーブル。
 
@@ -98,7 +120,7 @@ GPX / KML エクスポート履歴を保存するテーブル。
 | `point_count` | INTEGER | 出力対象の記録点数 |
 | `created_at`  | TEXT    | エクスポート日時   |
 
-### 4.5 `visited_cells`
+### 4.6 `visited_cells`
 
 メインマップの Visited Grid Overlay 表示に使う訪問済みセルを保存するテーブル。
 
@@ -117,7 +139,7 @@ GPX / KML エクスポート履歴を保存するテーブル。
 | `created_at`       | TEXT    | 作成日時                                          |
 | `updated_at`       | TEXT    | 更新日時                                          |
 
-### 4.6 `import_history`
+### 4.7 `import_history`
 
 GPX / KML インポート履歴を保存するテーブル。
 
@@ -134,26 +156,54 @@ GPX / KML インポート履歴を保存するテーブル。
 | `skipped_point_count`  | INTEGER   | 重複などでスキップした記録点数 |
 | `created_at`           | TEXT      | インポート日時                 |
 
-### 4.7 `photo_assets`（任意機能）
+### 4.8 `photo_assets`
 
 ジオタグ付き写真の表示に必要なメタデータを保存するテーブル。
 
 写真本体はDBに保存しない。ジオタグがない写真も保存しない。
 
-| カラム          | 型        | 説明                         |
-| --------------- | --------- | ---------------------------- |
-| `id`            | INTEGER   | 主キー                       |
-| `asset_id`      | TEXT      | 写真ライブラリ上のアセットID |
-| `taken_at`      | TEXT NULL | 撮影日時                     |
-| `latitude`      | REAL      | 緯度                         |
-| `longitude`     | REAL      | 経度                         |
-| `local_uri`     | TEXT NULL | ローカル参照URI              |
-| `thumbnail_uri` | TEXT NULL | サムネイルキャッシュURI      |
-| `last_seen_at`  | TEXT      | 最終確認日時                 |
-| `created_at`    | TEXT      | 作成日時                     |
-| `updated_at`    | TEXT      | 更新日時                     |
+| カラム         | 型        | 説明                                                        |
+| -------------- | --------- | ----------------------------------------------------------- |
+| `asset_id`     | TEXT      | 主キー。写真ライブラリ上のアセットID（`uri` と同値）        |
+| `latitude`     | REAL      | 緯度                                                        |
+| `longitude`    | REAL      | 経度                                                        |
+| `taken_at`     | TEXT NULL | 撮影日時。取得できないアセットがあるためNULL可              |
+| `uri`          | TEXT      | 安定した識別用URI（iOS: `ph://…` / Android: `content://…`） |
+| `width`        | INTEGER   | 写真の横幅                                                  |
+| `height`       | INTEGER   | 写真の高さ                                                  |
+| `last_seen_at` | TEXT      | 最終確認日時                                                |
+| `created_at`   | TEXT      | 作成日時                                                    |
+| `updated_at`   | TEXT      | 更新日時                                                    |
 
-### 4.8 `app_settings`
+保存は `asset_id` を主キーとしたUPSERTで行う。`created_at` は初回保存時の値を保ち、`updated_at` と `last_seen_at` は毎回更新する（`visited_cells` と同じ方針）。
+
+**行の削除**: 保存と同じトランザクションで、走査済みの時間窓（今回の走査で確実に見た撮影日時の範囲）にある行を走査結果と突き合わせ、確認できなかった行を `DELETE` する。写真ライブラリから削除された写真やジオタグを失った写真の行が残ると、画像を読めず地図上に空のバブルが出るため。判定条件と端の扱いは `docs/photo-geotag.md` §9.3 を参照する。位置情報の取得（`Asset.getLocation()`）が reject したアセットは「存在するが判断できない」ものとして削除対象から外し、実在する写真の行を消さないようにしている。
+
+**`local_uri` / `thumbnail_uri` は保存しない。** 表示できる一時パス（旧APIの `localUri`）は
+`requestContentEditingInput` の `fullSizeImageURL` に由来し、アプリ再起動をまたいで有効である保証がない。代わりに走査で得た安定URI（`Asset.id`）を `asset_id` と `uri` の双方へ保存する。
+
+**expo-media-library 新API移行時に一度だけ全行を削除する。** 走査APIの移行で `asset_id` に入る値の形が変わった（旧: `ph://` を含まない localIdentifier / 新: `ph://<localIdentifier>`）。旧形式の行を残すと同じ写真が新旧2行として共存し、地図に重複マーカーが出る。`photo_assets` は再走査で作り直せるキャッシュなので、`initializeDatabase()` の `resetPhotoAssetsForMediaLibraryNextApi()` で一度だけ空にする。実行済みかどうかは `app_settings` の `photoAssetsResetForMediaLibraryNextApi` で記録し、削除→マーカーの順に実行して途中失敗時は次回起動でやり直す。他のテーブルには一切触れない。
+
+> **iOS では**保存した `uri`（`ph://…`）をそのままでは `<Image>` で描画できない（検証済み）。描画できる表示用URIは保存せず、`resolvePhotoDisplayUri`（`src/features/photos/photoDisplayUri.ts`）でサムネイルとして都度解決する。Android の `content://…` はそのまま描画できる見込みのため素通しする（未リリースのため実機未確認。issue #76）。詳細は `docs/photo-geotag.md` §9.5 を参照する。
+
+`taken_at` とそのインデックスは、GPSログとの時刻連動（`docs/photo-geotag.md` §7）に向けた準備工事として入れたが、**表示上限の絞り込みで実際に使うようになった**（後述）。
+
+**読み出しには2種類の上限が掛かる。** 役割が異なるので混同しないこと。
+
+| 上限                                          | 出どころ                           | 掛かり方                                                                 |
+| --------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------ |
+| **表示上限**                                  | ユーザー設定「地図に表示する写真」 | 先に全体を `ORDER BY taken_at DESC LIMIT N` で絞り、そのうち範囲内を返す |
+| **安全上限**（`PHOTO_VIEWPORT_SAFETY_LIMIT`） | 内部固定（現在 5000 件）           | 設定が「すべて」でも常に掛かる。ユーザーからは見えない保険               |
+
+表示上限を範囲で絞る**前**に掛けるのは、後に掛けると「表示範囲ごとの最新N件」になり設定のラベルと挙動がずれるためである。`photo_assets` にはジオタグ付き写真しか入らないので、`ORDER BY taken_at DESC LIMIT N` がそのまま「最新N件のジオタグ写真」になる（`idx_photo_assets_taken_at` が効く）。
+
+`taken_at` は `new Date(ms).toISOString()` 由来のUTC固定長表記なので辞書順＝時刻順であり、撮影日時が不明（NULL）の行は `DESC` で末尾に来る。最新N件の絞り込みに紛れ込むことはない。
+
+安全上限は「設定が『すべて』でも一度にJSへ載る件数を抑える」ためのもので、全写真にジオタグを付けるユーザーが広域を表示したときにメモリと描画が際限なく膨らむのを防ぐ。実測（写真18,218枚）ではジオタグ付きが1,400件だったので、通常利用では存在しないのと同じ挙動になる。
+
+**差分走査の基準時刻は `app_settings` に持つ。** 前回の走査で確認できた最新の撮影日時を保存し、次回の差分走査の起点にする（`photoLibraryLastScannedTakenAt`）。`photo_assets` のスキーマは変更していない。詳細は `docs/photo-geotag.md` §8.2 を参照する。
+
+### 4.9 `app_settings`
 
 ユーザー設定を保存するテーブル。
 
@@ -179,7 +229,7 @@ RevenueCatの初回確認が起動待機上限を超えた場合は、保存済�
 
 RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。エラー時はアイコン表示だけ未確定状態を維持し、CustomerInfoまたは購読更新でactive/inactiveを取得できた時点で確定状態へ切り替える。
 
-### 4.9 `visited_admin_areas`
+### 4.10 `visited_admin_areas`
 
 実績システムで都道府県・市区町村の訪問状態を判定するため、訪問済み行政区域を保存するテーブル。
 
@@ -197,7 +247,7 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `created_at`              | TEXT         | 作成日時                           |
 | `updated_at`              | TEXT         | 更新日時                           |
 
-### 4.10 `location_point_admin_areas`
+### 4.11 `location_point_admin_areas`
 
 月次レポートや将来の期間指定集計で、都道府県・市区町村ごとのGPSポイント数を集計するための履歴テーブル。
 
@@ -217,7 +267,7 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 月次レポートの「よくいた都道府県」「一番よくいた市区町村」は、このテーブルの対象期間内GPSポイント数を集計して算出する。
 
-### 4.11 `achievement_unlocks`
+### 4.12 `achievement_unlocks`
 
 解除済み実績を保存するテーブル。
 
@@ -228,7 +278,7 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `progress_value` | REAL NULL | 解除時点の進捗値   |
 | `created_at`     | TEXT      | 作成日時           |
 
-### 4.12 `achievement_notification_queue`
+### 4.13 `achievement_notification_queue`
 
 実績解除通知とフォアグラウンド演出を安全に扱うためのキュー。
 
@@ -240,6 +290,23 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `delivered_push_at` | TEXT NULL | ローカル通知送信日時                                                                                                                                      |
 | `shown_in_app_at`   | TEXT NULL | アプリ内演出表示日時                                                                                                                                      |
 | `created_at`        | TEXT      | 作成日時                                                                                                                                                  |
+
+### 4.14 `stay_places`
+
+滞在場所ごとのGPS吸着と、共有時にルートを非表示にする範囲を保存するテーブル。契約状態による有効・無効は保存せず、作成日時順にアプリ側で判定する。
+
+| カラム                  | 型           | 説明                                                                                                |
+| ----------------------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| `id`                    | INTEGER      | 主キー                                                                                              |
+| `name`                  | TEXT         | ユーザーが入力する表示名                                                                            |
+| `icon_hexcode`          | TEXT         | 固定Twemojiカタログに含まれる、完全修飾済みの大文字Unicode hexcode                                  |
+| `latitude`              | REAL         | 滞在場所の中心緯度                                                                                  |
+| `longitude`             | REAL         | 滞在場所の中心経度                                                                                  |
+| `privacy_radius_meters` | INTEGER NULL | `NULL`は共有時も含める。値は`100`、`200`、`500`、`1000`、`2000`、`3000`、`5000`、`10000`mのいずれか |
+| `created_at`            | TEXT         | 作成日時（ISO 8601）                                                                                |
+| `updated_at`            | TEXT         | 更新日時（ISO 8601）                                                                                |
+
+滞在場所の有効・無効は保存しない。Plus有効時は全件、無料版または解約中は`created_at`、`id`の昇順で最初の1件だけを、GPS吸着と共有時の非表示範囲に使う。解約してもレコードを削除・変更せず、再契約時には保存済み全件を再び有効にする。
 
 ## 5. インデックス方針
 
@@ -257,6 +324,9 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `achievement_notification_queue(delivered_push_at)`
 - `visited_cells(x, y)`
 - `visited_cells(last_visited_at)`
+- `stay_places(created_at, id)` （滞在場所を作成順で安定して取得するため）
+- `photo_assets(latitude, longitude)` （マップ表示範囲での絞り込みに使う）
+- `photo_assets(taken_at)` （表示上限「全体の最新N件」の絞り込みと、撮影期間での絞り込みに使う）
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
@@ -288,7 +358,7 @@ from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
 保存前には raw GPS 観測を軽量な保存判定へ通し、`location_points` と日別距離へ反映する。
 
-Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` へ保存する。低速時は点が存在したセルだけを開放し、150km/h以上の高速移動時のみvisited cell補完用に点間を補間する。
+Visited Grid Overlayでは、有効な観測が存在した100mセルを `visited_cells` へ保存する。低速時は現在観測のセルだけを開放し、150km/h以上の高速移動時のみ、`location_recording_state`に永続化した直前のセル開放対象点から点間を補間する。現在観測でセルを更新できた場合はGPS点の保存対象外でも有効座標を次の補間起点として保存し、セルを生成できなければ以前の起点を保持する。
 
 メインマップはPolylineではなくVisited Gridを主表示とするため、`location_points` 側ではprovisional確定待ちを行わない。水平方向精度が80mを超える点、5m未満の細かな揺れ、端末のraw speedが停止相当で20m未満に散る点を落とし、それ以外は速度帯に応じた最小距離を満たせば保存する。
 
@@ -300,11 +370,13 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 
 停止状態は端末のraw speedが停止相当かつ移動距離が小さい場合だけドリフトとして扱う。徒歩開始や低速移動の取りこぼしを避けるため、停止クラスタやprovisional点列による厳密な確定待ちは行わない。
 
-`expo-location` の要求精度は `Location.Accuracy.High` とし、`distanceInterval` は5mに設定して停止中のコールバック頻度を抑える。
+`expo-location` の要求精度は `Location.Accuracy.High` とする。iOSではバックグラウンドの継続更新を維持するためネイティブの `distanceInterval` を指定せず、Androidでは5mの距離フィルターを指定する。両OSでGPSポイントの保存判定は5mを基準に行う。
 
 描画時は生データを直接Polylineへ渡さず、簡略化した描画用データを使う。
 
-日別の推定移動距離は、表示のたびに全GPS点を走査して再計算しない。新しい点を保存するときに直前の同日ポイントとの距離を加算し、`daily_logs.distance_meters` に累積値として保持する。既存データなど累積距離が存在しない場合のみ、表示側でフォールバック計算する。
+日別の推定移動距離は、表示のたびに全GPS点を走査して再計算しない。ライブ観測では時系列の前後点検索、GPS点挿入、Visited Grid、吸着状態、日別距離の差分加算を同じ排他トランザクションで確定する。重複は生観測の`(recorded_at, latitude, longitude)`で判定し、保存対象候補ではINSERTの一意制約競合、保存対象外では同じトランザクション内の存在確認を使う。どちらの重複も吸着状態、Visited Grid、日別集計を更新せず、NOT NULLなど他のSQLite制約違反は例外としてトランザクションをロールバックする。距離、保存判定、Visited Gridには有効座標を使い、生座標は`location_points.latitude` / `longitude`へ維持する。重複ではない保存対象外の観測はVisited Gridと吸着状態を更新する。
+
+同日の末尾へ保存する点は直前点との距離を加え、時系列途中へ保存する点は既存区間を置き換える差分だけを加算する。既存の`daily_logs.distance_meters`がNULLなら、新しい区間の部分差分で置き換えずNULLを維持し、表示側で全GPS点からフォールバック計算する。既存距離はマイグレーションで再計算・修復しない。
 
 ### 7.1 GPS点の段階的取得戦略
 
@@ -335,13 +407,18 @@ Visited Grid Overlayでは、GPS点が存在した100mセルを `visited_cells` 
 削除対象は以下とする。
 
 - `location_points`
+- `location_recording_state`
 - `location_point_admin_areas`
 - `daily_logs`
 - `visited_admin_areas`
 - `achievement_unlocks`
 - `achievement_notification_queue`
+- `stay_places`
+- `photo_assets`
 
 `location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
+
+`photo_assets` は写真ライブラリから読み取ったメタデータのキャッシュだが、撮影位置は端末内に残る個人データであるため削除対象に含める。写真ライブラリ側の写真は削除しない。
 
 アプリ設定を保持する `app_settings` は、画面表示設定や開発フラグ確認状態などを含むため、初期実装では削除対象外とする。
 
@@ -375,3 +452,4 @@ GPSログは端末内に保存し、ユーザーの明示操作なしに外部�
 | `keepScreenAwake`       | boolean | アプリがフォアグラウンドの場合に画面ロックを抑止するか                     |
 | `appThemePreference`    | string  | 画面テーマ設定。`system` / `light` / `dark` のいずれか                     |
 | `crashReportingEnabled` | boolean | 不具合レポート(App Hang/クラッシュ)を開発者へ送信するか。デフォルト `true` |
+| `showStayPlacesOnMap`   | boolean | 滞在場所アイコンをマップ上に表示するか。デフォルト `true`                  |

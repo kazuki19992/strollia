@@ -63,6 +63,9 @@ async function runDatabaseInitialization(): Promise<void> {
       local_date TEXT NOT NULL,
       latitude REAL NOT NULL,
       longitude REAL NOT NULL,
+      effective_latitude REAL NULL,
+      effective_longitude REAL NULL,
+      snapped_stay_place_id INTEGER NULL,
       altitude REAL NULL,
       speed REAL NULL,
       heading REAL NULL,
@@ -159,6 +162,43 @@ async function runDatabaseInitialization(): Promise<void> {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS stay_places (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      icon_hexcode TEXT NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      privacy_radius_meters INTEGER NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS location_recording_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      active_stay_place_id INTEGER NULL,
+      candidate_stay_place_id INTEGER NULL,
+      candidate_count INTEGER NOT NULL DEFAULT 0,
+      outside_count INTEGER NOT NULL DEFAULT 0,
+      last_observed_at TEXT NULL,
+      last_visited_grid_recorded_at TEXT NULL,
+      last_visited_grid_latitude REAL NULL,
+      last_visited_grid_longitude REAL NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS photo_assets (
+      asset_id TEXT PRIMARY KEY,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      taken_at TEXT NULL,
+      uri TEXT NOT NULL,
+      width INTEGER NOT NULL,
+      height INTEGER NOT NULL,
+      last_seen_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 
@@ -194,9 +234,24 @@ async function runDatabaseInitialization(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_visited_cells_last_visited_at
       ON visited_cells(last_visited_at);
+
+    CREATE INDEX IF NOT EXISTS idx_stay_places_created_at_id
+      ON stay_places(created_at, id);
+
+    CREATE INDEX IF NOT EXISTS idx_photo_assets_latitude_longitude
+      ON photo_assets(latitude, longitude);
+
+    CREATE INDEX IF NOT EXISTS idx_photo_assets_taken_at
+      ON photo_assets(taken_at);
   `);
 
   await ensureColumn('achievement_unlocks', 'unlocked_local_date', 'TEXT NULL');
+  await ensureColumn('location_points', 'effective_latitude', 'REAL NULL');
+  await ensureColumn('location_points', 'effective_longitude', 'REAL NULL');
+  await ensureColumn('location_points', 'snapped_stay_place_id', 'INTEGER NULL');
+  await ensureColumn('location_recording_state', 'last_visited_grid_recorded_at', 'TEXT NULL');
+  await ensureColumn('location_recording_state', 'last_visited_grid_latitude', 'REAL NULL');
+  await ensureColumn('location_recording_state', 'last_visited_grid_longitude', 'REAL NULL');
   await db.execAsync(`
     CREATE INDEX IF NOT EXISTS idx_achievement_unlocks_unlocked_local_date
       ON achievement_unlocks(unlocked_local_date);
@@ -205,6 +260,57 @@ async function runDatabaseInitialization(): Promise<void> {
     `UPDATE achievement_unlocks
      SET unlocked_local_date = substr(unlocked_at, 1, 10)
      WHERE unlocked_local_date IS NULL`,
+  );
+  await resetPhotoAssetsForMediaLibraryNextApi();
+}
+
+/**
+ * 一度だけ実行したマイグレーションを記録する `app_settings` のキー。
+ *
+ * `app_settings` は全データ削除(`deleteAllUserData`)の対象外なので、記録がリセットされない。
+ */
+const PHOTO_ASSETS_RESET_SETTING_KEY = 'photoAssetsResetForMediaLibraryNextApi';
+
+/**
+ * expo-media-library 新API移行に伴い、`photo_assets` のキャッシュを一度だけ全削除する。
+ *
+ * **なぜ消すのか**: 走査APIを新API(`Query` / `Asset`)へ移行したことで `asset_id` に入る値の形が
+ * 変わったためである。旧APIの `asset.id` は `ph://` を含まない localIdentifier(Androidは数値ID)
+ * だったが、新APIの `AssetMetadata.id` は `ph://<localIdentifier>`(Androidは contentUri)になる。
+ * 旧形式の行を残したまま再走査すると**同じ写真が新旧2行として共存し、地図に重複マーカーが出る**。
+ * 走査済み時間窓の突き合わせは窓の中しか掃除しないため、走査上限より古い旧形式の行は
+ * 二度と掃除されない。
+ *
+ * `asset_id` の値を変換する案は採らない。iOS は `ph://` を前置するだけで済むが、
+ * **Android は `file://` から `content://` へ機械的に変換できない**ためである。
+ *
+ * `photo_assets` は**再構築可能なキャッシュ**であり、写真表示を有効にした次の走査で作り直される。
+ * そのため全削除しても失われるユーザーデータは無い。GPSログなど他のテーブルには一切触れない。
+ *
+ * 削除より先にマーカーを保存してはいけない。削除に失敗したまま「実行済み」と記録すると、
+ * 旧形式の行が永久に残ってしまう。削除→マーカーの順にしておけば、途中で失敗しても
+ * 次回起動でやり直せる(削除自体は何度実行しても安全)。
+ *
+ * @returns なし。
+ */
+async function resetPhotoAssetsForMediaLibraryNextApi(): Promise<void> {
+  const completed = await db.getFirstAsync<{ value: string }>(
+    'SELECT value FROM app_settings WHERE key = ?',
+    PHOTO_ASSETS_RESET_SETTING_KEY,
+  );
+
+  if (completed) {
+    return;
+  }
+
+  await db.runAsync('DELETE FROM photo_assets');
+  await db.runAsync(
+    `INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    PHOTO_ASSETS_RESET_SETTING_KEY,
+    // settingsRepository と同じくJSON文字列で保存する
+    'true',
+    new Date().toISOString(),
   );
 }
 

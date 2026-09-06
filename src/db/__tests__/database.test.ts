@@ -21,6 +21,7 @@ jest.mock('expo-sqlite', () => ({
   openDatabaseSync: jest.fn(() => ({
     execAsync: jest.fn().mockResolvedValue(undefined),
     getAllAsync: jest.fn(),
+    getFirstAsync: jest.fn(),
     runAsync: jest.fn().mockResolvedValue(undefined),
     withExclusiveTransactionAsync: jest.fn(),
   })),
@@ -36,6 +37,9 @@ describe('database initializeDatabase マイグレーション', () => {
     (db.execAsync as jest.Mock).mockClear();
     (db.execAsync as jest.Mock).mockResolvedValue(undefined);
     (db.getAllAsync as jest.Mock).mockClear();
+    (db.getFirstAsync as jest.Mock).mockClear();
+    // 既定は「写真キャッシュ削除マイグレーション未実行」。実行済みの挙動は該当テストで上書きする
+    (db.getFirstAsync as jest.Mock).mockResolvedValue(null);
     (db.runAsync as jest.Mock).mockClear();
     (db.runAsync as jest.Mock).mockResolvedValue(undefined);
   });
@@ -135,6 +139,59 @@ describe('database initializeDatabase マイグレーション', () => {
 
       const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
       expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS import_history');
+    });
+
+    it('photo_assets テーブルと検索用インデックスが含まれる', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS photo_assets');
+      expect(firstCall).toContain('asset_id TEXT PRIMARY KEY');
+      // ビューポート絞り込み(緯度経度のBETWEEN)を効かせるための複合インデックス
+      expect(firstCall).toContain('idx_photo_assets_latitude_longitude');
+      expect(firstCall).toContain('ON photo_assets(latitude, longitude)');
+      // taken_at のインデックスは 2-c 以降の期間絞り込みに向けた準備工事
+      expect(firstCall).toContain('idx_photo_assets_taken_at');
+      expect(firstCall).toContain('ON photo_assets(taken_at)');
+    });
+
+    it('stay_places テーブルと作成順インデックスが含まれる', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const firstCall: string = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(firstCall).toContain('CREATE TABLE IF NOT EXISTS stay_places');
+      expect(firstCall).toContain('idx_stay_places_created_at_id');
+      expect(firstCall).toContain('ON stay_places(created_at, id)');
+    });
+
+    it('ライブ記録の吸着状態を保持する単一行テーブルを作成する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const createSql = (db.execAsync as jest.Mock).mock.calls[0][0] as string;
+      expect(createSql).toContain('CREATE TABLE IF NOT EXISTS location_recording_state');
+      expect(createSql).toContain('CHECK (id = 1)');
+      expect(createSql).toContain('last_observed_at TEXT NULL');
+      expect(createSql).toContain('last_visited_grid_recorded_at TEXT NULL');
+      expect(createSql).toContain('last_visited_grid_latitude REAL NULL');
+      expect(createSql).toContain('last_visited_grid_longitude REAL NULL');
+    });
+
+    it('記録状態テーブル追加時に既存距離と実績を更新しない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const sql = [...(db.execAsync as jest.Mock).mock.calls, ...(db.runAsync as jest.Mock).mock.calls]
+        .map(([statement]) => String(statement))
+        .join('\n');
+      expect(sql).not.toMatch(/UPDATE\s+daily_logs/i);
+      expect(sql).not.toMatch(/UPDATE\s+achievement_unlocks[\s\S]*progress_value/i);
     });
   });
 
@@ -238,6 +295,128 @@ describe('database initializeDatabase マイグレーション', () => {
         return sql.includes('UPDATE achievement_unlocks') && sql.includes('unlocked_local_date IS NULL');
       });
       expect(updateCalled).toBe(true);
+    });
+  });
+
+  describe('ensureColumn マイグレーション（location_pointsの有効座標）', () => {
+    it('既存ログを更新せず有効座標と吸着先IDの列だけを追加する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const alterStatements = (db.execAsync as jest.Mock).mock.calls
+        .map(([sql]) => sql as string)
+        .filter((sql) => sql.includes('ALTER TABLE location_points'));
+      expect(alterStatements).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('effective_latitude REAL NULL'),
+          expect.stringContaining('effective_longitude REAL NULL'),
+          expect.stringContaining('snapped_stay_place_id INTEGER NULL'),
+        ]),
+      );
+      expect(db.runAsync).not.toHaveBeenCalledWith(expect.stringContaining('UPDATE location_points'), expect.anything());
+    });
+  });
+
+  describe('ensureColumn マイグレーション（Visited Grid補間起点）', () => {
+    it('既存状態テーブルへ補間起点の3列をそれぞれ1回だけ追加し、データを埋め戻さない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const alterStatements = (db.execAsync as jest.Mock).mock.calls
+        .map(([sql]) => sql as string)
+        .filter((sql) => sql.includes('ALTER TABLE location_recording_state'));
+      expect(alterStatements).toEqual([
+        expect.stringContaining('last_visited_grid_recorded_at TEXT NULL'),
+        expect.stringContaining('last_visited_grid_latitude REAL NULL'),
+        expect.stringContaining('last_visited_grid_longitude REAL NULL'),
+      ]);
+      const migrationSql = [...(db.execAsync as jest.Mock).mock.calls, ...(db.runAsync as jest.Mock).mock.calls]
+        .map(([sql]) => String(sql))
+        .join('\n');
+      expect(migrationSql).not.toMatch(/UPDATE\s+location_recording_state/i);
+    });
+
+    it('補間起点の3列が既に存在する場合はALTER TABLEを実行しない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([
+        { name: 'last_visited_grid_recorded_at' },
+        { name: 'last_visited_grid_latitude' },
+        { name: 'last_visited_grid_longitude' },
+      ]);
+
+      await initializeDatabase();
+
+      const alterStatements = (db.execAsync as jest.Mock).mock.calls
+        .map(([sql]) => sql as string)
+        .filter((sql) => sql.includes('ALTER TABLE location_recording_state'));
+      expect(alterStatements).toEqual([]);
+    });
+  });
+
+  describe('写真キャッシュのリセット（expo-media-library新API移行）', () => {
+    /**
+     * `db.runAsync` へ渡されたSQL文を全て取り出す。
+     *
+     * @returns 実行されたSQL文の配列。
+     */
+    function runStatements(): string[] {
+      return (db.runAsync as jest.Mock).mock.calls.map(([sql]) => String(sql));
+    }
+
+    it('未実行の場合は photo_assets の全行を削除する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      // asset_id の値の形が ph:// 前置へ変わったため、旧形式の行を一度捨てて再走査で作り直す
+      expect(runStatements()).toContain('DELETE FROM photo_assets');
+    });
+
+    it('photo_assets 以外のテーブルは削除しない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      // GPSログや実績など、再構築できないデータを巻き込まないことを保証する
+      const deleteStatements = [...runStatements(), ...(db.execAsync as jest.Mock).mock.calls.map(([sql]) => String(sql))].filter((sql) =>
+        /DELETE\s+FROM/i.test(sql),
+      );
+      expect(deleteStatements).toEqual(['DELETE FROM photo_assets']);
+    });
+
+    it('削除したあとに実行済みマーカーを app_settings へ保存する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const markerCall = (db.runAsync as jest.Mock).mock.calls.find(([sql]) =>
+        String(sql).includes('INSERT INTO app_settings'),
+      ) as unknown[];
+      expect(markerCall).toBeDefined();
+      expect(markerCall[1]).toBe('photoAssetsResetForMediaLibraryNextApi');
+    });
+
+    it('削除より先にマーカーを保存しない（削除が失敗したら次回起動で再試行できるようにする）', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const statements = runStatements();
+      const deleteIndex = statements.indexOf('DELETE FROM photo_assets');
+      const markerIndex = statements.findIndex((sql) => sql.includes('INSERT INTO app_settings'));
+      expect(deleteIndex).toBeGreaterThanOrEqual(0);
+      expect(deleteIndex).toBeLessThan(markerIndex);
+    });
+
+    it('実行済みマーカーがある場合は削除もマーカー保存も行わない', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+      (db.getFirstAsync as jest.Mock).mockResolvedValue({ value: 'true' });
+
+      await initializeDatabase();
+
+      expect(runStatements()).not.toContain('DELETE FROM photo_assets');
+      expect(runStatements().some((sql) => sql.includes('INSERT INTO app_settings'))).toBe(false);
     });
   });
 

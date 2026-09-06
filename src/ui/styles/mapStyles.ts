@@ -160,12 +160,15 @@ export function createMapStyles(theme: AppTheme) {
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.28,
       shadowRadius: 14,
-      width: 274,
+      maxWidth: '100%',
       zIndex: 10,
+    },
+    mapDisplayBackgroundControlsDimmed: {
+      opacity: 0.42,
     },
     mapDisplayPanelScrim: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: 'rgba(0, 0, 0, 0.32)',
+      backgroundColor: 'rgba(0, 0, 0, 0.56)',
       zIndex: 1,
     },
     mapDisplayPhotoDescription: {
@@ -619,6 +622,52 @@ export function createMapStyles(theme: AppTheme) {
       width: 42,
     },
 
+    // Stay place marker
+    stayPlaceMapMarkerBubble: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 10,
+      borderWidth: 1,
+      elevation: 5,
+      height: 44,
+      justifyContent: 'center',
+      shadowColor: '#000000',
+      shadowOffset: { height: 3, width: 0 },
+      shadowOpacity: 0.22,
+      shadowRadius: 6,
+      width: 44,
+    },
+    stayPlaceMapMarkerContainer: {
+      alignItems: 'center',
+      height: 50,
+      justifyContent: 'flex-start',
+      width: 44,
+    },
+    stayPlaceMapMarkerImage: {
+      height: 28,
+      width: 28,
+    },
+    stayPlaceMapDialogContent: {
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 26,
+      paddingVertical: 18,
+    },
+    stayPlaceMapDialogImage: {
+      height: 42,
+      width: 42,
+    },
+    stayPlaceMapDialogPrivacy: {
+      color: colors.mutedText,
+      fontSize: 13,
+    },
+    stayPlaceMapDialogTitle: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '700',
+    },
+
     // Photo markers (map overlay)
     photoMarkerBubble: {
       backgroundColor: colors.surfaceOverlay,
@@ -644,6 +693,18 @@ export function createMapStyles(theme: AppTheme) {
       borderRadius: 7,
       height: '100%',
       width: '100%',
+    },
+    // サムネイルを取得できなかった写真のマーカー。除外して消すより、画像なしで存在を示す
+    photoMarkerPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: colors.cardStrong,
+      borderRadius: 7,
+      height: '100%',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    photoMarkerPlaceholderIcon: {
+      color: colors.mutedText,
     },
     photoClusterBadge: {
       alignItems: 'center',
@@ -691,6 +752,15 @@ export function createMapStyles(theme: AppTheme) {
       height: 50,
       width: 50,
     },
+    // サムネイルを取得できなかった写真の一覧表示。白紙のマスにしない
+    photoClusterGridPlaceholder: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      height: '100%',
+      justifyContent: 'center',
+      width: '100%',
+    },
     photoClusterMarkerBubble: {
       backgroundColor: colors.surfaceOverlay,
       borderColor: colors.card,
@@ -717,6 +787,15 @@ export function createMapStyles(theme: AppTheme) {
       fontWeight: '800',
       textAlign: 'center',
     },
+    // 吹き出しの「後ろ」に敷く閉じる用の当たり判定。吹き出しの祖先にしないことで、
+    // グリッドの余白でもScrollViewがパンを取れるようにしている(PhotoPreviewModals を参照)
+    photoClusterBackdrop: {
+      bottom: 0,
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+    },
     photoClusterOverlay: {
       alignItems: 'center',
       backgroundColor: theme.name === 'dark' ? 'rgba(0, 0, 0, 0.34)' : 'rgba(45, 36, 22, 0.18)',
@@ -724,10 +803,18 @@ export function createMapStyles(theme: AppTheme) {
       justifyContent: 'center',
       padding: 24,
     },
+    // 3×3グリッド1ページ分。50pxのマス3つ + gap 6px×2 = 162px の正方形。
+    // 写真が9枚に満たないページでも高さを固定するのは、余ったマスの領域も
+    // ScrollView のコンテンツに含めてページ送りのスワイプを受け取れるようにするため。
+    // 高さを指定しないと、写真3枚のページは1行分(50px)まで縮み、
+    // その下の空白がスワイプに反応しなくなる。
+    // alignContent を先頭寄せにしないと、flexWrap が残りの高さへ行を分散させてしまう。
     photoClusterPage: {
+      alignContent: 'flex-start',
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 6,
+      height: 162,
       width: 162,
     },
     photoClusterPager: {
@@ -761,6 +848,59 @@ export function createMapStyles(theme: AppTheme) {
     photoPreviewImage: {
       height: '88%',
       width: '100%',
+    },
+    // 高解像度(iCloudからのダウンロードを含む)取得中の待機表示。サムネイルの上に重ねる
+    photoPreviewLoading: {
+      alignSelf: 'center',
+      position: 'absolute',
+    },
+    photoPreviewLoadingIndicator: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、インジケータも固定の白にする
+      color: '#ffffff',
+    },
+    // 端末未ダウンロードの写真に出す案内。画像の下へ流し込み、写真の上には重ねない
+    photoPreviewNotice: {
+      backgroundColor: 'rgba(255, 255, 255, 0.14)',
+      borderRadius: 14,
+      marginTop: 14,
+      maxWidth: 320,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    photoPreviewNoticeText: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、文字色も固定の白にする
+      color: '#ffffff',
+      fontSize: 13,
+      lineHeight: 19,
+      textAlign: 'center',
+    },
+    // サムネイルを取得できなかった写真の拡大表示。暗転した背景に何も出ない状態を避ける
+    photoPreviewPlaceholder: {
+      alignItems: 'center',
+      gap: 12,
+      height: '88%',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    photoPreviewPlaceholderText: {
+      // 背景がテーマ非依存の暗幕(photoPreviewBackdrop)なので、文字色も固定の白にする
+      color: '#ffffff',
+      fontSize: 14,
+    },
+    /**
+     * 案内を出すときに画像・プレースホルダへ重ねる高さの上書き。
+     *
+     * 画像は既定で高さ88%を占めるため、案内を流し込むと「タップして閉じる」まで含めて縦が溢れる。
+     * 案内の分だけ高さを譲ることで、文章を写真の上に重ねずに済ませる。
+     */
+    photoPreviewShrunkForNotice: {
+      height: '72%',
+    },
+    // 走査コスト計測の一時表示。スクリーンショットから数字を読み取るため、本文より小さくしない
+    photoScanMetricsText: {
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 20,
     },
     photoStatusCard: {
       alignSelf: 'center',

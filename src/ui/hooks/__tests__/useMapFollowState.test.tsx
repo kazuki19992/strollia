@@ -380,6 +380,156 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
     });
   });
 
+  describe('Grid取得用region gridSyncRegion', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('初期状態は null になる', () => {
+      const { result } = renderMapFollowState();
+
+      expect(result.current.gridSyncRegion).toBeNull();
+    });
+
+    it('ドラッグ後の handleRegionChange では visibleRegion は更新されるが gridSyncRegion は null のまま', () => {
+      const { result } = renderMapFollowState();
+      const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+
+      act(() => {
+        result.current.handleMapPanDrag();
+      });
+      act(() => {
+        result.current.handleRegionChange(region);
+      });
+
+      expect(result.current.visibleRegion).toEqual(region);
+      expect(result.current.gridSyncRegion).toBeNull();
+    });
+
+    it('handleRegionChangeComplete で gridSyncRegion が更新される', () => {
+      const { result } = renderMapFollowState();
+      const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+
+      act(() => {
+        result.current.handleMapPanDrag();
+      });
+      act(() => {
+        result.current.handleRegionChangeComplete(region);
+      });
+
+      expect(result.current.gridSyncRegion).toEqual(region);
+    });
+
+    it('ユーザー操作がない状態の handleRegionChange では gridSyncRegion も更新される', () => {
+      const { result } = renderMapFollowState();
+      const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+
+      act(() => {
+        result.current.handleRegionChange(region);
+      });
+
+      expect(result.current.gridSyncRegion).toEqual(region);
+    });
+
+    it('現在地ボタン(recenterOnUserLocation)ではドラッグ後でも gridSyncRegion が即時更新される', () => {
+      const mockAnimateToRegion = jest.fn();
+      const { result } = renderHook(() => {
+        const incrementRef = useRef<() => void>(() => undefined);
+        const hookResult = useMapFollowState({
+          screenMode: 'map',
+          userLocationIcon: NATIVE_USER_LOCATION_ICON,
+          incrementVisitedGridRefreshVersionRef: incrementRef,
+        });
+        (hookResult.mapRef as React.MutableRefObject<{ animateToRegion: jest.Mock } | null>).current = {
+          animateToRegion: mockAnimateToRegion,
+        };
+        return hookResult;
+      });
+
+      // ドラッグで追従OFFにしてから現在地を更新する（追従OFF中はcenterOnCoordinateが
+      // 呼ばれないため、この時点ではgridSyncRegionはまだ更新されない）。
+      act(() => {
+        result.current.handleMapPanDrag();
+      });
+      act(() => {
+        result.current.applyUserLocation(35.681236, 139.767125, null);
+      });
+
+      expect(result.current.gridSyncRegion).toBeNull();
+
+      act(() => {
+        result.current.recenterOnUserLocation();
+      });
+
+      expect(result.current.gridSyncRegion).not.toBeNull();
+    });
+
+    it('onRegionChangeComplete が来なくても、最後の操作から1000ms経過で直近regionへ同期する', () => {
+      jest.useFakeTimers();
+      // regionChangeThrottleRefの初期値0との差分がスロットル閾値(150ms)を超えるよう、
+      // 十分離れた時刻から開始する。
+      jest.setSystemTime(1000);
+      const { result } = renderMapFollowState();
+      const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+
+      act(() => {
+        result.current.handleMapPanDrag();
+      });
+      act(() => {
+        result.current.handleRegionChange(region);
+      });
+
+      expect(result.current.gridSyncRegion).toBeNull();
+
+      // advanceTimersByTimeはモックされたDateも一緒に進めるため、setSystemTimeの再指定は不要。
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(result.current.gridSyncRegion).toEqual(region);
+    });
+
+    it('操作が続いている間(1000ms未満の間隔でhandleRegionChangeが来る)はタイマーが発火しない', () => {
+      jest.useFakeTimers();
+      // regionChangeThrottleRefの初期値0との差分がスロットル閾値(150ms)を超えるよう、
+      // 十分離れた時刻から開始する。
+      jest.setSystemTime(1000);
+      const { result } = renderMapFollowState();
+      const region1 = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+      const region2 = { latitude: 35.69, longitude: 139.77, latitudeDelta: 0.01, longitudeDelta: 0.01 };
+
+      act(() => {
+        result.current.handleMapPanDrag();
+      });
+      act(() => {
+        result.current.handleRegionChange(region1);
+      });
+
+      // 500ms後（1000ms未満）に再度操作 → タイマーが張り直され、まだ発火していないはず
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(result.current.gridSyncRegion).toBeNull();
+
+      act(() => {
+        result.current.handleRegionChange(region2);
+      });
+
+      // 最初のタイマーが発火するはずだった時刻（操作開始から1000ms = ここから500ms後）を
+      // 過ぎても、再操作によって張り直されたタイマーのおかげで発火しない
+      act(() => {
+        jest.advanceTimersByTime(650);
+      });
+      expect(result.current.gridSyncRegion).toBeNull();
+
+      // 張り直したタイマー（region2受信から1000ms後）で発火する
+      act(() => {
+        jest.advanceTimersByTime(350);
+      });
+      expect(result.current.gridSyncRegion).toEqual(region2);
+    });
+  });
+
   describe('toggleMapType — 地図種別の切り替え', () => {
     it('初期状態から toggleMapType を呼ぶと hybrid になる', () => {
       const { result } = renderMapFollowState();

@@ -105,13 +105,15 @@ flowchart TD
   H -->|いいえ| A
   F --> J["背景タスクからGPS観測を取得"]
   I --> K["前景監視からGPS観測を取得"]
-  J --> L["共通保存セッション"]
+  J --> L["共通記録セッション"]
   K --> L
-  L --> M["visited cellをupsert"]
-  L --> N["軽量保存判定"]
-  N -->|保存対象| O["SQLiteへ保存"]
-  N -->|保存しない| A
-  O --> A
+  L --> M["配信バッチごとに有効な滞在場所を取得し、観測を時系列順に処理"]
+  M --> N["SQLite排他トランザクション"]
+  N --> O["永続吸着状態・Grid補間起点・最新保存点を読み、古い観測を除外"]
+  O --> P["有効座標・保存判定・Visited Gridを計算"]
+  P --> Q["GPS点・日別距離・Visited Grid・吸着状態を原子的に確定"]
+  Q --> R["保存済みGPS点だけ実績処理"]
+  R --> A
 ```
 
 ## 6. データ取得フロー
@@ -141,10 +143,10 @@ flowchart TD
 ```mermaid
 flowchart TD
   A[MapView表示範囲] --> B[表示範囲を100mセルboundsへ変換]
-  B --> C[visited_cellsをx/y範囲検索]
-  C --> D[ズームに応じて100mセルを大セルへ集約]
+  B --> C[visited_cellsをx/y範囲検索、表示セルサイズが100mより大きい場合はSQL側GROUP BYでブロック集約]
+  C --> D[整列ブロックが完全に埋まっていれば1つの大きいPolygonへ結合。100m表示ではfresh cellを結合対象から外す]
   D --> E[Fog opacityをlatitudeDeltaから計算]
-  E --> F[1セル1PolygonとしてGrid Overlay描画]
+  E --> F[Grid Overlayとして描画]
 ```
 
 ## 7. 初期実装の判断
@@ -168,6 +170,8 @@ flowchart TD
 詳細画面は通常の画面遷移として扱い、戻るボタンのラベルを「ライセンス」にしてライブラリ一覧へ戻る。
 
 ライセンス一覧は実行時に `node_modules` やnative projectを探索せず、`npm run generate:licenses` で `src/app/generated/ossLicenses.ts` へ静的生成する。npm依存の収集には `license-checker-rseidelsohn` を使い、ライセンス名、リポジトリ、ライセンス本文、NOTICE本文を保存する。依存関係を追加・更新した場合は、ライセンス一覧も再生成する。
+
+滞在場所の固定アイコンには同梱したTwemoji PNGを使う。Twemoji graphicsのCC-BY 4.0帰属表記は、この同じOSSライセンス画面の静的一覧へ含める。実行時に絵文字CDNへアクセスしない。
 
 Expo managed checkoutでは `ios/` や `android/` が存在しない場合がある。その場合はnpm依存のみを生成対象にする。`ios/Pods/Target Support Files/**/**-acknowledgements.plist` が存在するprebuild/build環境では、CocoaPodsが生成するAcknowledgements plistも読み込み、iOS native依存のライセンスも同じ画面に統合する。
 
@@ -208,7 +212,9 @@ Expo managed checkoutでは `ios/` や `android/` が存在しない場合があ
 
 iOSでは `showsBackgroundLocationIndicator: false` を維持しつつ、Core Locationの継続的なバックグラウンド更新がサスペンドされる組み合わせを避けるため、ネイティブの `distanceInterval` を指定しない。Androidでは5mの距離フィルターを維持する。GPSポイントの保存間隔はプラットフォーム共通の5m保存判定で制御し、iOSで受信回数が増えてもSQLiteへ保存するポイントを無制限に増やさない。
 
-位置情報の保存処理は前景・背景で共通の保存セッションを使用する。セッションは開始時にSQLiteから最新保存点を1回取得し、以後は保存済みの前回点とVisited Grid用の前回観測点をメモリ上で引き継ぐ。GPSログの保存判定、Visited Grid、実績処理の規則は保存元によって変えない。
+位置情報の保存処理は前景・背景で共通の記録フローを使用する。セッションはGrid補間起点や最新GPS点を保持・取得せず、配信バッファ、時系列ソート、有効滞在場所の取得、Recorderへの委譲、保存後の実績処理だけを担う。吸着の入場・退出状態とVisited Grid補間起点は`location_recording_state`のID=`1`単一行を正とするため、前景・背景・JSプロセス再生成後も共有される。
+
+1観測はSQLite排他トランザクション内で、永続吸着状態とGrid補間起点、保存判定用の最新GPS点を読み、古い観測の除外、吸着判定、有効座標による保存判定、Visited Grid、GPS点挿入、日別距離の差分加算、状態更新までを確定する。GPS点が保存対象外でもVisited Gridと吸着状態を更新し、セルを更新できた有効座標は次のGrid補間起点として保存する。滞在場所取得が一時的に失敗した観測は生座標を使いつつ吸着状態を維持する。トランザクション確定後、保存済みGPS点だけを実績処理へ渡す。バッチ後半の記録に失敗した場合は失敗観測以降だけを再キューし、先に確定した点の実績処理を終えてから元の記録エラーを返す。実績処理の失敗は警告に留め、記録エラーを上書きしない。
 
 権限状態ごとの保存元は以下とする。
 

@@ -89,6 +89,22 @@ describe('GPX生成', () => {
     expect(track).toContain('<time>2026-05-04T00:01:00.000Z</time>');
   });
 
+  it('有効座標が保存されていてもGPXには生座標を出力する', () => {
+    const snappedPoint = {
+      ...day1Points[0],
+      latitude: 35,
+      longitude: 139,
+      effectiveLatitude: 35.5,
+      effectiveLongitude: 139.5,
+      snappedStayPlaceId: 1,
+    } as LocationPoint;
+
+    const track = buildGpxDayTrack('2026-05-04', [snappedPoint]);
+
+    expect(track).toContain('lat="35" lon="139"');
+    expect(track).not.toContain('lat="35.5" lon="139.5"');
+  });
+
   it('フッターでgpx要素を閉じる', () => {
     expect(buildGpxFooter()).toBe('</gpx>\n');
   });

@@ -32,6 +32,7 @@ import { getAchievementUnlocksByDate } from '@/features/achievements/achievement
 import { getLocationPointAdminAreaName } from '@/features/achievements/adminAreaRepository';
 import { getAchievementDefinition } from '@/features/achievements/achievementDefinitions';
 import { createDailyDetailReport } from '@/features/reports/dailyReport';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 
 const basePoint = {
   id: 1,
@@ -96,6 +97,19 @@ describe('dailyLogDetailService fetchDailyLogDetailData', () => {
       await fetchDailyLogDetailData('2026-05-31');
 
       expect(getLocationPointAdminAreaName).not.toHaveBeenCalled();
+    });
+
+    it('訪問エリア照会には保存済みの有効座標から導いたセルIDを使う', async () => {
+      const snappedPoint = { ...basePoint, effectiveLatitude: 35.5, effectiveLongitude: 139.5 };
+      (getLocationPointsByDate as jest.Mock).mockResolvedValue([snappedPoint]);
+      (getVisitedCellsByIds as jest.Mock).mockResolvedValue([]);
+      (getAchievementUnlocksByDate as jest.Mock).mockResolvedValue([]);
+      (getLocationPointAdminAreaName as jest.Mock).mockResolvedValue(null);
+      (createDailyDetailReport as jest.Mock).mockReturnValue(mockReport);
+
+      await fetchDailyLogDetailData('2026-05-31');
+
+      expect(getVisitedCellsByIds).toHaveBeenCalledWith([coordinateToGridCell({ latitude: 35.5, longitude: 139.5 }).cellId]);
     });
 
     it('GPSポイントがある場合は最初と最後のポイントIDで getLocationPointAdminAreaName を呼ぶ', async () => {

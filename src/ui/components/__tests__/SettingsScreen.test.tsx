@@ -6,6 +6,13 @@ import { AppColorPresetId } from '@/features/customization/colorPresets';
 import { darkTheme, lightTheme } from '@/theme/theme';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import { DEFAULT_USER_LOCATION_ICON_ID } from '@/features/customization/customizationOptions';
+import { DEFAULT_PHOTO_DISPLAY_LIMIT_ID } from '@/features/settings/photoDisplayLimitOptions';
+import {
+  PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION,
+  PHOTO_DISPLAY_LIMIT_SETTING_LABEL,
+  PHOTO_LIBRARY_RELOAD_DESCRIPTION,
+  PHOTO_LIBRARY_RELOAD_LABEL,
+} from '@/ui/appText';
 import { createStyles } from '@/ui/appStyles';
 
 import { SettingsScreen, getSubscriptionStoreName } from '@/ui/components/SettingsScreen';
@@ -31,6 +38,11 @@ jest.mock('react-native-svg', () => {
 
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn().mockResolvedValue(true),
+}));
+
+// 画面単体テストではRootLayoutを描画しないため、実機のセーフエリア値を固定する。
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
 }));
 
 const styles = new Proxy(
@@ -60,17 +72,24 @@ function createProps() {
     mapType: 'standard' as const,
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
+    hasStayPlaces: true,
+    showStayPlacesOnMap: true,
     isImportingGpx: false,
     premiumAccessState: getDefaultPremiumAccessState(),
     revenueCatAppUserId: null as string | null,
     appVersion: '1.1.0' as string | null,
     buildNumber: '21' as string | null,
+    hasCurrentAppUpdateNotice: false,
     premiumOfferingSummary: null as PremiumOfferingSummary | null,
     isLoadingPremiumOffering: false,
     isPurchasingPremiumPackage: false,
     isPresentingPremiumCustomerCenter: false,
     isRestoringPremiumPurchases: false,
     selectedUserLocationIconId: DEFAULT_USER_LOCATION_ICON_ID,
+    photoDisplayLimitId: DEFAULT_PHOTO_DISPLAY_LIMIT_ID,
+    isSyncingPhotoLibrary: false,
+    onUpdatePhotoDisplayLimitId: jest.fn().mockResolvedValue(undefined),
+    onReloadPhotoLibrary: jest.fn(),
     onBackToMap: jest.fn(),
     onStartRecording: jest.fn(),
     onRequestLocationPermission: jest.fn(),
@@ -79,10 +98,13 @@ function createProps() {
     onUpdateCrashReportingEnabled: jest.fn().mockResolvedValue(undefined),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
+    onUpdateShowStayPlacesOnMap: jest.fn().mockResolvedValue(undefined),
     onUpdateUserLocationIcon: jest.fn(),
     selectedAppColorPresetId: 'matcha' as AppColorPresetId,
     onUpdateAppColorPreset: jest.fn(),
+    onOpenStayPlaces: jest.fn(),
     onOpenAboutAppScreen: jest.fn(),
+    onOpenLatestAppUpdateNotice: jest.fn(),
     onOpenFirstLaunchTutorial: jest.fn(),
     onOpenFaqScreen: jest.fn(),
     onOpenLicenseScreen: jest.fn(),
@@ -123,6 +145,45 @@ describe('設定画面 SettingsScreen', () => {
     expect(screen.getByText('GPXファイルのエクスポート')).toBeTruthy();
   });
 
+  test('滞在場所設定を開く操作を表示してコールバックへ渡す', () => {
+    const props = createProps();
+    render(<SettingsScreen {...props} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('滞在場所を設定する'));
+    });
+
+    expect(props.onOpenStayPlaces).toHaveBeenCalledTimes(1);
+  });
+
+  test('滞在場所がある場合は写真関連項目の後かつマップのテーマ直前に滞在場所表示設定を表示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    const texts = screen.UNSAFE_getAllByType(Text).map((node) => node.props.children as unknown);
+    const photoReloadIndex = texts.lastIndexOf(PHOTO_LIBRARY_RELOAD_LABEL);
+    const stayPlaceIndex = texts.indexOf('マップ上に滞在場所を表示');
+    const mapThemeIndex = texts.indexOf('マップのテーマ');
+
+    expect(photoReloadIndex).toBeGreaterThanOrEqual(0);
+    expect(stayPlaceIndex).toBeGreaterThan(photoReloadIndex);
+    expect(mapThemeIndex).toBe(stayPlaceIndex + 2);
+  });
+
+  test('滞在場所がない場合は滞在場所表示設定を表示しない', () => {
+    render(<SettingsScreen {...createProps()} hasStayPlaces={false} />);
+
+    expect(screen.queryByText('マップ上に滞在場所を表示')).toBeNull();
+  });
+
+  test('滞在場所表示設定を切り替える', () => {
+    const props = createProps();
+    render(<SettingsScreen {...props} />);
+
+    fireEvent(screen.getByLabelText('マップ上に滞在場所を表示'), 'valueChange', false);
+
+    expect(props.onUpdateShowStayPlacesOnMap).toHaveBeenCalledWith(false);
+  });
+
   test('このアプリについての下にチュートリアルを表示して開ける', () => {
     const props = createProps();
     render(<SettingsScreen {...props} />);
@@ -146,6 +207,32 @@ describe('設定画面 SettingsScreen', () => {
 
     expect(props.onOpenAboutAppScreen).toHaveBeenCalledTimes(1);
     expect(props.onOpenFirstLaunchTutorial).toHaveBeenCalledTimes(1);
+  });
+
+  test('現在版の更新通知があるとこのアプリについての直後に最新の更新内容を表示して開ける', () => {
+    const props = { ...createProps(), hasCurrentAppUpdateNotice: true };
+    render(<SettingsScreen {...props} />);
+
+    const buttonLabels = screen.getAllByRole('button').map((node) => node.props.accessibilityLabel as unknown);
+    const aboutIndex = buttonLabels.indexOf('このアプリについて');
+    const updateNoticeIndex = buttonLabels.indexOf('最新の更新内容を見る');
+    const tutorialIndex = buttonLabels.indexOf('チュートリアル');
+
+    expect(aboutIndex).toBeGreaterThanOrEqual(0);
+    expect(updateNoticeIndex).toBe(aboutIndex + 1);
+    expect(updateNoticeIndex).toBeLessThan(tutorialIndex);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('最新の更新内容を見る'));
+    });
+
+    expect(props.onOpenLatestAppUpdateNotice).toHaveBeenCalledTimes(1);
+  });
+
+  test('現在版の更新通知がないと最新の更新内容を表示しない', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
   });
 
   test('チュートリアルの下によくある質問を表示して開ける', () => {
@@ -719,5 +806,83 @@ describe('設定画面 SettingsScreen', () => {
     });
 
     expect(alertSpy).toHaveBeenCalledWith('設定保存失敗', '保存に失敗しました');
+  });
+});
+
+describe('設定画面 地図に表示する写真', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('見出しと説明を表示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    expect(screen.getByText(PHOTO_DISPLAY_LIMIT_SETTING_LABEL)).toBeTruthy();
+    expect(screen.getByText(PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION)).toBeTruthy();
+  });
+
+  test('選択中の上限をドロップダウンに表示する', () => {
+    render(<SettingsScreen {...createProps()} photoDisplayLimitId="1000" />);
+
+    expect(screen.getByText('最新1000件')).toBeTruthy();
+  });
+
+  test('選択肢を選ぶと保存処理を呼ぶ', () => {
+    const onUpdatePhotoDisplayLimitId = jest.fn().mockResolvedValue(undefined);
+    render(<SettingsScreen {...createProps()} onUpdatePhotoDisplayLimitId={onUpdatePhotoDisplayLimitId} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('地図に表示する写真を選択'));
+    });
+    act(() => {
+      fireEvent.press(screen.getByLabelText('最新200件'));
+    });
+
+    expect(onUpdatePhotoDisplayLimitId).toHaveBeenCalledWith('200');
+  });
+
+  test('すべての選択肢を提示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('地図に表示する写真を選択'));
+    });
+
+    expect(screen.getByLabelText('すべて')).toBeTruthy();
+    expect(screen.getByLabelText('最新200件')).toBeTruthy();
+    expect(screen.getByLabelText('最新1000件')).toBeTruthy();
+    expect(screen.getByLabelText('最新3000件')).toBeTruthy();
+    expect(screen.getByLabelText('最新10000件')).toBeTruthy();
+  });
+});
+
+describe('設定画面 ライブラリを再読み込み', () => {
+  test('操作と説明を表示する', () => {
+    render(<SettingsScreen {...createProps()} />);
+
+    expect(screen.getByText(PHOTO_LIBRARY_RELOAD_DESCRIPTION)).toBeTruthy();
+    expect(screen.getByLabelText(PHOTO_LIBRARY_RELOAD_LABEL)).toBeTruthy();
+  });
+
+  test('押すと全件再読み込みを開始する', () => {
+    const onReloadPhotoLibrary = jest.fn();
+    render(<SettingsScreen {...createProps()} onReloadPhotoLibrary={onReloadPhotoLibrary} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText(PHOTO_LIBRARY_RELOAD_LABEL));
+    });
+
+    expect(onReloadPhotoLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  test('実行中は再度押せないようにする', () => {
+    render(<SettingsScreen {...createProps()} isSyncingPhotoLibrary />);
+
+    // Pressable の disabled は accessibilityState へマッピングされ props.disabled では検証できない
+    expect(screen.getByLabelText(PHOTO_LIBRARY_RELOAD_LABEL).props.accessibilityState).toMatchObject({ disabled: true });
   });
 });

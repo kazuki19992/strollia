@@ -4,6 +4,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import {
   formatDistanceKilometers,
   formatSpeedKmh,
@@ -12,6 +13,7 @@ import {
   SPEED_METER_ARC_CIRCUMFERENCE,
 } from '@/ui/components/MapBottomDashboard';
 import { MapScreen } from '@/ui/components/MapScreen';
+import { PHOTO_LIBRARY_SCANNING_MESSAGE } from '@/ui/appText';
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = require('react-native');
@@ -25,12 +27,18 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
+/** Polygonのレンダー回数。メモ化でPolygon要素が作り直されないことの検証に使う。 */
+const mockPolygonRenderCount = { current: 0 };
+
 jest.mock('react-native-maps', () => {
   const React = require('react');
   type MockMapComponentProps = Record<string, unknown> & { children?: unknown };
   const MapViewMock = (props: MockMapComponentProps) => React.createElement('MapView', props, props.children);
   const MarkerMock = (props: MockMapComponentProps) => React.createElement('Marker', props, props.children);
-  const PolygonMock = (props: MockMapComponentProps) => React.createElement('Polygon', props, props.children);
+  const PolygonMock = (props: MockMapComponentProps) => {
+    mockPolygonRenderCount.current += 1;
+    return React.createElement('Polygon', props, props.children);
+  };
   const PolylineMock = (props: MockMapComponentProps) => React.createElement('Polyline', props, props.children);
 
   return {
@@ -45,6 +53,24 @@ jest.mock('react-native-maps', () => {
 jest.mock('@/ui/components/PhotoClusterMarker', () => ({
   PhotoClusterMarker: () => null,
 }));
+
+jest.mock('@/ui/components/StayPlaceMapMarker', () => {
+  const { Pressable, Text } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
+  return {
+    StayPlaceMapMarker: ({ place, onPress }: { place: StayPlace; onPress: (place: StayPlace) => void }) => (
+      <Pressable accessibilityLabel={`${place.name}を開く`} accessibilityRole="button" onPress={() => onPress(place)}>
+        <Text>{place.name}</Text>
+      </Pressable>
+    ),
+  };
+});
+
+jest.mock('@/ui/components/Dialog', () => {
+  const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
+  return {
+    Dialog: ({ children, visible }: { children: React.ReactNode; visible: boolean }) => (visible ? <View>{children}</View> : null),
+  };
+});
 
 const styles = createStyles(lightTheme);
 
@@ -64,12 +90,17 @@ function createProps() {
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
     photoClusters: [],
+    activeStayPlaces: null as StayPlace[] | null,
+    hasStayPlaces: true,
+    showStayPlacesOnMap: true,
     hasAnyLocationPoints: false,
     hasRequiredPermission: true,
     isWhileInUseOnlyMode: false,
     shouldOpenSettingsForPermission: false,
     photoErrorMessage: null,
     isLoadingPhotos: false,
+    isScanningPhotoLibrary: false,
+    photoScanMetricsLines: null as string[] | null,
     distance: 1234,
     todayDistance: 456,
     currentSpeedKmh: 7,
@@ -86,6 +117,7 @@ function createProps() {
     onOpenMonthlyReport: jest.fn(),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
+    onUpdateShowStayPlacesOnMap: jest.fn().mockResolvedValue(undefined),
     onOpenSettings: jest.fn(),
     onRequestLocationPermission: jest.fn(),
     onRecenterOnUserLocation: jest.fn(),
@@ -114,6 +146,89 @@ describe('地図画面 MapScreen', () => {
     expect(screen.getByText('神田')).toBeTruthy();
     expect(screen.queryByText('🚶 徒歩で移動中...')).toBeNull();
     expect(screen.queryByText('メニュー')).toBeNull();
+  });
+
+  test('有効な滞在場所のマーカーをタップするとアイコン・太字の名前・非表示範囲を表示する', () => {
+    const place: StayPlace = {
+      id: 1,
+      name: '自宅',
+      iconHexcode: '1F3E0',
+      latitude: 35,
+      longitude: 139,
+      privacyRadiusMeters: 1000,
+      createdAt: '2026-08-20T00:00:00.000Z',
+      updatedAt: '2026-08-20T00:00:00.000Z',
+    };
+    render(<MapScreen {...createProps()} activeStayPlaces={[place]} />);
+
+    fireEvent.press(screen.getByLabelText('自宅を開く'));
+
+    const name = screen.getAllByText('自宅').at(-1);
+    expect(name).toBeDefined();
+    expect(StyleSheet.flatten(name!.props.style)).toMatchObject({ fontWeight: '700' });
+    expect(screen.getByLabelText('家のTwemojiアイコン')).toBeTruthy();
+    expect(screen.getByText('非表示範囲: 1km')).toBeTruthy();
+  });
+
+  test('滞在場所表示設定がOFFの場合は有効な滞在場所のマーカーを表示しない', () => {
+    const place: StayPlace = {
+      id: 1,
+      name: '自宅',
+      iconHexcode: '1F3E0',
+      latitude: 35,
+      longitude: 139,
+      privacyRadiusMeters: 1000,
+      createdAt: '2026-08-20T00:00:00.000Z',
+      updatedAt: '2026-08-20T00:00:00.000Z',
+    };
+
+    render(<MapScreen {...createProps()} activeStayPlaces={[place]} showStayPlacesOnMap={false} />);
+
+    expect(screen.queryByLabelText('自宅を開く')).toBeNull();
+  });
+
+  test('走査中は保存済み写真を表示したまま、走査中であることを控えめに知らせる', () => {
+    render(<MapScreen {...createProps()} showPhotosOnMap isLoadingPhotos={false} isScanningPhotoLibrary />);
+
+    expect(screen.getByText(PHOTO_LIBRARY_SCANNING_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText('ジオタグ付き写真を読み込んでいます...')).toBeNull();
+  });
+
+  test('キャッシュ検索中は走査中の案内を重ねて出さない', () => {
+    render(<MapScreen {...createProps()} showPhotosOnMap isLoadingPhotos isScanningPhotoLibrary />);
+
+    expect(screen.getByText('ジオタグ付き写真を読み込んでいます...')).toBeTruthy();
+    expect(screen.queryByText(PHOTO_LIBRARY_SCANNING_MESSAGE)).toBeNull();
+  });
+
+  test('写真表示がOFFなら走査中でも案内を出さない', () => {
+    render(<MapScreen {...createProps()} showPhotosOnMap={false} isScanningPhotoLibrary />);
+
+    expect(screen.queryByText(PHOTO_LIBRARY_SCANNING_MESSAGE)).toBeNull();
+  });
+
+  test('計測表示行が無い場合は写真走査の計測結果を表示しない', () => {
+    // 計測フラグが無効なとき(=通常のユーザー)は行が渡されない。既存の見た目を変えないこと
+    render(<MapScreen {...createProps()} showPhotosOnMap isLoadingPhotos={false} />);
+
+    expect(screen.queryByText(/走査 /)).toBeNull();
+    expect(screen.queryByText(/メタデータ /)).toBeNull();
+  });
+
+  test('計測表示行がある場合は写真走査の計測結果を帯に表示する', () => {
+    const lines = ['走査 2000件 / ジオタグ 143件 / 失敗 2件', 'メタデータ 0.3s / 位置 11.8s / 保存 1.2s / 合計 13.3s'];
+    render(<MapScreen {...createProps()} showPhotosOnMap photoScanMetricsLines={lines} />);
+
+    expect(screen.getByText(lines[0])).toBeTruthy();
+    expect(screen.getByText(lines[1])).toBeTruthy();
+  });
+
+  test('計測結果はスクリーンショットで読める文字サイズで表示する', () => {
+    const lines = ['走査 2000件 / ジオタグ 143件 / 失敗 2件'];
+    render(<MapScreen {...createProps()} showPhotosOnMap photoScanMetricsLines={lines} />);
+
+    const metricsText = screen.getByText(lines[0]);
+    expect(StyleSheet.flatten(metricsText.props.style).fontSize).toBeGreaterThanOrEqual(14);
   });
 
   test('記録状態とスピードメーターを表示する', () => {
@@ -299,6 +414,20 @@ describe('地図画面 MapScreen', () => {
     expect(mapView!.props.showsUserLocation).toBe(false);
   });
 
+  test('カスタム現在地アイコンは滞在場所マーカーより前面に表示する', () => {
+    render(
+      <MapScreen
+        {...createProps()}
+        userLocationIcon={{ useNativeUserLocation: false, customIconId: 'walker' as const, customImageUri: null }}
+        userCoordinate={{ latitude: 35, longitude: 139 }}
+      />,
+    );
+
+    // UNSAFE_getAllByProps を使うのは Marker の zIndex という非セマンティックなpropsを検証するため
+    const marker = screen.UNSAFE_getAllByProps({}).find((node) => String(node.type) === 'Marker');
+    expect(marker!.props.zIndex).toBe(4);
+  });
+
   test('OS標準アイコン時はOS標準の現在地ドットを表示する', () => {
     render(<MapScreen {...createProps()} userLocationIcon={{ useNativeUserLocation: true, customIconId: null, customImageUri: null }} />);
 
@@ -397,6 +526,59 @@ describe('地図画面 MapScreen', () => {
 
     const updatedMarker = screen.UNSAFE_getAllByProps({}).find((node) => String(node.type) === 'Marker');
     expect(updatedMarker!.props.tracksViewChanges).toBe(false);
+  });
+
+  describe('Visited Gridの再描画抑制', () => {
+    /** テスト用のvisited grid描画データ。参照を固定して渡すためテスト内で一度だけ作る。 */
+    function makeVisitedGridCells() {
+      return [
+        {
+          id: '100:1:1',
+          coordinates: [
+            { latitude: 35, longitude: 139 },
+            { latitude: 35.001, longitude: 139 },
+            { latitude: 35.001, longitude: 139.001 },
+            { latitude: 35, longitude: 139.001 },
+          ],
+          fillColor: 'rgba(31, 122, 92, 0.3)',
+          strokeColor: 'rgba(31, 122, 92, 0)',
+          strokeWidth: 0,
+        },
+      ];
+    }
+
+    beforeEach(() => {
+      mockPolygonRenderCount.current = 0;
+    });
+
+    test('visitedGridCellsが同じ参照なら、他のpropsが変わってもPolygonを再レンダーしない', () => {
+      // 追従モード中は現在地更新のたびにMapScreenが再レンダーされる。そのたびに
+      // Polygon要素を作り直すと表示セル数ぶんのコストがかかるため、要素配列をメモ化する。
+      const props = createProps();
+      const visitedGridCells = makeVisitedGridCells();
+
+      const { rerender } = render(<MapScreen {...props} visitedGridCells={visitedGridCells} />);
+
+      const renderCountAfterMount = mockPolygonRenderCount.current;
+      expect(renderCountAfterMount).toBeGreaterThan(0);
+
+      // 現在地だけが変わった再レンダーを模す。
+      rerender(<MapScreen {...props} visitedGridCells={visitedGridCells} userCoordinate={{ latitude: 35.1, longitude: 139.1 }} />);
+
+      expect(mockPolygonRenderCount.current).toBe(renderCountAfterMount);
+    });
+
+    test('visitedGridCellsが差し替わるとPolygonを再レンダーする', () => {
+      const props = createProps();
+
+      const { rerender } = render(<MapScreen {...props} visitedGridCells={makeVisitedGridCells()} />);
+
+      const renderCountAfterMount = mockPolygonRenderCount.current;
+
+      rerender(<MapScreen {...props} visitedGridCells={makeVisitedGridCells()} />);
+
+      expect(mockPolygonRenderCount.current).toBeGreaterThan(renderCountAfterMount);
+    });
   });
 });
 

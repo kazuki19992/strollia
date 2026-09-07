@@ -35,6 +35,7 @@ jest.mock('@/ui/state/AppStateProvider', () => {
       showPhotosOnMap: false,
       isUpdatingPhotoSetting: false,
       photoClusters: [],
+      stayPlaces: [],
       points: [],
       hasRequiredPermission: true,
       shouldOpenSettingsForPermission: false,

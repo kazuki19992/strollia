@@ -4,6 +4,7 @@ import * as Location from 'expo-location';
 import { bufferLocationsDuringGpxImport, isGpxImportPriorityActive } from '@/features/location/gpxImportPriority';
 import { createLocationRecordingSession, LocationRecordingSession } from '@/features/location/locationRecordingSession';
 import { ensureForegroundLocationPermission } from '@/features/location/locationService';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
 /** 位置更新を受け取るコールバック。speedはm/s（取得できない場合はnull）。 */
 export type ForegroundUserLocationCallback = (latitude: number, longitude: number, speed: number | null) => void;
@@ -18,6 +19,8 @@ export type ForegroundUserLocationOptions = {
   onLocation?: ForegroundUserLocationCallback;
   /** 監視開始または保存処理の失敗通知。 */
   onError?: (error: unknown) => void;
+  /** 現在の契約状態を反映した、GPS吸着に使う滞在場所の取得関数。 */
+  getActiveStayPlaces?: () => Promise<StayPlace[]>;
 };
 
 /**
@@ -26,9 +29,16 @@ export type ForegroundUserLocationOptions = {
  * 最終取得位置は表示だけに使い、watchから届く新しい観測だけを保存する。
  * 保存は直列化し、距離・時系列判定に使うセッション状態の競合を防ぐ。
  */
-export function useForegroundUserLocation({ enabled, shouldPersist, onLocation, onError }: ForegroundUserLocationOptions): void {
+export function useForegroundUserLocation({
+  enabled,
+  shouldPersist,
+  onLocation,
+  onError,
+  getActiveStayPlaces,
+}: ForegroundUserLocationOptions): void {
   const onLocationRef = useRef(onLocation);
   const onErrorRef = useRef(onError);
+  const getActiveStayPlacesRef = useRef(getActiveStayPlaces);
 
   useEffect(() => {
     onLocationRef.current = onLocation;
@@ -37,6 +47,10 @@ export function useForegroundUserLocation({ enabled, shouldPersist, onLocation, 
   useEffect(() => {
     onErrorRef.current = onError;
   }, [onError]);
+
+  useEffect(() => {
+    getActiveStayPlacesRef.current = getActiveStayPlaces;
+  }, [getActiveStayPlaces]);
 
   useEffect(() => {
     if (!enabled) {
@@ -86,7 +100,9 @@ export function useForegroundUserLocation({ enabled, shouldPersist, onLocation, 
                 return;
               }
 
-              sessionPromise ??= createLocationRecordingSession();
+              sessionPromise ??= createLocationRecordingSession({
+                getActiveStayPlaces: async () => (await getActiveStayPlacesRef.current?.()) ?? [],
+              });
               const session = await sessionPromise;
               await session.recordLocations([location]);
             } catch (error: unknown) {

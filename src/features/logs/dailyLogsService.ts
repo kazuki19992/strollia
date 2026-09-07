@@ -1,5 +1,6 @@
 import { getLocationPointAdminAreaNames } from '@/features/achievements/adminAreaRepository';
 import { getLocationPointsByDate } from '@/features/logs/logRepository';
+import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
 import { totalDistanceMeters } from '@/utils/distance';
 
 /**
@@ -44,7 +45,7 @@ export async function calculateTotalDistanceMeters(dailyLogs: DailyDistanceEntry
   let fallbackDistance = 0;
   for (const localDate of fallbackDates) {
     const points = await getLocationPointsByDate(localDate);
-    fallbackDistance += totalDistanceMeters(points);
+    fallbackDistance += totalDistanceMeters(points.map(toEffectiveLocationPoint));
   }
 
   return fixedDistance + fallbackDistance;

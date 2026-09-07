@@ -1,5 +1,6 @@
 import { db } from '@/db/database';
 import { importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { upsertVisitedCellVisitsInCurrentTransaction } from '@/features/location/visitedCellRepository';
 
 /** モック用のプリペアドステートメント。 */
 type MockPreparedStatement = {
@@ -46,6 +47,7 @@ jest.mock('@/db/database', () => {
 jest.mock('@/features/location/visitedCellRepository', () => ({
   upsertVisitedCells: jest.fn(),
   upsertVisitedCellsInCurrentTransaction: jest.fn(),
+  upsertVisitedCellVisitsInCurrentTransaction: jest.fn(),
 }));
 
 jest.mock('@/features/location/grid/gridInterpolation', () => ({
@@ -68,6 +70,9 @@ const point = {
   localDate: '2026-05-01',
   latitude: 35,
   longitude: 139,
+  effectiveLatitude: 35,
+  effectiveLongitude: 139,
+  snappedStayPlaceId: null,
   altitude: null,
   speed: null,
   heading: null,
@@ -104,6 +109,9 @@ describe('GPXインポート保存 importRepository', () => {
       point.localDate,
       point.latitude,
       point.longitude,
+      point.latitude,
+      point.longitude,
+      null,
       point.altitude,
       point.speed,
       point.heading,
@@ -133,11 +141,45 @@ describe('GPXインポート保存 importRepository', () => {
     );
   });
 
+  it('GPXインポートは吸着せず、生座標と同じ有効座標を保存する', async () => {
+    await importLocationPointsFromGpx([point], 'walk.gpx');
+
+    const insertPointStatement = findStatement("'gpx-import'");
+    expect(insertPointStatement!.executeAsync).toHaveBeenCalledWith(
+      point.recordedAt,
+      point.localDate,
+      point.latitude,
+      point.longitude,
+      point.latitude,
+      point.longitude,
+      null,
+      point.altitude,
+      point.speed,
+      point.heading,
+      point.accuracy,
+      point.altitudeAccuracy,
+      expect.any(String),
+    );
+  });
+
   it('プリペアドステートメントはチャンク終了時に必ずfinalizeする', async () => {
     await importLocationPointsFromGpx([point], 'walk.gpx');
 
     for (const statement of mockDbModule.__preparedStatements) {
       expect(statement.finalizeAsync).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it('チャンク内のvisited cell更新はまとめて実行する', async () => {
+    await importLocationPointsFromGpx([point, { ...point, recordedAt: '2026-05-01T00:01:00.000Z' }], 'walk.gpx');
+
+    expect(upsertVisitedCellVisitsInCurrentTransaction).toHaveBeenCalledTimes(1);
+    expect(upsertVisitedCellVisitsInCurrentTransaction).toHaveBeenCalledWith(
+      [
+        { cell: { cellId: '100:1:1', cellSizeMeters: 100, x: 1, y: 1 }, visitedAt: point.recordedAt },
+        { cell: { cellId: '100:1:1', cellSizeMeters: 100, x: 1, y: 1 }, visitedAt: '2026-05-01T00:01:00.000Z' },
+      ],
+      expect.anything(),
+    );
   });
 });

@@ -89,6 +89,15 @@ describe('総移動距離計算 calculateTotalDistanceMeters', () => {
     expect(result).toBeLessThan(220);
   });
 
+  it('距離が欠落した日は有効座標で再計算する', async () => {
+    (getLocationPointsByDate as jest.Mock).mockResolvedValue([
+      { ...point(35, 139, '2026-05-05'), effectiveLatitude: 35.5, effectiveLongitude: 139.5 },
+      { ...point(35.001, 139.001, '2026-05-05'), effectiveLatitude: 35.5, effectiveLongitude: 139.5 },
+    ]);
+
+    await expect(calculateTotalDistanceMeters([dailyDistanceEntry('2026-05-05', null)])).resolves.toBe(0);
+  });
+
   it('全日付が欠落している場合は0から再計算する', async () => {
     (getLocationPointsByDate as jest.Mock).mockResolvedValue([]);
 

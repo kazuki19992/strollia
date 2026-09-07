@@ -17,4 +17,5 @@
   - ビルド系: `build-development`, `build-preview`, `build-production`, `publish`
   - リリース系: `release`, `tag-release`, `release-notes`
   - GitHub運用系: `pr-review`, `create-issue`
+  - worktree作成: `worktree-setup`（`git worktree add` ではなく `git gtr new` を使い、`.env.local` をコピーするため `--no-copy` は使わない）
   - 後片付け: `post-merge-cleanup`(PRマージ後のworktree削除・develop最新化)

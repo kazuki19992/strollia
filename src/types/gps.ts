@@ -5,6 +5,12 @@ export type LocationPoint = {
   localDate: string;
   latitude: number;
   longitude: number;
+  /** 記録時に決定した有効緯度。旧ログではNULL。 */
+  effectiveLatitude?: number | null;
+  /** 記録時に決定した有効経度。旧ログではNULL。 */
+  effectiveLongitude?: number | null;
+  /** 吸着した滞在場所ID。吸着なし・旧ログではNULL。 */
+  snappedStayPlaceId?: number | null;
   altitude: number | null;
   speed: number | null;
   heading: number | null;

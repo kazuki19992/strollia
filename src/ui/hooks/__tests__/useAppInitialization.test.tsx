@@ -14,6 +14,7 @@ import { setupMonthlyReportNotificationChannel } from '@/features/reports/monthl
 import { evaluateAchievementsAndNotify } from '@/features/achievements/achievementService';
 import { isWhileInUseOnlyMode } from '@/features/location/locationPermission';
 import { shouldResetAchievementsOnLaunch } from '@/config/developmentFlags';
+import type { AppUpdateNotice } from '@/features/app-update/updateNotices';
 
 jest.mock('@/db/database', () => ({
   initializeDatabase: jest.fn().mockResolvedValue(undefined),
@@ -77,6 +78,13 @@ const DEFAULT_REFRESH_RESULT = {
   permissions: DEFAULT_PERMISSION_STATE,
 };
 
+/** 起動判定用の現在版通知fixture。 */
+const UPDATE_NOTICE: AppUpdateNotice = {
+  version: '1.3.0',
+  kind: 'feature',
+  items: ['地図を改善'],
+};
+
 /** テスト用の初期化オプションを生成する（各テストでオーバーライド可能）。 */
 function makeOptions(overrides: Partial<UseAppInitializationOptions> = {}): UseAppInitializationOptions {
   return {
@@ -91,11 +99,14 @@ function makeOptions(overrides: Partial<UseAppInitializationOptions> = {}): UseA
     snapshotPremiumAccessUpdateVersion: jest.fn().mockReturnValue(0),
     setKeepScreenAwake: jest.fn(),
     setCrashReportingEnabled: jest.fn(),
+    setShowStayPlacesOnMap: jest.fn(),
     setMessage: jest.fn(),
     setIsWhileInUseToastVisible: jest.fn(),
     setIsReady: jest.fn(),
     setFirstLaunchTutorialMode: jest.fn(),
     setIsFirstLaunchTutorialVisible: jest.fn(),
+    currentAppUpdateNotice: null,
+    openAutomaticAppUpdateNotice: jest.fn(),
     ...overrides,
   };
 }
@@ -221,6 +232,29 @@ describe('起動初期化フック useAppInitialization', () => {
   });
 
   describe('設定の読み込みと適用', () => {
+    it('滞在場所表示設定をデフォルトONで読み込む', async () => {
+      const setShowStayPlacesOnMap = jest.fn();
+      const options = { ...makeOptions(), setShowStayPlacesOnMap };
+
+      renderHook(() => useAppInitialization(options));
+      await flushPromises();
+
+      expect(getBooleanSetting).toHaveBeenCalledWith('showStayPlacesOnMap', true);
+    });
+
+    it('保存済みの滞在場所表示設定を適用する', async () => {
+      (getBooleanSetting as jest.Mock).mockImplementation(async (key: string, fallback: boolean) => {
+        return key === 'showStayPlacesOnMap' ? false : fallback;
+      });
+      const setShowStayPlacesOnMap = jest.fn();
+      const options = { ...makeOptions(), setShowStayPlacesOnMap };
+
+      renderHook(() => useAppInitialization(options));
+      await flushPromises();
+
+      expect(setShowStayPlacesOnMap).toHaveBeenCalledWith(false);
+    });
+
     it('keepScreenAwake が true で保存されている場合 setKeepScreenAwake(true) が呼ばれる', async () => {
       (getBooleanSetting as jest.Mock).mockImplementation(async (key: string) => {
         return key === 'keepScreenAwake' ? true : false;
@@ -298,6 +332,49 @@ describe('起動初期化フック useAppInitialization', () => {
       await flushPromises();
 
       expect(requestAchievementNotificationPermissionIfNeeded).toHaveBeenCalled();
+    });
+  });
+
+  describe('更新通知の起動判定', () => {
+    it('既存ユーザーの未読現在版は実績状態の初期化後に自動表示を予約する', async () => {
+      (getBooleanSetting as jest.Mock).mockImplementation(async (key: string) => key === 'firstLaunchTutorialCompleted');
+      (getStringSetting as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
+        return key === 'lastAcknowledgedUpdateNoticeVersion' ? '' : fallback;
+      });
+      const callOrder: string[] = [];
+      const openAutomaticAppUpdateNotice = jest.fn(() => {
+        callOrder.push('openAutomaticAppUpdateNotice');
+      });
+      const refreshAchievementState = jest.fn(async () => {
+        callOrder.push('refreshAchievementState');
+      });
+
+      renderHook(() =>
+        useAppInitialization(makeOptions({ currentAppUpdateNotice: UPDATE_NOTICE, openAutomaticAppUpdateNotice, refreshAchievementState })),
+      );
+      await flushPromises();
+
+      expect(openAutomaticAppUpdateNotice).toHaveBeenCalledTimes(1);
+      expect(callOrder.indexOf('openAutomaticAppUpdateNotice')).toBeGreaterThan(callOrder.indexOf('refreshAchievementState'));
+    });
+
+    it.each([
+      ['初回チュートリアルが未完了', false, '', UPDATE_NOTICE],
+      ['現在版が既読', true, '1.3.0', UPDATE_NOTICE],
+      ['現在版の通知がない', true, '', null],
+    ])('%sのときは自動表示を予約しない', async (_label, tutorialCompleted, acknowledgedVersion, currentAppUpdateNotice) => {
+      (getBooleanSetting as jest.Mock).mockImplementation(async (key: string) =>
+        key === 'firstLaunchTutorialCompleted' ? tutorialCompleted : false,
+      );
+      (getStringSetting as jest.Mock).mockImplementation(async (key: string, fallback: string) =>
+        key === 'lastAcknowledgedUpdateNoticeVersion' ? acknowledgedVersion : fallback,
+      );
+      const openAutomaticAppUpdateNotice = jest.fn();
+
+      renderHook(() => useAppInitialization(makeOptions({ currentAppUpdateNotice, openAutomaticAppUpdateNotice })));
+      await flushPromises();
+
+      expect(openAutomaticAppUpdateNotice).not.toHaveBeenCalled();
     });
   });
 

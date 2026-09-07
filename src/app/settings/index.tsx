@@ -26,11 +26,14 @@ export default function SettingsRoute(): React.ReactElement {
       mapType={s.mapType}
       showPhotosOnMap={s.showPhotosOnMap}
       isUpdatingPhotoSetting={s.isUpdatingPhotoSetting}
+      hasStayPlaces={s.stayPlaces.length > 0}
+      showStayPlacesOnMap={s.showStayPlacesOnMap}
       isImportingGpx={s.isImportingGpx}
       premiumAccessState={s.premiumAccessState}
       revenueCatAppUserId={s.revenueCatAppUserId}
       appVersion={s.appVersion}
       buildNumber={s.buildNumber}
+      hasCurrentAppUpdateNotice={s.currentAppUpdateNotice !== null}
       premiumOfferingSummary={s.premiumOfferingSummary}
       isLoadingPremiumOffering={s.isLoadingPremiumOffering}
       isPurchasingPremiumPackage={s.isPurchasingPremiumPackage}
@@ -46,10 +49,21 @@ export default function SettingsRoute(): React.ReactElement {
       onUpdateCrashReportingEnabled={s.updateCrashReportingEnabled}
       onToggleMapType={s.toggleMapType}
       onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
+      onUpdateShowStayPlacesOnMap={s.updateShowStayPlacesOnMap}
+      photoDisplayLimitId={s.photoDisplayLimitId}
+      onUpdatePhotoDisplayLimitId={s.updatePhotoDisplayLimitId}
+      isSyncingPhotoLibrary={s.isSyncingPhotoLibrary}
+      onReloadPhotoLibrary={() => {
+        s.startPhotoLibrarySync().catch((error: unknown) => {
+          console.warn('Failed to start photo library sync:', error);
+        });
+      }}
       selectedAppColorPresetId={s.selectedAppColorPresetId}
       onUpdateAppColorPreset={s.updateAppColorPreset}
       onUpdateUserLocationIcon={(iconId) => s.updateUserLocationIcon(iconId, s.premiumAccessState, s.showPremiumLockedMessage)}
+      onOpenStayPlaces={s.openStayPlaces}
       onOpenAboutAppScreen={() => router.push('/settings/about')}
+      onOpenLatestAppUpdateNotice={s.openLatestAppUpdateNotice}
       onOpenFirstLaunchTutorial={s.openFirstLaunchTutorial}
       onOpenFaqScreen={() => router.push('/settings/faq')}
       onOpenLicenseScreen={() => router.push('/settings/licenses')}

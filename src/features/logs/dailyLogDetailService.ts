@@ -2,6 +2,7 @@ import { getLocationPointAdminAreaName } from '@/features/achievements/adminArea
 import { getAchievementDefinition } from '@/features/achievements/achievementDefinitions';
 import { getAchievementUnlocksByDate } from '@/features/achievements/achievementRepository';
 import { coordinateToGridCell } from '@/features/location/grid/gridCell';
+import { toEffectiveLocationPoint } from '@/features/location/effectiveLocationPoint';
 import { getVisitedCellsByIds } from '@/features/location/visitedCellRepository';
 import { createDailyDetailReport, DailyDetailReport } from '@/features/reports/dailyReport';
 import type { LocationPoint } from '@/types/gps';
@@ -35,7 +36,7 @@ export async function fetchDailyLogDetailData(localDate: string): Promise<DailyL
   const points = await getLocationPointsByDate(localDate);
   const firstPoint = points[0] ?? null;
   const lastPoint = points.at(-1) ?? null;
-  const cellIds = [...new Set(points.map((point) => coordinateToGridCell(point).cellId))];
+  const cellIds = [...new Set(points.map(toEffectiveLocationPoint).map((point) => coordinateToGridCell(point).cellId))];
 
   const [visitedCells, achievementUnlocks, startArea, endArea] = await Promise.all([
     getVisitedCellsByIds(cellIds),

@@ -1,12 +1,27 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import type { ComponentProps } from 'react';
-import { useState } from 'react';
-import { Alert, Modal, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
 
-import { CRASH_REPORTING_SETTING_DESCRIPTION, CRASH_REPORTING_TOGGLE_LABEL } from '@/ui/appText';
+import {
+  CRASH_REPORTING_SETTING_DESCRIPTION,
+  CRASH_REPORTING_TOGGLE_LABEL,
+  PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION,
+  PHOTO_DISPLAY_LIMIT_SETTING_LABEL,
+  PHOTO_LIBRARY_RELOAD_DESCRIPTION,
+  PHOTO_LIBRARY_RELOAD_LABEL,
+  STAY_PLACES_SETTING_DESCRIPTION,
+  STAY_PLACES_SETTING_LABEL,
+  SHOW_STAY_PLACES_ON_MAP_DESCRIPTION,
+  SHOW_STAY_PLACES_ON_MAP_LABEL,
+} from '@/ui/appText';
+import {
+  DEFAULT_PHOTO_DISPLAY_LIMIT_ID,
+  PHOTO_DISPLAY_LIMIT_OPTIONS,
+  type PhotoDisplayLimitId,
+} from '@/features/settings/photoDisplayLimitOptions';
 import { USER_LOCATION_ICON_OPTIONS, UserLocationIconId } from '@/features/customization/customizationOptions';
 import { APP_COLOR_PRESETS, AppColorPresetId, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getDefaultPremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
@@ -21,6 +36,7 @@ import { InfoBlock } from './InfoBlock';
 import { OptionGroup } from './OptionGroup';
 import { ScreenSection } from './ScreenSection';
 import { SelectionTile } from './SelectionTile';
+import { SelectionDropdown } from './SelectionDropdown';
 
 /** 設定画面のprops。 */
 export type SettingsScreenProps = {
@@ -48,6 +64,14 @@ export type SettingsScreenProps = {
   showPhotosOnMap: boolean;
   /** 写真表示設定を保存中か。 */
   isUpdatingPhotoSetting: boolean;
+  /** 滞在場所が1件以上登録されているか。 */
+  hasStayPlaces: boolean;
+  /** 滞在場所アイコンを地図に表示するか。 */
+  showStayPlacesOnMap: boolean;
+  /** 選択中の「地図に表示する写真」設定。 */
+  photoDisplayLimitId: PhotoDisplayLimitId;
+  /** 写真ライブラリの全件再読み込み中か。 */
+  isSyncingPhotoLibrary: boolean;
   /** GPXインポート処理中か。 */
   isImportingGpx: boolean;
   /** Plus権限状態。 */
@@ -58,6 +82,8 @@ export type SettingsScreenProps = {
   appVersion: string | null;
   /** アプリのビルド番号（例: 21）。未取得ならnull。 */
   buildNumber: string | null;
+  /** 現在版に対応する更新通知があるかどうか。 */
+  hasCurrentAppUpdateNotice: boolean;
   /** RevenueCat Offeringの商品概要。 */
   premiumOfferingSummary: PremiumOfferingSummary | null;
   /** 商品情報を読み込み中か。 */
@@ -86,14 +112,24 @@ export type SettingsScreenProps = {
   onToggleMapType: () => void;
   /** 写真表示設定の更新処理。 */
   onUpdateShowPhotosOnMap: (enabled: boolean) => Promise<void>;
+  /** 滞在場所表示設定の更新処理。 */
+  onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
+  /** 「地図に表示する写真」設定の更新処理。 */
+  onUpdatePhotoDisplayLimitId: (id: PhotoDisplayLimitId) => Promise<void>;
+  /** 写真ライブラリの全件再読み込みを開始する処理。 */
+  onReloadPhotoLibrary: () => void;
   /** 現在地アイコン更新処理。 */
   onUpdateUserLocationIcon: (iconId: UserLocationIconId) => void;
   /** 選択中のアプリカラープリセットID。 */
   selectedAppColorPresetId: AppColorPresetId;
   /** アプリカラープリセット更新処理。 */
   onUpdateAppColorPreset: (presetId: AppColorPresetId) => void;
+  /** 滞在場所の設定画面を開く。 */
+  onOpenStayPlaces: () => void;
   /** このアプリについて画面を開く処理。 */
   onOpenAboutAppScreen: () => void;
+  /** 現在版の最新更新通知を設定起点で開く処理。 */
+  onOpenLatestAppUpdateNotice: () => void;
   /** 初回チュートリアルを再表示する処理。 */
   onOpenFirstLaunchTutorial: () => void;
   /** よくある質問画面を開く処理。 */
@@ -148,11 +184,16 @@ export function SettingsScreen({
   mapType,
   showPhotosOnMap,
   isUpdatingPhotoSetting,
+  hasStayPlaces,
+  showStayPlacesOnMap,
+  photoDisplayLimitId,
+  isSyncingPhotoLibrary,
   isImportingGpx,
   premiumAccessState,
   revenueCatAppUserId,
   appVersion,
   buildNumber,
+  hasCurrentAppUpdateNotice,
   premiumOfferingSummary,
   isLoadingPremiumOffering,
   isPurchasingPremiumPackage,
@@ -161,6 +202,7 @@ export function SettingsScreen({
   selectedUserLocationIconId,
   selectedAppColorPresetId,
   onUpdateAppColorPreset,
+  onOpenStayPlaces,
   onBackToMap,
   onStartRecording,
   onRequestLocationPermission,
@@ -169,8 +211,12 @@ export function SettingsScreen({
   onUpdateCrashReportingEnabled,
   onToggleMapType,
   onUpdateShowPhotosOnMap,
+  onUpdateShowStayPlacesOnMap,
+  onUpdatePhotoDisplayLimitId,
+  onReloadPhotoLibrary,
   onUpdateUserLocationIcon,
   onOpenAboutAppScreen,
+  onOpenLatestAppUpdateNotice,
   onOpenFirstLaunchTutorial,
   onOpenFaqScreen,
   onOpenLicenseScreen,
@@ -272,6 +318,47 @@ export function SettingsScreen({
             />
           </View>
 
+          <PhotoDisplayLimitPicker
+            photoDisplayLimitId={photoDisplayLimitId}
+            styles={styles}
+            theme={theme}
+            onUpdatePhotoDisplayLimitId={onUpdatePhotoDisplayLimitId}
+          />
+
+          <InfoBlock description={PHOTO_LIBRARY_RELOAD_DESCRIPTION} styles={styles} title={PHOTO_LIBRARY_RELOAD_LABEL} />
+          <ActionPill
+            alignLeft
+            disabled={isSyncingPhotoLibrary}
+            icon={<MaterialCommunityIcons name="image-sync-outline" size={22} color={theme.colors.text} />}
+            label={isSyncingPhotoLibrary ? '読み込み中...' : PHOTO_LIBRARY_RELOAD_LABEL}
+            accessibilityLabel={PHOTO_LIBRARY_RELOAD_LABEL}
+            styles={styles}
+            onPress={onReloadPhotoLibrary}
+          />
+
+          {hasStayPlaces ? (
+            <View style={styles.settingsInlineRow}>
+              <View style={styles.settingsInlineText}>
+                <Text style={styles.formItemTitle}>{SHOW_STAY_PLACES_ON_MAP_LABEL}</Text>
+                <Text style={styles.formItemDescription}>{SHOW_STAY_PLACES_ON_MAP_DESCRIPTION}</Text>
+              </View>
+              <Switch
+                accessibilityLabel={SHOW_STAY_PLACES_ON_MAP_LABEL}
+                value={showStayPlacesOnMap}
+                onValueChange={(value) => {
+                  onUpdateShowStayPlacesOnMap(value).catch((error: unknown) => {
+                    Alert.alert(
+                      '滞在場所表示設定失敗',
+                      error instanceof Error ? error.message : '滞在場所表示設定を保存できませんでした。',
+                    );
+                  });
+                }}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                thumbColor="#ffffff"
+              />
+            </View>
+          ) : null}
+
           <OptionGroup styles={styles} title="マップのテーマ">
             <SelectionTile
               icon={<MaterialCommunityIcons name="map-outline" size={42} color={theme.colors.text} />}
@@ -308,6 +395,17 @@ export function SettingsScreen({
               onUpdateUserLocationIcon={onUpdateUserLocationIcon}
             />
           ) : null}
+        </ScreenSection>
+
+        <ScreenSection styles={styles} title={STAY_PLACES_SETTING_LABEL}>
+          <InfoBlock description={STAY_PLACES_SETTING_DESCRIPTION} styles={styles} title={STAY_PLACES_SETTING_LABEL} />
+          <ActionPill
+            alignLeft
+            icon={<MaterialCommunityIcons name="map-marker-radius-outline" size={22} color={theme.colors.text} />}
+            label="滞在場所を設定する"
+            styles={styles}
+            onPress={onOpenStayPlaces}
+          />
         </ScreenSection>
 
         <ScreenSection styles={styles} title="サブスク情報">
@@ -450,6 +548,15 @@ export function SettingsScreen({
             styles={styles}
             onPress={onOpenAboutAppScreen}
           />
+          {hasCurrentAppUpdateNotice ? (
+            <ActionPill
+              alignLeft
+              icon={<Feather name="gift" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
+              label="最新の更新内容を見る"
+              styles={styles}
+              onPress={onOpenLatestAppUpdateNotice}
+            />
+          ) : null}
           <ActionPill
             alignLeft
             icon={<Feather name="book-open" size={16} color={theme.name === 'dark' ? '#ffffff' : '#333333'} />}
@@ -671,9 +778,7 @@ type AppColorPickerProps = {
 
 /** アプリカラープリセット選択ドロップダウン。 */
 function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: AppColorPickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const selectedPreset = getAppColorPreset(selectedPresetId);
-  const dotColor = theme.name === 'dark' ? selectedPreset.dark.primary : selectedPreset.light.primary;
 
   return (
     <OptionGroup
@@ -681,45 +786,52 @@ function AppColorPicker({ styles, theme, selectedPresetId, onUpdatePreset }: App
       title="アプリカラー (Strollia Plus)"
       note="現在地アイコンの背景・エリアの塗り色など、アプリ全体のカラーが変わります。"
     >
-      <Pressable
-        accessibilityRole="button"
+      <SelectionDropdown
         accessibilityLabel="アプリカラーを選択"
-        onPress={() => setIsOpen(true)}
-        style={styles.colorPresetDropdownButton}
-      >
-        <View style={[styles.colorPresetDot, { backgroundColor: dotColor }]} />
-        <Text style={styles.colorPresetLabel}>{selectedPreset.label}</Text>
-        <MaterialCommunityIcons name="chevron-down" size={18} color={theme.colors.mutedText} />
-      </Pressable>
+        getKey={(preset) => preset.id}
+        getLabel={(preset) => preset.label}
+        options={APP_COLOR_PRESETS}
+        selectedValue={selectedPreset}
+        styles={styles}
+        theme={theme}
+        renderLeading={(preset) => (
+          <View style={[styles.colorPresetDot, { backgroundColor: theme.name === 'dark' ? preset.dark.primary : preset.light.primary }]} />
+        )}
+        onSelect={(preset) => onUpdatePreset(preset.id)}
+      />
+    </OptionGroup>
+  );
+}
 
-      <Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
-        <Pressable style={styles.colorPresetModalBackdrop} onPress={() => setIsOpen(false)}>
-          <View style={styles.colorPresetModalSheet}>
-            {APP_COLOR_PRESETS.map((preset) => {
-              const presetDotColor = theme.name === 'dark' ? preset.dark.primary : preset.light.primary;
-              const isSelected = preset.id === selectedPresetId;
+type PhotoDisplayLimitPickerProps = Pick<SettingsScreenProps, 'styles' | 'theme' | 'photoDisplayLimitId' | 'onUpdatePhotoDisplayLimitId'>;
 
-              return (
-                <Pressable
-                  key={preset.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={preset.label}
-                  accessibilityState={{ selected: isSelected }}
-                  onPress={() => {
-                    onUpdatePreset(preset.id);
-                    setIsOpen(false);
-                  }}
-                  style={styles.colorPresetRow}
-                >
-                  <View style={[styles.colorPresetDot, { backgroundColor: presetDotColor }]} />
-                  <Text style={styles.colorPresetRowLabel}>{preset.label}</Text>
-                  {isSelected && <MaterialCommunityIcons name="check" size={18} color={theme.colors.primary} />}
-                </Pressable>
-              );
-            })}
-          </View>
-        </Pressable>
-      </Modal>
+/**
+ * 「地図に表示する写真」の上限を選ぶドロップダウン。
+ *
+ * 基準は**全体の最新N件**であり、表示範囲ごとのN件ではない。ラベルと挙動を一致させるためで、
+ * 古い場所へ移動すると何も表示されないという副作用は、設定した本人には理解できる挙動である(設計書 §4.6)。
+ */
+function PhotoDisplayLimitPicker({ styles, theme, photoDisplayLimitId, onUpdatePhotoDisplayLimitId }: PhotoDisplayLimitPickerProps) {
+  const selectedOption =
+    PHOTO_DISPLAY_LIMIT_OPTIONS.find((option) => option.id === photoDisplayLimitId) ??
+    PHOTO_DISPLAY_LIMIT_OPTIONS.find((option) => option.id === DEFAULT_PHOTO_DISPLAY_LIMIT_ID)!;
+
+  return (
+    <OptionGroup styles={styles} title={PHOTO_DISPLAY_LIMIT_SETTING_LABEL} note={PHOTO_DISPLAY_LIMIT_SETTING_DESCRIPTION}>
+      <SelectionDropdown
+        accessibilityLabel={`${PHOTO_DISPLAY_LIMIT_SETTING_LABEL}を選択`}
+        getKey={(option) => option.id}
+        getLabel={(option) => option.label}
+        options={PHOTO_DISPLAY_LIMIT_OPTIONS}
+        selectedValue={selectedOption}
+        styles={styles}
+        theme={theme}
+        onSelect={(option) => {
+          onUpdatePhotoDisplayLimitId(option.id).catch((error: unknown) => {
+            Alert.alert('設定保存失敗', error instanceof Error ? error.message : '設定を保存できませんでした。');
+          });
+        }}
+      />
     </OptionGroup>
   );
 }

@@ -13,16 +13,19 @@ export type DashboardActionProps = {
   scale: number;
   /** 画面共通スタイル。 */
   styles: AppStyles;
+  /** 操作を受け付けない状態か。 */
+  disabled?: boolean;
   /** 押下処理。 */
   onPress: () => void;
 };
 
 /** 下部ナビゲーションのアイコンボタンを描画する。 */
-export function DashboardAction({ icon, label, onPress, scale, styles }: DashboardActionProps) {
+export function DashboardAction({ icon, label, onPress, scale, styles, disabled = false }: DashboardActionProps) {
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
+      disabled={disabled}
       onPress={onPress}
       style={[styles.dashboardAction, getScaledDashboardActionStyle(scale)]}
     >

@@ -60,6 +60,10 @@ export function pathnameToSettingsSentryScreenName(pathname: string): string {
     return 'Settings:Faq';
   }
 
+  if (after === '/stay-places' || after.startsWith('/stay-places/')) {
+    return 'Settings:StayPlaces';
+  }
+
   if (after.startsWith('/licenses/') && after !== '/licenses/') {
     // /settings/licenses/[name] → Settings:LicenseDetail
     return 'Settings:LicenseDetail';

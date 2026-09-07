@@ -254,6 +254,13 @@ export function createAchievementStyles(theme: AppTheme) {
       fontWeight: '900',
       lineHeight: 19,
     },
+    // App update notice dialog
+    appUpdateNoticeDialogContent: {
+      alignItems: 'center',
+      alignSelf: 'stretch',
+      gap: 12,
+      paddingTop: 22,
+    },
     // Dialog
     dialogSwipeHint: {
       color: colors.mutedText,

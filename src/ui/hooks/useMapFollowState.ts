@@ -12,6 +12,13 @@ import { toDisplaySpeedKmh } from './useRawLocationSpeed';
 /** Android操作中のonRegionChangeを間引く間隔。エリア追従の速さとDB負荷のバランス。 */
 const REGION_CHANGE_THROTTLE_MS = 150;
 
+/**
+ * ユーザー操作中とみなす最後のイベントからの無操作アイドル時間。
+ * onRegionChangeComplete が届かない場合のフォールバックとして、この時間イベントが来なければ
+ * Grid取得用regionを直近regionへ同期する。詳細は設計書 §3.1 を参照。
+ */
+const USER_MAP_GESTURE_IDLE_TIMEOUT_MS = 1000;
+
 /** `useMapFollowState` フックの引数。 */
 export type UseMapFollowStateParams = {
   /**
@@ -53,6 +60,12 @@ export type UseMapFollowStateResult = {
   isMapReady: boolean;
   /** MapView の現在表示範囲。スクロール中も追従させるために保持する。 */
   visibleRegion: Region | null;
+  /**
+   * Visited Grid取得用の表示範囲。
+   * ユーザーがドラッグ操作中は更新しない。DB取得と大量Polygon更新をジェスチャー中に走らせないため、
+   * 地図カメラ用の visibleRegion とは別に持つ（詳細は設計書 §3.1）。
+   */
+  gridSyncRegion: Region | null;
   /** 現在の走行速度（km/h）。位置更新イベントから算出する。 */
   currentSpeedKmh: number;
   /** 現在の地図種別。standard / hybrid を切り替える。 */
@@ -123,6 +136,14 @@ export type UseMapFollowStateResult = {
  *           地図復帰時 region 復元
  *
  * ユーザー向け挙動は App.tsx のそれと完全に同一に保つ。
+ *
+ * また、Visited Grid取得用に `gridSyncRegion` を `visibleRegion` から分離して持つ。
+ * ユーザーがドラッグ操作中（onPanDrag後）は `onRegionChange` が来ても `gridSyncRegion` を
+ * 更新せず、DB取得と大量Polygon更新をジェスチャー中に走らせないようにする。判定は
+ * onPanDragで立てるフラグのみで行い、onRegionChangeCompleteの発火有無からは推測しない
+ * （プログラム移動でも発火するため）。onRegionChangeCompleteが届かないケースに備え、
+ * 最後の操作から1000ms経過したら直近regionへ同期するアイドルタイマーをフォールバックとして
+ * 用意する（詳細は設計書 §3.1）。
  */
 export function useMapFollowState({
   screenMode,
@@ -152,8 +173,66 @@ export function useMapFollowState({
   // onMapReadyまたは最初のonRegionChangeCompleteでtrueになり、以後リセットされない。
   const [isMapReady, setIsMapReady] = useState(false);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
+  const [gridSyncRegion, setGridSyncRegion] = useState<Region | null>(null);
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
   const [mapType, setMapType] = useState<MapType>('standard');
+  /**
+   * ユーザーがドラッグ操作中かどうかを示す抑止フラグ。
+   * onPanDragで立て、onRegionChangeComplete・centerOnCoordinate・アイドルタイマー発火で下ろす。
+   * onRegionChangeCompleteの発火有無からは推測しない（プログラム移動でも発火するため）。
+   */
+  const isUserMapGestureActiveRef = useRef(false);
+  /** アイドルタイマー（USER_MAP_GESTURE_IDLE_TIMEOUT_MS）のID。setTimeoutの戻り値を保持する。 */
+  const userMapGestureIdleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * 直近に受け取った表示範囲。
+   * アイドルタイマー発火時にonRegionChangeCompleteが届いていなくても、この値へgridSyncRegionを
+   * 同期するためのフォールバック用途。
+   */
+  const latestRegionRef = useRef<Region | null>(null);
+
+  /**
+   * ユーザー操作アイドルタイマーを張り直す。
+   * 既存タイマーをclearしてから USER_MAP_GESTURE_IDLE_TIMEOUT_MS 後に再設定するため、
+   * 操作が連続している間は発火しない（「最後のイベントから1000ms何も来ていない」判定になる）。
+   *
+   * @returns なし。
+   */
+  function scheduleUserMapGestureIdleSync(): void {
+    if (userMapGestureIdleTimeoutRef.current != null) {
+      clearTimeout(userMapGestureIdleTimeoutRef.current);
+    }
+
+    userMapGestureIdleTimeoutRef.current = setTimeout(() => {
+      userMapGestureIdleTimeoutRef.current = null;
+      isUserMapGestureActiveRef.current = false;
+
+      if (latestRegionRef.current != null) {
+        setGridSyncRegion(latestRegionRef.current);
+      }
+    }, USER_MAP_GESTURE_IDLE_TIMEOUT_MS);
+  }
+
+  /**
+   * ユーザー操作アイドルタイマーを解除する。
+   * onRegionChangeCompleteやcenterOnCoordinateなど、操作完了・プログラム移動が確定した契機で呼ぶ。
+   *
+   * @returns なし。
+   */
+  function clearUserMapGestureIdleSync(): void {
+    if (userMapGestureIdleTimeoutRef.current != null) {
+      clearTimeout(userMapGestureIdleTimeoutRef.current);
+      userMapGestureIdleTimeoutRef.current = null;
+    }
+  }
+
+  // アンマウント時にアイドルタイマーを掃除する。クリーンアップを怠るとアンマウント後の
+  // setGridSyncRegion呼び出し（Reactの警告対象）につながる。
+  useEffect(() => {
+    return () => {
+      clearUserMapGestureIdleSync();
+    };
+  }, []);
 
   /**
    * 指定座標が画面中心になるよう地図を移動する。
@@ -170,6 +249,10 @@ export function useMapFollowState({
 
       const region = createUserCenteredRegion(coordinate);
       setVisibleRegion(region);
+      latestRegionRef.current = region;
+      isUserMapGestureActiveRef.current = false;
+      clearUserMapGestureIdleSync();
+      setGridSyncRegion(region);
       incrementVisitedGridRefreshVersionRef.current();
       mapRef.current?.animateToRegion(region, animated ? 500 : 250);
     },
@@ -273,6 +356,8 @@ export function useMapFollowState({
    */
   function handleMapPanDrag(): void {
     setIsFollowingUserLocation(false);
+    isUserMapGestureActiveRef.current = true;
+    scheduleUserMapGestureIdleSync();
   }
 
   /**
@@ -290,6 +375,10 @@ export function useMapFollowState({
     setIsMapReady(true);
     regionChangeThrottleRef.current = Date.now();
     setVisibleRegion(region);
+    latestRegionRef.current = region;
+    isUserMapGestureActiveRef.current = false;
+    clearUserMapGestureIdleSync();
+    setGridSyncRegion(region);
   }
 
   /**
@@ -311,6 +400,16 @@ export function useMapFollowState({
 
     regionChangeThrottleRef.current = now;
     setVisibleRegion(region);
+    latestRegionRef.current = region;
+
+    // ユーザー操作中（onPanDrag済み）はGrid取得用regionを更新せず、アイドルタイマーだけ張り直す。
+    // 操作中でなければプログラム移動（追従センタリング等）由来のイベントなので即時同期する。
+    if (isUserMapGestureActiveRef.current) {
+      scheduleUserMapGestureIdleSync();
+      return;
+    }
+
+    setGridSyncRegion(region);
   }
 
   /**
@@ -354,7 +453,12 @@ export function useMapFollowState({
   function prepareMapRegionRestore(): void {
     if (shouldRestoreMapRegionOnMapOpen({ userCoordinate, isFollowingUserLocation }) && userCoordinate) {
       shouldRestoreMapRegionOnOpenRef.current = true;
-      setVisibleRegion(createUserCenteredRegion(userCoordinate));
+      const region = createUserCenteredRegion(userCoordinate);
+      setVisibleRegion(region);
+      latestRegionRef.current = region;
+      isUserMapGestureActiveRef.current = false;
+      clearUserMapGestureIdleSync();
+      setGridSyncRegion(region);
       incrementVisitedGridRefreshVersionRef.current();
       // expo-router 環境では地図ルートがマウントされたままのため、カウンターを
       // インクリメントして restore effect を強制的にトリガーする。
@@ -368,6 +472,7 @@ export function useMapFollowState({
     isFollowingUserLocation,
     isMapReady,
     visibleRegion,
+    gridSyncRegion,
     currentSpeedKmh,
     mapType,
     handleUserLocationChange,

@@ -161,6 +161,72 @@ export function createSettingsStyles(theme: AppTheme) {
       fontSize: 23,
       lineHeight: 30,
     },
+    stayPlaceEmojiImage: {
+      height: 32,
+      width: 32,
+    },
+    stayPlaceEmojiPickerButton: {
+      alignItems: 'center',
+      backgroundColor: 'transparent',
+      borderColor: settingsBorder,
+      borderWidth: 1,
+      justifyContent: 'center',
+      minHeight: 72,
+      minWidth: 72,
+      padding: 12,
+    },
+    stayPlaceEmojiPickerButtonSelected: {
+      backgroundColor: selectionSurface,
+      borderColor: colors.primary,
+      borderWidth: 3,
+    },
+    stayPlaceEmojiPickerGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+    stayPlaceEmojiPickerImage: {
+      height: 28,
+      width: 28,
+    },
+    stayPlaceEmojiPickerModal: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    stayPlaceEditorInput: {
+      borderBottomColor: settingsBorder,
+      borderBottomWidth: 1,
+      color: settingsText,
+      fontSize: 16,
+      fontWeight: '400',
+      minHeight: 44,
+      paddingHorizontal: 0,
+      paddingVertical: 8,
+    },
+    stayPlaceEditorMap: {
+      height: 260,
+      width: '100%',
+    },
+    stayPlaceEditorMapCenterMarker: {
+      alignItems: 'center',
+      bottom: 0,
+      justifyContent: 'center',
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+    },
+    stayPlaceEditorMapContainer: {
+      borderColor: settingsBorder,
+      borderWidth: 1,
+      overflow: 'hidden',
+    },
+    stayPlaceFormError: {
+      color: settingsDanger,
+      fontSize: 13,
+      fontWeight: '400',
+      lineHeight: 18,
+    },
 
     // Settings card / rows
     settingsAction: {
@@ -472,6 +538,10 @@ export function createSettingsStyles(theme: AppTheme) {
       borderTopRightRadius: 20,
       paddingBottom: 34,
       paddingTop: 8,
+    },
+    colorPresetModalScroll: {
+      flexGrow: 0,
+      flexShrink: 1,
     },
     colorPresetRow: {
       alignItems: 'center',

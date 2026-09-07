@@ -4,7 +4,8 @@ import { withExclusiveTransaction } from '@/db/database';
 import { NewLocationPoint } from '@/types/gps';
 import { distanceMeters } from '@/utils/distance';
 import { getVisitedCellsForLocationPoint } from '@/features/location/grid/gridInterpolation';
-import { upsertVisitedCellsInCurrentTransaction } from '@/features/location/visitedCellRepository';
+import { upsertVisitedCellVisitsInCurrentTransaction } from '@/features/location/visitedCellRepository';
+import type { VisitedCellVisit } from '@/features/location/visitedCellRepository';
 
 /** GPX インポートの実行結果。 */
 export type GpxImportResult = {
@@ -52,15 +53,6 @@ export class GpxImportInterruptedError extends Error {
 export const IMPORT_TRANSACTION_CHUNK_SIZE = 100;
 
 /**
- * チャンク間でロックを解放して待機する時間(ミリ秒)。
- *
- * ロック解放直後に次チャンクのBEGINが走ると、busy_timeout で待機中の
- * バックグラウンドGPS記録の書き込みがロックを取得できないまま
- * 待ち続ける可能性があるため、明示的に書き込みの隙間を作る。
- */
-const INTER_CHUNK_DELAY_MS = 50;
-
-/**
  * GPX 由来の GPS ポイントを既存データ優先で SQLite へ取り込む。
  *
  * - ポイントは `recorded_at` 昇順にソートしてから挿入する。
@@ -85,11 +77,6 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
     const chunk = sortedPoints.slice(chunkIndex * IMPORT_TRANSACTION_CHUNK_SIZE, (chunkIndex + 1) * IMPORT_TRANSACTION_CHUNK_SIZE);
     const isLastChunk = chunkIndex === chunkCount - 1;
 
-    if (chunkIndex > 0) {
-      // 待機中のバックグラウンド書き込みへ書き込みの隙間を譲る
-      await new Promise<void>((resolve) => setTimeout(resolve, INTER_CHUNK_DELAY_MS));
-    }
-
     // チャンク開始時点の件数。失敗チャンクはロールバックされるため、この時点の値が取り込み済みの実態になる
     const importedCountBeforeChunk = importedPointCount;
     const skippedCountBeforeChunk = skippedPointCount;
@@ -100,11 +87,19 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
         // チャンクの所要時間を短縮することで、書き込みロックの保持時間も短くなる。
         const insertPointStatement = await txn.prepareAsync(INSERT_LOCATION_POINT_SQL);
         const upsertDailyLogStatement = await txn.prepareAsync(UPSERT_DAILY_LOG_SQL);
+        const visitedCellVisits: VisitedCellVisit[] = [];
 
         try {
           for (const point of chunk) {
+            // GPXは観測済み履歴なので現在の滞在場所で再判定せず、生座標を有効座標として固定する。
+            const importedPoint: NewLocationPoint = {
+              ...point,
+              effectiveLatitude: point.latitude,
+              effectiveLongitude: point.longitude,
+              snappedStayPlaceId: null,
+            };
             const wasInserted = await insertImportedLocationPoint(
-              point,
+              importedPoint,
               previousImportedPoint,
               now,
               insertPointStatement,
@@ -115,11 +110,13 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
               continue;
             }
 
-            const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, point);
-            await upsertVisitedCellsInCurrentTransaction(visitedCells, point.recordedAt, txn);
-            previousImportedPoint = point;
+            const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, importedPoint);
+            visitedCellVisits.push(...visitedCells.map((cell) => ({ cell, visitedAt: importedPoint.recordedAt })));
+            previousImportedPoint = importedPoint;
             importedPointCount += 1;
           }
+
+          await upsertVisitedCellVisitsInCurrentTransaction(visitedCellVisits, txn);
 
           if (isLastChunk) {
             await insertImportHistory(sortedPoints, fileName, importedPointCount, skippedPointCount, now, txn);
@@ -145,6 +142,9 @@ const INSERT_LOCATION_POINT_SQL = `INSERT OR IGNORE INTO location_points (
   local_date,
   latitude,
   longitude,
+  effective_latitude,
+  effective_longitude,
+  snapped_stay_place_id,
   altitude,
   speed,
   heading,
@@ -152,7 +152,7 @@ const INSERT_LOCATION_POINT_SQL = `INSERT OR IGNORE INTO location_points (
   altitude_accuracy,
   source,
   created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`;
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`;
 
 /** 日別ログの集計値を更新するUPSERT SQL。チャンク内でプリペアして使い回す。 */
 const UPSERT_DAILY_LOG_SQL = `INSERT INTO daily_logs (
@@ -200,6 +200,9 @@ async function insertImportedLocationPoint(
     point.localDate,
     point.latitude,
     point.longitude,
+    point.effectiveLatitude ?? point.latitude,
+    point.effectiveLongitude ?? point.longitude,
+    point.snappedStayPlaceId ?? null,
     point.altitude,
     point.speed,
     point.heading,

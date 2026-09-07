@@ -1,5 +1,5 @@
 import * as ReactNative from 'react-native';
-import { Animated, Text } from 'react-native';
+import { Animated, StyleSheet, Text } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -58,6 +58,8 @@ function createProps() {
     currentAreaLabel: { primary: '船橋市', secondary: '行田' },
     showPhotosOnMap: false,
     isUpdatingPhotoSetting: false,
+    hasStayPlaces: true,
+    showStayPlacesOnMap: true,
     onRecenterOnUserLocation: jest.fn(),
     onOpenDailyLogs: jest.fn(),
     onOpenAchievements: jest.fn(),
@@ -65,6 +67,7 @@ function createProps() {
     onOpenSettings: jest.fn(),
     onToggleMapType: jest.fn(),
     onUpdateShowPhotosOnMap: jest.fn().mockResolvedValue(undefined),
+    onUpdateShowStayPlacesOnMap: jest.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -125,6 +128,106 @@ describe('マップ下部ダッシュボード', () => {
     expect(screen.getByText('標準マップ')).toBeTruthy();
     expect(screen.getByText('航空写真')).toBeTruthy();
     expect(screen.getByText('マップ上に写真を表示')).toBeTruthy();
+    expect(screen.getByText('マップ上に滞在場所を表示')).toBeTruthy();
+    expect(screen.getByText('滞在場所のアイコンをマップ上に表示します')).toBeTruthy();
+  });
+
+  test('表示設定パネルは滞在場所ラベルを1行で表示できる幅を確保する', () => {
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    const panel = screen.UNSAFE_getAllByProps({}).find((node) => StyleSheet.flatten(node.props.style)?.width === 336);
+    const stayPlacesLabel = screen.getByText('マップ上に滞在場所を表示');
+
+    expect(StyleSheet.flatten(panel?.props.style).width).toBeGreaterThanOrEqual(330);
+    expect(stayPlacesLabel.props.numberOfLines).toBe(1);
+    expect(stayPlacesLabel.props.adjustsFontSizeToFit).toBe(true);
+  });
+
+  test('狭い画面では表示設定パネルをダッシュボードの親幅に収める', () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 320, height: 667, scale: 2, fontScale: 1 });
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    const panel = screen.UNSAFE_getAllByProps({}).find((node) => StyleSheet.flatten(node.props.style)?.width === 304);
+
+    expect(panel).toBeDefined();
+  });
+
+  test('表示設定パネルを開いている間は背景のダッシュボード操作を無効化する', () => {
+    const props = createProps();
+    render(<MapBottomDashboard {...props} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    const scrim = screen.getByLabelText('マップ表示設定を閉じる');
+    expect(StyleSheet.flatten(scrim.props.style).backgroundColor).toBe('rgba(0, 0, 0, 0.56)');
+
+    fireEvent.press(screen.getByLabelText('実績'));
+    fireEvent.press(screen.getByLabelText('現在地へ戻る'));
+    fireEvent.press(screen.getByLabelText('日ごとの記録'));
+    fireEvent.press(screen.getByLabelText('レポートを見る'));
+    fireEvent.press(screen.getByLabelText('設定'));
+
+    expect(props.onOpenAchievements).not.toHaveBeenCalled();
+    expect(props.onRecenterOnUserLocation).not.toHaveBeenCalled();
+    expect(props.onOpenDailyLogs).not.toHaveBeenCalled();
+    expect(props.onOpenMonthlyReport).not.toHaveBeenCalled();
+    expect(props.onOpenSettings).not.toHaveBeenCalled();
+  });
+
+  test('表示設定パネルは暗幕をタップして閉じられる', () => {
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    fireEvent.press(screen.getByLabelText('マップ表示設定を閉じる'));
+
+    expect(screen.queryByText('マップ上に写真を表示')).toBeNull();
+  });
+
+  test('表示設定パネルはマップの表示ボタンを再度タップして閉じられる', () => {
+    render(<MapBottomDashboard {...createProps()} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    fireEvent.press(screen.getByLabelText('マップの表示'));
+
+    expect(screen.queryByText('マップ上に写真を表示')).toBeNull();
+  });
+
+  test('滞在場所がない場合は表示設定パネルに滞在場所表示設定を出さない', () => {
+    render(<MapBottomDashboard {...createProps()} hasStayPlaces={false} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    expect(screen.queryByText('マップ上に滞在場所を表示')).toBeNull();
+  });
+
+  test('表示設定パネルから滞在場所表示設定を切り替える', () => {
+    const props = createProps();
+    render(<MapBottomDashboard {...props} />);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+    fireEvent(screen.getByLabelText('マップ上に滞在場所を表示'), 'valueChange', false);
+
+    expect(props.onUpdateShowStayPlacesOnMap).toHaveBeenCalledWith(false);
   });
 
   test('地図種別の選択中バッジはViewで装飾しTextは文字だけ描画する', () => {

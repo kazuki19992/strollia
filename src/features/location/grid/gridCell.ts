@@ -113,6 +113,23 @@ export function coordinateToGridCell(coordinate: LatLng, cellSizeMeters = GRID_O
 }
 
 /**
+ * Web Mercatorのワールド幅を、指定セルサイズで分割したX方向のセル数を返す。
+ *
+ * 日付変更線をまたぐ検索では、この値でX番号を循環させる。セル番号の範囲は
+ * `coordinateToGridCell` と同じ丸め方に合わせる必要があるため、投影定数を呼び出し側で
+ * 重複して計算しない。
+ *
+ * @param cellSizeMeters - セルサイズ。単位はm。
+ * @returns X方向のワールド全体のセル数。
+ */
+export function getGridWorldColumnCount(cellSizeMeters: number): number {
+  const worldMinX = Math.floor(-WEB_MERCATOR_HALF_WORLD_WIDTH_METERS / cellSizeMeters);
+  const worldMaxX = Math.floor(WEB_MERCATOR_HALF_WORLD_WIDTH_METERS / cellSizeMeters);
+
+  return worldMaxX - worldMinX + 1;
+}
+
+/**
  * セルをMapView Polygon用の4頂点へ変換する。
  *
  * @param cell - 変換対象セル。

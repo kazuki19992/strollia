@@ -35,6 +35,22 @@ describe('日別詳細レポート createDailyDetailReport', () => {
     expect(report.pointCount).toBe(3);
   });
 
+  it('訪問エリア数は保存済みの有効座標から計算する', () => {
+    const snappedPoints = [
+      { ...basePoint, effectiveLatitude: 35.5, effectiveLongitude: 139.5 },
+      { ...basePoint, id: 2, latitude: 35.9, longitude: 139.9, effectiveLatitude: 35.5, effectiveLongitude: 139.5 },
+    ];
+
+    const report = createDailyDetailReport({
+      localDate: '2026-05-31',
+      points: snappedPoints,
+      visitedCells: [],
+      unlockedAchievements: [],
+    });
+
+    expect(report.visitedAreaCount).toBe(1);
+  });
+
   it('その日に解除した実績を表示用に保持する', () => {
     const report = createDailyDetailReport({
       localDate: '2026-05-31',

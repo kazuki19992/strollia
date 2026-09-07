@@ -1,5 +1,7 @@
 import { Image, ImageSourcePropType } from 'react-native';
 
+import { STROLLIA_APP_STORE_URL } from '@/config/storeUrls';
+
 /** 実績の分類。 */
 export type AchievementCategory = 'distance' | 'logDays' | 'prefecture' | 'municipality';
 
@@ -33,9 +35,6 @@ export type AchievementDefinition = {
   /** 将来の段階公開に備えた有効フラグ。 */
   enabled: boolean;
 };
-
-/** App Store公開ページのURL（1.0.0はApp Storeのみ公開）。 */
-export const STROLLIA_APP_STORE_URL = 'https://apps.apple.com/jp/app/id6777709044';
 
 /** X投稿画面へ渡す共有文言テンプレート。 */
 export const ACHIEVEMENT_SHARE_TEXT_TEMPLATE = `すとろりあで{achievementTitle}を達成しました！

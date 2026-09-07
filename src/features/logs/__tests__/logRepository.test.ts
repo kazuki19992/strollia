@@ -1,15 +1,17 @@
 import { db, withExclusiveTransaction } from '@/db/database';
-import { NewLocationPoint } from '@/types/gps';
+import { LocationPoint, NewLocationPoint } from '@/types/gps';
 import {
   deleteAllUserData,
   getDailyLogs,
   getLocationPointsBounds,
   getLocationPointsByMonth,
-  insertLocationPoint,
+  hasLocationPointRawIdentityInCurrentTransaction,
+  insertLocationPointInCurrentTransaction,
 } from '@/features/logs/logRepository';
 
 const mockTxn = {
-  runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100 }),
+  getFirstAsync: jest.fn(),
+  runAsync: jest.fn().mockResolvedValue({ lastInsertRowId: 100, changes: 1 }),
 };
 
 jest.mock('@/db/database', () => ({
@@ -35,23 +37,148 @@ function point(latitude: number, longitude: number): NewLocationPoint {
   };
 }
 
-describe('GPSポイント保存 insertLocationPoint', () => {
+describe('GPSポイント生観測一致 hasLocationPointRawIdentityInCurrentTransaction', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    mockTxn.getFirstAsync.mockReset();
+  });
+
+  it('recorded_at・latitude・longitudeが一致する行を同じrunnerで検索する', async () => {
+    const rawPoint = point(35, 139);
+    mockTxn.getFirstAsync.mockResolvedValueOnce({ found: 1 });
+
+    await expect(hasLocationPointRawIdentityInCurrentTransaction(rawPoint, mockTxn as never)).resolves.toBe(true);
+
+    const sql = String(mockTxn.getFirstAsync.mock.calls[0][0]).replace(/\s+/g, ' ').trim();
+    expect(sql).toContain('WHERE recorded_at = ? AND latitude = ? AND longitude = ?');
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledWith(expect.any(String), rawPoint.recordedAt, rawPoint.latitude, rawPoint.longitude);
+    expect(db.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('一致する行がない場合はfalseを返す', async () => {
+    mockTxn.getFirstAsync.mockResolvedValueOnce(null);
+
+    await expect(hasLocationPointRawIdentityInCurrentTransaction(point(35, 139), mockTxn as never)).resolves.toBe(false);
+  });
+});
+
+describe('GPSポイント保存 insertLocationPointInCurrentTransaction', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('日別サマリーへ区間距離を累積保存する', async () => {
-    (db.getFirstAsync as jest.Mock).mockResolvedValue({
+    mockTxn.getFirstAsync.mockResolvedValueOnce({
       ...point(35, 139),
       id: 1,
     });
+    mockTxn.getFirstAsync.mockResolvedValueOnce(null);
 
-    await expect(insertLocationPoint(point(35.001, 139))).resolves.toBe(100);
+    await expect(
+      insertLocationPointInCurrentTransaction(point(35.001, 139), '2026-08-23T00:00:30.000Z', mockTxn as never),
+    ).resolves.toEqual(expect.objectContaining({ locationPointId: 100 }));
 
     expect(mockTxn.runAsync).toHaveBeenCalledTimes(2);
     const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
     expect(dailySummaryArgs[4]).toBeGreaterThan(100);
     expect(dailySummaryArgs[4]).toBeLessThan(120);
+  });
+
+  it('日別距離は記録時の有効座標で計算する', async () => {
+    mockTxn.getFirstAsync.mockResolvedValueOnce({
+      ...point(35, 139),
+      id: 1,
+      effectiveLatitude: 35,
+      effectiveLongitude: 139,
+      snappedStayPlaceId: 1,
+    });
+    mockTxn.getFirstAsync.mockResolvedValueOnce(null);
+    const snappedPoint = {
+      ...point(35.001, 139.001),
+      effectiveLatitude: 35,
+      effectiveLongitude: 139,
+      snappedStayPlaceId: 1,
+    } as NewLocationPoint;
+
+    await insertLocationPointInCurrentTransaction(snappedPoint, '2026-08-23T00:00:30.000Z', mockTxn as never);
+
+    const dailySummaryArgs = mockTxn.runAsync.mock.calls[1];
+    expect(dailySummaryArgs[4]).toBe(0);
+  });
+
+  it('前後点の読取・GPS挿入・日別距離更新を同じrunnerで行う', async () => {
+    const previousPoint: LocationPoint = { ...point(35, 139), id: 1 };
+    const nextPoint: LocationPoint = { ...point(35.002, 139.002), id: 2 };
+    const newPoint = point(35.001, 139.001);
+    mockTxn.runAsync.mockResolvedValueOnce({ lastInsertRowId: 100, changes: 1 }).mockResolvedValueOnce({ changes: 1 });
+    mockTxn.getFirstAsync.mockResolvedValueOnce(previousPoint).mockResolvedValueOnce(nextPoint);
+
+    const result = await insertLocationPointInCurrentTransaction(newPoint, '2026-08-23T00:00:30.000Z', mockTxn as never);
+
+    expect(result).toEqual(expect.objectContaining({ locationPointId: 100, previousPoint, nextPoint }));
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(2);
+    const insertSql = mockTxn.runAsync.mock.calls[0][0] as string;
+    const dailySql = mockTxn.runAsync.mock.calls[1][0] as string;
+    const normalizedDailySql = dailySql.replace(/\s+/g, ' ').trim();
+    expect(insertSql).not.toContain('INSERT OR IGNORE');
+    expect(insertSql).toContain('ON CONFLICT(recorded_at, latitude, longitude) DO NOTHING');
+    expect(normalizedDailySql).toContain('WHEN daily_logs.distance_meters IS NULL THEN NULL');
+    expect(normalizedDailySql).toContain('ELSE daily_logs.distance_meters + excluded.distance_meters');
+    expect(mockTxn.runAsync.mock.calls[1][4]).toBe(result?.distanceDeltaMeters);
+    expect(db.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('GPS点のNOT NULL制約違反は呼び出し元へ伝播する', async () => {
+    mockTxn.runAsync.mockRejectedValueOnce(new Error('NOT NULL constraint failed'));
+    const invalidPoint = { ...point(35, 139), latitude: null as unknown as number };
+
+    await expect(insertLocationPointInCurrentTransaction(invalidPoint, '2026-08-23T00:00:30.000Z', mockTxn as never)).rejects.toThrow(
+      'NOT NULL constraint failed',
+    );
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('重複点のINSERTが無視された場合は日別集計を更新しない', async () => {
+    mockTxn.runAsync.mockResolvedValueOnce({ lastInsertRowId: 0, changes: 0 });
+
+    await expect(insertLocationPointInCurrentTransaction(point(35, 139), '2026-08-23T00:00:30.000Z', mockTxn as never)).resolves.toBeNull();
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('INSERT結果のchangesが不明な場合は挿入成功と推測せず日別集計を更新しない', async () => {
+    mockTxn.runAsync.mockResolvedValueOnce({ lastInsertRowId: 100 });
+
+    await expect(insertLocationPointInCurrentTransaction(point(35, 139), '2026-08-23T00:00:30.000Z', mockTxn as never)).resolves.toBeNull();
+
+    expect(mockTxn.runAsync).toHaveBeenCalledTimes(1);
+    expect(mockTxn.getFirstAsync).not.toHaveBeenCalled();
+  });
+
+  it('同じrunnerの前後点SELECTは直前点の解決後に直後点を取得する', async () => {
+    const previousPoint: LocationPoint = { ...point(35, 139), id: 1 };
+    let resolvePreviousPoint: (value: LocationPoint | null) => void = () => undefined;
+    const previousPointPromise = new Promise<LocationPoint | null>((resolve) => {
+      resolvePreviousPoint = resolve;
+    });
+    mockTxn.getFirstAsync.mockImplementationOnce(() => previousPointPromise).mockResolvedValueOnce(null);
+
+    const insertion = insertLocationPointInCurrentTransaction(point(35.001, 139), '2026-08-23T00:00:30.000Z', mockTxn as never);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(1);
+
+    resolvePreviousPoint(previousPoint);
+    await insertion;
+
+    expect(mockTxn.getFirstAsync).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -90,17 +217,21 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     jest.clearAllMocks();
   });
 
-  it('GPSログ、行政区域履歴、実績関連データを1つのトランザクションで削除する', async () => {
+  it('GPSログ、滞在場所、行政区域履歴、実績関連データ、写真メタデータを1つのトランザクションで削除する', async () => {
     await deleteAllUserData();
 
     expect(withExclusiveTransaction).toHaveBeenCalledTimes(1);
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM visited_cells');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM achievement_notification_queue');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_unlocks');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM visited_admin_areas');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM location_point_admin_areas');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_points');
-    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM daily_logs');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(1, 'DELETE FROM location_recording_state');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(2, 'DELETE FROM visited_cells');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(3, 'DELETE FROM achievement_notification_queue');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(4, 'DELETE FROM achievement_unlocks');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(5, 'DELETE FROM visited_admin_areas');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(6, 'DELETE FROM location_point_admin_areas');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(7, 'DELETE FROM stay_places');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(8, 'DELETE FROM location_points');
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(9, 'DELETE FROM daily_logs');
+    // 写真メタデータ(ジオタグ付き写真のキャッシュ)も端末から確実に消す
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(10, 'DELETE FROM photo_assets');
   });
 });
 

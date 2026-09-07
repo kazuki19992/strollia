@@ -5,6 +5,7 @@ import {
   filterSentryEventBeforeSend,
   initializeSentry,
   reportInvestigatedError,
+  reportPhotoMapDiagnostics,
   setCrashReportingEnabled,
   updateSentryScreenContext,
   updateSentrySubscriptionContext,
@@ -20,6 +21,7 @@ const mockScope = {
 
 jest.mock('@sentry/react-native', () => ({
   captureException: jest.fn(),
+  captureMessage: jest.fn(),
   init: jest.fn(),
   setContext: jest.fn(),
   setTag: jest.fn(),
@@ -193,6 +195,35 @@ describe('Sentry送信制御', () => {
       subscriptionStatus: 'free',
     });
     expect(Sentry.captureException).toHaveBeenCalledWith(error);
+  });
+
+  describe('写真マップ診断送信 reportPhotoMapDiagnostics', () => {
+    it('productionビルドでは調査タグ・ステージタグ・件数contextを付けてinfoメッセージを送る', () => {
+      process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE = 'production';
+
+      reportPhotoMapDiagnostics('load', {
+        scannedAssetCount: 200,
+        geotaggedPhotoCount: 12,
+      });
+
+      expect(Sentry.withScope).toHaveBeenCalledTimes(1);
+      expect(mockScope.setTag).toHaveBeenCalledWith('investigation_area', 'photo-map');
+      expect(mockScope.setTag).toHaveBeenCalledWith('photo_map_stage', 'load');
+      expect(mockScope.setContext).toHaveBeenCalledWith('photoMap', {
+        scannedAssetCount: 200,
+        geotaggedPhotoCount: 12,
+      });
+      expect(Sentry.captureMessage).toHaveBeenCalledWith('photo-map: load', 'info');
+    });
+
+    it('Sentry側が例外を投げても呼び出し元へ伝播させない', () => {
+      // 診断送信の失敗で写真読み込みなど本来の処理を壊さないことを保証する
+      (Sentry.withScope as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('sentry unavailable');
+      });
+
+      expect(() => reportPhotoMapDiagnostics('cluster', { clusterCount: 3 })).not.toThrow();
+    });
   });
 
   describe('不具合レポート送信のゲート', () => {

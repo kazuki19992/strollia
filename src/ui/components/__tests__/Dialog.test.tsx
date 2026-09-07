@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { PanResponder, Text } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
@@ -29,6 +28,7 @@ describe('汎用ダイアログ Dialog', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   test('autoClose=true のとき10秒経過で onClose を呼ぶ', () => {
@@ -149,6 +149,7 @@ describe('Dialog dismissible', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('dismissible=false のとき閉じるボタンを描画しない', () => {

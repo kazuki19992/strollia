@@ -8,6 +8,7 @@ import {
   toRenderRouteSegments,
   toRenderRouteCoordinates,
   toRouteCoordinates,
+  toRoutePointSegments,
 } from '@/features/map/routeMapper';
 
 function point(latitude: number, longitude: number, recordedAt = '2026-05-04T00:00:00.000Z'): LocationPoint {
@@ -28,6 +29,28 @@ function point(latitude: number, longitude: number, recordedAt = '2026-05-04T00:
 describe('ルート描画変換', () => {
   it('保存済みポイントを地図座標へ変換する', () => {
     expect(toRouteCoordinates([point(35.1, 139.1)])).toEqual([{ latitude: 35.1, longitude: 139.1 }]);
+  });
+
+  it('有効座標が保存されているポイントは通常ルートに有効座標を使う', () => {
+    const snappedPoint = {
+      ...point(35, 139),
+      effectiveLatitude: 35.5,
+      effectiveLongitude: 139.5,
+    };
+
+    expect(toRouteCoordinates([snappedPoint])).toEqual([{ latitude: 35.5, longitude: 139.5 }]);
+  });
+
+  it('toRoutePointSegmentsも異常分割の前に有効座標を使う', () => {
+    const segments = toRoutePointSegments([
+      { ...point(35, 139), effectiveLatitude: 35.5, effectiveLongitude: 139.5 },
+      { ...point(35.001, 139.001, '2026-05-04T00:01:00.000Z'), effectiveLatitude: 35.501, effectiveLongitude: 139.501 },
+    ]);
+
+    expect(segments[0]).toEqual([
+      expect.objectContaining({ latitude: 35.5, longitude: 139.5 }),
+      expect.objectContaining({ latitude: 35.501, longitude: 139.501 }),
+    ]);
   });
 
   it('保存済みポイントの不正な座標を地図座標から除外する', () => {

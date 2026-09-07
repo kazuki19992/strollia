@@ -29,10 +29,21 @@ import { createRegionFromBounds } from '@/features/map/routeMapper';
 import { resolveUserLocationIcon } from '@/features/customization/customizationResolver';
 import { DEFAULT_APP_COLOR_PRESET_ID, getAppColorPreset } from '@/features/customization/colorPresets';
 import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
-import { setSetting } from '@/features/settings/settingsRepository';
-import { CRASH_REPORTING_SETTING_KEY } from '@/ui/appText';
-import { clusterMapPhotos, MapPhotoCluster, paginateMapPhotos } from '@/features/photos/photoClusters';
-import type { MapPhoto } from '@/features/photos/photoLibrary';
+import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
+import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlaceRecordingService';
+import type { SaveStayPlaceInput, StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import { setSetting, setSettings } from '@/features/settings/settingsRepository';
+import type { AppSettingEntry } from '@/features/settings/settingsRepository';
+import { CRASH_REPORTING_SETTING_KEY, SHOW_STAY_PLACES_ON_MAP_SETTING_KEY } from '@/ui/appText';
+import {
+  applyResolvedPhotoUrisToClusters,
+  getPhotoClusterRepresentativePhotos,
+  MapPhotoCluster,
+  paginateMapPhotos,
+} from '@/features/photos/photoClusters';
+import { applyResolvedPhotoUris } from '@/features/photos/photoDisplayUri';
+import type { GeotaggedPhotoScanResult, MapPhoto, PhotoScanProgress } from '@/features/photos/photoLibrary';
+import { createPhotoScanMetricsLines } from '@/features/photos/photoScanMetrics';
 import type { DailyLogSummary } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
 import { getAppTheme, applyColorPreset } from '@/theme/theme';
@@ -52,11 +63,20 @@ import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyReportNotificationResponse';
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
+import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
+import { usePhotoDisplayUris } from '@/ui/hooks/usePhotoDisplayUris';
+import { usePhotoLibrarySync } from '@/ui/hooks/usePhotoLibrarySync';
+import { usePhotoMapClusterDiagnostics } from '@/ui/hooks/usePhotoMapClusterDiagnostics';
+import { usePhotoDisplayLimitSetting } from '@/ui/hooks/usePhotoDisplayLimitSetting';
 import { usePhotoMapCrashBreaker } from '@/ui/hooks/usePhotoMapCrashBreaker';
+import { usePhotoPreviewUri } from '@/ui/hooks/usePhotoPreviewUri';
+import { usePhotoUnavailableReason } from '@/ui/hooks/usePhotoUnavailableReason';
 import { DELETE_ALL_DATA_SUCCESS_MESSAGE, refreshDeletedUserDataState } from '@/ui/deleteAllDataFlow';
 import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
+import { appendFirstLaunchUpdateNoticeAcknowledgement, useAppUpdateNoticeState } from '@/ui/hooks/useAppUpdateNoticeState';
+import { useStayPlaceState } from '@/ui/hooks/useStayPlaceState';
 import type { PremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import type { AchievementListItem, PendingAchievementNotification } from '@/features/achievements/achievementRepository';
 import type { AchievementDefinition } from '@/features/achievements/achievementDefinitions';
@@ -70,7 +90,11 @@ import type { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import type { RefreshDataResult } from '@/ui/hooks/useLocationRecordingSync';
 import type { AppColorPresetId } from '@/features/customization/colorPresets';
 import type { UserLocationIconId } from '@/features/customization/customizationOptions';
+import type { PhotoUnavailableReason } from '@/ui/hooks/usePhotoUnavailableReason';
+import type { PhotoDisplayLimitId } from '@/features/settings/photoDisplayLimit';
+import type { AppUpdateNotice, AppUpdateNoticeSource } from '@/features/app-update/updateNotices';
 import { hasEnabledDevelopmentFlags } from '@/config/developmentFlags';
+import type { GpxImportProgressStage } from '@/ui/components/GpxImportProgressDialog';
 
 /** expo-keep-awakeでこの画面のロック抑止を識別するタグ。 */
 const KEEP_AWAKE_TAG = 'strollia-foreground-map';
@@ -134,6 +158,20 @@ export type AppStateContextValue = {
   monthlyReportPoints: LocationPoint[];
   /** 月次エリアレポート。 */
   monthlyAreaReport: MonthlyAreaReport | null;
+  /** 登録済みの滞在場所。 */
+  stayPlaces: StayPlace[];
+  /** 現在の契約状態で共有・記録に使う滞在場所。未解決・失敗時はnull。 */
+  activeStayPlaces: StayPlace[] | null;
+  /** 滞在場所の読込状態。共有画面がfail-closed表示を選ぶために使う。 */
+  stayPlacesStatus: StayPlacesStatus;
+  /** 滞在場所を再読込する。 */
+  reloadStayPlaces: () => Promise<void>;
+  /** 滞在場所を作成して一覧・共有用リストを更新する。 */
+  createStayPlace: (input: SaveStayPlaceInput) => Promise<void>;
+  /** 滞在場所を更新して一覧・共有用リストを更新する。 */
+  updateStayPlace: (id: number, input: SaveStayPlaceInput) => Promise<void>;
+  /** 滞在場所を削除して一覧・共有用リストを更新する。 */
+  deleteStayPlace: (id: number) => Promise<void>;
   /** データ再取得。 */
   refreshData: (options?: { signal?: AbortSignal }) => Promise<RefreshDataResult>;
   /** 手動で記録を開始する。 */
@@ -182,6 +220,10 @@ export type AppStateContextValue = {
   recenterOnUserLocation: () => void;
   /** 地図タイプを切り替える。 */
   toggleMapType: () => void;
+  /** 地図上に滞在場所を表示するかどうか。 */
+  showStayPlacesOnMap: boolean;
+  /** 滞在場所の地図表示設定を更新する。 */
+  updateShowStayPlacesOnMap: (show: boolean) => Promise<void>;
 
   // 訪問グリッド
   /** 訪問済みグリッドセル一覧。 */
@@ -196,14 +238,52 @@ export type AppStateContextValue = {
   isUpdatingPhotoSetting: boolean;
   /** 地図上に表示する写真クラスタ一覧。 */
   photoClusters: MapPhotoCluster[];
-  /** 写真読み込み中かどうか。 */
+  /** 保存済み写真(`photo_assets`)の読み込み中かどうか。 */
   isLoadingPhotos: boolean;
+  /**
+   * 背後で写真ライブラリの差分走査が動いているかどうか。
+   *
+   * 走査は表示をブロックしないため、読み込み表示とは分けて「邪魔にならない形」で示す(設計書 §4.2)。
+   */
+  isScanningPhotoLibrary: boolean;
   /** 写真取得エラーメッセージ。 */
   photoErrorMessage: string | null;
+  /** 選択中の「地図に表示する写真」設定。 */
+  photoDisplayLimitId: PhotoDisplayLimitId;
+  /** 「地図に表示する写真」設定を更新する。 */
+  updatePhotoDisplayLimitId: (id: PhotoDisplayLimitId) => Promise<void>;
+  /** 写真ライブラリの全件再読み込み中かどうか(ブロッキングダイアログ表示用)。 */
+  isSyncingPhotoLibrary: boolean;
+  /** 全件再読み込みの進捗。総数が分かる前はnull。 */
+  photoLibrarySyncProgress: PhotoScanProgress | null;
+  /** 写真ライブラリの全件再読み込みを開始する。 */
+  startPhotoLibrarySync: () => Promise<void>;
+  /**
+   * 拡大表示で高解像度を出せなかった理由。案内不要な場合はnull。
+   *
+   * `deleted` はモーダル、`unavailable` は拡大表示の中のインライン案内として出す(設計書 §4.5)。
+   */
+  photoUnavailableReason: PhotoUnavailableReason | null;
+  /** 削除済み写真のモーダルを閉じる。 */
+  dismissPhotoDeletedDialog: () => void;
+  /** 削除済み写真の案内から全件再読み込みを実行し、完了後にプレビューを閉じる。 */
+  reloadPhotoLibraryFromDeletedDialog: () => Promise<void>;
+  /**
+   * 写真ライブラリ走査の計測結果を表示する行。表示しない場合はnull。
+   *
+   * **計測用の開発フラグ(`EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS`)が有効なときだけ非nullになる。**
+   * 走査上限の撤廃(Phase 2-c)を実機の実測値で設計するための一時的な導線で、通常のユーザーには
+   * 一切表示しない。
+   */
+  photoScanMetricsLines: string[] | null;
   /** 写真表示設定を更新する。 */
   updateShowPhotosOnMap: (show: boolean) => Promise<void>;
   /** 選択された写真(単体プレビュー用)。 */
   selectedPhoto: MapPhoto | null;
+  /** 拡大表示に使うURI。高解像度を取得できるまではサムネイルのまま。 */
+  selectedPhotoPreviewUri: string | null;
+  /** 拡大表示用の高解像度画像を取得中かどうか。 */
+  isSelectedPhotoPreviewLoading: boolean;
   /** 選択された写真クラスタ(複数プレビュー用)。 */
   selectedPhotoCluster: MapPhotoCluster | null;
   /** ページ分割済み選択クラスタ写真一覧。 */
@@ -298,10 +378,28 @@ export type AppStateContextValue = {
   isImportingGpx: boolean;
   /** GPX処理中かどうか(ブロッキングダイアログ表示用)。 */
   isProcessingGpxImport: boolean;
+  /** GPXインポートの現在段階。 */
+  gpxImportProgressStage: GpxImportProgressStage;
+  /** GPXインポート開始時点の通算距離。単位はm。 */
+  gpxImportOdometerDistanceMeters: number;
   /** アプリバージョン文字列。 */
   appVersion: string | null;
   /** ビルド番号文字列。 */
   buildNumber: string | null;
+
+  // アプリ更新通知
+  /** 現在のネイティブ版に一致する更新通知。 */
+  currentAppUpdateNotice: AppUpdateNotice | null;
+  /** 更新通知を開いた導線。 */
+  appUpdateNoticeDialogSource: AppUpdateNoticeSource | null;
+  /** 他モーダルとの排他を反映した更新通知の表示可否。 */
+  isAppUpdateNoticeDialogVisible: boolean;
+  /** 設定画面から最新の更新通知を開く。 */
+  openLatestAppUpdateNotice: () => void;
+  /** 更新通知を閉じる。自動表示分だけ既読として保存する。 */
+  closeAppUpdateNotice: () => void;
+  /** 現在のOSに対応するストアページを開く。 */
+  openAppStorePage: () => Promise<void>;
 
   // チュートリアル
   /** 初回チュートリアル表示中かどうか。 */
@@ -322,6 +420,8 @@ export type AppStateContextValue = {
   openMonthlyReport: () => void;
   /** 設定画面へ移動する。 */
   openSettings: () => void;
+  /** 滞在場所の設定画面へ移動する。 */
+  openStayPlaces: () => void;
   /** 設定からチュートリアルを再表示する。 */
   openFirstLaunchTutorial: () => void;
 };
@@ -362,6 +462,8 @@ type AppStateProviderProps = {
     openMonthlyReport?: () => void;
     /** 設定画面へ移動する。 */
     openSettings?: () => void;
+    /** 滞在場所の設定画面へ移動する。 */
+    openStayPlaces?: () => void;
   };
   /**
    * expo-router の現在パスから導出した ScreenMode。
@@ -446,8 +548,17 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const screenMode = currentScreenMode ?? internalScreenMode;
   const [keepScreenAwake, setKeepScreenAwake] = useState(false);
   const [crashReportingEnabled, setCrashReportingEnabledState] = useState(true);
+  const [showStayPlacesOnMap, setShowStayPlacesOnMap] = useState(true);
+  /** SQLiteへの保存に成功した最後の滞在場所表示設定。 */
+  const persistedShowStayPlacesOnMapRef = useRef(true);
+  /** SQLiteへの滞在場所表示設定の書き込みを要求順に実行するチェーン。 */
+  const stayPlaceMapVisibilityWriteQueueRef = useRef<Promise<void>>(Promise.resolve());
+  /** 保存失敗時に古い要求が最新UIを巻き戻さないための連番。 */
+  const stayPlaceMapVisibilityRequestIdRef = useRef(0);
   const [isImportingGpx, setIsImportingGpx] = useState(false);
   const [isProcessingGpxImport, setIsProcessingGpxImport] = useState(false);
+  const [gpxImportProgressStage, setGpxImportProgressStage] = useState<GpxImportProgressStage>('selecting');
+  const [gpxImportOdometerDistanceMeters, setGpxImportOdometerDistanceMeters] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState<MapPhoto | null>(null);
   const [selectedPhotoCluster, setSelectedPhotoCluster] = useState<MapPhotoCluster | null>(null);
   const [isFirstLaunchTutorialVisible, setIsFirstLaunchTutorialVisible] = useState(false);
@@ -461,6 +572,20 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
    * 未読み込み(初期値 null)のときはディープリンク等の直接到達を示す。
    */
   const loadedMonthlyReportMonthRef = useRef<string | null>(null);
+
+  const {
+    stayPlaces,
+    activeStayPlaces,
+    status: stayPlacesStatus,
+    reloadStayPlaces,
+    createStayPlace,
+    updateStayPlace,
+    deleteStayPlace,
+  } = useStayPlaceState({
+    isReady,
+    isPlusActive: premiumAccessState.isPlusActive,
+    onFreeStayPlaceLimitReached: openPremiumPaywall,
+  });
 
   const {
     selectedAchievement,
@@ -543,6 +668,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     isFollowingUserLocation,
     isMapReady,
     visibleRegion,
+    gridSyncRegion,
     currentSpeedKmh,
     mapType,
     handleUserLocationChange,
@@ -553,7 +679,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     handleMapReady,
     recenterOnUserLocation,
   } = mapFollowState;
-  const gridOverlayRegion = visibleRegion ?? initialRegion;
+  // Grid取得はユーザー操作中に走らせないため visibleRegion ではなく gridSyncRegion を使う。
+  const gridOverlayRegion = gridSyncRegion ?? initialRegion;
   const { visitedGridCells, gridOverlayOpacity, incrementVisitedGridRefreshVersion } = useVisitedGridOverlay({
     isReady,
     gridOverlayRegion,
@@ -570,17 +697,112 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     const today = toLocalDate(new Date());
     return dailyLogs.find((log) => log.localDate === today)?.distanceMeters ?? 0;
   }, [dailyLogs]);
+  // 表示上限は地図のパン・ズームのたびに読み直さず、UI層で保持した値を検索へ渡す。
+  const { photoDisplayLimitId, photoDisplayLimit, updatePhotoDisplayLimitId } = usePhotoDisplayLimitSetting();
+  // 写真の検索範囲もGrid取得と同じく、ユーザー操作中に更新されない gridOverlayRegion を使う。
   const {
     showPhotosOnMap,
     isUpdatingPhotoSetting,
     photos,
     isLoadingPhotos,
+    isScanningPhotoLibrary,
     photoErrorMessage,
+    photoScanMetrics,
     initializePhotoSetting,
     updateShowPhotosOnMap,
-  } = usePhotoMapCrashBreaker({ isReady, isMapReady });
-  const photoClusters = useMemo(() => clusterMapPhotos(photos, visibleRegion), [photos, visibleRegion]);
-  const selectedPhotoClusterPages = useMemo(() => paginateMapPhotos(selectedPhotoCluster?.photos ?? []), [selectedPhotoCluster]);
+    refreshPhotosFromCache,
+  } = usePhotoMapCrashBreaker({ isReady, isMapReady, photoOverlayRegion: gridOverlayRegion, photoDisplayLimit });
+  // 計測フラグが無効なら常にnull(=画面に何も出さない)。判定は createPhotoScanMetricsLines に閉じている
+  const photoScanMetricsLines = useMemo(() => createPhotoScanMetricsLines(photoScanMetrics), [photoScanMetrics]);
+  // パン(中心移動のみ)では再クラスタリングをスキップする。詳細は usePhotoClusters を参照。
+  const photoClusters = usePhotoClusters(photos, visibleRegion);
+  // 「写真は読めているのにクラスタが作られていないか」を実機から観測するための調査用計装。
+  usePhotoMapClusterDiagnostics({ enabled: showPhotosOnMap, isLoadingPhotos, photos, clusters: photoClusters });
+  const { resolvedPhotoUris, requestPhotoDisplayUris, resetPhotoDisplayUris } = usePhotoDisplayUris();
+
+  /**
+   * 地図に画像として出る写真だけ、表示用URIの解決を要求する。
+   *
+   * 対象は「クラスタの代表写真」「開いているクラスタの写真」「拡大表示中の写真」の3つに限る。
+   * ビューポート検索の結果を全件解決すると、`+187` のクラスタで188枚ぶん書き出すことになる
+   * (設計書 §4.8)。要求は解決済み・要求済みの写真を内部で除くため、重複して呼んでよい。
+   *
+   * 解決前の写真は `uri: null` としてプレースホルダで描かれる。これは画像を取得できない写真の
+   * 既存の見せ方と同じなので、解決が届くまでの見た目は破綻しない。
+   */
+  useEffect(() => {
+    requestPhotoDisplayUris(getPhotoClusterRepresentativePhotos(photoClusters));
+  }, [photoClusters, requestPhotoDisplayUris]);
+
+  useEffect(() => {
+    requestPhotoDisplayUris(selectedPhotoCluster?.photos ?? []);
+  }, [requestPhotoDisplayUris, selectedPhotoCluster]);
+
+  useEffect(() => {
+    requestPhotoDisplayUris(selectedPhoto === null ? [] : [selectedPhoto]);
+  }, [requestPhotoDisplayUris, selectedPhoto]);
+
+  const resolvedPhotoClusters = useMemo(
+    () => applyResolvedPhotoUrisToClusters(photoClusters, resolvedPhotoUris),
+    [photoClusters, resolvedPhotoUris],
+  );
+  const selectedPhotoClusterPages = useMemo(
+    () => paginateMapPhotos(applyResolvedPhotoUris(selectedPhotoCluster?.photos ?? [], resolvedPhotoUris)),
+    [resolvedPhotoUris, selectedPhotoCluster],
+  );
+  // 拡大表示を開いたあとに解決が届くこともあるため、選択中の写真にも解決結果を反映する。
+  const resolvedSelectedPhoto = useMemo(
+    () => (selectedPhoto === null ? null : applyResolvedPhotoUris([selectedPhoto], resolvedPhotoUris)[0]),
+    [resolvedPhotoUris, selectedPhoto],
+  );
+  // 拡大表示のときだけ高解像度を取りに行く(この経路だけiCloudからのダウンロードを許可する)。
+  const {
+    previewUri: selectedPhotoPreviewUri,
+    isLoadingPreview: isSelectedPhotoPreviewLoading,
+    hasHighResolutionPreview: hasSelectedPhotoHighResolutionPreview,
+  } = usePhotoPreviewUri(resolvedSelectedPhoto);
+
+  /**
+   * 全件再読み込みの完了後に、地図の表示を実態へ合わせ直す。
+   *
+   * 走査で削除済みの行が消えるため、引き直さないと地図にマーカーだけが残る。
+   * 解決済みの表示用URIも捨てる。削除された写真のサムネイルはキャッシュに残っており、
+   * そのままだと「もう無い写真」の画像が出続けてしまう(設計書 §4.5)。
+   */
+  const handlePhotoLibrarySyncCompleted = useCallback(
+    (result: GeotaggedPhotoScanResult): void => {
+      resetPhotoDisplayUris();
+      // 全件走査でもキャッシュ保存は失敗しうる。その場合だけ走査結果をフォールバックへ張り替える
+      // (保存できていれば null を渡し、差分走査で残っていた古いフォールバックを解除する)
+      refreshPhotosFromCache(result.isCacheSaved ? null : result.photos);
+    },
+    [refreshPhotosFromCache, resetPhotoDisplayUris],
+  );
+
+  const { isSyncingPhotoLibrary, photoLibrarySyncProgress, startPhotoLibrarySync } = usePhotoLibrarySync({
+    onCompleted: handlePhotoLibrarySyncCompleted,
+  });
+
+  // 高解像度を出せなかった原因を存在確認で切り分け、削除済みと取得不可を出し分ける(設計書 §4.5)。
+  const { photoUnavailableReason, dismissPhotoDeletedDialog } = usePhotoUnavailableReason({
+    photo: resolvedSelectedPhoto,
+    hasHighResolutionPreview: hasSelectedPhotoHighResolutionPreview,
+    isLoadingPreview: isSelectedPhotoPreviewLoading,
+  });
+
+  /**
+   * 削除済み写真の案内から全件再読み込みを実行し、終わったら裏のプレビューを閉じる。
+   *
+   * 削除された写真を表示し続けないための後始末である。走査が失敗した場合も閉じる。
+   * どちらにせよその写真は表示できず、壊れたプレビューを残しておく意味がないため。
+   */
+  const reloadPhotoLibraryFromDeletedDialog = useCallback(async (): Promise<void> => {
+    dismissPhotoDeletedDialog();
+    await startPhotoLibrarySync();
+    setSelectedPhoto(null);
+    setSelectedPhotoCluster(null);
+  }, [dismissPhotoDeletedDialog, startPhotoLibrarySync]);
+
   const hasRequiredPermission = hasRequiredLocationPermission(permissionState);
   const shouldOpenSettingsForPermission = !canRequestLocationPermissionInApp(permissionState);
   const isWhileInUseRecordingMode = isWhileInUseOnlyMode(permissionState);
@@ -589,7 +811,26 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   const foregroundWatchEnabled = appState === 'active' && (shouldDisplayCustomLocation || shouldPersistForegroundLocation);
   const shouldShowDevelopmentFlagBanner = hasEnabledDevelopmentFlags();
   const activeAchievementNotification = pendingAchievementNotifications[0] ?? null;
-  /**
+  const {
+    currentAppUpdateNotice,
+    appUpdateNoticeDialogSource,
+    isAppUpdateNoticeDialogVisible,
+    openAutomaticAppUpdateNotice,
+    openLatestAppUpdateNotice,
+    closeAppUpdateNotice,
+    openAppStorePage,
+  } = useAppUpdateNoticeState({
+    nativeApplicationVersion: Application.nativeApplicationVersion,
+    isFirstLaunchTutorialVisible,
+    hasActiveAchievementNotification: activeAchievementNotification !== null,
+    hasSelectedAchievement: selectedAchievement !== null,
+    isPremiumPaywallVisible,
+    hasSelectedPhoto: selectedPhoto !== null,
+    hasSelectedPhotoCluster: selectedPhotoCluster !== null,
+    isProcessingGpxImport,
+    isPhotoDeletedDialogVisible: photoUnavailableReason === 'deleted',
+    isPhotoLibrarySyncDialogVisible: isSyncingPhotoLibrary,
+  });
   /**
    * RevenueCat App User IDをSentryのユーザーコンテキストへ反映する。
    * クラッシュレポートをSupport IDで問い合わせられるようにするために必要。
@@ -733,6 +974,38 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     [keepScreenAwake],
   );
 
+  /** 起動時に読み込んだ滞在場所表示設定をUIと保存済み値へ反映する。 */
+  const initializeShowStayPlacesOnMap = useCallback((show: boolean): void => {
+    persistedShowStayPlacesOnMapRef.current = show;
+    setShowStayPlacesOnMap(show);
+  }, []);
+
+  /** 滞在場所アイコンの表示設定をUI状態とSQLiteへ要求順に反映する。 */
+  const updateShowStayPlacesOnMap = useCallback(async (show: boolean): Promise<void> => {
+    const requestId = stayPlaceMapVisibilityRequestIdRef.current + 1;
+    stayPlaceMapVisibilityRequestIdRef.current = requestId;
+    setShowStayPlacesOnMap(show);
+
+    const queuedWrite = stayPlaceMapVisibilityWriteQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        await setSetting(SHOW_STAY_PLACES_ON_MAP_SETTING_KEY, show);
+        persistedShowStayPlacesOnMapRef.current = show;
+      });
+    stayPlaceMapVisibilityWriteQueueRef.current = queuedWrite;
+
+    try {
+      await queuedWrite;
+    } catch (error: unknown) {
+      console.warn('Failed to persist stay place map visibility setting:', error);
+      if (requestId === stayPlaceMapVisibilityRequestIdRef.current) {
+        const rollbackValue = persistedShowStayPlacesOnMapRef.current;
+        setShowStayPlacesOnMap(rollbackValue);
+      }
+      throw error;
+    }
+  }, []);
+
   useAppInitialization({
     initializePremiumAccess,
     applySavedIconSettings,
@@ -745,11 +1018,14 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     snapshotPremiumAccessUpdateVersion,
     setKeepScreenAwake,
     setCrashReportingEnabled: applyCrashReportingSetting,
+    setShowStayPlacesOnMap: initializeShowStayPlacesOnMap,
     setMessage,
     setIsWhileInUseToastVisible,
     setIsReady,
     setFirstLaunchTutorialMode,
     setIsFirstLaunchTutorialVisible,
+    currentAppUpdateNotice,
+    openAutomaticAppUpdateNotice,
   });
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
@@ -770,6 +1046,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     enabled: foregroundWatchEnabled,
     shouldPersist: shouldPersistForegroundLocation,
     onLocation: shouldDisplayCustomLocation ? applyUserLocation : undefined,
+    getActiveStayPlaces: getActiveStayPlacesForRecording,
     onError: (error: unknown) => {
       setMessage(error instanceof Error ? error.message : 'フォアグラウンド位置情報の取得に失敗しました。');
     },
@@ -911,6 +1188,16 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
+  /** 滞在場所の設定画面へ移動する。 */
+  function openStayPlaces(): void {
+    if (navigator?.openStayPlaces) {
+      triggerLightImpactHaptic();
+      navigator.openStayPlaces();
+    } else {
+      navigateToScreen('settings');
+    }
+  }
+
   /** 設定画面から初回チュートリアルを再表示する。 */
   function openFirstLaunchTutorial(): void {
     triggerSelectionHaptic();
@@ -946,16 +1233,27 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
           { cancelable: false },
         );
       });
+      // ファイルピッカーを開く前からアプリ側をモーダルで覆う。Androidではピッカー表示まで
+      // 数秒かかる場合があるが、OSのピッカーは前面で操作でき、背面だけは操作不能になる。
+      setGpxImportProgressStage('selecting');
+      setGpxImportOdometerDistanceMeters(distance);
+      setIsProcessingGpxImport(true);
+      // JSのコミットだけでなくiOSのModal presentation開始後にDocumentPickerを開くため、
+      // 2フレーム待つ。1フレームではModalのネイティブ遷移中に競合するおそれがある。
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
       const pickedFile = await pickAndReadGpxFile();
 
       if (!pickedFile) {
         return;
       }
 
-      // ファイル選択後の取り込み処理中は、削除などの操作を防ぐためブロッキングダイアログを表示する。
-      setIsProcessingGpxImport(true);
-      // 同期的なパースに入る前に1フレーム譲り、ブロッキングダイアログを確実に描画させる。
+      // 同期的なパースに入る前に解析中表示へ切り替え、1フレーム譲って描画を確実にする。
       // （パースは同期処理のため、譲らないと大きなGPXでは旧画面のまま固まる）
+      setGpxImportProgressStage('parsing');
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => resolve());
       });
@@ -970,13 +1268,15 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       beginGpxImportPriority();
       let result: GpxImportResult;
       try {
+        setGpxImportProgressStage('saving');
         result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
       } finally {
         // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
-        await flushLocationsBufferedDuringGpxImport().catch((error: unknown) => {
+        await flushLocationsBufferedDuringGpxImport({ getActiveStayPlaces: getActiveStayPlacesForRecording }).catch((error: unknown) => {
           console.warn('Failed to flush buffered locations after GPX import:', error);
         });
       }
+      setGpxImportProgressStage('refreshing');
       await refreshData();
       // 取り込んだ大量データ(ルート・訪問グリッド)の再描画が終わるまでブロッキングダイアログを維持する。
       // 先に閉じると再描画中のフリーズが操作可能な画面のまま露出する。
@@ -1021,8 +1321,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       return;
     }
 
-    setSetting(FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, true).catch((error: unknown) => {
-      console.warn('Failed to persist first launch tutorial flag:', error);
+    const entries: AppSettingEntry[] = appendFirstLaunchUpdateNoticeAcknowledgement(
+      [{ key: FIRST_LAUNCH_TUTORIAL_COMPLETED_SETTING_KEY, value: true }],
+      currentAppUpdateNotice,
+    );
+    setSettings(entries).catch((error: unknown) => {
+      console.warn('Failed to persist first launch tutorial state:', error);
     });
     requestAchievementNotificationPermissionIfNeeded()
       .then(() => syncMonthlyReportNotification(premiumAccessState.isPlusActive))
@@ -1056,6 +1360,13 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     hasAnyLocationPoints,
     monthlyReportPoints,
     monthlyAreaReport,
+    stayPlaces,
+    activeStayPlaces,
+    stayPlacesStatus,
+    reloadStayPlaces,
+    createStayPlace,
+    updateStayPlace,
+    deleteStayPlace,
     refreshData,
     startRecording,
     requestLocationPermission,
@@ -1079,15 +1390,30 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     handleMapReady,
     recenterOnUserLocation,
     toggleMapType,
+    showStayPlacesOnMap,
+    updateShowStayPlacesOnMap,
     visitedGridCells,
     gridOverlayOpacity,
     showPhotosOnMap,
     isUpdatingPhotoSetting,
-    photoClusters,
+    // 地図へ渡すのは表示用URIを反映した方。未解決の写真はプレースホルダで描かれる
+    photoClusters: resolvedPhotoClusters,
     isLoadingPhotos,
+    isScanningPhotoLibrary,
     photoErrorMessage,
+    photoDisplayLimitId,
+    updatePhotoDisplayLimitId,
+    isSyncingPhotoLibrary,
+    photoLibrarySyncProgress,
+    startPhotoLibrarySync,
+    photoUnavailableReason,
+    dismissPhotoDeletedDialog,
+    reloadPhotoLibraryFromDeletedDialog,
+    photoScanMetricsLines,
     updateShowPhotosOnMap,
-    selectedPhoto,
+    selectedPhoto: resolvedSelectedPhoto,
+    selectedPhotoPreviewUri,
+    isSelectedPhotoPreviewLoading,
     selectedPhotoCluster,
     selectedPhotoClusterPages,
     setSelectedPhotoCluster,
@@ -1129,8 +1455,16 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openLegalLink,
     isImportingGpx,
     isProcessingGpxImport,
+    gpxImportProgressStage,
+    gpxImportOdometerDistanceMeters,
     appVersion: Application.nativeApplicationVersion,
     buildNumber: Application.nativeBuildVersion,
+    currentAppUpdateNotice,
+    appUpdateNoticeDialogSource,
+    isAppUpdateNoticeDialogVisible,
+    openLatestAppUpdateNotice,
+    closeAppUpdateNotice,
+    openAppStorePage,
     isFirstLaunchTutorialVisible,
     firstLaunchTutorialMode,
     completeFirstLaunchTutorial,
@@ -1139,6 +1473,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openAchievements,
     openMonthlyReport,
     openSettings,
+    openStayPlaces,
     openFirstLaunchTutorial,
   };
 

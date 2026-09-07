@@ -4,6 +4,7 @@ import * as TaskManager from 'expo-task-manager';
 import { BACKGROUND_LOCATION_TASK_NAME } from './locationTrackingConfig';
 import { bufferLocationsDuringGpxImport, isGpxImportPriorityActive } from './gpxImportPriority';
 import { createLocationRecordingSession } from './locationRecordingSession';
+import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlaceRecordingService';
 
 /** Expo Locationのバックグラウンドタスクから渡される位置情報ペイロード。 */
 type BackgroundLocationTaskData = {
@@ -40,7 +41,9 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
       return;
     }
 
-    const session = await createLocationRecordingSession();
+    const session = await createLocationRecordingSession({
+      getActiveStayPlaces: getActiveStayPlacesForRecording,
+    });
     await session.recordLocations(locations);
   });
 }

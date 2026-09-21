@@ -39,7 +39,7 @@ jest.mock('@/features/logs/logRepository', () => ({
       localDate: '2026-05-31',
       latitude: 35.681236,
       longitude: 139.767125,
-      altitude: null,
+      altitude: 10,
       speed: null,
       heading: null,
       accuracy: 10,
@@ -51,7 +51,7 @@ jest.mock('@/features/logs/logRepository', () => ({
       localDate: '2026-05-31',
       latitude: 35.690921,
       longitude: 139.700258,
-      altitude: null,
+      altitude: 30,
       speed: null,
       heading: null,
       accuracy: 10,
@@ -136,6 +136,32 @@ const log = {
 const plusAccessState = { isPlusActive: true, entitlementId: 'Strollia Plus' };
 const freeAccessState = { isPlusActive: false, entitlementId: 'Strollia Plus' };
 const onOpenPremiumPaywall = jest.fn();
+const shareAltitudePoints = [
+  {
+    id: 1,
+    recordedAt: new Date(2026, 4, 31, 9, 0).toISOString(),
+    localDate: '2026-05-31',
+    latitude: 35.681236,
+    longitude: 139.767125,
+    altitude: 10,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  },
+  {
+    id: 2,
+    recordedAt: new Date(2026, 4, 31, 10, 0).toISOString(),
+    localDate: '2026-05-31',
+    latitude: 35.690921,
+    longitude: 139.700258,
+    altitude: 30,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  },
+];
 
 describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   beforeEach(() => {
@@ -174,6 +200,9 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(screen.getByText('146.20km')).toBeTruthy();
     expect(screen.getByText('船橋市 ▶ 船橋市')).toBeTruthy();
     expect(screen.getByText('おもいで')).toBeTruthy();
+    expect(screen.getByText('高度')).toBeTruthy();
+    expect(screen.getByText('10m')).toBeTruthy();
+    expect(screen.getByText('30m')).toBeTruthy();
     expect(screen.getByText('この日に獲得した実績')).toBeTruthy();
     expect(screen.getByText('この日の記録を共有')).toBeTruthy();
     expect(screen.getByText('移動距離はGPSのブレにより本来の距離より多く記録される場合があります。')).toBeTruthy();
@@ -358,6 +387,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       fireEvent.press(screen.getByLabelText('この日の記録を共有'));
     });
 
+    expect(screen.UNSAFE_getByType(DailyLogShareCard).props.altitudePoints).toHaveLength(2);
+
     // 画面外の共有カードがマウントされ、地図のタイル描画完了を発火させるとキャプチャが走る。
     await act(async () => {
       screen.UNSAFE_getByType(DailyLogShareCard).props.onMapLoaded();
@@ -366,6 +397,91 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     expect(captureRef).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ format: 'png', quality: 1, result: 'tmpfile' }));
     expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/daily-log-detail.png', expect.objectContaining({ mimeType: 'image/png' }));
+  });
+
+  test('高度を含む詳細データの読込中は共有を開始しない', async () => {
+    const { captureRef } = require('react-native-view-shot');
+    let resolvePoints: ((points: unknown[]) => void) | undefined;
+    (getLocationPointsByDate as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoints = resolve;
+        }),
+    );
+
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    const shareButton = screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0];
+    expect(shareButton.props.disabled).toBe(true);
+    fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+    expect(captureRef).not.toHaveBeenCalled();
+    expect(screen.UNSAFE_queryAllByType(DailyLogShareCard)).toHaveLength(0);
+
+    await act(async () => {
+      resolvePoints?.([]);
+    });
+  });
+
+  test('PNG共有カードはPlusの有効高度だけを表示する', () => {
+    const baseProps = {
+      width: 390,
+      points: shareAltitudePoints,
+      activeStayPlaces: [],
+      regionPoints: shareAltitudePoints,
+      altitudePoints: shareAltitudePoints,
+      distanceLabel: '1.00km',
+      routeEndpointsLabel: '船橋市 ▶ 船橋市',
+      dailyDetailReport: null,
+      isLoadingDetail: false,
+      dateLabel: '2026年5月31日 (日)',
+      styles: styles as never,
+      theme: lightTheme,
+      onMapLoaded: jest.fn(),
+    };
+    const { rerender } = render(<DailyLogShareCard {...baseProps} isPlusActive />);
+
+    expect(screen.getByText('高度')).toBeTruthy();
+    expect(screen.getByText('10m')).toBeTruthy();
+    expect(screen.getByText('30m')).toBeTruthy();
+
+    rerender(<DailyLogShareCard {...baseProps} isPlusActive={false} />);
+    expect(screen.queryByText('高度')).toBeNull();
+
+    rerender(
+      <DailyLogShareCard {...baseProps} altitudePoints={shareAltitudePoints.map((point) => ({ ...point, altitude: null }))} isPlusActive />,
+    );
+    expect(screen.queryByText('高度')).toBeNull();
+    expect(screen.queryByText('高度データを表示できません')).toBeNull();
+  });
+
+  test('Plusでも有効高度が不足する画面ではデータ不足を表示する', async () => {
+    (getLocationPointsByDate as jest.Mock).mockResolvedValueOnce(shareAltitudePoints.map((point) => ({ ...point, altitude: null })));
+
+    render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={styles as never}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={onOpenPremiumPaywall}
+      />,
+    );
+
+    await act(async () => {});
+    expect(screen.getByText('高度')).toBeTruthy();
+    expect(screen.getByText('高度データを表示できません')).toBeTruthy();
   });
 
   test('滞在場所の読込中は共有画像とGIFを開始せず共有用地図もマウントしない', async () => {
@@ -628,6 +744,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(screen.queryByText('新しく訪問したエリア数')).toBeNull();
     expect(screen.getByText('Plusでくわしく！')).toBeTruthy();
     expect(screen.getByText('Plusでもっと詳しく！')).toBeTruthy();
+    expect(screen.queryByText('高度')).toBeNull();
+    expect(screen.queryByText('高度データを表示できません')).toBeNull();
   });
 
   test('一般ユーザーの場合「移動距離は〜」テキストが「移動のデータ」タイトル直下に表示される', async () => {

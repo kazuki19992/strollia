@@ -12,6 +12,44 @@ export function createDailyLogStyles(theme: AppTheme) {
   const { colors } = theme;
   const { settingsText, settingsMuted, settingsBorder } = getSettingsDerivedColors(theme);
   return {
+    // Altitude profile
+    altitudeProfilePlotRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    altitudeProfileChart: {
+      flex: 1,
+      height: 160,
+    },
+    altitudeProfileYAxis: {
+      height: 160,
+      justifyContent: 'space-between',
+      width: 48,
+    },
+    altitudeProfileAxisLabel: {
+      color: settingsMuted,
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 16,
+    },
+    altitudeProfileTimeLabels: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginLeft: 56,
+    },
+    altitudeProfileTimeLabel: {
+      color: settingsMuted,
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 16,
+    },
+    altitudeProfileEmptyText: {
+      color: settingsMuted,
+      fontSize: 15,
+      fontWeight: '400',
+      lineHeight: 20,
+    },
+
     // Daily log list
     dailyEmptyCard: {
       backgroundColor: colors.card,

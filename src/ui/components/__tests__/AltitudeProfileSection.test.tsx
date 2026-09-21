@@ -26,7 +26,7 @@ describe('高度プロファイルセクション', () => {
   test('最低・最高高度と開始・中間・終了時刻を表示する', () => {
     render(
       <AltitudeProfileSection
-        points={[point(1, 9, 0, 10), point(2, 11, 0, 30)]}
+        points={[point(1, 9, 0, 10), point(2, 9, 30, 10), point(3, 10, 0, 20), point(4, 10, 30, 30), point(5, 11, 0, 30)]}
         styles={styles as never}
         theme={lightTheme}
         showUnavailableMessage
@@ -61,7 +61,7 @@ describe('高度プロファイルセクション', () => {
   test('高度差が10m未満なら現在テーマのprimary単色で描く', () => {
     const { rerender } = render(
       <AltitudeProfileSection
-        points={[point(1, 9, 0, 10), point(2, 10, 0, 19)]}
+        points={[point(1, 9, 0, 10), point(2, 9, 15, 10), point(3, 9, 30, 14), point(4, 9, 45, 19), point(5, 10, 0, 19)]}
         styles={styles as never}
         theme={lightTheme}
         showUnavailableMessage
@@ -72,7 +72,7 @@ describe('高度プロファイルセクション', () => {
 
     rerender(
       <AltitudeProfileSection
-        points={[point(1, 9, 0, 10), point(2, 10, 0, 19)]}
+        points={[point(1, 9, 0, 10), point(2, 9, 15, 10), point(3, 9, 30, 14), point(4, 9, 45, 19), point(5, 10, 0, 19)]}
         styles={styles as never}
         theme={darkTheme}
         showUnavailableMessage

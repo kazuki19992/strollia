@@ -151,10 +151,46 @@ const shareAltitudePoints = [
   },
   {
     id: 2,
+    recordedAt: new Date(2026, 4, 31, 9, 30).toISOString(),
+    localDate: '2026-05-31',
+    latitude: 35.685,
+    longitude: 139.74,
+    altitude: 10,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  },
+  {
+    id: 3,
     recordedAt: new Date(2026, 4, 31, 10, 0).toISOString(),
     localDate: '2026-05-31',
     latitude: 35.690921,
     longitude: 139.700258,
+    altitude: 20,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  },
+  {
+    id: 4,
+    recordedAt: new Date(2026, 4, 31, 10, 30).toISOString(),
+    localDate: '2026-05-31',
+    latitude: 35.695,
+    longitude: 139.68,
+    altitude: 30,
+    speed: null,
+    heading: null,
+    accuracy: 10,
+    altitudeAccuracy: null,
+  },
+  {
+    id: 5,
+    recordedAt: new Date(2026, 4, 31, 11, 0).toISOString(),
+    localDate: '2026-05-31',
+    latitude: 35.7,
+    longitude: 139.66,
     altitude: 30,
     speed: null,
     heading: null,
@@ -201,8 +237,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(screen.getByText('船橋市 ▶ 船橋市')).toBeTruthy();
     expect(screen.getByText('おもいで')).toBeTruthy();
     expect(screen.getByText('高度')).toBeTruthy();
-    expect(screen.getByText('10m')).toBeTruthy();
-    expect(screen.getByText('30m')).toBeTruthy();
+    expect(screen.getAllByText('20m')).toHaveLength(2);
     expect(screen.getByText('この日に獲得した実績')).toBeTruthy();
     expect(screen.getByText('この日の記録を共有')).toBeTruthy();
     expect(screen.getByText('移動距離はGPSのブレにより本来の距離より多く記録される場合があります。')).toBeTruthy();

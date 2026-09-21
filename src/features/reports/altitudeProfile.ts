@@ -27,12 +27,8 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
-/** 5点未満の短い区間を変形せず、連続区間内だけで5点移動中央値を適用する。 */
+/** 区間端では取得済みの点だけを使い、連続区間内で5点移動中央値を適用する。 */
 function smoothSegment(segment: AltitudeProfilePoint[]): AltitudeProfilePoint[] {
-  if (segment.length < 5) {
-    return segment;
-  }
-
   return segment.map((point, index) => {
     const window = segment.slice(Math.max(0, index - 2), Math.min(segment.length, index + 3));
     return { ...point, altitudeMeters: median(window.map((sample) => sample.altitudeMeters)) };
@@ -46,7 +42,7 @@ function downsampleSegment(segment: AltitudeProfilePoint[], limit: number): Alti
   }
 
   const interior = segment.slice(1, -1);
-  const bucketCount = Math.max(1, Math.floor((limit - 2) / 2));
+  const bucketCount = Math.floor((limit - 2) / 2);
   const selected = new Set<number>([0, segment.length - 1]);
 
   for (let bucketIndex = 0; bucketIndex < bucketCount; bucketIndex += 1) {
@@ -72,23 +68,62 @@ function downsampleSegment(segment: AltitudeProfilePoint[], limit: number): Alti
     }
   }
 
-  return [...selected]
+  return [...selected].sort((left, right) => left - right).map((index) => segment[index]);
+}
+
+/** 端の区間を優先しつつ、時刻範囲全体から描画可能な区間を選ぶ。 */
+function selectSegmentsWithinBudget(segments: AltitudeProfilePoint[][], budget: number): AltitudeProfilePoint[][] {
+  const selectedIndices = new Set<number>();
+  let remainingBudget = budget;
+
+  const addSegment = (index: number): boolean => {
+    const cost = Math.min(2, segments[index].length);
+    if (selectedIndices.has(index) || cost > remainingBudget) return false;
+    selectedIndices.add(index);
+    remainingBudget -= cost;
+    return true;
+  };
+
+  addSegment(0);
+  addSegment(segments.length - 1);
+
+  while (remainingBudget > 0) {
+    let nextIndex = -1;
+    let greatestDistance = -1;
+
+    for (let index = 1; index < segments.length - 1; index += 1) {
+      const cost = Math.min(2, segments[index].length);
+      if (selectedIndices.has(index) || cost > remainingBudget) continue;
+      const nearestSelectedDistance = Math.min(...[...selectedIndices].map((selected) => Math.abs(selected - index)));
+      if (nearestSelectedDistance > greatestDistance) {
+        greatestDistance = nearestSelectedDistance;
+        nextIndex = index;
+      }
+    }
+
+    if (nextIndex < 0) break;
+    addSegment(nextIndex);
+  }
+
+  return [...selectedIndices]
     .sort((left, right) => left - right)
-    .slice(0, limit)
-    .map((index) => segment[index]);
+    .map((index) => downsampleSegment(segments[index], Math.min(2, segments[index].length)));
 }
 
 /** 全区間へ点数上限を按分して描画点数を抑える。 */
 function downsampleSegments(segments: AltitudeProfilePoint[][], maxRenderedPoints: number): AltitudeProfilePoint[][] {
   const totalPointCount = segments.reduce((sum, segment) => sum + segment.length, 0);
-  const requestedLimit = Math.max(2, Math.floor(maxRenderedPoints));
+  const requestedLimit = Math.max(0, Math.floor(maxRenderedPoints));
   if (totalPointCount <= requestedLimit) {
     return segments;
   }
 
   const minimumBudget = segments.reduce((sum, segment) => sum + Math.min(2, segment.length), 0);
-  const totalBudget = Math.max(requestedLimit, minimumBudget);
-  let remainingBudget = totalBudget;
+  if (minimumBudget > requestedLimit) {
+    return selectSegmentsWithinBudget(segments, requestedLimit);
+  }
+
+  let remainingBudget = requestedLimit;
   let remainingPoints = totalPointCount;
 
   return segments.map((segment, index) => {

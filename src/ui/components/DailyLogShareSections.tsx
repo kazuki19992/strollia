@@ -1,8 +1,11 @@
 import { Text, View } from 'react-native';
 
 import type { DailyDetailReport } from '@/features/reports/dailyReport';
+import type { AppTheme } from '@/theme/theme';
+import type { LocationPoint } from '@/types/gps';
 import type { AppStyles } from '@/ui/appStyles';
 import { AchievementScroller } from './AchievementScroller';
+import { AltitudeProfileSection } from './AltitudeProfileSection';
 import { DataSummaryRow } from './DataSummaryRow';
 import { DescriptionText } from './DescriptionText';
 import { SectionTitle } from './SectionTitle';
@@ -18,8 +21,14 @@ export type DailyLogShareSectionsProps = {
   dailyDetailReport: DailyDetailReport | null;
   /** 詳細データ読み込み中か。 */
   isLoadingDetail: boolean;
+  /** 1日全体の高度表示用GPSポイント。 */
+  altitudePoints: readonly LocationPoint[];
+  /** 高度不足時に画面用メッセージを表示するか。 */
+  showAltitudeUnavailableMessage: boolean;
   /** 画面共通スタイル。 */
   styles: AppStyles;
+  /** 現在テーマ。 */
+  theme: AppTheme;
 };
 
 /** 日別詳細・共有画像で共通の「移動のデータ」「おもいで」セクション。 */
@@ -29,7 +38,10 @@ export function DailyLogShareSections({
   routeEndpointsLabel,
   dailyDetailReport,
   isLoadingDetail,
+  altitudePoints,
+  showAltitudeUnavailableMessage,
   styles,
+  theme,
 }: DailyLogShareSectionsProps) {
   return (
     <>
@@ -61,6 +73,15 @@ export function DailyLogShareSections({
           <DescriptionText styles={styles}>移動距離はGPSのブレにより本来の距離より多く記録される場合があります。</DescriptionText>
         )}
       </View>
+
+      {isPlusActive && (
+        <AltitudeProfileSection
+          points={altitudePoints}
+          styles={styles}
+          theme={theme}
+          showUnavailableMessage={showAltitudeUnavailableMessage}
+        />
+      )}
 
       {isPlusActive && (
         <View style={styles.dailyLogDetailSection}>

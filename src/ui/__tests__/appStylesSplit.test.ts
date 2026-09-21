@@ -81,7 +81,10 @@ describe('appStyles 分割後のキー網羅検証', () => {
       const styles = createDailyLogStyles(theme);
 
       expect(styles.dailyLogDetailCapture).toBeDefined();
+      expect(styles.altitudeProfileChart).toBeDefined();
+      expect(styles.altitudeProfileAxisLabel).toBeDefined();
       expect(styles.routeMapFrame).toBeDefined();
+      expect(styles.altitudeProfileChart).toBeDefined();
       expect(styles.stepSliderThumb).toBeDefined();
       expect(styles.rangeSliderFill).toBeDefined();
       expect(styles.gifFrameContainer).toBeDefined();
@@ -138,7 +141,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全393キーが存在する（過不足なし）', () => {
+    test('全400キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -149,7 +152,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 端末未ダウンロード写真のインライン案内3キー + GPXインポートODO表示5キー
       //       + 更新通知ダイアログ1キー
       //       + マップ表示設定中の背景ダッシュボード減光1キー
-      expect(keys.length).toBe(393);
+      //       + 高度プロファイル7キー
+      expect(keys.length).toBe(400);
     });
   });
 });

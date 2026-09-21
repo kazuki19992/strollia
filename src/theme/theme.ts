@@ -29,6 +29,10 @@ export type AppTheme = {
     surfaceOverlay: string;
     scrim: string;
     shadow: string;
+    altitudeLow: string;
+    altitudeMid: string;
+    altitudeHighMid: string;
+    altitudeHigh: string;
   };
 };
 
@@ -55,6 +59,10 @@ export const lightTheme: AppTheme = {
     surfaceOverlay: 'rgba(248, 248, 248, 0.94)',
     scrim: 'rgba(0, 0, 0, 0.08)',
     shadow: '#000000',
+    altitudeLow: '#2f80ed',
+    altitudeMid: '#27ae60',
+    altitudeHighMid: '#f2c94c',
+    altitudeHigh: '#f2994a',
   },
 };
 
@@ -81,6 +89,10 @@ export const darkTheme: AppTheme = {
     surfaceOverlay: 'rgba(37, 37, 37, 0.94)',
     scrim: 'rgba(0, 0, 0, 0.28)',
     shadow: '#000000',
+    altitudeLow: '#2f80ed',
+    altitudeMid: '#27ae60',
+    altitudeHighMid: '#f2c94c',
+    altitudeHigh: '#f2994a',
   },
 };
 

@@ -122,7 +122,16 @@ export async function recordLocationObservation(input: RecordLocationObservation
         ? { recordedAt: effectivePoint.recordedAt, latitude: effectivePoint.latitude, longitude: effectivePoint.longitude }
         : persistedState.lastVisitedGridPoint;
     await upsertLocationRecordingStateInCurrentTransaction(
-      { ...snapResult.state, lastObservedAt: rawPoint.recordedAt, lastVisitedGridPoint },
+      {
+        ...snapResult.state,
+        lastObservedAt: rawPoint.recordedAt,
+        lastVisitedGridPoint,
+        // スポット到達判定はこの層ではまだ行わない。単一行を丸ごと上書きするため、
+        // 読み出した滞在中の途中状態をそのまま書き戻さないと計測がリセットされてしまう
+        landmarkCandidateSpotId: persistedState.landmarkCandidateSpotId,
+        landmarkCandidateEnteredAt: persistedState.landmarkCandidateEnteredAt,
+        landmarkOutsideCount: persistedState.landmarkOutsideCount,
+      },
       now,
       txn,
     );

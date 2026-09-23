@@ -1,7 +1,7 @@
 import type * as SQLite from 'expo-sqlite';
 
-import { INITIAL_STAY_PLACE_SNAP_STATE } from '@/features/stayPlaces/stayPlaceSnapResolver';
 import {
+  INITIAL_PERSISTED_LOCATION_RECORDING_STATE,
   getLocationRecordingStateInCurrentTransaction,
   upsertLocationRecordingStateInCurrentTransaction,
 } from '@/features/location/locationRecordingStateRepository';
@@ -21,9 +21,7 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
     mockRunner.getFirstAsync.mockResolvedValue(null);
 
     await expect(getLocationRecordingStateInCurrentTransaction(mockRunner as unknown as SQLite.SQLiteDatabase)).resolves.toEqual({
-      ...INITIAL_STAY_PLACE_SNAP_STATE,
-      lastObservedAt: null,
-      lastVisitedGridPoint: null,
+      ...INITIAL_PERSISTED_LOCATION_RECORDING_STATE,
     });
   });
 
@@ -37,6 +35,9 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
       lastVisitedGridRecordedAt: '2026-08-23T00:00:09.000Z',
       lastVisitedGridLatitude: 35,
       lastVisitedGridLongitude: 139,
+      landmarkCandidateSpotId: null,
+      landmarkCandidateEnteredAt: null,
+      landmarkOutsideCount: 0,
     });
 
     await expect(getLocationRecordingStateInCurrentTransaction(mockRunner as unknown as SQLite.SQLiteDatabase)).resolves.toEqual({
@@ -50,6 +51,9 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
         latitude: 35,
         longitude: 139,
       },
+      landmarkCandidateSpotId: null,
+      landmarkCandidateEnteredAt: null,
+      landmarkOutsideCount: 0,
     });
     expect(mockRunner.getFirstAsync).toHaveBeenCalledWith(expect.stringContaining('active_stay_place_id AS activeStayPlaceId'));
     expect(mockRunner.getFirstAsync).toHaveBeenCalledWith(expect.stringContaining('WHERE id = 1'));
@@ -72,9 +76,7 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
     });
 
     await expect(getLocationRecordingStateInCurrentTransaction(mockRunner as unknown as SQLite.SQLiteDatabase)).resolves.toEqual({
-      ...INITIAL_STAY_PLACE_SNAP_STATE,
-      lastObservedAt: null,
-      lastVisitedGridPoint: null,
+      ...INITIAL_PERSISTED_LOCATION_RECORDING_STATE,
     });
   });
 
@@ -96,9 +98,7 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
     });
 
     await expect(getLocationRecordingStateInCurrentTransaction(mockRunner as unknown as SQLite.SQLiteDatabase)).resolves.toEqual({
-      ...INITIAL_STAY_PLACE_SNAP_STATE,
-      lastObservedAt: null,
-      lastVisitedGridPoint: null,
+      ...INITIAL_PERSISTED_LOCATION_RECORDING_STATE,
     });
   });
 
@@ -114,6 +114,9 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
         latitude: 35,
         longitude: 139,
       },
+      landmarkCandidateSpotId: null,
+      landmarkCandidateEnteredAt: null,
+      landmarkOutsideCount: 0,
     };
 
     await upsertLocationRecordingStateInCurrentTransaction(
@@ -133,17 +136,16 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
       '2026-08-23T00:00:09.000Z',
       35,
       139,
+      null,
+      null,
+      0,
       '2026-08-23T00:00:11.000Z',
     );
   });
 
   it('補間起点なしの場合は3列すべてへNULLを保存する', async () => {
     await upsertLocationRecordingStateInCurrentTransaction(
-      {
-        ...INITIAL_STAY_PLACE_SNAP_STATE,
-        lastObservedAt: null,
-        lastVisitedGridPoint: null,
-      },
+      { ...INITIAL_PERSISTED_LOCATION_RECORDING_STATE },
       '2026-08-23T00:00:11.000Z',
       mockRunner as unknown as SQLite.SQLiteDatabase,
     );
@@ -159,7 +161,94 @@ describe('位置情報記録状態リポジトリ locationRecordingStateReposito
       null,
       null,
       null,
+      null,
+      null,
+      0,
       '2026-08-23T00:00:11.000Z',
+    );
+  });
+});
+
+describe('ライブ記録状態のスポット滞在列', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('行が無い場合はスポット滞在状態も初期値になる', () => {
+    expect(INITIAL_PERSISTED_LOCATION_RECORDING_STATE.landmarkCandidateSpotId).toBeNull();
+    expect(INITIAL_PERSISTED_LOCATION_RECORDING_STATE.landmarkCandidateEnteredAt).toBeNull();
+    expect(INITIAL_PERSISTED_LOCATION_RECORDING_STATE.landmarkOutsideCount).toBe(0);
+  });
+
+  it('保存済み行からスポット滞在状態を読み出す', async () => {
+    mockRunner.getFirstAsync.mockResolvedValue({
+      activeStayPlaceId: null,
+      candidateStayPlaceId: null,
+      candidateCount: 0,
+      outsideCount: 0,
+      lastObservedAt: '2026-09-23T10:00:00.000Z',
+      lastVisitedGridRecordedAt: null,
+      lastVisitedGridLatitude: null,
+      lastVisitedGridLongitude: null,
+      landmarkCandidateSpotId: '01a0c450-6c00-7000-8000-000000000101',
+      landmarkCandidateEnteredAt: '2026-09-23T09:58:00.000Z',
+      landmarkOutsideCount: 1,
+    });
+
+    const state = await getLocationRecordingStateInCurrentTransaction(mockRunner as unknown as SQLite.SQLiteDatabase);
+
+    expect(state.landmarkCandidateSpotId).toBe('01a0c450-6c00-7000-8000-000000000101');
+    expect(state.landmarkCandidateEnteredAt).toBe('2026-09-23T09:58:00.000Z');
+    expect(state.landmarkOutsideCount).toBe(1);
+  });
+
+  it('列が未追加の既存行でも滞在回数は0として扱う', async () => {
+    mockRunner.getFirstAsync.mockResolvedValue({
+      activeStayPlaceId: null,
+      candidateStayPlaceId: null,
+      candidateCount: 0,
+      outsideCount: 0,
+      lastObservedAt: null,
+      lastVisitedGridRecordedAt: null,
+      lastVisitedGridLatitude: null,
+      lastVisitedGridLongitude: null,
+      landmarkCandidateSpotId: null,
+      landmarkCandidateEnteredAt: null,
+      landmarkOutsideCount: null,
+    });
+
+    const state = await getLocationRecordingStateInCurrentTransaction(mockRunner as unknown as SQLite.SQLiteDatabase);
+
+    expect(state.landmarkOutsideCount).toBe(0);
+  });
+
+  it('スポット滞在状態を3列へ保存する', async () => {
+    await upsertLocationRecordingStateInCurrentTransaction(
+      {
+        ...INITIAL_PERSISTED_LOCATION_RECORDING_STATE,
+        landmarkCandidateSpotId: '01a0c450-6c00-7000-8000-000000000101',
+        landmarkCandidateEnteredAt: '2026-09-23T09:58:00.000Z',
+        landmarkOutsideCount: 1,
+      },
+      '2026-09-23T10:00:00.000Z',
+      mockRunner as unknown as SQLite.SQLiteDatabase,
+    );
+
+    expect(mockRunner.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('landmark_candidate_spot_id'),
+      1,
+      null,
+      null,
+      0,
+      0,
+      null,
+      null,
+      null,
+      null,
+      '01a0c450-6c00-7000-8000-000000000101',
+      '2026-09-23T09:58:00.000Z',
+      1,
+      '2026-09-23T10:00:00.000Z',
     );
   });
 });

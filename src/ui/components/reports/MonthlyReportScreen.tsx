@@ -107,6 +107,7 @@ export function MonthlyReportScreen({
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
   const reportCaptureRef = useRef<View | null>(null);
+  const isSharingReportRef = useRef(false);
   const [isSharingReport, setIsSharingReport] = useState(false);
   const report = useMemo(() => createMonthlyReport(dailyLogs, points, getPreviousReportMonth()), [dailyLogs, points]);
   const summary = useMemo(() => createMonthlyDistanceSummary(dailyLogs, report), [dailyLogs, report]);
@@ -133,10 +134,12 @@ export function MonthlyReportScreen({
 
   /** レポートのスクロール本文全体をPNG化して共有する。 */
   async function shareReportImage(): Promise<void> {
-    if (!reportCaptureRef.current || isSharingReport || !isSharePrivacyReady) {
+    if (!reportCaptureRef.current || isSharingReportRef.current || !isSharePrivacyReady) {
       return;
     }
 
+    // state更新の描画反映前に届く連続タップも遮断するため、同期的にロックする。
+    isSharingReportRef.current = true;
     setIsSharingReport(true);
 
     await shareViewAsPng(reportCaptureRef, {
@@ -144,7 +147,10 @@ export function MonthlyReportScreen({
       errorFallbackMessage: 'レポート画像を共有できませんでした。',
       // キャプチャ前にReact Nativeの描画反映を1フレーム待つ。
       onBeforeCapture: () => new Promise((resolve) => requestAnimationFrame(() => resolve())),
-      onFinally: () => setIsSharingReport(false),
+      onFinally: () => {
+        isSharingReportRef.current = false;
+        setIsSharingReport(false);
+      },
     });
   }
 

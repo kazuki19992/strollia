@@ -1,4 +1,9 @@
-import { pathnameToScreenMode, pathnameToSettingsSentryScreenName, pathnameToDailyLogsSentryScreenName } from '@/ui/pathnameToScreenMode';
+import {
+  pathnameToAchievementsSentryScreenName,
+  pathnameToScreenMode,
+  pathnameToSettingsSentryScreenName,
+  pathnameToDailyLogsSentryScreenName,
+} from '@/ui/pathnameToScreenMode';
 
 describe('pathnameToScreenMode', () => {
   it('ルートパス "/" は map を返す', () => {
@@ -23,6 +28,10 @@ describe('pathnameToScreenMode', () => {
 
   it('"/achievements" は achievements を返す', () => {
     expect(pathnameToScreenMode('/achievements')).toBe('achievements');
+  });
+
+  it('"/achievements/01a0c450-6c00-7000-8000-000000000001" は achievements を返す', () => {
+    expect(pathnameToScreenMode('/achievements/01a0c450-6c00-7000-8000-000000000001')).toBe('achievements');
   });
 
   it('"/monthly-report" は monthlyReport を返す', () => {
@@ -78,6 +87,26 @@ describe('pathnameToSettingsSentryScreenName', () => {
 
   it('設定系でないパスは Settings:SettingsHome にフォールバックする', () => {
     expect(pathnameToSettingsSentryScreenName('/map')).toBe('Settings:SettingsHome');
+  });
+});
+
+describe('pathnameToAchievementsSentryScreenName', () => {
+  it('"/achievements" は Achievements:AchievementList を返す', () => {
+    expect(pathnameToAchievementsSentryScreenName('/achievements')).toBe('Achievements:AchievementList');
+  });
+
+  it('"/achievements/" は Achievements:AchievementList を返す', () => {
+    expect(pathnameToAchievementsSentryScreenName('/achievements/')).toBe('Achievements:AchievementList');
+  });
+
+  it('"/achievements/[packId]" は Achievements:LandmarkPackDetail を返す', () => {
+    expect(pathnameToAchievementsSentryScreenName('/achievements/01a0c450-6c00-7000-8000-000000000001')).toBe(
+      'Achievements:LandmarkPackDetail',
+    );
+  });
+
+  it('実績系でないパスは Achievements:AchievementList にフォールバックする', () => {
+    expect(pathnameToAchievementsSentryScreenName('/settings')).toBe('Achievements:AchievementList');
   });
 });
 

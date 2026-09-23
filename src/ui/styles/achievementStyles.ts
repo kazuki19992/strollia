@@ -66,6 +66,42 @@ export function createAchievementStyles(theme: AppTheme) {
       fontWeight: '800',
       textAlign: 'center',
     },
+    // Landmark spot packs (実績画面のスポットセクション)
+    landmarkPackTrophy: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      // 鍵バッジを右下へ重ねるための基準。幅と高さは Grayscale の制約により呼び出し側が数値で渡す
+      position: 'relative',
+    },
+    landmarkPackTrophyDim: {
+      opacity: 0.4,
+    },
+    landmarkPackLockBadge: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 999,
+      borderWidth: 1,
+      bottom: 0,
+      justifyContent: 'center',
+      padding: 4,
+      position: 'absolute',
+      right: 0,
+    },
+    landmarkPackProgressRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    landmarkPackProgressText: {
+      color: colors.mutedText,
+      fontSize: 13,
+      // 分数は桁数が変わってもバーの左端が揃うよう最小幅を確保する
+      minWidth: 34,
+    },
+    landmarkPackProgressBarArea: {
+      flex: 1,
+    },
     achievementDialogDate: {
       color: colors.mutedText,
       fontSize: 13,

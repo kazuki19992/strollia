@@ -77,6 +77,7 @@ import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
 import { appendFirstLaunchUpdateNoticeAcknowledgement, useAppUpdateNoticeState } from '@/ui/hooks/useAppUpdateNoticeState';
+import { type LandmarkPackListItem, useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
 import { useStayPlaceState } from '@/ui/hooks/useStayPlaceState';
 import type { PremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import type { AchievementListItem, PendingAchievementNotification } from '@/features/achievements/achievementRepository';
@@ -309,6 +310,8 @@ export type AppStateContextValue = {
   closeAchievementUnlockModal: () => void;
   /** 実績をXへシェアする。 */
   shareAchievementToX: (achievement: AchievementDefinition) => void;
+  /** スポットパックの到達状況(実績画面のスポットセクション用)。 */
+  landmarkPackItems: LandmarkPackListItem[];
 
   // プレミアム
   /** プレミアムアクセス状態。 */
@@ -417,6 +420,8 @@ export type AppStateContextValue = {
   openDailyLogs: () => void;
   /** 実績画面へ移動する。 */
   openAchievements: () => void;
+  /** スポットパック詳細画面へ移動する。 */
+  openLandmarkPack: (packId: string) => void;
   /** 月次レポート画面へ移動する(Plusゲート付き)。 */
   openMonthlyReport: () => void;
   /** 設定画面へ移動する。 */
@@ -459,6 +464,8 @@ type AppStateProviderProps = {
     openDailyLogs?: () => void;
     /** 実績画面へ移動する。 */
     openAchievements?: () => void;
+    /** スポットパック詳細画面へ移動する。 */
+    openLandmarkPack?: (packId: string) => void;
     /** 月次レポート画面へ移動する。 */
     openMonthlyReport?: () => void;
     /** 設定画面へ移動する。 */
@@ -602,6 +609,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     initializeAchievementReviewState,
     requestAchievementNotificationPermissionIfNeeded,
   } = useAchievementState();
+  const { landmarkPackItems } = useLandmarkPackState(premiumAccessState.isPlusActive);
 
   // useLocationRecordingSync に渡す安定したコールバックラッパー。
   // ref 経由で実装しているため空 deps で問題ない。
@@ -1123,6 +1131,18 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
+  /**
+   * スポットパック詳細画面へ移動する。
+   *
+   * 施錠中の行はペイウォールへ振り分けられるため、ここへ来るのはPlus有効時だけである。
+   */
+  function openLandmarkPack(packId: string): void {
+    if (navigator?.openLandmarkPack) {
+      triggerLightImpactHaptic();
+      navigator.openLandmarkPack(packId);
+    }
+  }
+
   /** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
   function openMonthlyReport(): void {
     // 起動直後は premiumAccessState がデフォルト値（未確定）のままの可能性があるため、
@@ -1430,6 +1450,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     activeAchievementNotification,
     closeAchievementUnlockModal,
     shareAchievementToX,
+    landmarkPackItems,
     premiumAccessState,
     revenueCatAppUserId,
     premiumOfferingSummary,
@@ -1476,6 +1497,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openMap,
     openDailyLogs,
     openAchievements,
+    openLandmarkPack,
     openMonthlyReport,
     openSettings,
     openStayPlaces,

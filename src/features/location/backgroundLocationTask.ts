@@ -4,6 +4,7 @@ import * as TaskManager from 'expo-task-manager';
 import { BACKGROUND_LOCATION_TASK_NAME } from './locationTrackingConfig';
 import { bufferLocationsDuringGpxImport, isGpxImportPriorityActive } from './gpxImportPriority';
 import { createLocationRecordingSession } from './locationRecordingSession';
+import { getLandmarkDetectionSnapshotForRecording } from '@/features/landmarks/landmarkRecordingService';
 import { getActiveStayPlacesForRecording } from '@/features/stayPlaces/stayPlaceRecordingService';
 
 /** Expo Locationのバックグラウンドタスクから渡される位置情報ペイロード。 */
@@ -43,6 +44,7 @@ if (!TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
 
     const session = await createLocationRecordingSession({
       getActiveStayPlaces: getActiveStayPlacesForRecording,
+      getLandmarkDetection: getLandmarkDetectionSnapshotForRecording,
     });
     await session.recordLocations(locations);
   });

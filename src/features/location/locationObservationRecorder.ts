@@ -1,5 +1,12 @@
 import { withExclusiveTransaction } from '@/db/database';
 import {
+  INITIAL_LANDMARK_ARRIVAL_STATE,
+  resolveLandmarkArrival,
+  type LandmarkArrivalState,
+} from '@/features/landmarks/landmarkArrivalResolver';
+import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
+import { insertLandmarkSpotVisitInCurrentTransaction } from '@/features/landmarks/landmarkVisitRepository';
+import {
   getLatestLocationPointInCurrentTransaction,
   hasLocationPointRawIdentityInCurrentTransaction,
   insertLocationPointInCurrentTransaction,
@@ -27,6 +34,8 @@ export type RecordLocationObservationInput = {
   rawPoint: NewLocationPoint;
   /** 当該観測で利用できる有効滞在場所一覧、または一時的な取得失敗。 */
   activeStayPlaces: ActiveStayPlacesSnapshot;
+  /** 当該配信バッチで利用できるスポット検知の対象、または無効・取得失敗。 */
+  landmarkDetection: LandmarkDetectionSnapshot;
   /** DB更新日時。未指定時は呼び出し時刻を使う。 */
   now?: string;
 };
@@ -62,6 +71,44 @@ function preserveSnapState(state: PersistedLocationRecordingState): StayPlaceSna
     candidateCount: state.candidateCount,
     outsideCount: state.outsideCount,
   };
+}
+
+/** 永続化された記録状態からスポット到達判定の状態を取り出す。 */
+function toLandmarkArrivalState(state: PersistedLocationRecordingState): LandmarkArrivalState {
+  return {
+    candidateSpotId: state.landmarkCandidateSpotId,
+    candidateEnteredAt: state.landmarkCandidateEnteredAt,
+    outsideCount: state.landmarkOutsideCount,
+  };
+}
+
+/**
+ * スポット検知の可否に応じて到達判定を行う。
+ *
+ * Plus無効(`disabled`)は明示的な権利消失のため滞在状態をリセットする。
+ * 取得失敗(`unavailable`)は一時的な障害のため、次の正常取得まで滞在状態を保持する。
+ */
+function resolveLandmarkArrivalForObservation(
+  persistedState: PersistedLocationRecordingState,
+  rawPoint: NewLocationPoint,
+  detection: LandmarkDetectionSnapshot,
+): { state: LandmarkArrivalState; arrivedSpotId: string | null } {
+  if (detection.status === 'disabled') {
+    return { state: INITIAL_LANDMARK_ARRIVAL_STATE, arrivedSpotId: null };
+  }
+
+  if (detection.status === 'unavailable') {
+    return { state: toLandmarkArrivalState(persistedState), arrivedSpotId: null };
+  }
+
+  return resolveLandmarkArrival({
+    state: toLandmarkArrivalState(persistedState),
+    // 到達判定は生座標で行う。滞在場所への吸着座標を使うと、吸着中の位置が
+    // スポット判定へ混入してしまうため。
+    observation: { latitude: rawPoint.latitude, longitude: rawPoint.longitude, recordedAt: rawPoint.recordedAt },
+    spots: detection.spots,
+    visitedSpotIds: detection.visitedSpotIds,
+  });
 }
 
 /**
@@ -117,6 +164,24 @@ export async function recordLocationObservation(input: RecordLocationObservation
       await upsertVisitedCellsInCurrentTransaction(visitedCells, rawPoint.recordedAt, txn);
     }
 
+    // スポット到達は保存されない観測も対象にする。停止中はGPS保存フィルタがほとんどの点を
+    // 捨てるため、保存点だけを見ていると滞在時間が進まず到達が永久に確定しない。
+    const landmarkResult = resolveLandmarkArrivalForObservation(persistedState, rawPoint, input.landmarkDetection);
+
+    if (landmarkResult.arrivedSpotId) {
+      await insertLandmarkSpotVisitInCurrentTransaction(
+        {
+          spotId: landmarkResult.arrivedSpotId,
+          visitedAt: rawPoint.recordedAt,
+          visitedLocalDate: rawPoint.localDate,
+          // 保存対象外の観測で確定した場合は根拠GPS点が存在しないためnullになる
+          locationPointId,
+        },
+        now,
+        txn,
+      );
+    }
+
     const lastVisitedGridPoint =
       visitedCells.length > 0
         ? { recordedAt: effectivePoint.recordedAt, latitude: effectivePoint.latitude, longitude: effectivePoint.longitude }
@@ -126,11 +191,10 @@ export async function recordLocationObservation(input: RecordLocationObservation
         ...snapResult.state,
         lastObservedAt: rawPoint.recordedAt,
         lastVisitedGridPoint,
-        // スポット到達判定はこの層ではまだ行わない。単一行を丸ごと上書きするため、
-        // 読み出した滞在中の途中状態をそのまま書き戻さないと計測がリセットされてしまう
-        landmarkCandidateSpotId: persistedState.landmarkCandidateSpotId,
-        landmarkCandidateEnteredAt: persistedState.landmarkCandidateEnteredAt,
-        landmarkOutsideCount: persistedState.landmarkOutsideCount,
+        // 単一行を丸ごと上書きするため、到達判定で求めた途中状態も必ず書き戻す
+        landmarkCandidateSpotId: landmarkResult.state.candidateSpotId,
+        landmarkCandidateEnteredAt: landmarkResult.state.candidateEnteredAt,
+        landmarkOutsideCount: landmarkResult.state.outsideCount,
       },
       now,
       txn,

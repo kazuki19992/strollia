@@ -1,5 +1,6 @@
 import type { LocationObject } from 'expo-location';
 
+import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
 import type { NewLocationPoint } from '@/types/gps';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 
@@ -70,6 +71,9 @@ const home: StayPlace = {
   createdAt: '2026-08-19T00:00:00.000Z',
   updatedAt: '2026-08-19T00:00:00.000Z',
 };
+
+/** Plus有効時のスポット検知スナップショット。 */
+const enabledDetection: LandmarkDetectionSnapshot = { status: 'enabled', spots: [], visitedSpotIds: new Set<string>() };
 
 /** 指定timestampのExpo位置情報を作る。 */
 function location(timestamp: number): LocationObject {
@@ -204,6 +208,40 @@ describe('位置情報保存セッション', () => {
       2,
       expect.objectContaining({ activeStayPlaces: { status: 'ready', stayPlaces: [home] } }),
     );
+  });
+
+  it('1回の位置情報バッチではスポット検知対象を1回だけ読み込む', async () => {
+    const getLandmarkDetection = jest.fn().mockResolvedValue(enabledDetection);
+    const session = await createLocationRecordingSession({ getLandmarkDetection });
+
+    await session.recordLocations([firstLocation, secondLocation]);
+
+    expect(getLandmarkDetection).toHaveBeenCalledTimes(1);
+    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(1, expect.objectContaining({ landmarkDetection: enabledDetection }));
+    expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(2, expect.objectContaining({ landmarkDetection: enabledDetection }));
+  });
+
+  it('スポット検知の取得関数が無い場合はdisabledをRecorderへ渡す', async () => {
+    const session = await createLocationRecordingSession();
+
+    await session.recordLocations([firstLocation]);
+
+    expect(mockRecordLocationObservation).toHaveBeenCalledWith(expect.objectContaining({ landmarkDetection: { status: 'disabled' } }));
+  });
+
+  it('スポット検知の取得失敗をunavailableとしてRecorderへ渡す', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const session = await createLocationRecordingSession({
+      getLandmarkDetection: async () => {
+        throw new Error('RevenueCat unavailable');
+      },
+    });
+
+    await session.recordLocations([firstLocation]);
+
+    expect(mockRecordLocationObservation).toHaveBeenCalledWith(expect.objectContaining({ landmarkDetection: { status: 'unavailable' } }));
+    expect(warn).toHaveBeenCalledWith('Landmark detection loading failed:', expect.any(Error));
+    warn.mockRestore();
   });
 });
 

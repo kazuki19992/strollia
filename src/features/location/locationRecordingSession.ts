@@ -2,6 +2,7 @@ import type * as Location from 'expo-location';
 
 import { initializeDatabase } from '@/db/database';
 import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
+import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
 import {
   ActiveStayPlacesSnapshot,
   recordLocationObservation,
@@ -23,10 +24,12 @@ export type LocationRecordingSession = {
   recordLocations: (locations: Location.LocationObject[]) => Promise<void>;
 };
 
-/** 記録中の各観測点で有効な滞在場所を取得する依存。 */
+/** 記録中の各観測点で有効な滞在場所・スポット検知対象を取得する依存。 */
 export type LocationRecordingSessionOptions = {
   /** 課金状態・設定変更を次の配信バッチから反映するため、配信バッチごとに取得する。 */
   getActiveStayPlaces?: () => Promise<StayPlace[]>;
+  /** 課金状態・到達済みスポットを次の配信バッチから反映するため、配信バッチごとに取得する。 */
+  getLandmarkDetection?: () => Promise<LandmarkDetectionSnapshot>;
 };
 
 /**
@@ -59,6 +62,8 @@ export async function createLocationRecordingSession(options: LocationRecordingS
       // Expoは複数観測を1回のタスク配信へまとめる。設定DBを点ごとに読むと不要な
       // ロック競合を増やすため、この配信全体では同じ有効滞在場所を使う。
       const activeStayPlaces: ActiveStayPlacesSnapshot = await getActiveStayPlacesSnapshot(options.getActiveStayPlaces);
+      // スポット検知もPlus判定とDB読み出しを伴うため、同じく配信バッチ単位で1回だけ取得する。
+      const landmarkDetection: LandmarkDetectionSnapshot = await getLandmarkDetectionSnapshot(options.getLandmarkDetection);
       /** 保存を完了した位置情報の数。途中失敗時に未確定分をバッファへ戻すために追跡する。 */
       let processedCount = 0;
       /** 後続観測が失敗しても、先に確定した点の実績処理後に元のエラーを返すため保持する。 */
@@ -71,6 +76,7 @@ export async function createLocationRecordingSession(options: LocationRecordingS
           const result: RecordLocationObservationResult = await recordLocationObservation({
             rawPoint,
             activeStayPlaces,
+            landmarkDetection,
           });
 
           if (result.status === 'saved') {
@@ -113,6 +119,27 @@ async function getActiveStayPlacesSnapshot(
     return { status: 'ready', stayPlaces: await getActiveStayPlaces() };
   } catch (error: unknown) {
     console.warn('Stay place loading failed:', error);
+    return { status: 'unavailable' };
+  }
+}
+
+/**
+ * スポット検知対象の読込結果を、Recorderが扱える形式へ変換する。
+ *
+ * 取得関数が未指定の場合は検知しない(Plus無効相当)扱いにする。取得自体が失敗した場合は
+ * 一時的な障害として `unavailable` を返し、計測中の滞在状態をリセットさせない。
+ */
+async function getLandmarkDetectionSnapshot(
+  getLandmarkDetection: (() => Promise<LandmarkDetectionSnapshot>) | undefined,
+): Promise<LandmarkDetectionSnapshot> {
+  if (!getLandmarkDetection) {
+    return { status: 'disabled' };
+  }
+
+  try {
+    return await getLandmarkDetection();
+  } catch (error: unknown) {
+    console.warn('Landmark detection loading failed:', error);
     return { status: 'unavailable' };
   }
 }

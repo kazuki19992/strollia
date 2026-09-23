@@ -1,4 +1,6 @@
 import { withExclusiveTransaction } from '@/db/database';
+import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
+import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
 import {
   recordLocationObservation,
   RecordLocationObservationInput,
@@ -19,6 +21,7 @@ const mockInsert = jest.fn();
 const mockShouldSave = jest.fn();
 const mockGetVisitedCells = jest.fn();
 const mockUpsertVisitedCells = jest.fn();
+const mockInsertLandmarkVisit = jest.fn();
 
 jest.mock('@/db/database', () => ({
   withExclusiveTransaction: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
@@ -47,6 +50,10 @@ jest.mock('@/features/location/visitedCellRepository', () => ({
   upsertVisitedCellsInCurrentTransaction: (...args: unknown[]) => mockUpsertVisitedCells(...args),
 }));
 
+jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
+  insertLandmarkSpotVisitInCurrentTransaction: (...args: unknown[]) => mockInsertLandmarkVisit(...args),
+}));
+
 const initialPersistedState = {
   activeStayPlaceId: null,
   candidateStayPlaceId: null,
@@ -54,6 +61,9 @@ const initialPersistedState = {
   outsideCount: 0,
   lastObservedAt: null,
   lastVisitedGridPoint: null,
+  landmarkCandidateSpotId: null,
+  landmarkCandidateEnteredAt: null,
+  landmarkOutsideCount: 0,
 };
 
 const home: StayPlace = {
@@ -68,6 +78,37 @@ const home: StayPlace = {
 };
 
 const cell = { cellId: '100:1:1', cellSizeMeters: 100, x: 1, y: 1 };
+
+/** 自宅と同じ座標に置いたテスト用スポット。半径200m・滞在180秒。 */
+const spot: LandmarkSpot = {
+  id: '01a0c450-6c00-7000-8000-000000000101',
+  name: 'テスト用スポット',
+  prefecture: 'TOKYO',
+  latitude: 35,
+  longitude: 139,
+  radiusMeters: 200,
+  dwellSeconds: 180,
+  packs: [{ packId: '01a0c450-6c00-7000-8000-000000000001', order: 1 }],
+};
+
+/**
+ * 自宅の吸着半径(50m)内にありながら、自宅中心からは外れる小さなスポット。
+ *
+ * 到達判定が生座標と吸着座標のどちらを見ているかを区別するために使う。
+ */
+const snapRadiusSpot: LandmarkSpot = {
+  ...spot,
+  id: '01a0c450-6c00-7000-8000-000000000102',
+  name: '吸着半径内のスポット',
+  latitude: 35 + 40 / 6_371_000 / (Math.PI / 180),
+  radiusMeters: 20,
+  dwellSeconds: 0,
+};
+
+/** Plus有効時の検知スナップショットを作る。 */
+function enabledLandmarkDetection(visitedSpotIds: string[] = []): LandmarkDetectionSnapshot {
+  return { status: 'enabled', spots: [spot], visitedSpotIds: new Set(visitedSpotIds) };
+}
 
 /** 指定時刻の生GPS観測を作る。 */
 function pointAt(latitude: number, longitude: number, recordedAt: string): NewLocationPoint {
@@ -100,26 +141,37 @@ function pointOutsideHome(recordedAt: string): NewLocationPoint {
   return pointAt(home.latitude + 0.001, home.longitude, recordedAt);
 }
 
-/** 通常の有効滞在場所取得結果を持つ記録入力を作る。 */
+/**
+ * 通常の有効滞在場所取得結果を持つ記録入力を作る。
+ *
+ * スポット検知はPlus限定のため、既定はPlus無効相当の `disabled` とする。
+ */
 function input(rawPoint: NewLocationPoint): RecordLocationObservationInput {
   return {
     rawPoint,
     activeStayPlaces: { status: 'ready', stayPlaces: [home] },
+    landmarkDetection: { status: 'disabled' },
     now: '2026-08-23T01:00:00.000Z',
   };
 }
 
+/** 保存が成立する既定のモック応答へ戻す。 */
+function resetMocksToDefaults(): void {
+  jest.clearAllMocks();
+  mockGetState.mockResolvedValue({ ...initialPersistedState });
+  mockUpsertState.mockResolvedValue(undefined);
+  mockGetLatest.mockResolvedValue(null);
+  mockHasRawIdentity.mockResolvedValue(false);
+  mockInsert.mockResolvedValue({ locationPointId: 1, previousPoint: null, nextPoint: null, distanceDeltaMeters: 0 });
+  mockShouldSave.mockReturnValue(true);
+  mockGetVisitedCells.mockReturnValue([]);
+  mockUpsertVisitedCells.mockResolvedValue(undefined);
+  mockInsertLandmarkVisit.mockResolvedValue(undefined);
+}
+
 describe('原子的な位置観測記録 recordLocationObservation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockGetState.mockResolvedValue({ ...initialPersistedState });
-    mockUpsertState.mockResolvedValue(undefined);
-    mockGetLatest.mockResolvedValue(null);
-    mockHasRawIdentity.mockResolvedValue(false);
-    mockInsert.mockResolvedValue({ locationPointId: 1, previousPoint: null, nextPoint: null, distanceDeltaMeters: 0 });
-    mockShouldSave.mockReturnValue(true);
-    mockGetVisitedCells.mockReturnValue([]);
-    mockUpsertVisitedCells.mockResolvedValue(undefined);
+    resetMocksToDefaults();
   });
 
   it('別々の呼び出しでも永続状態を引き継ぎ3点目から吸着する', async () => {
@@ -458,5 +510,163 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     expect(mockInsert).toHaveBeenCalledWith(expect.any(Object), '2026-08-23T01:00:00.000Z', mockTxn);
     expect(mockUpsertVisitedCells).toHaveBeenCalledWith([cell], rawPoint.recordedAt, mockTxn);
     expect(mockUpsertState).not.toHaveBeenCalled();
+  });
+});
+
+describe('スポット到達の記録', () => {
+  /** 滞在時間の計測が進行中の永続状態。 */
+  const dwellingPersistedState = {
+    ...initialPersistedState,
+    landmarkCandidateSpotId: spot.id,
+    landmarkCandidateEnteredAt: '2026-08-23T00:00:00.000Z',
+    landmarkOutsideCount: 1,
+  };
+
+  beforeEach(() => {
+    resetMocksToDefaults();
+  });
+
+  it('Plus無効なら到達を記録せず滞在状態をリセットする', async () => {
+    mockGetState.mockResolvedValue({ ...dwellingPersistedState });
+
+    await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:05:00.000Z')),
+      landmarkDetection: { status: 'disabled' },
+    });
+
+    expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
+    expect(mockUpsertState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        landmarkCandidateSpotId: null,
+        landmarkCandidateEnteredAt: null,
+        landmarkOutsideCount: 0,
+      }),
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+  });
+
+  it('取得失敗時は滞在状態を保持する', async () => {
+    mockGetState.mockResolvedValue({ ...dwellingPersistedState });
+
+    await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:05:00.000Z')),
+      landmarkDetection: { status: 'unavailable' },
+    });
+
+    expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
+    expect(mockUpsertState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        landmarkCandidateSpotId: spot.id,
+        landmarkCandidateEnteredAt: '2026-08-23T00:00:00.000Z',
+        landmarkOutsideCount: 1,
+      }),
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+  });
+
+  it('半径内の最初の観測では到達せず入場時刻を記録する', async () => {
+    const rawPoint = pointAtHome('2026-08-23T00:00:10.000Z');
+
+    await recordLocationObservation({ ...input(rawPoint), landmarkDetection: enabledLandmarkDetection() });
+
+    expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
+    expect(mockUpsertState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        landmarkCandidateSpotId: spot.id,
+        landmarkCandidateEnteredAt: rawPoint.recordedAt,
+        landmarkOutsideCount: 0,
+      }),
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+  });
+
+  it('到達が確定するとlandmark_spot_visitsへINSERTする', async () => {
+    let persistedState = { ...initialPersistedState };
+    mockGetState.mockImplementation(async () => persistedState);
+    mockUpsertState.mockImplementation(async (state) => {
+      persistedState = state;
+    });
+    const detection = enabledLandmarkDetection();
+
+    await recordLocationObservation({ ...input(pointAtHome('2026-08-23T00:00:00.000Z')), landmarkDetection: detection });
+    const arrival = pointAtHome('2026-08-23T00:03:00.000Z');
+    await recordLocationObservation({ ...input(arrival), landmarkDetection: detection });
+
+    expect(mockInsertLandmarkVisit).toHaveBeenCalledTimes(1);
+    expect(mockInsertLandmarkVisit).toHaveBeenCalledWith(
+      {
+        spotId: spot.id,
+        visitedAt: arrival.recordedAt,
+        visitedLocalDate: arrival.localDate,
+        locationPointId: 1,
+      },
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+    expect(persistedState.landmarkCandidateSpotId).toBeNull();
+  });
+
+  it('保存されない観測でも到達を確定できる', async () => {
+    // 立ち止まっている間はGPS保存フィルタが点を捨てるため、保存されない観測でも
+    // 到達が確定しなければ「滝の前で眺める」ケースで永久に到達できない
+    mockShouldSave.mockReturnValue(false);
+    mockGetState.mockResolvedValue({
+      ...initialPersistedState,
+      landmarkCandidateSpotId: spot.id,
+      landmarkCandidateEnteredAt: '2026-08-23T00:00:00.000Z',
+    });
+    const arrival = pointAtHome('2026-08-23T00:03:00.000Z');
+
+    await expect(recordLocationObservation({ ...input(arrival), landmarkDetection: enabledLandmarkDetection() })).resolves.toEqual({
+      status: 'not-saved',
+    });
+
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockInsertLandmarkVisit).toHaveBeenCalledWith(
+      {
+        spotId: spot.id,
+        visitedAt: arrival.recordedAt,
+        visitedLocalDate: arrival.localDate,
+        locationPointId: null,
+      },
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+  });
+
+  it('到達済みスポットでは再びINSERTしない', async () => {
+    mockGetState.mockResolvedValue({
+      ...initialPersistedState,
+      landmarkCandidateSpotId: spot.id,
+      landmarkCandidateEnteredAt: '2026-08-23T00:00:00.000Z',
+    });
+
+    await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:03:00.000Z')),
+      landmarkDetection: enabledLandmarkDetection([spot.id]),
+    });
+
+    expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
+  });
+
+  it('吸着中でも生座標でスポットを判定する', async () => {
+    // 吸着座標で判定すると、自宅中心(=スポットの半径外)へ寄せられた位置が混入し到達できない
+    mockGetState.mockResolvedValue({ ...initialPersistedState, activeStayPlaceId: home.id });
+    const rawPoint = pointAtDistanceFromHome(40, '2026-08-23T00:00:10.000Z');
+
+    const result = await recordLocationObservation({
+      ...input(rawPoint),
+      landmarkDetection: { status: 'enabled', spots: [snapRadiusSpot], visitedSpotIds: new Set<string>() },
+    });
+
+    expect(result).toEqual(expect.objectContaining({ point: expect.objectContaining({ snappedStayPlaceId: home.id }) }));
+    expect(mockInsertLandmarkVisit).toHaveBeenCalledWith(
+      expect.objectContaining({ spotId: snapRadiusSpot.id }),
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
   });
 });

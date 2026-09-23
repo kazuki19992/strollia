@@ -128,5 +128,7 @@ export function getAchievementProgressLabel(item: AchievementListItem): string {
       return `${item.progressValue} / ${threshold} 都道府県`;
     case 'municipalityCount':
       return `${item.progressValue} / ${threshold} 市区町村`;
+    case 'landmarkPackCompletion':
+      return `${item.progressValue} / ${threshold} スポット`;
   }
 }

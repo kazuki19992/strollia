@@ -89,11 +89,11 @@ function isPackUnlocked(packId: string, access: PremiumAccessState): boolean {
 
 **パックごとにスポットを重複定義してはならない。** 重複定義すると同じ場所へ2回行かなければ両方が埋まらず、不自然な体験になる。
 
-スポットは座標の実体として1件だけ定義し、パックはスポットの参照集合を持つ。
+スポットは座標の実体として1件だけ定義し、**所属するパックをスポット側が持つ**（第5.4節）。
 訪問記録は `spot_id` 単位で1行入るため、備中松山城へ1回到達すれば両パックのカウントが同時に進む。
 
 この構造により、将来の日本百観音（西国33＋坂東33＋秩父34＝100）のような入れ子パックも、
-特別な仕組みなしに表現できる（百観音パックが100件を参照し、その部分集合を3つの小パックが参照する）。
+特別な仕組みなしに表現できる（各スポットが小パックと百観音パックの両方を `packs` に持つだけでよい）。
 
 ### 5.2 ファイル構成
 
@@ -127,17 +127,31 @@ src/features/landmarks/
 マスタをDBへ同期しない。同期層を持つと真実の源が2つになり、
 「JSONを直したのにDBが古い」という不整合と、観測ごとのSQLite読み込みを抱え込むため。
 
-### 5.4 ID方針
+### 5.4 ID方針と参照の向き
 
-| フィールド | 用途                                                                                     |
-| ---------- | ---------------------------------------------------------------------------------------- |
-| `id`       | UUIDv7。DBの `spot_id` に保存する安定識別子                                              |
-| `slug`     | 大文字スネークケースの可読キー（`CAPE_SOYA` など）。JSON内の相互参照と差分の可読性に使う |
+**識別子はUUIDv7のみとする。可読キー（slug）は持たない。**
 
-`landmarkPacks.json` は `spotSlugs` でスポットを参照し、**生成時にUUIDへ解決する**。
-UUIDv7を直接書くと手編集が困難になるため、可読キーで参照を書けるようにする。
+データはヘルパーツールで生成する前提であり、レコードごとに人間が可読キーを考える工程を挟むと、
+命名の一意性判断と表記の揺れという、ツールでは自動化しにくい作業が残ってしまうため。
 
-enum値は大文字スネークケースで統一する（都道府県は `HOKKAIDO`、`KYOTO` など単語1つ）。
+enum値は大文字スネークケースで統一する（都道府県は `HOKKAIDO`、`KYOTO` など）。
+これは固定の閉じた集合であり、レコードごとに人間が考えるものではないため、可読な値のままとする。
+
+#### パック所属はスポット側が持つ
+
+UUIDのみにすると相互参照が可読でなくなるため、**参照の向きをスポット側からに統一する**。
+
+| 持ち方                        | 可読性                                                                           |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| パックが `spotIds` を持つ     | パック定義がUUID61個の羅列になり、何のスポットか読めない                         |
+| **スポットが `packs` を持つ** | **スポット名と所属が同じレコードに並ぶ。パック定義は相互参照ゼロで完全に読める** |
+
+追跡すべきUUIDがスポット61個からパック11個へ減ることも利点となる。
+パック → スポットの引き当ては生成スクリプトがグルーピングして作るため、アプリ側の使い勝手は変わらない。
+
+`packs` の要素は `order` を持ち、パック内の表示順を定める。
+将来の四国八十八ヶ所の札所番号（1番〜88番）や西国三十三所の順序をそのまま表現できる。
+同一スポットが複数パックに属する場合、パックごとに異なる順序を持てる。
 
 ### 5.5 スキーマ
 
@@ -147,17 +161,29 @@ enum値は大文字スネークケースで統一する（都道府県は `HOKKA
   "type": "array",
   "items": {
     "type": "object",
-    "required": ["id", "slug", "name", "prefecture", "latitude", "longitude", "radiusMeters", "dwellSeconds"],
+    "required": ["id", "name", "prefecture", "latitude", "longitude", "radiusMeters", "dwellSeconds", "packs"],
     "additionalProperties": false,
     "properties": {
       "id": { "type": "string", "format": "uuid" },
-      "slug": { "type": "string", "pattern": "^[A-Z0-9_]+$" },
       "name": { "type": "string", "minLength": 1 },
       "prefecture": { "type": "string", "enum": ["HOKKAIDO", "AOMORI", "..."] },
       "latitude": { "type": "number", "minimum": 20, "maximum": 46 },
       "longitude": { "type": "number", "minimum": 122, "maximum": 154 },
       "radiusMeters": { "type": "number", "exclusiveMinimum": 0, "maximum": 2000 },
       "dwellSeconds": { "type": "integer", "minimum": 0, "maximum": 3600 },
+      "packs": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["packId", "order"],
+          "additionalProperties": false,
+          "properties": {
+            "packId": { "type": "string", "format": "uuid" },
+            "order": { "type": "integer", "minimum": 1 }
+          }
+        }
+      },
       "retired": { "type": "boolean" },
       "note": { "type": "string" }
     }
@@ -168,15 +194,30 @@ enum値は大文字スネークケースで統一する（都道府県は `HOKKA
 緯度経度の範囲を日本国内に制限することで、**緯度と経度の取り違え**という最も起きやすい入力ミスをエディタ上で検出できる。
 `additionalProperties: false` はキーのスペルミスを弾く。
 
-パックのスキーマは以下を持つ。
+スポットの実例。
 
 ```json
 {
-  "slug": "JAPAN_MAINLAND_FOUR_EXTREMES",
-  "name": "日本本土四極",
-  "description": "民間人がたどり着ける日本の東西南北の極",
-  "spotSlugs": ["CAPE_SOYA", "CAPE_NOSAPPU", "CAPE_SATA", "KANZAKIBANA"],
-  "trophyImage": "japan-mainland-four-extremes.png",
+  "id": "0199c8f2-1a2b-7c3d-8e4f-000000000001",
+  "name": "華厳の滝",
+  "prefecture": "TOCHIGI",
+  "latitude": 36.737917,
+  "longitude": 139.501972,
+  "radiusMeters": 200,
+  "dwellSeconds": 180,
+  "packs": [{ "packId": "0199aa01-1a2b-7c3d-8e4f-000000000001", "order": 1 }],
+  "note": "観瀑台と駐車場を含む半径。国道120号は300m以上離れており通過では入らない"
+}
+```
+
+パックは相互参照を持たない。
+
+```json
+{
+  "id": "0199aa01-1a2b-7c3d-8e4f-000000000001",
+  "name": "日本三名瀑",
+  "description": "日本を代表する3つの名瀑",
+  "trophyImage": "spots-japan-falls-3.png",
   "sortOrder": 100
 }
 ```
@@ -188,14 +229,28 @@ enum値は大文字スネークケースで統一する（都道府県は `HOKKA
 `generate-landmark-catalog.mjs` は以下を検証し、違反があれば生成せずに失敗する。
 
 - JSON Schema への適合
-- `id` と `slug` の重複がないこと
-- **`spotSlugs` が実在するスポットを指していること**
+- スポットとパックそれぞれで `id` の重複がないこと
+- **スポットの `packs[].packId` が実在するパックを指していること**
+- 同一スポットが同じパックを重複して参照していないこと
+- 同一パック内で `order` が重複していないこと
+- スポットを1件も持たないパックが存在しないこと（完走不能なパックを防ぐ）
 
-最後の項目は多対多構造では必須である。`spotSlugs` に1文字のtypoがあると、
-実行時には何のエラーも出ないまま**そのパックが永久に完走不能**になる。
+`packId` に誤りがあると、実行時には何のエラーも出ないまま
+**そのスポットがどのパックにも数えられない**、あるいは**パックが永久に完走不能**になるため、
+生成時に落とすことが必須である。
 
-生成物の型は `slug` からリテラルユニオン型を作る（`'CAPE_SOYA' | 'CAPE_NOSAPPU' | ...`）。
-JSONを直接importする場合は全て `string` になるため、生成を挟む利点がここにある。
+生成物には**スポット名をコメントとして併記する**。UUIDのみではデバッグ時に判別できないため。
+
+```ts
+export const LANDMARK_PACKS: readonly LandmarkPack[] = [
+  {
+    id: '0199aa01-1a2b-7c3d-8e4f-000000000001',
+    name: '日本三名瀑',
+    // 華厳の滝, 那智の滝, 袋田の滝
+    spotIds: ['0199c8f2-...', '0199c8f2-...', '0199c8f2-...'],
+  },
+];
+```
 
 ## 6. DBスキーマ
 
@@ -274,7 +329,7 @@ export type LandmarkArrivalResult = {
 手順。
 
 1. 未到達のスポットのうち、観測地点から `radiusMeters` 以内にあるものを探す。**境界値は範囲内**として扱う（滞在場所の吸着半径と同じ）
-2. 複数が該当する場合は最寄りの1件を候補とする。同距離なら `slug` 昇順で安定させる
+2. 複数が該当する場合は最寄りの1件を候補とする。同距離なら `id` 昇順で安定させる（UUIDv7は生成順に単調増加するため、実質マスタへの登録順になる）
 3. 候補が前回と同じなら `candidateEnteredAt` を維持し、異なれば今回の観測時刻で開始し直す
 4. `観測時刻 − candidateEnteredAt >= dwellSeconds` になった観測で**到達を確定**する
 5. 候補の半径外を観測した場合、`outsideCount` を進める。**2回連続で外なら状態をリセット**する
@@ -326,7 +381,11 @@ export type AchievementCategory = 'distance' | 'logDays' | 'prefecture' | 'munic
 `threshold` はパックの有効スポット数（`retired` を除いた件数）とする。
 `AchievementProgress` にはパックIDごとの到達数を持たせ、`getProgressValueForCondition` で解決する。
 
-11パックぶんの完走実績を `ACHIEVEMENT_DEFINITIONS` へ追加する。
+完走実績のIDは `landmark-pack-<パックのUUID>` とする。
+`achievement_unlocks` へ保存されるため安定性が最優先であり、可読性は二の次でよい。
+
+パック完走実績の定義はマスタから導出し、`ACHIEVEMENT_DEFINITIONS` へ合成する。
+パックを追加するたびに実績定義を手で書き足さずに済み、両者の食い違いが起きない。
 
 ### 8.2 既存実績画面グリッドへの影響
 
@@ -537,7 +596,7 @@ URLが変わらないため既存の `openAchievements()` は改修不要。
 | 対象                      | 検証内容                                                                                                                                                               |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `resolveLandmarkArrival`  | 半径の境界値（境界は範囲内）、滞在時間の到達・未達、候補の切り替え、1点の外れ値を許容すること、2点連続で外ならリセットすること、到達済みスポットを候補から除外すること |
-| カタログ生成物            | `id` / `slug` の重複、緯度経度の範囲、`radiusMeters > 0`、`dwellSeconds >= 0`、**`spotSlugs` が実在するスポットを指すこと**                                            |
+| カタログ生成物            | `id` の重複、緯度経度の範囲、`radiusMeters > 0`、`dwellSeconds >= 0`、**`packs[].packId` が実在するパックを指すこと**、`order` の重複、スポットを持たないパックの不在  |
 | `landmarkVisitRepository` | `db` をモックし、重複INSERTが無害なこと、`visited_local_date` が正しく記録されること                                                                                   |
 | パック完走判定            | 多対多（備中松山城への1回の到達で2パックの進捗が進むこと）、`retired` を分母から除外すること                                                                           |
 | Plus連携                  | Plus無効時に検知を行わず状態がリセットされること、解約後も訪問記録が残ること                                                                                           |

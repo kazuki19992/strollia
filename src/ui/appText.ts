@@ -140,6 +140,14 @@ export const LANDMARK_PACK_SECTION_TITLE = 'スポット (Strollia Plus)';
  */
 export const LANDMARK_PACK_PLUS_PROMOTION_NOTE = 'Strollia Plus なら、今後追加されるスポットパックもすべて集められます';
 
+/**
+ * パック詳細画面で、現存しなくなったスポット(retired)の行へ併記する注記。
+ *
+ * 完走判定の分母から外していることをユーザーが読み取れるようにするための表示で、
+ * 「行けないのに未到達扱いで残っている」という誤解を防ぐ。
+ */
+export const LANDMARK_SPOT_RETIRED_NOTE = '現存せず';
+
 /** 初回チュートリアルの不具合レポート告知ステップのタイトル。 */
 export const CRASH_REPORTING_TUTORIAL_TITLE = '不具合レポートについて';
 

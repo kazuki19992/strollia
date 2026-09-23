@@ -207,6 +207,9 @@ function useRouterNavigator() {
       openDailyLogs: () => router.push('/daily-logs'),
       openAchievements: () => router.push('/achievements'),
       openLandmarkPack: (packId: string) => router.push(`/achievements/${packId}`),
+      closeLandmarkPack: () => router.back(),
+      // 実績スタックの子画面から地図へ抜けるため、スタックを畳んで地図ルートまで戻す
+      dismissToMap: () => router.dismissTo('/'),
       openMonthlyReport: () => router.push('/monthly-report'),
       openSettings: () => router.push('/settings'),
       openStayPlaces: () => router.push('/settings/stay-places'),

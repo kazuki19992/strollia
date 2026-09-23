@@ -16,6 +16,7 @@ import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { GpxImportInterruptedError, importLocationPointsFromGpx } from '@/features/import/importRepository';
 import type { GpxImportResult } from '@/features/import/importRepository';
+import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 import { getLandmarkDetectionSnapshotForRecording } from '@/features/landmarks/landmarkRecordingService';
 import { beginGpxImportPriority } from '@/features/location/gpxImportPriority';
 import { flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
@@ -77,7 +78,7 @@ import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
 import { appendFirstLaunchUpdateNoticeAcknowledgement, useAppUpdateNoticeState } from '@/ui/hooks/useAppUpdateNoticeState';
-import { type LandmarkPackListItem, useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
+import { type LandmarkPackDetail, type LandmarkPackListItem, useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
 import { useStayPlaceState } from '@/ui/hooks/useStayPlaceState';
 import type { PremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import type { AchievementListItem, PendingAchievementNotification } from '@/features/achievements/achievementRepository';
@@ -312,6 +313,8 @@ export type AppStateContextValue = {
   shareAchievementToX: (achievement: AchievementDefinition) => void;
   /** スポットパックの到達状況(実績画面のスポットセクション用)。 */
   landmarkPackItems: LandmarkPackListItem[];
+  /** パックIDからパック詳細画面の表示データを取得する。未知のIDはnull。 */
+  getLandmarkPackDetail: (packId: string) => LandmarkPackDetail | null;
 
   // プレミアム
   /** プレミアムアクセス状態。 */
@@ -422,6 +425,10 @@ export type AppStateContextValue = {
   openAchievements: () => void;
   /** スポットパック詳細画面へ移動する。 */
   openLandmarkPack: (packId: string) => void;
+  /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
+  closeLandmarkPack: () => void;
+  /** 未到達スポットの位置を確認するため地図画面へ移動する。 */
+  openMapAtLandmarkSpot: (spot: LandmarkSpot) => void;
   /** 月次レポート画面へ移動する(Plusゲート付き)。 */
   openMonthlyReport: () => void;
   /** 設定画面へ移動する。 */
@@ -466,6 +473,15 @@ type AppStateProviderProps = {
     openAchievements?: () => void;
     /** スポットパック詳細画面へ移動する。 */
     openLandmarkPack?: (packId: string) => void;
+    /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
+    closeLandmarkPack?: () => void;
+    /**
+     * ネストした子画面から地図ルートへ戻る(`router.dismissTo('/')` 相当)。
+     *
+     * 実績スタックの子画面から地図へ抜けるには、1段戻る `openMap` では親の一覧へ
+     * 戻ってしまうため、スタックを畳んで地図まで戻る操作を別に用意する。
+     */
+    dismissToMap?: () => void;
     /** 月次レポート画面へ移動する。 */
     openMonthlyReport?: () => void;
     /** 設定画面へ移動する。 */
@@ -609,7 +625,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     initializeAchievementReviewState,
     requestAchievementNotificationPermissionIfNeeded,
   } = useAchievementState();
-  const { landmarkPackItems } = useLandmarkPackState(premiumAccessState.isPlusActive);
+  const { landmarkPackItems, getLandmarkPackDetail } = useLandmarkPackState(premiumAccessState.isPlusActive);
 
   // useLocationRecordingSync に渡す安定したコールバックラッパー。
   // ref 経由で実装しているため空 deps で問題ない。
@@ -1143,6 +1159,34 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
+  /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
+  function closeLandmarkPack(): void {
+    if (navigator?.closeLandmarkPack) {
+      triggerLightImpactHaptic();
+      navigator.closeLandmarkPack();
+    } else {
+      navigateToScreen('achievements');
+    }
+  }
+
+  /**
+   * 未到達スポットの位置を確認するため地図画面へ移動する。
+   *
+   * 設計書 §9.7 はスポット座標を中心に表示することを求めるが、座標中心化と追従OFFは
+   * `useMapFollowState` 側の拡張が必要なため後続タスクで実装する。現時点は地図へ戻るところまでを担う。
+   * 現在地中心への復元(`prepareMapRegionRestore`)は、スポット中心化と衝突するため意図的に呼ばない。
+   *
+   * @param spot - 表示したいスポット。座標中心化の実装で使う。
+   */
+  function openMapAtLandmarkSpot(spot: LandmarkSpot): void {
+    if (navigator?.dismissToMap) {
+      triggerLightImpactHaptic();
+      navigator.dismissToMap();
+    } else {
+      navigateToScreen('map');
+    }
+  }
+
   /** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
   function openMonthlyReport(): void {
     // 起動直後は premiumAccessState がデフォルト値（未確定）のままの可能性があるため、
@@ -1451,6 +1495,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     closeAchievementUnlockModal,
     shareAchievementToX,
     landmarkPackItems,
+    getLandmarkPackDetail,
     premiumAccessState,
     revenueCatAppUserId,
     premiumOfferingSummary,
@@ -1498,6 +1543,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openDailyLogs,
     openAchievements,
     openLandmarkPack,
+    closeLandmarkPack,
+    openMapAtLandmarkSpot,
     openMonthlyReport,
     openSettings,
     openStayPlaces,

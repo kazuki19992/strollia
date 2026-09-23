@@ -314,7 +314,7 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     mockShouldSave.mockReturnValue(false);
     mockGetVisitedCells.mockReturnValue([cell]);
 
-    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'not-saved' });
+    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'not-saved', arrivedLandmarkSpotId: null });
 
     expect(mockHasRawIdentity).toHaveBeenCalledWith(rawPoint, mockTxn);
     expect(mockInsert).not.toHaveBeenCalled();
@@ -591,10 +591,16 @@ describe('スポット到達の記録', () => {
     });
     const detection = enabledLandmarkDetection();
 
-    await recordLocationObservation({ ...input(pointAtHome('2026-08-23T00:00:00.000Z')), landmarkDetection: detection });
+    const beforeArrival = await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:00:00.000Z')),
+      landmarkDetection: detection,
+    });
     const arrival = pointAtHome('2026-08-23T00:03:00.000Z');
-    await recordLocationObservation({ ...input(arrival), landmarkDetection: detection });
+    const arrivalResult = await recordLocationObservation({ ...input(arrival), landmarkDetection: detection });
 
+    // 呼び出し側が到達通知と完走実績評価をこの戻り値だけで判断できるようにする
+    expect(beforeArrival).toEqual(expect.objectContaining({ status: 'saved', arrivedLandmarkSpotId: null }));
+    expect(arrivalResult).toEqual(expect.objectContaining({ status: 'saved', arrivedLandmarkSpotId: spot.id }));
     expect(mockInsertLandmarkVisit).toHaveBeenCalledTimes(1);
     expect(mockInsertLandmarkVisit).toHaveBeenCalledWith(
       {
@@ -622,6 +628,7 @@ describe('スポット到達の記録', () => {
 
     await expect(recordLocationObservation({ ...input(arrival), landmarkDetection: enabledLandmarkDetection() })).resolves.toEqual({
       status: 'not-saved',
+      arrivedLandmarkSpotId: spot.id,
     });
 
     expect(mockInsert).not.toHaveBeenCalled();

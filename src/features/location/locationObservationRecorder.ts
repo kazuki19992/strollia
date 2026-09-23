@@ -40,9 +40,17 @@ export type RecordLocationObservationInput = {
   now?: string;
 };
 
-/** 原子的な位置観測記録の結果。 */
+/**
+ * 原子的な位置観測記録の結果。
+ *
+ * `arrivedLandmarkSpotId` は保存の有無に関わらず返す。停止中はGPS保存フィルタがほとんどの点を
+ * 捨てるため、到達は保存されない観測でこそ確定する。呼び出し側が保存点だけを見ていると
+ * 到達通知とパック完走実績が歩き出すまで遅れてしまう。
+ */
 export type RecordLocationObservationResult =
-  { status: 'saved'; point: NewLocationPoint; locationPointId: number } | { status: 'not-saved' } | { status: 'stale' | 'duplicate' };
+  | { status: 'saved'; point: NewLocationPoint; locationPointId: number; arrivedLandmarkSpotId: string | null }
+  | { status: 'not-saved'; arrivedLandmarkSpotId: string | null }
+  | { status: 'stale' | 'duplicate' };
 
 /** トランザクション内で求めた結果をコールバック外へ受け渡す箱。 */
 type RecordLocationObservationResultHolder = {
@@ -200,7 +208,10 @@ export async function recordLocationObservation(input: RecordLocationObservation
       txn,
     );
 
-    result.value = locationPointId == null ? { status: 'not-saved' } : { status: 'saved', point, locationPointId };
+    result.value =
+      locationPointId == null
+        ? { status: 'not-saved', arrivedLandmarkSpotId: landmarkResult.arrivedSpotId }
+        : { status: 'saved', point, locationPointId, arrivedLandmarkSpotId: landmarkResult.arrivedSpotId };
   });
 
   if (!result.value) {

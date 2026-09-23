@@ -1,7 +1,8 @@
 import type * as Location from 'expo-location';
 
 import { initializeDatabase } from '@/db/database';
-import { processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
+import { evaluateAchievementsAndNotify, processAchievementsForSavedPoint } from '@/features/achievements/achievementService';
+import { notifyLandmarkSpotArrival } from '@/features/landmarks/landmarkNotificationService';
 import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
 import {
   ActiveStayPlacesSnapshot,
@@ -59,6 +60,8 @@ export async function createLocationRecordingSession(options: LocationRecordingS
         .map(({ location }) => location);
 
       const savedPoints: { point: ReturnType<typeof toLocationPoint>; locationPointId: number }[] = [];
+      /** この配信バッチで到達が確定したスポットID。保存されない観測で確定した分も含む。 */
+      const arrivedLandmarkSpotIds: string[] = [];
       // Expoは複数観測を1回のタスク配信へまとめる。設定DBを点ごとに読むと不要な
       // ロック競合を増やすため、この配信全体では同じ有効滞在場所を使う。
       const activeStayPlaces: ActiveStayPlacesSnapshot = await getActiveStayPlacesSnapshot(options.getActiveStayPlaces);
@@ -83,6 +86,10 @@ export async function createLocationRecordingSession(options: LocationRecordingS
             savedPoints.push({ point: result.point, locationPointId: result.locationPointId });
           }
 
+          if ((result.status === 'saved' || result.status === 'not-saved') && result.arrivedLandmarkSpotId) {
+            arrivedLandmarkSpotIds.push(result.arrivedLandmarkSpotId);
+          }
+
           processedCount += 1;
         }
       } catch (error: unknown) {
@@ -93,9 +100,28 @@ export async function createLocationRecordingSession(options: LocationRecordingS
         hasRecordingError = true;
       }
 
+      // 到達通知はGPSポイントと到達記録を確定してから行う。到達は保存されない観測でも
+      // 確定するため、保存点の有無に関わらず通知する。
+      // 「実績を達成しました」より先に「到達しました」を出すため、実績処理より前に流す。
+      for (const arrivedSpotId of arrivedLandmarkSpotIds) {
+        await notifyLandmarkSpotArrival(arrivedSpotId).catch((error: unknown) => {
+          console.warn('Landmark arrival notification failed:', error);
+        });
+      }
+
       // GPSポイントを確定してから、逆ジオコーディングを含む実績処理を行う。
       for (const { point, locationPointId } of savedPoints) {
         await processAchievementsForSavedPoint(point, locationPointId).catch((error: unknown) => {
+          console.warn('Achievement processing failed:', error);
+        });
+      }
+
+      // 保存点が1件も無い配信バッチでも、到達によってパック完走が成立しうる。停止中はGPS保存
+      // フィルタがほとんどの点を捨てるため、保存点の実績処理だけに任せると歩き出すまで完走実績が
+      // 解除されない。保存点があった場合は processAchievementsForSavedPoint が既に評価済みなので、
+      // ここで再評価すると二重に走ってしまうため保存点なしの場合だけ呼ぶ。
+      if (arrivedLandmarkSpotIds.length > 0 && savedPoints.length === 0) {
+        await evaluateAchievementsAndNotify().catch((error: unknown) => {
           console.warn('Achievement processing failed:', error);
         });
       }

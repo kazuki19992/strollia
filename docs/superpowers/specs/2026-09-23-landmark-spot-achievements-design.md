@@ -357,12 +357,24 @@ recordLocationObservation（観測ごと・排他トランザクション）
   └ resolveLandmarkArrival        新規
        → 到達確定なら landmark_spot_visits へ INSERT OR IGNORE
 
+notifyLandmarkSpotArrival（配信バッチの後段・到達1件ごと）
+  → 「華厳の滝に到達しました（日本三名瀑 1/3）」のローカル通知のみ
+
 processAchievementsForSavedPoint（保存点の後段）
   └ evaluateAndStoreAchievementUnlocks
        → landmarkPackCompletion 条件を評価し、完走実績を解除
+
+evaluateAchievementsAndNotify（到達あり かつ 保存点なしの配信バッチのみ）
+  └ evaluateAndStoreAchievementUnlocks
 ```
 
 到達の検知と実績の解除を分ける。検知は観測単位、解除は既存の実績フローに乗せる。
+
+**保存点が無い配信バッチでも、到達があれば実績を評価しなければならない。**
+停止中はGPS保存フィルタがほとんどの点を捨てるため、保存点の実績処理だけに任せると
+立ち止まって完走した瞬間に完走実績が解除されず、歩き出すまでトロフィーが出ない。
+保存点がある配信バッチでは `processAchievementsForSavedPoint` が既に評価しているため、
+追加の評価は行わない（二重評価を避ける）。
 
 ## 8. パック完走実績
 

@@ -14,7 +14,6 @@ import { AppListItem } from './AppListItem';
 import { AppProgressBar } from './AppProgressBar';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DescriptionText } from './DescriptionText';
-import { ScreenSection } from './ScreenSection';
 
 /** 実績一覧画面のprops。 */
 export type AchievementListScreenProps = {
@@ -139,52 +138,57 @@ export function AchievementListScreen({
         })}
 
         {visibleLandmarkPackItems.length > 0 ? (
-          <ScreenSection styles={styles} title={LANDMARK_PACK_SECTION_TITLE}>
-            {visibleLandmarkPackItems.map((item) => {
-              // 施錠中は検知していないため、到達率を0として未到達と同じ見た目にする
-              const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
-              const trophyState = resolveLandmarkTrophyDisplayState(ratio);
-              const trophyImage = <Image source={item.pack.trophyImage} style={{ width: packTrophySize, height: packTrophySize }} />;
+          // 見出しは同じ画面のグリッドセクションと同じ achievementSection + screenSectionHeading を使う。
+          // ScreenSection の screenSectionTitle(16px) では既存グリッドの見出し(18px)と大きさが揃わない。
+          <View style={styles.achievementSection}>
+            <Text style={styles.screenSectionHeading}>{LANDMARK_PACK_SECTION_TITLE}</Text>
+            <View style={styles.screenSectionBody}>
+              {visibleLandmarkPackItems.map((item) => {
+                // 施錠中は検知していないため、到達率を0として未到達と同じ見た目にする
+                const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
+                const trophyState = resolveLandmarkTrophyDisplayState(ratio);
+                const trophyImage = <Image source={item.pack.trophyImage} style={{ width: packTrophySize, height: packTrophySize }} />;
 
-              return (
-                <AppListItem
-                  key={item.pack.id}
-                  accessibilityLabel={item.isLocked ? `${item.pack.name}はStrollia Plus限定です` : `${item.pack.name}の詳細を開く`}
-                  footer={
-                    item.isLocked ? undefined : (
-                      <View style={styles.landmarkPackProgressRow}>
-                        <Text style={styles.landmarkPackProgressText}>{`${item.visitedCount}/${item.totalCount}`}</Text>
-                        <View style={styles.landmarkPackProgressBarArea}>
-                          <AppProgressBar accessibilityLabel={`${item.pack.name}の進捗`} ratio={ratio} styles={styles} theme={theme} />
+                return (
+                  <AppListItem
+                    key={item.pack.id}
+                    accessibilityLabel={item.isLocked ? `${item.pack.name}はStrollia Plus限定です` : `${item.pack.name}の詳細を開く`}
+                    footer={
+                      item.isLocked ? undefined : (
+                        <View style={styles.landmarkPackProgressRow}>
+                          <Text style={styles.landmarkPackProgressText}>{`${item.visitedCount}/${item.totalCount}`}</Text>
+                          <View style={styles.landmarkPackProgressBarArea}>
+                            <AppProgressBar accessibilityLabel={`${item.pack.name}の進捗`} ratio={ratio} styles={styles} theme={theme} />
+                          </View>
                         </View>
+                      )
+                    }
+                    leading={
+                      <View style={[styles.landmarkPackTrophy, { width: packTrophySize, height: packTrophySize }]}>
+                        {trophyState === 'color' ? (
+                          trophyImage
+                        ) : (
+                          <Grayscale style={trophyState === 'dim' ? styles.landmarkPackTrophyDim : undefined}>{trophyImage}</Grayscale>
+                        )}
+                        {item.isLocked ? (
+                          <View style={styles.landmarkPackLockBadge}>
+                            <Feather name="lock" size={14} color={theme.colors.mutedText} />
+                          </View>
+                        ) : null}
                       </View>
-                    )
-                  }
-                  leading={
-                    <View style={[styles.landmarkPackTrophy, { width: packTrophySize, height: packTrophySize }]}>
-                      {trophyState === 'color' ? (
-                        trophyImage
-                      ) : (
-                        <Grayscale style={trophyState === 'dim' ? styles.landmarkPackTrophyDim : undefined}>{trophyImage}</Grayscale>
-                      )}
-                      {item.isLocked ? (
-                        <View style={styles.landmarkPackLockBadge}>
-                          <Feather name="lock" size={14} color={theme.colors.mutedText} />
-                        </View>
-                      ) : null}
-                    </View>
-                  }
-                  styles={styles}
-                  subtitle={item.pack.description}
-                  theme={theme}
-                  title={item.pack.name}
-                  onPress={item.isLocked ? onRequestPremium : () => onSelectLandmarkPack(item.pack.id)}
-                />
-              );
-            })}
+                    }
+                    styles={styles}
+                    subtitle={item.pack.description}
+                    theme={theme}
+                    title={item.pack.name}
+                    onPress={item.isLocked ? onRequestPremium : () => onSelectLandmarkPack(item.pack.id)}
+                  />
+                );
+              })}
 
-            {!isPlusActive ? <DescriptionText styles={styles}>{LANDMARK_PACK_PLUS_PROMOTION_NOTE}</DescriptionText> : null}
-          </ScreenSection>
+              {!isPlusActive ? <DescriptionText styles={styles}>{LANDMARK_PACK_PLUS_PROMOTION_NOTE}</DescriptionText> : null}
+            </View>
+          </View>
         ) : null}
       </ScrollView>
     </SafeAreaView>

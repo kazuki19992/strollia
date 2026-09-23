@@ -1,6 +1,11 @@
 import { act, cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { AppState } from 'react-native';
 
+import { createUserCenteredRegion } from '@/ui/mapRegion';
+
+/** MapScreen モックが mapRef へ差し込む animateToRegion。地図中心の移動先を検証するために使う。 */
+const mockAnimateToRegion = jest.fn();
+
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
   impactAsync: jest.fn().mockResolvedValue(undefined),
@@ -267,8 +272,11 @@ jest.mock('@/ui/components/DailyLogsScreen', () => ({ DailyLogsScreen: () => nul
 
 // 実績一覧とパック詳細は実物を描画するため、この2画面はモックしない。
 jest.mock('@/ui/components/MapScreen', () => ({
-  MapScreen: (props: { onOpenAchievements: () => void }) => {
+  MapScreen: (props: { mapRef: { current: unknown }; onOpenAchievements: () => void }) => {
     const { Pressable, Text } = require('react-native');
+
+    // 実 MapView は描画しないため、地図移動の検証用に animateToRegion だけを ref へ差し込む
+    props.mapRef.current = { animateToRegion: mockAnimateToRegion };
 
     return (
       <Pressable accessibilityLabel="実績" onPress={props.onOpenAchievements}>
@@ -285,6 +293,19 @@ const flushPromises = async () => {
       await Promise.resolve();
     }
   });
+};
+
+/** 実績一覧を開く。スポットセクションの進捗表示を検証する起点にする。 */
+const openAchievementList = async () => {
+  const router = renderRouter('src/app');
+  await flushPromises();
+
+  await act(async () => {
+    fireEvent.press(screen.getByLabelText('実績'));
+  });
+  await flushPromises();
+
+  return router;
 };
 
 /**
@@ -363,8 +384,9 @@ describe('実績一覧からスポットパック詳細への遷移', () => {
     expect(router.getPathname()).toBe('/achievements');
   });
 
-  it('未到達スポットの行を押すと地図画面まで戻る', async () => {
+  it('未到達スポットの行を押すと地図画面まで戻り、そのスポットを中心に表示する', async () => {
     const router = await openLandmarkPackDetail();
+    mockAnimateToRegion.mockClear();
 
     await act(async () => {
       fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
@@ -372,5 +394,49 @@ describe('実績一覧からスポットパック詳細への遷移', () => {
     await flushPromises();
 
     expect(router.getPathname()).toBe('/');
+    // 那智の滝の座標(data/landmarks/landmarkSpots.json)が地図中心になる
+    expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
+  });
+
+  it('実績の再評価に合わせてスポット到達を読み直し、一覧の進捗を更新する', async () => {
+    // AppState復帰の同期チェーンを手動で起動するため、登録されたリスナーを全て集めておく
+    const appStateHandlers: ((state: string) => void)[] = [];
+    jest.spyOn(AppState, 'addEventListener').mockImplementation(((_event: string, handler: (state: string) => void) => {
+      appStateHandlers.push(handler);
+
+      return { remove: jest.fn() };
+    }) as never);
+
+    await openAchievementList();
+
+    expect(screen.getByText('1/3')).toBeTruthy();
+
+    // 記録中に那智の滝へ到達した状況を作る
+    const { getLandmarkSpotVisits } = require('@/features/landmarks/landmarkVisitRepository');
+    (getLandmarkSpotVisits as jest.Mock).mockResolvedValue([
+      {
+        spotId: '01a0c450-6c00-7000-8000-000000000101',
+        visitedAt: '2026-04-12T02:00:00.000Z',
+        visitedLocalDate: '2026-04-12',
+        locationPointId: 1,
+      },
+      {
+        spotId: '01a0c450-6c00-7000-8000-000000000102',
+        visitedAt: '2026-04-13T02:00:00.000Z',
+        visitedLocalDate: '2026-04-13',
+        locationPointId: 2,
+      },
+    ]);
+
+    await act(async () => {
+      for (const handler of appStateHandlers) {
+        handler('active');
+      }
+    });
+    await flushPromises();
+    await flushPromises();
+
+    // 実績画面を開き直さずに分数が追従する
+    expect(screen.getByText('2/3')).toBeTruthy();
   });
 });

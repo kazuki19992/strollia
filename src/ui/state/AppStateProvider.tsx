@@ -625,17 +625,33 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     initializeAchievementReviewState,
     requestAchievementNotificationPermissionIfNeeded,
   } = useAchievementState();
-  const { landmarkPackItems, getLandmarkPackDetail } = useLandmarkPackState(premiumAccessState.isPlusActive);
+  const { landmarkPackItems, getLandmarkPackDetail, reloadLandmarkState } = useLandmarkPackState(premiumAccessState.isPlusActive);
 
   // useLocationRecordingSync に渡す安定したコールバックラッパー。
-  // ref 経由で実装しているため空 deps で問題ない。
+  // ref 経由で実装しているため空 deps で問題ない(reloadLandmarkState も useCallback で
+  // 安定化済みなので、deps に入れても識別子は変わらない)。
   // これらを useCallback で安定化しないと deps 変化で refreshData が毎レンダーで再生成され
   // effect が無限ループする。
   const stableIncrementVisitedGridRefreshVersion = useCallback(() => incrementVisitedGridRefreshVersionRef.current(), []);
   const stableEvaluateAchievementsIfDialogIdle = useCallback(() => evaluateAchievementsIfDialogIdleRef.current(), []);
+  /**
+   * 実績の再読み込みに、スポット到達記録の再読み込みを相乗りさせた安定コールバック。
+   *
+   * スポット到達は実績評価と同じ契機(GPS保存後・フォアグラウンド復帰・起動時・全削除後)で
+   * 更新されるため、経路を分けずに実績再読み込みへ束ねる。これを行わないと、到達しても
+   * 実績画面を開き直すまで一覧の分数とトロフィー表示が古いままになる。
+   *
+   * スポット側の失敗で実績の再読み込み結果を捨てないよう、`reloadLandmarkState` の失敗は
+   * ここで飲み込んで警告だけ残す。
+   */
   const stableRefreshAchievementState = useCallback(
-    (...args: Parameters<typeof refreshAchievementStateRef.current>) => refreshAchievementStateRef.current(...args),
-    [],
+    async (...args: Parameters<typeof refreshAchievementStateRef.current>) => {
+      await refreshAchievementStateRef.current(...args);
+      await reloadLandmarkState().catch((error: unknown) => {
+        console.warn('Failed to reload landmark spot visits:', error);
+      });
+    },
+    [reloadLandmarkState],
   );
 
   const {
@@ -937,7 +953,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         onPress: () => {
           deleteAllUserData()
             .then(async () => {
-              await refreshDeletedUserDataState(refreshData, refreshAchievementState);
+              // 全削除では landmark_spot_visits も消えるため、スポット到達も合わせて読み直す
+              await refreshDeletedUserDataState(refreshData, stableRefreshAchievementState);
               // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
               Alert.alert('削除完了', DELETE_ALL_DATA_SUCCESS_MESSAGE);
             })
@@ -947,7 +964,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         },
       },
     ]);
-  }, [refreshAchievementState, refreshData]);
+  }, [stableRefreshAchievementState, refreshData]);
 
   /**
    * 起動時読み込みとSentry両方へ不具合レポート設定を反映するsetter。
@@ -1038,7 +1055,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     refreshData,
     synchronizeLocationRecordingMode,
     initializeAchievementReviewState,
-    refreshAchievementState,
+    refreshAchievementState: stableRefreshAchievementState,
     requestAchievementNotificationPermissionIfNeeded,
     snapshotPremiumAccessUpdateVersion,
     setKeepScreenAwake,
@@ -1138,7 +1155,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
 
   /** 実績画面へ移動する。 */
   function openAchievements(): void {
-    refreshAchievementState().catch(() => undefined);
+    stableRefreshAchievementState().catch(() => undefined);
     if (navigator?.openAchievements) {
       triggerLightImpactHaptic();
       navigator.openAchievements();
@@ -1170,15 +1187,17 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   }
 
   /**
-   * 未到達スポットの位置を確認するため地図画面へ移動する。
+   * 未到達スポットの位置を確認するため、そのスポットを中心にした地図画面へ移動する(設計書 §9.7)。
    *
-   * 設計書 §9.7 はスポット座標を中心に表示することを求めるが、座標中心化と追従OFFは
-   * `useMapFollowState` 側の拡張が必要なため後続タスクで実装する。現時点は地図へ戻るところまでを担う。
-   * 現在地中心への復元(`prepareMapRegionRestore`)は、スポット中心化と衝突するため意図的に呼ばない。
+   * 現在地中心へ戻す `prepareMapRegionRestore` ではなく `prepareMapRegionFocus` を使う。
+   * こちらは中心座標をスポットへ差し替えたうえで現在地追従を OFF にするため、
+   * 到着直後に現在地へ引き戻されず、見せたいスポットが中心に残る(`AGENTS.md` 10.3)。
    *
-   * @param spot - 表示したいスポット。座標中心化の実装で使う。
+   * @param spot - 地図中心に表示したいスポット。
    */
   function openMapAtLandmarkSpot(spot: LandmarkSpot): void {
+    mapFollowState.prepareMapRegionFocus({ latitude: spot.latitude, longitude: spot.longitude });
+
     if (navigator?.dismissToMap) {
       triggerLightImpactHaptic();
       navigator.dismissToMap();

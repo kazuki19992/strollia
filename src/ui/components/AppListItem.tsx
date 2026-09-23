@@ -11,6 +11,8 @@ export type AppListItemProps = {
   accessibilityLabel: string;
   /** 補足情報。 */
   detail?: string;
+  /** タイトル・サブタイトルの下に表示する追加要素。進捗バーなどを差す汎用スロット。 */
+  footer?: ReactNode;
   /** 行の先頭に表示する補助アイコンなどの要素。 */
   leading?: ReactNode;
   /** 画面共通スタイル。 */
@@ -31,6 +33,7 @@ export type AppListItemProps = {
 export function AppListItem({
   accessibilityLabel,
   detail,
+  footer,
   leading,
   styles,
   subtitle,
@@ -46,6 +49,7 @@ export function AppListItem({
         <Text style={[styles.appListItemTitle, prominent && styles.appListItemTitleProminent]}>{title}</Text>
         {subtitle ? <Text style={styles.appListItemSubtitle}>{subtitle}</Text> : null}
         {detail ? <Text style={styles.appListItemDetail}>{detail}</Text> : null}
+        {footer ? <View style={styles.appListItemFooter}>{footer}</View> : null}
       </View>
       <Feather name="chevron-right" size={24} color={theme.colors.mutedText} />
     </Pressable>

@@ -140,6 +140,9 @@ export function createSettingsStyles(theme: AppTheme) {
       fontWeight: '400',
       lineHeight: 20,
     },
+    appListItemFooter: {
+      marginTop: 8,
+    },
     appListItemSubtitle: {
       color: settingsMuted,
       fontSize: 14,

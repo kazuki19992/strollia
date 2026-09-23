@@ -153,7 +153,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 更新通知ダイアログ1キー
       //       + マップ表示設定中の背景ダッシュボード減光1キー
       //       + 高度プロファイル7キー
-      expect(keys.length).toBe(400);
+      //       + 汎用プログレスバー(AppProgressBar)2キー + リスト行footerスロット1キー
+      expect(keys.length).toBe(403);
     });
   });
 });

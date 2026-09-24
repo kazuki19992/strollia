@@ -4,7 +4,7 @@ import {
   LANDMARK_PACKS,
   type LandmarkPack,
   type LandmarkSpot,
-  getActiveSpotsForPack,
+  getAllSpotsForPack,
   getLandmarkPackById,
 } from '@/features/landmarks/landmarkCatalog';
 import { resolveLandmarkPackProgress } from '@/features/landmarks/landmarkPackProgress';
@@ -103,7 +103,9 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
 
       return {
         pack,
-        spotItems: getActiveSpotsForPack(packId).map((spot) => ({
+        // retired なスポットも「現存せず」として表示するため含める。
+        // 完走判定の分母から外すのは画面側(LandmarkPackScreen)の役目。
+        spotItems: getAllSpotsForPack(packId).map((spot) => ({
           spot,
           visitedLocalDate: visitedLocalDateBySpotId.get(spot.id) ?? null,
         })),

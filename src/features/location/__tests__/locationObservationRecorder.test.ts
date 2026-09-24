@@ -166,7 +166,8 @@ function resetMocksToDefaults(): void {
   mockShouldSave.mockReturnValue(true);
   mockGetVisitedCells.mockReturnValue([]);
   mockUpsertVisitedCells.mockResolvedValue(undefined);
-  mockInsertLandmarkVisit.mockResolvedValue(undefined);
+  // 実装は新規に行を追加できたときtrueを返す。既定は初回到達として扱う
+  mockInsertLandmarkVisit.mockResolvedValue(true);
 }
 
 describe('原子的な位置観測記録 recordLocationObservation', () => {
@@ -657,6 +658,26 @@ describe('スポット到達の記録', () => {
     });
 
     expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
+  });
+
+  it('同一バッチ内の再到達では到達を報告しない', async () => {
+    // 検知対象の到達済みID集合は配信バッチ単位のスナップショットで直前の到達を含まない。
+    // 到達確定後に判定状態が初期化されるため同じスポットが再び候補になるが、
+    // 行が増えていない以上は通知も実績評価も走らせてはいけない。
+    mockGetState.mockResolvedValue({
+      ...initialPersistedState,
+      landmarkCandidateSpotId: spot.id,
+      landmarkCandidateEnteredAt: '2026-08-23T00:00:00.000Z',
+    });
+    mockInsertLandmarkVisit.mockResolvedValue(false);
+
+    const result = await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:03:00.000Z')),
+      landmarkDetection: enabledLandmarkDetection(),
+    });
+
+    expect(mockInsertLandmarkVisit).toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({ arrivedLandmarkSpotId: null }));
   });
 
   it('吸着中でも生座標でスポットを判定する', async () => {

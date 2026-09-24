@@ -36,13 +36,16 @@ export async function getVisitedLandmarkSpotIds(): Promise<Set<string>> {
  *
  * INSERT OR IGNORE とすることで、同じスポットの再到達で初回の到達日時を上書きしない。
  * 実績は「一度達成したら取り消さない」方針であり、初回の記録が正となる。
+ *
+ * @returns 新しく行を追加した場合はtrue。既に到達済みだった場合はfalse。
+ *   呼び出し側はこの値で「初回の到達か」を判定し、通知と実績評価の二重実行を防ぐ。
  */
 export async function insertLandmarkSpotVisitInCurrentTransaction(
   visit: LandmarkSpotVisit,
   createdAt: string,
   runner: SQLite.SQLiteDatabase,
-): Promise<void> {
-  await runner.runAsync(
+): Promise<boolean> {
+  const result = await runner.runAsync(
     `INSERT OR IGNORE INTO landmark_spot_visits (spot_id, visited_at, visited_local_date, location_point_id, created_at)
      VALUES (?, ?, ?, ?, ?)`,
     visit.spotId,
@@ -51,4 +54,6 @@ export async function insertLandmarkSpotVisitInCurrentTransaction(
     visit.locationPointId,
     createdAt,
   );
+
+  return result.changes > 0;
 }

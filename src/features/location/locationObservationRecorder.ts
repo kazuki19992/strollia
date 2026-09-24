@@ -176,8 +176,17 @@ export async function recordLocationObservation(input: RecordLocationObservation
     // 捨てるため、保存点だけを見ていると滞在時間が進まず到達が永久に確定しない。
     const landmarkResult = resolveLandmarkArrivalForObservation(persistedState, rawPoint, input.landmarkDetection);
 
+    /**
+     * この観測で「初めて」到達が確定したスポットID。
+     *
+     * 到達判定は確定後に状態を初期化するため、同じスポットが同一配信バッチ内で再び候補になりうる。
+     * 検知対象の到達済みID集合は配信バッチ単位のスナップショットで、直前の到達を含まないためである。
+     * 行が実際に増えたときだけ報告し、通知と実績評価が重複して走るのを防ぐ。
+     */
+    let arrivedLandmarkSpotId: string | null = null;
+
     if (landmarkResult.arrivedSpotId) {
-      await insertLandmarkSpotVisitInCurrentTransaction(
+      const inserted = await insertLandmarkSpotVisitInCurrentTransaction(
         {
           spotId: landmarkResult.arrivedSpotId,
           visitedAt: rawPoint.recordedAt,
@@ -188,6 +197,8 @@ export async function recordLocationObservation(input: RecordLocationObservation
         now,
         txn,
       );
+
+      arrivedLandmarkSpotId = inserted ? landmarkResult.arrivedSpotId : null;
     }
 
     const lastVisitedGridPoint =
@@ -210,8 +221,8 @@ export async function recordLocationObservation(input: RecordLocationObservation
 
     result.value =
       locationPointId == null
-        ? { status: 'not-saved', arrivedLandmarkSpotId: landmarkResult.arrivedSpotId }
-        : { status: 'saved', point, locationPointId, arrivedLandmarkSpotId: landmarkResult.arrivedSpotId };
+        ? { status: 'not-saved', arrivedLandmarkSpotId }
+        : { status: 'saved', point, locationPointId, arrivedLandmarkSpotId };
   });
 
   if (!result.value) {

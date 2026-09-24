@@ -37,6 +37,8 @@ jest.mock('@/db/database', () => ({ db: {} }));
 
 jest.mock('@/features/premium/revenueCatAccess', () => ({
   getPremiumAccessState: (...args: unknown[]) => mockGetPremiumAccessState(...args),
+  // スポット検知は取得失敗をPlus無効へ丸めないよう confirmed 版を使う
+  getConfirmedPremiumAccessState: (...args: unknown[]) => mockGetPremiumAccessState(...args),
 }));
 
 jest.mock('@/features/stayPlaces/stayPlaceRepository', () => ({

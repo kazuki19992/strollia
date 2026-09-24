@@ -76,4 +76,39 @@ describe('スポット訪問リポジトリ landmarkVisitRepository', () => {
       '2026-04-12T02:00:00.000Z',
     );
   });
+
+  it('行を追加できた場合はtrueを返す', async () => {
+    mockRunner.runAsync.mockResolvedValue({ changes: 1 });
+
+    await expect(
+      insertLandmarkSpotVisitInCurrentTransaction(
+        {
+          spotId: '01a0c450-6c00-7000-8000-000000000101',
+          visitedAt: '2026-04-12T02:00:00.000Z',
+          visitedLocalDate: '2026-04-12',
+          locationPointId: 42,
+        },
+        '2026-04-12T02:00:00.000Z',
+        mockRunner as unknown as Parameters<typeof insertLandmarkSpotVisitInCurrentTransaction>[2],
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it('既に到達済みで行が増えなかった場合はfalseを返す', async () => {
+    // 呼び出し側はこの戻り値で通知と実績評価の二重実行を防ぐ
+    mockRunner.runAsync.mockResolvedValue({ changes: 0 });
+
+    await expect(
+      insertLandmarkSpotVisitInCurrentTransaction(
+        {
+          spotId: '01a0c450-6c00-7000-8000-000000000101',
+          visitedAt: '2026-04-12T02:00:00.000Z',
+          visitedLocalDate: '2026-04-12',
+          locationPointId: null,
+        },
+        '2026-04-12T02:00:00.000Z',
+        mockRunner as unknown as Parameters<typeof insertLandmarkSpotVisitInCurrentTransaction>[2],
+      ),
+    ).resolves.toBe(false);
+  });
 });

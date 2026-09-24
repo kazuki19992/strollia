@@ -41,7 +41,18 @@ export function getLandmarkPackById(id: string): LandmarkPack | null {
  * 既に到達済みのユーザーの実績はルール1により取り消されないため、分母が減っても矛盾しない。
  */
 export function getActiveSpotsForPack(packId: string): readonly LandmarkSpot[] {
-  return LANDMARK_SPOTS.filter((spot) => !spot.retired && spot.packs.some((membership) => membership.packId === packId)).sort(
+  return getAllSpotsForPack(packId).filter((spot) => !spot.retired);
+}
+
+/**
+ * パックに属する全スポットを `retired` も含めて order 昇順で返す。
+ *
+ * パック詳細画面の一覧表示に使う。`retired` なスポットを一覧から消すと、
+ * 「現存せず」の表示ができなくなるうえ、そこへ到達済みのユーザーが
+ * その日の記録への導線を失うため、表示上は残して分母からだけ外す。
+ */
+export function getAllSpotsForPack(packId: string): readonly LandmarkSpot[] {
+  return LANDMARK_SPOTS.filter((spot) => spot.packs.some((membership) => membership.packId === packId)).sort(
     (left, right) => getPackOrder(left, packId) - getPackOrder(right, packId),
   );
 }

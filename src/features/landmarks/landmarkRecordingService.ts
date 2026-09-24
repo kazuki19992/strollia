@@ -1,4 +1,4 @@
-import { getPremiumAccessState } from '@/features/premium/revenueCatAccess';
+import { getConfirmedPremiumAccessState } from '@/features/premium/revenueCatAccess';
 
 import { getDetectableLandmarkSpots, type LandmarkSpot } from './landmarkCatalog';
 import { getVisitedLandmarkSpotIds } from './landmarkVisitRepository';
@@ -22,7 +22,11 @@ export type LandmarkDetectionSnapshot =
  */
 export async function getLandmarkDetectionSnapshotForRecording(): Promise<LandmarkDetectionSnapshot> {
   try {
-    const premiumAccessState = await getPremiumAccessState();
+    // getPremiumAccessState ではなく confirmed 版を使う。前者はRevenueCatの取得失敗を
+    // 既定状態(本番ではPlus無効)へ丸めるため、一時的な通信失敗が disabled と区別できず、
+    // 権利消失として滞在計測をリセットしてしまう。ここでは失敗を例外のまま受け取り、
+    // 下の catch で unavailable(状態を保持)へ落とす。
+    const premiumAccessState = await getConfirmedPremiumAccessState();
 
     if (!premiumAccessState.isPlusActive) {
       return { status: 'disabled' };

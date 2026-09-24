@@ -127,6 +127,45 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     expect(Sharing.shareAsync).toHaveBeenCalledWith('file:///tmp/monthly-report.png', expect.objectContaining({ mimeType: 'image/png' }));
   });
 
+  it('共有準備中はレポート生成中ダイアログを表示し、完了後に閉じる', async () => {
+    let resolveSharingAvailability: ((available: boolean) => void) | undefined;
+    (Sharing.isAvailableAsync as jest.Mock).mockReturnValue(
+      new Promise<boolean>((resolve) => {
+        resolveSharingAvailability = resolve;
+      }),
+    );
+
+    render(
+      <MonthlyReportScreen
+        dailyLogs={[]}
+        points={[]}
+        achievements={[]}
+        monthlyAreaReport={{ prefectureRanking: [], topMunicipalityName: null }}
+        theme={lightTheme}
+        activeStayPlaces={[]}
+        onBackToMap={jest.fn()}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('レポートを共有'));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('レポートを生成しています…')).toBeTruthy();
+    expect(screen.getByText('少しお待ちください。')).toBeTruthy();
+
+    await act(async () => {
+      resolveSharingAvailability?.(true);
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(600);
+    });
+
+    expect(screen.queryByText('レポートを生成しています…')).toBeNull();
+  });
+
   it('共有準備中に連続で押しても共有処理を1回だけ開始する', async () => {
     let resolveSharingAvailability: ((available: boolean) => void) | undefined;
     (Sharing.isAvailableAsync as jest.Mock).mockReturnValue(

@@ -120,13 +120,6 @@ export type UseMapFollowStateResult = {
    * openMap から呼んで shouldRestoreMapRegionOnOpenRef を true にする。
    */
   prepareMapRegionRestore: () => void;
-  /**
-   * 地図画面へ移動したあと、指定座標を中心に表示する準備をする。
-   * 現在地ではない地点を見せるため、現在地追従は OFF にする。
-   *
-   * @param coordinate - 中心に表示したい緯度経度。
-   */
-  prepareMapRegionFocus: (coordinate: LatLng) => void;
 };
 
 /**
@@ -172,12 +165,6 @@ export function useMapFollowState({
    * ため、このカウンターを effect の依存に加えて地図復帰センタリングを確実にトリガーする。
    */
   const [mapRestoreTrigger, setMapRestoreTrigger] = useState(0);
-  /**
-   * 地図復帰時に現在地ではなく中心へ据えたい座標。
-   * スポットの位置確認など、現在地以外を見せたい遷移で `prepareMapRegionFocus` が設定する。
-   * 復帰センタリングを1回実行したら null へ戻し、以後の復帰は現在地中心の既定挙動へ戻す。
-   */
-  const mapRegionFocusTargetRef = useRef<LatLng | null>(null);
 
   const [userCoordinate, setUserCoordinate] = useState<LatLng | null>(null);
   const [isFollowingUserLocation, setIsFollowingUserLocation] = useState(true);
@@ -301,9 +288,6 @@ export function useMapFollowState({
    *
    * screenMode 変化（旧 AppCompatShell 経由）と mapRestoreTrigger 増分（expo-router 経由）
    * の両方をトリガーとして受け付ける。
-   *
-   * `prepareMapRegionFocus` で中心座標が指定されている場合は、現在地ではなくその座標へ寄せる。
-   * 現在地が未取得でもスポット座標は確定しているため、focus 指定時は userCoordinate を要求しない。
    */
   useEffect(() => {
     if (screenMode !== 'map' || !shouldRestoreMapRegionOnOpenRef.current) {
@@ -312,15 +296,11 @@ export function useMapFollowState({
 
     shouldRestoreMapRegionOnOpenRef.current = false;
 
-    const focusTarget = mapRegionFocusTargetRef.current;
-    mapRegionFocusTargetRef.current = null;
-    const centerTarget = focusTarget ?? userCoordinate;
-
-    if (!centerTarget) {
+    if (!userCoordinate) {
       return;
     }
 
-    centerOnCoordinate(centerTarget, false);
+    centerOnCoordinate(userCoordinate, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
   }, [screenMode, userCoordinate, mapRestoreTrigger]);
 
@@ -486,41 +466,6 @@ export function useMapFollowState({
     }
   }
 
-  /**
-   * 地図画面へ移動したあと、指定座標を中心に表示する準備をする。
-   *
-   * 現在地追従を OFF にするのは、未到達スポットのように「現在地ではない地点」を見せる操作だからである
-   * （`AGENTS.md` 10.3）。追従が ON のままだと次の現在地更新や追従センタリング effect が
-   * すぐに中心を現在地へ奪い返し、見せたい地点が画面外へ流れてしまう。
-   *
-   * 座標の適用は `prepareMapRegionRestore` と同じ復帰 effect に委ねる。地図ルートがまだ前面に
-   * 来ていない時点で `animateToRegion` を呼んでもネイティブ側で無視されうるため、
-   * 復元フラグとトリガーを立てて画面が地図へ切り替わってからセンタリングする。
-   *
-   * @param coordinate - 中心に表示したい緯度経度。
-   * @returns なし。
-   */
-  function prepareMapRegionFocus(coordinate: LatLng): void {
-    if (!isValidMapCoordinate(coordinate)) {
-      return;
-    }
-
-    setIsFollowingUserLocation(false);
-    mapRegionFocusTargetRef.current = coordinate;
-    shouldRestoreMapRegionOnOpenRef.current = true;
-
-    const region = createUserCenteredRegion(coordinate);
-    setVisibleRegion(region);
-    latestRegionRef.current = region;
-    isUserMapGestureActiveRef.current = false;
-    clearUserMapGestureIdleSync();
-    setGridSyncRegion(region);
-    incrementVisitedGridRefreshVersionRef.current();
-    // expo-router 環境では地図ルートがマウントされたままのため、カウンターを
-    // インクリメントして restore effect を強制的にトリガーする。
-    setMapRestoreTrigger((prev) => prev + 1);
-  }
-
   return {
     mapRef,
     userCoordinate,
@@ -540,6 +485,5 @@ export function useMapFollowState({
     recenterOnUserLocation,
     toggleMapType,
     prepareMapRegionRestore,
-    prepareMapRegionFocus,
   };
 }

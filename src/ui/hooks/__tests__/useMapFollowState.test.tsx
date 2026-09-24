@@ -1,7 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useRef } from 'react';
 import { useMapFollowState, UseMapFollowStateResult } from '@/ui/hooks/useMapFollowState';
-import { createUserCenteredRegion } from '@/ui/mapRegion';
 import type { ResolvedUserLocationIcon } from '@/features/customization/customizationResolver';
 import type { ScreenMode } from '@/ui/appTypes';
 
@@ -528,82 +527,6 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
         jest.advanceTimersByTime(350);
       });
       expect(result.current.gridSyncRegion).toEqual(region2);
-    });
-  });
-
-  describe('prepareMapRegionFocus — 指定座標を中心に地図へ戻る', () => {
-    /** 未到達スポットの想定座標（那智の滝）。現在地とは十分離れている。 */
-    const spotCoordinate = { latitude: 33.675278, longitude: 135.8875 };
-
-    it('地図画面へ戻ったときに指定座標を中心へセンタリングする', () => {
-      const { result, rerender, mockAnimateToRegion } = renderCustomIconMapFollowState({ screenMode: 'achievements' });
-
-      act(() => {
-        result.current.handleMapReady();
-      });
-      // 現在地は別地点で受信済み。追従が残っていると復帰時に現在地へ引き戻される
-      act(() => {
-        result.current.applyUserLocation(35.681236, 139.767125, null);
-      });
-      mockAnimateToRegion.mockClear();
-
-      act(() => {
-        result.current.prepareMapRegionFocus(spotCoordinate);
-      });
-      act(() => {
-        rerender({ screenMode: 'map' });
-      });
-
-      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
-      expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion(spotCoordinate), 250);
-    });
-
-    it('現在地以外を見せる操作なので現在地追従を OFF にする', () => {
-      const { result } = renderMapFollowState({ screenMode: 'achievements' });
-
-      act(() => {
-        result.current.prepareMapRegionFocus(spotCoordinate);
-      });
-
-      expect(result.current.isFollowingUserLocation).toBe(false);
-    });
-
-    it('中心指定は1回だけ効き、以降の現在地ボタンでは現在地へ戻る', () => {
-      const { result, rerender, mockAnimateToRegion } = renderCustomIconMapFollowState({ screenMode: 'achievements' });
-
-      act(() => {
-        result.current.applyUserLocation(35.681236, 139.767125, null);
-      });
-      act(() => {
-        result.current.prepareMapRegionFocus(spotCoordinate);
-      });
-      act(() => {
-        rerender({ screenMode: 'map' });
-      });
-      mockAnimateToRegion.mockClear();
-
-      act(() => {
-        result.current.recenterOnUserLocation();
-      });
-
-      expect(result.current.isFollowingUserLocation).toBe(true);
-      expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 }), 500);
-    });
-
-    it('不正な座標（NaN）では追従状態もセンタリングも変えない', () => {
-      const { result, rerender, mockAnimateToRegion } = renderCustomIconMapFollowState({ screenMode: 'achievements' });
-
-      act(() => {
-        result.current.prepareMapRegionFocus({ latitude: Number.NaN, longitude: 135.8875 });
-      });
-
-      expect(result.current.isFollowingUserLocation).toBe(true);
-
-      act(() => {
-        rerender({ screenMode: 'map' });
-      });
-
-      expect(mockAnimateToRegion).not.toHaveBeenCalled();
     });
   });
 

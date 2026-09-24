@@ -93,7 +93,7 @@ SQLite (src/db/database.ts)
 - expo-router のファイルベースルーティングを採用している。`src/app/` 配下のファイル構造がそのままURLパスになる
 - ルートレイアウト(`src/app/_layout.tsx`)の `<Stack>` は `animation: 'none'`。地図画面(トップレベル)へ戻るときはフェード + 微量下スライドで視覚的に区別する
 - 実績スタック(`src/app/achievements/_layout.tsx`)・日別記録スタック(`src/app/daily-logs/_layout.tsx`)・設定スタック(`src/app/settings/_layout.tsx`)はそれぞれ `animation: 'slide_from_right', gestureEnabled: true` で子画面を管理する。iOS スワイプバックが有効になる
-- 実績スタックの子画面はスポットパック詳細(`/achievements/[packId]`)。詳細の行タップは、到達済みなら日別記録詳細へ、未到達なら地図へ戻ってそのスポットを中心表示する(`mapFollowState.prepareMapRegionFocus()`。現在地追従は OFF にする)
+- 実績スタックの子画面はスポットパック詳細(`/achievements/[packId]`)。詳細の行タップは、到達済みなら日別記録詳細へ、未到達なら画面内の埋め込み地図(`LandmarkPackMapPreview`)だけがそのスポットへズームする(メイン地図への画面遷移はしない)
 - Sentry 画面名は `_layout.tsx` が `usePathname()` を監視し、`pathnameToScreenMode` / `pathnameToDailyLogsSentryScreenName` / `pathnameToSettingsSentryScreenName` / `resolveSentryScreenName` の純粋関数群で `Settings:SettingsHome` 等の文字列を導出して `updateSentryScreenContext` へ通知する
 - 地図フォーカス制御: 地図へ戻る操作(`openMap`)では `mapFollowState.prepareMapRegionRestore()` を呼び、復帰後に `animateToRegion` で現在地を復元する
 - メインマップ初期表示範囲: `AppStateProvider` が `useLocationRecordingSync`を通じて `pointsBounds`(SQLの`MIN/MAX/COUNT`集計)を取得し、`createRegionFromBounds`(`src/features/map/routeMapper.ts`)でメモリへのポイント本体ロードなしに初期表示範囲を算出する

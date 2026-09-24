@@ -15,7 +15,7 @@ jest.mock('@/features/landmarks/landmarkCatalog.generated', () => {
       {
         id: 'spot-active-2',
         name: '現存するスポット2',
-        prefecture: 'TOKYO',
+        prefectures: ['TOKYO'],
         latitude: 35.0,
         longitude: 139.0,
         radiusMeters: 200,
@@ -25,7 +25,7 @@ jest.mock('@/features/landmarks/landmarkCatalog.generated', () => {
       {
         id: 'spot-retired',
         name: '現存しないスポット',
-        prefecture: 'TOKYO',
+        prefectures: ['TOKYO'],
         latitude: 35.1,
         longitude: 139.1,
         radiusMeters: 200,
@@ -36,7 +36,7 @@ jest.mock('@/features/landmarks/landmarkCatalog.generated', () => {
       {
         id: 'spot-active-1',
         name: '現存するスポット1',
-        prefecture: 'TOKYO',
+        prefectures: ['TOKYO'],
         latitude: 35.2,
         longitude: 139.2,
         radiusMeters: 200,

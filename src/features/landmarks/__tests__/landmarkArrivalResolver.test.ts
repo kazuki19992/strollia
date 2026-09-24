@@ -5,7 +5,7 @@ import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 const kegon: LandmarkSpot = {
   id: 'spot-kegon',
   name: '華厳の滝',
-  prefecture: 'TOCHIGI',
+  prefectures: ['TOCHIGI'],
   latitude: 36.737917,
   longitude: 139.501972,
   radiusMeters: 200,

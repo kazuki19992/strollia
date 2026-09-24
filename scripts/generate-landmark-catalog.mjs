@@ -128,7 +128,7 @@ const spotEntries = spots
     (spot) => `  {
     id: ${toLiteral(spot.id)},
     name: ${toLiteral(spot.name)},
-    prefecture: ${toLiteral(spot.prefecture)},
+    prefectures: [${spot.prefectures.map((prefecture) => toLiteral(prefecture)).join(', ')}],
     latitude: ${spot.latitude},
     longitude: ${spot.longitude},
     radiusMeters: ${spot.radiusMeters},
@@ -176,8 +176,8 @@ export type GeneratedLandmarkSpot = {
   id: string;
   /** 表示名。 */
   name: string;
-  /** 都道府県。大文字スネークケースの固定値。 */
-  prefecture: string;
+  /** 所属都道府県。大文字スネークケースの固定値の配列。富士山のように複数県にまたがるスポットは複数件持つ(1件以上、重複なし)。 */
+  prefectures: readonly string[];
   latitude: number;
   longitude: number;
   /** 到達判定の半径(メートル)。境界値は範囲内として扱う。 */

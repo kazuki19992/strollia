@@ -16,7 +16,6 @@ import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { GpxImportInterruptedError, importLocationPointsFromGpx } from '@/features/import/importRepository';
 import type { GpxImportResult } from '@/features/import/importRepository';
-import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 import { getLandmarkDetectionSnapshotForRecording } from '@/features/landmarks/landmarkRecordingService';
 import { beginGpxImportPriority } from '@/features/location/gpxImportPriority';
 import { flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
@@ -427,8 +426,6 @@ export type AppStateContextValue = {
   openLandmarkPack: (packId: string) => void;
   /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
   closeLandmarkPack: () => void;
-  /** 未到達スポットの位置を確認するため地図画面へ移動する。 */
-  openMapAtLandmarkSpot: (spot: LandmarkSpot) => void;
   /** 月次レポート画面へ移動する(Plusゲート付き)。 */
   openMonthlyReport: () => void;
   /** 設定画面へ移動する。 */
@@ -475,13 +472,6 @@ type AppStateProviderProps = {
     openLandmarkPack?: (packId: string) => void;
     /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
     closeLandmarkPack?: () => void;
-    /**
-     * ネストした子画面から地図ルートへ戻る(`router.dismissTo('/')` 相当)。
-     *
-     * 実績スタックの子画面から地図へ抜けるには、1段戻る `openMap` では親の一覧へ
-     * 戻ってしまうため、スタックを畳んで地図まで戻る操作を別に用意する。
-     */
-    dismissToMap?: () => void;
     /** 月次レポート画面へ移動する。 */
     openMonthlyReport?: () => void;
     /** 設定画面へ移動する。 */
@@ -1186,26 +1176,6 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
-  /**
-   * 未到達スポットの位置を確認するため、そのスポットを中心にした地図画面へ移動する(設計書 §9.7)。
-   *
-   * 現在地中心へ戻す `prepareMapRegionRestore` ではなく `prepareMapRegionFocus` を使う。
-   * こちらは中心座標をスポットへ差し替えたうえで現在地追従を OFF にするため、
-   * 到着直後に現在地へ引き戻されず、見せたいスポットが中心に残る(`AGENTS.md` 10.3)。
-   *
-   * @param spot - 地図中心に表示したいスポット。
-   */
-  function openMapAtLandmarkSpot(spot: LandmarkSpot): void {
-    mapFollowState.prepareMapRegionFocus({ latitude: spot.latitude, longitude: spot.longitude });
-
-    if (navigator?.dismissToMap) {
-      triggerLightImpactHaptic();
-      navigator.dismissToMap();
-    } else {
-      navigateToScreen('map');
-    }
-  }
-
   /** 月次レポート画面へ移動する。無料ユーザーはペイウォールを表示する。 */
   function openMonthlyReport(): void {
     // 起動直後は premiumAccessState がデフォルト値（未確定）のままの可能性があるため、
@@ -1563,7 +1533,6 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openAchievements,
     openLandmarkPack,
     closeLandmarkPack,
-    openMapAtLandmarkSpot,
     openMonthlyReport,
     openSettings,
     openStayPlaces,

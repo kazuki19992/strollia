@@ -1,5 +1,5 @@
 import { LANDMARK_SPOTS } from '@/features/landmarks/landmarkCatalog';
-import { getLandmarkPrefectureLabel } from '@/features/landmarks/landmarkPrefectureLabel';
+import { formatLandmarkPrefectures, getLandmarkPrefectureLabel } from '@/features/landmarks/landmarkPrefectureLabel';
 
 /**
  * 都道府県コードと日本語表記の期待値。
@@ -82,7 +82,27 @@ describe('都道府県ラベル getLandmarkPrefectureLabel', () => {
 
   it('マスタに登録済みのスポットはすべて日本語表記へ変換できる', () => {
     for (const spot of LANDMARK_SPOTS) {
-      expect(getLandmarkPrefectureLabel(spot.prefecture)).not.toBe(spot.prefecture);
+      for (const prefecture of spot.prefectures) {
+        expect(getLandmarkPrefectureLabel(prefecture)).not.toBe(prefecture);
+      }
     }
+  });
+});
+
+describe('都道府県配列の結合 formatLandmarkPrefectures', () => {
+  it('単一県はそのまま日本語表記へ変換する', () => {
+    expect(formatLandmarkPrefectures(['TOCHIGI'])).toBe('栃木県');
+  });
+
+  it('複数県は中黒(・)で連結する', () => {
+    expect(formatLandmarkPrefectures(['YAMANASHI', 'SHIZUOKA'])).toBe('山梨県・静岡県');
+  });
+
+  it('データ側の並び順をそのまま尊重し、並べ替えない', () => {
+    expect(formatLandmarkPrefectures(['SHIZUOKA', 'YAMANASHI'])).toBe('静岡県・山梨県');
+  });
+
+  it('未知のコードが混ざった場合はコードをそのまま連結する(getLandmarkPrefectureLabelと同じ挙動)', () => {
+    expect(formatLandmarkPrefectures(['TOCHIGI', 'UNKNOWN_PREFECTURE'])).toBe('栃木県・UNKNOWN_PREFECTURE');
   });
 });

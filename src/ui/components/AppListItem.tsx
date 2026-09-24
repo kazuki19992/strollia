@@ -23,6 +23,8 @@ export type AppListItemProps = {
   theme: AppTheme;
   /** 行タイトル。 */
   title: string;
+  /** 行の右端(chevron-rightの手前)に表示する補助要素を差す汎用スロット。到達済みバッジなどに使う。 */
+  trailing?: ReactNode;
   /** 押下処理。 */
   onPress: () => void;
   /** 日別ログなど、タイトルを強めに見せる行か。 */
@@ -39,6 +41,7 @@ export function AppListItem({
   subtitle,
   theme,
   title,
+  trailing,
   prominent = false,
   onPress,
 }: AppListItemProps) {
@@ -51,6 +54,7 @@ export function AppListItem({
         {detail ? <Text style={styles.appListItemDetail}>{detail}</Text> : null}
         {footer ? <View style={styles.appListItemFooter}>{footer}</View> : null}
       </View>
+      {trailing ? <View>{trailing}</View> : null}
       <Feather name="chevron-right" size={24} color={theme.colors.mutedText} />
     </Pressable>
   );

@@ -83,7 +83,7 @@ const cell = { cellId: '100:1:1', cellSizeMeters: 100, x: 1, y: 1 };
 const spot: LandmarkSpot = {
   id: '01a0c450-6c00-7000-8000-000000000101',
   name: 'テスト用スポット',
-  prefecture: 'TOKYO',
+  prefectures: ['TOKYO'],
   latitude: 35,
   longitude: 139,
   radiusMeters: 200,

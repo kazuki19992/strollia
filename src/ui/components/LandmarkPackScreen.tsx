@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { SafeAreaView, ScrollView } from 'react-native';
 
 import type { LandmarkPack, LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
-import { getLandmarkPrefectureLabel } from '@/features/landmarks/landmarkPrefectureLabel';
+import { formatLandmarkPrefectures } from '@/features/landmarks/landmarkPrefectureLabel';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
 import { LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
@@ -95,7 +95,7 @@ export function LandmarkPackScreen({
  * 現存しなくなったスポットは都道府県に注記を併記し、到達できない理由が分かるようにする。
  */
 function buildSpotSubtitle(spot: LandmarkSpot): string {
-  const prefectureLabel = getLandmarkPrefectureLabel(spot.prefecture);
+  const prefectureLabel = formatLandmarkPrefectures(spot.prefectures);
 
   return spot.retired ? `${prefectureLabel}・${LANDMARK_SPOT_RETIRED_NOTE}` : prefectureLabel;
 }

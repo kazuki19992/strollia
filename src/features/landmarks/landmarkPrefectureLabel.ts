@@ -68,3 +68,18 @@ const LANDMARK_PREFECTURE_LABELS: Readonly<Record<string, string | undefined>> =
 export function getLandmarkPrefectureLabel(prefecture: string): string {
   return LANDMARK_PREFECTURE_LABELS[prefecture] ?? prefecture;
 }
+
+/**
+ * 都道府県コードの配列を表示用の文字列へ結合する。
+ *
+ * 富士山のように複数都道府県にまたがるスポットは「山梨県・静岡県」のように
+ * 中黒(・)で連結する。配列の並び順はデータ側の意図(主要な県を先に書くなど)を
+ * そのまま尊重し、ここでは並べ替えない。未知のコードが混ざった場合の扱いは
+ * `getLandmarkPrefectureLabel` に委ねる(コードをそのまま連結する)。
+ *
+ * @param codes - スポットの `prefectures`(大文字スネークケースのコード配列)。
+ * @returns 中黒区切りの日本語表記。
+ */
+export function formatLandmarkPrefectures(codes: readonly string[]): string {
+  return codes.map((code) => getLandmarkPrefectureLabel(code)).join('・');
+}

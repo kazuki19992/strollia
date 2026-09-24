@@ -2,7 +2,7 @@
   {
     "id": "01a0c450-6c00-7000-8000-000000000101",
     "name": "華厳の滝",
-    "prefecture": "TOCHIGI",
+    "prefectures": ["TOCHIGI"],
     "latitude": 36.737917,
     "longitude": 139.501972,
     "radiusMeters": 200,
@@ -13,7 +13,7 @@
   {
     "id": "01a0c450-6c00-7000-8000-000000000102",
     "name": "那智の滝",
-    "prefecture": "WAKAYAMA",
+    "prefectures": ["WAKAYAMA"],
     "latitude": 33.675278,
     "longitude": 135.8875,
     "radiusMeters": 150,
@@ -24,7 +24,7 @@
   {
     "id": "01a0c450-6c00-7000-8000-000000000103",
     "name": "袋田の滝",
-    "prefecture": "IBARAKI",
+    "prefectures": ["IBARAKI"],
     "latitude": 36.764194,
     "longitude": 140.407361,
     "radiusMeters": 200,

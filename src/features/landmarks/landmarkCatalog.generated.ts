@@ -18,8 +18,8 @@ export type GeneratedLandmarkSpot = {
   id: string;
   /** 表示名。 */
   name: string;
-  /** 都道府県。大文字スネークケースの固定値。 */
-  prefecture: string;
+  /** 所属都道府県。大文字スネークケースの固定値の配列。富士山のように複数県にまたがるスポットは複数件持つ(1件以上、重複なし)。 */
+  prefectures: readonly string[];
   latitude: number;
   longitude: number;
   /** 到達判定の半径(メートル)。境界値は範囲内として扱う。 */
@@ -52,7 +52,7 @@ export const GENERATED_LANDMARK_SPOTS: readonly GeneratedLandmarkSpot[] = [
   {
     id: "01a0c450-6c00-7000-8000-000000000101",
     name: "華厳の滝",
-    prefecture: "TOCHIGI",
+    prefectures: ["TOCHIGI"],
     latitude: 36.737917,
     longitude: 139.501972,
     radiusMeters: 200,
@@ -63,7 +63,7 @@ export const GENERATED_LANDMARK_SPOTS: readonly GeneratedLandmarkSpot[] = [
   {
     id: "01a0c450-6c00-7000-8000-000000000102",
     name: "那智の滝",
-    prefecture: "WAKAYAMA",
+    prefectures: ["WAKAYAMA"],
     latitude: 33.675278,
     longitude: 135.8875,
     radiusMeters: 150,
@@ -74,7 +74,7 @@ export const GENERATED_LANDMARK_SPOTS: readonly GeneratedLandmarkSpot[] = [
   {
     id: "01a0c450-6c00-7000-8000-000000000103",
     name: "袋田の滝",
-    prefecture: "IBARAKI",
+    prefectures: ["IBARAKI"],
     latitude: 36.764194,
     longitude: 140.407361,
     radiusMeters: 200,

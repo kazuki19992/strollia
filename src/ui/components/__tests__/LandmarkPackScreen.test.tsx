@@ -24,7 +24,7 @@ const pack: LandmarkPack = {
 };
 
 /** スポット1件を組み立てる。到達日以外はパック詳細の表示に必要な最小構成。 */
-function createSpot(overrides: Partial<LandmarkSpot> & Pick<LandmarkSpot, 'id' | 'name' | 'prefecture'>): LandmarkSpot {
+function createSpot(overrides: Partial<LandmarkSpot> & Pick<LandmarkSpot, 'id' | 'name' | 'prefectures'>): LandmarkSpot {
   return {
     latitude: 36.737917,
     longitude: 139.501972,
@@ -38,11 +38,11 @@ function createSpot(overrides: Partial<LandmarkSpot> & Pick<LandmarkSpot, 'id' |
 /** 到達済み1件・未到達1件のスポット行。 */
 const spotItems: LandmarkSpotListItem[] = [
   {
-    spot: createSpot({ id: '01a0c450-6c00-7000-8000-000000000101', name: '華厳の滝', prefecture: 'TOCHIGI' }),
+    spot: createSpot({ id: '01a0c450-6c00-7000-8000-000000000101', name: '華厳の滝', prefectures: ['TOCHIGI'] }),
     visitedLocalDate: '2026-04-12',
   },
   {
-    spot: createSpot({ id: '01a0c450-6c00-7000-8000-000000000102', name: '那智の滝', prefecture: 'WAKAYAMA' }),
+    spot: createSpot({ id: '01a0c450-6c00-7000-8000-000000000102', name: '那智の滝', prefectures: ['WAKAYAMA'] }),
     visitedLocalDate: null,
   },
 ];
@@ -143,7 +143,7 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
         spot: createSpot({
           id: '01a0c450-6c00-7000-8000-000000000199',
           name: '幻の滝',
-          prefecture: 'IBARAKI',
+          prefectures: ['IBARAKI'],
           retired: true,
         }),
         visitedLocalDate: null,

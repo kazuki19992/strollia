@@ -162,6 +162,23 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     );
   });
 
+  it('未到達の行を連続で押すたびに再ズームする', () => {
+    // spotIdだけで要求を表すと、同じ行の連続タップで値が変わらずReactが更新をスキップし、
+    // 地図を動かした後の再タップでズームし直せない不具合があった
+    renderScreen();
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
+    });
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
+    });
+
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
+  });
+
   it('戻るボタンで実績一覧へ戻る', () => {
     const onBack = jest.fn();
     renderScreen({ onBack });

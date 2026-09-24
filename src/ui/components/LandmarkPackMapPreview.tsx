@@ -31,12 +31,21 @@ type LandmarkSpotMarker = {
   coordinate: RouteCoordinate;
 };
 
+/**
+ * 埋め込み地図へのズーム要求。
+ *
+ * spotIdだけで表すと、同じスポットへの連続タップ(ズーム→地図操作→再タップ)で値が変わらず
+ * Reactが更新をスキップしてしまう。タップのたびに変わるnonceを添えて、
+ * 「同じスポットへの再フォーカス要求」も新しい要求として区別できるようにする。
+ */
+export type LandmarkSpotFocusRequest = { spotId: string; nonce: number } | null;
+
 /** パック詳細画面の埋め込み地図のprops。 */
 export type LandmarkPackMapPreviewProps = {
   /** 表示するスポット行(order昇順)。番号バッジと同じ配列indexで番号を振る。 */
   spotItems: LandmarkSpotListItem[];
-  /** ズームして中心表示したいスポットID。nullなら全スポットが収まる表示範囲を保つ。 */
-  focusedSpotId: string | null;
+  /** ズームして中心表示したいスポットへの要求。nullなら全スポットが収まる表示範囲を保つ。 */
+  focusRequest: LandmarkSpotFocusRequest;
   /** 画面共通スタイル。 */
   styles: AppStyles;
   /** 現在テーマ。 */
@@ -47,10 +56,10 @@ export type LandmarkPackMapPreviewProps = {
  * スポットパックの全スポットを番号マーカーで示す、画面に埋め込むタイプの地図。
  *
  * 初期表示はパック内の全スポット(retired含む)が収まる範囲にして、「次はどこへ行こう」を
- * 地図の広がりから読み取れるようにする。行タップで渡される `focusedSpotId` が変わったときだけ
+ * 地図の広がりから読み取れるようにする。行タップで渡される `focusRequest` が変わったときだけ
  * そのスポットへ寄せ、`null` へ戻っても勝手に引き戻さない(ユーザーが動かした表示位置を尊重する)。
  */
-export function LandmarkPackMapPreview({ spotItems, focusedSpotId, styles, theme }: LandmarkPackMapPreviewProps) {
+export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme }: LandmarkPackMapPreviewProps) {
   const mapRef = useRef<MapView | null>(null);
   /**
    * ネイティブ地図の準備完了フラグ。
@@ -70,14 +79,15 @@ export function LandmarkPackMapPreview({ spotItems, focusedSpotId, styles, theme
   const markers = useMemo(() => toLandmarkSpotMarkers(spotItems), [spotItems]);
   const initialRegion = useMemo(() => createRegionFromBounds(toLandmarkSpotBounds(markers)), [markers]);
 
-  const focusedMarker = markers.find((marker) => marker.spotId === focusedSpotId) ?? null;
+  const focusedMarker = markers.find((marker) => marker.spotId === focusRequest?.spotId) ?? null;
   // 座標を数値へ分解して依存配列に入れる。親が spotItems を毎レンダー作り直しても、
-  // 同じスポットを指している間は再フォーカスが走らないようにするため。
+  // 同じ要求(nonce)を指している間は再フォーカスが走らないようにするため。
   const focusedLatitude = focusedMarker?.coordinate.latitude ?? null;
   const focusedLongitude = focusedMarker?.coordinate.longitude ?? null;
+  const focusNonce = focusRequest?.nonce ?? null;
 
   useEffect(() => {
-    if (!isMapReady || focusedSpotId === null || focusedLatitude === null || focusedLongitude === null) {
+    if (!isMapReady || focusNonce === null || focusedLatitude === null || focusedLongitude === null) {
       return;
     }
 
@@ -85,7 +95,9 @@ export function LandmarkPackMapPreview({ spotItems, focusedSpotId, styles, theme
       createUserCenteredRegion({ latitude: focusedLatitude, longitude: focusedLongitude }),
       LANDMARK_SPOT_FOCUS_DURATION_MS,
     );
-  }, [focusedSpotId, focusedLatitude, focusedLongitude, isMapReady]);
+    // nonce をタップのたびに変えることで、同じスポットへの再タップでも
+    // (座標が変わらず)確実にアニメーションを再実行する。
+  }, [focusNonce, focusedLatitude, focusedLongitude, isMapReady]);
 
   // RouteMapPanel と同じく、描ける座標が無いときは地図を描画しない
   if (markers.length === 0) {

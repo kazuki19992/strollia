@@ -4,7 +4,7 @@ import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 import { createRegionFromBounds } from '@/features/map/routeMapper';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
-import { LandmarkPackMapPreview } from '@/ui/components/LandmarkPackMapPreview';
+import { LandmarkPackMapPreview, type LandmarkSpotFocusRequest } from '@/ui/components/LandmarkPackMapPreview';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
 import { createUserCenteredRegion } from '@/ui/mapRegion';
 
@@ -65,13 +65,18 @@ const spotItems: LandmarkSpotListItem[] = [
   },
 ];
 
-/** 地図プレビューを描画する。focusedSpotId を切り替えるため rerender を返す。 */
-function renderPreview(focusedSpotId: string | null = null, items: LandmarkSpotListItem[] = spotItems) {
-  const view = render(<LandmarkPackMapPreview spotItems={items} focusedSpotId={focusedSpotId} styles={styles} theme={lightTheme} />);
+/** 指定スポットへの1回目のフォーカス要求を作る。 */
+function focusRequestFor(spotId: string, nonce = 1): LandmarkSpotFocusRequest {
+  return { spotId, nonce };
+}
+
+/** 地図プレビューを描画する。focusRequest を切り替えるため rerender を返す。 */
+function renderPreview(focusRequest: LandmarkSpotFocusRequest = null, items: LandmarkSpotListItem[] = spotItems) {
+  const view = render(<LandmarkPackMapPreview spotItems={items} focusRequest={focusRequest} styles={styles} theme={lightTheme} />);
 
   return {
-    rerender: (nextFocusedSpotId: string | null, nextItems: LandmarkSpotListItem[] = items) =>
-      view.rerender(<LandmarkPackMapPreview spotItems={nextItems} focusedSpotId={nextFocusedSpotId} styles={styles} theme={lightTheme} />),
+    rerender: (nextFocusRequest: LandmarkSpotFocusRequest, nextItems: LandmarkSpotListItem[] = items) =>
+      view.rerender(<LandmarkPackMapPreview spotItems={nextItems} focusRequest={nextFocusRequest} styles={styles} theme={lightTheme} />),
   };
 }
 
@@ -114,24 +119,43 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     expect(screen.getByText('3')).toBeTruthy();
   });
 
-  it('focusedSpotIdが変わるとそのスポット中心へアニメーションする', () => {
+  it('focusRequestが変わるとそのスポット中心へアニメーションする', () => {
     const { rerender } = renderPreview();
     fireMapReady();
 
     act(() => {
-      rerender('spot-2');
+      rerender(focusRequestFor('spot-2'));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
     expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
   });
 
-  it('focusedSpotIdがnullへ戻っても追加のアニメーションは行わず初期表示のズームを保つ', () => {
+  it('同じスポットへ連続で再タップ(nonceだけ増加)しても再アニメーションする', () => {
+    // spotIdだけを見て変化を判定すると、同じ値のためReactが更新をスキップし、
+    // 地図を動かしてから同じ行を再タップしてもズームし直せない不具合があった
     const { rerender } = renderPreview();
     fireMapReady();
 
     act(() => {
-      rerender('spot-2');
+      rerender(focusRequestFor('spot-2', 1));
+    });
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      rerender(focusRequestFor('spot-2', 2));
+    });
+
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
+    expect(mockAnimateToRegion).toHaveBeenNthCalledWith(2, createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
+  });
+
+  it('focusRequestがnullへ戻っても追加のアニメーションは行わず初期表示のズームを保つ', () => {
+    const { rerender } = renderPreview();
+    fireMapReady();
+
+    act(() => {
+      rerender(focusRequestFor('spot-2'));
     });
     mockAnimateToRegion.mockClear();
 
@@ -143,7 +167,7 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
   });
 
   it('onMapReady前のフォーカス指定はネイティブ側で無視されるため、準備完了まで待ってから移動する', () => {
-    renderPreview('spot-3');
+    renderPreview(focusRequestFor('spot-3'));
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();
 

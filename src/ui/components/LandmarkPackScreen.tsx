@@ -9,7 +9,7 @@ import { LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
 import { AppListItem } from './AppListItem';
 import { AppScreenHeader } from './AppScreenHeader';
-import { LandmarkPackMapPreview } from './LandmarkPackMapPreview';
+import { LandmarkPackMapPreview, type LandmarkSpotFocusRequest } from './LandmarkPackMapPreview';
 import { LandmarkSpotNumberBadge } from './LandmarkSpotNumberBadge';
 
 /** 到達済みスポット行に表示するスタンプ画像。全スポット共通の1種類のみ用意している。 */
@@ -44,8 +44,14 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
   // (`resolveLandmarkPackProgress` が retired を除いた有効スポットだけを数えるのと同じ基準)。
   const activeSpotItems = spotItems.filter((item) => !item.spot.retired);
   const visitedCount = activeSpotItems.filter((item) => item.visitedLocalDate !== null).length;
-  /** 埋め込み地図がズームして中心表示するスポットID。未タップならnull(全スポットが収まる表示範囲)。 */
-  const [focusedSpotId, setFocusedSpotId] = useState<string | null>(null);
+  /**
+   * 埋め込み地図がズームして中心表示するリクエスト。未タップならnull(全スポットが収まる表示範囲)。
+   *
+   * spotIdだけを保持すると、同じ行を連続で押したときに値が変わらずReactが更新をスキップし、
+   * ユーザーが地図を動かした後の再タップでズームし直せない。押すたびに変わるnonceを添えて
+   * 「同じスポットへの再フォーカス要求」も新しい状態として確実に伝える。
+   */
+  const [focusRequest, setFocusRequest] = useState<LandmarkSpotFocusRequest>(null);
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -60,7 +66,7 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
 
       <View style={styles.landmarkPackScreenBody}>
         <View style={styles.landmarkPackMapSection}>
-          <LandmarkPackMapPreview focusedSpotId={focusedSpotId} spotItems={spotItems} styles={styles} theme={theme} />
+          <LandmarkPackMapPreview focusRequest={focusRequest} spotItems={spotItems} styles={styles} theme={theme} />
         </View>
 
         <ScrollView style={styles.landmarkPackListSection} contentContainerStyle={styles.screenList}>
@@ -90,7 +96,11 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
                     />
                   ) : undefined
                 }
-                onPress={isVisited ? () => onSelectVisitedSpot(visitedLocalDate) : () => setFocusedSpotId(spot.id)}
+                onPress={
+                  isVisited
+                    ? () => onSelectVisitedSpot(visitedLocalDate)
+                    : () => setFocusRequest((prev) => ({ spotId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
+                }
               />
             );
           })}

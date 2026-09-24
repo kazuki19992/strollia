@@ -33,6 +33,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.appUpdateNoticeDialogContent).toBeDefined();
       expect(styles.confettiLayer).toBeDefined();
       expect(styles.confettiPiece).toBeDefined();
+      expect(styles.landmarkSpotNumberBadgeMap).toBeDefined();
     });
   });
 
@@ -157,7 +158,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 実績画面のスポットセクション6キー
       //       + スポット行番号バッジ・到達スタンプ6キー
       //       + パック詳細画面のレイアウト3キー + 埋め込み地図3キー
-      expect(keys.length).toBe(421);
+      //       + 地図マーカーバッジ(白リング・影)4キー
+      expect(keys.length).toBe(425);
     });
   });
 });

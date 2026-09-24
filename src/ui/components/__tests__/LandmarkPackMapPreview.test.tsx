@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 import { createRegionFromBounds } from '@/features/map/routeMapper';
@@ -117,6 +118,18 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     expect(screen.getByText('1')).toBeTruthy();
     expect(screen.getByText('2')).toBeTruthy();
     expect(screen.getByText('3')).toBeTruthy();
+  });
+
+  it('番号バッジをvariant="map"の見た目(白文字・塗りつぶし)で描画する(地図タイル色に左右されないコントラスト確保)', () => {
+    renderPreview();
+
+    // variant='map'の場合、到達済み・未到達とも landmarkSpotNumberBadgeTextMap(白文字)を使う。
+    // list variantならcolorはprimaryText/mutedTextになり#ffffffにはならないため、variant切り替えの検証になる
+    const visitedBadgeText = screen.getByText('1');
+    expect(StyleSheet.flatten(visitedBadgeText.props.style)).toMatchObject({ color: '#ffffff' });
+
+    const unvisitedBadgeText = screen.getByText('2');
+    expect(StyleSheet.flatten(unvisitedBadgeText.props.style)).toMatchObject({ color: '#ffffff' });
   });
 
   it('focusRequestが変わるとそのスポット中心へアニメーションする', () => {

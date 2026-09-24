@@ -21,6 +21,9 @@ import { MonthlyReportScrollIndicator } from './MonthlyReportScrollIndicator';
 import { NewRecordPill } from './NewRecordPill';
 import { ShareBranding } from '@/ui/components/ShareBranding';
 import { ShareButton } from '@/ui/components/ShareButton';
+import { createStyles } from '@/ui/appStyles';
+import { Dialog } from '@/ui/components/Dialog';
+import { IndeterminateProgressBar } from '@/ui/components/IndeterminateProgressBar';
 import { reportStyles } from './reportStyles';
 
 /** 月次レポート画面のprops。 */
@@ -131,6 +134,7 @@ export function MonthlyReportScreen({
   const backgroundColor = theme.name === 'dark' ? '#111111' : '#ffffff';
   const shareButtonBackgroundColor = theme.name === 'dark' ? '#f7f2ea' : '#333333';
   const shareButtonTextColor = theme.name === 'dark' ? '#111111' : '#ffffff';
+  const dialogStyles = useMemo(() => createStyles(theme), [theme]);
 
   /** レポートのスクロール本文全体をPNG化して共有する。 */
   async function shareReportImage(): Promise<void> {
@@ -373,6 +377,14 @@ export function MonthlyReportScreen({
           <Feather name="x" size={26} color="#777777" />
         </Pressable>
       </SafeAreaView>
+
+      <Dialog visible={isSharingReport} dismissible={false} swipeToClose={false} styles={dialogStyles} onClose={() => undefined}>
+        <View style={dialogStyles.gifRangeContent}>
+          <Text style={dialogStyles.gifProgressTitle}>レポートを生成しています…</Text>
+          <Text style={dialogStyles.gifProgressBody}>少しお待ちください。</Text>
+          <IndeterminateProgressBar styles={dialogStyles} animating={isSharingReport} />
+        </View>
+      </Dialog>
     </View>
   );
 }

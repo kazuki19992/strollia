@@ -102,6 +102,36 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackProgressBarArea: {
       flex: 1,
     },
+    // スポット行の番号バッジ(AppListItemのleadingスロットへ差す)
+    landmarkSpotNumberBadge: {
+      alignItems: 'center',
+      borderRadius: 999,
+      height: 30,
+      justifyContent: 'center',
+      width: 30,
+    },
+    landmarkSpotNumberBadgeVisited: {
+      backgroundColor: colors.primary,
+    },
+    landmarkSpotNumberBadgeUnvisited: {
+      borderColor: colors.border,
+      borderWidth: 1.5,
+    },
+    landmarkSpotNumberBadgeTextVisited: {
+      color: colors.primaryText,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    landmarkSpotNumberBadgeTextUnvisited: {
+      color: colors.mutedText,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    // 到達済み行の右端(chevron手前)に表示するスタンプ画像(AppListItemのtrailingスロットへ差す)
+    landmarkSpotVisitedStamp: {
+      height: 32,
+      width: 32,
+    },
     achievementDialogDate: {
       color: colors.mutedText,
       fontSize: 13,

@@ -155,7 +155,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 高度プロファイル7キー
       //       + 汎用プログレスバー(AppProgressBar)2キー + リスト行footerスロット1キー
       //       + 実績画面のスポットセクション6キー
-      expect(keys.length).toBe(409);
+      //       + スポット行番号バッジ・到達スタンプ6キー
+      expect(keys.length).toBe(415);
     });
   });
 });

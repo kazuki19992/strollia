@@ -96,6 +96,19 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     expect(screen.getByText('和歌山県')).toBeTruthy();
   });
 
+  it('先頭から何番目かを1始まりの番号バッジで表示する(order生値ではなく配列indexを使う)', () => {
+    renderScreen();
+
+    expect(screen.getByText('1')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
+  });
+
+  it('到達済みの行だけ訪問済みスタンプを表示する', () => {
+    renderScreen();
+
+    expect(screen.getAllByLabelText('訪問済み')).toHaveLength(1);
+  });
+
   it('到達済みの行を押すとその日の記録へ遷移する', () => {
     const onSelectVisitedSpot = jest.fn();
     renderScreen({ onSelectVisitedSpot });

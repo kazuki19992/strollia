@@ -16,6 +16,8 @@ import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { GpxImportInterruptedError, importLocationPointsFromGpx } from '@/features/import/importRepository';
 import type { GpxImportResult } from '@/features/import/importRepository';
+import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
+import { getLandmarkDetectionSnapshotForRecording } from '@/features/landmarks/landmarkRecordingService';
 import { beginGpxImportPriority } from '@/features/location/gpxImportPriority';
 import { flushLocationsBufferedDuringGpxImport } from '@/features/location/locationRecordingSession';
 import {
@@ -76,6 +78,7 @@ import { useLocationRecordingSync } from '@/ui/hooks/useLocationRecordingSync';
 import { useAchievementState } from '@/ui/hooks/useAchievementState';
 import { useAppInitialization } from '@/ui/hooks/useAppInitialization';
 import { appendFirstLaunchUpdateNoticeAcknowledgement, useAppUpdateNoticeState } from '@/ui/hooks/useAppUpdateNoticeState';
+import { type LandmarkPackDetail, type LandmarkPackListItem, useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
 import { useStayPlaceState } from '@/ui/hooks/useStayPlaceState';
 import type { PremiumAccessState, PremiumOfferingSummary } from '@/features/premium/revenueCatAccess';
 import type { AchievementListItem, PendingAchievementNotification } from '@/features/achievements/achievementRepository';
@@ -308,6 +311,10 @@ export type AppStateContextValue = {
   closeAchievementUnlockModal: () => void;
   /** 実績をXへシェアする。 */
   shareAchievementToX: (achievement: AchievementDefinition) => void;
+  /** スポットパックの到達状況(実績画面のスポットセクション用)。 */
+  landmarkPackItems: LandmarkPackListItem[];
+  /** パックIDからパック詳細画面の表示データを取得する。未知のIDはnull。 */
+  getLandmarkPackDetail: (packId: string) => LandmarkPackDetail | null;
 
   // プレミアム
   /** プレミアムアクセス状態。 */
@@ -416,6 +423,12 @@ export type AppStateContextValue = {
   openDailyLogs: () => void;
   /** 実績画面へ移動する。 */
   openAchievements: () => void;
+  /** スポットパック詳細画面へ移動する。 */
+  openLandmarkPack: (packId: string) => void;
+  /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
+  closeLandmarkPack: () => void;
+  /** 未到達スポットの位置を確認するため地図画面へ移動する。 */
+  openMapAtLandmarkSpot: (spot: LandmarkSpot) => void;
   /** 月次レポート画面へ移動する(Plusゲート付き)。 */
   openMonthlyReport: () => void;
   /** 設定画面へ移動する。 */
@@ -458,6 +471,17 @@ type AppStateProviderProps = {
     openDailyLogs?: () => void;
     /** 実績画面へ移動する。 */
     openAchievements?: () => void;
+    /** スポットパック詳細画面へ移動する。 */
+    openLandmarkPack?: (packId: string) => void;
+    /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
+    closeLandmarkPack?: () => void;
+    /**
+     * ネストした子画面から地図ルートへ戻る(`router.dismissTo('/')` 相当)。
+     *
+     * 実績スタックの子画面から地図へ抜けるには、1段戻る `openMap` では親の一覧へ
+     * 戻ってしまうため、スタックを畳んで地図まで戻る操作を別に用意する。
+     */
+    dismissToMap?: () => void;
     /** 月次レポート画面へ移動する。 */
     openMonthlyReport?: () => void;
     /** 設定画面へ移動する。 */
@@ -601,16 +625,33 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     initializeAchievementReviewState,
     requestAchievementNotificationPermissionIfNeeded,
   } = useAchievementState();
+  const { landmarkPackItems, getLandmarkPackDetail, reloadLandmarkState } = useLandmarkPackState(premiumAccessState.isPlusActive);
 
   // useLocationRecordingSync に渡す安定したコールバックラッパー。
-  // ref 経由で実装しているため空 deps で問題ない。
+  // ref 経由で実装しているため空 deps で問題ない(reloadLandmarkState も useCallback で
+  // 安定化済みなので、deps に入れても識別子は変わらない)。
   // これらを useCallback で安定化しないと deps 変化で refreshData が毎レンダーで再生成され
   // effect が無限ループする。
   const stableIncrementVisitedGridRefreshVersion = useCallback(() => incrementVisitedGridRefreshVersionRef.current(), []);
   const stableEvaluateAchievementsIfDialogIdle = useCallback(() => evaluateAchievementsIfDialogIdleRef.current(), []);
+  /**
+   * 実績の再読み込みに、スポット到達記録の再読み込みを相乗りさせた安定コールバック。
+   *
+   * スポット到達は実績評価と同じ契機(GPS保存後・フォアグラウンド復帰・起動時・全削除後)で
+   * 更新されるため、経路を分けずに実績再読み込みへ束ねる。これを行わないと、到達しても
+   * 実績画面を開き直すまで一覧の分数とトロフィー表示が古いままになる。
+   *
+   * スポット側の失敗で実績の再読み込み結果を捨てないよう、`reloadLandmarkState` の失敗は
+   * ここで飲み込んで警告だけ残す。
+   */
   const stableRefreshAchievementState = useCallback(
-    (...args: Parameters<typeof refreshAchievementStateRef.current>) => refreshAchievementStateRef.current(...args),
-    [],
+    async (...args: Parameters<typeof refreshAchievementStateRef.current>) => {
+      await refreshAchievementStateRef.current(...args);
+      await reloadLandmarkState().catch((error: unknown) => {
+        console.warn('Failed to reload landmark spot visits:', error);
+      });
+    },
+    [reloadLandmarkState],
   );
 
   const {
@@ -912,7 +953,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         onPress: () => {
           deleteAllUserData()
             .then(async () => {
-              await refreshDeletedUserDataState(refreshData, refreshAchievementState);
+              // 全削除では landmark_spot_visits も消えるため、スポット到達も合わせて読み直す
+              await refreshDeletedUserDataState(refreshData, stableRefreshAchievementState);
               // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
               Alert.alert('削除完了', DELETE_ALL_DATA_SUCCESS_MESSAGE);
             })
@@ -922,7 +964,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         },
       },
     ]);
-  }, [refreshAchievementState, refreshData]);
+  }, [stableRefreshAchievementState, refreshData]);
 
   /**
    * 起動時読み込みとSentry両方へ不具合レポート設定を反映するsetter。
@@ -1013,7 +1055,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     refreshData,
     synchronizeLocationRecordingMode,
     initializeAchievementReviewState,
-    refreshAchievementState,
+    refreshAchievementState: stableRefreshAchievementState,
     requestAchievementNotificationPermissionIfNeeded,
     snapshotPremiumAccessUpdateVersion,
     setKeepScreenAwake,
@@ -1047,6 +1089,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     shouldPersist: shouldPersistForegroundLocation,
     onLocation: shouldDisplayCustomLocation ? applyUserLocation : undefined,
     getActiveStayPlaces: getActiveStayPlacesForRecording,
+    getLandmarkDetection: getLandmarkDetectionSnapshotForRecording,
     onError: (error: unknown) => {
       setMessage(error instanceof Error ? error.message : 'フォアグラウンド位置情報の取得に失敗しました。');
     },
@@ -1112,12 +1155,54 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
 
   /** 実績画面へ移動する。 */
   function openAchievements(): void {
-    refreshAchievementState().catch(() => undefined);
+    stableRefreshAchievementState().catch(() => undefined);
     if (navigator?.openAchievements) {
       triggerLightImpactHaptic();
       navigator.openAchievements();
     } else {
       navigateToScreen('achievements');
+    }
+  }
+
+  /**
+   * スポットパック詳細画面へ移動する。
+   *
+   * 施錠中の行はペイウォールへ振り分けられるため、ここへ来るのはPlus有効時だけである。
+   */
+  function openLandmarkPack(packId: string): void {
+    if (navigator?.openLandmarkPack) {
+      triggerLightImpactHaptic();
+      navigator.openLandmarkPack(packId);
+    }
+  }
+
+  /** スポットパック詳細画面を閉じて実績一覧へ戻る。 */
+  function closeLandmarkPack(): void {
+    if (navigator?.closeLandmarkPack) {
+      triggerLightImpactHaptic();
+      navigator.closeLandmarkPack();
+    } else {
+      navigateToScreen('achievements');
+    }
+  }
+
+  /**
+   * 未到達スポットの位置を確認するため、そのスポットを中心にした地図画面へ移動する(設計書 §9.7)。
+   *
+   * 現在地中心へ戻す `prepareMapRegionRestore` ではなく `prepareMapRegionFocus` を使う。
+   * こちらは中心座標をスポットへ差し替えたうえで現在地追従を OFF にするため、
+   * 到着直後に現在地へ引き戻されず、見せたいスポットが中心に残る(`AGENTS.md` 10.3)。
+   *
+   * @param spot - 地図中心に表示したいスポット。
+   */
+  function openMapAtLandmarkSpot(spot: LandmarkSpot): void {
+    mapFollowState.prepareMapRegionFocus({ latitude: spot.latitude, longitude: spot.longitude });
+
+    if (navigator?.dismissToMap) {
+      triggerLightImpactHaptic();
+      navigator.dismissToMap();
+    } else {
+      navigateToScreen('map');
     }
   }
 
@@ -1272,7 +1357,10 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
       } finally {
         // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
-        await flushLocationsBufferedDuringGpxImport({ getActiveStayPlaces: getActiveStayPlacesForRecording }).catch((error: unknown) => {
+        await flushLocationsBufferedDuringGpxImport({
+          getActiveStayPlaces: getActiveStayPlacesForRecording,
+          getLandmarkDetection: getLandmarkDetectionSnapshotForRecording,
+        }).catch((error: unknown) => {
           console.warn('Failed to flush buffered locations after GPX import:', error);
         });
       }
@@ -1425,6 +1513,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     activeAchievementNotification,
     closeAchievementUnlockModal,
     shareAchievementToX,
+    landmarkPackItems,
+    getLandmarkPackDetail,
     premiumAccessState,
     revenueCatAppUserId,
     premiumOfferingSummary,
@@ -1471,6 +1561,9 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openMap,
     openDailyLogs,
     openAchievements,
+    openLandmarkPack,
+    closeLandmarkPack,
+    openMapAtLandmarkSpot,
     openMonthlyReport,
     openSettings,
     openStayPlaces,

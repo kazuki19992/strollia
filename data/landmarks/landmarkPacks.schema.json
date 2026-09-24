@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://strollia.app/schemas/landmarkPacks.schema.json",
+  "title": "Strollia landmark packs",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "name", "description", "trophyImage", "sortOrder"],
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "name": { "type": "string", "minLength": 1 },
+      "description": { "type": "string", "minLength": 1 },
+      "trophyImage": { "type": "string", "pattern": "^[a-z0-9-]+\\.png$" },
+      "sortOrder": { "type": "integer", "minimum": 1 }
+    }
+  }
+}

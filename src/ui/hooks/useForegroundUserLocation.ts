@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
 
+import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
 import { bufferLocationsDuringGpxImport, isGpxImportPriorityActive } from '@/features/location/gpxImportPriority';
 import { createLocationRecordingSession, LocationRecordingSession } from '@/features/location/locationRecordingSession';
 import { ensureForegroundLocationPermission } from '@/features/location/locationService';
@@ -21,6 +22,8 @@ export type ForegroundUserLocationOptions = {
   onError?: (error: unknown) => void;
   /** 現在の契約状態を反映した、GPS吸着に使う滞在場所の取得関数。 */
   getActiveStayPlaces?: () => Promise<StayPlace[]>;
+  /** 現在の契約状態を反映した、スポット到達検知の対象取得関数。 */
+  getLandmarkDetection?: () => Promise<LandmarkDetectionSnapshot>;
 };
 
 /**
@@ -35,10 +38,12 @@ export function useForegroundUserLocation({
   onLocation,
   onError,
   getActiveStayPlaces,
+  getLandmarkDetection,
 }: ForegroundUserLocationOptions): void {
   const onLocationRef = useRef(onLocation);
   const onErrorRef = useRef(onError);
   const getActiveStayPlacesRef = useRef(getActiveStayPlaces);
+  const getLandmarkDetectionRef = useRef(getLandmarkDetection);
 
   useEffect(() => {
     onLocationRef.current = onLocation;
@@ -51,6 +56,10 @@ export function useForegroundUserLocation({
   useEffect(() => {
     getActiveStayPlacesRef.current = getActiveStayPlaces;
   }, [getActiveStayPlaces]);
+
+  useEffect(() => {
+    getLandmarkDetectionRef.current = getLandmarkDetection;
+  }, [getLandmarkDetection]);
 
   useEffect(() => {
     if (!enabled) {
@@ -102,6 +111,8 @@ export function useForegroundUserLocation({
 
               sessionPromise ??= createLocationRecordingSession({
                 getActiveStayPlaces: async () => (await getActiveStayPlacesRef.current?.()) ?? [],
+                // 取得関数が未指定の間は検知しない(Plus無効相当)扱いにする
+                getLandmarkDetection: async () => (await getLandmarkDetectionRef.current?.()) ?? { status: 'disabled' },
               });
               const session = await sessionPromise;
               await session.recordLocations([location]);

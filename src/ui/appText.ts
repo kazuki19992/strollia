@@ -125,6 +125,29 @@ export const PHOTO_UNAVAILABLE_INLINE_MESSAGE =
 export const CRASH_REPORTING_SETTING_DESCRIPTION =
   'アプリが固まったり、落ちたりしたときなどの不具合の記録を開発者に自動で送ります。あなたの位置情報や移動記録など、あなたを特定できてしまう情報は送りません。有効にしておくと不具合改善が早くなります。';
 
+/**
+ * 実績画面のスポットセクション見出し。
+ *
+ * Plus限定機能であることを見出しで示し、無料ユーザーが施錠の理由を推測しなくて済むようにする。
+ */
+export const LANDMARK_PACK_SECTION_TITLE = 'スポット (Strollia Plus)';
+
+/**
+ * Plus未加入時にスポットセクションの下へ出す誘導文。
+ *
+ * 表示しているのは先頭1パックだけなので、他にもパックがあることを伝える。
+ * 現時点で提供しているのは1パックのみのため、具体的なパック名や総数は書かない。
+ */
+export const LANDMARK_PACK_PLUS_PROMOTION_NOTE = 'Strollia Plus なら、今後追加されるスポットパックもすべて集められます';
+
+/**
+ * パック詳細画面で、現存しなくなったスポット(retired)の行へ併記する注記。
+ *
+ * 完走判定の分母から外していることをユーザーが読み取れるようにするための表示で、
+ * 「行けないのに未到達扱いで残っている」という誤解を防ぐ。
+ */
+export const LANDMARK_SPOT_RETIRED_NOTE = '現存せず';
+
 /** 初回チュートリアルの不具合レポート告知ステップのタイトル。 */
 export const CRASH_REPORTING_TUTORIAL_TITLE = '不具合レポートについて';
 

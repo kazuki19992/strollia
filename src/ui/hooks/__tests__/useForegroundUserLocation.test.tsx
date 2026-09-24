@@ -142,6 +142,47 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
     expect(getActiveStayPlaces).toHaveBeenCalledTimes(1);
   });
 
+  test('保存セッションへ最新のスポット検知取得関数を渡す', async () => {
+    const detection = { status: 'enabled', spots: [], visitedSpotIds: new Set<string>() };
+    const getLandmarkDetection = jest.fn().mockResolvedValue(detection);
+    let watchCallback: ((location: LocationObject) => void) | null = null;
+    mockWatchPositionAsync.mockImplementation((_options: unknown, callback: (location: LocationObject) => void) => {
+      watchCallback = callback;
+      return Promise.resolve({ remove: mockRemove });
+    });
+
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, getLandmarkDetection }));
+
+    await act(async () => {
+      await flushPromises();
+      watchCallback?.(watchedLocation);
+      await flushPromises();
+    });
+
+    const options = mockCreateLocationRecordingSession.mock.calls[0][0] as { getLandmarkDetection: () => Promise<unknown> };
+    await expect(options.getLandmarkDetection()).resolves.toEqual(detection);
+    expect(getLandmarkDetection).toHaveBeenCalledTimes(1);
+  });
+
+  test('スポット検知取得関数が無い場合はdisabledを渡す', async () => {
+    let watchCallback: ((location: LocationObject) => void) | null = null;
+    mockWatchPositionAsync.mockImplementation((_options: unknown, callback: (location: LocationObject) => void) => {
+      watchCallback = callback;
+      return Promise.resolve({ remove: mockRemove });
+    });
+
+    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
+
+    await act(async () => {
+      await flushPromises();
+      watchCallback?.(watchedLocation);
+      await flushPromises();
+    });
+
+    const options = mockCreateLocationRecordingSession.mock.calls[0][0] as { getLandmarkDetection: () => Promise<unknown> };
+    await expect(options.getLandmarkDetection()).resolves.toEqual({ status: 'disabled' });
+  });
+
   test('表示コールバックがなくても新しい位置を保存する', async () => {
     let watchCallback: ((location: LocationObject) => void) | null = null;
     mockWatchPositionAsync.mockImplementation((_options: unknown, callback: (location: LocationObject) => void) => {

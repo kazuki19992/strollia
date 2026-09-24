@@ -1,16 +1,18 @@
 import { Image, ImageSourcePropType } from 'react-native';
 
 import { STROLLIA_APP_STORE_URL } from '@/config/storeUrls';
+import { LANDMARK_PACKS, getActiveSpotsForPack, getLandmarkPackCompletionAchievementId } from '@/features/landmarks/landmarkCatalog';
 
 /** 実績の分類。 */
-export type AchievementCategory = 'distance' | 'logDays' | 'prefecture' | 'municipality';
+export type AchievementCategory = 'distance' | 'logDays' | 'prefecture' | 'municipality' | 'landmarkPack';
 
 /** 実績解除に使う条件。 */
 export type AchievementCondition =
   | { type: 'totalDistanceMeters'; threshold: number }
   | { type: 'logDays'; threshold: number }
   | { type: 'prefectureCount'; threshold: number }
-  | { type: 'municipalityCount'; threshold: number };
+  | { type: 'municipalityCount'; threshold: number }
+  | { type: 'landmarkPackCompletion'; packId: string; threshold: number };
 
 /** アプリに同梱する実績定義。 */
 export type AchievementDefinition = {
@@ -190,6 +192,32 @@ const distanceDefinitions: AchievementDefinition[] = [
   .sort((a, b) => a.condition.threshold - b.condition.threshold)
   .map((definition, index): AchievementDefinition => ({ ...definition, sortOrder: 1000 + index }));
 
+/**
+ * スポットパックの完走実績をマスタから導出する。
+ *
+ * パックを追加するたびに実績定義を手で書き足さずに済み、
+ * マスタと実績定義が食い違う余地がなくなる。
+ * しきい値は `retired` を除いた有効スポット数とし、廃止されたスポットで完走不能にならないようにする。
+ */
+function createLandmarkPackDefinitions(): AchievementDefinition[] {
+  return LANDMARK_PACKS.map((pack, index): AchievementDefinition => {
+    const title = `${pack.name}を制覇`;
+
+    return {
+      id: getLandmarkPackCompletionAchievementId(pack.id),
+      title,
+      description: `${pack.name}のすべてのスポットへ到達する`,
+      category: 'landmarkPack',
+      condition: { type: 'landmarkPackCompletion', packId: pack.id, threshold: getActiveSpotsForPack(pack.id).length },
+      trophyImage: pack.trophyImage,
+      trophyImageUri: pack.trophyImageUri,
+      shareText: createAchievementShareText(title),
+      sortOrder: 6000 + index,
+      enabled: true,
+    };
+  });
+}
+
 /** 初期実装で有効にする全実績定義。 */
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   ...distanceDefinitions,
@@ -229,6 +257,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     sortOrder: 5000 + index,
     enabled: true,
   })),
+  ...createLandmarkPackDefinitions(),
 ];
 
 /** IDから実績定義を取得する。 */

@@ -16,7 +16,12 @@ import { PhotoDeletedDialog } from '@/ui/components/PhotoDeletedDialog';
 import { PremiumPaywallModal } from '@/ui/components/PremiumPaywallModal';
 import { TopToast } from '@/ui/components/TopToast';
 import { AppStateProvider, useAppState } from '@/ui/state/AppStateProvider';
-import { pathnameToScreenMode, pathnameToDailyLogsSentryScreenName, pathnameToSettingsSentryScreenName } from '@/ui/pathnameToScreenMode';
+import {
+  pathnameToAchievementsSentryScreenName,
+  pathnameToScreenMode,
+  pathnameToDailyLogsSentryScreenName,
+  pathnameToSettingsSentryScreenName,
+} from '@/ui/pathnameToScreenMode';
 import { resolveSentryScreenName } from '@/ui/sentryScreen';
 
 /**
@@ -43,6 +48,8 @@ function RootLayoutContent(): React.ReactElement {
       screenName = pathnameToSettingsSentryScreenName(pathname);
     } else {
       screenName = resolveSentryScreenName({
+        // 実績一覧からペイウォールを開く導線があるため、早期分岐させず前面表示の優先度に委ねる
+        achievementsScreenName: pathnameToAchievementsSentryScreenName(pathname),
         dailyLogsScreenName: pathnameToDailyLogsSentryScreenName(pathname),
         firstLaunchTutorialMode: s.isFirstLaunchTutorialVisible
           ? s.firstLaunchTutorialMode === 'replay'
@@ -199,6 +206,10 @@ function useRouterNavigator() {
       openMap: () => router.back(),
       openDailyLogs: () => router.push('/daily-logs'),
       openAchievements: () => router.push('/achievements'),
+      openLandmarkPack: (packId: string) => router.push(`/achievements/${packId}`),
+      closeLandmarkPack: () => router.back(),
+      // 実績スタックの子画面から地図へ抜けるため、スタックを畳んで地図ルートまで戻す
+      dismissToMap: () => router.dismissTo('/'),
       openMonthlyReport: () => router.push('/monthly-report'),
       openSettings: () => router.push('/settings'),
       openStayPlaces: () => router.push('/settings/stay-places'),

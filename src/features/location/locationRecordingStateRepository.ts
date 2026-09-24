@@ -9,6 +9,12 @@ export type PersistedLocationRecordingState = StayPlaceSnapState & {
   lastObservedAt: string | null;
   /** 最後にVisited Gridのセル更新へ利用できた有効座標。 */
   lastVisitedGridPoint: VisitedGridInterpolationPoint | null;
+  /** 滞在時間を計測中のスポットID。半径内にいない間はnull。 */
+  landmarkCandidateSpotId: string | null;
+  /** 候補スポットの半径内で最初に観測した日時。 */
+  landmarkCandidateEnteredAt: string | null;
+  /** 候補スポットの半径外を連続観測した回数。 */
+  landmarkOutsideCount: number;
 };
 
 /** 未保存時に返す、未吸着のライブ記録状態。 */
@@ -16,6 +22,9 @@ export const INITIAL_PERSISTED_LOCATION_RECORDING_STATE: PersistedLocationRecord
   ...INITIAL_STAY_PLACE_SNAP_STATE,
   lastObservedAt: null,
   lastVisitedGridPoint: null,
+  landmarkCandidateSpotId: null,
+  landmarkCandidateEnteredAt: null,
+  landmarkOutsideCount: 0,
 };
 
 /** `location_recording_state` のSELECT結果。 */
@@ -28,6 +37,12 @@ type LocationRecordingStateRow = StayPlaceSnapState & {
   lastVisitedGridLatitude: number | null;
   /** 最後にVisited Gridへ反映した有効経度。 */
   lastVisitedGridLongitude: number | null;
+  /** 滞在時間を計測中のスポットID。 */
+  landmarkCandidateSpotId: string | null;
+  /** 候補スポットの半径内で最初に観測した日時。 */
+  landmarkCandidateEnteredAt: string | null;
+  /** 候補スポットの半径外を連続観測した回数。列追加直後の既存行ではNULLになりうる。 */
+  landmarkOutsideCount: number | null;
 };
 
 /** SQLite行の3列が完全かつ有効な場合だけGrid補間起点へ変換する。 */
@@ -67,7 +82,10 @@ export async function getLocationRecordingStateInCurrentTransaction(
             last_observed_at AS lastObservedAt,
             last_visited_grid_recorded_at AS lastVisitedGridRecordedAt,
             last_visited_grid_latitude AS lastVisitedGridLatitude,
-            last_visited_grid_longitude AS lastVisitedGridLongitude
+            last_visited_grid_longitude AS lastVisitedGridLongitude,
+            landmark_candidate_spot_id AS landmarkCandidateSpotId,
+            landmark_candidate_entered_at AS landmarkCandidateEnteredAt,
+            landmark_outside_count AS landmarkOutsideCount
      FROM location_recording_state
      WHERE id = 1`,
   );
@@ -83,6 +101,10 @@ export async function getLocationRecordingStateInCurrentTransaction(
     outsideCount: row.outsideCount,
     lastObservedAt: row.lastObservedAt,
     lastVisitedGridPoint: toVisitedGridInterpolationPoint(row),
+    landmarkCandidateSpotId: row.landmarkCandidateSpotId ?? null,
+    landmarkCandidateEnteredAt: row.landmarkCandidateEnteredAt ?? null,
+    // 列追加マイグレーション直後の既存行はNULLを返しうるため、未計測を表す0へ寄せる
+    landmarkOutsideCount: row.landmarkOutsideCount ?? 0,
   };
 }
 
@@ -107,8 +129,11 @@ export async function upsertLocationRecordingStateInCurrentTransaction(
        last_visited_grid_recorded_at,
        last_visited_grid_latitude,
        last_visited_grid_longitude,
+       landmark_candidate_spot_id,
+       landmark_candidate_entered_at,
+       landmark_outside_count,
        updated_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        active_stay_place_id = excluded.active_stay_place_id,
        candidate_stay_place_id = excluded.candidate_stay_place_id,
@@ -118,6 +143,9 @@ export async function upsertLocationRecordingStateInCurrentTransaction(
        last_visited_grid_recorded_at = excluded.last_visited_grid_recorded_at,
        last_visited_grid_latitude = excluded.last_visited_grid_latitude,
        last_visited_grid_longitude = excluded.last_visited_grid_longitude,
+       landmark_candidate_spot_id = excluded.landmark_candidate_spot_id,
+       landmark_candidate_entered_at = excluded.landmark_candidate_entered_at,
+       landmark_outside_count = excluded.landmark_outside_count,
        updated_at = excluded.updated_at`,
     1,
     state.activeStayPlaceId,
@@ -128,6 +156,9 @@ export async function upsertLocationRecordingStateInCurrentTransaction(
     state.lastVisitedGridPoint?.recordedAt ?? null,
     state.lastVisitedGridPoint?.latitude ?? null,
     state.lastVisitedGridPoint?.longitude ?? null,
+    state.landmarkCandidateSpotId,
+    state.landmarkCandidateEnteredAt,
+    state.landmarkOutsideCount,
     updatedAt,
   );
 }

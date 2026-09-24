@@ -77,6 +77,27 @@ export function pathnameToSettingsSentryScreenName(pathname: string): string {
 }
 
 /**
+ * expo-router のパス名から Sentry 用の実績系子画面名を解決する。
+ *
+ * 実績スタック内の子ルートは `Achievements:ルート名` の形式で Sentry へ送る。
+ * 実績一覧とスポットパック詳細をクラッシュ発生画面として区別するために必要。
+ */
+export function pathnameToAchievementsSentryScreenName(pathname: string): string {
+  if (!pathname.startsWith('/achievements')) {
+    return 'Achievements:AchievementList';
+  }
+
+  const after = pathname.slice('/achievements'.length);
+
+  if (after === '' || after === '/') {
+    return 'Achievements:AchievementList';
+  }
+
+  // /achievements/[packId] → Achievements:LandmarkPackDetail
+  return 'Achievements:LandmarkPackDetail';
+}
+
+/**
  * expo-router のパス名から Sentry 用の日別記録系子画面名を解決する。
  *
  * 旧実装の `NavigationContainer#onStateChange` が生成していた文字列と完全に一致させる。

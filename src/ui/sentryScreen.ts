@@ -3,6 +3,13 @@ import type { ScreenMode } from './appTypes';
 type FirstLaunchTutorialModeForSentry = 'firstLaunch' | 'hidden' | 'replay';
 
 type ResolveSentryScreenNameInput = {
+  /**
+   * 実績スタック内の子画面名(`Achievements:*`)。
+   *
+   * 省略時は従来どおり `AchievementList` を返す。スポットパック詳細を追加しても
+   * 既存の呼び出し側をそのまま動かせるよう任意項目にしている。
+   */
+  achievementsScreenName?: string;
   dailyLogsScreenName: string;
   firstLaunchTutorialMode: FirstLaunchTutorialModeForSentry;
   isFirstLaunchTutorialVisible: boolean;
@@ -33,7 +40,7 @@ export function resolveSentryScreenName(input: ResolveSentryScreenNameInput): st
 
   switch (input.screenMode) {
     case 'achievements':
-      return 'AchievementList';
+      return input.achievementsScreenName ?? 'AchievementList';
     case 'dailyLogs':
       return input.dailyLogsScreenName;
     case 'map':

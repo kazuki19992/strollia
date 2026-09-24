@@ -15,7 +15,15 @@ describe('共通リスト行 AppListItem', () => {
   it('タイトル・サブタイトル・補足を表示し、押下で通知する', () => {
     const onPress = jest.fn();
     render(
-      <AppListItem accessibilityLabel="行を開く" detail="詳細" styles={styles} subtitle="サブ" theme={lightTheme} title="タイトル" onPress={onPress} />,
+      <AppListItem
+        accessibilityLabel="行を開く"
+        detail="詳細"
+        styles={styles}
+        subtitle="サブ"
+        theme={lightTheme}
+        title="タイトル"
+        onPress={onPress}
+      />,
     );
 
     expect(screen.getByText('タイトル')).toBeTruthy();

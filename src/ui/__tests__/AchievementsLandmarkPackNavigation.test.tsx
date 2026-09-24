@@ -1,11 +1,6 @@
 import { act, cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { AppState } from 'react-native';
 
-import { createUserCenteredRegion } from '@/ui/mapRegion';
-
-/** MapScreen モックが mapRef へ差し込む animateToRegion。地図中心の移動先を検証するために使う。 */
-const mockAnimateToRegion = jest.fn();
-
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
   impactAsync: jest.fn().mockResolvedValue(undefined),
@@ -275,9 +270,6 @@ jest.mock('@/ui/components/MapScreen', () => ({
   MapScreen: (props: { mapRef: { current: unknown }; onOpenAchievements: () => void }) => {
     const { Pressable, Text } = require('react-native');
 
-    // 実 MapView は描画しないため、地図移動の検証用に animateToRegion だけを ref へ差し込む
-    props.mapRef.current = { animateToRegion: mockAnimateToRegion };
-
     return (
       <Pressable accessibilityLabel="実績" onPress={props.onOpenAchievements}>
         <Text>実績</Text>
@@ -384,18 +376,20 @@ describe('実績一覧からスポットパック詳細への遷移', () => {
     expect(router.getPathname()).toBe('/achievements');
   });
 
-  it('未到達スポットの行を押すと地図画面まで戻り、そのスポットを中心に表示する', async () => {
+  it('未到達スポットの行を押してもメイン地図へは遷移せず、パック詳細画面に留まる', async () => {
+    // 画面内の埋め込み地図(LandmarkPackMapPreview)だけがそのスポットへズームする挙動へ変更した。
+    // メイン地図への画面遷移とそこでの中心表示は、この機能のためだけに設けていた
+    // openMapAtLandmarkSpot / prepareMapRegionFocus 一式ごと廃止している。
+    // 埋め込み地図がズームすること自体は LandmarkPackScreen.test.tsx / LandmarkPackMapPreview.test.tsx
+    // 側で react-native-maps の詳細なモックを使って検証済み。
     const router = await openLandmarkPackDetail();
-    mockAnimateToRegion.mockClear();
 
     await act(async () => {
       fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
     });
     await flushPromises();
 
-    expect(router.getPathname()).toBe('/');
-    // 那智の滝の座標(data/landmarks/landmarkSpots.json)が地図中心になる
-    expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
+    expect(router.getPathname()).toBe('/achievements/01a0c450-6c00-7000-8000-000000000001');
   });
 
   it('実績の再評価に合わせてスポット到達を読み直し、一覧の進捗を更新する', async () => {

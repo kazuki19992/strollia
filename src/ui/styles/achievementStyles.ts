@@ -102,6 +102,31 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackProgressBarArea: {
       flex: 1,
     },
+    // パック詳細画面のレイアウト(上1/3が地図、下2/3がスポット一覧)
+    landmarkPackScreenBody: {
+      flex: 1,
+    },
+    landmarkPackMapSection: {
+      flex: 1,
+    },
+    landmarkPackListSection: {
+      flex: 2,
+    },
+    // パック詳細画面の埋め込み地図。高さは固定pxではなく親セクションのflexで決める
+    landmarkPackMapFrame: {
+      borderRadius: 8,
+      flex: 1,
+      overflow: 'hidden',
+      width: '100%',
+    },
+    landmarkPackMap: {
+      height: '100%',
+      width: '100%',
+    },
+    landmarkPackMapMarkerContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     // スポット行の番号バッジ(AppListItemのleadingスロットへ差す)
     landmarkSpotNumberBadge: {
       alignItems: 'center',

@@ -23,7 +23,9 @@ export type LandmarkSpotNumberBadgeProps = {
  */
 export function LandmarkSpotNumberBadge({ number, isVisited, styles }: LandmarkSpotNumberBadgeProps) {
   return (
-    <View style={[styles.landmarkSpotNumberBadge, isVisited ? styles.landmarkSpotNumberBadgeVisited : styles.landmarkSpotNumberBadgeUnvisited]}>
+    <View
+      style={[styles.landmarkSpotNumberBadge, isVisited ? styles.landmarkSpotNumberBadgeVisited : styles.landmarkSpotNumberBadgeUnvisited]}
+    >
       <Text style={isVisited ? styles.landmarkSpotNumberBadgeTextVisited : styles.landmarkSpotNumberBadgeTextUnvisited}>{number}</Text>
     </View>
   );

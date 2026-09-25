@@ -118,7 +118,6 @@ export function createAchievementStyles(theme: AppTheme) {
       flex: 1,
       margin: 16,
       overflow: 'hidden',
-      width: '100%',
     },
     landmarkPackMap: {
       height: '100%',

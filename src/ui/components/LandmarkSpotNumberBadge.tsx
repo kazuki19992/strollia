@@ -13,20 +13,42 @@ export type LandmarkSpotNumberBadgeProps = {
   styles: AppStyles;
   /** 現在テーマ。 */
   theme: AppTheme;
+  /**
+   * 表示先。
+   *
+   * `'list'`(既定)はパック詳細画面のリスト行向けで、到達済み=塗りつぶし円/未到達=線囲み円のまま。
+   * `'map'` は埋め込み地図のマーカー向けで、OSの地図タイル色がライト/ダーク/衛星と変わっても
+   * 視認できるよう、到達済み・未到達の両方を塗りつぶし円にし、白リング+影を重ねてコントラストを確保する。
+   */
+  variant?: 'list' | 'map';
 };
 
 /**
- * スポットパック詳細画面の行先頭に表示する円形の番号バッジ。
+ * スポットパック詳細画面の行先頭・埋め込み地図のマーカーに表示する円形の番号バッジ。
  *
- * 到達済みは塗りつぶし円+白文字、未到達は線囲み円+ミュート文字で見分けられるようにする。
- * `AppListItem` の `leading` スロットへ差し込んで使う汎用コンポーネント。
+ * `variant='list'`(既定)は到達済み=塗りつぶし円+白文字、未到達=線囲み円+ミュート文字で見分けられるようにする。
+ * `variant='map'` は地図タイルの上でも視認できるよう、到達済み・未到達とも塗りつぶし円+白リング+白文字にする。
+ * `AppListItem` の `leading` スロット、または `LandmarkPackMapPreview` のマーカーへ差し込んで使う汎用コンポーネント。
  */
-export function LandmarkSpotNumberBadge({ number, isVisited, styles }: LandmarkSpotNumberBadgeProps) {
+export function LandmarkSpotNumberBadge({ number, isVisited, styles, variant = 'list' }: LandmarkSpotNumberBadgeProps) {
+  const containerStyle =
+    variant === 'map'
+      ? [
+          styles.landmarkSpotNumberBadge,
+          styles.landmarkSpotNumberBadgeMap,
+          isVisited ? styles.landmarkSpotNumberBadgeMapVisited : styles.landmarkSpotNumberBadgeMapUnvisited,
+        ]
+      : [styles.landmarkSpotNumberBadge, isVisited ? styles.landmarkSpotNumberBadgeVisited : styles.landmarkSpotNumberBadgeUnvisited];
+  const textStyle =
+    variant === 'map'
+      ? styles.landmarkSpotNumberBadgeTextMap
+      : isVisited
+        ? styles.landmarkSpotNumberBadgeTextVisited
+        : styles.landmarkSpotNumberBadgeTextUnvisited;
+
   return (
-    <View
-      style={[styles.landmarkSpotNumberBadge, isVisited ? styles.landmarkSpotNumberBadgeVisited : styles.landmarkSpotNumberBadgeUnvisited]}
-    >
-      <Text style={isVisited ? styles.landmarkSpotNumberBadgeTextVisited : styles.landmarkSpotNumberBadgeTextUnvisited}>{number}</Text>
+    <View style={containerStyle}>
+      <Text style={textStyle}>{number}</Text>
     </View>
   );
 }

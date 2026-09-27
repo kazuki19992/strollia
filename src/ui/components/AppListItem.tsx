@@ -29,6 +29,8 @@ export type AppListItemProps = {
   onPress: () => void;
   /** 日別ログなど、タイトルを強めに見せる行か。 */
   prominent?: boolean;
+  /** 右端のchevron-rightを表示するか。既定はtrue。画面遷移しない行(地図ズームのみ等)ではfalseにして誤誘導を避ける。 */
+  showChevron?: boolean;
 };
 
 /** アプリ内の詳細遷移リストで共通利用する行コンポーネント。 */
@@ -43,6 +45,7 @@ export function AppListItem({
   title,
   trailing,
   prominent = false,
+  showChevron = true,
   onPress,
 }: AppListItemProps) {
   return (
@@ -55,7 +58,7 @@ export function AppListItem({
         {footer ? <View style={styles.appListItemFooter}>{footer}</View> : null}
       </View>
       {trailing ? <View>{trailing}</View> : null}
-      <Feather name="chevron-right" size={24} color={theme.colors.mutedText} />
+      {showChevron ? <Feather name="chevron-right" size={24} color={theme.colors.mutedText} /> : null}
     </Pressable>
   );
 }

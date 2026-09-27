@@ -116,8 +116,8 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackMapFrame: {
       borderRadius: 8,
       flex: 1,
+      margin: 16,
       overflow: 'hidden',
-      width: '100%',
     },
     landmarkPackMap: {
       height: '100%',
@@ -146,11 +146,41 @@ export function createAchievementStyles(theme: AppTheme) {
       color: colors.primaryText,
       fontSize: 14,
       fontWeight: '700',
+      includeFontPadding: false,
+      lineHeight: 16,
+      textAlign: 'center',
     },
     landmarkSpotNumberBadgeTextUnvisited: {
       color: colors.mutedText,
       fontSize: 14,
       fontWeight: '700',
+      includeFontPadding: false,
+      lineHeight: 16,
+      textAlign: 'center',
+    },
+    // 埋め込み地図のマーカー用バッジ(地図タイル色に左右されないよう白リング+影+塗りつぶしを重ねる)
+    landmarkSpotNumberBadgeMap: {
+      borderColor: '#ffffff',
+      borderWidth: 2,
+      elevation: 5,
+      shadowColor: '#000000',
+      shadowOffset: { height: 3, width: 0 },
+      shadowOpacity: 0.22,
+      shadowRadius: 6,
+    },
+    landmarkSpotNumberBadgeMapVisited: {
+      backgroundColor: colors.primary,
+    },
+    landmarkSpotNumberBadgeMapUnvisited: {
+      backgroundColor: colors.mutedText,
+    },
+    landmarkSpotNumberBadgeTextMap: {
+      color: '#ffffff',
+      fontSize: 14,
+      fontWeight: '700',
+      includeFontPadding: false,
+      lineHeight: 16,
+      textAlign: 'center',
     },
     // 到達済み行の右端(chevron手前)に表示するスタンプ画像(AppListItemのtrailingスロットへ差す)
     landmarkSpotVisitedStamp: {

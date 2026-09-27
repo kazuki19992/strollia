@@ -87,4 +87,27 @@ describe('共通リスト行 AppListItem', () => {
 
     expect(screen.queryByText('末尾要素')).toBeNull();
   });
+
+  it('showChevronを指定しない場合はchevron-rightを表示する(既定true)', () => {
+    render(<AppListItem accessibilityLabel="行を開く" styles={styles} theme={lightTheme} title="タイトル" onPress={jest.fn()} />);
+
+    // Featherをテキストへモックしているため、name propで対象のアイコンを特定する
+    // (このファイル・testing.mdで許容されているUNSAFE_系クエリの使用例)
+    expect(screen.UNSAFE_getByProps({ name: 'chevron-right' })).toBeTruthy();
+  });
+
+  it('showChevron={false}の場合はchevron-rightを表示しない(画面遷移しない行の誤誘導防止)', () => {
+    render(
+      <AppListItem
+        accessibilityLabel="行を開く"
+        showChevron={false}
+        styles={styles}
+        theme={lightTheme}
+        title="タイトル"
+        onPress={jest.fn()}
+      />,
+    );
+
+    expect(screen.UNSAFE_queryByProps({ name: 'chevron-right' })).toBeNull();
+  });
 });

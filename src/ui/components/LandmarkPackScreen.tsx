@@ -83,6 +83,7 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
                 accessibilityLabel={isVisited ? `${spot.name}の記録を開く` : `${spot.name}を地図で見る`}
                 detail={visitedLocalDate ? formatLandmarkVisitedDate(visitedLocalDate) : undefined}
                 leading={<LandmarkSpotNumberBadge isVisited={isVisited} number={displayNumber} styles={styles} theme={theme} />}
+                showChevron={isVisited}
                 styles={styles}
                 subtitle={buildSpotSubtitle(spot)}
                 theme={theme}

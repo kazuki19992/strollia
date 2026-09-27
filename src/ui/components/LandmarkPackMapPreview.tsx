@@ -135,7 +135,13 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
               style={styles.landmarkPackMapMarkerContainer}
               onLayout={() => setLaidOutMarkerCount((count) => count + 1)}
             >
-              <LandmarkSpotNumberBadge isVisited={marker.isVisited} number={marker.displayNumber} styles={styles} theme={theme} />
+              <LandmarkSpotNumberBadge
+                isVisited={marker.isVisited}
+                number={marker.displayNumber}
+                styles={styles}
+                theme={theme}
+                variant="map"
+              />
             </View>
           </Marker>
         ))}

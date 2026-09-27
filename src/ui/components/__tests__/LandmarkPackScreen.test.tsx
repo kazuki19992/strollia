@@ -137,6 +137,16 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     expect(screen.getAllByLabelText('訪問済み')).toHaveLength(1);
   });
 
+  it('到達済みの行だけchevronを表示し、未到達の行は表示しない(地図ズームのみで画面遷移しないため)', () => {
+    renderScreen();
+
+    // Featherをテキストへモックしているため、name propで対象のアイコンを特定する
+    // (testing.mdで許容されているUNSAFE_系クエリの使用例)。
+    // モックのTextは合成要素+ホスト要素の2段でともにnamepropを持つため、1個描画されるごとに2件ヒットする。
+    // 2行中、到達済みの1行にのみ現れる想定なので、期待件数は 1件 × 2 = 2件
+    expect(screen.UNSAFE_getAllByProps({ name: 'chevron-right' })).toHaveLength(2);
+  });
+
   it('到達済みの行を押すとその日の記録へ遷移する', () => {
     const onSelectVisitedSpot = jest.fn();
     renderScreen({ onSelectVisitedSpot });

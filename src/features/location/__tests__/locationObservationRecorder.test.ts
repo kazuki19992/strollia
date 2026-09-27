@@ -144,13 +144,15 @@ function pointOutsideHome(recordedAt: string): NewLocationPoint {
 /**
  * 通常の有効滞在場所取得結果を持つ記録入力を作る。
  *
- * スポット検知はPlus限定のため、既定はPlus無効相当の `disabled` とする。
+ * landmarkDetection の既定値は「検知対象のスポットが無い」状態にする。スポットと無関係な
+ * テスト(滞在場所吸着・GPS保存フィルタ等)がこの既定値を暗黙に使うため、`enabledLandmarkDetection()`
+ * (固定のテスト用スポットを1件含む)を流用せず、必ず spots: [] にして到達判定へ一切干渉しないようにする。
  */
 function input(rawPoint: NewLocationPoint): RecordLocationObservationInput {
   return {
     rawPoint,
     activeStayPlaces: { status: 'ready', stayPlaces: [home] },
-    landmarkDetection: { status: 'disabled' },
+    landmarkDetection: { status: 'enabled', spots: [], visitedSpotIds: new Set() },
     now: '2026-08-23T01:00:00.000Z',
   };
 }
@@ -527,12 +529,19 @@ describe('スポット到達の記録', () => {
     resetMocksToDefaults();
   });
 
-  it('Plus無効なら到達を記録せず滞在状態をリセットする', async () => {
-    mockGetState.mockResolvedValue({ ...dwellingPersistedState });
+  it('検知対象のspotsが空なら、2回連続で圏外扱いを経て滞在状態がリセットされる', async () => {
+    // 有料パックのスポットしか滞在中でなくPlusが無効になった場合など、
+    // spotsからそのスポットが消えると findClosestSpotInRadius が候補を見つけられなくなり、
+    // resolveWhileOutside の「2回連続で圏外ならリセット」経路を通る(resolveLandmarkArrival側で
+    // 既にテスト済みのため、ここではその経路へ正しく到達することだけを確認する)。
+    mockGetState.mockResolvedValue({
+      ...dwellingPersistedState,
+      landmarkOutsideCount: 1,
+    });
 
     await recordLocationObservation({
       ...input(pointAtHome('2026-08-23T00:05:00.000Z')),
-      landmarkDetection: { status: 'disabled' },
+      landmarkDetection: { status: 'enabled', spots: [], visitedSpotIds: new Set() },
     });
 
     expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();

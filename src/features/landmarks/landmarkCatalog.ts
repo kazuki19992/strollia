@@ -78,6 +78,17 @@ export function parseLandmarkPackCompletionAchievementId(achievementId: string):
   return achievementId.startsWith(prefix) ? achievementId.slice(prefix.length) : null;
 }
 
+/**
+ * スポットが少なくとも1つの無料パックに属するか。
+ *
+ * スポットは複数パックに属しうる。物理的な場所そのものは1つであり、
+ * 無料パックの一部でもある以上、そこへ到達したという事実自体は無料ユーザーにも開いてよい
+ * という考え方により、1つでも無料パックに属していれば無料として扱う。
+ */
+export function isLandmarkSpotInFreePack(spot: LandmarkSpot): boolean {
+  return spot.packs.some((membership) => getLandmarkPackById(membership.packId)?.isFree === true);
+}
+
 /** 指定パック内での表示順を取り出す。所属していない場合は末尾扱い。 */
 function getPackOrder(spot: LandmarkSpot, packId: string): number {
   return spot.packs.find((membership) => membership.packId === packId)?.order ?? Number.MAX_SAFE_INTEGER;

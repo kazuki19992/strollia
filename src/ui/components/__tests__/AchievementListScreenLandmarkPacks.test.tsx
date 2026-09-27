@@ -22,6 +22,7 @@ const fallsPackItem: LandmarkPackListItem = {
     trophyImage: 1,
     trophyImageUri: null,
     sortOrder: 100,
+    isFree: true,
   },
   visitedCount: 2,
   totalCount: 3,

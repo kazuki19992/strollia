@@ -152,6 +152,7 @@ const packEntries = packs
     // 所属スポット: ${memberNames}
     trophyImage: require('../../../assets/achievements/spots/${pack.trophyImage}'),
     sortOrder: ${pack.sortOrder},
+    isFree: ${pack.isFree},
   },`;
   })
   .join('\n');
@@ -204,6 +205,8 @@ export type GeneratedLandmarkPack = {
   trophyImage: ImageSourcePropType;
   /** 一覧の表示順。 */
   sortOrder: number;
+  /** trueなら無料で誰でも到達検知・完走できる。falseならStrollia Plusのサブスクが必要。 */
+  isFree: boolean;
 };
 
 export const GENERATED_LANDMARK_SPOTS: readonly GeneratedLandmarkSpot[] = [

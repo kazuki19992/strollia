@@ -66,8 +66,6 @@ export function AchievementListScreen({
   // スポットパックのトロフィーも Grayscale を通すため数値サイズが必要。
   // 一覧行のアイコンは設計書 §9.3.1 の 60〜80pt を目安にし、狭い端末では縮めて上限で止める。
   const packTrophySize = Math.min(72, Math.max(48, Math.floor((windowWidth - 24 * 2) * 0.2)));
-  // 施錠中は先頭1件だけを見せる(設計書 §9.8)。表示するパックを固定して起動ごとのブレを避ける
-  const visibleLandmarkPackItems = isPlusActive ? landmarkPackItems : landmarkPackItems.slice(0, 1);
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -137,13 +135,13 @@ export function AchievementListScreen({
           );
         })}
 
-        {visibleLandmarkPackItems.length > 0 ? (
+        {landmarkPackItems.length > 0 ? (
           // 見出しは同じ画面のグリッドセクションと同じ achievementSection + screenSectionHeading を使う。
           // ScreenSection の screenSectionTitle(16px) では既存グリッドの見出し(18px)と大きさが揃わない。
           <View style={styles.achievementSection}>
             <Text style={styles.screenSectionHeading}>{LANDMARK_PACK_SECTION_TITLE}</Text>
             <View style={styles.screenSectionBody}>
-              {visibleLandmarkPackItems.map((item) => {
+              {landmarkPackItems.map((item) => {
                 // 施錠中は検知していないため、到達率を0として未到達と同じ見た目にする
                 const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
                 const trophyState = resolveLandmarkTrophyDisplayState(ratio);
@@ -186,7 +184,9 @@ export function AchievementListScreen({
                 );
               })}
 
-              {!isPlusActive ? <DescriptionText styles={styles}>{LANDMARK_PACK_PLUS_PROMOTION_NOTE}</DescriptionText> : null}
+              {landmarkPackItems.some((item) => item.isLocked) ? (
+                <DescriptionText styles={styles}>{LANDMARK_PACK_PLUS_PROMOTION_NOTE}</DescriptionText>
+              ) : null}
             </View>
           </View>
         ) : null}

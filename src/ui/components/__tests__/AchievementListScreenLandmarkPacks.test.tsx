@@ -124,15 +124,23 @@ describe('実績画面のスポットセクション', () => {
       expect(screen.getByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toBeTruthy();
     });
 
-    it('2件以上渡されても先頭1件だけを表示する', () => {
-      const secondPackItem: LandmarkPackListItem = {
-        ...lockedPackItem,
-        pack: { ...lockedPackItem.pack, id: '01a0c450-6c00-7000-8000-000000000002', name: '日本本土四極' },
+    it('無料パックと有料パックが混在する場合、両方を表示する', () => {
+      const freePackItem: LandmarkPackListItem = {
+        ...fallsPackItem,
+        pack: { ...fallsPackItem.pack, id: '01a0c450-6c00-7000-8000-000000000002', name: '日本本土四極' },
+        isLocked: false,
       };
-      renderScreen({ landmarkPackItems: [lockedPackItem, secondPackItem], isPlusActive: false });
+      renderScreen({ landmarkPackItems: [lockedPackItem, freePackItem], isPlusActive: false });
 
       expect(screen.getByText('日本三名瀑')).toBeTruthy();
-      expect(screen.queryByText('日本本土四極')).toBeNull();
+      expect(screen.getByText('日本本土四極')).toBeTruthy();
+    });
+
+    it('施錠中のパックが1件も無ければ誘導文を表示しない', () => {
+      const freePackItem: LandmarkPackListItem = { ...fallsPackItem, isLocked: false };
+      renderScreen({ landmarkPackItems: [freePackItem], isPlusActive: false });
+
+      expect(screen.queryByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toBeNull();
     });
   });
 });

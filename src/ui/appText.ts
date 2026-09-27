@@ -128,17 +128,17 @@ export const CRASH_REPORTING_SETTING_DESCRIPTION =
 /**
  * 実績画面のスポットセクション見出し。
  *
- * Plus限定機能であることを見出しで示し、無料ユーザーが施錠の理由を推測しなくて済むようにする。
+ * 「スタンプラリー」は機能全体のユーザー向けブランド名。無料パックと有料パックが混在するため、
+ * セクション全体にPlus限定のラベルは付けない(施錠有無は行ごとの鍵アイコンで示す)。
  */
-export const LANDMARK_PACK_SECTION_TITLE = 'スポット (Strollia Plus)';
+export const LANDMARK_PACK_SECTION_TITLE = 'スタンプラリー';
 
 /**
- * Plus未加入時にスポットセクションの下へ出す誘導文。
+ * Plus未加入時、施錠中のパックが1件以上あるときだけスポットセクションの下へ出す誘導文。
  *
- * 表示しているのは先頭1パックだけなので、他にもパックがあることを伝える。
- * 現時点で提供しているのは1パックのみのため、具体的なパック名や総数は書かない。
+ * 無料パックしか無い(施錠中のパックが0件の)ときはこの誘導文自体を表示しない。
  */
-export const LANDMARK_PACK_PLUS_PROMOTION_NOTE = 'Strollia Plus なら、今後追加されるスポットパックもすべて集められます';
+export const LANDMARK_PACK_PLUS_PROMOTION_NOTE = 'Strollia Plus なら、有料のスタンプラリーもすべて集められます';
 
 /**
  * パック詳細画面で、現存しなくなったスポット(retired)の行へ併記する注記。

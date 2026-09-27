@@ -63,7 +63,7 @@ describe('実績画面のスポットセクション', () => {
     jest.restoreAllMocks();
   });
 
-  it('Plus限定であることを示す見出しを表示する', () => {
+  it('セクション見出しを表示する', () => {
     renderScreen();
 
     expect(screen.getByText(LANDMARK_PACK_SECTION_TITLE)).toBeTruthy();

@@ -33,7 +33,7 @@ jest.mock('@/features/location/gpxImportPriority', () => ({
 
 // スポット検知の境界がリポジトリ経由でDB接続モジュールを読み込むため、
 // 実SQLiteを開かないようモジュールごと差し替える(このテストではDBへ触れない)
-jest.mock('@/db/database', () => ({ db: {} }));
+jest.mock('@/db/database', () => ({ db: { getAllAsync: jest.fn().mockResolvedValue([]) } }));
 
 jest.mock('@/features/premium/revenueCatAccess', () => ({
   getPremiumAccessState: (...args: unknown[]) => mockGetPremiumAccessState(...args),
@@ -107,13 +107,17 @@ describe('バックグラウンド位置情報タスク', () => {
     expect(mockResolveActiveStayPlaces).toHaveBeenCalledWith([home], false);
   });
 
-  it('Plus無効ならスポット検知を行わないスナップショットを保存セッションへ渡す', async () => {
+  it('Plus無効でも無料パックのスポットは検知対象に含めたスナップショットを保存セッションへ渡す', async () => {
     mockGetPremiumAccessState.mockResolvedValue({ isPlusActive: false });
 
     await definedTask!({ data: { locations: [{ timestamp: 1, coords: {} } as LocationObject] }, error: null });
 
     const options = mockCreateLocationRecordingSession.mock.calls[0][0] as { getLandmarkDetection: () => Promise<unknown> };
-    await expect(options.getLandmarkDetection()).resolves.toEqual({ status: 'disabled' });
+    const snapshot = (await options.getLandmarkDetection()) as { status: string; spots?: unknown[] };
+
+    // 2026-09-27時点、実マスタのパックは全て無料(日本三名瀑)なので、Plus無効でも空にならない
+    expect(snapshot.status).toBe('enabled');
+    expect(snapshot.spots?.length).toBeGreaterThan(0);
   });
 
   it('位置情報が空の場合は保存セッションを作らない', async () => {

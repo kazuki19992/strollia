@@ -111,8 +111,8 @@ export function useForegroundUserLocation({
 
               sessionPromise ??= createLocationRecordingSession({
                 getActiveStayPlaces: async () => (await getActiveStayPlacesRef.current?.()) ?? [],
-                // 取得関数が未指定の間は検知しない(Plus無効相当)扱いにする
-                getLandmarkDetection: async () => (await getLandmarkDetectionRef.current?.()) ?? { status: 'disabled' },
+                // 取得関数が未指定の間は一時的な取得不能扱いにする(滞在状態を保持する)
+                getLandmarkDetection: async () => (await getLandmarkDetectionRef.current?.()) ?? { status: 'unavailable' },
               });
               const session = await sessionPromise;
               await session.recordLocations([location]);

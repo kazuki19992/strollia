@@ -68,4 +68,10 @@ describe('スポット実績カタログ landmarkCatalog', () => {
   it('パックIDから完走実績IDを導出できる', () => {
     expect(getLandmarkPackCompletionAchievementId(FALLS_PACK_ID)).toBe(`landmark-pack-${FALLS_PACK_ID}`);
   });
+
+  it('全パックがisFreeを持つ', () => {
+    for (const pack of LANDMARK_PACKS) {
+      expect(typeof pack.isFree).toBe('boolean');
+    }
+  });
 });

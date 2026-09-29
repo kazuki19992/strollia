@@ -235,12 +235,12 @@ describe('位置情報保存セッション', () => {
     expect(mockRecordLocationObservation).toHaveBeenNthCalledWith(2, expect.objectContaining({ landmarkDetection: enabledDetection }));
   });
 
-  it('スポット検知の取得関数が無い場合はdisabledをRecorderへ渡す', async () => {
+  it('スポット検知の取得関数が無い場合はunavailableをRecorderへ渡す', async () => {
     const session = await createLocationRecordingSession();
 
     await session.recordLocations([firstLocation]);
 
-    expect(mockRecordLocationObservation).toHaveBeenCalledWith(expect.objectContaining({ landmarkDetection: { status: 'disabled' } }));
+    expect(mockRecordLocationObservation).toHaveBeenCalledWith(expect.objectContaining({ landmarkDetection: { status: 'unavailable' } }));
   });
 
   it('スポット検知の取得失敗をunavailableとしてRecorderへ渡す', async () => {

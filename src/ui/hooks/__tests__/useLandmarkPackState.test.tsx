@@ -30,16 +30,17 @@ describe('スポットパック状態 useLandmarkPackState', () => {
     expect(result.current.landmarkPackItems[0]?.isLocked).toBe(false);
   });
 
-  it('Plus無効なら先頭1件だけを施錠状態で返す', async () => {
+  it('Plus無効でも無料パックは施錠されず進捗つきで返る', async () => {
+    // 2026-09-27時点、実マスタのパック「日本三名瀑」は無料(isFree: true)
     const { result } = renderHook(() => useLandmarkPackState(false));
 
     await waitFor(() => {
-      expect(result.current.landmarkPackItems.length).toBe(1);
+      expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
     });
 
-    expect(result.current.landmarkPackItems[0]?.isLocked).toBe(true);
-    // 検知していない期間の進捗を出すと誤解を招くため、到達数は0で返す
-    expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(0);
+    expect(result.current.landmarkPackItems.length).toBe(1);
+    expect(result.current.landmarkPackItems[0]?.isLocked).toBe(false);
+    expect(result.current.landmarkPackItems[0]?.totalCount).toBe(3);
   });
 
   it('パック詳細に到達日を含め、未到達はnullにする', async () => {

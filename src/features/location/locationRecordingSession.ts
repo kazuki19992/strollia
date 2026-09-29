@@ -152,14 +152,16 @@ async function getActiveStayPlacesSnapshot(
 /**
  * スポット検知対象の読込結果を、Recorderが扱える形式へ変換する。
  *
- * 取得関数が未指定の場合は検知しない(Plus無効相当)扱いにする。取得自体が失敗した場合は
- * 一時的な障害として `unavailable` を返し、計測中の滞在状態をリセットさせない。
+ * `LandmarkDetectionSnapshot` は `'enabled' | 'unavailable'` の2値化(検知可否は
+ * パック単位の無料/有料・Plus状態で決まるため、機能全体の `'disabled'` は存在しない)。
+ * 取得関数が未指定の場合・取得自体が失敗した場合のどちらも、一時的な障害として
+ * `unavailable` を返し、計測中の滞在状態をリセットさせない。
  */
 async function getLandmarkDetectionSnapshot(
   getLandmarkDetection: (() => Promise<LandmarkDetectionSnapshot>) | undefined,
 ): Promise<LandmarkDetectionSnapshot> {
   if (!getLandmarkDetection) {
-    return { status: 'disabled' };
+    return { status: 'unavailable' };
   }
 
   try {

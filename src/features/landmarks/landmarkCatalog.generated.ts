@@ -46,6 +46,8 @@ export type GeneratedLandmarkPack = {
   trophyImage: ImageSourcePropType;
   /** 一覧の表示順。 */
   sortOrder: number;
+  /** trueなら無料で誰でも到達検知・完走できる。falseならStrollia Plusのサブスクが必要。 */
+  isFree: boolean;
 };
 
 export const GENERATED_LANDMARK_SPOTS: readonly GeneratedLandmarkSpot[] = [
@@ -92,5 +94,6 @@ export const GENERATED_LANDMARK_PACKS: readonly GeneratedLandmarkPack[] = [
     // 所属スポット: 華厳の滝, 那智の滝, 袋田の滝
     trophyImage: require('../../../assets/achievements/spots/spots-japan-falls-3.png'),
     sortOrder: 100,
+    isFree: true,
   },
 ];

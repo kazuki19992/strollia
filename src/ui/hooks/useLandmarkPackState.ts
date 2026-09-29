@@ -54,8 +54,9 @@ export type UseLandmarkPackStateResult = {
  * マスタ(`LANDMARK_PACKS`)を起点に数えるため、マスタから消えたスポットの到達記録が
  * DBに残っていても分子が分母を超えない。
  *
- * @param isPlusActive - Strollia Plusが有効かどうか。無効ならスポット到達を検知していないため、
- *   先頭1パックだけを施錠状態・進捗なしで返す(設計書 §9.8)。
+ * @param isPlusActive - Strollia Plusが有効かどうか。無料パック(`pack.isFree`)は常に施錠しない。
+ *   有料パックは無効時のみ施錠状態・進捗なしで返す
+ *   (`docs/superpowers/specs/2026-09-27-stamp-rally-free-paid-packs-design.md` §6.1)。
  */
 export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStateResult {
   /** 到達済みスポットIDから到達日を引くMap。詳細画面の日別記録遷移にも使う。 */
@@ -78,17 +79,15 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
     const progressByPackId = new Map(
       resolveLandmarkPackProgress(new Set(visitedLocalDateBySpotId.keys())).map((progress) => [progress.packId, progress]),
     );
-    // 施錠時に表示するパックを表示順の先頭へ固定し、起動ごとに内容が変わらないようにする
-    const visiblePacks = isPlusActive ? LANDMARK_PACKS : LANDMARK_PACKS.slice(0, 1);
-
-    return visiblePacks.map((pack) => {
+    return LANDMARK_PACKS.map((pack) => {
       const progress = progressByPackId.get(pack.id);
+      const isLocked = !pack.isFree && !isPlusActive;
 
       return {
         pack,
-        visitedCount: isPlusActive ? (progress?.visitedCount ?? 0) : 0,
+        visitedCount: isLocked ? 0 : (progress?.visitedCount ?? 0),
         totalCount: progress?.totalCount ?? 0,
-        isLocked: !isPlusActive,
+        isLocked,
       };
     });
   }, [isPlusActive, visitedLocalDateBySpotId]);

@@ -49,6 +49,7 @@ const pack: LandmarkPack = {
   trophyImage: 1,
   trophyImageUri: null,
   sortOrder: 100,
+  isFree: true,
 };
 
 /** スポット1件を組み立てる。到達日以外はパック詳細の表示に必要な最小構成。 */

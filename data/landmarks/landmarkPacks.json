@@ -4,6 +4,7 @@
     "name": "日本三名瀑",
     "description": "日本を代表する3つの名瀑",
     "trophyImage": "spots-japan-falls-3.png",
-    "sortOrder": 100
+    "sortOrder": 100,
+    "isFree": true
   }
 ]

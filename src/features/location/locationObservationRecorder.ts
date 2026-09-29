@@ -1,9 +1,5 @@
 import { withExclusiveTransaction } from '@/db/database';
-import {
-  INITIAL_LANDMARK_ARRIVAL_STATE,
-  resolveLandmarkArrival,
-  type LandmarkArrivalState,
-} from '@/features/landmarks/landmarkArrivalResolver';
+import { resolveLandmarkArrival, type LandmarkArrivalState } from '@/features/landmarks/landmarkArrivalResolver';
 import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
 import { insertLandmarkSpotVisitInCurrentTransaction } from '@/features/landmarks/landmarkVisitRepository';
 import {
@@ -93,18 +89,15 @@ function toLandmarkArrivalState(state: PersistedLocationRecordingState): Landmar
 /**
  * スポット検知の可否に応じて到達判定を行う。
  *
- * Plus無効(`disabled`)は明示的な権利消失のため滞在状態をリセットする。
  * 取得失敗(`unavailable`)は一時的な障害のため、次の正常取得まで滞在状態を保持する。
+ * `enabled` は無料パックのスポットのみ・全パックのスポットのどちらもあり得る
+ * (`spots` は呼び出し側がPlus状態に応じて絞り込み済み)。
  */
 function resolveLandmarkArrivalForObservation(
   persistedState: PersistedLocationRecordingState,
   rawPoint: NewLocationPoint,
   detection: LandmarkDetectionSnapshot,
 ): { state: LandmarkArrivalState; arrivedSpotId: string | null } {
-  if (detection.status === 'disabled') {
-    return { state: INITIAL_LANDMARK_ARRIVAL_STATE, arrivedSpotId: null };
-  }
-
   if (detection.status === 'unavailable') {
     return { state: toLandmarkArrivalState(persistedState), arrivedSpotId: null };
   }

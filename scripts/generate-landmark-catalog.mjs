@@ -96,6 +96,15 @@ for (const spot of spots) {
 for (const pack of packs) {
   const members = membersByPackId.get(pack.id);
 
+  // trophyImageはSVG(trophyIcon)から自動生成するPNGを指すため、ベース名が食い違うと
+  // 生成モジュールがこのパイプラインで作られていないアセットを require してしまう。
+  const expectedTrophyImage = `${pack.trophyIcon}.png`;
+  if (pack.trophyImage !== expectedTrophyImage) {
+    errors.push(
+      `パック「${pack.name}」の trophyImage(${pack.trophyImage})が trophyIcon から期待される名前(${expectedTrophyImage})と一致しません`,
+    );
+  }
+
   if (members.length === 0) {
     errors.push(`パック「${pack.name}」にスポットが1件もありません（完走不能になります）`);
     continue;

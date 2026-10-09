@@ -26,36 +26,38 @@
 
 ## File Structure
 
-| ファイル | 変更内容 |
-|----------|----------|
-| `metro.config.js` | `react-native-svg-transformer` を配線し `.svg` をコンポーネントとしてimport可能にする |
-| `src/types/svg.d.ts` | `*.svg` importの型宣言(新規) |
-| `__mocks__/svgMock.js` | Jestでの `.svg` importモック(新規) |
-| `package.json` | `sharp` をdevDependencyに追加、jestの`moduleNameMapper`に`.svg`マッピング追加、`generate:landmarks`スクリプトを2段階化 |
-| `assets/achievements/spots/svg/japan-falls-3.svg` | トロフィーSVGマスタ(新規) |
-| `scripts/generate-landmark-trophy-pngs.mjs` | SVG→PNG自動生成スクリプト(新規) |
-| `assets/achievements/spots/spots-japan-falls-3.png` | 削除(新しい生成PNGへ置き換え) |
-| `data/landmarks/landmarkPacks.schema.json` | `trophyIcon` を必須項目として追加 |
-| `data/landmarks/landmarkPacks.json` | `trophyIcon` 追加、`trophyImage` の値を新しいPNG名へ変更 |
-| `scripts/generate-landmark-catalog.mjs` | 生成テンプレート・型に `trophyIcon` を追加 |
-| `src/features/landmarks/landmarkCatalog.generated.ts` | 生成物(再生成) |
-| `src/features/landmarks/__tests__/landmarkCatalog.test.ts` | `trophyIcon` の検証テスト追加 |
-| `src/ui/components/__tests__/LandmarkPackScreen.test.tsx` | フィクスチャに `trophyIcon` 追加 |
-| `src/ui/components/__tests__/AchievementListScreenLandmarkPacks.test.tsx` | フィクスチャに `trophyIcon` 追加、SVG描画テスト追加 |
-| `src/ui/components/AchievementListScreen.tsx` | パック行トロフィーの描画を `Image` から `trophyIcon` コンポーネントへ変更 |
-| `docs/todo.md` / `docs/landmark-spot-packs.md` / `docs/achievements.md` | SVG+生成PNGパイプラインの記述反映 |
+| ファイル                                                                  | 変更内容                                                                                                               |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `metro.config.js`                                                         | `react-native-svg-transformer` を配線し `.svg` をコンポーネントとしてimport可能にする                                  |
+| `src/types/svg.d.ts`                                                      | `*.svg` importの型宣言(新規)                                                                                           |
+| `__mocks__/svgMock.js`                                                    | Jestでの `.svg` importモック(新規)                                                                                     |
+| `package.json`                                                            | `sharp` をdevDependencyに追加、jestの`moduleNameMapper`に`.svg`マッピング追加、`generate:landmarks`スクリプトを2段階化 |
+| `assets/achievements/spots/svg/japan-falls-3.svg`                         | トロフィーSVGマスタ(新規)                                                                                              |
+| `scripts/generate-landmark-trophy-pngs.mjs`                               | SVG→PNG自動生成スクリプト(新規)                                                                                        |
+| `assets/achievements/spots/spots-japan-falls-3.png`                       | 削除(新しい生成PNGへ置き換え)                                                                                          |
+| `data/landmarks/landmarkPacks.schema.json`                                | `trophyIcon` を必須項目として追加                                                                                      |
+| `data/landmarks/landmarkPacks.json`                                       | `trophyIcon` 追加、`trophyImage` の値を新しいPNG名へ変更                                                               |
+| `scripts/generate-landmark-catalog.mjs`                                   | 生成テンプレート・型に `trophyIcon` を追加                                                                             |
+| `src/features/landmarks/landmarkCatalog.generated.ts`                     | 生成物(再生成)                                                                                                         |
+| `src/features/landmarks/__tests__/landmarkCatalog.test.ts`                | `trophyIcon` の検証テスト追加                                                                                          |
+| `src/ui/components/__tests__/LandmarkPackScreen.test.tsx`                 | フィクスチャに `trophyIcon` 追加                                                                                       |
+| `src/ui/components/__tests__/AchievementListScreenLandmarkPacks.test.tsx` | フィクスチャに `trophyIcon` 追加、SVG描画テスト追加                                                                    |
+| `src/ui/components/AchievementListScreen.tsx`                             | パック行トロフィーの描画を `Image` から `trophyIcon` コンポーネントへ変更                                              |
+| `docs/todo.md` / `docs/landmark-spot-packs.md` / `docs/achievements.md`   | SVG+生成PNGパイプラインの記述反映                                                                                      |
 
 ---
 
 ## Task 1: SVGインフラ整備(Metro・Jest・型宣言・sharp依存)
 
 **Files:**
+
 - Modify: `metro.config.js`
 - Modify: `package.json`
 - Create: `src/types/svg.d.ts`
 - Create: `__mocks__/svgMock.js`
 
 **Interfaces:**
+
 - Produces: `.svg` ファイルを `import Foo from './foo.svg'` でReactコンポーネント(`ComponentType<SvgProps>`)としてimportできる状態(Metro実機・Jestテストの両方で)
 
 - [ ] **Step 1: `metro.config.js` に `react-native-svg-transformer` を配線する**
@@ -182,11 +184,13 @@ git commit -m "build(landmarks): SVGアイコン用のMetro/Jest設定とsharp�
 ## Task 2: トロフィーSVGマスタとPNG自動生成スクリプト
 
 **Files:**
+
 - Create: `assets/achievements/spots/svg/japan-falls-3.svg`
 - Create: `scripts/generate-landmark-trophy-pngs.mjs`
 - Modify: `package.json`(`generate:landmarks` スクリプト)
 
 **Interfaces:**
+
 - Consumes: Task 1 の `sharp` 依存
 - Produces: `assets/achievements/spots/svg/*.svg` を入力に、同名の `assets/achievements/spots/*.png`(600×600、透過)を出力するビルドスクリプト。パックJSONの内容には依存しない(ファイル名のみで1:1対応する)
 
@@ -304,6 +308,7 @@ git commit -m "feat(landmarks): トロフィーSVGマスタとPNG自動生成ス
 ## Task 3: データモデルに `trophyIcon` を追加する
 
 **Files:**
+
 - Modify: `data/landmarks/landmarkPacks.schema.json`
 - Modify: `data/landmarks/landmarkPacks.json`
 - Modify: `scripts/generate-landmark-catalog.mjs`
@@ -314,6 +319,7 @@ git commit -m "feat(landmarks): トロフィーSVGマスタとPNG自動生成ス
 - Delete: `assets/achievements/spots/spots-japan-falls-3.png`
 
 **Interfaces:**
+
 - Consumes: Task 2 で生成された `assets/achievements/spots/japan-falls-3.png`
 - Produces:
   - `GeneratedLandmarkPack.trophyIcon: ComponentType<SvgProps>`(生成物の型)
@@ -387,7 +393,7 @@ git rm assets/achievements/spots/spots-japan-falls-3.png
 `scripts/generate-landmark-catalog.mjs` の `packEntries` 生成部分の既存ブロック:
 
 ```js
-    return `  {
+return `  {
     id: ${toLiteral(pack.id)},
     name: ${toLiteral(pack.name)},
     description: ${toLiteral(pack.description)},
@@ -401,7 +407,7 @@ git rm assets/achievements/spots/spots-japan-falls-3.png
 以下へ置き換える。
 
 ```js
-    return `  {
+return `  {
     id: ${toLiteral(pack.id)},
     name: ${toLiteral(pack.name)},
     description: ${toLiteral(pack.description)},
@@ -490,11 +496,11 @@ Expected: `landmark catalog を生成しました: ...` と出力され、`src/f
 `src/features/landmarks/__tests__/landmarkCatalog.test.ts` を開き、既存の `'全パックがisFreeを持つ'` テストの直後に追加する。
 
 ```typescript
-  it('全パックがtrophyIconを持つ', () => {
-    for (const pack of LANDMARK_PACKS) {
-      expect(pack.trophyIcon).toBeDefined();
-    }
-  });
+it('全パックがtrophyIconを持つ', () => {
+  for (const pack of LANDMARK_PACKS) {
+    expect(pack.trophyIcon).toBeDefined();
+  }
+});
 ```
 
 - [ ] **Step 7: 型チェックを実行し、残りの壊れたフィクスチャを洗い出す**
@@ -607,10 +613,12 @@ git commit -m "feat(landmarks): パックにtrophyIconフィールドを追加�
 ## Task 4: `AchievementListScreen` のパック行トロフィーをSVGで描画する
 
 **Files:**
+
 - Modify: `src/ui/components/AchievementListScreen.tsx`
 - Modify: `src/ui/components/__tests__/AchievementListScreenLandmarkPacks.test.tsx`
 
 **Interfaces:**
+
 - Consumes: Task 3 の `LandmarkPackListItem.pack.trophyIcon: ComponentType<SvgProps>`、Task 3 Step 9 の `MockTrophyIcon`
 
 - [ ] **Step 1: 失敗するテストを書く**
@@ -618,13 +626,13 @@ git commit -m "feat(landmarks): パックにtrophyIconフィールドを追加�
 `src/ui/components/__tests__/AchievementListScreenLandmarkPacks.test.tsx` 内、`'進捗バーへ到達率を渡す'` テストの直後に追加する。
 
 ```tsx
-  it('パック行のトロフィーをSVGアイコンで描画する', () => {
-    renderScreen();
+it('パック行のトロフィーをSVGアイコンで描画する', () => {
+  renderScreen();
 
-    // UNSAFE_: コンポーネント型検索はtesting.mdが明示的に許容する例外。
-    // トロフィーの実体はSVGで、accessibilityLabel等では「どのコンポーネントが描画されたか」を確認できない
-    expect(screen.UNSAFE_getByType(MockTrophyIcon)).toBeTruthy();
-  });
+  // UNSAFE_: コンポーネント型検索はtesting.mdが明示的に許容する例外。
+  // トロフィーの実体はSVGで、accessibilityLabel等では「どのコンポーネントが描画されたか」を確認できない
+  expect(screen.UNSAFE_getByType(MockTrophyIcon)).toBeTruthy();
+});
 ```
 
 - [ ] **Step 2: テストを実行して失敗を確認する**
@@ -667,11 +675,13 @@ git commit -m "feat(achievements): パック行トロフィーの描画をSVGア
 ## Task 5: ドキュメント更新・全体検証・PR作成
 
 **Files:**
+
 - Modify: `docs/todo.md`
 - Modify: `docs/landmark-spot-packs.md`
 - Modify: `docs/achievements.md`
 
 **Interfaces:**
+
 - Consumes: なし(ドキュメントのみ)
 
 - [ ] **Step 1: `docs/todo.md` のトロフィー関連項目を更新する**
@@ -787,20 +797,21 @@ git push -u origin claude/landmark-pack-svg-icon
 
 **Spec coverage:**
 
-| 設計書の節 | 実装タスク |
-|------------|-----------|
-| §3.1 SVG/PNGの役割分離 | Task 1・2・3(データモデル) |
-| §3.2 `trophyIcon` フィールド追加 | Task 3 |
-| §3.3 ファイル配置 | Task 2・3 |
-| §3.4 絵柄 | Task 2 Step 1 |
-| §3.5 PNG生成スクリプト | Task 2 |
-| §3.6 Metro設定 | Task 1 |
-| §3.7 生成カタログへの反映 | Task 3 |
-| §3.8 `AchievementListScreen.tsx` の変更 | Task 4 |
-| §4 変更しないもの | 全タスク共通(Global Constraints に明記) |
-| §5 ドキュメント更新 | Task 5 |
-| §6 テスト方針 | 各タスクのテストステップ |
+| 設計書の節                              | 実装タスク                              |
+| --------------------------------------- | --------------------------------------- |
+| §3.1 SVG/PNGの役割分離                  | Task 1・2・3(データモデル)              |
+| §3.2 `trophyIcon` フィールド追加        | Task 3                                  |
+| §3.3 ファイル配置                       | Task 2・3                               |
+| §3.4 絵柄                               | Task 2 Step 1                           |
+| §3.5 PNG生成スクリプト                  | Task 2                                  |
+| §3.6 Metro設定                          | Task 1                                  |
+| §3.7 生成カタログへの反映               | Task 3                                  |
+| §3.8 `AchievementListScreen.tsx` の変更 | Task 4                                  |
+| §4 変更しないもの                       | 全タスク共通(Global Constraints に明記) |
+| §5 ドキュメント更新                     | Task 5                                  |
+| §6 テスト方針                           | 各タスクのテストステップ                |
 
 **既知の制約:**
+
 - 設計書§3.5は「出力: 対応するtrophyImageのファイル名」としていたが、実装では「SVGファイル名と同名のPNG」という1:1の機械的対応に単純化した(パックJSONへの依存を無くし、スクリプトをより単純にするため)。この単純化に合わせて`landmarkPacks.json`の`trophyImage`値を`japan-falls-3.png`(旧`spots-japan-falls-3.png`から命名変更)にしている。設計の意図(SVGマスタからPNGを自動生成する)自体は変わらない
 - `metro.config.js`の実機動作(Expo Go/開発ビルドでSVGが実際に描画されるか)は自動テストでは検証できない。Task 1完了時点ではまだ`.svg`をimportするコードが無く、Task 3〜4で初めて実使用されるため、Task 4完了後に実機/シミュレータでの目視確認を推奨する(本計画のテストでは検証できない旨を明記する)

@@ -25,9 +25,9 @@
 
 パックのトロフィーアイコンを以下の2つの役割に分けて持つ。
 
-| 役割 | 形式 | 用途 | 生成方法 |
-|------|------|------|----------|
-| 表示用 | SVG | 実績画面のパック行アイコン(`AchievementListScreen.tsx`) | 手書きのSVGファイルをマスタとして用意 |
+| 役割                     | 形式               | 用途                                                                                  | 生成方法                                           |
+| ------------------------ | ------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 表示用                   | SVG                | 実績画面のパック行アイコン(`AchievementListScreen.tsx`)                               | 手書きのSVGファイルをマスタとして用意              |
 | 通知添付・汎用実績互換用 | PNG(600×600、透過) | `achievementNotificationService` の通知添付、`AchievementDefinition.trophyImage` 互換 | SVGからビルドスクリプトで自動生成(手作業PNGは廃止) |
 
 これにより、汎用実績システム(`achievementDefinitions.ts`・通知・`AchievementScroller`等)は一切変更不要になる。変更が要るのは「PNGの作り方」と「`AchievementListScreen.tsx` のパック行アイコンの描画方法」だけ。
@@ -52,10 +52,10 @@
 assets/achievements/spots/
   svg/
     japan-falls-3.svg   # 新規: 手書きSVGマスタ
-  spots-japan-falls-3.png  # 既存PNGを新しい生成PNGで置き換える
+  japan-falls-3.png     # 生成物。SVGと同じベース名で自動生成する(旧 spots-japan-falls-3.png は削除)
 ```
 
-ファイル名規則: SVGは `assets/achievements/spots/svg/<trophyIcon>.svg`、PNGは既存の `assets/achievements/spots/<trophyImage>` パス(今回は同じ `spots-japan-falls-3.png` を維持し、内容だけ新しいSVG由来のものに置き換える)。
+ファイル名規則: SVGは `assets/achievements/spots/svg/<trophyIcon>.svg`、PNGは生成スクリプトがSVGと同じベース名で自動生成する `assets/achievements/spots/<trophyIcon>.png`。`trophyImage` の値は常に `<trophyIcon>.png` と一致させる(生成スクリプト側で検証する。§3.5参照)。
 
 ### 3.4 SVGアイコンの絵柄(日本三名瀑)
 
@@ -132,7 +132,7 @@ export type GeneratedLandmarkPack = {
 ```
 
 ```js
-    return `  {
+return `  {
     id: ${toLiteral(pack.id)},
     name: ${toLiteral(pack.name)},
     description: ${toLiteral(pack.description)},
@@ -148,15 +148,22 @@ export type GeneratedLandmarkPack = {
 
 ### 3.8 `AchievementListScreen.tsx` の変更
 
-パック行アイコンの描画を `Image` から `trophyIcon` コンポーネントへ変更する。`Grayscale` ラップ・3状態(`dim`/`grayscale`/`color`)切り替えのロジックはそのまま(ラップする中身を差し替えるだけ)。
+パック行アイコンの描画を、状態によって `trophyIcon`(SVG)と `trophyImage`(PNG)で使い分ける。
+
+`Grayscale`(`react-native-color-matrix-image-filters`)はネイティブ画像ビューへのフィルタであり、`react-native-svg` のコンポーネントには効かない。そのため3状態(`dim`/`grayscale`/`color`)のうちフルカラー(`color`)だけSVGの`trophyIcon`をそのまま描画し、減光・白黒状態(`dim`/`grayscale`)はPNGの`trophyImage`を`Grayscale`でラップして描画する。
 
 ```typescript
 // 変更前
 const trophyImage = <Image source={item.pack.trophyImage} style={{ width: packTrophySize, height: packTrophySize }} />;
+// ...
+{trophyState === 'color' ? trophyImage : <Grayscale ...>{trophyImage}</Grayscale>}
 
 // 変更後
 const TrophyIcon = item.pack.trophyIcon;
 const trophyImage = <TrophyIcon width={packTrophySize} height={packTrophySize} />;
+const grayscaleTrophyImage = <Image source={item.pack.trophyImage} style={{ width: packTrophySize, height: packTrophySize }} />;
+// ...
+{trophyState === 'color' ? trophyImage : <Grayscale ...>{grayscaleTrophyImage}</Grayscale>}
 ```
 
 ## 4. 変更しないもの

@@ -146,7 +146,14 @@ export function AchievementListScreen({
                 const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
                 const trophyState = resolveLandmarkTrophyDisplayState(ratio);
                 const TrophyIcon = item.pack.trophyIcon;
+                // Grayscale(react-native-color-matrix-image-filters)はネイティブ画像ビューの
+                // フィルタであり、react-native-svgのコンポーネントには効かない。
+                // そのため減光/白黒状態はSVGではなくPNG(trophyImage)をGrayscaleでラップして描画し、
+                // フルカラー状態だけSVG(trophyIcon)をそのまま描画する。
                 const trophyImage = <TrophyIcon width={packTrophySize} height={packTrophySize} />;
+                const grayscaleTrophyImage = (
+                  <Image source={item.pack.trophyImage} style={{ width: packTrophySize, height: packTrophySize }} />
+                );
 
                 return (
                   <AppListItem
@@ -167,7 +174,9 @@ export function AchievementListScreen({
                         {trophyState === 'color' ? (
                           trophyImage
                         ) : (
-                          <Grayscale style={trophyState === 'dim' ? styles.landmarkPackTrophyDim : undefined}>{trophyImage}</Grayscale>
+                          <Grayscale style={trophyState === 'dim' ? styles.landmarkPackTrophyDim : undefined}>
+                            {grayscaleTrophyImage}
+                          </Grayscale>
                         )}
                         {item.isLocked ? (
                           <View style={styles.landmarkPackLockBadge}>

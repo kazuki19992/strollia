@@ -47,6 +47,7 @@ const pack: LandmarkPack = {
   name: '日本三名瀑',
   description: '日本を代表する3つの名瀑',
   trophyImage: 1,
+  trophyIcon: () => null,
   trophyImageUri: null,
   sortOrder: 100,
   isFree: true,

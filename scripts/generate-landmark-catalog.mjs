@@ -151,6 +151,7 @@ const packEntries = packs
     description: ${toLiteral(pack.description)},
     // 所属スポット: ${memberNames}
     trophyImage: require('../../../assets/achievements/spots/${pack.trophyImage}'),
+    trophyIcon: require('../../../assets/achievements/spots/svg/${pack.trophyIcon}.svg').default,
     sortOrder: ${pack.sortOrder},
     isFree: ${pack.isFree},
   },`;
@@ -161,7 +162,9 @@ const output = `/**
  * data/landmarks のJSONから生成したスポット実績カタログ。
  * 手動編集せず、npm run generate:landmarks で再生成する。
  */
+import type { ComponentType } from 'react';
 import type { ImageSourcePropType } from 'react-native';
+import type { SvgProps } from 'react-native-svg';
 
 /** スポットが所属するパックと、そのパック内での表示順。 */
 export type LandmarkPackMembership = {
@@ -201,8 +204,10 @@ export type GeneratedLandmarkPack = {
   name: string;
   /** 一覧行のサブタイトルに表示する説明。 */
   description: string;
-  /** 完走トロフィー画像。 */
+  /** 完走トロフィー画像(通知添付・汎用実績システム互換用のPNG。trophyIconのSVGから生成する)。 */
   trophyImage: ImageSourcePropType;
+  /** 一覧行に表示するSVGトロフィーアイコン(表示用のマスタ)。 */
+  trophyIcon: ComponentType<SvgProps>;
   /** 一覧の表示順。 */
   sortOrder: number;
   /** trueなら無料で誰でも到達検知・完走できる。falseならStrollia Plusのサブスクが必要。 */

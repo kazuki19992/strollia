@@ -13,6 +13,11 @@ jest.mock('@expo/vector-icons', () => ({
 
 const styles = createStyles(lightTheme);
 
+/** テスト用のトロフィーSVGアイコンモック。実体を描画する必要はなく、コンポーネント型として参照できれば十分。 */
+function MockTrophyIcon() {
+  return null;
+}
+
 /** テスト用の日本三名瀑パック行(2/3到達)。 */
 const fallsPackItem: LandmarkPackListItem = {
   pack: {
@@ -20,6 +25,7 @@ const fallsPackItem: LandmarkPackListItem = {
     name: '日本三名瀑',
     description: '日本を代表する3つの名瀑',
     trophyImage: 1,
+    trophyIcon: MockTrophyIcon,
     trophyImageUri: null,
     sortOrder: 100,
     isFree: true,

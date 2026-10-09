@@ -10,7 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "generate:licenses": "node scripts/generate-licenses.js",
-    "generate:landmarks": "node scripts/generate-landmark-catalog.mjs",
+    "generate:landmarks": "node scripts/generate-landmark-trophy-pngs.mjs && node scripts/generate-landmark-catalog.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { Image } from 'react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
@@ -13,6 +14,11 @@ jest.mock('@expo/vector-icons', () => ({
 
 const styles = createStyles(lightTheme);
 
+/** テスト用のトロフィーSVGアイコンモック。実体を描画する必要はなく、コンポーネント型として参照できれば十分。 */
+function MockTrophyIcon() {
+  return null;
+}
+
 /** テスト用の日本三名瀑パック行(2/3到達)。 */
 const fallsPackItem: LandmarkPackListItem = {
   pack: {
@@ -20,6 +26,7 @@ const fallsPackItem: LandmarkPackListItem = {
     name: '日本三名瀑',
     description: '日本を代表する3つの名瀑',
     trophyImage: 1,
+    trophyIcon: MockTrophyIcon,
     trophyImageUri: null,
     sortOrder: 100,
     isFree: true,
@@ -83,6 +90,26 @@ describe('実績画面のスポットセクション', () => {
     expect(screen.getByLabelText('日本三名瀑の進捗').props.accessibilityValue).toEqual({ min: 0, max: 100, now: 67 });
   });
 
+  it('完走(フルカラー状態)したパック行はSVGアイコンで描画する', () => {
+    // fallsPackItemは2/3到達(grayscale状態)のため、完走(3/3・color状態)のフィクスチャで検証する
+    const completedPackItem: LandmarkPackListItem = { ...fallsPackItem, visitedCount: 3 };
+    renderScreen({ landmarkPackItems: [completedPackItem] });
+
+    // UNSAFE_: コンポーネント型検索はtesting.mdが明示的に許容する例外。
+    // トロフィーの実体はSVGで、accessibilityLabel等では「どのコンポーネントが描画されたか」を確認できない
+    expect(screen.UNSAFE_getByType(MockTrophyIcon)).toBeTruthy();
+  });
+
+  it('未完走(白黒状態)のパック行はSVGアイコンではなくPNGをGrayscaleで描画する', () => {
+    // fallsPackItemは2/3到達でgrayscale状態(dimでもcolorでもない)
+    renderScreen();
+
+    // Grayscale(react-native-color-matrix-image-filters)はreact-native-svgの
+    // コンポーネントには効かないため、白黒状態もPNGのtrophyImageを描画する
+    expect(screen.UNSAFE_queryAllByType(MockTrophyIcon)).toHaveLength(0);
+    expect(screen.UNSAFE_getByType(Image)).toBeTruthy();
+  });
+
   it('パック行を押すと詳細を開く', () => {
     const onSelectLandmarkPack = jest.fn();
     renderScreen({ onSelectLandmarkPack });
@@ -141,6 +168,16 @@ describe('実績画面のスポットセクション', () => {
       renderScreen({ landmarkPackItems: [freePackItem], isPlusActive: false });
 
       expect(screen.queryByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toBeNull();
+    });
+
+    it('施錠中はSVGアイコンではなくPNGをGrayscaleで描画する', () => {
+      // Grayscale(react-native-color-matrix-image-filters)はreact-native-svgの
+      // コンポーネントには効かないため、減光状態(dim)はSVGのtrophyIconではなく
+      // PNGのtrophyImageを描画する(実装側のコメント参照)
+      renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false });
+
+      expect(screen.UNSAFE_queryAllByType(MockTrophyIcon)).toHaveLength(0);
+      expect(screen.UNSAFE_getByType(Image)).toBeTruthy();
     });
   });
 });

@@ -18,6 +18,11 @@
 
 パックの内容が後から変わると、完走トロフィーの扱いが破綻する。以下を運用ルールとする。
 
+トロフィーの絵柄は、シンプルな幾何学的ベクターアイコンをSVGで用意する(`assets/achievements/spots/svg/<trophyIcon>.svg`)。
+プッシュ通知添付・汎用実績システム互換用のPNG(`assets/achievements/spots/<trophyImage>`、600×600・透過)は、
+このSVGから `npm run generate:landmarks` が自動生成するため、手作業でPNGを用意する必要はない。
+詳細は `docs/superpowers/specs/2026-10-07-landmark-pack-svg-trophy-design.md` を参照する。
+
 ### ルール1: 解除済みの完走実績は、リストが変わっても取り消さない
 
 既存の実績システムは `INSERT OR IGNORE` のみで解除の取り消し経路を持たない（`src/features/achievements/achievementRepository.ts`）。

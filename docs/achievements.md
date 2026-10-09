@@ -446,6 +446,10 @@ src/app/components/ConfettiOverlay.tsx
 スポットとパックは多対多で、スポット側が所属パックと表示順を持つ。識別子はUUIDv7で、
 到達記録(`landmark_spot_visits.spot_id`)に保存されるため後から変更しない。
 
+パックの完走トロフィーは、表示用SVGアイコン(`trophyIcon`)と、通知添付・汎用実績システム互換用の
+生成PNG(`trophyImage`)の組で持つ。PNGは`npm run generate:landmarks`がSVGから自動生成するため、
+手作業では用意しない。詳細は`docs/superpowers/specs/2026-10-07-landmark-pack-svg-trophy-design.md`を参照する。
+
 生成時に以下を検証し、問題があればビルド前に失敗させる。
 
 - スキーマ違反(座標が日本国内の範囲外、半径が0以下など)

@@ -74,4 +74,10 @@ describe('スポット実績カタログ landmarkCatalog', () => {
       expect(typeof pack.isFree).toBe('boolean');
     }
   });
+
+  it('全パックがtrophyIconを持つ', () => {
+    for (const pack of LANDMARK_PACKS) {
+      expect(pack.trophyIcon).toBeDefined();
+    }
+  });
 });

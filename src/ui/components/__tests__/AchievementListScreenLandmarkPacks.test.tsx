@@ -89,6 +89,14 @@ describe('実績画面のスポットセクション', () => {
     expect(screen.getByLabelText('日本三名瀑の進捗').props.accessibilityValue).toEqual({ min: 0, max: 100, now: 67 });
   });
 
+  it('パック行のトロフィーをSVGアイコンで描画する', () => {
+    renderScreen();
+
+    // UNSAFE_: コンポーネント型検索はtesting.mdが明示的に許容する例外。
+    // トロフィーの実体はSVGで、accessibilityLabel等では「どのコンポーネントが描画されたか」を確認できない
+    expect(screen.UNSAFE_getByType(MockTrophyIcon)).toBeTruthy();
+  });
+
   it('パック行を押すと詳細を開く', () => {
     const onSelectLandmarkPack = jest.fn();
     renderScreen({ onSelectLandmarkPack });

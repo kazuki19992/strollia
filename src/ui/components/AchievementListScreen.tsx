@@ -145,7 +145,8 @@ export function AchievementListScreen({
                 // 施錠中は検知していないため、到達率を0として未到達と同じ見た目にする
                 const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
                 const trophyState = resolveLandmarkTrophyDisplayState(ratio);
-                const trophyImage = <Image source={item.pack.trophyImage} style={{ width: packTrophySize, height: packTrophySize }} />;
+                const TrophyIcon = item.pack.trophyIcon;
+                const trophyImage = <TrophyIcon width={packTrophySize} height={packTrophySize} />;
 
                 return (
                   <AppListItem

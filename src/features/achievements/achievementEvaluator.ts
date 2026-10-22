@@ -10,6 +10,8 @@ export type AchievementProgress = {
   prefectureCount: number;
   /** 訪問済み市区町村数。 */
   municipalityCount: number;
+  /** パックIDごとの到達済みスポット数。 */
+  landmarkPackVisitedCounts: Readonly<Record<string, number>>;
 };
 
 /** 実績定義の解除時に記録する進捗値を取り出す。 */
@@ -23,6 +25,9 @@ export function getProgressValueForCondition(condition: AchievementCondition, pr
       return progress.prefectureCount;
     case 'municipalityCount':
       return progress.municipalityCount;
+    case 'landmarkPackCompletion':
+      // 進捗を持たないパック(未到達・マスタから消えたパック)は0件として扱う。
+      return progress.landmarkPackVisitedCounts[condition.packId] ?? 0;
   }
 }
 

@@ -5,6 +5,7 @@ import {
   formatAchievementDistance,
   kilometersToMeters,
 } from '@/features/achievements/achievementDefinitions';
+import { LANDMARK_PACKS, getActiveSpotsForPack, getLandmarkPackCompletionAchievementId } from '@/features/landmarks/landmarkCatalog';
 
 describe('実績定義 achievementDefinitions', () => {
   it('距離表記をkm単位で整形する', () => {
@@ -52,6 +53,27 @@ describe('実績定義 achievementDefinitions', () => {
 
   it('存在しない400万km実績を含まない', () => {
     expect(ACHIEVEMENT_DEFINITIONS.some((definition) => definition.id === 'distance-4000000')).toBe(false);
+  });
+
+  it('スポットパックの完走実績をマスタの全パックぶん持つ', () => {
+    const landmarkPackDefinitions = ACHIEVEMENT_DEFINITIONS.filter((definition) => definition.category === 'landmarkPack');
+
+    expect(landmarkPackDefinitions.map((definition) => definition.id)).toEqual(
+      LANDMARK_PACKS.map((pack) => getLandmarkPackCompletionAchievementId(pack.id)),
+    );
+  });
+
+  it('パック完走のしきい値を有効スポット数に合わせる', () => {
+    for (const pack of LANDMARK_PACKS) {
+      const definition = ACHIEVEMENT_DEFINITIONS.find((item) => item.id === getLandmarkPackCompletionAchievementId(pack.id));
+
+      expect(definition?.condition).toEqual({
+        type: 'landmarkPackCompletion',
+        packId: pack.id,
+        threshold: getActiveSpotsForPack(pack.id).length,
+      });
+      expect(definition?.title).toBe(`${pack.name}を制覇`);
+    }
   });
 
   it('地球n周の距離実績を通常の総距離としきい値順に並べる', () => {

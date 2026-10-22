@@ -1,4 +1,5 @@
 src/ui/generated/
+src/features/landmarks/landmarkCatalog.generated.ts
 android/
 ios/
 builds/

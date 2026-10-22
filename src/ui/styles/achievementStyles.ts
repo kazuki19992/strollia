@@ -66,6 +66,127 @@ export function createAchievementStyles(theme: AppTheme) {
       fontWeight: '800',
       textAlign: 'center',
     },
+    // Landmark spot packs (実績画面のスポットセクション)
+    landmarkPackTrophy: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      // 鍵バッジを右下へ重ねるための基準。幅と高さは Grayscale の制約により呼び出し側が数値で渡す
+      position: 'relative',
+    },
+    landmarkPackTrophyDim: {
+      opacity: 0.4,
+    },
+    landmarkPackLockBadge: {
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 999,
+      borderWidth: 1,
+      bottom: 0,
+      justifyContent: 'center',
+      padding: 4,
+      position: 'absolute',
+      right: 0,
+    },
+    landmarkPackProgressRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    landmarkPackProgressText: {
+      color: colors.mutedText,
+      fontSize: 13,
+      // 分数は桁数が変わってもバーの左端が揃うよう最小幅を確保する
+      minWidth: 34,
+    },
+    landmarkPackProgressBarArea: {
+      flex: 1,
+    },
+    // パック詳細画面のレイアウト(上1/3が地図、下2/3がスポット一覧)
+    landmarkPackScreenBody: {
+      flex: 1,
+    },
+    landmarkPackMapSection: {
+      flex: 1,
+    },
+    landmarkPackListSection: {
+      flex: 2,
+    },
+    // パック詳細画面の埋め込み地図。高さは固定pxではなく親セクションのflexで決める
+    landmarkPackMapFrame: {
+      borderRadius: 8,
+      flex: 1,
+      margin: 16,
+      overflow: 'hidden',
+    },
+    landmarkPackMap: {
+      height: '100%',
+      width: '100%',
+    },
+    landmarkPackMapMarkerContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    // スポット行の番号バッジ(AppListItemのleadingスロットへ差す)
+    landmarkSpotNumberBadge: {
+      alignItems: 'center',
+      borderRadius: 999,
+      height: 30,
+      justifyContent: 'center',
+      width: 30,
+    },
+    landmarkSpotNumberBadgeVisited: {
+      backgroundColor: colors.primary,
+    },
+    landmarkSpotNumberBadgeUnvisited: {
+      borderColor: colors.border,
+      borderWidth: 1.5,
+    },
+    landmarkSpotNumberBadgeTextVisited: {
+      color: colors.primaryText,
+      fontSize: 14,
+      fontWeight: '700',
+      includeFontPadding: false,
+      lineHeight: 16,
+      textAlign: 'center',
+    },
+    landmarkSpotNumberBadgeTextUnvisited: {
+      color: colors.mutedText,
+      fontSize: 14,
+      fontWeight: '700',
+      includeFontPadding: false,
+      lineHeight: 16,
+      textAlign: 'center',
+    },
+    // 埋め込み地図のマーカー用バッジ(地図タイル色に左右されないよう白リング+影+塗りつぶしを重ねる)
+    landmarkSpotNumberBadgeMap: {
+      borderColor: '#ffffff',
+      borderWidth: 2,
+      elevation: 5,
+      shadowColor: '#000000',
+      shadowOffset: { height: 3, width: 0 },
+      shadowOpacity: 0.22,
+      shadowRadius: 6,
+    },
+    landmarkSpotNumberBadgeMapVisited: {
+      backgroundColor: colors.primary,
+    },
+    landmarkSpotNumberBadgeMapUnvisited: {
+      backgroundColor: colors.mutedText,
+    },
+    landmarkSpotNumberBadgeTextMap: {
+      color: '#ffffff',
+      fontSize: 14,
+      fontWeight: '700',
+      includeFontPadding: false,
+      lineHeight: 16,
+      textAlign: 'center',
+    },
+    // 到達済み行の右端(chevron手前)に表示するスタンプ画像(AppListItemのtrailingスロットへ差す)
+    landmarkSpotVisitedStamp: {
+      height: 32,
+      width: 32,
+    },
     achievementDialogDate: {
       color: colors.mutedText,
       fontSize: 13,

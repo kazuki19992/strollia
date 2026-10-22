@@ -210,7 +210,7 @@ export function DailyLogDetailScreen({
   }
 
   async function shareDailyLogImage(): Promise<void> {
-    if (isSharingDetail || !isSharePrivacyReady) {
+    if (isSharingDetail || isLoadingDetail || !isSharePrivacyReady) {
       return;
     }
 
@@ -403,7 +403,10 @@ export function DailyLogDetailScreen({
             routeEndpointsLabel={routeEndpointsLabel}
             dailyDetailReport={dailyDetailReport}
             isLoadingDetail={isLoadingDetail}
+            altitudePoints={dailyPoints}
+            showAltitudeUnavailableMessage
             styles={styles}
+            theme={theme}
           />
         </View>
 
@@ -432,7 +435,7 @@ export function DailyLogDetailScreen({
             </DescriptionText>
           )}
           <ActionPill
-            disabled={isSharingDetail || !isSharePrivacyReady}
+            disabled={isSharingDetail || isLoadingDetail || !isSharePrivacyReady}
             icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
             label={isSharingDetail ? '画像を作っています……' : 'この日の記録を共有'}
             styles={styles}
@@ -466,6 +469,7 @@ export function DailyLogDetailScreen({
           points={visibleRoutePoints}
           activeStayPlaces={activeStayPlaces}
           regionPoints={dailyPoints}
+          altitudePoints={dailyPoints}
           isPlusActive={isPlusActive}
           distanceLabel={distanceLabel}
           routeEndpointsLabel={routeEndpointsLabel}

@@ -144,6 +144,10 @@ jest.mock('@/features/achievements/achievementEvaluationGate', () => ({
   canEvaluateAchievementsInForeground: jest.fn(() => true),
 }));
 
+jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
+  getLandmarkSpotVisits: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('@/features/achievements/achievementService', () => ({
   evaluateAchievementsAndNotify: jest.fn().mockResolvedValue(undefined),
 }));

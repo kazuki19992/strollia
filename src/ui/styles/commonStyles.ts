@@ -144,6 +144,18 @@ export function createCommonStyles(theme: AppTheme) {
       fontWeight: '900',
     },
 
+    // Progress bar (AppProgressBar: 汎用プログレスバー。ratio×色を受け取るだけの表示専用)
+    appProgressBarTrack: {
+      backgroundColor: colors.border,
+      borderRadius: 999,
+      height: 8,
+      overflow: 'hidden',
+    },
+    appProgressBarFill: {
+      borderRadius: 999,
+      height: '100%',
+    },
+
     // Development flag banner
     developmentFlagBannerContainer: {
       alignItems: 'center',

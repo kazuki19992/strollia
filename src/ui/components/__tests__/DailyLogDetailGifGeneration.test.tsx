@@ -306,6 +306,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
     // UNSAFE_getByType は画面外のGIF描画コンポーネントへ渡したpropsを確認するために使う。
     expect(screen.UNSAFE_getByType(GifFrameRenderer).props.activeStayPlaces).toEqual([]);
+    expect(screen.UNSAFE_getByType(GifFrameRenderer).props.altitudePoints).toBeUndefined();
 
     // 画面外の GifFrameRenderer がマウントされ、地図のタイル描画完了を発火させる
     await act(async () => {

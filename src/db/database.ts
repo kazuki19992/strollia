@@ -183,6 +183,9 @@ async function runDatabaseInitialization(): Promise<void> {
       last_visited_grid_recorded_at TEXT NULL,
       last_visited_grid_latitude REAL NULL,
       last_visited_grid_longitude REAL NULL,
+      landmark_candidate_spot_id TEXT NULL,
+      landmark_candidate_entered_at TEXT NULL,
+      landmark_outside_count INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL
     );
 
@@ -197,6 +200,14 @@ async function runDatabaseInitialization(): Promise<void> {
       last_seen_at TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS landmark_spot_visits (
+      spot_id TEXT PRIMARY KEY,
+      visited_at TEXT NOT NULL,
+      visited_local_date TEXT NOT NULL,
+      location_point_id INTEGER NULL,
+      created_at TEXT NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
@@ -243,6 +254,9 @@ async function runDatabaseInitialization(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_photo_assets_taken_at
       ON photo_assets(taken_at);
+
+    CREATE INDEX IF NOT EXISTS idx_landmark_spot_visits_local_date
+      ON landmark_spot_visits (visited_local_date);
   `);
 
   await ensureColumn('achievement_unlocks', 'unlocked_local_date', 'TEXT NULL');
@@ -252,6 +266,9 @@ async function runDatabaseInitialization(): Promise<void> {
   await ensureColumn('location_recording_state', 'last_visited_grid_recorded_at', 'TEXT NULL');
   await ensureColumn('location_recording_state', 'last_visited_grid_latitude', 'REAL NULL');
   await ensureColumn('location_recording_state', 'last_visited_grid_longitude', 'REAL NULL');
+  await ensureColumn('location_recording_state', 'landmark_candidate_spot_id', 'TEXT NULL');
+  await ensureColumn('location_recording_state', 'landmark_candidate_entered_at', 'TEXT NULL');
+  await ensureColumn('location_recording_state', 'landmark_outside_count', 'INTEGER NOT NULL DEFAULT 0');
   await db.execAsync(`
     CREATE INDEX IF NOT EXISTS idx_achievement_unlocks_unlocked_local_date
       ON achievement_unlocks(unlocked_local_date);

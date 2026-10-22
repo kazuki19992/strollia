@@ -13,6 +13,14 @@ jest.mock('@expo/vector-icons', () => ({
 
 const styles = createStyles(lightTheme);
 
+/** スポットセクションはここでは検証しないため、空の状態で固定する。 */
+const landmarkPackProps = {
+  landmarkPackItems: [],
+  isPlusActive: true,
+  onSelectLandmarkPack: jest.fn(),
+  onRequestPremium: jest.fn(),
+};
+
 describe('実績画面 AchievementListScreen の画面共通UI', () => {
   beforeEach(() => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -23,7 +31,16 @@ describe('実績画面 AchievementListScreen の画面共通UI', () => {
   });
 
   test('設定画面と同じ背景と共通ヘッダーで表示する', () => {
-    render(<AchievementListScreen items={[]} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />);
+    render(
+      <AchievementListScreen
+        items={[]}
+        {...landmarkPackProps}
+        styles={styles}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onSelectAchievement={jest.fn()}
+      />,
+    );
 
     // SafeAreaView のスタイル確認
     // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
@@ -64,6 +81,7 @@ describe('実績グリッドの3状態表示', () => {
     render(
       <AchievementListScreen
         items={items}
+        {...landmarkPackProps}
         styles={styles}
         theme={lightTheme}
         onBackToMap={jest.fn()}
@@ -79,7 +97,14 @@ describe('実績グリッドの3状態表示', () => {
 
   test('それ以降の実績はタイトルと進捗を伏せ字にする', () => {
     render(
-      <AchievementListScreen items={items} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
+      <AchievementListScreen
+        items={items}
+        {...landmarkPackProps}
+        styles={styles}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onSelectAchievement={jest.fn()}
+      />,
     );
 
     expect(screen.getAllByText('？？？').length).toBeGreaterThan(0);
@@ -87,7 +112,14 @@ describe('実績グリッドの3状態表示', () => {
 
   test('次の実績はタイトルを表示し進捗ラベルを出す', () => {
     render(
-      <AchievementListScreen items={items} styles={styles} theme={lightTheme} onBackToMap={jest.fn()} onSelectAchievement={jest.fn()} />,
+      <AchievementListScreen
+        items={items}
+        {...landmarkPackProps}
+        styles={styles}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onSelectAchievement={jest.fn()}
+      />,
     );
 
     expect(screen.getByText('d2タイトル')).toBeTruthy();

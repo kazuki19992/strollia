@@ -19,6 +19,8 @@ export type DailyLogShareCardProps = {
   activeStayPlaces: StayPlace[] | null;
   /** 地図の表示範囲の基準にするポイント。 */
   regionPoints: LocationPoint[];
+  /** 時刻スライダーの影響を受けない1日全体の高度表示用ポイント。 */
+  altitudePoints: readonly LocationPoint[];
   /** Plus課金状態。 */
   isPlusActive: boolean;
   /** 移動距離の表示ラベル。 */
@@ -49,6 +51,7 @@ export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(functi
     points,
     activeStayPlaces,
     regionPoints,
+    altitudePoints,
     isPlusActive,
     distanceLabel,
     routeEndpointsLabel,
@@ -81,7 +84,10 @@ export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(functi
           routeEndpointsLabel={routeEndpointsLabel}
           dailyDetailReport={dailyDetailReport}
           isLoadingDetail={isLoadingDetail}
+          altitudePoints={altitudePoints}
+          showAltitudeUnavailableMessage={false}
           styles={styles}
+          theme={theme}
         />
         {/* おもいで（実績）の下に、日付（左下）とブランディング（右下）を同じ行で重ならないよう配置する。 */}
         <View style={styles.dailyLogShareFooter}>

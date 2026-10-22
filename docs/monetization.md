@@ -12,7 +12,7 @@ Strollia は基本機能を無料で使えるローカルファーストGPSロ�
 
 - 現在地アイコン変更
 - エリア色変更
-- 高度統計
+- 高度統計（日別高度プロファイル実装済み）
 - 月次レポート / 年次レポート
 - 日別詳細レポート
 - 日別移動リプレイ
@@ -208,12 +208,13 @@ Expo SDK 55以降はNew Architecture専用であり、`newArchEnabled` オプシ
 2. `USER_LOCATION_ICON_OPTIONS` に画像情報を持たせる
 3. 独自現在地Markerを画像表示へ差し替える
 4. エリア色カスタマイズをUI化するか判断する
-5. 高度統計の集計仕様と画面を実装する
+5. 月次・年次の高度集計仕様を検討する
 6. 日別移動リプレイMVPを実装する
 
 実装済み:
 
 - 月次レポートMVP
 - 日別詳細レポートMVP
+- 日別詳細の高度プロファイルとPNG共有
 - RevenueCat SDK導入とCustomerInfoによるPlus状態判定
 - RevenueCat直接購入、復元、Offering表示、Customer Center表示

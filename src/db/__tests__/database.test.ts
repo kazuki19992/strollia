@@ -327,11 +327,13 @@ describe('database initializeDatabase マイグレーション', () => {
       const alterStatements = (db.execAsync as jest.Mock).mock.calls
         .map(([sql]) => sql as string)
         .filter((sql) => sql.includes('ALTER TABLE location_recording_state'));
-      expect(alterStatements).toEqual([
-        expect.stringContaining('last_visited_grid_recorded_at TEXT NULL'),
-        expect.stringContaining('last_visited_grid_latitude REAL NULL'),
-        expect.stringContaining('last_visited_grid_longitude REAL NULL'),
-      ]);
+      expect(alterStatements).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('last_visited_grid_recorded_at TEXT NULL'),
+          expect.stringContaining('last_visited_grid_latitude REAL NULL'),
+          expect.stringContaining('last_visited_grid_longitude REAL NULL'),
+        ]),
+      );
       const migrationSql = [...(db.execAsync as jest.Mock).mock.calls, ...(db.runAsync as jest.Mock).mock.calls]
         .map(([sql]) => String(sql))
         .join('\n');
@@ -343,6 +345,9 @@ describe('database initializeDatabase マイグレーション', () => {
         { name: 'last_visited_grid_recorded_at' },
         { name: 'last_visited_grid_latitude' },
         { name: 'last_visited_grid_longitude' },
+        { name: 'landmark_candidate_spot_id' },
+        { name: 'landmark_candidate_entered_at' },
+        { name: 'landmark_outside_count' },
       ]);
 
       await initializeDatabase();
@@ -351,6 +356,48 @@ describe('database initializeDatabase マイグレーション', () => {
         .map(([sql]) => sql as string)
         .filter((sql) => sql.includes('ALTER TABLE location_recording_state'));
       expect(alterStatements).toEqual([]);
+    });
+  });
+
+  describe('スポット到達記録のスキーマ', () => {
+    it('新規インストール向けに到達記録テーブルと日付インデックスを作成する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const schemaSql = (db.execAsync as jest.Mock).mock.calls.map(([sql]) => String(sql)).join('\n');
+      expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS landmark_spot_visits');
+      expect(schemaSql).toContain('spot_id TEXT PRIMARY KEY');
+      expect(schemaSql).toContain('CREATE INDEX IF NOT EXISTS idx_landmark_spot_visits_local_date');
+    });
+
+    it('新規インストール向けの状態テーブル定義にもスポット滞在の3列を含める', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      // CREATE TABLE だけを更新して ensureColumn を忘れると既存ユーザーで、逆だと新規ユーザーで壊れるため両方を確認する
+      const schemaSql = (db.execAsync as jest.Mock).mock.calls.map(([sql]) => String(sql)).join('\n');
+      expect(schemaSql).toContain('landmark_candidate_spot_id TEXT NULL');
+      expect(schemaSql).toContain('landmark_candidate_entered_at TEXT NULL');
+      expect(schemaSql).toContain('landmark_outside_count INTEGER NOT NULL DEFAULT 0');
+    });
+
+    it('既存ユーザーの状態テーブルへスポット滞在の3列を追加する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const alterStatements = (db.execAsync as jest.Mock).mock.calls
+        .map(([sql]) => sql as string)
+        .filter((sql) => sql.includes('ALTER TABLE location_recording_state'));
+      expect(alterStatements).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('landmark_candidate_spot_id TEXT NULL'),
+          expect.stringContaining('landmark_candidate_entered_at TEXT NULL'),
+          expect.stringContaining('landmark_outside_count INTEGER NOT NULL DEFAULT 0'),
+        ]),
+      );
     });
   });
 

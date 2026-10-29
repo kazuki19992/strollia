@@ -31,16 +31,17 @@ describe('スポットパック状態 useLandmarkPackState', () => {
   });
 
   it('Plus無効でも無料パックは施錠されず進捗つきで返る', async () => {
-    // 2026-09-27時点、実マスタのパック「日本三名瀑」は無料(isFree: true)
+    // 実マスタのパックは「日本三名瀑」(isFree: true)・「JRA競馬場」(isFree: false)の2件
     const { result } = renderHook(() => useLandmarkPackState(false));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
     });
 
-    expect(result.current.landmarkPackItems.length).toBe(1);
+    expect(result.current.landmarkPackItems.length).toBe(2);
     expect(result.current.landmarkPackItems[0]?.isLocked).toBe(false);
     expect(result.current.landmarkPackItems[0]?.totalCount).toBe(3);
+    expect(result.current.landmarkPackItems[1]?.isLocked).toBe(true);
   });
 
   it('パック詳細に到達日を含め、未到達はnullにする', async () => {

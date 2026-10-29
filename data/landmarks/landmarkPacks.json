@@ -7,5 +7,14 @@
     "trophyIcon": "japan-falls-3",
     "sortOrder": 100,
     "isFree": true
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000002",
+    "name": "JRA競馬場",
+    "description": "JRAが開催する全国10箇所の競馬場を巡る",
+    "trophyImage": "jra-racecourses-10.png",
+    "trophyIcon": "jra-racecourses-10",
+    "sortOrder": 200,
+    "isFree": false
   }
 ]

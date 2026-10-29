@@ -31,5 +31,115 @@
     "dwellSeconds": 180,
     "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000001", "order": 3 }],
     "note": "観瀑台とトンネル入口の料金所付近を含む。麓の駐車場は400m超で含まない"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000201",
+    "name": "札幌競馬場",
+    "prefectures": ["HOKKAIDO"],
+    "latitude": 43.0775010,
+    "longitude": 141.3258793,
+    "radiusMeters": 400,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 1 }],
+    "note": "OSM施設ポリゴン(敷地約870m×770m)の重心。コース・スタンド・駐車場を含む"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000202",
+    "name": "函館競馬場",
+    "prefectures": ["HOKKAIDO"],
+    "latitude": 41.7812014,
+    "longitude": 140.7747998,
+    "radiusMeters": 400,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 2 }],
+    "note": "OSM施設ポリゴン(敷地約760m×680m)の重心。北側の主要道路(函館南茅部線)は半径外"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000203",
+    "name": "福島競馬場",
+    "prefectures": ["FUKUSHIMA"],
+    "latitude": 37.7648272,
+    "longitude": 140.4821846,
+    "radiusMeters": 400,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 3 }],
+    "note": "OSM施設ポリゴン(敷地約790m×570m)の重心。コース・スタンド・駐車場を含む"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000204",
+    "name": "新潟競馬場",
+    "prefectures": ["NIIGATA"],
+    "latitude": 37.9483599,
+    "longitude": 139.1883607,
+    "radiusMeters": 550,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 4 }],
+    "note": "OSM施設ポリゴン(敷地約960m×960m)の重心。他場より大規模なため半径を広めに取る"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000205",
+    "name": "東京競馬場",
+    "prefectures": ["TOKYO"],
+    "latitude": 35.6636986,
+    "longitude": 139.4854585,
+    "radiusMeters": 500,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 5 }],
+    "note": "OSM施設ポリゴン(敷地約730m×1230m)の重心。府中本町駅は600m超離れている"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000206",
+    "name": "中山競馬場",
+    "prefectures": ["CHIBA"],
+    "latitude": 35.7250771,
+    "longitude": 139.9636061,
+    "radiusMeters": 500,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 6 }],
+    "note": "OSM施設ポリゴン(敷地約840m×970m)の重心。コース・スタンド・駐車場を含む"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000207",
+    "name": "中京競馬場",
+    "prefectures": ["AICHI"],
+    "latitude": 35.0679176,
+    "longitude": 136.9888021,
+    "radiusMeters": 550,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 7 }],
+    "note": "OSM施設ポリゴン(敷地約1230m×980m)の重心。他場より大規模なため半径を広めに取る"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000208",
+    "name": "京都競馬場",
+    "prefectures": ["KYOTO"],
+    "latitude": 34.9061739,
+    "longitude": 135.7263938,
+    "radiusMeters": 550,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 8 }],
+    "note": "OSM施設ポリゴン(敷地約960m×990m)の重心。他場より大規模なため半径を広めに取る"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000209",
+    "name": "阪神競馬場",
+    "prefectures": ["HYOGO"],
+    "latitude": 34.7801348,
+    "longitude": 135.3635340,
+    "radiusMeters": 450,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 9 }],
+    "note": "OSM施設ポリゴン(敷地約720m×880m)の重心。コース・スタンド・駐車場を含む"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000210",
+    "name": "小倉競馬場",
+    "prefectures": ["FUKUOKA"],
+    "latitude": 33.8429592,
+    "longitude": 130.8729927,
+    "radiusMeters": 400,
+    "dwellSeconds": 180,
+    "packs": [{ "packId": "01a0c450-6c00-7000-8000-000000000002", "order": 10 }],
+    "note": "OSM施設ポリゴン(敷地約880m×710m)の重心。コース・スタンド・駐車場を含む"
   }
 ]

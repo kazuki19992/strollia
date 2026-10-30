@@ -30,6 +30,7 @@ function expectAndroidPermissionProhibited(manifest: string, permission: string)
 describe('Expo prebuild後のネイティブ権限', () => {
   let temporaryProjectPath: string;
   let infoPlist: string;
+  let podfile: string;
   let androidManifest: string;
 
   beforeAll(() => {
@@ -37,6 +38,8 @@ describe('Expo prebuild後のネイティブ権限', () => {
     copyFileSync(join(PROJECT_ROOT, 'app.json'), join(temporaryProjectPath, 'app.json'));
     copyFileSync(join(PROJECT_ROOT, 'package.json'), join(temporaryProjectPath, 'package.json'));
     symlinkSync(join(PROJECT_ROOT, 'assets'), join(temporaryProjectPath, 'assets'), 'dir');
+    // app.json がローカルのconfig pluginを相対パスで参照しているため、一時プロジェクトにも置く
+    symlinkSync(join(PROJECT_ROOT, 'plugins'), join(temporaryProjectPath, 'plugins'), 'dir');
     symlinkSync(join(PROJECT_ROOT, 'node_modules'), join(temporaryProjectPath, 'node_modules'), 'dir');
 
     const expoCliPath = require.resolve('expo/bin/cli');
@@ -47,6 +50,7 @@ describe('Expo prebuild後のネイティブ権限', () => {
     });
 
     infoPlist = readFileSync(join(temporaryProjectPath, 'ios', 'app', 'Info.plist'), 'utf8');
+    podfile = readFileSync(join(temporaryProjectPath, 'ios', 'Podfile'), 'utf8');
     androidManifest = readFileSync(join(temporaryProjectPath, 'android', 'app', 'src', 'main', 'AndroidManifest.xml'), 'utf8');
   }, 120_000);
 
@@ -93,5 +97,10 @@ describe('Expo prebuild後のネイティブ権限', () => {
     ]) {
       expectAndroidPermissionProhibited(androidManifest, permission);
     }
+  });
+
+  test('iOSのPodfileにはXcode 27向けに全Podターゲットのデプロイメントターゲット下限を揃える処理が入る', () => {
+    expect(podfile).toContain('# @generated begin strollia-pod-deployment-target-floor');
+    expect(podfile).toContain('installer.pods_project.targets.each');
   });
 });

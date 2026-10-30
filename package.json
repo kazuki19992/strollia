@@ -99,6 +99,7 @@
     "clearMocks": true
   },
   "overrides": {
-    "react-test-renderer": "19.2.3"
+    "react-test-renderer": "19.2.3",
+    "react-native-reanimated": "4.5.1"
   }
 }

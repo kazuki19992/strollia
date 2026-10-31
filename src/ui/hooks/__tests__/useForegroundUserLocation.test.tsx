@@ -52,7 +52,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   });
 
   test('enabled=falseのときウォッチを開始しない', async () => {
-    renderHook(() => useForegroundUserLocation({ enabled: false, shouldPersist: false }));
+    await renderHook(() => useForegroundUserLocation({ enabled: false, shouldPersist: false }));
 
     await act(async () => {
       await flushPromises();
@@ -62,9 +62,12 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   });
 
   test('表示専用ではBalanced、保存時はHighでウォッチを1つ開始する', async () => {
-    const { rerender } = renderHook(({ enabled, shouldPersist }: HarnessProps) => useForegroundUserLocation({ enabled, shouldPersist }), {
-      initialProps: { enabled: true, shouldPersist: false },
-    });
+    const { rerender } = await renderHook(
+      ({ enabled, shouldPersist }: HarnessProps) => useForegroundUserLocation({ enabled, shouldPersist }),
+      {
+        initialProps: { enabled: true, shouldPersist: false },
+      },
+    );
 
     await act(async () => {
       await flushPromises();
@@ -73,7 +76,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
     expect(mockWatchPositionAsync).toHaveBeenLastCalledWith({ accuracy: 3, distanceInterval: 5, timeInterval: 2000 }, expect.any(Function));
 
     await act(async () => {
-      rerender({ enabled: true, shouldPersist: true });
+      await rerender({ enabled: true, shouldPersist: true });
       await flushPromises();
     });
 
@@ -85,7 +88,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
     const onLocation = jest.fn();
     mockGetLastKnownPositionAsync.mockResolvedValue(watchedLocation);
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onLocation }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onLocation }));
 
     await act(async () => {
       await flushPromises();
@@ -104,7 +107,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onLocation }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onLocation }));
 
     await act(async () => {
       await flushPromises();
@@ -129,7 +132,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, getActiveStayPlaces }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, getActiveStayPlaces }));
 
     await act(async () => {
       await flushPromises();
@@ -151,7 +154,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, getLandmarkDetection }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, getLandmarkDetection }));
 
     await act(async () => {
       await flushPromises();
@@ -171,7 +174,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
 
     await act(async () => {
       await flushPromises();
@@ -190,7 +193,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
 
     await act(async () => {
       await flushPromises();
@@ -219,7 +222,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true }));
 
     await act(async () => {
       await flushPromises();
@@ -253,7 +256,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
       return Promise.resolve({ remove: mockRemove });
     });
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onError }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: true, onError }));
 
     await act(async () => {
       await flushPromises();
@@ -273,7 +276,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   test('権限が無い場合はウォッチを開始しない', async () => {
     mockEnsureForegroundLocationPermission.mockResolvedValue(false);
 
-    renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: false }));
+    await renderHook(() => useForegroundUserLocation({ enabled: true, shouldPersist: false }));
 
     await act(async () => {
       await flushPromises();
@@ -283,7 +286,7 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
   });
 
   test('無効化時とアンマウント時にウォッチを解除する', async () => {
-    const { rerender, unmount } = renderHook(
+    const { rerender, unmount } = await renderHook(
       ({ enabled }: { enabled: boolean }) => useForegroundUserLocation({ enabled, shouldPersist: false }),
       {
         initialProps: { enabled: true },
@@ -295,19 +298,19 @@ describe('前景位置ウォッチ useForegroundUserLocation', () => {
     });
 
     await act(async () => {
-      rerender({ enabled: false });
+      await rerender({ enabled: false });
       await flushPromises();
     });
 
     expect(mockRemove).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      rerender({ enabled: true });
+      await rerender({ enabled: true });
       await flushPromises();
     });
 
     await act(async () => {
-      unmount();
+      await unmount();
       await flushPromises();
     });
 

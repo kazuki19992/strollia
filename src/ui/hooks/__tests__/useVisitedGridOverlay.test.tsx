@@ -111,8 +111,8 @@ function parseFillOpacity(fillColor: string): number {
 }
 
 /** gridOverlayRegionをpropsとして受け取るrenderHookのラッパー。rerenderでregionを差し替えるテストに使う。 */
-function renderVisitedGridOverlay() {
-  return renderHook(
+async function renderVisitedGridOverlay() {
+  return await renderHook(
     ({ gridOverlayRegion }: { gridOverlayRegion: typeof TEST_REGION }) =>
       useVisitedGridOverlay({ isReady: true, gridOverlayRegion, themePrimaryColor: THEME_PRIMARY_COLOR }),
     {
@@ -128,7 +128,7 @@ function renderVisitedGridOverlay() {
 async function setupWithFreshBlock() {
   (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeFullBlockRows(BLOCK_ORIGIN));
 
-  const rendered = renderVisitedGridOverlay();
+  const rendered = await renderVisitedGridOverlay();
 
   await flushFetch();
 
@@ -151,7 +151,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     // マイクロタスクでact()外に発火し「not wrapped in act」警告になるため、
     // アサーション対象はrenderHookの同期結果でも取得完了を待ってから検証する。
     it('初期 visitedGridCells は空配列になる', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -161,7 +161,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     });
 
     it('gridOverlayOpacity は数値で返される', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -171,7 +171,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     });
 
     it('incrementVisitedGridRefreshVersion は関数として返される', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -183,7 +183,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
   describe('isReady が false の場合', () => {
     it('isReady が false のときは getVisitedCellsInBounds を呼ばない', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: false, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -196,7 +196,9 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
   describe('isReady が true の場合', () => {
     it('isReady が true のときは getVisitedCellsInBounds を呼ぶ', async () => {
-      renderHook(() => useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }));
+      await renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
 
       await flushFetch();
 
@@ -204,7 +206,9 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     });
 
     it('getVisitedCellsInBounds は表示セルサイズ(100)付きで呼ばれる', async () => {
-      renderHook(() => useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }));
+      await renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
 
       await flushFetch();
 
@@ -214,7 +218,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
 
   describe('incrementVisitedGridRefreshVersion', () => {
     it('呼び出すと getVisitedCellsInBounds が再度呼ばれる', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -232,7 +236,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     it('完全に埋まった4x4は1つのPolygonへ結合される', async () => {
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -250,7 +254,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       ];
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(scatteredRows);
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -263,7 +267,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     it('初回取得のセルはフェードせず即時表示する', async () => {
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -361,7 +365,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       }));
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(displayBlockRows);
 
-      await flushAct(() => rerender({ gridOverlayRegion: ZOOMED_OUT_REGION }));
+      await flushAct(async () => await rerender({ gridOverlayRegion: ZOOMED_OUT_REGION }));
 
       // 表示セルサイズが実際に200mへ切り替わったことを、getVisitedCellsInBoundsへ渡された
       // 第2引数で確認する(ヒステリシスの挙動次第で意図しないサイズになる場合があるため)。
@@ -389,7 +393,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       const MOVED_REGION = { ...TEST_REGION, longitude: TEST_REGION.longitude + 0.004 };
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
-      await flushAct(() => rerender({ gridOverlayRegion: MOVED_REGION }));
+      await flushAct(async () => await rerender({ gridOverlayRegion: MOVED_REGION }));
 
       const ids = result.current.visitedGridCells.map((cell) => cell.id);
 
@@ -410,12 +414,12 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       const ZOOMED_OUT_REGION = { ...TEST_REGION, latitudeDelta: 0.1, longitudeDelta: 0.1 };
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
-      await flushAct(() => rerender({ gridOverlayRegion: ZOOMED_OUT_REGION }));
+      await flushAct(async () => await rerender({ gridOverlayRegion: ZOOMED_OUT_REGION }));
 
       // 100m表示へ戻す。同じ20セルを再度返す。
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValueOnce(makeCombinedRows());
 
-      await flushAct(() => rerender({ gridOverlayRegion: TEST_REGION }));
+      await flushAct(async () => await rerender({ gridOverlayRegion: TEST_REGION }));
 
       const ids = result.current.visitedGridCells.map((cell) => cell.id);
 
@@ -439,7 +443,9 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       // 4x4ブロックが1Polygonへ結合されるため、raw=16 / render=1 になる。
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      renderHook(() => useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }));
+      await renderHook(() =>
+        useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
+      );
 
       await flushFetch();
 
@@ -463,7 +469,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       // 純粋関数のテストとは別に、フックへ正しく結線されていることをここで固定する。
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -487,7 +493,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     it('完全に同じ結果を返す再取得でも visitedGridCells の参照を維持する', async () => {
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -504,7 +510,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
       // 再取得の頻度は変えない(新しいセルが開いた瞬間の表示遅延を増やさない)ことの確認。
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -520,7 +526,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     it('セルが増えた再取得では visitedGridCells を更新する', async () => {
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 
@@ -539,7 +545,7 @@ describe('訪問グリッドオーバーレイフック useVisitedGridOverlay', 
     it('更新した回とスキップした回の両方で source ログを出力する', async () => {
       (getVisitedCellsInBounds as jest.Mock).mockResolvedValue(makeFullBlockRows(BLOCK_ORIGIN));
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useVisitedGridOverlay({ isReady: true, gridOverlayRegion: TEST_REGION, themePrimaryColor: THEME_PRIMARY_COLOR }),
       );
 

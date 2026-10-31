@@ -53,7 +53,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('自動で走る走査は差分モードで実行する', async () => {
-    renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(loadGeotaggedPhotos).toHaveBeenCalledWith({ mode: 'incremental' });
@@ -64,7 +64,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     (loadGeotaggedPhotos as jest.Mock).mockReturnValue(new Promise(() => undefined));
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([photo]);
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([photo]);
@@ -83,7 +83,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
       return [];
     });
 
-    renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(callOrder[0]).toBe('search');
@@ -93,7 +93,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     const scannedPhoto: MapPhoto = { ...photo, id: 'photo-2' };
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValueOnce([]).mockResolvedValue([scannedPhoto]);
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(loadGeotaggedPhotosInBounds).toHaveBeenCalledTimes(2);
@@ -102,14 +102,14 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('表示上限を指定した場合はビューポート検索へ渡す', async () => {
-    renderHook(() => usePhotoMapOverlay(true, baseRegion, 1000));
+    await renderHook(() => usePhotoMapOverlay(true, baseRegion, 1000));
     await flushPromises();
 
     expect((loadGeotaggedPhotosInBounds as jest.Mock).mock.calls[0][1]).toBe(1000);
   });
 
   it('表示上限が変わったら取得済み範囲の内側でも検索し直す', async () => {
-    const { rerender } = renderHook(
+    const { rerender } = await renderHook(
       ({ displayLimit }: { displayLimit: number | null }) => usePhotoMapOverlay(true, baseRegion, displayLimit),
       {
         initialProps: { displayLimit: null as number | null },
@@ -119,7 +119,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     const callCountBeforeChange = (loadGeotaggedPhotosInBounds as jest.Mock).mock.calls.length;
 
     await act(async () => {
-      rerender({ displayLimit: 200 });
+      await rerender({ displayLimit: 200 });
     });
     await flushPromises();
 
@@ -128,27 +128,27 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('走査の計測値を状態として公開する', async () => {
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photoScanMetrics).toEqual(metrics);
   });
 
-  it('走査前は計測値を持たない', () => {
-    const { result } = renderHook(() => usePhotoMapOverlay(false, baseRegion));
+  it('走査前は計測値を持たない', async () => {
+    const { result } = await renderHook(() => usePhotoMapOverlay(false, baseRegion));
 
     expect(result.current.photoScanMetrics).toBeNull();
   });
 
   it('無効化した場合は計測値を捨てる', async () => {
-    const { result, rerender } = renderHook(({ enabled }: { enabled: boolean }) => usePhotoMapOverlay(enabled, baseRegion), {
+    const { result, rerender } = await renderHook(({ enabled }: { enabled: boolean }) => usePhotoMapOverlay(enabled, baseRegion), {
       initialProps: { enabled: true },
     });
     await flushPromises();
     expect(result.current.photoScanMetrics).toEqual(metrics);
 
     await act(async () => {
-      rerender({ enabled: false });
+      await rerender({ enabled: false });
     });
     await flushPromises();
 
@@ -158,7 +158,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   it('有効な場合は表示範囲に含まれる保存済み写真を読み込む', async () => {
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([photo]);
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([photo]);
@@ -166,7 +166,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('検索範囲は表示範囲の外側へ余白を持たせる', async () => {
-    renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     const bounds = (loadGeotaggedPhotosInBounds as jest.Mock).mock.calls[0][0];
@@ -180,7 +180,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [scannedPhoto], isCacheSaved: true, metrics, mode: 'incremental' });
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([photo]);
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([photo]);
@@ -191,7 +191,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [photo], isCacheSaved: false, metrics, mode: 'incremental' });
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([]);
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([photo]);
@@ -203,7 +203,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     const farPhoto: MapPhoto = { ...photo, id: 'photo-far', latitude: 10, longitude: 100 };
     (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [photo, farPhoto], isCacheSaved: false, metrics, mode: 'incremental' });
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([photo]);
@@ -220,7 +220,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
       mode: 'incremental',
     });
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion, 1));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion, 1));
     await flushPromises();
 
     // キャッシュ検索と同じく「全体の最新N件」を先に絞る
@@ -237,7 +237,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
       mode: 'incremental',
     });
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([newerPhoto, olderPhoto]);
@@ -249,7 +249,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [stalePhoto], isCacheSaved: false, metrics, mode: 'incremental' });
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([cachedPhoto]);
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
     expect(result.current.photos).toEqual([stalePhoto]);
 
@@ -267,7 +267,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     const rescannedPhoto: MapPhoto = { ...photo, id: 'photo-rescanned' };
     (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: [stalePhoto], isCacheSaved: false, metrics, mode: 'incremental' });
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
     expect(result.current.photos).toEqual([stalePhoto]);
 
@@ -280,7 +280,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('無効な場合は走査も検索もせず表示状態を空にする', async () => {
-    const { result } = renderHook(() => usePhotoMapOverlay(false, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(false, baseRegion));
     await flushPromises();
 
     expect(loadGeotaggedPhotos).not.toHaveBeenCalled();
@@ -289,7 +289,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('余白の内側に収まる小さなパンでは再検索しない', async () => {
-    const { rerender } = renderHook(({ region }: { region: Region }) => usePhotoMapOverlay(true, region), {
+    const { rerender } = await renderHook(({ region }: { region: Region }) => usePhotoMapOverlay(true, region), {
       initialProps: { region: baseRegion },
     });
     await flushPromises();
@@ -298,7 +298,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     expect(loadGeotaggedPhotosInBounds).toHaveBeenCalledTimes(2);
 
     await act(async () => {
-      rerender({ region: { ...baseRegion, longitude: 139.01 } });
+      await rerender({ region: { ...baseRegion, longitude: 139.01 } });
     });
     await flushPromises();
 
@@ -306,13 +306,13 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('余白の外へ出た場合は再検索する', async () => {
-    const { rerender } = renderHook(({ region }: { region: Region }) => usePhotoMapOverlay(true, region), {
+    const { rerender } = await renderHook(({ region }: { region: Region }) => usePhotoMapOverlay(true, region), {
       initialProps: { region: baseRegion },
     });
     await flushPromises();
 
     await act(async () => {
-      rerender({ region: { ...baseRegion, longitude: 139.5 } });
+      await rerender({ region: { ...baseRegion, longitude: 139.5 } });
     });
     await flushPromises();
 
@@ -331,20 +331,20 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
       }),
     );
 
-    const { result, rerender } = renderHook(({ region }: { region: Region }) => usePhotoMapOverlay(true, region), {
+    const { result, rerender } = await renderHook(({ region }: { region: Region }) => usePhotoMapOverlay(true, region), {
       initialProps: { region: baseRegion },
     });
     await flushPromises();
 
     // 余白の外へ出て2回目の読み込みを開始する
     await act(async () => {
-      rerender({ region: { ...baseRegion, longitude: 139.5 } });
+      await rerender({ region: { ...baseRegion, longitude: 139.5 } });
     });
     expect(loadGeotaggedPhotosInBounds).toHaveBeenCalledTimes(2);
 
     // 取得済み範囲の内側へ戻ると早期returnするが、実行中の読み込みは取り消してはいけない
     await act(async () => {
-      rerender({ region: baseRegion });
+      await rerender({ region: baseRegion });
     });
     expect(result.current.isLoadingPhotos).toBe(true);
 
@@ -365,12 +365,12 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
       }),
     );
 
-    const { result, rerender } = renderHook(({ enabled }: { enabled: boolean }) => usePhotoMapOverlay(enabled, baseRegion), {
+    const { result, rerender } = await renderHook(({ enabled }: { enabled: boolean }) => usePhotoMapOverlay(enabled, baseRegion), {
       initialProps: { enabled: true },
     });
 
     await act(async () => {
-      rerender({ enabled: false });
+      await rerender({ enabled: false });
     });
 
     await act(async () => {
@@ -384,7 +384,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   it('検索に失敗した場合はエラーメッセージを表示して写真を空にする', async () => {
     (loadGeotaggedPhotosInBounds as jest.Mock).mockRejectedValue(new Error('database is locked'));
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([]);
@@ -396,7 +396,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
     (loadGeotaggedPhotos as jest.Mock).mockRejectedValue(new Error('scan failed'));
     (loadGeotaggedPhotosInBounds as jest.Mock).mockResolvedValue([photo]);
 
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
 
     expect(result.current.photos).toEqual([photo]);
@@ -405,7 +405,7 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('refreshPhotosFromCacheは走査せずにビューポート検索だけやり直す', async () => {
-    const { result } = renderHook(() => usePhotoMapOverlay(true, baseRegion));
+    const { result } = await renderHook(() => usePhotoMapOverlay(true, baseRegion));
     await flushPromises();
     const searchCountBeforeRefresh = (loadGeotaggedPhotosInBounds as jest.Mock).mock.calls.length;
 
@@ -419,18 +419,18 @@ describe('写真マップ表示hook usePhotoMapOverlay', () => {
   });
 
   it('無効化してから再度有効にすると写真ライブラリを走査し直す', async () => {
-    const { rerender } = renderHook(({ enabled }: { enabled: boolean }) => usePhotoMapOverlay(enabled, baseRegion), {
+    const { rerender } = await renderHook(({ enabled }: { enabled: boolean }) => usePhotoMapOverlay(enabled, baseRegion), {
       initialProps: { enabled: true },
     });
     await flushPromises();
 
     await act(async () => {
-      rerender({ enabled: false });
+      await rerender({ enabled: false });
     });
     await flushPromises();
 
     await act(async () => {
-      rerender({ enabled: true });
+      await rerender({ enabled: true });
     });
     await flushPromises();
 

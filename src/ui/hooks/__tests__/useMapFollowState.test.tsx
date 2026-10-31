@@ -31,8 +31,8 @@ const CUSTOM_USER_LOCATION_ICON = {
 } as const;
 
 /** useMapFollowState を既定値でレンダリングするヘルパー。テストごとの冗長な incrementRef 定義を集約する。 */
-function renderMapFollowState(overrides: { screenMode?: ScreenMode; userLocationIcon?: ResolvedUserLocationIcon } = {}) {
-  return renderHook(() => {
+async function renderMapFollowState(overrides: { screenMode?: ScreenMode; userLocationIcon?: ResolvedUserLocationIcon } = {}) {
+  return await renderHook(() => {
     const incrementRef = useRef<() => void>(() => undefined);
     return useMapFollowState({
       screenMode: overrides.screenMode ?? 'map',
@@ -46,9 +46,9 @@ function renderMapFollowState(overrides: { screenMode?: ScreenMode; userLocation
  * カスタムアイコン時の追従センタリング挙動を検証するためのヘルパー。
  * mapRef に animateToRegion モックを注入し、rerender で screenMode を切り替えられるようにする。
  */
-function renderCustomIconMapFollowState(overrides: { screenMode?: ScreenMode } = {}) {
+async function renderCustomIconMapFollowState(overrides: { screenMode?: ScreenMode } = {}) {
   const mockAnimateToRegion = jest.fn();
-  const rendered = renderHook(
+  const rendered = await renderHook(
     ({ screenMode }: { screenMode: ScreenMode }) => {
       const incrementRef = useRef<() => void>(() => undefined);
       const hookResult = useMapFollowState({
@@ -69,48 +69,48 @@ function renderCustomIconMapFollowState(overrides: { screenMode?: ScreenMode } =
 
 describe('地図追従・センタリングフック useMapFollowState', () => {
   describe('初期状態', () => {
-    it('初期 isFollowingUserLocation は true（追従ON）になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期 isFollowingUserLocation は true（追従ON）になる', async () => {
+      const { result } = await renderMapFollowState();
 
       expect(result.current.isFollowingUserLocation).toBe(true);
     });
 
-    it('初期 userCoordinate は null になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期 userCoordinate は null になる', async () => {
+      const { result } = await renderMapFollowState();
 
       expect(result.current.userCoordinate).toBeNull();
     });
 
-    it('初期 isMapReady は false になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期 isMapReady は false になる', async () => {
+      const { result } = await renderMapFollowState();
 
       expect(result.current.isMapReady).toBe(false);
     });
 
-    it('初期 visibleRegion は null になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期 visibleRegion は null になる', async () => {
+      const { result } = await renderMapFollowState();
 
       expect(result.current.visibleRegion).toBeNull();
     });
 
-    it('初期 currentSpeedKmh は 0 になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期 currentSpeedKmh は 0 になる', async () => {
+      const { result } = await renderMapFollowState();
 
       expect(result.current.currentSpeedKmh).toBe(0);
     });
 
-    it('初期 mapType は standard になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期 mapType は standard になる', async () => {
+      const { result } = await renderMapFollowState();
 
       expect(result.current.mapType).toBe('standard');
     });
   });
 
   describe('handleMapPanDrag — ドラッグで追従 OFF', () => {
-    it('ドラッグ操作後は isFollowingUserLocation が false になる', () => {
-      const { result } = renderMapFollowState();
+    it('ドラッグ操作後は isFollowingUserLocation が false になる', async () => {
+      const { result } = await renderMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
 
@@ -119,9 +119,9 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('recenterOnUserLocation — 現在地ボタンで追従 ON', () => {
-    it('現在地ボタン押下後は isFollowingUserLocation が true に戻る', () => {
+    it('現在地ボタン押下後は isFollowingUserLocation が true に戻る', async () => {
       const mockAnimateToRegion = jest.fn();
-      const { result } = renderHook(() => {
+      const { result } = await renderHook(() => {
         const incrementRef = useRef<() => void>(() => undefined);
         const hookResult = useMapFollowState({
           screenMode: 'map',
@@ -136,34 +136,34 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
       });
 
       // ドラッグで追従 OFF にする
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
 
       expect(result.current.isFollowingUserLocation).toBe(false);
 
       // 現在地を設定してから recenter
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
 
-      act(() => {
+      await act(() => {
         result.current.recenterOnUserLocation();
       });
 
       expect(result.current.isFollowingUserLocation).toBe(true);
     });
 
-    it('userCoordinate が null のときは recenterOnUserLocation を呼んでも追従状態は変わらない', () => {
-      const { result } = renderMapFollowState();
+    it('userCoordinate が null のときは recenterOnUserLocation を呼んでも追従状態は変わらない', async () => {
+      const { result } = await renderMapFollowState();
 
       // ドラッグで追従 OFF
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
 
       // 現在地なしで recenter → 何も起きない
-      act(() => {
+      await act(() => {
         result.current.recenterOnUserLocation();
       });
 
@@ -172,9 +172,9 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('追従の自動復帰禁止 — 現在地更新だけでは追従 ON に戻らない', () => {
-    it('ドラッグ後に現在地が更新されても isFollowingUserLocation は false のまま', () => {
+    it('ドラッグ後に現在地が更新されても isFollowingUserLocation は false のまま', async () => {
       const mockAnimateToRegion = jest.fn();
-      const { result } = renderHook(() => {
+      const { result } = await renderHook(() => {
         const incrementRef = useRef<() => void>(() => undefined);
         const hookResult = useMapFollowState({
           screenMode: 'map',
@@ -188,14 +188,14 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
       });
 
       // ドラッグで追従 OFF
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
 
       expect(result.current.isFollowingUserLocation).toBe(false);
 
       // 現在地更新（OS標準アイコン時も追従は自動復帰しない）
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
 
@@ -205,31 +205,31 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('applyUserLocation — 現在地と速度の更新', () => {
-    it('有効な緯度経度で userCoordinate が更新される', () => {
-      const { result } = renderMapFollowState();
+    it('有効な緯度経度で userCoordinate が更新される', async () => {
+      const { result } = await renderMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
 
       expect(result.current.userCoordinate).toEqual({ latitude: 35.681236, longitude: 139.767125 });
     });
 
-    it('速度が渡された場合は currentSpeedKmh が更新される', () => {
-      const { result } = renderMapFollowState();
+    it('速度が渡された場合は currentSpeedKmh が更新される', async () => {
+      const { result } = await renderMapFollowState();
 
       // 10 m/s = 36 km/h
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, 10);
       });
 
       expect(result.current.currentSpeedKmh).toBeGreaterThan(0);
     });
 
-    it('無効な座標（NaN）は無視される', () => {
-      const { result } = renderMapFollowState();
+    it('無効な座標（NaN）は無視される', async () => {
+      const { result } = await renderMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(NaN, 139.767125, null);
       });
 
@@ -238,10 +238,10 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('handleMapReady', () => {
-    it('handleMapReady 呼び出し後は isMapReady が true になる', () => {
-      const { result } = renderMapFollowState();
+    it('handleMapReady 呼び出し後は isMapReady が true になる', async () => {
+      const { result } = await renderMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.handleMapReady();
       });
 
@@ -250,12 +250,12 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('handleRegionChangeComplete — 表示範囲の保存', () => {
-    it('表示範囲が更新される', () => {
-      const { result } = renderMapFollowState();
+    it('表示範囲が更新される', async () => {
+      const { result } = await renderMapFollowState();
 
       const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-      act(() => {
+      await act(() => {
         result.current.handleRegionChangeComplete(region);
       });
 
@@ -264,54 +264,54 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('カスタムアイコン時の追従センタリング（issue #126）', () => {
-    it('継続追従: handleMapReady 後は現在地更新のたびにセンタリングされ続ける', () => {
-      const { result, mockAnimateToRegion } = renderCustomIconMapFollowState();
+    it('継続追従: handleMapReady 後は現在地更新のたびにセンタリングされ続ける', async () => {
+      const { result, mockAnimateToRegion } = await renderCustomIconMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.handleMapReady();
       });
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.6813, 139.7672, null);
       });
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.6814, 139.7673, null);
       });
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(3);
     });
 
-    it('画面往復後の継続追従: 他画面へ遷移してから地図へ戻っても（MapView 再マウントなし）追従センタリングが継続する', () => {
-      const { result, rerender, mockAnimateToRegion } = renderCustomIconMapFollowState({ screenMode: 'map' });
+    it('画面往復後の継続追従: 他画面へ遷移してから地図へ戻っても（MapView 再マウントなし）追従センタリングが継続する', async () => {
+      const { result, rerender, mockAnimateToRegion } = await renderCustomIconMapFollowState({ screenMode: 'map' });
 
-      act(() => {
+      await act(() => {
         result.current.handleMapReady();
       });
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
 
       // 他画面へ遷移 → 地図へ戻る。expo-router 構成では MapView は再マウントされないため
       // handleMapReady は再度呼ばれない（isMapReady はリセットされず true のまま）。
-      act(() => {
-        rerender({ screenMode: 'settings' });
+      await act(async () => {
+        await rerender({ screenMode: 'settings' });
       });
-      act(() => {
-        rerender({ screenMode: 'map' });
+      await act(async () => {
+        await rerender({ screenMode: 'map' });
       });
 
       expect(result.current.isMapReady).toBe(true);
       const callsAfterRoundTrip = mockAnimateToRegion.mock.calls.length;
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.6813, 139.7672, null);
       });
 
@@ -319,11 +319,11 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
       expect(mockAnimateToRegion.mock.calls.length).toBeGreaterThan(callsAfterRoundTrip);
     });
 
-    it('onMapReady 不発火フォールバック: 最初の onRegionChangeComplete で保留中の現在地へセンタリングされる', () => {
-      const { result, mockAnimateToRegion } = renderCustomIconMapFollowState();
+    it('onMapReady 不発火フォールバック: 最初の onRegionChangeComplete で保留中の現在地へセンタリングされる', async () => {
+      const { result, mockAnimateToRegion } = await renderCustomIconMapFollowState();
 
       // handleMapReady は一度も呼ばない（New Architecture実機での不発火を再現）。
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
       expect(result.current.isMapReady).toBe(false);
@@ -331,7 +331,7 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
 
       const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-      act(() => {
+      await act(() => {
         result.current.handleRegionChangeComplete(region);
       });
 
@@ -339,40 +339,40 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
       expect(result.current.isMapReady).toBe(true);
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.6813, 139.7672, null);
       });
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
     });
 
-    it('再追従の継続: ドラッグでOFFの間はカメラが動かず、現在地ボタンでONに戻すと以後も追従が続く', () => {
-      const { result, mockAnimateToRegion } = renderCustomIconMapFollowState();
+    it('再追従の継続: ドラッグでOFFの間はカメラが動かず、現在地ボタンでONに戻すと以後も追従が続く', async () => {
+      const { result, mockAnimateToRegion } = await renderCustomIconMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.handleMapReady();
       });
 
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
       expect(result.current.isFollowingUserLocation).toBe(false);
 
       const callsWhileFollowing = mockAnimateToRegion.mock.calls.length;
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
       // 追従OFF時は位置更新だけではカメラが動かない。
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(callsWhileFollowing);
 
-      act(() => {
+      await act(() => {
         result.current.recenterOnUserLocation();
       });
       expect(result.current.isFollowingUserLocation).toBe(true);
       const callsAfterRecenter = mockAnimateToRegion.mock.calls.length;
       expect(callsAfterRecenter).toBeGreaterThan(callsWhileFollowing);
 
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.6814, 139.7673, null);
       });
       // 再追従ON後は後続の現在地更新でもセンタリングが続く。
@@ -385,20 +385,20 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
       jest.useRealTimers();
     });
 
-    it('初期状態は null になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期状態は null になる', async () => {
+      const { result } = await renderMapFollowState();
 
       expect(result.current.gridSyncRegion).toBeNull();
     });
 
-    it('ドラッグ後の handleRegionChange では visibleRegion は更新されるが gridSyncRegion は null のまま', () => {
-      const { result } = renderMapFollowState();
+    it('ドラッグ後の handleRegionChange では visibleRegion は更新されるが gridSyncRegion は null のまま', async () => {
+      const { result } = await renderMapFollowState();
       const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
-      act(() => {
+      await act(() => {
         result.current.handleRegionChange(region);
       });
 
@@ -406,34 +406,34 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
       expect(result.current.gridSyncRegion).toBeNull();
     });
 
-    it('handleRegionChangeComplete で gridSyncRegion が更新される', () => {
-      const { result } = renderMapFollowState();
+    it('handleRegionChangeComplete で gridSyncRegion が更新される', async () => {
+      const { result } = await renderMapFollowState();
       const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
-      act(() => {
+      await act(() => {
         result.current.handleRegionChangeComplete(region);
       });
 
       expect(result.current.gridSyncRegion).toEqual(region);
     });
 
-    it('ユーザー操作がない状態の handleRegionChange では gridSyncRegion も更新される', () => {
-      const { result } = renderMapFollowState();
+    it('ユーザー操作がない状態の handleRegionChange では gridSyncRegion も更新される', async () => {
+      const { result } = await renderMapFollowState();
       const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-      act(() => {
+      await act(() => {
         result.current.handleRegionChange(region);
       });
 
       expect(result.current.gridSyncRegion).toEqual(region);
     });
 
-    it('現在地ボタン(recenterOnUserLocation)ではドラッグ後でも gridSyncRegion が即時更新される', () => {
+    it('現在地ボタン(recenterOnUserLocation)ではドラッグ後でも gridSyncRegion が即時更新される', async () => {
       const mockAnimateToRegion = jest.fn();
-      const { result } = renderHook(() => {
+      const { result } = await renderHook(() => {
         const incrementRef = useRef<() => void>(() => undefined);
         const hookResult = useMapFollowState({
           screenMode: 'map',
@@ -448,82 +448,82 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
 
       // ドラッグで追従OFFにしてから現在地を更新する（追従OFF中はcenterOnCoordinateが
       // 呼ばれないため、この時点ではgridSyncRegionはまだ更新されない）。
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
-      act(() => {
+      await act(() => {
         result.current.applyUserLocation(35.681236, 139.767125, null);
       });
 
       expect(result.current.gridSyncRegion).toBeNull();
 
-      act(() => {
+      await act(() => {
         result.current.recenterOnUserLocation();
       });
 
       expect(result.current.gridSyncRegion).not.toBeNull();
     });
 
-    it('onRegionChangeComplete が来なくても、最後の操作から1000ms経過で直近regionへ同期する', () => {
+    it('onRegionChangeComplete が来なくても、最後の操作から1000ms経過で直近regionへ同期する', async () => {
       jest.useFakeTimers();
       // regionChangeThrottleRefの初期値0との差分がスロットル閾値(150ms)を超えるよう、
       // 十分離れた時刻から開始する。
       jest.setSystemTime(1000);
-      const { result } = renderMapFollowState();
+      const { result } = await renderMapFollowState();
       const region = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
-      act(() => {
+      await act(() => {
         result.current.handleRegionChange(region);
       });
 
       expect(result.current.gridSyncRegion).toBeNull();
 
       // advanceTimersByTimeはモックされたDateも一緒に進めるため、setSystemTimeの再指定は不要。
-      act(() => {
+      await act(() => {
         jest.advanceTimersByTime(1000);
       });
 
       expect(result.current.gridSyncRegion).toEqual(region);
     });
 
-    it('操作が続いている間(1000ms未満の間隔でhandleRegionChangeが来る)はタイマーが発火しない', () => {
+    it('操作が続いている間(1000ms未満の間隔でhandleRegionChangeが来る)はタイマーが発火しない', async () => {
       jest.useFakeTimers();
       // regionChangeThrottleRefの初期値0との差分がスロットル閾値(150ms)を超えるよう、
       // 十分離れた時刻から開始する。
       jest.setSystemTime(1000);
-      const { result } = renderMapFollowState();
+      const { result } = await renderMapFollowState();
       const region1 = { latitude: 35.68, longitude: 139.76, latitudeDelta: 0.01, longitudeDelta: 0.01 };
       const region2 = { latitude: 35.69, longitude: 139.77, latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
-      act(() => {
+      await act(() => {
         result.current.handleMapPanDrag();
       });
-      act(() => {
+      await act(() => {
         result.current.handleRegionChange(region1);
       });
 
       // 500ms後（1000ms未満）に再度操作 → タイマーが張り直され、まだ発火していないはず
-      act(() => {
+      await act(() => {
         jest.advanceTimersByTime(500);
       });
       expect(result.current.gridSyncRegion).toBeNull();
 
-      act(() => {
+      await act(() => {
         result.current.handleRegionChange(region2);
       });
 
       // 最初のタイマーが発火するはずだった時刻（操作開始から1000ms = ここから500ms後）を
       // 過ぎても、再操作によって張り直されたタイマーのおかげで発火しない
-      act(() => {
+      await act(() => {
         jest.advanceTimersByTime(650);
       });
       expect(result.current.gridSyncRegion).toBeNull();
 
       // 張り直したタイマー（region2受信から1000ms後）で発火する
-      act(() => {
+      await act(() => {
         jest.advanceTimersByTime(350);
       });
       expect(result.current.gridSyncRegion).toEqual(region2);
@@ -531,24 +531,24 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('toggleMapType — 地図種別の切り替え', () => {
-    it('初期状態から toggleMapType を呼ぶと hybrid になる', () => {
-      const { result } = renderMapFollowState();
+    it('初期状態から toggleMapType を呼ぶと hybrid になる', async () => {
+      const { result } = await renderMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.toggleMapType();
       });
 
       expect(result.current.mapType).toBe('hybrid');
     });
 
-    it('再度 toggleMapType を呼ぶと standard に戻る', () => {
-      const { result } = renderMapFollowState();
+    it('再度 toggleMapType を呼ぶと standard に戻る', async () => {
+      const { result } = await renderMapFollowState();
 
-      act(() => {
+      await act(() => {
         result.current.toggleMapType();
       });
 
-      act(() => {
+      await act(() => {
         result.current.toggleMapType();
       });
 

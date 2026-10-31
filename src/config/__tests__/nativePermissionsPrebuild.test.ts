@@ -30,6 +30,9 @@ function expectAndroidPermissionProhibited(manifest: string, permission: string)
 describe('Expo prebuild後のネイティブ権限', () => {
   let temporaryProjectPath: string;
   let infoPlist: string;
+  let podfile: string;
+  let appDelegate: string;
+  let sceneDelegate: string;
   let androidManifest: string;
 
   beforeAll(() => {
@@ -37,6 +40,8 @@ describe('Expo prebuild後のネイティブ権限', () => {
     copyFileSync(join(PROJECT_ROOT, 'app.json'), join(temporaryProjectPath, 'app.json'));
     copyFileSync(join(PROJECT_ROOT, 'package.json'), join(temporaryProjectPath, 'package.json'));
     symlinkSync(join(PROJECT_ROOT, 'assets'), join(temporaryProjectPath, 'assets'), 'dir');
+    // app.json がローカルのconfig pluginを相対パスで参照しているため、一時プロジェクトにも置く
+    symlinkSync(join(PROJECT_ROOT, 'plugins'), join(temporaryProjectPath, 'plugins'), 'dir');
     symlinkSync(join(PROJECT_ROOT, 'node_modules'), join(temporaryProjectPath, 'node_modules'), 'dir');
 
     const expoCliPath = require.resolve('expo/bin/cli');
@@ -47,6 +52,9 @@ describe('Expo prebuild後のネイティブ権限', () => {
     });
 
     infoPlist = readFileSync(join(temporaryProjectPath, 'ios', 'app', 'Info.plist'), 'utf8');
+    podfile = readFileSync(join(temporaryProjectPath, 'ios', 'Podfile'), 'utf8');
+    appDelegate = readFileSync(join(temporaryProjectPath, 'ios', 'app', 'AppDelegate.swift'), 'utf8');
+    sceneDelegate = readFileSync(join(temporaryProjectPath, 'ios', 'app', 'SceneDelegate.swift'), 'utf8');
     androidManifest = readFileSync(join(temporaryProjectPath, 'android', 'app', 'src', 'main', 'AndroidManifest.xml'), 'utf8');
   }, 120_000);
 
@@ -93,5 +101,19 @@ describe('Expo prebuild後のネイティブ権限', () => {
     ]) {
       expectAndroidPermissionProhibited(androidManifest, permission);
     }
+  });
+
+  test('iOSのPodfileにはXcode 27向けに全Podターゲットのデプロイメントターゲット下限を揃える処理が入る', () => {
+    expect(podfile).toContain('# @generated begin strollia-pod-deployment-target-floor');
+    expect(podfile).toContain('installer.pods_project.targets.each');
+  });
+
+  test('iOS 27 SDKで起動時に強制終了されないよう、UISceneライフサイクルを採用したネイティブプロジェクトを生成する', () => {
+    expect(infoPlist).toContain('<key>UIApplicationSceneManifest</key>');
+    expect(infoPlist).toContain('$(PRODUCT_MODULE_NAME).SceneDelegate');
+    expect(sceneDelegate).toContain('class SceneDelegate: ExpoAppSceneDelegate');
+    // windowの生成とReact Nativeの起動はSceneDelegateが担い、AppDelegateはfactoryを渡すだけにする
+    expect(appDelegate).toContain('ExpoReactNativeFactoryProvider');
+    expect(appDelegate).not.toContain('startReactNative(');
   });
 });

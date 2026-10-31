@@ -78,8 +78,8 @@ jest.mock('@/ui/components/MapScreen', () => ({
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 
 describe('expo-router エントリポイント (index)', () => {
-  test('default export が存在しレンダリングできること', () => {
-    render(<AppEntry />);
+  test('default export が存在しレンダリングできること', async () => {
+    await render(<AppEntry />);
 
     expect(screen.toJSON()).not.toBeNull();
   });

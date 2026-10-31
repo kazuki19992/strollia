@@ -52,7 +52,7 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     jest.useFakeTimers();
     jest.clearAllMocks();
     (setSetting as jest.Mock).mockResolvedValue(undefined);
-    jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -61,8 +61,8 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     jest.restoreAllMocks();
   });
 
-  test('現在のネイティブ版と通知版が完全一致するときだけ現在通知を解決する', () => {
-    const { result, rerender } = renderHook(
+  test('現在のネイティブ版と通知版が完全一致するときだけ現在通知を解決する', async () => {
+    const { result, rerender } = await renderHook(
       ({ nativeApplicationVersion }: NativeVersionProps) => useAppUpdateNoticeState(makeOptions({ nativeApplicationVersion })),
       {
         initialProps: { nativeApplicationVersion: '1.3.0' as string | null },
@@ -71,7 +71,7 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
 
     expect(result.current.currentAppUpdateNotice).toEqual(UPDATE_NOTICE);
 
-    rerender({ nativeApplicationVersion: '1.3.0.1' });
+    await rerender({ nativeApplicationVersion: '1.3.0.1' });
     expect(result.current.currentAppUpdateNotice).toBeNull();
   });
 
@@ -82,10 +82,10 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     ]);
   });
 
-  test('自動表示を要求するとautomatic起点でダイアログを表示する', () => {
-    const { result } = renderHook(() => useAppUpdateNoticeState(makeOptions()));
+  test('自動表示を要求するとautomatic起点でダイアログを表示する', async () => {
+    const { result } = await renderHook(() => useAppUpdateNoticeState(makeOptions()));
 
-    act(() => {
+    await act(() => {
       result.current.openAutomaticAppUpdateNotice();
     });
 
@@ -103,66 +103,66 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     ['GPX処理', { isProcessingGpxImport: true }],
     ['削除済み写真の案内', { isPhotoDeletedDialogVisible: true }],
     ['写真ライブラリの再読み込み', { isPhotoLibrarySyncDialogVisible: true }],
-  ])('%s の表示中は更新通知を待機し、退場時間の経過後に表示する', (_label, blockingState) => {
-    const { result, rerender } = renderHook(({ options }: NoticeStateProps) => useAppUpdateNoticeState(options), {
+  ])('%s の表示中は更新通知を待機し、退場時間の経過後に表示する', async (_label, blockingState) => {
+    const { result, rerender } = await renderHook(({ options }: NoticeStateProps) => useAppUpdateNoticeState(options), {
       initialProps: { options: makeOptions(blockingState) },
     });
 
-    act(() => {
+    await act(() => {
       result.current.openAutomaticAppUpdateNotice();
     });
     expect(result.current.appUpdateNoticeDialogSource).toBe('automatic');
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
 
-    rerender({ options: makeOptions() });
+    await rerender({ options: makeOptions() });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(MODAL_EXIT_TRANSITION_DURATION_MS + MODAL_EXIT_SETTLE_BUFFER_MS - 1);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(1);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(true);
   });
 
-  test('先行モーダルの退場待機中に別のブロッカーが現れたら待機をリセットする', () => {
-    const { result, rerender } = renderHook(({ options }: NoticeStateProps) => useAppUpdateNoticeState(options), {
+  test('先行モーダルの退場待機中に別のブロッカーが現れたら待機をリセットする', async () => {
+    const { result, rerender } = await renderHook(({ options }: NoticeStateProps) => useAppUpdateNoticeState(options), {
       initialProps: { options: makeOptions({ isFirstLaunchTutorialVisible: true }) },
     });
 
-    act(() => {
+    await act(() => {
       result.current.openAutomaticAppUpdateNotice();
     });
-    rerender({ options: makeOptions() });
-    act(() => {
+    await rerender({ options: makeOptions() });
+    await act(() => {
       jest.advanceTimersByTime(250);
     });
-    rerender({ options: makeOptions({ isPremiumPaywallVisible: true }) });
-    act(() => {
+    await rerender({ options: makeOptions({ isPremiumPaywallVisible: true }) });
+    await act(() => {
       jest.advanceTimersByTime(MODAL_EXIT_TRANSITION_DURATION_MS + MODAL_EXIT_SETTLE_BUFFER_MS);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
 
-    rerender({ options: makeOptions() });
-    act(() => {
+    await rerender({ options: makeOptions() });
+    await act(() => {
       jest.advanceTimersByTime(MODAL_EXIT_TRANSITION_DURATION_MS + MODAL_EXIT_SETTLE_BUFFER_MS - 1);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(false);
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(1);
     });
     expect(result.current.isAppUpdateNoticeDialogVisible).toBe(true);
   });
 
-  test('設定から開いて閉じても既読版を保存しない', () => {
-    const { result } = renderHook(() => useAppUpdateNoticeState(makeOptions()));
+  test('設定から開いて閉じても既読版を保存しない', async () => {
+    const { result } = await renderHook(() => useAppUpdateNoticeState(makeOptions()));
 
-    act(() => {
+    await act(() => {
       result.current.openLatestAppUpdateNotice();
     });
     expect(result.current.appUpdateNoticeDialogSource).toBe('settings');
-    act(() => {
+    await act(() => {
       result.current.closeAppUpdateNotice();
     });
 
@@ -170,13 +170,13 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     expect(setSetting).not.toHaveBeenCalled();
   });
 
-  test('自動表示を閉じると現在の通知版を既読として保存する', () => {
-    const { result } = renderHook(() => useAppUpdateNoticeState(makeOptions()));
+  test('自動表示を閉じると現在の通知版を既読として保存する', async () => {
+    const { result } = await renderHook(() => useAppUpdateNoticeState(makeOptions()));
 
-    act(() => {
+    await act(() => {
       result.current.openAutomaticAppUpdateNotice();
     });
-    act(() => {
+    await act(() => {
       result.current.closeAppUpdateNotice();
     });
 
@@ -187,12 +187,12 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
   test('既読保存に失敗してもダイアログを閉じ、警告を残す', async () => {
     const error = new Error('DB失敗');
     (setSetting as jest.Mock).mockRejectedValue(error);
-    const { result } = renderHook(() => useAppUpdateNoticeState(makeOptions()));
+    const { result } = await renderHook(() => useAppUpdateNoticeState(makeOptions()));
 
-    act(() => {
+    await act(() => {
       result.current.openAutomaticAppUpdateNotice();
     });
-    act(() => {
+    await act(() => {
       result.current.closeAppUpdateNotice();
     });
     await act(async () => {
@@ -203,10 +203,10 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
     expect(console.warn).toHaveBeenCalledWith('Failed to persist app update notice acknowledgement:', error);
   });
 
-  test('現在版通知がないときは設定から開かない', () => {
-    const { result } = renderHook(() => useAppUpdateNoticeState(makeOptions({ nativeApplicationVersion: '1.3.1' })));
+  test('現在版通知がないときは設定から開かない', async () => {
+    const { result } = await renderHook(() => useAppUpdateNoticeState(makeOptions({ nativeApplicationVersion: '1.3.1' })));
 
-    act(() => {
+    await act(() => {
       result.current.openLatestAppUpdateNotice();
     });
 
@@ -217,9 +217,9 @@ describe('更新通知状態フック useAppUpdateNoticeState', () => {
   test('ストア表示に失敗してもダイアログ状態を閉じず、警告を残す', async () => {
     const error = new Error('URL失敗');
     jest.spyOn(Linking, 'openURL').mockRejectedValue(error);
-    const { result } = renderHook(() => useAppUpdateNoticeState(makeOptions()));
+    const { result } = await renderHook(() => useAppUpdateNoticeState(makeOptions()));
 
-    act(() => {
+    await act(() => {
       result.current.openLatestAppUpdateNotice();
     });
     await act(async () => {

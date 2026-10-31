@@ -1,5 +1,5 @@
 import * as ReactNative from 'react-native';
-import { Animated, StyleSheet, Text } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -77,8 +77,8 @@ describe('マップ下部ダッシュボード', () => {
     expect(METER_CLUSTER_BACKGROUND_PATH.match(/rgba/)).toBeNull();
   });
 
-  test('速度計と長い距離表示をまとめて描画する', () => {
-    render(<MapBottomDashboard {...createProps()} />);
+  test('速度計と長い距離表示をまとめて描画する', async () => {
+    await render(<MapBottomDashboard {...createProps()} />);
 
     expect(screen.getByText('SPEED')).toBeTruthy();
     expect(screen.getByText('ODO')).toBeTruthy();
@@ -88,8 +88,8 @@ describe('マップ下部ダッシュボード', () => {
     expect(screen.getByText('船橋市')).toBeTruthy();
   });
 
-  test('速度と距離の指定桁数と市名6文字プラス市を固定文字サイズで表示する', () => {
-    render(
+  test('速度と距離の指定桁数と市名6文字プラス市を固定文字サイズで表示する', async () => {
+    await render(
       <MapBottomDashboard
         {...createProps()}
         currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }}
@@ -107,8 +107,9 @@ describe('マップ下部ダッシュボード', () => {
     expect(screen.getByText('つくばみらい市')).toBeTruthy();
 
     // allowFontScaling=false を持つ文字列テキストのみを検証する
-    // UNSAFE_getAllByType を使うのは allowFontScaling という非セマンティックな props の検証のため
-    const textNodes = screen.UNSAFE_getAllByType(Text).filter((node) => typeof node.props.children === 'string');
+    // allowFontScaling という非セマンティックな props の検証のため、container から host Text を集める
+    const textNodes = screen.container.queryAll((node) => node.type === 'Text' && typeof node.props.children === 'string');
+    expect(textNodes.length).toBeGreaterThan(0);
     expect(textNodes.every((node) => node.props.allowFontScaling === false)).toBe(true);
   });
 
@@ -118,11 +119,11 @@ describe('マップ下部ダッシュボード', () => {
     expect(styles.dashboardTodayMetric.minWidth).toBeGreaterThanOrEqual(56);
   });
 
-  test('マップボタンから表示設定パネルを前面に開く', () => {
-    render(<MapBottomDashboard {...createProps()} />);
+  test('マップボタンから表示設定パネルを前面に開く', async () => {
+    await render(<MapBottomDashboard {...createProps()} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
     expect(screen.getByText('標準マップ')).toBeTruthy();
@@ -132,14 +133,14 @@ describe('マップ下部ダッシュボード', () => {
     expect(screen.getByText('滞在場所のアイコンをマップ上に表示します')).toBeTruthy();
   });
 
-  test('表示設定パネルは滞在場所ラベルを1行で表示できる幅を確保する', () => {
-    render(<MapBottomDashboard {...createProps()} />);
+  test('表示設定パネルは滞在場所ラベルを1行で表示できる幅を確保する', async () => {
+    await render(<MapBottomDashboard {...createProps()} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    const panel = screen.UNSAFE_getAllByProps({}).find((node) => StyleSheet.flatten(node.props.style)?.width === 336);
+    const panel = screen.container.queryAll((node) => StyleSheet.flatten(node.props.style)?.width === 336)[0];
     const stayPlacesLabel = screen.getByText('マップ上に滞在場所を表示');
 
     expect(StyleSheet.flatten(panel?.props.style).width).toBeGreaterThanOrEqual(330);
@@ -147,35 +148,35 @@ describe('マップ下部ダッシュボード', () => {
     expect(stayPlacesLabel.props.adjustsFontSizeToFit).toBe(true);
   });
 
-  test('狭い画面では表示設定パネルをダッシュボードの親幅に収める', () => {
+  test('狭い画面では表示設定パネルをダッシュボードの親幅に収める', async () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 320, height: 667, scale: 2, fontScale: 1 });
-    render(<MapBottomDashboard {...createProps()} />);
+    await render(<MapBottomDashboard {...createProps()} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    const panel = screen.UNSAFE_getAllByProps({}).find((node) => StyleSheet.flatten(node.props.style)?.width === 304);
+    const panel = screen.container.queryAll((node) => StyleSheet.flatten(node.props.style)?.width === 304)[0];
 
     expect(panel).toBeDefined();
   });
 
-  test('表示設定パネルを開いている間は背景のダッシュボード操作を無効化する', () => {
+  test('表示設定パネルを開いている間は背景のダッシュボード操作を無効化する', async () => {
     const props = createProps();
-    render(<MapBottomDashboard {...props} />);
+    await render(<MapBottomDashboard {...props} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
     const scrim = screen.getByLabelText('マップ表示設定を閉じる');
     expect(StyleSheet.flatten(scrim.props.style).backgroundColor).toBe('rgba(0, 0, 0, 0.56)');
 
-    fireEvent.press(screen.getByLabelText('実績'));
-    fireEvent.press(screen.getByLabelText('現在地へ戻る'));
-    fireEvent.press(screen.getByLabelText('日ごとの記録'));
-    fireEvent.press(screen.getByLabelText('レポートを見る'));
-    fireEvent.press(screen.getByLabelText('設定'));
+    await fireEvent.press(screen.getByLabelText('実績'));
+    await fireEvent.press(screen.getByLabelText('現在地へ戻る'));
+    await fireEvent.press(screen.getByLabelText('日ごとの記録'));
+    await fireEvent.press(screen.getByLabelText('レポートを見る'));
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     expect(props.onOpenAchievements).not.toHaveBeenCalled();
     expect(props.onRecenterOnUserLocation).not.toHaveBeenCalled();
@@ -184,57 +185,57 @@ describe('マップ下部ダッシュボード', () => {
     expect(props.onOpenSettings).not.toHaveBeenCalled();
   });
 
-  test('表示設定パネルは暗幕をタップして閉じられる', () => {
-    render(<MapBottomDashboard {...createProps()} />);
+  test('表示設定パネルは暗幕をタップして閉じられる', async () => {
+    await render(<MapBottomDashboard {...createProps()} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    fireEvent.press(screen.getByLabelText('マップ表示設定を閉じる'));
+    await fireEvent.press(screen.getByLabelText('マップ表示設定を閉じる'));
 
     expect(screen.queryByText('マップ上に写真を表示')).toBeNull();
   });
 
-  test('表示設定パネルはマップの表示ボタンを再度タップして閉じられる', () => {
-    render(<MapBottomDashboard {...createProps()} />);
+  test('表示設定パネルはマップの表示ボタンを再度タップして閉じられる', async () => {
+    await render(<MapBottomDashboard {...createProps()} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
-    fireEvent.press(screen.getByLabelText('マップの表示'));
+    await fireEvent.press(screen.getByLabelText('マップの表示'));
 
     expect(screen.queryByText('マップ上に写真を表示')).toBeNull();
   });
 
-  test('滞在場所がない場合は表示設定パネルに滞在場所表示設定を出さない', () => {
-    render(<MapBottomDashboard {...createProps()} hasStayPlaces={false} />);
+  test('滞在場所がない場合は表示設定パネルに滞在場所表示設定を出さない', async () => {
+    await render(<MapBottomDashboard {...createProps()} hasStayPlaces={false} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
     expect(screen.queryByText('マップ上に滞在場所を表示')).toBeNull();
   });
 
-  test('表示設定パネルから滞在場所表示設定を切り替える', () => {
+  test('表示設定パネルから滞在場所表示設定を切り替える', async () => {
     const props = createProps();
-    render(<MapBottomDashboard {...props} />);
+    await render(<MapBottomDashboard {...props} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
-    fireEvent(screen.getByLabelText('マップ上に滞在場所を表示'), 'valueChange', false);
+    await fireEvent(screen.getByLabelText('マップ上に滞在場所を表示'), 'valueChange', false);
 
     expect(props.onUpdateShowStayPlacesOnMap).toHaveBeenCalledWith(false);
   });
 
-  test('地図種別の選択中バッジはViewで装飾しTextは文字だけ描画する', () => {
-    render(<MapBottomDashboard {...createProps()} />);
+  test('地図種別の選択中バッジはViewで装飾しTextは文字だけ描画する', async () => {
+    await render(<MapBottomDashboard {...createProps()} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('マップの表示'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
     });
 
     const selectedLabel = screen.getByText('✓ 選択中');
@@ -242,27 +243,26 @@ describe('マップ下部ダッシュボード', () => {
     expect(selectedLabel).toBeTruthy();
     expect(selectedLabel.props.style).toEqual(styles.mapDisplayTypeSelectedBadgeText);
     // バッジ装飾用の View が mapDisplayTypeSelectedBadge スタイルを持っていることを確認する
-    // UNSAFE_getAllByProps で mapDisplayTypeSelectedBadge スタイルを持つ View を探す
-    const badgeView = screen
-      .UNSAFE_getAllByProps({})
-      .find((node) => node.props.style != null && node.props.style === styles.mapDisplayTypeSelectedBadge);
+    // container の host View から mapDisplayTypeSelectedBadge スタイルを持つものを探す
+    const badgeView = screen.container.queryAll(
+      (node) => node.type === 'View' && node.props.style != null && node.props.style === styles.mapDisplayTypeSelectedBadge,
+    )[0];
     expect(badgeView).toBeTruthy();
   });
 
-  test('速度リングを連続円弧で描画する', () => {
-    render(<MapBottomDashboard {...createProps()} currentSpeedKmh={15} />);
+  test('速度リングを連続円弧で描画する', async () => {
+    await render(<MapBottomDashboard {...createProps()} currentSpeedKmh={15} />);
 
     // testID で速度リング円弧を検索する
-    // UNSAFE_getAllByProps を使うのは testID という非セマンティックな props でフィルタリングが必要なため
-    const arc = screen.UNSAFE_getAllByProps({ testID: 'speed-meter-progress-arc' })[0];
+    const arc = screen.getByTestId('speed-meter-progress-arc', { includeHiddenElements: true });
     expect(arc.props.stroke).toBe('#39d9ff');
     expect(arc.props.strokeDashoffset).toBeCloseTo(SPEED_METER_ARC_CIRCUMFERENCE / 2);
   });
 
-  test('小さい画面では現在地名に縮小許可を付けて描画する', () => {
+  test('小さい画面では現在地名に縮小許可を付けて描画する', async () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 375, height: 667, scale: 2, fontScale: 1 });
 
-    render(<MapBottomDashboard {...createProps()} currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }} />);
+    await render(<MapBottomDashboard {...createProps()} currentAreaLabel={{ primary: 'つくばみらい市', secondary: null }} />);
 
     const place = screen.getByText('つくばみらい市');
 
@@ -271,17 +271,17 @@ describe('マップ下部ダッシュボード', () => {
     expect(place.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: expect.any(Number) })]));
   });
 
-  test('小さい画面では速度リングの背景とSVGを同じ倍率で縮小する', () => {
+  test('小さい画面では速度リングの背景とSVGを同じ倍率で縮小する', async () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 375, height: 667, scale: 2, fontScale: 1 });
 
-    render(<MapBottomDashboard {...createProps()} />);
+    await render(<MapBottomDashboard {...createProps()} />);
 
     const scale = getDashboardScale(375);
     const layout = getScaledSpeedDialLayout(scale);
 
     // testID でリング背景とSVGを検索する
-    const ringBase = screen.UNSAFE_getAllByProps({ testID: 'speed-meter-ring-base' })[0];
-    const arcSvg = screen.UNSAFE_getAllByProps({ testID: 'speed-meter-arc-svg' })[0];
+    const ringBase = screen.getByTestId('speed-meter-ring-base', { includeHiddenElements: true });
+    const arcSvg = screen.getByTestId('speed-meter-arc-svg', { includeHiddenElements: true });
 
     expect(ringBase.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.ringBase)]));
     expect(arcSvg.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.arcSvg)]));

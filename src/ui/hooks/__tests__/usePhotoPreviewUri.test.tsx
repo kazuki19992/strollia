@@ -33,10 +33,10 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
     jest.clearAllMocks();
   });
 
-  it('写真を開いた直後は手元のサムネイルを返し、取得中であることを伝える', () => {
+  it('写真を開いた直後は手元のサムネイルを返し、取得中であることを伝える', async () => {
     (resolvePhotoPreviewUri as jest.Mock).mockReturnValue(new Promise(() => undefined));
 
-    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+    const { result } = await renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-512.jpg');
     expect(result.current.isLoadingPreview).toBe(true);
@@ -45,7 +45,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
   it('高解像度を取得できたら表示を差し替える', async () => {
     (resolvePhotoPreviewUri as jest.Mock).mockResolvedValue('file:///caches/asset-1-preview.jpg');
 
-    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+    const { result } = await renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
     await flushPromises();
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-preview.jpg');
@@ -56,7 +56,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
   it('高解像度を取得できなくてもサムネイルのまま表示を続ける(真っ黒にしない)', async () => {
     (resolvePhotoPreviewUri as jest.Mock).mockResolvedValue(null);
 
-    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+    const { result } = await renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
     await flushPromises();
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-512.jpg');
@@ -68,17 +68,17 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
     // 端末未ダウンロードの写真を「表示できている」と誤認してしまう
     (resolvePhotoPreviewUri as jest.Mock).mockResolvedValue(null);
 
-    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+    const { result } = await renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
     await flushPromises();
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-512.jpg');
     expect(result.current.hasHighResolutionPreview).toBe(false);
   });
 
-  it('取得中は高解像度を取得できていないと伝える', () => {
+  it('取得中は高解像度を取得できていないと伝える', async () => {
     (resolvePhotoPreviewUri as jest.Mock).mockReturnValue(new Promise(() => undefined));
 
-    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+    const { result } = await renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
 
     expect(result.current.hasHighResolutionPreview).toBe(false);
   });
@@ -88,7 +88,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (resolvePhotoPreviewUri as jest.Mock).mockRejectedValue(new Error('download failed'));
 
-    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
+    const { result } = await renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', 'file:///caches/asset-1-512.jpg')));
     await flushPromises();
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-512.jpg');
@@ -96,8 +96,8 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
     expect(result.current.hasHighResolutionPreview).toBe(false);
   });
 
-  it('写真を閉じている間は取得せず、URIも持たない', () => {
-    const { result } = renderHook(() => usePhotoPreviewUri(null));
+  it('写真を閉じている間は取得せず、URIも持たない', async () => {
+    const { result } = await renderHook(() => usePhotoPreviewUri(null));
 
     expect(result.current.previewUri).toBeNull();
     expect(result.current.isLoadingPreview).toBe(false);
@@ -112,12 +112,12 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
     );
     jest.useFakeTimers();
 
-    const { result, rerender } = renderHook(({ photo }: { photo: MapPhoto }) => usePhotoPreviewUri(photo), {
+    const { result, rerender } = await renderHook(({ photo }: { photo: MapPhoto }) => usePhotoPreviewUri(photo), {
       initialProps: { photo: createPhoto('asset-1', 'file:///caches/asset-1-512.jpg') },
     });
 
-    act(() => {
-      rerender({ photo: createPhoto('asset-2', 'file:///caches/asset-2-512.jpg') });
+    await act(async () => {
+      await rerender({ photo: createPhoto('asset-2', 'file:///caches/asset-2-512.jpg') });
     });
     await act(async () => {
       jest.runAllTimers();
@@ -130,7 +130,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
   it('サムネイルすら無い写真でも高解像度を取得できれば表示する', async () => {
     (resolvePhotoPreviewUri as jest.Mock).mockResolvedValue('file:///caches/asset-1-preview.jpg');
 
-    const { result } = renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', null)));
+    const { result } = await renderHook(() => usePhotoPreviewUri(createPhoto('asset-1', null)));
     await flushPromises();
 
     expect(result.current.previewUri).toBe('file:///caches/asset-1-preview.jpg');
@@ -144,7 +144,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
 
     (resolvePhotoPreviewUri as jest.Mock).mockResolvedValue('file:///caches/asset-1-preview.jpg');
 
-    const { rerender } = renderHook(
+    const { rerender } = await renderHook(
       ({ photo }: { photo: MapPhoto }) => {
         const state = usePhotoPreviewUri(photo);
         renderedUris.push(state.previewUri);
@@ -156,7 +156,7 @@ describe('拡大表示用URLフック usePhotoPreviewUri', () => {
 
     (resolvePhotoPreviewUri as jest.Mock).mockReturnValue(new Promise(() => undefined));
     const switchedAtIndex = renderedUris.length;
-    rerender({ photo: createPhoto('asset-2', 'file:///caches/asset-2-512.jpg') });
+    await rerender({ photo: createPhoto('asset-2', 'file:///caches/asset-2-512.jpg') });
 
     // 切替後のどのレンダーでも、写真1の高解像度URIが出てはいけない
     expect(renderedUris.slice(switchedAtIndex)).not.toContain('file:///caches/asset-1-preview.jpg');

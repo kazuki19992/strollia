@@ -14,20 +14,20 @@ jest.mock('@expo/vector-icons', () => {
 const styles = createStyles(lightTheme);
 
 describe('DashboardAction', () => {
-  test('アクセシビリティラベルとロールを付与して描画する', () => {
-    render(<DashboardAction icon={<Text>icon</Text>} label="日ごとの記録" scale={1} styles={styles} onPress={jest.fn()} />);
+  test('アクセシビリティラベルとロールを付与して描画する', async () => {
+    await render(<DashboardAction icon={<Text>icon</Text>} label="日ごとの記録" scale={1} styles={styles} onPress={jest.fn()} />);
 
     const pressable = screen.getByLabelText('日ごとの記録');
     expect(pressable).toBeTruthy();
     expect(pressable.props.accessibilityRole).toBe('button');
   });
 
-  test('onPressを呼び出す', () => {
+  test('onPressを呼び出す', async () => {
     const onPress = jest.fn();
 
-    render(<DashboardAction icon={<Text>icon</Text>} label="設定" scale={1} styles={styles} onPress={onPress} />);
+    await render(<DashboardAction icon={<Text>icon</Text>} label="設定" scale={1} styles={styles} onPress={onPress} />);
 
-    fireEvent.press(screen.getByLabelText('設定'));
+    await fireEvent.press(screen.getByLabelText('設定'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

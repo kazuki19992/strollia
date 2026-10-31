@@ -44,93 +44,93 @@ describe('課金状態フック usePremiumAccess', () => {
   });
 
   describe('初期状態', () => {
-    it('初期 premiumAccessState は getDefaultPremiumAccessState の戻り値になる', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('初期 premiumAccessState は getDefaultPremiumAccessState の戻り値になる', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
       expect(result.current.premiumAccessState).toEqual(PLUS_INACTIVE_STATE);
     });
 
-    it('初期 isPremiumAccessPendingForIcon は true になる', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('初期 isPremiumAccessPendingForIcon は true になる', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
       expect(result.current.isPremiumAccessPendingForIcon).toBe(true);
     });
 
-    it('初期 isPremiumPaywallVisible は false になる', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('初期 isPremiumPaywallVisible は false になる', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
       expect(result.current.isPremiumPaywallVisible).toBe(false);
     });
 
-    it('初期 isLoadingPremiumOffering は false になる', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('初期 isLoadingPremiumOffering は false になる', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
       expect(result.current.isLoadingPremiumOffering).toBe(false);
     });
   });
 
   describe('subscribePremiumAccessStateUpdates の購読', () => {
-    it('マウント時に subscribePremiumAccessStateUpdates を呼ぶ', () => {
-      renderHook(() => usePremiumAccess());
+    it('マウント時に subscribePremiumAccessStateUpdates を呼ぶ', async () => {
+      await renderHook(() => usePremiumAccess());
 
       expect(subscribePremiumAccessStateUpdates).toHaveBeenCalledTimes(1);
     });
 
-    it('アンマウント時に解除関数を呼ぶ', () => {
+    it('アンマウント時に解除関数を呼ぶ', async () => {
       const unsubscribe = jest.fn();
       (subscribePremiumAccessStateUpdates as jest.Mock).mockReturnValue(unsubscribe);
 
-      const { unmount } = renderHook(() => usePremiumAccess());
+      const { unmount } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
-        unmount();
+      await act(async () => {
+        await unmount();
       });
 
       expect(unsubscribe).toHaveBeenCalledTimes(1);
     });
 
-    it('購読コールバックが呼ばれると premiumAccessState が更新される', () => {
+    it('購読コールバックが呼ばれると premiumAccessState が更新される', async () => {
       let onUpdate: (state: PremiumAccessState) => void = () => undefined;
       (subscribePremiumAccessStateUpdates as jest.Mock).mockImplementation((cb) => {
         onUpdate = cb;
         return jest.fn();
       });
 
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         onUpdate(PLUS_ACTIVE_STATE);
       });
 
       expect(result.current.premiumAccessState).toEqual(PLUS_ACTIVE_STATE);
     });
 
-    it('購読コールバックが呼ばれると isPremiumAccessPendingForIcon が false になる', () => {
+    it('購読コールバックが呼ばれると isPremiumAccessPendingForIcon が false になる', async () => {
       let onUpdate: (state: PremiumAccessState) => void = () => undefined;
       (subscribePremiumAccessStateUpdates as jest.Mock).mockImplementation((cb) => {
         onUpdate = cb;
         return jest.fn();
       });
 
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         onUpdate(PLUS_ACTIVE_STATE);
       });
 
       expect(result.current.isPremiumAccessPendingForIcon).toBe(false);
     });
 
-    it('購読コールバックが呼ばれると syncMonthlyReportNotification を呼ぶ', () => {
+    it('購読コールバックが呼ばれると syncMonthlyReportNotification を呼ぶ', async () => {
       let onUpdate: (state: PremiumAccessState) => void = () => undefined;
       (subscribePremiumAccessStateUpdates as jest.Mock).mockImplementation((cb) => {
         onUpdate = cb;
         return jest.fn();
       });
 
-      renderHook(() => usePremiumAccess());
+      await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         onUpdate(PLUS_ACTIVE_STATE);
       });
 
@@ -139,34 +139,34 @@ describe('課金状態フック usePremiumAccess', () => {
   });
 
   describe('openPremiumPaywall / closePremiumPaywall', () => {
-    it('openPremiumPaywall を呼ぶと isPremiumPaywallVisible が true になる', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('openPremiumPaywall を呼ぶと isPremiumPaywallVisible が true になる', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         result.current.openPremiumPaywall();
       });
 
       expect(result.current.isPremiumPaywallVisible).toBe(true);
     });
 
-    it('closePremiumPaywall を呼ぶと isPremiumPaywallVisible が false になる', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('closePremiumPaywall を呼ぶと isPremiumPaywallVisible が false になる', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         result.current.openPremiumPaywall();
       });
 
-      act(() => {
+      await act(() => {
         result.current.closePremiumPaywall();
       });
 
       expect(result.current.isPremiumPaywallVisible).toBe(false);
     });
 
-    it('ペイウォールが表示中に openPremiumPaywall を再度呼んでも二重表示にならない', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('ペイウォールが表示中に openPremiumPaywall を再度呼んでも二重表示にならない', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         result.current.openPremiumPaywall();
         result.current.openPremiumPaywall();
       });
@@ -176,11 +176,11 @@ describe('課金状態フック usePremiumAccess', () => {
   });
 
   describe('showPremiumLockedMessage', () => {
-    it('showPremiumLockedMessage を呼ぶと Alert.alert を呼ぶ', () => {
+    it('showPremiumLockedMessage を呼ぶと Alert.alert を呼ぶ', async () => {
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         result.current.showPremiumLockedMessage('カスタムアイコン');
       });
 
@@ -189,10 +189,10 @@ describe('課金状態フック usePremiumAccess', () => {
       alertSpy.mockRestore();
     });
 
-    it('showPremiumLockedMessage を呼ぶと Haptics.selectionAsync を呼ぶ', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('showPremiumLockedMessage を呼ぶと Haptics.selectionAsync を呼ぶ', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         result.current.showPremiumLockedMessage('カスタムアイコン');
       });
 
@@ -207,7 +207,7 @@ describe('課金状態フック usePremiumAccess', () => {
         accessState: PLUS_ACTIVE_STATE,
       });
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       await act(async () => {
         await result.current.purchasePremiumPackageFromSettings('monthly');
@@ -224,9 +224,9 @@ describe('課金状態フック usePremiumAccess', () => {
         accessState: PLUS_ACTIVE_STATE,
       });
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         result.current.openPremiumPaywall();
       });
 
@@ -246,14 +246,14 @@ describe('課金状態フック usePremiumAccess', () => {
           resolve = res;
         }),
       );
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       let firstCall: Promise<void>;
-      act(() => {
+      await act(() => {
         firstCall = result.current.purchasePremiumPackageFromSettings('monthly');
       });
 
-      act(() => {
+      await act(() => {
         result.current.purchasePremiumPackageFromSettings('monthly').catch(() => undefined);
       });
 
@@ -271,7 +271,7 @@ describe('課金状態フック usePremiumAccess', () => {
     it('復元成功で Plus 有効なら premiumAccessState が更新される', async () => {
       (restorePremiumPurchases as jest.Mock).mockResolvedValue(PLUS_ACTIVE_STATE);
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       await act(async () => {
         await result.current.restorePurchasesFromSettings();
@@ -285,9 +285,9 @@ describe('課金状態フック usePremiumAccess', () => {
     it('復元成功で Plus 有効なら ペイウォールが閉じる', async () => {
       (restorePremiumPurchases as jest.Mock).mockResolvedValue(PLUS_ACTIVE_STATE);
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
-      act(() => {
+      await act(() => {
         result.current.openPremiumPaywall();
       });
 
@@ -308,16 +308,16 @@ describe('課金状態フック usePremiumAccess', () => {
           resolveRestore = res;
         }),
       );
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       // 1回目呼び出し（promise 未解決のまま）
       let firstCall: Promise<void>;
-      act(() => {
+      await act(() => {
         firstCall = result.current.restorePurchasesFromSettings();
       });
 
       // 2回目呼び出し（1回目が pending 中）
-      act(() => {
+      await act(() => {
         result.current.restorePurchasesFromSettings().catch(() => undefined);
       });
 
@@ -339,7 +339,7 @@ describe('課金状態フック usePremiumAccess', () => {
     it('presentPremiumCustomerCenter が true を返すとき Alert は呼ばれない', async () => {
       (presentPremiumCustomerCenter as jest.Mock).mockResolvedValue(true);
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       await act(async () => {
         await result.current.openPremiumCustomerCenter();
@@ -353,7 +353,7 @@ describe('課金状態フック usePremiumAccess', () => {
     it('presentPremiumCustomerCenter が false を返すとき Alert を呼ぶ', async () => {
       (presentPremiumCustomerCenter as jest.Mock).mockResolvedValue(false);
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       await act(async () => {
         await result.current.openPremiumCustomerCenter();
@@ -366,13 +366,13 @@ describe('課金状態フック usePremiumAccess', () => {
   });
 
   describe('initializePremiumAccess', () => {
-    it('confirmed=true のとき isPremiumAccessPendingForIcon が false になる', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('confirmed=true のとき isPremiumAccessPendingForIcon が false になる', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
       const initialVersion = result.current.snapshotPremiumAccessUpdateVersion();
       const signal = new AbortController().signal;
 
-      act(() => {
+      await act(() => {
         result.current.initializePremiumAccess({
           initialVersion,
           initialPremiumAccessRequest: Promise.resolve(PLUS_ACTIVE_STATE),
@@ -384,13 +384,13 @@ describe('課金状態フック usePremiumAccess', () => {
       expect(result.current.isPremiumAccessPendingForIcon).toBe(false);
     });
 
-    it('confirmed=false のとき isPremiumAccessPendingForIcon は true のまま', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('confirmed=false のとき isPremiumAccessPendingForIcon は true のまま', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
       const initialVersion = result.current.snapshotPremiumAccessUpdateVersion();
       const signal = new AbortController().signal;
 
-      act(() => {
+      await act(() => {
         result.current.initializePremiumAccess({
           initialVersion,
           initialPremiumAccessRequest: Promise.resolve(PLUS_INACTIVE_STATE),
@@ -402,13 +402,13 @@ describe('課金状態フック usePremiumAccess', () => {
       expect(result.current.isPremiumAccessPendingForIcon).toBe(true);
     });
 
-    it('state が premiumAccessState に反映される', () => {
-      const { result } = renderHook(() => usePremiumAccess());
+    it('state が premiumAccessState に反映される', async () => {
+      const { result } = await renderHook(() => usePremiumAccess());
 
       const initialVersion = result.current.snapshotPremiumAccessUpdateVersion();
       const signal = new AbortController().signal;
 
-      act(() => {
+      await act(() => {
         result.current.initializePremiumAccess({
           initialVersion,
           initialPremiumAccessRequest: Promise.resolve(PLUS_ACTIVE_STATE),
@@ -420,25 +420,25 @@ describe('課金状態フック usePremiumAccess', () => {
       expect(result.current.premiumAccessState).toEqual(PLUS_ACTIVE_STATE);
     });
 
-    it('initialVersion が現在のバージョンと一致しない場合は setState しない', () => {
+    it('initialVersion が現在のバージョンと一致しない場合は setState しない', async () => {
       let onUpdate: (state: PremiumAccessState) => void = () => undefined;
       (subscribePremiumAccessStateUpdates as jest.Mock).mockImplementation((cb) => {
         onUpdate = cb;
         return jest.fn();
       });
 
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       const initialVersion = result.current.snapshotPremiumAccessUpdateVersion();
 
       // 購読コールバックでバージョンを進める
-      act(() => {
+      await act(() => {
         onUpdate(PLUS_ACTIVE_STATE);
       });
 
       const signal = new AbortController().signal;
 
-      act(() => {
+      await act(() => {
         result.current.initializePremiumAccess({
           initialVersion,
           initialPremiumAccessRequest: Promise.resolve(PLUS_INACTIVE_STATE),
@@ -459,12 +459,12 @@ describe('課金状態フック usePremiumAccess', () => {
         }),
       );
 
-      const { result } = renderHook(() => usePremiumAccess());
+      const { result } = await renderHook(() => usePremiumAccess());
 
       const initialVersion = result.current.snapshotPremiumAccessUpdateVersion();
       const signal = new AbortController().signal;
 
-      act(() => {
+      await act(() => {
         result.current.initializePremiumAccess({
           initialVersion,
           initialPremiumAccessRequest: Promise.resolve(PLUS_INACTIVE_STATE),

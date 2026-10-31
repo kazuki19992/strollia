@@ -13,40 +13,40 @@ jest.mock('@expo/vector-icons', () => {
 const styles = createStyles(lightTheme);
 
 describe('MapDisplayTypeButton', () => {
-  test('選択中の場合にmapDisplayTypeButtonSelectedスタイルを付与する', () => {
-    render(<MapDisplayTypeButton icon="map-outline" isSelected={true} label="標準マップ" styles={styles} onPress={jest.fn()} />);
+  test('選択中の場合にmapDisplayTypeButtonSelectedスタイルを付与する', async () => {
+    await render(<MapDisplayTypeButton icon="map-outline" isSelected={true} label="標準マップ" styles={styles} onPress={jest.fn()} />);
 
     const pressable = screen.getByRole('button');
     const flatStyle = Array.isArray(pressable.props.style) ? pressable.props.style : [pressable.props.style];
     expect(flatStyle).toContain(styles.mapDisplayTypeButtonSelected);
   });
 
-  test('未選択の場合にmapDisplayTypeButtonSelectedスタイルを付与しない', () => {
-    render(<MapDisplayTypeButton icon="satellite-variant" isSelected={false} label="航空写真" styles={styles} onPress={jest.fn()} />);
+  test('未選択の場合にmapDisplayTypeButtonSelectedスタイルを付与しない', async () => {
+    await render(<MapDisplayTypeButton icon="satellite-variant" isSelected={false} label="航空写真" styles={styles} onPress={jest.fn()} />);
 
     const pressable = screen.getByRole('button');
     const flatStyle = Array.isArray(pressable.props.style) ? pressable.props.style : [pressable.props.style];
     expect(flatStyle).not.toContain(styles.mapDisplayTypeButtonSelected);
   });
 
-  test('選択中バッジを選択時だけ表示する', () => {
-    const { unmount } = render(
+  test('選択中バッジを選択時だけ表示する', async () => {
+    const { unmount } = await render(
       <MapDisplayTypeButton icon="map-outline" isSelected={true} label="標準マップ" styles={styles} onPress={jest.fn()} />,
     );
 
     expect(screen.getByText('✓ 選択中')).toBeTruthy();
-    unmount();
+    await unmount();
 
-    render(<MapDisplayTypeButton icon="satellite-variant" isSelected={false} label="航空写真" styles={styles} onPress={jest.fn()} />);
+    await render(<MapDisplayTypeButton icon="satellite-variant" isSelected={false} label="航空写真" styles={styles} onPress={jest.fn()} />);
     expect(screen.queryByText('✓ 選択中')).toBeNull();
   });
 
-  test('onPressを呼び出す', () => {
+  test('onPressを呼び出す', async () => {
     const onPress = jest.fn();
-    render(<MapDisplayTypeButton icon="map-outline" isSelected={false} label="標準マップ" styles={styles} onPress={onPress} />);
+    await render(<MapDisplayTypeButton icon="map-outline" isSelected={false} label="標準マップ" styles={styles} onPress={onPress} />);
 
-    act(() => {
-      fireEvent.press(screen.getByRole('button'));
+    await act(async () => {
+      await fireEvent.press(screen.getByRole('button'));
     });
     expect(onPress).toHaveBeenCalledTimes(1);
   });

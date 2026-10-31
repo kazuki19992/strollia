@@ -23,10 +23,10 @@ describe('選択ドロップダウン SelectionDropdown', () => {
     mockUseWindowDimensions.mockReset();
   });
 
-  test('選択肢が画面高を超える場合は高さ制限付きのスクロール領域へ収める', () => {
+  test('選択肢が画面高を超える場合は高さ制限付きのスクロール領域へ収める', async () => {
     mockUseWindowDimensions.mockReturnValue({ fontScale: 1, height: 844, scale: 3, width: 390 });
 
-    render(
+    await render(
       <SafeAreaProvider
         initialMetrics={{
           frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -46,7 +46,7 @@ describe('選択ドロップダウン SelectionDropdown', () => {
       </SafeAreaProvider>,
     );
 
-    fireEvent.press(screen.getByLabelText('候補を選択'));
+    await fireEvent.press(screen.getByLabelText('候補を選択'));
 
     const sheet = screen.getByTestId('selection-dropdown-sheet');
     expect(StyleSheet.flatten(sheet.props.style).maxHeight).toBe(769);

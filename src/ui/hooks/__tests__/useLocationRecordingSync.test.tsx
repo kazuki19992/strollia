@@ -124,8 +124,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
   });
 
   describe('初期状態', () => {
-    it('初期 isRecording は false になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 isRecording は false になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -137,8 +137,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.isRecording).toBe(false);
     });
 
-    it('初期 autoStartStatus は checking になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 autoStartStatus は checking になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -150,8 +150,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.autoStartStatus).toBe('checking');
     });
 
-    it('初期 isLocationRecordingModeSynchronized は false になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 isLocationRecordingModeSynchronized は false になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -163,8 +163,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.isLocationRecordingModeSynchronized).toBe(false);
     });
 
-    it('初期 isWhileInUseToastVisible は false になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 isWhileInUseToastVisible は false になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -176,8 +176,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.isWhileInUseToastVisible).toBe(false);
     });
 
-    it('初期 message は「起動後に自動でGPS記録を開始します。」になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 message は「起動後に自動でGPS記録を開始します。」になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -189,8 +189,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.message).toBe('起動後に自動でGPS記録を開始します。');
     });
 
-    it('初期 dailyLogs は空配列になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 dailyLogs は空配列になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -202,8 +202,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.dailyLogs).toEqual([]);
     });
 
-    it('初期 pointsBounds は null になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 pointsBounds は null になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -215,8 +215,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.pointsBounds).toBeNull();
     });
 
-    it('初期 distance は 0 になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 distance は 0 になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -228,8 +228,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       expect(result.current.distance).toBe(0);
     });
 
-    it('初期 monthlyAreaReport は null になる', () => {
-      const { result } = renderHook(() =>
+    it('初期 monthlyAreaReport は null になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -244,7 +244,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
   describe('refreshData — DB・権限状態の再読み込み', () => {
     it('getDailyLogs・getLocationPointsBounds・isBackgroundLocationRecording・getLocationPermissionState をまとめて呼ぶ', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -264,7 +264,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
     });
 
     it('signal が abort 済みのとき state を更新せず返却値だけを返す', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -289,7 +289,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
     it('refreshData が完了すると incrementVisitedGridRefreshVersion が呼ばれる', async () => {
       const mockIncrement = jest.fn();
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: mockIncrement,
@@ -308,7 +308,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
   describe('startRecording — GPS記録開始', () => {
     it('startBackgroundLocationRecording を呼ぶ', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -326,7 +326,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
     it('reason が auto のとき message に「GPS記録を自動開始しました。」が設定される', async () => {
       (hasRequiredLocationPermission as jest.Mock).mockReturnValue(true);
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -344,7 +344,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
     it('reason が manual のとき message に「バックグラウンドGPS記録を開始しました。」が設定される', async () => {
       (hasRequiredLocationPermission as jest.Mock).mockReturnValue(true);
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -362,7 +362,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
     it('startBackgroundLocationRecording が失敗したとき autoStartStatus が failed になる', async () => {
       (startBackgroundLocationRecording as jest.Mock).mockRejectedValue(new Error('GPS start failed'));
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -381,7 +381,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
 
   describe('synchronizeLocationRecordingMode — 記録モード同期', () => {
     it('バックグラウンド権限ありのとき updateBackgroundLocationTaskOptionsIfNeeded を呼ぶ', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -398,7 +398,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
     });
 
     it('バックグラウンド権限なしのとき stopBackgroundLocationRecording を呼ぶ', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -415,7 +415,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
     });
 
     it('バックグラウンド権限なしで同期完了後 isLocationRecordingModeSynchronized が true になる', async () => {
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -433,8 +433,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
   });
 
   describe('setMessage — メッセージ更新', () => {
-    it('setMessage を呼ぶと message が更新される', () => {
-      const { result } = renderHook(() =>
+    it('setMessage を呼ぶと message が更新される', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -443,7 +443,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         }),
       );
 
-      act(() => {
+      await act(() => {
         result.current.setMessage('テストメッセージ');
       });
 
@@ -452,8 +452,8 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
   });
 
   describe('setIsWhileInUseToastVisible — トースト表示更新', () => {
-    it('setIsWhileInUseToastVisible(true) を呼ぶと isWhileInUseToastVisible が true になる', () => {
-      const { result } = renderHook(() =>
+    it('setIsWhileInUseToastVisible(true) を呼ぶと isWhileInUseToastVisible が true になる', async () => {
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -462,7 +462,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         }),
       );
 
-      act(() => {
+      await act(() => {
         result.current.setIsWhileInUseToastVisible(true);
       });
 
@@ -479,7 +479,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         return { remove: jest.fn() };
       });
 
-      renderHook(() =>
+      await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -522,7 +522,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         )
         .mockResolvedValue(freshLogs);
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -532,7 +532,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       );
 
       // 先行チェーン開始（getDailyLogs は pending のまま止まる）
-      act(() => {
+      await act(() => {
         listeners.forEach((l) => l('active'));
       });
 
@@ -583,7 +583,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
         )
         .mockResolvedValue([]);
 
-      const { result } = renderHook(() =>
+      const { result } = await renderHook(() =>
         useLocationRecordingSync({
           isReady: true,
           incrementVisitedGridRefreshVersion: defaultIncrementVisitedGridRefreshVersion,
@@ -593,13 +593,13 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       );
 
       // 同期チェーン開始（getDailyLogs pending で実行中のまま）
-      act(() => {
+      await act(() => {
         listeners.forEach((l) => l('active'));
       });
       expect(getDailyLogs).toHaveBeenCalledTimes(1);
 
       // 同期チェーン実行中に interval を発火 → スキップされ refreshData は呼ばれない
-      act(() => {
+      await act(() => {
         intervalCallbacks.forEach((callback) => callback());
       });
       expect(getDailyLogs).toHaveBeenCalledTimes(1);
@@ -632,7 +632,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       evaluateRef.current = jest.fn().mockResolvedValue(false);
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => {
+      const { result } = await renderHook(() => {
         const stableEvaluate = React.useCallback(() => evaluateRef.current(), []);
         const stableRefresh = React.useCallback((...args: Parameters<typeof refreshRef.current>) => refreshRef.current(...args), []);
         const stableIncrement = React.useCallback(() => incrementRef.current(), []);
@@ -656,7 +656,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       evaluateRef.current = jest.fn().mockResolvedValue(true);
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => {
+      const { result } = await renderHook(() => {
         const stableEvaluate = React.useCallback(() => evaluateRef.current(), []);
         const stableRefresh = React.useCallback((...args: Parameters<typeof refreshRef.current>) => refreshRef.current(...args), []);
         const stableIncrement = React.useCallback(() => incrementRef.current(), []);
@@ -679,7 +679,7 @@ describe('GPS記録同期フック useLocationRecordingSync', () => {
       evaluateRef.current = jest.fn().mockResolvedValue(false);
       refreshRef.current = jest.fn().mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => {
+      const { result } = await renderHook(() => {
         const stableEvaluate = React.useCallback(() => evaluateRef.current(), []);
         const stableRefresh = React.useCallback((...args: Parameters<typeof refreshRef.current>) => refreshRef.current(...args), []);
         const stableIncrement = React.useCallback(() => incrementRef.current(), []);

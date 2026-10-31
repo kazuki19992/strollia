@@ -66,16 +66,16 @@ describe('滞在場所設定ルート', () => {
     mockState.stayPlacesStatus = 'ready';
   });
 
-  test('一覧から新規作成画面へ遷移する', () => {
-    render(<StayPlacesRoute />);
+  test('一覧から新規作成画面へ遷移する', async () => {
+    await render(<StayPlacesRoute />);
 
-    fireEvent.press(screen.getByLabelText('滞在場所を追加'));
+    await fireEvent.press(screen.getByLabelText('滞在場所を追加'));
 
     expect(mockPush).toHaveBeenCalledWith('/settings/stay-places/new');
   });
 
   test('新規作成画面はProviderのcreateStayPlace完了後に一覧へ戻る', async () => {
-    render(<NewStayPlaceRoute />);
+    await render(<NewStayPlaceRoute />);
 
     await (latestEditorProps?.onSave as (input: Record<string, unknown>) => Promise<void>)({
       name: '自宅',
@@ -95,16 +95,16 @@ describe('滞在場所設定ルート', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 
-  test('現在地が未取得の新規作成画面は、地図を動かすまで保存座標を渡さない', () => {
+  test('現在地が未取得の新規作成画面は、地図を動かすまで保存座標を渡さない', async () => {
     mockState.userCoordinate = null;
-    render(<NewStayPlaceRoute />);
+    await render(<NewStayPlaceRoute />);
 
     expect(latestEditorProps?.initialCoordinate).toBeNull();
   });
 
   test('無料版の読込中に直接新規作成へ到達しても保存せずPlus購入導線を開く', async () => {
     mockState.stayPlacesStatus = 'loading';
-    render(<NewStayPlaceRoute />);
+    await render(<NewStayPlaceRoute />);
 
     await (latestEditorProps?.onSave as (input: Record<string, unknown>) => Promise<void>)({
       name: '自宅',
@@ -132,7 +132,7 @@ describe('滞在場所設定ルート', () => {
         updatedAt: '2026-08-19T00:00:00.000Z',
       },
     ];
-    render(<EditStayPlaceRoute />);
+    await render(<EditStayPlaceRoute />);
 
     await (latestEditorProps?.onSave as (input: Record<string, unknown>) => Promise<void>)({
       name: '新しい自宅',
@@ -148,9 +148,9 @@ describe('滞在場所設定ルート', () => {
     expect(mockBack).toHaveBeenCalledTimes(2);
   });
 
-  test('編集URLへ読込中に直接到達した場合は待機し、完了後に対象の編集画面を表示する', () => {
+  test('編集URLへ読込中に直接到達した場合は待機し、完了後に対象の編集画面を表示する', async () => {
     mockState.stayPlacesStatus = 'loading';
-    const view = render(<EditStayPlaceRoute />);
+    const view = await render(<EditStayPlaceRoute />);
 
     expect(latestRedirectHref).toBeNull();
     expect(latestEditorProps).toBeNull();
@@ -168,7 +168,7 @@ describe('滞在場所設定ルート', () => {
       },
     ];
     mockState.stayPlacesStatus = 'ready';
-    view.rerender(<EditStayPlaceRoute />);
+    await view.rerender(<EditStayPlaceRoute />);
 
     expect(latestRedirectHref).toBeNull();
     expect(screen.getByTestId('stay-place-editor')).toBeTruthy();

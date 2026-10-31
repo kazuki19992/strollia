@@ -31,38 +31,38 @@ describe('汎用ダイアログ Dialog', () => {
     jest.restoreAllMocks();
   });
 
-  test('autoClose=true のとき10秒経過で onClose を呼ぶ', () => {
+  test('autoClose=true のとき10秒経過で onClose を呼ぶ', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <Dialog visible autoClose animationKey="k1" styles={styles} onClose={onClose}>
         <Text>本文</Text>
       </Dialog>,
     );
 
     expect(onClose).not.toHaveBeenCalled();
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(10_000);
     });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  test('autoClose=false のときは時間経過しても onClose を呼ばない', () => {
+  test('autoClose=false のときは時間経過しても onClose を呼ばない', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <Dialog visible styles={styles} onClose={onClose}>
         <Text>本文</Text>
       </Dialog>,
     );
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(10_000);
     });
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  test('showConfetti=false のとき ConfettiOverlay を active=false で描画する', () => {
+  test('showConfetti=false のとき ConfettiOverlay を active=false で描画する', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <Dialog visible styles={styles} onClose={onClose}>
         <Text>本文</Text>
       </Dialog>,
@@ -71,23 +71,23 @@ describe('汎用ダイアログ Dialog', () => {
     expect(mockConfetti).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
   });
 
-  test('閉じるボタンを押すと onClose を呼ぶ', () => {
+  test('閉じるボタンを押すと onClose を呼ぶ', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <Dialog visible styles={styles} onClose={onClose}>
         <Text>本文</Text>
       </Dialog>,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('閉じる'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('閉じる'));
     });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  test('swipeToClose 既定時はスワイプヒントを表示する', () => {
+  test('swipeToClose 既定時はスワイプヒントを表示する', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <Dialog visible styles={styles} onClose={onClose}>
         <Text>本文</Text>
       </Dialog>,
@@ -96,9 +96,9 @@ describe('汎用ダイアログ Dialog', () => {
     expect(screen.getByText('スワイプで閉じる')).toBeTruthy();
   });
 
-  test('swipeToClose=false のときヒントを表示しない', () => {
+  test('swipeToClose=false のときヒントを表示しない', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
         <Text>本文</Text>
       </Dialog>,
@@ -107,11 +107,11 @@ describe('汎用ダイアログ Dialog', () => {
     expect(screen.queryByText('スワイプで閉じる')).toBeNull();
   });
 
-  test('swipeToClose=false のときスワイプ追従用のPanResponderを作らない', () => {
+  test('swipeToClose=false のときスワイプ追従用のPanResponderを作らない', async () => {
     const createSpy = jest.spyOn(PanResponder, 'create');
     const onClose = jest.fn();
 
-    render(
+    await render(
       <Dialog visible swipeToClose={false} styles={styles} onClose={onClose}>
         <Text>本文</Text>
       </Dialog>,
@@ -120,9 +120,9 @@ describe('汎用ダイアログ Dialog', () => {
     expect(createSpy).not.toHaveBeenCalled();
   });
 
-  test('render-prop の pauseAutoClose を呼ぶと自動クローズが止まる', () => {
+  test('render-prop の pauseAutoClose を呼ぶと自動クローズが止まる', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <Dialog visible autoClose styles={styles} onClose={onClose}>
         {({ pauseAutoClose }) => (
           <Text accessibilityLabel="pause" onPress={pauseAutoClose}>
@@ -132,10 +132,10 @@ describe('汎用ダイアログ Dialog', () => {
       </Dialog>,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('pause'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('pause'));
     });
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(10_000);
     });
     expect(onClose).not.toHaveBeenCalled();
@@ -152,8 +152,8 @@ describe('Dialog dismissible', () => {
     jest.restoreAllMocks();
   });
 
-  it('dismissible=false のとき閉じるボタンを描画しない', () => {
-    render(
+  it('dismissible=false のとき閉じるボタンを描画しない', async () => {
+    await render(
       <Dialog visible dismissible={false} swipeToClose={false} styles={styles} onClose={() => undefined}>
         <Text>本文</Text>
       </Dialog>,
@@ -161,8 +161,8 @@ describe('Dialog dismissible', () => {
     expect(screen.queryByLabelText('閉じる')).toBeNull();
   });
 
-  it('dismissible 既定（true）では閉じるボタンを描画する', () => {
-    render(
+  it('dismissible 既定（true）では閉じるボタンを描画する', async () => {
+    await render(
       <Dialog visible swipeToClose={false} styles={styles} onClose={() => undefined}>
         <Text>本文</Text>
       </Dialog>,

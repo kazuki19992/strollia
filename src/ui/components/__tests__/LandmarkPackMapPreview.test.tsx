@@ -72,18 +72,20 @@ function focusRequestFor(spotId: string, nonce = 1): LandmarkSpotFocusRequest {
 }
 
 /** 地図プレビューを描画する。focusRequest を切り替えるため rerender を返す。 */
-function renderPreview(focusRequest: LandmarkSpotFocusRequest = null, items: LandmarkSpotListItem[] = spotItems) {
-  const view = render(<LandmarkPackMapPreview spotItems={items} focusRequest={focusRequest} styles={styles} theme={lightTheme} />);
+async function renderPreview(focusRequest: LandmarkSpotFocusRequest = null, items: LandmarkSpotListItem[] = spotItems) {
+  const view = await render(<LandmarkPackMapPreview spotItems={items} focusRequest={focusRequest} styles={styles} theme={lightTheme} />);
 
   return {
-    rerender: (nextFocusRequest: LandmarkSpotFocusRequest, nextItems: LandmarkSpotListItem[] = items) =>
-      view.rerender(<LandmarkPackMapPreview spotItems={nextItems} focusRequest={nextFocusRequest} styles={styles} theme={lightTheme} />),
+    rerender: async (nextFocusRequest: LandmarkSpotFocusRequest, nextItems: LandmarkSpotListItem[] = items) =>
+      await view.rerender(
+        <LandmarkPackMapPreview spotItems={nextItems} focusRequest={nextFocusRequest} styles={styles} theme={lightTheme} />,
+      ),
   };
 }
 
 /** モックMapViewの onMapReady を発火し、ネイティブ地図の準備完了を再現する。 */
-function fireMapReady(): void {
-  act(() => {
+async function fireMapReady(): Promise<void> {
+  await act(() => {
     mockMapViewProps.current?.onMapReady?.();
   });
 }
@@ -94,8 +96,8 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     mockMapViewProps.current = null;
   });
 
-  it('全スポットが収まる表示範囲を initialRegion に渡す', () => {
-    renderPreview();
+  it('全スポットが収まる表示範囲を initialRegion に渡す', async () => {
+    await renderPreview();
 
     // 期待値はパック内の全スポット(retired含む)の外接境界から作った範囲と一致する
     const expectedRegion = createRegionFromBounds({
@@ -108,8 +110,8 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     expect(screen.getByTestId('landmark-pack-map').props.initialRegion).toEqual(expectedRegion);
   });
 
-  it('各スポットへマーカーを置き、配列indexベースの1始まりの番号を振る', () => {
-    renderPreview();
+  it('各スポットへマーカーを置き、配列indexベースの1始まりの番号を振る', async () => {
+    await renderPreview();
 
     expect(screen.getByLabelText('1番目のスポット 華厳の滝')).toBeTruthy();
     expect(screen.getByLabelText('2番目のスポット 那智の滝')).toBeTruthy();
@@ -120,8 +122,8 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     expect(screen.getByText('3')).toBeTruthy();
   });
 
-  it('番号バッジをvariant="map"の見た目(白文字・塗りつぶし)で描画する(地図タイル色に左右されないコントラスト確保)', () => {
-    renderPreview();
+  it('番号バッジをvariant="map"の見た目(白文字・塗りつぶし)で描画する(地図タイル色に左右されないコントラスト確保)', async () => {
+    await renderPreview();
 
     // variant='map'の場合、到達済み・未到達とも landmarkSpotNumberBadgeTextMap(白文字)を使う。
     // list variantならcolorはprimaryText/mutedTextになり#ffffffにはならないため、variant切り替えの検証になる
@@ -132,76 +134,76 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     expect(StyleSheet.flatten(unvisitedBadgeText.props.style)).toMatchObject({ color: '#ffffff' });
   });
 
-  it('focusRequestが変わるとそのスポット中心へアニメーションする', () => {
-    const { rerender } = renderPreview();
-    fireMapReady();
+  it('focusRequestが変わるとそのスポット中心へアニメーションする', async () => {
+    const { rerender } = await renderPreview();
+    await fireMapReady();
 
-    act(() => {
-      rerender(focusRequestFor('spot-2'));
+    await act(async () => {
+      await rerender(focusRequestFor('spot-2'));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
     expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
   });
 
-  it('同じスポットへ連続で再タップ(nonceだけ増加)しても再アニメーションする', () => {
+  it('同じスポットへ連続で再タップ(nonceだけ増加)しても再アニメーションする', async () => {
     // spotIdだけを見て変化を判定すると、同じ値のためReactが更新をスキップし、
     // 地図を動かしてから同じ行を再タップしてもズームし直せない不具合があった
-    const { rerender } = renderPreview();
-    fireMapReady();
+    const { rerender } = await renderPreview();
+    await fireMapReady();
 
-    act(() => {
-      rerender(focusRequestFor('spot-2', 1));
+    await act(async () => {
+      await rerender(focusRequestFor('spot-2', 1));
     });
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
 
-    act(() => {
-      rerender(focusRequestFor('spot-2', 2));
+    await act(async () => {
+      await rerender(focusRequestFor('spot-2', 2));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
     expect(mockAnimateToRegion).toHaveBeenNthCalledWith(2, createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
   });
 
-  it('focusRequestがnullへ戻っても追加のアニメーションは行わず初期表示のズームを保つ', () => {
-    const { rerender } = renderPreview();
-    fireMapReady();
+  it('focusRequestがnullへ戻っても追加のアニメーションは行わず初期表示のズームを保つ', async () => {
+    const { rerender } = await renderPreview();
+    await fireMapReady();
 
-    act(() => {
-      rerender(focusRequestFor('spot-2'));
+    await act(async () => {
+      await rerender(focusRequestFor('spot-2'));
     });
     mockAnimateToRegion.mockClear();
 
-    act(() => {
-      rerender(null);
+    await act(async () => {
+      await rerender(null);
     });
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();
   });
 
-  it('onMapReady前のフォーカス指定はネイティブ側で無視されるため、準備完了まで待ってから移動する', () => {
-    renderPreview(focusRequestFor('spot-3'));
+  it('onMapReady前のフォーカス指定はネイティブ側で無視されるため、準備完了まで待ってから移動する', async () => {
+    await renderPreview(focusRequestFor('spot-3'));
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();
 
-    fireMapReady();
+    await fireMapReady();
 
     expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 36.767222, longitude: 140.398333 }), 250);
   });
 
-  it('表示できるスポットが1件も無い場合は地図を描画しない', () => {
-    renderPreview(null, []);
+  it('表示できるスポットが1件も無い場合は地図を描画しない', async () => {
+    await renderPreview(null, []);
 
     expect(screen.queryByTestId('landmark-pack-map')).toBeNull();
   });
 
-  it('緯度経度が壊れたスポットはマーカーから除き、番号の連番は残りのスポットで保つ', () => {
+  it('緯度経度が壊れたスポットはマーカーから除き、番号の連番は残りのスポットで保つ', async () => {
     const brokenItems: LandmarkSpotListItem[] = [
       { spot: createSpot({ id: 'spot-broken', name: '幻の滝', latitude: Number.NaN, longitude: 139 }), visitedLocalDate: null },
       spotItems[1],
     ];
 
-    renderPreview(null, brokenItems);
+    await renderPreview(null, brokenItems);
 
     expect(screen.queryByLabelText('1番目のスポット 幻の滝')).toBeNull();
     // 2件目は配列indexのまま2番として描画され、リスト側の番号とズレない

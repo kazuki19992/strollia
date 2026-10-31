@@ -7,15 +7,15 @@ Strollia (footspot) は Expo (React Native) 製のローカルファーストGPS
 
 | 領域           | ライブラリ                                                                              |
 | -------------- | --------------------------------------------------------------------------------------- |
-| 基盤           | Expo ~57 / React 19.2 / React Native 0.86 / TypeScript ~6.0 (strict) / New Architecture |
-| ナビゲーション | expo-router ~57(ファイルベースルーティング)                                             |
+| 基盤           | Expo ~58 / React 19.3 / React Native 0.88 / TypeScript ~6.0 (strict) / New Architecture |
+| ナビゲーション | expo-router ~58(ファイルベースルーティング)                                             |
 | 位置情報       | expo-location + expo-task-manager                                                       |
 | DB             | expo-sqlite(`strollia.db`)                                                              |
 | 地図           | react-native-maps                                                                       |
 | 課金           | react-native-purchases (RevenueCat)                                                     |
 | エラー追跡     | @sentry/react-native                                                                    |
 | GPX解析        | fast-xml-parser                                                                         |
-| テスト         | jest + jest-expo + @testing-library/react-native + expo-router/testing-library          |
+| テスト         | jest 30 + jest-expo + @testing-library/react-native 14 + expo-router/testing-library    |
 
 ## エントリポイント
 
@@ -86,6 +86,7 @@ SQLite (src/db/database.ts)
 | `src/theme/theme.ts`                | `AppTheme`(ライト/ダーク)・カラープリセット適用                                                                                                                                                                                                                                                                                                                 |
 | `src/config/`                       | Sentry設定・開発フラグ(`developmentFlags.ts`)・法的リンク                                                                                                                                                                                                                                                                                                       |
 | `src/types/gps.ts`                  | GPS関連の型定義                                                                                                                                                                                                                                                                                                                                                 |
+| `plugins/`                          | ローカルconfig plugin(CommonJS)。prebuildで生成される `ios/`・`android/` への変更はここで行う(`ios/` は git 管理外)。`withPodDeploymentTargetFloor.js` は Xcode 27 向けに全Podターゲットのデプロイメントターゲット下限を揃える。詳細は `docs/architecture.md` §14                                                                                               |
 | `src/utils/`                        | 日付・距離のユーティリティ                                                                                                                                                                                                                                                                                                                                      |
 
 ## ナビゲーション構成

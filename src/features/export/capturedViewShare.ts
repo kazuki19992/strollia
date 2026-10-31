@@ -1,6 +1,7 @@
 import { Alert } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
+import type { ComponentRef, RefObject } from 'react';
 import type { View } from 'react-native';
 import type { CaptureOptions } from 'react-native-view-shot';
 
@@ -51,7 +52,10 @@ export type ShareCapturedViewOptions = {
  * @param viewRef キャプチャ対象の View への ref。
  * @param options 共有動作を制御するオプション。
  */
-export async function shareViewAsPng(viewRef: React.RefObject<View | null>, options: ShareCapturedViewOptions): Promise<void> {
+export async function shareViewAsPng(
+  viewRef: RefObject<ComponentRef<typeof View> | null>,
+  options: ShareCapturedViewOptions,
+): Promise<void> {
   const { dialogTitle, errorFallbackMessage, captureOptions, onBeforeCapture, shouldAbort, onFinally } = options;
 
   try {

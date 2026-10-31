@@ -48,7 +48,7 @@ describe('無料/有料パックが混在するときのuseLandmarkPackState', (
   });
 
   it('Plus無効なら無料パックは施錠されず、有料パックは施錠される', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(false));
+    const { result } = await renderHook(() => useLandmarkPackState(false));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems.length).toBe(2);
@@ -62,7 +62,7 @@ describe('無料/有料パックが混在するときのuseLandmarkPackState', (
   });
 
   it('Plus有効ならどちらも施錠されない', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems.length).toBe(2);

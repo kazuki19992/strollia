@@ -23,9 +23,9 @@ function flattenStyle(style: unknown): Record<string, unknown> {
 }
 
 describe('画面共通コンポーネント', () => {
-  test('選択中タイルはプライマリー枠と10%塗りで表示する', () => {
+  test('選択中タイルはプライマリー枠と10%塗りで表示する', async () => {
     const styles = createStyles(lightTheme);
-    render(<SelectionTile isSelected label={'スマホの設定に\n合わせる'} styles={styles} />);
+    await render(<SelectionTile isSelected label={'スマホの設定に\n合わせる'} styles={styles} />);
 
     const tile = screen.getByLabelText('スマホの設定に 合わせる');
     const text = screen.getByText('スマホの設定に\n合わせる');
@@ -39,9 +39,9 @@ describe('画面共通コンポーネント', () => {
     expect(text.props.children).toBe('スマホの設定に\n合わせる');
   });
 
-  test('未選択タイルはダークモードでも塗りではなくアウトライン表示にする', () => {
+  test('未選択タイルはダークモードでも塗りではなくアウトライン表示にする', async () => {
     const styles = createStyles(darkTheme);
-    render(<SelectionTile label="いつもダーク" styles={styles} />);
+    await render(<SelectionTile label="いつもダーク" styles={styles} />);
 
     const tile = screen.getByLabelText('いつもダーク');
     const tileStyle = flattenStyle(tile.props.style);
@@ -52,15 +52,15 @@ describe('画面共通コンポーネント', () => {
     expect(tileStyle.borderWidth).toBe(1);
   });
 
-  test('通常アクションはアウトラインピルとして表示し、アイコンとラベルを左寄せできる', () => {
+  test('通常アクションはアウトラインピルとして表示し、アイコンとラベルを左寄せできる', async () => {
     const styles = createStyles(lightTheme);
-    render(<ActionPill alignLeft label="オープンソースライセンス" styles={styles} onPress={jest.fn()} />);
+    await render(<ActionPill alignLeft label="オープンソースライセンス" styles={styles} onPress={jest.fn()} />);
 
     const pill = screen.getByRole('button');
-    // width='100%' の View コンテナを UNSAFE_getAllByProps で探す
-    // justifyContent という非セマンティックな props を確認するため UNSAFE を使う
-    const content = screen
-      .UNSAFE_getAllByProps({})
+    // width='100%' の View コンテナを container から探す
+    // justifyContent という非セマンティックな props を確認するため、ホスト要素を style で絞り込む
+    const content = screen.container
+      .queryAll(() => true)
       .find((node) => flattenStyle(node.props.style).width === '100%' && flattenStyle(node.props.style).justifyContent !== undefined);
     const pillStyle = flattenStyle(pill.props.style);
     const contentStyle = content ? flattenStyle(content.props.style) : {};
@@ -71,9 +71,9 @@ describe('画面共通コンポーネント', () => {
     expect(contentStyle.justifyContent).toBe('flex-start');
   });
 
-  test('危険操作ピルは赤のアウトラインと薄い赤塗りで表示する', () => {
+  test('危険操作ピルは赤のアウトラインと薄い赤塗りで表示する', async () => {
     const styles = createStyles(lightTheme);
-    render(<ActionPill danger label="すべてのデータの削除" styles={styles} onPress={jest.fn()} />);
+    await render(<ActionPill danger label="すべてのデータの削除" styles={styles} onPress={jest.fn()} />);
 
     const pill = screen.getByRole('button');
     const text = screen.getByText('すべてのデータの削除');
@@ -85,9 +85,9 @@ describe('画面共通コンポーネント', () => {
     expect(textStyle.color).toBe('#b0002f');
   });
 
-  test('アクションピルは外部から背景色と文字色を指定できる', () => {
+  test('アクションピルは外部から背景色と文字色を指定できる', async () => {
     const styles = createStyles(lightTheme);
-    render(
+    await render(
       <ActionPill
         alignLeft
         backgroundColor="rgba(31, 122, 92, 0.08)"
@@ -109,9 +109,9 @@ describe('画面共通コンポーネント', () => {
     expect(textStyle.color).toBe(lightTheme.colors.primary);
   });
 
-  test('説明ブロックは設定項目のタイトルと説明スタイルを共通利用する', () => {
+  test('説明ブロックは設定項目のタイトルと説明スタイルを共通利用する', async () => {
     const styles = createStyles(lightTheme);
-    render(<InfoBlock description="説明文" styles={styles} title="項目名" />);
+    await render(<InfoBlock description="説明文" styles={styles} title="項目名" />);
 
     const title = screen.getByText('項目名');
     const description = screen.getByText('説明文');
@@ -120,9 +120,9 @@ describe('画面共通コンポーネント', () => {
     expect(flattenStyle(description.props.style).color).toBe('#767676');
   });
 
-  test('画面ヘッダーのタイトルは戻るボタン幅に影響されない中央配置にする', () => {
+  test('画面ヘッダーのタイトルは戻るボタン幅に影響されない中央配置にする', async () => {
     const styles = createStyles(lightTheme);
-    render(<AppScreenHeader backLabel="長い戻り先" styles={styles} theme={lightTheme} title="設定" onBack={jest.fn()} />);
+    await render(<AppScreenHeader backLabel="長い戻り先" styles={styles} theme={lightTheme} title="設定" onBack={jest.fn()} />);
 
     const title = screen.getByText('設定');
     const titleStyle = flattenStyle(title.props.style);
@@ -133,16 +133,16 @@ describe('画面共通コンポーネント', () => {
     expect(titleStyle.textAlign).toBe('center');
   });
 
-  test('戻るボタンは単体の共通コンポーネントとして使える', () => {
+  test('戻るボタンは単体の共通コンポーネントとして使える', async () => {
     const styles = createStyles(lightTheme);
     const onBack = jest.fn();
-    render(<AppBackButton label="地図" styles={styles} theme={lightTheme} onPress={onBack} />);
+    await render(<AppBackButton label="地図" styles={styles} theme={lightTheme} onPress={onBack} />);
 
     const backButton = screen.getByLabelText('地図へ戻る');
     const label = screen.getByText('地図');
 
-    act(() => {
-      fireEvent.press(backButton);
+    await act(async () => {
+      await fireEvent.press(backButton);
     });
 
     expect(flattenStyle(backButton.props.style).backgroundColor).toBe('#d9d9d9');
@@ -150,16 +150,16 @@ describe('画面共通コンポーネント', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  test('全画面共通ヘッダーは設定画面と同じ戻るリボンと中央タイトルを使える', () => {
+  test('全画面共通ヘッダーは設定画面と同じ戻るリボンと中央タイトルを使える', async () => {
     const styles = createStyles(lightTheme);
     const onBack = jest.fn();
-    render(<AppScreenHeader backLabel="地図" styles={styles} theme={lightTheme} title="実績" onBack={onBack} />);
+    await render(<AppScreenHeader backLabel="地図" styles={styles} theme={lightTheme} title="実績" onBack={onBack} />);
 
     const backButton = screen.getByLabelText('地図へ戻る');
     const title = screen.getByText('実績');
 
-    act(() => {
-      fireEvent.press(backButton);
+    await act(async () => {
+      await fireEvent.press(backButton);
     });
 
     expect(flattenStyle(backButton.props.style).backgroundColor).toBe('#d9d9d9');

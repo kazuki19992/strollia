@@ -15,8 +15,8 @@ jest.mock('react-native-svg', () => {
 });
 
 describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
-  test('固定viewBoxと縦横比を保ち、SVGの子要素と読み上げラベルを描画する', () => {
-    render(
+  test('固定viewBoxと縦横比を保ち、SVGの子要素と読み上げラベルを描画する', async () => {
+    await render(
       <ScalableSvgCanvas viewBoxWidth={329} viewBoxHeight={261} accessibilityLabel="更新通知" testID="vector-canvas">
         <Rect testID="vector-child" x={0} y={0} width={10} height={10} />
       </ScalableSvgCanvas>,
@@ -31,7 +31,7 @@ describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
     expect(screen.getByTestId('vector-child')).toBeTruthy();
   });
 
-  test('表示幅が80%になっても同じ縦横比でviewBox全体を線形縮小する', () => {
+  test('表示幅が80%になっても同じ縦横比でviewBox全体を線形縮小する', async () => {
     const renderAtWidth = (width: number) => (
       <View testID="vector-display-area" style={{ width }}>
         <ScalableSvgCanvas viewBoxWidth={329} viewBoxHeight={261} accessibilityLabel="更新通知" testID="vector-canvas">
@@ -39,14 +39,14 @@ describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
         </ScalableSvgCanvas>
       </View>
     );
-    const { rerender } = render(renderAtWidth(329));
+    const { rerender } = await render(renderAtWidth(329));
 
     const baseAspectRatio = screen.getByTestId('vector-canvas-container').props.style.aspectRatio;
     expect(screen.getByTestId('vector-display-area').props.style.width).toBe(329);
     expect(baseAspectRatio).toBe(329 / 261);
     expect(329 / baseAspectRatio).toBeCloseTo(261);
 
-    rerender(renderAtWidth(263.2));
+    await rerender(renderAtWidth(263.2));
 
     const scaledAspectRatio = screen.getByTestId('vector-canvas-container').props.style.aspectRatio;
     expect(screen.getByTestId('vector-display-area').props.style.width).toBe(263.2);
@@ -57,8 +57,8 @@ describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
     expect(screen.getByTestId('vector-canvas')).toHaveProp('height', '100%');
   });
 
-  test('最大幅と最大高の内側へobject-fit contain相当で収める', () => {
-    render(
+  test('最大幅と最大高の内側へobject-fit contain相当で収める', async () => {
+    await render(
       <ScalableSvgCanvas
         viewBoxWidth={329}
         viewBoxHeight={261}
@@ -78,8 +78,8 @@ describe('拡大縮小可能なSVGキャンバス ScalableSvgCanvas', () => {
     expect(screen.getByTestId('vector-canvas')).toHaveProp('preserveAspectRatio', 'xMidYMid meet');
   });
 
-  test('viewBoxの幅または高さが0でもNaN寸法を描画しない', () => {
-    render(
+  test('viewBoxの幅または高さが0でもNaN寸法を描画しない', async () => {
+    await render(
       <ScalableSvgCanvas
         viewBoxWidth={0}
         viewBoxHeight={0}

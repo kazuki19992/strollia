@@ -1,4 +1,4 @@
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -27,20 +27,22 @@ describe('このアプリについて画面 AboutAppScreen', () => {
     jest.restoreAllMocks();
   });
 
-  test('設定へ戻れる共通ヘッダーとアプリアイコンを表示する', () => {
+  test('設定へ戻れる共通ヘッダーとアプリアイコンを表示する', async () => {
     const styles = createStyles(lightTheme);
     const onBackToSettings = jest.fn();
 
-    render(<AboutAppScreen styles={styles} theme={lightTheme} onBackToSettings={onBackToSettings} />);
+    await render(<AboutAppScreen styles={styles} theme={lightTheme} onBackToSettings={onBackToSettings} />);
 
     // SafeAreaView のスタイル確認
-    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(SafeAreaView);
+    // RNTL v14 で UNSAFE_getByType が廃止されたため、ホスト要素の型名 'SafeAreaView' で唯一の要素を取得する
+    const safeAreaViews = screen.container.queryAll((node) => node.type === 'SafeAreaView');
+    expect(safeAreaViews).toHaveLength(1);
+    const container = safeAreaViews[0];
     const title = screen.getByText('このアプリについて');
     // Image の accessibilityLabel で確認する
     const icon = screen.getByLabelText('すとろりあのアプリアイコン');
 
-    fireEvent.press(screen.getByLabelText('設定へ戻る'));
+    await fireEvent.press(screen.getByLabelText('設定へ戻る'));
 
     expect(container.props.style).toBe(styles.appScreen);
     expect(flattenStyle(title.props.style).position).toBe('absolute');
@@ -49,10 +51,10 @@ describe('このアプリについて画面 AboutAppScreen', () => {
     expect(onBackToSettings).toHaveBeenCalledTimes(1);
   });
 
-  test('ローカルファーストとプライバシーを含む本文初稿を表示する', () => {
+  test('ローカルファーストとプライバシーを含む本文初稿を表示する', async () => {
     const styles = createStyles(lightTheme);
 
-    render(<AboutAppScreen styles={styles} theme={lightTheme} onBackToSettings={jest.fn()} />);
+    await render(<AboutAppScreen styles={styles} theme={lightTheme} onBackToSettings={jest.fn()} />);
 
     expect(screen.getByText('歩いた場所を、あなたの記録として残す')).toBeTruthy();
     expect(

@@ -20,7 +20,7 @@ describe('スポットパック状態 useLandmarkPackState', () => {
   });
 
   it('Plus有効なら到達数つきのパック一覧を返す', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
@@ -32,7 +32,7 @@ describe('スポットパック状態 useLandmarkPackState', () => {
 
   it('Plus無効でも無料パックは施錠されず進捗つきで返る', async () => {
     // 実マスタのパックは「日本三名瀑」(isFree: true)・「JRA競馬場」(isFree: false)の2件
-    const { result } = renderHook(() => useLandmarkPackState(false));
+    const { result } = await renderHook(() => useLandmarkPackState(false));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
@@ -45,7 +45,7 @@ describe('スポットパック状態 useLandmarkPackState', () => {
   });
 
   it('パック詳細に到達日を含め、未到達はnullにする', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(result.current.getLandmarkPackDetail(FALLS_PACK_ID)?.spotItems[0]?.visitedLocalDate).toBe('2026-04-12');
@@ -58,7 +58,7 @@ describe('スポットパック状態 useLandmarkPackState', () => {
   });
 
   it('未知のパックIDにはnullを返す', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(getLandmarkSpotVisits).toHaveBeenCalled();
@@ -68,7 +68,7 @@ describe('スポットパック状態 useLandmarkPackState', () => {
   });
 
   it('reloadLandmarkStateで到達記録を読み直す', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
@@ -95,7 +95,7 @@ describe('スポットパック状態 useLandmarkPackState', () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (getLandmarkSpotVisits as jest.Mock).mockRejectedValue(new Error('db error'));
 
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(console.warn).toHaveBeenCalled();

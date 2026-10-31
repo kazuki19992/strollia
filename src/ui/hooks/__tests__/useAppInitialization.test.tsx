@@ -57,6 +57,11 @@ jest.mock('@/features/location/locationPermission', () => ({
   isWhileInUseOnlyMode: jest.fn().mockReturnValue(false),
 }));
 
+// usePhotoMapCrashBreaker 経由で @sentry/react-native(ESM)を読み込まないよう、Sentry連携はスタブにする
+jest.mock('@/config/sentry', () => ({
+  reportPhotoMapDiagnostics: jest.fn(),
+}));
+
 jest.mock('@/config/developmentFlags', () => ({
   shouldResetAchievementsOnLaunch: jest.fn().mockReturnValue(false),
   hasEnabledDevelopmentFlags: jest.fn().mockReturnValue(false),
@@ -158,7 +163,7 @@ describe('起動初期化フック useAppInitialization', () => {
         }),
       });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
 
       await flushPromises();
 
@@ -191,7 +196,7 @@ describe('起動初期化フック useAppInitialization', () => {
         callOrder.push('evaluateAchievementsAndNotify');
       });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       const refreshDataIndex = callOrder.indexOf('refreshData');
@@ -211,7 +216,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsReady = jest.fn();
       const options = makeOptions({ setIsReady });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setIsReady).toHaveBeenCalledWith(true);
@@ -223,7 +228,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsReady = jest.fn();
       const options = makeOptions({ setMessage, setIsReady });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setMessage).toHaveBeenCalledWith('DB初期化失敗');
@@ -236,7 +241,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setShowStayPlacesOnMap = jest.fn();
       const options = { ...makeOptions(), setShowStayPlacesOnMap };
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(getBooleanSetting).toHaveBeenCalledWith('showStayPlacesOnMap', true);
@@ -249,7 +254,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setShowStayPlacesOnMap = jest.fn();
       const options = { ...makeOptions(), setShowStayPlacesOnMap };
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setShowStayPlacesOnMap).toHaveBeenCalledWith(false);
@@ -262,7 +267,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setKeepScreenAwake = jest.fn();
       const options = makeOptions({ setKeepScreenAwake });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setKeepScreenAwake).toHaveBeenCalledWith(true);
@@ -272,7 +277,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const initializeAchievementReviewState = jest.fn();
       const options = makeOptions({ initializeAchievementReviewState });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(initializeAchievementReviewState).toHaveBeenCalled();
@@ -285,7 +290,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsWhileInUseToastVisible = jest.fn();
       const options = makeOptions({ setIsWhileInUseToastVisible });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setIsWhileInUseToastVisible).toHaveBeenCalledWith(true);
@@ -301,7 +306,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setFirstLaunchTutorialMode = jest.fn();
       const options = makeOptions({ setIsFirstLaunchTutorialVisible, setFirstLaunchTutorialMode });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setFirstLaunchTutorialMode).toHaveBeenCalledWith('firstLaunch');
@@ -315,7 +320,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setIsFirstLaunchTutorialVisible = jest.fn();
       const options = makeOptions({ setIsFirstLaunchTutorialVisible });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setIsFirstLaunchTutorialVisible).not.toHaveBeenCalled();
@@ -328,7 +333,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const requestAchievementNotificationPermissionIfNeeded = jest.fn().mockResolvedValue(undefined);
       const options = makeOptions({ requestAchievementNotificationPermissionIfNeeded });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(requestAchievementNotificationPermissionIfNeeded).toHaveBeenCalled();
@@ -349,7 +354,7 @@ describe('起動初期化フック useAppInitialization', () => {
         callOrder.push('refreshAchievementState');
       });
 
-      renderHook(() =>
+      await renderHook(() =>
         useAppInitialization(makeOptions({ currentAppUpdateNotice: UPDATE_NOTICE, openAutomaticAppUpdateNotice, refreshAchievementState })),
       );
       await flushPromises();
@@ -371,7 +376,7 @@ describe('起動初期化フック useAppInitialization', () => {
       );
       const openAutomaticAppUpdateNotice = jest.fn();
 
-      renderHook(() => useAppInitialization(makeOptions({ currentAppUpdateNotice, openAutomaticAppUpdateNotice })));
+      await renderHook(() => useAppInitialization(makeOptions({ currentAppUpdateNotice, openAutomaticAppUpdateNotice })));
       await flushPromises();
 
       expect(openAutomaticAppUpdateNotice).not.toHaveBeenCalled();
@@ -386,7 +391,7 @@ describe('起動初期化フック useAppInitialization', () => {
       const setMessage = jest.fn();
       const options = makeOptions({ setMessage });
 
-      renderHook(() => useAppInitialization(options));
+      await renderHook(() => useAppInitialization(options));
       await flushPromises();
 
       expect(setSetting).toHaveBeenCalledWith('showPhotosOnMap', false);

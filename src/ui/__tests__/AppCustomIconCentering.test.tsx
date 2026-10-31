@@ -252,19 +252,19 @@ describe('App カスタムアイコン時の起動センタリング', () => {
   test('カスタムアイコン時は地図準備完了まで現在地センタリングを遅延し、準備完了後に現在地へ寄せる', async () => {
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     // 地図準備完了前に現在地が届いてもセンタリングしない（animateToRegionはネイティブ未準備でドロップされるため）。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('現在地更新'));
+      await fireEvent.press(screen.getByLabelText('現在地更新'));
     });
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();
 
     // 地図準備完了後に現在地へセンタリングする。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('地図準備完了'));
+      await fireEvent.press(screen.getByLabelText('地図準備完了'));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);

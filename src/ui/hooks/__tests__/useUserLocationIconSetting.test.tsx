@@ -49,36 +49,36 @@ describe('現在地アイコン・カラープリセット設定フック useUse
   });
 
   describe('初期状態', () => {
-    it('初期 selectedAppColorPresetId は matcha になる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('初期 selectedAppColorPresetId は matcha になる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       expect(result.current.selectedAppColorPresetId).toBe('matcha');
     });
 
-    it('初期 selectedUserLocationIconId は default になる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('初期 selectedUserLocationIconId は default になる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       expect(result.current.selectedUserLocationIconId).toBe('default');
     });
 
-    it('初期 customIconImageUri は null になる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('初期 customIconImageUri は null になる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       expect(result.current.customIconImageUri).toBeNull();
     });
 
-    it('初期 hasCustomIconImageLoadFailed は false になる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('初期 hasCustomIconImageLoadFailed は false になる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       expect(result.current.hasCustomIconImageLoadFailed).toBe(false);
     });
   });
 
   describe('handleCustomIconLoadError', () => {
-    it('呼び出すと hasCustomIconImageLoadFailed が true になる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('呼び出すと hasCustomIconImageLoadFailed が true になる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
-      act(() => {
+      await act(() => {
         result.current.handleCustomIconLoadError();
       });
 
@@ -87,30 +87,30 @@ describe('現在地アイコン・カラープリセット設定フック useUse
   });
 
   describe('updateAppColorPreset', () => {
-    it('プリセットIDを設定すると selectedAppColorPresetId が更新される', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('プリセットIDを設定すると selectedAppColorPresetId が更新される', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
-      act(() => {
+      await act(() => {
         result.current.updateAppColorPreset('sakura');
       });
 
       expect(result.current.selectedAppColorPresetId).toBe('sakura');
     });
 
-    it('プリセット変更時に setSetting が呼ばれる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('プリセット変更時に setSetting が呼ばれる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
-      act(() => {
+      await act(() => {
         result.current.updateAppColorPreset('umi');
       });
 
       expect(setSetting).toHaveBeenCalledWith('appColorPresetId', 'umi');
     });
 
-    it('プリセット変更時に selectionAsync haptic が呼ばれる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('プリセット変更時に selectionAsync haptic が呼ばれる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
-      act(() => {
+      await act(() => {
         result.current.updateAppColorPreset('tomato');
       });
 
@@ -119,21 +119,21 @@ describe('現在地アイコン・カラープリセット設定フック useUse
   });
 
   describe('updateUserLocationIcon', () => {
-    it('Plus 不要アイコンを選択すると selectedUserLocationIconId が更新される', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('Plus 不要アイコンを選択すると selectedUserLocationIconId が更新される', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
-      act(() => {
+      await act(() => {
         result.current.updateUserLocationIcon('default', PLUS_ACTIVE_STATE, jest.fn());
       });
 
       expect(result.current.selectedUserLocationIconId).toBe('default');
     });
 
-    it('Plus 専用アイコンを Plus 未加入で選択すると showPremiumLockedMessage が呼ばれる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('Plus 専用アイコンを Plus 未加入で選択すると showPremiumLockedMessage が呼ばれる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
       const showPremiumLockedMessage = jest.fn();
 
-      act(() => {
+      await act(() => {
         result.current.updateUserLocationIcon('walker', PLUS_INACTIVE_STATE, showPremiumLockedMessage);
       });
 
@@ -141,20 +141,20 @@ describe('現在地アイコン・カラープリセット設定フック useUse
       expect(result.current.selectedUserLocationIconId).toBe('default'); // 変わらない
     });
 
-    it('Plus 専用アイコンを Plus 加入済みで選択すると selectedUserLocationIconId が更新される', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('Plus 専用アイコンを Plus 加入済みで選択すると selectedUserLocationIconId が更新される', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
-      act(() => {
+      await act(() => {
         result.current.updateUserLocationIcon('walker', PLUS_ACTIVE_STATE, jest.fn());
       });
 
       expect(result.current.selectedUserLocationIconId).toBe('walker');
     });
 
-    it('アイコン変更時に setSetting が呼ばれる', () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+    it('アイコン変更時に setSetting が呼ばれる', async () => {
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
-      act(() => {
+      await act(() => {
         result.current.updateUserLocationIcon('compass', PLUS_ACTIVE_STATE, jest.fn());
       });
 
@@ -164,7 +164,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
 
   describe('applySavedIconSettings', () => {
     it('有効なアイコンIDを渡すと selectedUserLocationIconId が設定される', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (resolveCustomIconReference as jest.Mock).mockResolvedValue({ reference: '', uri: 'file://icon.jpg', migrated: false });
 
@@ -181,7 +181,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('有効なプリセットIDを渡すと selectedAppColorPresetId が設定される', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
 
@@ -198,7 +198,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('無効なプリセットIDを渡すと DEFAULT（matcha）へフォールバックする', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
 
@@ -215,7 +215,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('カスタムアイコン参照が解決できたとき customIconImageUri が設定される', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (resolveCustomIconReference as jest.Mock).mockResolvedValue({
         reference: 'managed:icon.jpg',
@@ -236,7 +236,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('カスタムアイコン参照が null かつアイコンが custom のとき OS標準へリセットする', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
       (isLegacyCustomIconReference as jest.Mock).mockReturnValue(false);
@@ -259,7 +259,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('旧URI形式のカスタムアイコンが消失した場合はアラートを表示する', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
       (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
@@ -279,7 +279,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('移行が必要なカスタムアイコンは新参照へ更新する', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (resolveCustomIconReference as jest.Mock).mockResolvedValue({
         reference: 'managed:migrated.jpg',
@@ -301,7 +301,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('AbortSignal が発火した場合は state 更新をスキップする', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
       const controller = new AbortController();
 
       // resolveCustomIconReference の前に signal を中断する
@@ -326,7 +326,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     it('resolve中に abort された場合、保存設定が selectedUserLocationIconId / selectedAppColorPresetId に反映されない', async () => {
       // 修正前は resolveCustomIconReference の await 前に setState を呼んでいたため、
       // abort 後も保存設定が state に残っていた。修正後は resolve 完了後にのみ setState を呼ぶ。
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
       const controller = new AbortController();
 
       // resolve を pending のまま保持し、in-flight 中に abort されたことを再現する。
@@ -360,7 +360,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
 
   describe('pickCustomIcon', () => {
     it('権限が拒否された場合はアラートを表示する', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
       const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
       (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ granted: false });
@@ -374,7 +374,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('画像選択がキャンセルされた場合は state が変わらない', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
       (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: true, assets: [] });
@@ -388,7 +388,7 @@ describe('現在地アイコン・カラープリセット設定フック useUse
     });
 
     it('画像選択が成功すると custom アイコンが設定される', async () => {
-      const { result } = renderHook(() => useUserLocationIconSetting());
+      const { result } = await renderHook(() => useUserLocationIconSetting());
 
       (ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
       (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({

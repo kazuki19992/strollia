@@ -137,20 +137,20 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     mockLatestUpdateNoticeDialogProps = null;
   });
 
-  test('default export が存在しレンダリングできること', () => {
-    render(<RootLayout />);
+  test('default export が存在しレンダリングできること', async () => {
+    await render(<RootLayout />);
 
     expect(screen.toJSON()).not.toBeNull();
   });
 
-  test('全画面がセーフエリア情報を参照できるようSafeAreaProviderで包む', () => {
-    render(<RootLayout />);
+  test('全画面がセーフエリア情報を参照できるようSafeAreaProviderで包む', async () => {
+    await render(<RootLayout />);
 
     expect(screen.getByTestId('root-safe-area-provider')).toBeTruthy();
   });
 
-  test('グローバル更新通知ダイアログへContextの表示状態と操作を渡す', () => {
-    render(<RootLayout />);
+  test('グローバル更新通知ダイアログへContextの表示状態と操作を渡す', async () => {
+    await render(<RootLayout />);
 
     expect(mockLatestUpdateNoticeDialogProps).toEqual(
       expect.objectContaining({
@@ -164,45 +164,45 @@ describe('expo-router ルートレイアウト (_layout)', () => {
     );
   });
 
-  test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', () => {
+  test('現在パスから導出した currentScreenMode を AppStateProvider へ渡す(設定画面)', async () => {
     mockPathname = '/settings/about';
 
-    render(<RootLayout />);
+    await render(<RootLayout />);
 
     // navigator 経由の遷移では内部 state が更新されないため、
     // パス由来の ScreenMode が単一ソースとして Provider へ渡ることを固定する
     expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('settings');
   });
 
-  test('地図(/)では currentScreenMode が map になる', () => {
+  test('地図(/)では currentScreenMode が map になる', async () => {
     mockPathname = '/';
 
-    render(<RootLayout />);
+    await render(<RootLayout />);
 
     expect(mockProviderProps.at(-1)?.currentScreenMode).toBe('map');
   });
 
-  test('削除済みと判定した写真ではモーダルで案内する', () => {
+  test('削除済みと判定した写真ではモーダルで案内する', async () => {
     mockAppStateOverrides = { photoUnavailableReason: 'deleted' };
 
-    render(<RootLayout />);
+    await render(<RootLayout />);
 
     expect(mockPhotoDeletedDialogProps.at(-1)?.visible).toBe(true);
     expect(mockPhotoPreviewModalsProps.at(-1)?.isSelectedPhotoUnavailable).toBe(false);
   });
 
-  test('端末に本体が無い写真ではモーダルを出さず拡大表示の中で案内する', () => {
+  test('端末に本体が無い写真ではモーダルを出さず拡大表示の中で案内する', async () => {
     mockAppStateOverrides = { photoUnavailableReason: 'unavailable' };
 
-    render(<RootLayout />);
+    await render(<RootLayout />);
 
     // 未ダウンロードの写真を開くたびにモーダルが出ると操作の邪魔になる
     expect(mockPhotoDeletedDialogProps.at(-1)?.visible).toBe(false);
     expect(mockPhotoPreviewModalsProps.at(-1)?.isSelectedPhotoUnavailable).toBe(true);
   });
 
-  test('滞在場所設定へのナビゲーターをAppStateProviderへ渡す', () => {
-    render(<RootLayout />);
+  test('滞在場所設定へのナビゲーターをAppStateProviderへ渡す', async () => {
+    await render(<RootLayout />);
 
     const navigator = mockProviderProps.at(-1)?.navigator as { openStayPlaces: () => void };
     navigator.openStayPlaces();

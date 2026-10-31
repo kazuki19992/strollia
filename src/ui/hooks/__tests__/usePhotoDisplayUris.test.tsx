@@ -35,7 +35,7 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
   });
 
   it('要求された写真の表示用URIを解決して公開する', async () => {
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
     await act(async () => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
@@ -46,7 +46,7 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
   });
 
   it('解決済みの写真は問い合わせ直さない', async () => {
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
     await act(async () => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
@@ -62,7 +62,7 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
   });
 
   it('未解決の写真だけを問い合わせる', async () => {
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
     await act(async () => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
@@ -80,7 +80,7 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
 
   it('解決できなかった写真は次の機会に再試行する', async () => {
     (resolvePhotoDisplayUriMap as jest.Mock).mockResolvedValue(new Map([['photo-1', null]]));
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
     await act(async () => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
@@ -99,7 +99,7 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
   it('解決に失敗しても例外を投げず、次の要求で再試行できる', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (resolvePhotoDisplayUriMap as jest.Mock).mockRejectedValueOnce(new Error('native module unavailable'));
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
     await act(async () => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
@@ -116,7 +116,7 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
   });
 
   it('リセットすると解決結果とサムネイルのメモリキャッシュを捨てる', async () => {
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
     await act(async () => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
@@ -147,14 +147,14 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
       }),
     );
 
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
-    act(() => {
+    await act(() => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
     });
 
     // 解決の途中で「ライブラリを再読み込み」が完了し、全件を捨てる
-    act(() => {
+    await act(() => {
       result.current.resetPhotoDisplayUris();
     });
 
@@ -176,12 +176,12 @@ describe('写真の表示用URI解決hook usePhotoDisplayUris', () => {
       }),
     );
 
-    const { result } = renderHook(() => usePhotoDisplayUris());
+    const { result } = await renderHook(() => usePhotoDisplayUris());
 
-    act(() => {
+    await act(() => {
       result.current.requestPhotoDisplayUris([createPhoto('photo-1')]);
     });
-    act(() => {
+    await act(() => {
       result.current.resetPhotoDisplayUris();
     });
 

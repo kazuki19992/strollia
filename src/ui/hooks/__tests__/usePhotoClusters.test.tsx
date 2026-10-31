@@ -42,73 +42,73 @@ describe('写真クラスタhook usePhotoClusters', () => {
     jest.clearAllMocks();
   });
 
-  it('パン(中心移動のみ)ではクラスタを再計算しない', () => {
+  it('パン(中心移動のみ)ではクラスタを再計算しない', async () => {
     const photos = [createPhoto('a')];
-    const { rerender } = renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
+    const { rerender } = await renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
       initialProps: { region: baseRegion },
     });
 
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
 
     // latitudeDelta は据え置き、中心だけを大きく動かす。
-    rerender({ region: { ...baseRegion, latitude: 40, longitude: -73 } });
+    await rerender({ region: { ...baseRegion, latitude: 40, longitude: -73 } });
 
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
   });
 
-  it('ズーム(latitudeDelta変化)ではクラスタを再計算する', () => {
+  it('ズーム(latitudeDelta変化)ではクラスタを再計算する', async () => {
     const photos = [createPhoto('a')];
-    const { rerender } = renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
+    const { rerender } = await renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
       initialProps: { region: baseRegion },
     });
 
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
 
-    rerender({ region: { ...baseRegion, latitudeDelta: 0.08 } });
+    await rerender({ region: { ...baseRegion, latitudeDelta: 0.08 } });
 
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(2);
   });
 
-  it('写真一覧が変わればクラスタを再計算する', () => {
-    const { rerender } = renderHook(({ photos }: { photos: MapPhoto[] }) => usePhotoClusters(photos, baseRegion), {
+  it('写真一覧が変わればクラスタを再計算する', async () => {
+    const { rerender } = await renderHook(({ photos }: { photos: MapPhoto[] }) => usePhotoClusters(photos, baseRegion), {
       initialProps: { photos: [createPhoto('a')] },
     });
 
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
 
-    rerender({ photos: [createPhoto('a'), createPhoto('b')] });
+    await rerender({ photos: [createPhoto('a'), createPhoto('b')] });
 
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(2);
   });
 
-  it('パンを繰り返しても初回の計算結果を返し続ける', () => {
+  it('パンを繰り返しても初回の計算結果を返し続ける', async () => {
     const photos = [createPhoto('a'), createPhoto('b')];
-    const { result, rerender } = renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
+    const { result, rerender } = await renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
       initialProps: { region: baseRegion },
     });
     const firstResult = result.current;
 
-    rerender({ region: { ...baseRegion, latitude: 36 } });
-    rerender({ region: { ...baseRegion, latitude: 37 } });
+    await rerender({ region: { ...baseRegion, latitude: 36 } });
+    await rerender({ region: { ...baseRegion, latitude: 37 } });
 
     // 参照ごと同一であることまで確認する(再計算していれば新しい配列になる)。
     expect(result.current).toBe(firstResult);
   });
 
-  it('ヒステリシス境界をわずかに超えるだけでは再計算せず、大きく超えると再計算する', () => {
+  it('ヒステリシス境界をわずかに超えるだけでは再計算せず、大きく超えると再計算する', async () => {
     const photos = [createPhoto('a')];
-    const { rerender } = renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
+    const { rerender } = await renderHook(({ region }: { region: Region }) => usePhotoClusters(photos, region), {
       initialProps: { region: { ...baseRegion, latitudeDelta: 0.04 } }, // 段階3(150m)の範囲内
     });
 
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
 
     // 段階境界(0.045)をわずかに超えるが、ヒステリシス帯(0.045 * 1.2 = 0.054)には収まる。
-    rerender({ region: { ...baseRegion, latitudeDelta: 0.05 } });
+    await rerender({ region: { ...baseRegion, latitudeDelta: 0.05 } });
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(1);
 
     // ヒステリシス帯を明確に超える。
-    rerender({ region: { ...baseRegion, latitudeDelta: 0.06 } });
+    await rerender({ region: { ...baseRegion, latitudeDelta: 0.06 } });
     expect(clusterMapPhotosByRadius).toHaveBeenCalledTimes(2);
   });
 });

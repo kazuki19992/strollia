@@ -16,12 +16,12 @@ describe('月次レポートスクロール誘導 MonthlyReportScrollIndicator',
     jest.restoreAllMocks();
   });
 
-  it('マウント時にループアニメーションを開始し、アンマウント時に停止する', () => {
-    const { unmount } = render(<MonthlyReportScrollIndicator color="#ffffff" />);
+  it('マウント時にループアニメーションを開始し、アンマウント時に停止する', async () => {
+    const { unmount } = await render(<MonthlyReportScrollIndicator color="#ffffff" />);
 
     expect(loopAnimation.start).toHaveBeenCalledTimes(1);
 
-    act(() => unmount());
+    await act(() => unmount());
 
     expect(loopAnimation.stop).toHaveBeenCalledTimes(1);
   });

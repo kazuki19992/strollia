@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { type ComponentRef, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { Image, Pressable, Text, View } from 'react-native';
 
@@ -22,7 +22,7 @@ export type AchievementDialogProps = {
 
 /** 解除済み実績をタップしたときに開く詳細ダイアログ。 */
 export function AchievementDialog({ item, styles, theme, onClose }: AchievementDialogProps) {
-  const captureViewRef = useRef<View>(null);
+  const captureViewRef = useRef<ComponentRef<typeof View>>(null);
   const [isSharing, setIsSharing] = useState(false);
 
   /**

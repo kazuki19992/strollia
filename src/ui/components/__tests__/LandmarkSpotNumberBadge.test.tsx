@@ -8,14 +8,14 @@ import { LandmarkSpotNumberBadge } from '@/ui/components/LandmarkSpotNumberBadge
 const styles = createStyles(lightTheme);
 
 describe('スポット番号バッジ LandmarkSpotNumberBadge', () => {
-  it('指定した番号をそのまま表示する', () => {
-    render(<LandmarkSpotNumberBadge number={3} isVisited={false} styles={styles} theme={lightTheme} />);
+  it('指定した番号をそのまま表示する', async () => {
+    await render(<LandmarkSpotNumberBadge number={3} isVisited={false} styles={styles} theme={lightTheme} />);
 
     expect(screen.getByText('3')).toBeTruthy();
   });
 
-  it('到達済みの場合は塗りつぶし円+primaryText色の文字にする', () => {
-    render(<LandmarkSpotNumberBadge number={1} isVisited styles={styles} theme={lightTheme} />);
+  it('到達済みの場合は塗りつぶし円+primaryText色の文字にする', async () => {
+    await render(<LandmarkSpotNumberBadge number={1} isVisited styles={styles} theme={lightTheme} />);
 
     const badgeText = screen.getByText('1');
     expect(StyleSheet.flatten(badgeText.props.style)).toMatchObject({
@@ -23,8 +23,8 @@ describe('スポット番号バッジ LandmarkSpotNumberBadge', () => {
     });
   });
 
-  it('未到達の場合は線囲み円+mutedText色の文字にする', () => {
-    render(<LandmarkSpotNumberBadge number={2} isVisited={false} styles={styles} theme={lightTheme} />);
+  it('未到達の場合は線囲み円+mutedText色の文字にする', async () => {
+    await render(<LandmarkSpotNumberBadge number={2} isVisited={false} styles={styles} theme={lightTheme} />);
 
     const badgeText = screen.getByText('2');
     expect(StyleSheet.flatten(badgeText.props.style)).toMatchObject({
@@ -33,28 +33,28 @@ describe('スポット番号バッジ LandmarkSpotNumberBadge', () => {
   });
 
   describe('variant="map"(埋め込み地図のマーカー向け)', () => {
-    it('到達済みでもprimary色で塗りつぶし、白文字にする(地図タイル色に左右されないコントラスト確保)', () => {
-      render(<LandmarkSpotNumberBadge number={1} isVisited styles={styles} theme={lightTheme} variant="map" />);
+    it('到達済みでもprimary色で塗りつぶし、白文字にする(地図タイル色に左右されないコントラスト確保)', async () => {
+      await render(<LandmarkSpotNumberBadge number={1} isVisited styles={styles} theme={lightTheme} variant="map" />);
 
       const badgeText = screen.getByText('1');
       expect(StyleSheet.flatten(badgeText.props.style)).toMatchObject({ color: '#ffffff' });
 
-      // Text host要素の親は同じ内容のText合成要素を挟むため、Viewコンテナはさらに1段上
-      const container = badgeText.parent?.parent;
+      // v14 では host 要素のみのツリーになったため、Text host要素の親がそのままViewコンテナになる
+      const container = badgeText.parent;
       expect(StyleSheet.flatten(container?.props.style)).toMatchObject({
         backgroundColor: lightTheme.colors.primary,
         borderColor: '#ffffff',
       });
     });
 
-    it('未到達でも線囲みではなくmutedText色で塗りつぶす(list variantと異なり必ず塗りつぶす)', () => {
-      render(<LandmarkSpotNumberBadge number={2} isVisited={false} styles={styles} theme={lightTheme} variant="map" />);
+    it('未到達でも線囲みではなくmutedText色で塗りつぶす(list variantと異なり必ず塗りつぶす)', async () => {
+      await render(<LandmarkSpotNumberBadge number={2} isVisited={false} styles={styles} theme={lightTheme} variant="map" />);
 
       const badgeText = screen.getByText('2');
       expect(StyleSheet.flatten(badgeText.props.style)).toMatchObject({ color: '#ffffff' });
 
-      // Text host要素の親は同じ内容のText合成要素を挟むため、Viewコンテナはさらに1段上
-      const container = badgeText.parent?.parent;
+      // v14 では host 要素のみのツリーになったため、Text host要素の親がそのままViewコンテナになる
+      const container = badgeText.parent;
       expect(StyleSheet.flatten(container?.props.style)).toMatchObject({
         backgroundColor: lightTheme.colors.mutedText,
         borderColor: '#ffffff',

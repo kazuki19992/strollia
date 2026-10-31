@@ -1,3 +1,4 @@
+import type React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { getLocationPointAdminAreaName } from '@/features/achievements/adminAreaRepository';
@@ -7,7 +8,69 @@ import { getLocationPointsByDate } from '@/features/logs/logRepository';
 import { lightTheme } from '@/theme/theme';
 import { DailyLogDetailScreen } from '@/ui/components/DailyLogDetailScreen';
 import { DailyLogShareCard } from '@/ui/components/DailyLogShareCard';
-import { StepSlider } from '@/ui/components/StepSlider';
+
+/**
+ * 合成コンポーネント名ごとに、マウント中のインスタンスが受け取った最新propsを保持する。
+ * RNTL v14 はホスト要素しか検索できないため、画面外の共有カードやスライダーへ渡したpropsの検証に使う。
+ */
+const mockMountedProps: Record<string, Map<object, Record<string, any>>> = {};
+
+/**
+ * 実コンポーネントをそのまま描画しつつ、受け取ったpropsを mockMountedProps へ記録するラッパーを作る。
+ * jest.mock のファクトリから呼ぶため、巻き上げられる関数宣言にしている。
+ */
+function mockTrackProps<P extends object>(name: string, Actual: React.ComponentType<P>): React.ComponentType<P> {
+  return function TrackedComponent(props: P) {
+    const ReactActual = jest.requireActual<typeof React>('react');
+    const key = ReactActual.useRef({}).current;
+    (mockMountedProps[name] ??= new Map()).set(key, props as Record<string, any>);
+    ReactActual.useEffect(
+      () => () => {
+        mockMountedProps[name]?.delete(key);
+      },
+      [key],
+    );
+    return ReactActual.createElement(Actual, props);
+  };
+}
+
+/** マウント中の指定コンポーネントのprops一覧を返す。 */
+function getAllMountedProps(name: string): Record<string, any>[] {
+  return [...(mockMountedProps[name]?.values() ?? [])];
+}
+
+/** マウント中の指定コンポーネントがちょうど1つであることを確認し、そのpropsを返す。 */
+function getMountedProps(name: string): Record<string, any> {
+  const all = getAllMountedProps(name);
+  if (all.length !== 1) {
+    throw new Error(`${name} のマウント数が1ではありません: ${all.length}`);
+  }
+  return all[0];
+}
+
+/** 画面本体の縦スクロール ScrollView(横スクロールの実績一覧を除く)のホスト要素がちょうど1つであることを確認し、返す。 */
+function getVerticalScrollView() {
+  const nodes = screen.container.queryAll((node) => node.type === 'RCTScrollView' && node.props.horizontal !== true);
+  if (nodes.length !== 1) {
+    throw new Error(`縦スクロールの ScrollView のホスト要素数が1ではありません: ${nodes.length}`);
+  }
+  return nodes[0];
+}
+
+/** 経路 Polyline(strokeWidth=5 かつ2点)のホスト要素を返す。 */
+function queryRoutePolylines() {
+  return screen.container.queryAll((node) => node.props.strokeWidth === 5 && node.props.coordinates?.length === 2);
+}
+
+jest.mock('@/ui/components/StepSlider', () => {
+  const actual = jest.requireActual('@/ui/components/StepSlider');
+  return { ...actual, StepSlider: mockTrackProps('StepSlider', actual.StepSlider) };
+});
+
+jest.mock('@/ui/components/DailyLogShareCard', () => {
+  const actual = jest.requireActual('@/ui/components/DailyLogShareCard');
+  return { ...actual, DailyLogShareCard: mockTrackProps('DailyLogShareCard', actual.DailyLogShareCard) };
+});
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -213,7 +276,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   });
 
   test('共通ヘッダーと移動データ、獲得実績を表示する', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -252,7 +315,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   });
 
   test('詳細画面の地図はスクロール可能なMapViewとして表示する', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -266,13 +329,13 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    // UNSAFE_getAllByProps を使うのは scrollEnabled と zoomEnabled という非セマンティックな props で MapView を検索するため
-    const routeMap = screen.UNSAFE_getAllByProps({ scrollEnabled: true, zoomEnabled: true })[0];
+    // scrollEnabled と zoomEnabled という非セマンティックな props で MapView(View としてモック)のホスト要素を検索する
+    const routeMap = screen.container.queryAll((node) => node.props.scrollEnabled === true && node.props.zoomEnabled === true)[0];
     expect(routeMap).toBeTruthy();
   });
 
   test('スライダーを動かすと選択時刻までの移動記録だけを地図へ渡す', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -285,25 +348,21 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    // UNSAFE_getAllByProps を使うのは strokeWidth と coordinates という非セマンティックな props で Polyline を検索するため
-    expect(
-      screen.UNSAFE_getAllByProps({}).filter((node) => node.props.strokeWidth === 5 && node.props.coordinates?.length === 2).length,
-    ).toBeGreaterThan(0);
+    // strokeWidth と coordinates という非セマンティックな props で Polyline のホスト要素を検索する
+    expect(queryRoutePolylines().length).toBeGreaterThan(0);
 
     await act(async () => {
-      screen.UNSAFE_getByType(StepSlider).props.onValueChange(0);
+      getMountedProps('StepSlider').onValueChange(0);
     });
 
-    expect(
-      screen.UNSAFE_getAllByProps({}).filter((node) => node.props.strokeWidth === 5 && node.props.coordinates?.length === 2),
-    ).toHaveLength(0);
+    expect(queryRoutePolylines()).toHaveLength(0);
     expect(screen.getAllByText('0:00').length).toBeGreaterThan(0);
     expect(screen.getByText('24:00')).toBeTruthy();
     expect(screen.queryByText('移動地図を表示できません')).toBeNull();
   });
 
   test('同じ日付でlogオブジェクトが変わった場合も詳細データを再読み込みする', async () => {
-    const { rerender } = render(
+    const { rerender } = await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -318,7 +377,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(getLocationPointsByDate).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      rerender(
+      await rerender(
         <DailyLogDetailScreen
           log={{ ...log, distanceMeters: 147000, endLocationPointId: 3 }}
           styles={styles as never}
@@ -335,9 +394,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   });
 
   test('スライダーのドラッグ中は ScrollView のスクロールを無効化する', async () => {
-    const { ScrollView } = require('react-native');
-
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -350,28 +407,28 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    // UNSAFE_getByType を使うのは ScrollView という型で要素を取得するため
-    const scrollView = screen.UNSAFE_getByType(ScrollView);
+    // scrollEnabled という非セマンティックな props を検証するため ScrollView のホスト要素を取得する
+    const scrollView = getVerticalScrollView();
     expect(scrollView.props.scrollEnabled).not.toBe(false);
 
     await act(async () => {
-      screen.UNSAFE_getByType(StepSlider).props.onDragStart?.();
+      getMountedProps('StepSlider').onDragStart?.();
     });
 
-    expect(screen.UNSAFE_getByType(ScrollView).props.scrollEnabled).toBe(false);
+    expect(getVerticalScrollView().props.scrollEnabled).toBe(false);
 
     await act(async () => {
-      screen.UNSAFE_getByType(StepSlider).props.onDragEnd?.();
+      getMountedProps('StepSlider').onDragEnd?.();
     });
 
-    expect(screen.UNSAFE_getByType(ScrollView).props.scrollEnabled).not.toBe(false);
+    expect(getVerticalScrollView().props.scrollEnabled).not.toBe(false);
   });
 
   test('共有の画像生成中に画面を離れると、別画面をキャプチャせず中断する', async () => {
     const { captureRef } = require('react-native-view-shot');
     const Sharing = require('expo-sharing');
 
-    const { unmount } = render(
+    const { unmount } = await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -387,12 +444,12 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     // 共有開始（地図ロード完了 onMapLoaded はまだ発火させない＝キャプチャ前で待機中）。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+      await fireEvent.press(screen.getByLabelText('この日の記録を共有'));
     });
 
     // 画面を離れる（アンマウント）。
     await act(async () => {
-      unmount();
+      await unmount();
     });
 
     // 別画面をキャプチャせず、共有もしない。
@@ -404,7 +461,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     const { captureRef } = require('react-native-view-shot');
     const Sharing = require('expo-sharing');
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -419,14 +476,14 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     await act(async () => {});
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+      await fireEvent.press(screen.getByLabelText('この日の記録を共有'));
     });
 
-    expect(screen.UNSAFE_getByType(DailyLogShareCard).props.altitudePoints).toHaveLength(2);
+    expect(getMountedProps('DailyLogShareCard').altitudePoints).toHaveLength(2);
 
     // 画面外の共有カードがマウントされ、地図のタイル描画完了を発火させるとキャプチャが走る。
     await act(async () => {
-      screen.UNSAFE_getByType(DailyLogShareCard).props.onMapLoaded();
+      getMountedProps('DailyLogShareCard').onMapLoaded();
       await flushAnimationFrames();
     });
 
@@ -444,7 +501,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
         }),
     );
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -456,18 +513,17 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       />,
     );
 
-    const shareButton = screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0];
-    expect(shareButton.props.disabled).toBe(true);
-    fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+    expect(screen.getByLabelText('この日の記録を共有')).toBeDisabled();
+    await fireEvent.press(screen.getByLabelText('この日の記録を共有'));
     expect(captureRef).not.toHaveBeenCalled();
-    expect(screen.UNSAFE_queryAllByType(DailyLogShareCard)).toHaveLength(0);
+    expect(getAllMountedProps('DailyLogShareCard')).toHaveLength(0);
 
     await act(async () => {
       resolvePoints?.([]);
     });
   });
 
-  test('PNG共有カードはPlusの有効高度だけを表示する', () => {
+  test('PNG共有カードはPlusの有効高度だけを表示する', async () => {
     const baseProps = {
       width: 390,
       points: shareAltitudePoints,
@@ -483,16 +539,16 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       theme: lightTheme,
       onMapLoaded: jest.fn(),
     };
-    const { rerender } = render(<DailyLogShareCard {...baseProps} isPlusActive />);
+    const { rerender } = await render(<DailyLogShareCard {...baseProps} isPlusActive />);
 
     expect(screen.getByText('高度')).toBeTruthy();
     expect(screen.getByText('10m')).toBeTruthy();
     expect(screen.getByText('30m')).toBeTruthy();
 
-    rerender(<DailyLogShareCard {...baseProps} isPlusActive={false} />);
+    await rerender(<DailyLogShareCard {...baseProps} isPlusActive={false} />);
     expect(screen.queryByText('高度')).toBeNull();
 
-    rerender(
+    await rerender(
       <DailyLogShareCard {...baseProps} altitudePoints={shareAltitudePoints.map((point) => ({ ...point, altitude: null }))} isPlusActive />,
     );
     expect(screen.queryByText('高度')).toBeNull();
@@ -502,7 +558,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   test('Plusでも有効高度が不足する画面ではデータ不足を表示する', async () => {
     (getLocationPointsByDate as jest.Mock).mockResolvedValueOnce(shareAltitudePoints.map((point) => ({ ...point, altitude: null })));
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -522,7 +578,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   test('滞在場所の読込中は共有画像とGIFを開始せず共有用地図もマウントしない', async () => {
     const { captureRef } = require('react-native-view-shot');
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -536,17 +592,17 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
+    expect(screen.getByLabelText('この日の記録を共有')).toBeDisabled();
     expect(screen.queryByLabelText('移動記録をGIFで出力')).toBeNull();
 
-    fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+    await fireEvent.press(screen.getByLabelText('この日の記録を共有'));
 
     expect(captureRef).not.toHaveBeenCalled();
-    expect(screen.UNSAFE_queryAllByType(DailyLogShareCard)).toHaveLength(0);
+    expect(getAllMountedProps('DailyLogShareCard')).toHaveLength(0);
   });
 
   test('滞在場所の読込失敗時は共有を無効化して安全なエラー状態を表示する', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -562,11 +618,11 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     await act(async () => {});
 
     expect(screen.getByText('滞在場所を読み込めないため、共有を準備できません。')).toBeTruthy();
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
+    expect(screen.getByLabelText('この日の記録を共有')).toBeDisabled();
   });
 
   test('不正な共有時非表示半径を含む場合は日別共有をfail-closedにする', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -592,7 +648,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBe(true);
+    expect(screen.getByLabelText('この日の記録を共有')).toBeDisabled();
     expect(screen.queryByLabelText('移動記録をGIFで出力')).toBeNull();
   });
 
@@ -610,7 +666,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       },
     ];
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -624,15 +680,15 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+      await fireEvent.press(screen.getByLabelText('この日の記録を共有'));
     });
 
-    // UNSAFE_getByType は画面外の共有専用コンポーネントへ渡したpropsを確認するために使う。
-    expect(screen.UNSAFE_getByType(DailyLogShareCard).props.activeStayPlaces).toEqual(activeStayPlaces);
+    // 画面外の共有専用コンポーネントへ渡したpropsを確認する。
+    expect(getMountedProps('DailyLogShareCard').activeStayPlaces).toEqual(activeStayPlaces);
   });
 
   test('今日以外の日付はスライダーの最大値が 24:00 になる', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -646,8 +702,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    // UNSAFE_getByType を使うのは StepSlider という型で要素を取得するため
-    expect(screen.UNSAFE_getByType(StepSlider).props.maxValue).toBe(1440);
+    // StepSlider へ渡したpropsを確認する
+    expect(getMountedProps('StepSlider').maxValue).toBe(1440);
   });
 
   test('今日の日付はスライダーの最大値が現在時刻（30 分単位）までになる', async () => {
@@ -655,7 +711,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     getTodayLocalDate.mockReturnValue('2026-05-31');
     getCurrentMinutesOfDay.mockReturnValue(750);
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -668,8 +724,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    // UNSAFE_getByType を使うのは StepSlider という型で要素を取得するため
-    expect(screen.UNSAFE_getByType(StepSlider).props.maxValue).toBe(750);
+    // StepSlider へ渡したpropsを確認する
+    expect(getMountedProps('StepSlider').maxValue).toBe(750);
   });
 
   test('今日の 0:00〜0:05 の間はスライダーを非表示にする', async () => {
@@ -677,7 +733,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     getTodayLocalDate.mockReturnValue('2026-05-31');
     getCurrentMinutesOfDay.mockReturnValue(3);
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -690,8 +746,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    // UNSAFE_queryAllByType を使うのは StepSlider という型で要素が0件であることを確認するため
-    expect(screen.UNSAFE_queryAllByType(StepSlider)).toHaveLength(0);
+    // StepSlider がマウントされていないことを確認する
+    expect(getAllMountedProps('StepSlider')).toHaveLength(0);
   });
 
   test('共有処理中は共有ボタンを無効化する', async () => {
@@ -703,7 +759,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
       }),
     );
 
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -717,28 +773,26 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBeFalsy();
+    expect(screen.getByLabelText('この日の記録を共有')).not.toBeDisabled();
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('この日の記録を共有'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('この日の記録を共有'));
     });
 
     // 共有中はラベルが「画像を作っています……」に変わり、無効化される。
-    // UNSAFE_getAllByProps を使うのは accessibilityLabel と disabled を同時に検証するため
-    const sharingButton = screen.UNSAFE_getAllByProps({ accessibilityLabel: '画像を作っています……' })[0];
-    expect(sharingButton.props.disabled).toBe(true);
+    expect(screen.getByLabelText('画像を作っています……')).toBeDisabled();
 
     await act(async () => {
-      screen.UNSAFE_getByType(DailyLogShareCard).props.onMapLoaded();
+      getMountedProps('DailyLogShareCard').onMapLoaded();
       await flushAnimationFrames();
       captureResolve!();
     });
 
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この日の記録を共有' })[0].props.disabled).toBeFalsy();
+    expect(screen.getByLabelText('この日の記録を共有')).not.toBeDisabled();
   });
 
   test('Plusユーザーの場合はスライダー・訪問エリア・おもいでが表示される', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -754,13 +808,13 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     expect(screen.getByText('おもいで')).toBeTruthy();
     expect(screen.getByText('訪問したエリア数')).toBeTruthy();
     expect(screen.getByText('新しく訪問したエリア数')).toBeTruthy();
-    // UNSAFE_getAllByType を使うのは StepSlider という型で要素件数を確認するため
-    expect(screen.UNSAFE_getAllByType(StepSlider).length).toBeGreaterThan(0);
+    // StepSlider がマウントされていることを確認する
+    expect(getAllMountedProps('StepSlider').length).toBeGreaterThan(0);
     expect(screen.queryByText('Plusでもっと詳しく！')).toBeNull();
   });
 
   test('一般ユーザーの場合はスライダー・訪問エリアが非表示でおもいでがブラーされる', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -773,8 +827,8 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
     await act(async () => {});
 
-    // UNSAFE_queryAllByType を使うのは StepSlider という型で要素が0件であることを確認するため
-    expect(screen.UNSAFE_queryAllByType(StepSlider)).toHaveLength(0);
+    // StepSlider がマウントされていないことを確認する
+    expect(getAllMountedProps('StepSlider')).toHaveLength(0);
     expect(screen.queryByText('訪問したエリア数')).toBeNull();
     expect(screen.queryByText('新しく訪問したエリア数')).toBeNull();
     expect(screen.getByText('Plusでくわしく！')).toBeTruthy();
@@ -784,7 +838,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
   });
 
   test('一般ユーザーの場合「移動距離は〜」テキストが「移動のデータ」タイトル直下に表示される', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -802,7 +856,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
 
   test('一般ユーザーの場合「Plusでもっと詳しく！」ボタンを押すと onOpenPremiumPaywall が呼ばれる', async () => {
     const onOpen = jest.fn();
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -816,7 +870,7 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     await act(async () => {});
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('Plusでもっと詳しく！'));
+      await fireEvent.press(screen.getByLabelText('Plusでもっと詳しく！'));
     });
 
     expect(onOpen).toHaveBeenCalledTimes(1);

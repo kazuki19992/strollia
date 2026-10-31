@@ -1,4 +1,3 @@
-import { Text } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 import { MonthlyReport } from '@/features/reports/monthlyReport';
@@ -18,8 +17,8 @@ const report: MonthlyReport = {
 };
 
 describe('都道府県ランキングレポート PrefectureRankingReportPage', () => {
-  it('渡されたランキングデータを表示する', () => {
-    render(
+  it('渡されたランキングデータを表示する', async () => {
+    await render(
       <PrefectureRankingReportPage
         report={report}
         pageCount={4}
@@ -32,8 +31,8 @@ describe('都道府県ランキングレポート PrefectureRankingReportPage', 
       />,
     );
 
-    // UNSAFE_getAllByType を使うのはすべての Text の children を JSON化して検証するため
-    const text = JSON.stringify(screen.UNSAFE_getAllByType(Text).map((node) => node.props.children));
+    // container.queryAll を使うのはすべての Text の children を JSON化して検証するため
+    const text = JSON.stringify(screen.container.queryAll((node) => node.type === 'Text').map((node) => node.props.children));
     expect(text).toContain('東京都');
     expect(text).toContain('42');
     expect(text).toContain('pt');

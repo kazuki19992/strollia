@@ -18,47 +18,47 @@ describe('画面ON維持 useKeepScreenAwake', () => {
     jest.clearAllMocks();
   });
 
-  it('enabled=true かつ appState=active のとき activateKeepAwakeAsync を呼ぶ', () => {
-    renderHook(() => useKeepScreenAwake({ enabled: true, appState: 'active', tag: 'strollia' }));
+  it('enabled=true かつ appState=active のとき activateKeepAwakeAsync を呼ぶ', async () => {
+    await renderHook(() => useKeepScreenAwake({ enabled: true, appState: 'active', tag: 'strollia' }));
 
     expect(activateKeepAwakeAsync).toHaveBeenCalledWith('strollia');
     expect(deactivateKeepAwake).not.toHaveBeenCalled();
   });
 
-  it('enabled=false のとき deactivateKeepAwake を呼ぶ', () => {
-    renderHook(() => useKeepScreenAwake({ enabled: false, appState: 'active', tag: 'strollia' }));
+  it('enabled=false のとき deactivateKeepAwake を呼ぶ', async () => {
+    await renderHook(() => useKeepScreenAwake({ enabled: false, appState: 'active', tag: 'strollia' }));
 
     expect(deactivateKeepAwake).toHaveBeenCalledWith('strollia');
     expect(activateKeepAwakeAsync).not.toHaveBeenCalled();
   });
 
-  it('enabled=true でも appState=background のとき deactivateKeepAwake を呼ぶ', () => {
-    renderHook(() => useKeepScreenAwake({ enabled: true, appState: 'background', tag: 'strollia' }));
+  it('enabled=true でも appState=background のとき deactivateKeepAwake を呼ぶ', async () => {
+    await renderHook(() => useKeepScreenAwake({ enabled: true, appState: 'background', tag: 'strollia' }));
 
     expect(deactivateKeepAwake).toHaveBeenCalledWith('strollia');
     expect(activateKeepAwakeAsync).not.toHaveBeenCalled();
   });
 
-  it('アンマウント時に deactivateKeepAwake が呼ばれる', () => {
-    const { unmount } = renderHook(() => useKeepScreenAwake({ enabled: true, appState: 'active', tag: 'strollia' }));
+  it('アンマウント時に deactivateKeepAwake が呼ばれる', async () => {
+    const { unmount } = await renderHook(() => useKeepScreenAwake({ enabled: true, appState: 'active', tag: 'strollia' }));
 
     jest.clearAllMocks();
 
-    act(() => {
-      unmount();
+    await act(async () => {
+      await unmount();
     });
 
     expect(deactivateKeepAwake).toHaveBeenCalledWith('strollia');
   });
 
-  it('enabled=true → false に変化すると deactivateKeepAwake が呼ばれる', () => {
-    const { rerender } = renderHook(({ enabled, appState, tag }: HookProps) => useKeepScreenAwake({ enabled, appState, tag }), {
+  it('enabled=true → false に変化すると deactivateKeepAwake が呼ばれる', async () => {
+    const { rerender } = await renderHook(({ enabled, appState, tag }: HookProps) => useKeepScreenAwake({ enabled, appState, tag }), {
       initialProps: { enabled: true, appState: 'active' as const, tag: 'strollia' },
     });
 
     jest.clearAllMocks();
 
-    rerender({ enabled: false, appState: 'active', tag: 'strollia' });
+    await rerender({ enabled: false, appState: 'active', tag: 'strollia' });
 
     expect(deactivateKeepAwake).toHaveBeenCalledWith('strollia');
     expect(activateKeepAwakeAsync).not.toHaveBeenCalled();

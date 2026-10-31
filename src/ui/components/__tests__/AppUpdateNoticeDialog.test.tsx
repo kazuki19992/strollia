@@ -1,11 +1,28 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { ScrollView } from 'react-native';
 
 import type { AppUpdateNotice } from '@/features/app-update/updateNotices';
 import { AppUpdateNoticeDialog } from '@/ui/components/AppUpdateNoticeDialog';
-import { Dialog } from '@/ui/components/Dialog';
 
 const mockUseWindowDimensions = jest.fn();
+
+/** Dialog へ渡された props を記録するモック。RNTL v14 で型検索が廃止されたため、props 契約はこの記録から検証する。 */
+const mockDialogProps = jest.fn();
+
+jest.mock('@/ui/components/Dialog', () => {
+  const actual = jest.requireActual('@/ui/components/Dialog');
+  const { createElement } = jest.requireActual('react');
+  return {
+    ...actual,
+    // 実際の Dialog を描画したまま、渡された props だけを記録する
+    Dialog: (props: { visible: boolean }) => {
+      mockDialogProps(props);
+      return createElement(actual.Dialog, props);
+    },
+  };
+});
+
+/** 直近の描画で Dialog へ渡された props を返す。 */
+const getLastDialogProps = () => mockDialogProps.mock.calls[mockDialogProps.mock.calls.length - 1][0];
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -43,21 +60,21 @@ describe('AppUpdateNoticeDialog', () => {
     mockUseWindowDimensions.mockReturnValue({ width: 390, height: 800, scale: 3, fontScale: 1 });
   });
 
-  test('自動表示ではスワイプで閉じられ、ストアページ導線を表示しない', () => {
-    render(<AppUpdateNoticeDialog {...baseProps} />);
+  test('自動表示ではスワイプで閉じられ、ストアページ導線を表示しない', async () => {
+    await render(<AppUpdateNoticeDialog {...baseProps} />);
 
     // Dialog の設定値は利用者がスワイプで閉じられる契約を検証するために直接確認する。
-    const dialog = screen.UNSAFE_getByType(Dialog);
-    expect(dialog.props.visible).toBe(true);
-    expect(dialog.props.swipeToClose).toBe(true);
-    expect(dialog.props.autoClose).toBe(false);
-    expect(screen.UNSAFE_queryAllByType(ScrollView)).toHaveLength(0);
+    const dialogProps = getLastDialogProps();
+    expect(dialogProps.visible).toBe(true);
+    expect(dialogProps.swipeToClose).toBe(true);
+    expect(dialogProps.autoClose).toBe(false);
+    expect(screen.container.queryAll((node) => node.type === 'RCTScrollView')).toHaveLength(0);
     expect(screen.queryByLabelText('ストアページへ')).toBeNull();
   });
 
-  test('看板をモーダル内の利用可能な幅と高さへcontain表示する', () => {
+  test('看板をモーダル内の利用可能な幅と高さへcontain表示する', async () => {
     mockUseWindowDimensions.mockReturnValue({ width: 390, height: 320, scale: 3, fontScale: 1 });
-    render(<AppUpdateNoticeDialog {...baseProps} />);
+    await render(<AppUpdateNoticeDialog {...baseProps} />);
 
     const contentStyle = screen.getByTestId('app-update-notice-dialog-content').props.style;
     const signStyle = screen.getByTestId('app-update-notice-sign-canvas-container').props.style;
@@ -68,32 +85,32 @@ describe('AppUpdateNoticeDialog', () => {
     expect(signStyle.width).toBeCloseTo((178 * 329) / 261);
   });
 
-  test('設定起点ではストアボタンの領域を除いた高さへ看板を縮小する', () => {
+  test('設定起点ではストアボタンの領域を除いた高さへ看板を縮小する', async () => {
     mockUseWindowDimensions.mockReturnValue({ width: 390, height: 320, scale: 3, fontScale: 1 });
-    render(<AppUpdateNoticeDialog {...baseProps} source="settings" />);
+    await render(<AppUpdateNoticeDialog {...baseProps} source="settings" />);
 
     expect(screen.getByTestId('app-update-notice-sign-canvas-container').props.style.height).toBeCloseTo(126);
   });
 
-  test('設定画面から開くとストアページへのボタンを押せる', () => {
+  test('設定画面から開くとストアページへのボタンを押せる', async () => {
     const onOpenStorePage = jest.fn();
-    render(<AppUpdateNoticeDialog {...baseProps} source="settings" onOpenStorePage={onOpenStorePage} />);
+    await render(<AppUpdateNoticeDialog {...baseProps} source="settings" onOpenStorePage={onOpenStorePage} />);
 
-    fireEvent.press(screen.getByLabelText('ストアページへ'));
+    await fireEvent.press(screen.getByLabelText('ストアページへ'));
 
     expect(onOpenStorePage).toHaveBeenCalledTimes(1);
   });
 
-  test('通知定義がないときはDialogを非表示にする', () => {
-    render(<AppUpdateNoticeDialog {...baseProps} notice={null} />);
+  test('通知定義がないときはDialogを非表示にする', async () => {
+    await render(<AppUpdateNoticeDialog {...baseProps} notice={null} />);
 
     // Dialog の visible は Modal の内部アニメーションを介さずに非表示条件を検証するために確認する。
-    expect(screen.UNSAFE_getByType(Dialog).props.visible).toBe(false);
+    expect(getLastDialogProps().visible).toBe(false);
   });
 
-  test('visible=falseのときはDialogを非表示にする', () => {
-    render(<AppUpdateNoticeDialog {...baseProps} visible={false} />);
+  test('visible=falseのときはDialogを非表示にする', async () => {
+    await render(<AppUpdateNoticeDialog {...baseProps} visible={false} />);
 
-    expect(screen.UNSAFE_getByType(Dialog).props.visible).toBe(false);
+    expect(getLastDialogProps().visible).toBe(false);
   });
 });

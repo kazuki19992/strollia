@@ -65,19 +65,19 @@ describe('日別記録詳細ルートの共有プライバシー配線', () => {
     latestDailyLogDetailScreenProps = null;
   });
 
-  test('現在有効な滞在場所を日別共有画面へ渡す', () => {
-    render(<DailyLogDetailRoute />);
+  test('現在有効な滞在場所を日別共有画面へ渡す', async () => {
+    await render(<DailyLogDetailRoute />);
 
     expect(screen.getByTestId('daily-log-detail-screen')).toBeTruthy();
     expect(latestDailyLogDetailScreenProps?.activeStayPlaces).toEqual(activeStayPlaces);
     expect(latestDailyLogDetailScreenProps?.stayPlacesStatus).toBe('ready');
   });
 
-  test('滞在場所の読込失敗状態も日別共有画面へ渡す', () => {
+  test('滞在場所の読込失敗状態も日別共有画面へ渡す', async () => {
     (mockState as { activeStayPlaces: typeof activeStayPlaces | null }).activeStayPlaces = null;
     mockState.stayPlacesStatus = 'error';
 
-    render(<DailyLogDetailRoute />);
+    await render(<DailyLogDetailRoute />);
 
     expect(latestDailyLogDetailScreenProps?.activeStayPlaces).toBeNull();
     expect(latestDailyLogDetailScreenProps?.stayPlacesStatus).toBe('error');

@@ -1,4 +1,6 @@
 import * as Notifications from 'expo-notifications';
+// expo-notifications 58 のビルド形式では eslint-plugin-import が名前空間経由の enum を解決できず誤検知するため、名前付きで import する
+import { AndroidImportance } from 'expo-notifications';
 import { Platform } from 'react-native';
 
 /** Androidの通知チャンネルID。月次レポート通知はこのチャンネルを使う。 */
@@ -20,7 +22,7 @@ export async function setupMonthlyReportNotificationChannel(): Promise<void> {
 
   await Notifications.setNotificationChannelAsync(MONTHLY_REPORT_NOTIFICATION_CHANNEL_ID, {
     name: '月次レポート',
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: AndroidImportance.DEFAULT,
   });
 }
 

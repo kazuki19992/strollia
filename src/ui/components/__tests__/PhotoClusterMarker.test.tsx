@@ -1,5 +1,4 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Image } from 'react-native';
 
 import type { MapPhotoCluster } from '@/features/photos/photoClusters';
 import type { MapPhoto } from '@/features/photos/photoLibrary';
@@ -22,6 +21,9 @@ jest.mock('react-native-maps', () => {
     ),
   };
 });
+
+/** UNSAFE_getByType(Image) の代替として、描画された host Image 要素を返す。 */
+const queryHostImages = () => screen.container.queryAll((node) => node.type === 'Image');
 
 /**
  * テスト用の地図写真を作る。
@@ -47,8 +49,8 @@ function createCluster(photos: MapPhoto[]): MapPhotoCluster {
 const styles = createStyles(lightTheme);
 
 describe('写真クラスタマーカー PhotoClusterMarker', () => {
-  test('代表写真の画像がある場合はその画像を表示する', () => {
-    render(
+  test('代表写真の画像がある場合はその画像を表示する', async () => {
+    await render(
       <PhotoClusterMarker
         cluster={createCluster([createPhoto('asset-1', 'file:///tmp/asset-1.jpg')])}
         styles={styles}
@@ -56,26 +58,28 @@ describe('写真クラスタマーカー PhotoClusterMarker', () => {
       />,
     );
 
-    // Imageのsourceは利用者に見えない実装詳細のため、ここだけ型検索でURIを確認する
-    expect(screen.UNSAFE_getByType(Image).props.source).toEqual({ uri: 'file:///tmp/asset-1.jpg' });
+    // Imageのsourceは利用者に見えない実装詳細のため、ここだけ host Image 要素を container から探してURIを確認する
+    const images = queryHostImages();
+    expect(images).toHaveLength(1);
+    expect(images[0].props.source).toEqual({ uri: 'file:///tmp/asset-1.jpg' });
     expect(screen.queryByLabelText('画像を表示できない写真')).toBeNull();
   });
 
-  test('代表写真の画像が無い場合は白紙にせず、プレースホルダを表示する', () => {
-    render(<PhotoClusterMarker cluster={createCluster([createPhoto('asset-1', null)])} styles={styles} onPress={jest.fn()} />);
+  test('代表写真の画像が無い場合は白紙にせず、プレースホルダを表示する', async () => {
+    await render(<PhotoClusterMarker cluster={createCluster([createPhoto('asset-1', null)])} styles={styles} onPress={jest.fn()} />);
 
     expect(screen.getByLabelText('画像を表示できない写真')).toBeTruthy();
-    expect(screen.UNSAFE_queryByType(Image)).toBeNull();
+    expect(queryHostImages()).toHaveLength(0);
   });
 
-  test('画像の有無にかかわらず枚数バッジを表示する', () => {
+  test('画像の有無にかかわらず枚数バッジを表示する', async () => {
     const photosWithImage = [createPhoto('asset-1', 'file:///tmp/asset-1.jpg'), createPhoto('asset-2', 'file:///tmp/asset-2.jpg')];
-    const { unmount } = render(<PhotoClusterMarker cluster={createCluster(photosWithImage)} styles={styles} onPress={jest.fn()} />);
+    const { unmount } = await render(<PhotoClusterMarker cluster={createCluster(photosWithImage)} styles={styles} onPress={jest.fn()} />);
 
     expect(screen.getByText('+1')).toBeTruthy();
-    unmount();
+    await unmount();
 
-    render(
+    await render(
       <PhotoClusterMarker
         cluster={createCluster([createPhoto('asset-1', null), createPhoto('asset-2', null)])}
         styles={styles}
@@ -86,23 +90,23 @@ describe('写真クラスタマーカー PhotoClusterMarker', () => {
     expect(screen.getByText('+1')).toBeTruthy();
   });
 
-  test('画像の有無でアクセシビリティラベルが変わり、押すとクラスタを通知する', () => {
+  test('画像の有無でアクセシビリティラベルが変わり、押すとクラスタを通知する', async () => {
     const onPress = jest.fn();
     const cluster = createCluster([createPhoto('asset-1', 'file:///tmp/asset-1.jpg'), createPhoto('asset-2', null)]);
-    const { unmount } = render(<PhotoClusterMarker cluster={cluster} styles={styles} onPress={onPress} />);
+    const { unmount } = await render(<PhotoClusterMarker cluster={cluster} styles={styles} onPress={onPress} />);
 
-    fireEvent.press(screen.getByLabelText('写真2枚を開く'));
+    await fireEvent.press(screen.getByLabelText('写真2枚を開く'));
 
     expect(onPress).toHaveBeenCalledWith(cluster);
-    unmount();
+    await unmount();
 
-    render(<PhotoClusterMarker cluster={createCluster([createPhoto('asset-1', null)])} styles={styles} onPress={onPress} />);
+    await render(<PhotoClusterMarker cluster={createCluster([createPhoto('asset-1', null)])} styles={styles} onPress={onPress} />);
 
     expect(screen.getByLabelText('写真1枚を開く（画像を表示できません）')).toBeTruthy();
   });
 
-  test('写真が空のクラスタは何も描画しない', () => {
-    render(<PhotoClusterMarker cluster={createCluster([])} styles={styles} onPress={jest.fn()} />);
+  test('写真が空のクラスタは何も描画しない', async () => {
+    await render(<PhotoClusterMarker cluster={createCluster([])} styles={styles} onPress={jest.fn()} />);
 
     expect(screen.toJSON()).toBeNull();
   });

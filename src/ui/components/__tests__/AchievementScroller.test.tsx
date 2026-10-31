@@ -5,8 +5,8 @@ import { AchievementScroller } from '@/ui/components/AchievementScroller';
 const styles = new Proxy({}, { get: (_target, prop) => prop });
 
 describe('実績スクローラー AchievementScroller', () => {
-  test('実績画像を読み上げ可能な画像として表示する', () => {
-    render(
+  test('実績画像を読み上げ可能な画像として表示する', async () => {
+    await render(
       <AchievementScroller
         achievements={[
           {
@@ -25,8 +25,8 @@ describe('実績スクローラー AchievementScroller', () => {
     expect(image.props.accessibilityRole).toBe('image');
   });
 
-  test('実績がない場合は空状態を表示する', () => {
-    render(<AchievementScroller achievements={[]} styles={styles as never} />);
+  test('実績がない場合は空状態を表示する', async () => {
+    await render(<AchievementScroller achievements={[]} styles={styles as never} />);
 
     expect(screen.getByText('この日に獲得した実績はありません。')).toBeTruthy();
   });

@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { type ComponentRef, forwardRef } from 'react';
 import { Image, Text, View } from 'react-native';
 import MapView, { Polyline, Region } from 'react-native-maps';
 
@@ -28,7 +28,7 @@ export type GifFrameRendererProps = {
 };
 
 /** 画面外にマウントしてGIFの1コマをキャプチャするための地図View。 */
-export const GifFrameRenderer = forwardRef<View, GifFrameRendererProps>(function GifFrameRenderer(
+export const GifFrameRenderer = forwardRef<ComponentRef<typeof View>, GifFrameRendererProps>(function GifFrameRenderer(
   { region, points, activeStayPlaces, timeLabel, dateLabel, styles, theme, onMapLoaded },
   ref,
 ) {

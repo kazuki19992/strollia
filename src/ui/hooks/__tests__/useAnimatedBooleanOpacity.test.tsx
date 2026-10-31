@@ -31,20 +31,20 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
     jest.restoreAllMocks();
   });
 
-  it('visible=trueの場合は初期値1で開始する', () => {
-    const { result } = renderHook(() => useAnimatedBooleanOpacity(true, 500));
+  it('visible=trueの場合は初期値1で開始する', async () => {
+    const { result } = await renderHook(() => useAnimatedBooleanOpacity(true, 500));
 
     expect((result.current as InspectableAnimatedValue).__getValue()).toBe(1);
   });
 
-  it('visible=falseの場合は初期値0で開始する', () => {
-    const { result } = renderHook(() => useAnimatedBooleanOpacity(false, 500));
+  it('visible=falseの場合は初期値0で開始する', async () => {
+    const { result } = await renderHook(() => useAnimatedBooleanOpacity(false, 500));
 
     expect((result.current as InspectableAnimatedValue).__getValue()).toBe(0);
   });
 
-  it('visibleとdurationMsに応じたフェードアニメーションを開始する', () => {
-    const { rerender } = renderHook(
+  it('visibleとdurationMsに応じたフェードアニメーションを開始する', async () => {
+    const { rerender } = await renderHook(
       ({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs),
       {
         initialProps: { visible: false, durationMs: 250 },
@@ -57,7 +57,7 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
       useNativeDriver: true,
     });
 
-    rerender({ visible: true, durationMs: 600 });
+    await rerender({ visible: true, durationMs: 600 });
 
     expect(Animated.timing).toHaveBeenLastCalledWith(expect.any(Animated.Value), {
       toValue: 1,
@@ -66,8 +66,8 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
     });
   });
 
-  it('visible変更時は前回アニメーションを停止してから次のアニメーションを開始する', () => {
-    const { rerender } = renderHook(
+  it('visible変更時は前回アニメーションを停止してから次のアニメーションを開始する', async () => {
+    const { rerender } = await renderHook(
       ({ visible, durationMs }: { visible: boolean; durationMs: number }) => useAnimatedBooleanOpacity(visible, durationMs),
       {
         initialProps: { visible: false, durationMs: 250 },
@@ -76,8 +76,8 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
 
     const firstAnimation = animations[0];
 
-    act(() => {
-      rerender({ visible: true, durationMs: 250 });
+    await act(async () => {
+      await rerender({ visible: true, durationMs: 250 });
     });
 
     expect(firstAnimation.stop).toHaveBeenCalledTimes(1);

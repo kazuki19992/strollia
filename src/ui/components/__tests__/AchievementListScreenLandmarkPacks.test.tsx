@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { Image } from 'react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { View } from 'react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
@@ -14,10 +14,16 @@ jest.mock('@expo/vector-icons', () => ({
 
 const styles = createStyles(lightTheme);
 
-/** テスト用のトロフィーSVGアイコンモック。実体を描画する必要はなく、コンポーネント型として参照できれば十分。 */
+/**
+ * テスト用のトロフィーSVGアイコンモック。
+ * RNTL v14 では型検索が廃止されたため、描画されたかを testID で確認できるホスト要素を返す。
+ */
 function MockTrophyIcon() {
-  return null;
+  return <View testID="mock-trophy-icon" />;
 }
+
+/** 描画済みツリーからホストの Image 要素を全件返す。 */
+const queryAllImages = () => screen.container.queryAll((node) => node.type === 'Image');
 
 /** テスト用の日本三名瀑パック行(2/3到達)。 */
 const fallsPackItem: LandmarkPackListItem = {
@@ -37,7 +43,7 @@ const fallsPackItem: LandmarkPackListItem = {
 };
 
 /** スポットセクションのpropsを埋めて実績画面を描画する。 */
-function renderScreen(
+async function renderScreen(
   overrides: Partial<{
     landmarkPackItems: LandmarkPackListItem[];
     isPlusActive: boolean;
@@ -45,7 +51,7 @@ function renderScreen(
     onRequestPremium: () => void;
   }> = {},
 ) {
-  render(
+  await render(
     <AchievementListScreen
       items={[]}
       landmarkPackItems={overrides.landmarkPackItems ?? [fallsPackItem]}
@@ -70,59 +76,57 @@ describe('実績画面のスポットセクション', () => {
     jest.restoreAllMocks();
   });
 
-  it('セクション見出しを表示する', () => {
-    renderScreen();
+  it('セクション見出しを表示する', async () => {
+    await renderScreen();
 
     expect(screen.getByText(LANDMARK_PACK_SECTION_TITLE)).toBeTruthy();
   });
 
-  it('パック名・説明・分数の進捗を表示する', () => {
-    renderScreen();
+  it('パック名・説明・分数の進捗を表示する', async () => {
+    await renderScreen();
 
     expect(screen.getByText('日本三名瀑')).toBeTruthy();
     expect(screen.getByText('日本を代表する3つの名瀑')).toBeTruthy();
     expect(screen.getByText('2/3')).toBeTruthy();
   });
 
-  it('進捗バーへ到達率を渡す', () => {
-    renderScreen();
+  it('進捗バーへ到達率を渡す', async () => {
+    await renderScreen();
 
     expect(screen.getByLabelText('日本三名瀑の進捗').props.accessibilityValue).toEqual({ min: 0, max: 100, now: 67 });
   });
 
-  it('完走(フルカラー状態)したパック行はSVGアイコンで描画する', () => {
+  it('完走(フルカラー状態)したパック行はSVGアイコンで描画する', async () => {
     // fallsPackItemは2/3到達(grayscale状態)のため、完走(3/3・color状態)のフィクスチャで検証する
     const completedPackItem: LandmarkPackListItem = { ...fallsPackItem, visitedCount: 3 };
-    renderScreen({ landmarkPackItems: [completedPackItem] });
+    await renderScreen({ landmarkPackItems: [completedPackItem] });
 
-    // UNSAFE_: コンポーネント型検索はtesting.mdが明示的に許容する例外。
-    // トロフィーの実体はSVGで、accessibilityLabel等では「どのコンポーネントが描画されたか」を確認できない
-    expect(screen.UNSAFE_getByType(MockTrophyIcon)).toBeTruthy();
+    // トロフィーの実体はSVGで、accessibilityLabel等では「どのコンポーネントが描画されたか」を確認できないため
+    // モックが描画する testID で確認する
+    expect(screen.getByTestId('mock-trophy-icon')).toBeTruthy();
   });
 
-  it('未完走(白黒状態)のパック行はSVGアイコンではなくPNGをGrayscaleで描画する', () => {
+  it('未完走(白黒状態)のパック行はSVGアイコンではなくPNGをGrayscaleで描画する', async () => {
     // fallsPackItemは2/3到達でgrayscale状態(dimでもcolorでもない)
-    renderScreen();
+    await renderScreen();
 
     // Grayscale(react-native-color-matrix-image-filters)はreact-native-svgの
     // コンポーネントには効かないため、白黒状態もPNGのtrophyImageを描画する
-    expect(screen.UNSAFE_queryAllByType(MockTrophyIcon)).toHaveLength(0);
-    expect(screen.UNSAFE_getByType(Image)).toBeTruthy();
+    expect(screen.queryAllByTestId('mock-trophy-icon')).toHaveLength(0);
+    expect(queryAllImages()).toHaveLength(1);
   });
 
-  it('パック行を押すと詳細を開く', () => {
+  it('パック行を押すと詳細を開く', async () => {
     const onSelectLandmarkPack = jest.fn();
-    renderScreen({ onSelectLandmarkPack });
+    await renderScreen({ onSelectLandmarkPack });
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('日本三名瀑の詳細を開く'));
-    });
+    await fireEvent.press(screen.getByLabelText('日本三名瀑の詳細を開く'));
 
     expect(onSelectLandmarkPack).toHaveBeenCalledWith('01a0c450-6c00-7000-8000-000000000001');
   });
 
-  it('パックが1件も無い場合はセクションを表示しない', () => {
-    renderScreen({ landmarkPackItems: [] });
+  it('パックが1件も無い場合はセクションを表示しない', async () => {
+    await renderScreen({ landmarkPackItems: [] });
 
     expect(screen.queryByText(LANDMARK_PACK_SECTION_TITLE)).toBeNull();
   });
@@ -131,53 +135,51 @@ describe('実績画面のスポットセクション', () => {
     /** 施錠状態のパック行。検知していないため到達数は0。 */
     const lockedPackItem: LandmarkPackListItem = { ...fallsPackItem, visitedCount: 0, isLocked: true };
 
-    it('進捗を表示せずPaywallへ誘導する', () => {
+    it('進捗を表示せずPaywallへ誘導する', async () => {
       const onRequestPremium = jest.fn();
-      renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false, onRequestPremium });
+      await renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false, onRequestPremium });
 
       expect(screen.queryByText('0/3')).toBeNull();
       expect(screen.queryByLabelText('日本三名瀑の進捗')).toBeNull();
 
-      act(() => {
-        fireEvent.press(screen.getByLabelText('日本三名瀑はStrollia Plus限定です'));
-      });
+      await fireEvent.press(screen.getByLabelText('日本三名瀑はStrollia Plus限定です'));
 
       expect(onRequestPremium).toHaveBeenCalled();
     });
 
-    it('他のパックの存在を伝える誘導文を表示する', () => {
-      renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false });
+    it('他のパックの存在を伝える誘導文を表示する', async () => {
+      await renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false });
 
       expect(screen.getByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toBeTruthy();
     });
 
-    it('無料パックと有料パックが混在する場合、両方を表示する', () => {
+    it('無料パックと有料パックが混在する場合、両方を表示する', async () => {
       const freePackItem: LandmarkPackListItem = {
         ...fallsPackItem,
         pack: { ...fallsPackItem.pack, id: '01a0c450-6c00-7000-8000-000000000002', name: '日本本土四極' },
         isLocked: false,
       };
-      renderScreen({ landmarkPackItems: [lockedPackItem, freePackItem], isPlusActive: false });
+      await renderScreen({ landmarkPackItems: [lockedPackItem, freePackItem], isPlusActive: false });
 
       expect(screen.getByText('日本三名瀑')).toBeTruthy();
       expect(screen.getByText('日本本土四極')).toBeTruthy();
     });
 
-    it('施錠中のパックが1件も無ければ誘導文を表示しない', () => {
+    it('施錠中のパックが1件も無ければ誘導文を表示しない', async () => {
       const freePackItem: LandmarkPackListItem = { ...fallsPackItem, isLocked: false };
-      renderScreen({ landmarkPackItems: [freePackItem], isPlusActive: false });
+      await renderScreen({ landmarkPackItems: [freePackItem], isPlusActive: false });
 
       expect(screen.queryByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toBeNull();
     });
 
-    it('施錠中はSVGアイコンではなくPNGをGrayscaleで描画する', () => {
+    it('施錠中はSVGアイコンではなくPNGをGrayscaleで描画する', async () => {
       // Grayscale(react-native-color-matrix-image-filters)はreact-native-svgの
       // コンポーネントには効かないため、減光状態(dim)はSVGのtrophyIconではなく
       // PNGのtrophyImageを描画する(実装側のコメント参照)
-      renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false });
+      await renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false });
 
-      expect(screen.UNSAFE_queryAllByType(MockTrophyIcon)).toHaveLength(0);
-      expect(screen.UNSAFE_getByType(Image)).toBeTruthy();
+      expect(screen.queryAllByTestId('mock-trophy-icon')).toHaveLength(0);
+      expect(queryAllImages()).toHaveLength(1);
     });
   });
 });

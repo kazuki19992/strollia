@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { processColor } from 'react-native';
 
 import { darkTheme, lightTheme } from '@/theme/theme';
 import type { LocationPoint } from '@/types/gps';
@@ -22,9 +23,23 @@ function point(id: number, hour: number, minute: number, altitude: number | null
   };
 }
 
+/**
+ * UNSAFE_getAllByProps の代替として、指定した単色 stroke で描かれた react-native-svg の host 要素を返す。
+ * host 要素では色が `{ type: 0, payload: processColor(color) }` へ変換されているため、同じ変換で比較する。
+ */
+const queryHostNodesWithSolidStroke = (color: string) =>
+  screen.container.queryAll((node) => {
+    const stroke = node.props.stroke as { type?: number; payload?: unknown } | undefined;
+    return stroke?.type === 0 && stroke.payload === processColor(color);
+  });
+
+/** UNSAFE_getAllByProps({ fill: 'none' }) の代替として、塗りなし(host では fill=null)の折れ線 Path を返す。 */
+const queryHostLinePaths = () =>
+  screen.container.queryAll((node) => node.type === 'RNSVGPath' && node.props.fill === null && typeof node.props.d === 'string');
+
 describe('高度プロファイルセクション', () => {
-  test('最低・最高高度と開始・中間・終了時刻を表示する', () => {
-    render(
+  test('最低・最高高度と開始・中間・終了時刻を表示する', async () => {
+    await render(
       <AltitudeProfileSection
         points={[point(1, 9, 0, 10), point(2, 9, 30, 10), point(3, 10, 0, 20), point(4, 10, 30, 30), point(5, 11, 0, 30)]}
         styles={styles as never}
@@ -42,15 +57,15 @@ describe('高度プロファイルセクション', () => {
     expect(screen.getByLabelText('最低高度10メートル、最高高度30メートル')).toBeTruthy();
   });
 
-  test('データ不足は画面で説明し共有用ではセクションを表示しない', () => {
-    const { rerender } = render(
+  test('データ不足は画面で説明し共有用ではセクションを表示しない', async () => {
+    const { rerender } = await render(
       <AltitudeProfileSection points={[point(1, 9, 0, null)]} styles={styles as never} theme={lightTheme} showUnavailableMessage />,
     );
 
     expect(screen.getByText('高度')).toBeTruthy();
     expect(screen.getByText('高度データを表示できません')).toBeTruthy();
 
-    rerender(
+    await rerender(
       <AltitudeProfileSection points={[point(1, 9, 0, null)]} styles={styles as never} theme={lightTheme} showUnavailableMessage={false} />,
     );
 
@@ -58,8 +73,8 @@ describe('高度プロファイルセクション', () => {
     expect(screen.queryByText('高度データを表示できません')).toBeNull();
   });
 
-  test('高度差が10m未満なら現在テーマのprimary単色で描く', () => {
-    const { rerender } = render(
+  test('高度差が10m未満なら現在テーマのprimary単色で描く', async () => {
+    const { rerender } = await render(
       <AltitudeProfileSection
         points={[point(1, 9, 0, 10), point(2, 9, 15, 10), point(3, 9, 30, 14), point(4, 9, 45, 19), point(5, 10, 0, 19)]}
         styles={styles as never}
@@ -68,9 +83,9 @@ describe('高度プロファイルセクション', () => {
       />,
     );
 
-    expect(screen.UNSAFE_getAllByProps({ stroke: lightTheme.colors.primary }).length).toBeGreaterThan(0);
+    expect(queryHostNodesWithSolidStroke(lightTheme.colors.primary).length).toBeGreaterThan(0);
 
-    rerender(
+    await rerender(
       <AltitudeProfileSection
         points={[point(1, 9, 0, 10), point(2, 9, 15, 10), point(3, 9, 30, 14), point(4, 9, 45, 19), point(5, 10, 0, 19)]}
         styles={styles as never}
@@ -79,12 +94,12 @@ describe('高度プロファイルセクション', () => {
       />,
     );
 
-    expect(screen.UNSAFE_getAllByProps({ stroke: darkTheme.colors.primary }).length).toBeGreaterThan(0);
+    expect(queryHostNodesWithSolidStroke(darkTheme.colors.primary).length).toBeGreaterThan(0);
     expect(screen.getByLabelText('最低高度10メートル、最高高度19メートル')).toBeTruthy();
   });
 
-  test('欠測区間を別々の折れ線パスとして描く', () => {
-    render(
+  test('欠測区間を別々の折れ線パスとして描く', async () => {
+    await render(
       <AltitudeProfileSection
         points={[point(1, 9, 0, 10), point(2, 9, 10, 12), point(3, 9, 20, null), point(4, 9, 30, 20), point(5, 9, 40, 22)]}
         styles={styles as never}
@@ -93,7 +108,7 @@ describe('高度プロファイルセクション', () => {
       />,
     );
 
-    const paths = screen.UNSAFE_getAllByProps({ fill: 'none' }).filter((node) => typeof node.props.d === 'string');
+    const paths = queryHostLinePaths();
     expect(paths).toHaveLength(2);
   });
 });

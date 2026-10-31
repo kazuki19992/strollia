@@ -45,7 +45,7 @@ const item: AchievementListItem = {
 
 describe('実績詳細ダイアログ AchievementDialog', () => {
   test('実績名・開放日・説明を表示する', async () => {
-    render(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+    await render(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
 
     await act(async () => {
       await Promise.resolve();
@@ -57,14 +57,14 @@ describe('実績詳細ダイアログ AchievementDialog', () => {
   });
 
   test('共有ボタンを押すと captureRef と shareAsync を呼ぶ', async () => {
-    render(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+    await render(<AchievementDialog item={item} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
 
     await act(async () => {
       await Promise.resolve();
     });
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('実績を共有する'));
+      await fireEvent.press(screen.getByLabelText('実績を共有する'));
     });
 
     expect(mockCaptureRef).toHaveBeenCalled();
@@ -72,7 +72,7 @@ describe('実績詳細ダイアログ AchievementDialog', () => {
   });
 
   test('item が null のとき本文を描画しない', async () => {
-    render(<AchievementDialog item={null} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
+    await render(<AchievementDialog item={null} styles={styles} theme={lightTheme} onClose={jest.fn()} />);
 
     await act(async () => {
       await Promise.resolve();

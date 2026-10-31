@@ -15,6 +15,7 @@
 - リポジトリのテストは `db` をモジュールモックする(実DBは使わない)
 - `clearMocks: true` 相当の運用: `beforeEach(() => { jest.clearAllMocks(); })`
 - `react-test-renderer` の直接 import / require は禁止(ESLint で error)。テスト API は下記の RTL を使う
+- `@testing-library/react-native` は v14(Expo SDK 58 移行時に更新)。`render` / `renderHook` / `fireEvent` / `act` / `rerender` / `unmount` と `expo-router/testing-library` の `renderRouter` はすべて Promise を返すので、必ず `await` する。`await` し忘れると「overlapping act() calls」で失敗する。詳細は `node_modules/@testing-library/react-native/docs/guides/migration-v14.md`
 
 ## リポジトリテストの実例
 
@@ -69,13 +70,11 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     jest.restoreAllMocks();
   });
 
-  test('行を押すと詳細を開く', () => {
+  test('行を押すと詳細を開く', async () => {
     const onOpen = jest.fn();
-    render(<DailyLogsScreen ... onOpenDailyLogDetail={onOpen} />);
+    await render(<DailyLogsScreen ... onOpenDailyLogDetail={onOpen} />);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('5月31日（日）の記録を開く'));
-    });
+    await fireEvent.press(screen.getByLabelText('5月31日（日）の記録を開く'));
 
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
@@ -86,9 +85,11 @@ describe('日別ログ画面 DailyLogsScreen', () => {
 
 - UI要素の特定は `screen.getByLabelText('...')` を優先する(コンポーネントに `accessibilityLabel` + `accessibilityRole` を付ける規約とセット)
 - ボタン押下は `fireEvent.press(element)` を使う。`.props.onPress()` 直接呼び出しは禁止
-- `UNSAFE_` 系クエリ(`UNSAFE_getByProps` 等)は最終手段。使う場合は理由をコメントに記載する
-  - 許容例: `disabled` 値検証(Pressable の `disabled` prop は accessibilityState にマッピングされ props.disabled では検証できない)、`aria-hidden` 画面内の要素検索、コンポーネント型検索
-- `render()` は内部で `act` を呼ぶため、`await act(async () => { render(...) })` は不要
+- `UNSAFE_getByType` / `UNSAFE_getByProps` などの `UNSAFE_` 系クエリは RTL v14 で削除された。標準クエリで特定できない場合だけ、`screen.container.queryAll((node) => ...)` でホスト要素の `type` / `props` を検索し、理由をコメントに記載する
+  - 対象はホスト要素(`View` / `Text` などネイティブに描画される要素)だけ。自作コンポーネントの型では検索できない
+  - 許容例: `disabled` 値検証(Pressable の `disabled` prop は accessibilityState にマッピングされ props.disabled では検証できない)、`aria-hidden` 画面内の要素検索、モックした地図要素の props 検証
+- `await render()` は内部で `act` を流し切るため、`await act(async () => { await render(...) })` は不要
+- `fireEvent.press` / `fireEvent.scroll` は既定のネイティブイベントを生成して渡した値とマージするため、ハンドラの引数は `expect.objectContaining` で検証する
 - モックが必要な代表モジュール: `@expo/vector-icons`, `react-native-maps`, DBリポジトリ関数
 
 ## フックテストの実例
@@ -100,20 +101,18 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useAnimatedBooleanOpacity } from '@/ui/hooks/useAnimatedBooleanOpacity';
 
 describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
-  it('visible=trueの場合は初期値1で開始する', () => {
-    const { result } = renderHook(() => useAnimatedBooleanOpacity(true, 500));
+  it('visible=trueの場合は初期値1で開始する', async () => {
+    const { result } = await renderHook(() => useAnimatedBooleanOpacity(true, 500));
 
     expect(result.current.__getValue()).toBe(1);
   });
 
-  it('props変更による再レンダーは rerender で検証する', () => {
-    const { rerender } = renderHook(({ visible }: { visible: boolean }) => useAnimatedBooleanOpacity(visible, 250), {
+  it('props変更による再レンダーは rerender で検証する', async () => {
+    const { rerender } = await renderHook(({ visible }: { visible: boolean }) => useAnimatedBooleanOpacity(visible, 250), {
       initialProps: { visible: false },
     });
 
-    act(() => {
-      rerender({ visible: true });
-    });
+    await rerender({ visible: true });
 
     // rerender 後の状態を result.current で検証する
   });
@@ -123,8 +122,8 @@ describe('真偽値フェードhook useAnimatedBooleanOpacity', () => {
 ポイント:
 
 - フック戻り値は `result.current` で参照する
-- props 変更は `rerender(newProps)` で行う
-- 副作用の非同期 flush は `act(async () => { ... })` で包む
+- props 変更は `await rerender(newProps)` で行う
+- 副作用の非同期 flush は `await act(async () => { ... })` で包む
 
 ## ルーター統合テストの実例
 
@@ -173,16 +172,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('別画面から地図へ戻ると現在地中心へ復元する', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     // accessibilityLabel でUI要素を特定し、fireEvent.press でボタンを押す
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('日ごとの記録'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('地図へ'));
-    });
+    await fireEvent.press(screen.getByLabelText('日ごとの記録'));
+    await fireEvent.press(screen.getByLabelText('地図へ'));
     await flushPromises();
 
     expect(mockAnimateToRegion).toHaveBeenCalled();
@@ -193,12 +188,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
 ポイント:
 
 - `renderRouter('src/app')` でルート定義ごとレンダリングする。個別コンポーネントではなくルーター全体をテストする
-- レンダリングと状態更新は `act()` で包む
+- `renderRouter` / `fireEvent` は `await` する。それ以外の状態更新は `await act()` で包む
 - UI要素は `screen.getByLabelText('...')` を優先し、`fireEvent.press` でボタンを押す
 - テスト終了後は `cleanup()` と `jest.restoreAllMocks()` を `afterEach` で呼ぶ
 - `wrapWithSentry` は `(component) => component` でラップを外すモックが必要
 - モックが必要な代表モジュール: `@/config/sentry`(wrapWithSentry), `expo-haptics`, `expo-location`, `expo-notifications`, `react-native-maps`, `react-native-purchases`, DBリポジトリ関数
-- 画面遷移後に前画面の要素を検証する場合は `aria-hidden` の影響で `getByLabelText` が失敗することがある。その場合だけ `UNSAFE_getByProps` を残し理由をコメントする
+- 画面遷移後に前画面の要素を検証する場合は `aria-hidden` の影響で `getByLabelText` が失敗することがある。その場合だけ `screen.container.queryAll` でホスト要素を検索し理由をコメントする
 
 ## テストを書けない場合
 

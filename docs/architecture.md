@@ -301,4 +301,14 @@ GPSログ保存、行政区域解決、実績評価、通知・演出は責務�
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `plugins/withPodDeploymentTargetFloor.js` | Xcode 27 はiOS 15.0未満のデプロイメントターゲットをエラーにする。`react_native_post_install` はPod本体のターゲットしか引き上げないため、Sentry・RevenueCat・RNSVG・view-shot などのリソースバンドル用ターゲットが古い値のまま残る。Podfileの `post_install` 末尾で全Podターゲットをアプリ本体の platform 指定(既定15.1)まで引き上げる |
 
+### UISceneライフサイクル
+
+iOS 27 SDKでビルドしたアプリは UIScene ライフサイクルの採用が必須で、未採用だと起動直後に UIKit が強制終了させる(`UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`)。Expo SDK 57 のテンプレートは未対応だったため、SDK 58 へ移行して対応した。SDK 58 の prebuild は次の構成を生成する。
+
+- `SceneDelegate.swift`(`ExpoAppSceneDelegate` を継承)がwindowを作り、React Nativeを起動する
+- `AppDelegate` は `ExpoReactNativeFactoryProvider` に準拠し、React Nativeのfactoryを作って保持するだけにする
+- `Info.plist` の `UIApplicationSceneManifest` に単一ウィンドウのSceneDelegateを登録する
+
+この構成は `src/config/__tests__/nativePermissionsPrebuild.test.ts` で回帰を検知する。Scene方式では、OSがアプリをバックグラウンドで再起動したときにSceneが接続されずReact Nativeが起動しない可能性がある。バックグラウンドGPS記録への影響は実機で確認すること。
+
 ローカルconfig pluginはNodeから直接読み込まれるためCommonJSで書く。Podfileなど文字列を書き換える処理は純粋関数として切り出し、`plugins/__tests__/` で単体テストする。prebuild結果への反映は `src/config/__tests__/nativePermissionsPrebuild.test.ts` で実際にprebuildして検証する。

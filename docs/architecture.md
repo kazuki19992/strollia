@@ -299,7 +299,11 @@ GPSログ保存、行政区域解決、実績評価、通知・演出は責務�
 
 | プラグイン                                | 目的                                                                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `plugins/withPodDeploymentTargetFloor.js` | Xcode 27 はiOS 15.0未満のデプロイメントターゲットをエラーにする。`react_native_post_install` はPod本体のターゲットしか引き上げないため、Sentry・RevenueCat・RNSVG・view-shot などのリソースバンドル用ターゲットが古い値のまま残る。Podfileの `post_install` 末尾で全Podターゲットを、Podfileの `platform :ios` と同じ値(SDK 58の既定は16.4)まで引き上げる |
+| `plugins/withPodDeploymentTargetFloor.js` | Xcode 27 はiOS 15.0未満のデプロイメントターゲットをエラーにする。`react_native_post_install` はPod本体のターゲットしか引き上げないため、Sentry・RevenueCat・RNSVG・view-shot などのリソースバンドル用ターゲットが古い値のまま残る。Podfileの `post_install` 末尾で全Podターゲットを、Podfileの `platform :ios` と同じ値(下記の対応下限18.0)まで引き上げる |
+
+### iOSの対応下限
+
+iOSの対応下限は 18.0 とし、`app.json` の `expo-build-properties` プラグインで `ios.deploymentTarget` を指定する。Expo SDK 58 のテンプレート既定値(16.4)をそのまま使わないのは、iOS 16〜17 の端末は少なく、古いOSの互換を保つコストに見合わないため。この値は `Podfile.properties.json` を通じて Podfile の `platform :ios` とアプリ本体ターゲットの `IPHONEOS_DEPLOYMENT_TARGET` に反映され、`withPodDeploymentTargetFloor` もこの値を下限に使う。
 
 ### UISceneライフサイクル
 

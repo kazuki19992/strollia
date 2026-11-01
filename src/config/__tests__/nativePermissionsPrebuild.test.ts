@@ -31,6 +31,8 @@ describe('Expo prebuild後のネイティブ権限', () => {
   let temporaryProjectPath: string;
   let infoPlist: string;
   let podfile: string;
+  let podfileProperties: Record<string, string>;
+  let xcodeProject: string;
   let appDelegate: string;
   let sceneDelegate: string;
   let androidManifest: string;
@@ -53,6 +55,8 @@ describe('Expo prebuild後のネイティブ権限', () => {
 
     infoPlist = readFileSync(join(temporaryProjectPath, 'ios', 'app', 'Info.plist'), 'utf8');
     podfile = readFileSync(join(temporaryProjectPath, 'ios', 'Podfile'), 'utf8');
+    podfileProperties = JSON.parse(readFileSync(join(temporaryProjectPath, 'ios', 'Podfile.properties.json'), 'utf8'));
+    xcodeProject = readFileSync(join(temporaryProjectPath, 'ios', 'app.xcodeproj', 'project.pbxproj'), 'utf8');
     appDelegate = readFileSync(join(temporaryProjectPath, 'ios', 'app', 'AppDelegate.swift'), 'utf8');
     sceneDelegate = readFileSync(join(temporaryProjectPath, 'ios', 'app', 'SceneDelegate.swift'), 'utf8');
     androidManifest = readFileSync(join(temporaryProjectPath, 'android', 'app', 'src', 'main', 'AndroidManifest.xml'), 'utf8');
@@ -106,6 +110,16 @@ describe('Expo prebuild後のネイティブ権限', () => {
   test('iOSのPodfileにはXcode 27向けに全Podターゲットのデプロイメントターゲット下限を揃える処理が入る', () => {
     expect(podfile).toContain('# @generated begin strollia-pod-deployment-target-floor');
     expect(podfile).toContain('installer.pods_project.targets.each');
+  });
+
+  test('iOSの対応下限は18.0にし、アプリ本体とPodの両方へ反映する', () => {
+    expect(podfileProperties['ios.deploymentTarget']).toBe('18.0');
+    // プロジェクト全体の既定値はテンプレートの値のまま残るため、実際に効くアプリ本体ターゲットの設定だけを見る
+    const appTargetSettings = xcodeProject.split('buildSettings = {').filter((settings) => settings.includes('PRODUCT_BUNDLE_IDENTIFIER'));
+    expect(appTargetSettings.length).toBeGreaterThan(0);
+    for (const settings of appTargetSettings) {
+      expect(settings).toMatch(/IPHONEOS_DEPLOYMENT_TARGET = 18\.0;/);
+    }
   });
 
   test('iOS 27 SDKで起動時に強制終了されないよう、UISceneライフサイクルを採用したネイティブプロジェクトを生成する', () => {

@@ -105,6 +105,14 @@
           "granularPermissions": ["photo"]
         }
       ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "18.0"
+          }
+        }
+      ],
       "./plugins/withPodDeploymentTargetFloor"
     ],
     "description": "Strollia is a local-first GPS logger built with Expo.",

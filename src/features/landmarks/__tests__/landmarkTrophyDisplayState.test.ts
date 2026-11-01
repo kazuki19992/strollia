@@ -1,12 +1,12 @@
 import { resolveLandmarkTrophyDisplayState } from '@/features/landmarks/landmarkTrophyDisplayState';
 
 describe('トロフィー表示状態 resolveLandmarkTrophyDisplayState', () => {
-  it('未到達は白黒+減光になる', () => {
-    expect(resolveLandmarkTrophyDisplayState(0)).toBe('dim');
+  it('未到達はシルエットになる', () => {
+    expect(resolveLandmarkTrophyDisplayState(0)).toBe('silhouette');
   });
 
-  it('到達率50%ちょうどは白黒+減光のまま', () => {
-    expect(resolveLandmarkTrophyDisplayState(0.5)).toBe('dim');
+  it('到達率50%ちょうどはシルエットのまま', () => {
+    expect(resolveLandmarkTrophyDisplayState(0.5)).toBe('silhouette');
   });
 
   it('過半数を超えると白黒になる', () => {
@@ -17,7 +17,7 @@ describe('トロフィー表示状態 resolveLandmarkTrophyDisplayState', () => 
     expect(resolveLandmarkTrophyDisplayState(1)).toBe('color');
   });
 
-  it('分母0や不正値は白黒+減光として扱う', () => {
-    expect(resolveLandmarkTrophyDisplayState(Number.NaN)).toBe('dim');
+  it('分母0や不正値はシルエットとして扱う', () => {
+    expect(resolveLandmarkTrophyDisplayState(Number.NaN)).toBe('silhouette');
   });
 });

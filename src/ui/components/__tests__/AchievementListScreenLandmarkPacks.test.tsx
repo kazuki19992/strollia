@@ -116,6 +116,23 @@ describe('実績画面のスポットセクション', () => {
     expect(queryAllImages()).toHaveLength(1);
   });
 
+  it('到達率50%以下のパック行は、他の実績トロフィーと同じ色でシルエット表示する', async () => {
+    const halfPackItem: LandmarkPackListItem = { ...fallsPackItem, visitedCount: 1, totalCount: 2 };
+    await renderScreen({ landmarkPackItems: [halfPackItem] });
+
+    // シルエットは tintColor による単色塗りのため、SVGではなく透過PNGで描画する
+    expect(screen.queryAllByTestId('mock-trophy-icon')).toHaveLength(0);
+    const images = queryAllImages();
+    expect(images).toHaveLength(1);
+    expect(images[0].props.tintColor).toBe(lightTheme.colors.border);
+  });
+
+  it('白黒状態のパック行はシルエットにしない', async () => {
+    await renderScreen();
+
+    expect(queryAllImages()[0].props.tintColor).toBeUndefined();
+  });
+
   it('パック行を押すと詳細を開く', async () => {
     const onSelectLandmarkPack = jest.fn();
     await renderScreen({ onSelectLandmarkPack });
@@ -172,14 +189,15 @@ describe('実績画面のスポットセクション', () => {
       expect(screen.queryByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toBeNull();
     });
 
-    it('施錠中はSVGアイコンではなくPNGをGrayscaleで描画する', async () => {
-      // Grayscale(react-native-color-matrix-image-filters)はreact-native-svgの
-      // コンポーネントには効かないため、減光状態(dim)はSVGのtrophyIconではなく
-      // PNGのtrophyImageを描画する(実装側のコメント参照)
+    it('施錠中は未到達と同じく、SVGアイコンではなくPNGのシルエットで描画する', async () => {
+      // tintColorはネイティブ画像ビューの機能でreact-native-svgのコンポーネントには効かないため、
+      // シルエット状態はSVGのtrophyIconではなくPNGのtrophyImageを描画する(実装側のコメント参照)
       await renderScreen({ landmarkPackItems: [lockedPackItem], isPlusActive: false });
 
       expect(screen.queryAllByTestId('mock-trophy-icon')).toHaveLength(0);
-      expect(queryAllImages()).toHaveLength(1);
+      const images = queryAllImages();
+      expect(images).toHaveLength(1);
+      expect(images[0].props.tintColor).toBe(lightTheme.colors.border);
     });
   });
 });

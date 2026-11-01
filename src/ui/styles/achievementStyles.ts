@@ -73,9 +73,6 @@ export function createAchievementStyles(theme: AppTheme) {
       // 鍵バッジを右下へ重ねるための基準。幅と高さは Grayscale の制約により呼び出し側が数値で渡す
       position: 'relative',
     },
-    landmarkPackTrophyDim: {
-      opacity: 0.4,
-    },
     landmarkPackLockBadge: {
       alignItems: 'center',
       backgroundColor: colors.card,

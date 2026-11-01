@@ -1,4 +1,4 @@
-import { Image, View } from 'react-native';
+import { Image } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { createStyles } from '@/ui/appStyles';
@@ -16,9 +16,9 @@ const styles = createStyles(lightTheme);
 const areaInstructionImage = require('../../../../assets/tutorial/area-instruction.png');
 
 /** 指定ラベルのボタンを押す。 */
-function press(label: string): void {
-  act(() => {
-    fireEvent.press(screen.getByLabelText(label));
+async function press(label: string): Promise<void> {
+  await act(async () => {
+    await fireEvent.press(screen.getByLabelText(label));
   });
 }
 
@@ -27,8 +27,8 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     jest.restoreAllMocks();
   });
 
-  test('最初にアプリ説明を表示する', () => {
-    render(
+  test('最初にアプリ説明を表示する', async () => {
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -44,8 +44,8 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(screen.getByText('記録したデータは、あなたの明示操作なしに外部へ送信しません。')).toBeTruthy();
   });
 
-  test('次へを押すと画面下の項目、エリア、実績、安全注意、権限案内の順に進む', () => {
-    render(
+  test('次へを押すと画面下の項目、エリア、実績、安全注意、権限案内の順に進む', async () => {
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -55,14 +55,14 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       />,
     );
 
-    press('次へ');
+    await press('次へ');
     expect(screen.getByText('画面下の項目')).toBeTruthy();
     expect(screen.getByText('2 / 7')).toBeTruthy();
     // Image の accessibilityLabel で確認する
     const instructionImage = screen.getByLabelText('マップ画面の要素説明');
     expect(instructionImage.props.accessibilityLabel).toBe('マップ画面の要素説明');
 
-    press('次へ');
+    await press('次へ');
     expect(screen.getByText('エリアを広げよう')).toBeTruthy();
     expect(screen.getByText('3 / 7')).toBeTruthy();
     expect(screen.getByText('地図上で薄く色が塗られているマスを、すとろりあでは「エリア」と呼びます。')).toBeTruthy();
@@ -73,11 +73,11 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     ).toBeTruthy();
     expect(screen.getByLabelText('地図上のエリアの説明')).toBeTruthy();
 
-    press('次へ');
+    await press('次へ');
     expect(screen.getByText('実績を集める')).toBeTruthy();
     expect(screen.getByText('4 / 7')).toBeTruthy();
 
-    press('次へ');
+    await press('次へ');
     expect(screen.getByText('さいごに')).toBeTruthy();
     expect(screen.getByText('5 / 7')).toBeTruthy();
     expect(screen.getByText('安全に楽しくおさんぽするために、次のことを守りましょう。')).toBeTruthy();
@@ -86,25 +86,25 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(screen.getByText('危険な場所には近づかない、入らない')).toBeTruthy();
     expect(screen.getByText('体調が悪くなったら無理に続けない')).toBeTruthy();
 
-    press('次へ');
+    await press('次へ');
     expect(screen.getByText('不具合レポートについて')).toBeTruthy();
     expect(screen.getByText('6 / 7')).toBeTruthy();
 
-    press('次へ');
+    await press('次へ');
     expect(screen.getByText('位置情報を確認してはじめる')).toBeTruthy();
     expect(screen.getByText('7 / 7')).toBeTruthy();
     expect(screen.getByText('GPSログの記録には位置情報の常時許可が必要です。')).toBeTruthy();
     expect(screen.getByText('チュートリアルを閉じたあと、地図上に表示される位置情報の案内パネルから続けられます。')).toBeTruthy();
   });
 
-  test('補足画像ごとのアスペクト比を保って画像枠内に表示する', () => {
+  test('補足画像ごとのアスペクト比を保って画像枠内に表示する', async () => {
     jest.spyOn(Image, 'resolveAssetSource').mockImplementation((source) => {
       if (source === areaInstructionImage) {
         return { width: 903, height: 540, scale: 1, uri: 'area-instruction.png' };
       }
       return { width: 453, height: 279, scale: 1, uri: 'home-screen-instruction.png' };
     });
-    render(
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -114,37 +114,35 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       />,
     );
 
-    press('次へ');
+    await press('次へ');
 
-    // instructionImageFrame の View を UNSAFE_getAllByType で探す
-    // onLayout を持つ特定スタイルの View を検索するため UNSAFE を使う
-    const instructionImageFrame = screen
-      .UNSAFE_getAllByType(View)
+    // instructionImageFrame の View を container からホスト View 要素として探す
+    // onLayout を持つ特定スタイルの View を検索するため、型名と style で絞り込む
+    const instructionImageFrame = screen.container
+      .queryAll((node) => node.type === 'View')
       .find((node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
     expect(instructionImageFrame).toBeTruthy();
-    act(() => {
-      instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
-    });
+    await fireEvent(instructionImageFrame!, 'layout', { nativeEvent: { layout: { width: 300 } } });
 
     // Image の style を確認する
     const instructionImage = screen.getByLabelText('マップ画面の要素説明');
     expect(instructionImage.props.style).toEqual([styles.firstLaunchTutorialInstructionImage, { width: 268, height: 268 / (453 / 279) }]);
 
-    press('次へ');
+    await press('次へ');
     const areaImage = screen.getByLabelText('地図上のエリアの説明');
     expect(areaImage.props.style).toEqual([styles.firstLaunchTutorialInstructionImage, { width: 268, height: 268 / (903 / 540) }]);
     expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ width: '100%' }));
     expect(styles.firstLaunchTutorialInstructionImage).not.toEqual(expect.objectContaining({ alignSelf: 'stretch' }));
   });
 
-  test('補足画像の元サイズを取得できないときは既存画像比率へフォールバックする', () => {
+  test('補足画像の元サイズを取得できないときは既存画像比率へフォールバックする', async () => {
     jest.spyOn(Image, 'resolveAssetSource').mockReturnValue({
       width: 0,
       height: 0,
       scale: 1,
       uri: 'invalid-instruction.png',
     });
-    render(
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -154,24 +152,22 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       />,
     );
 
-    press('次へ');
+    await press('次へ');
 
-    // instructionImageFrame の View を UNSAFE_getAllByType で探す
-    const instructionImageFrame = screen
-      .UNSAFE_getAllByType(View)
+    // instructionImageFrame の View を container からホスト View 要素として探す
+    const instructionImageFrame = screen.container
+      .queryAll((node) => node.type === 'View')
       .find((node) => node.props.style === styles.firstLaunchTutorialInstructionImageFrame);
     expect(instructionImageFrame).toBeTruthy();
-    act(() => {
-      instructionImageFrame!.props.onLayout({ nativeEvent: { layout: { width: 300 } } });
-    });
+    await fireEvent(instructionImageFrame!, 'layout', { nativeEvent: { layout: { width: 300 } } });
 
     const instructionImage = screen.getByLabelText('マップ画面の要素説明');
     expect(instructionImage.props.style).toEqual([styles.firstLaunchTutorialInstructionImage, { width: 268, height: 268 / (453 / 279) }]);
   });
 
-  test('最後のボタンで onComplete を呼ぶ', () => {
+  test('最後のボタンで onComplete を呼ぶ', async () => {
     const onComplete = jest.fn();
-    render(
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -181,20 +177,20 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       />,
     );
 
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('地図で確認する');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('地図で確認する');
 
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  test('完了ボタンの文言を再表示用に変更できる', () => {
+  test('完了ボタンの文言を再表示用に変更できる', async () => {
     const onComplete = jest.fn();
-    render(
+    await render(
       <FirstLaunchTutorialDialog
         visible
         completionButtonLabel="閉じる"
@@ -205,21 +201,21 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       />,
     );
 
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
     expect(screen.getByText('閉じる')).toBeTruthy();
-    press('チュートリアルを閉じる');
+    await press('チュートリアルを閉じる');
 
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  test('再表示したときは最初の説明から始まる', () => {
+  test('再表示したときは最初の説明から始まる', async () => {
     const onComplete = jest.fn();
-    const { rerender } = render(
+    const { rerender } = await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -229,16 +225,16 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       />,
     );
 
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
-    press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
+    await press('次へ');
     expect(screen.getByText('7 / 7')).toBeTruthy();
 
-    act(() => {
-      rerender(
+    await act(async () => {
+      await rerender(
         <FirstLaunchTutorialDialog
           visible={false}
           styles={styles}
@@ -248,8 +244,8 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
         />,
       );
     });
-    act(() => {
-      rerender(
+    await act(async () => {
+      await rerender(
         <FirstLaunchTutorialDialog
           visible
           styles={styles}
@@ -264,9 +260,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(screen.getByText('すとろりあへようこそ')).toBeTruthy();
   });
 
-  test('閉じるボタンで onComplete を呼ぶ', () => {
+  test('閉じるボタンで onComplete を呼ぶ', async () => {
     const onComplete = jest.fn();
-    render(
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -276,15 +272,15 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       />,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('閉じる'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('閉じる'));
     });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  test('スワイプヒントを表示しない', () => {
-    render(
+  test('スワイプヒントを表示しない', async () => {
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -297,9 +293,9 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
     expect(screen.queryByText('スワイプで閉じる')).toBeNull();
   });
 
-  test('不具合レポート告知ステップのスイッチを切り替えると更新処理を呼ぶ', () => {
+  test('不具合レポート告知ステップのスイッチを切り替えると更新処理を呼ぶ', async () => {
     const onUpdate = jest.fn();
-    render(
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -315,13 +311,13 @@ describe('初回起動チュートリアル FirstLaunchTutorialDialog', () => {
       if (screen.queryByText('不具合レポートについて')) {
         break;
       }
-      press('次へ');
+      await press('次へ');
     }
 
     expect(screen.getByText('不具合レポートについて')).toBeTruthy();
 
-    act(() => {
-      fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
+    await act(async () => {
+      await fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
     });
 
     expect(onUpdate).toHaveBeenCalledWith(false);

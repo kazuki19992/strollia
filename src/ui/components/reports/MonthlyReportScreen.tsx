@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useMemo, useRef, useState } from 'react';
+import { type ComponentRef, useMemo, useRef, useState } from 'react';
 import { Animated, Image, Pressable, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 
@@ -109,7 +109,7 @@ export function MonthlyReportScreen({
     resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null && hasValidStayPlacePrivacyConfiguration(activeStayPlaces);
   const { height } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
-  const reportCaptureRef = useRef<View | null>(null);
+  const reportCaptureRef = useRef<ComponentRef<typeof View> | null>(null);
   const isSharingReportRef = useRef(false);
   const [isSharingReport, setIsSharingReport] = useState(false);
   const report = useMemo(() => createMonthlyReport(dailyLogs, points, getPreviousReportMonth()), [dailyLogs, points]);

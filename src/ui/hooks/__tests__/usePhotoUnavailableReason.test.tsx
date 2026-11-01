@@ -36,10 +36,10 @@ async function flushPromises(): Promise<void> {
 }
 
 /** 既定の引数に差分を当ててフックを描画する。取得状況を遷移させない静的なケース用。 */
-function renderReason(overrides: Partial<ReasonProps> = {}) {
+async function renderReason(overrides: Partial<ReasonProps> = {}) {
   const props: ReasonProps = { photo: createPhoto('photo-1'), hasHighResolutionPreview: false, isLoadingPreview: false, ...overrides };
 
-  return renderHook((currentProps: ReasonProps) => usePhotoUnavailableReason(currentProps), { initialProps: props });
+  return await renderHook((currentProps: ReasonProps) => usePhotoUnavailableReason(currentProps), { initialProps: props });
 }
 
 /**
@@ -54,14 +54,14 @@ function renderReason(overrides: Partial<ReasonProps> = {}) {
  * @param hasHighResolutionPreview - 取得完了後に高解像度を得られたかどうか。
  */
 async function advanceThroughPreviewAttempt(
-  view: ReturnType<typeof renderReason>,
+  view: Awaited<ReturnType<typeof renderReason>>,
   photo: MapPhoto,
   hasHighResolutionPreview = false,
 ): Promise<void> {
-  view.rerender({ photo, hasHighResolutionPreview: false, isLoadingPreview: true });
+  await view.rerender({ photo, hasHighResolutionPreview: false, isLoadingPreview: true });
   await flushPromises();
 
-  view.rerender({ photo, hasHighResolutionPreview, isLoadingPreview: false });
+  await view.rerender({ photo, hasHighResolutionPreview, isLoadingPreview: false });
   await flushPromises();
 }
 
@@ -75,7 +75,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     // 機内モードで未ダウンロードの写真を開くと案内が出なかった不具合の回帰テスト。
     // 最初のコミットで存在確認を撃つと、直後の isLoadingPreview 変化で結果が破棄され案内が出なくなる
     const photo = createPhoto('photo-1', 'file:///caches/photo-1-512.jpg');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
@@ -84,7 +84,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('取得を試みる前の最初のコミットでは存在確認を撃たない', async () => {
     // 判定材料が揃う前に撃つと、その結果が破棄されたうえ「確認済み」だけが残ってしまう
-    renderReason();
+    await renderReason();
     await flushPromises();
 
     expect(isPhotoAssetAvailableAsync).not.toHaveBeenCalled();
@@ -92,7 +92,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('高解像度を取得できていれば案内を出さない', async () => {
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo, true);
 
@@ -101,7 +101,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
   });
 
   it('取得中は判定しない(結果を待つ)', async () => {
-    const { result } = renderReason({ isLoadingPreview: true });
+    const { result } = await renderReason({ isLoadingPreview: true });
     await flushPromises();
 
     expect(result.current.photoUnavailableReason).toBeNull();
@@ -109,7 +109,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
   });
 
   it('拡大表示を開いていなければ判定しない', async () => {
-    const { result } = renderReason({ photo: null });
+    const { result } = await renderReason({ photo: null });
     await flushPromises();
 
     expect(result.current.photoUnavailableReason).toBeNull();
@@ -120,7 +120,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     // 拡大表示はサムネイルへフォールバックするため、「何かが映っている」ことを条件にすると
     // 端末未ダウンロードの写真で案内が一切出なくなる(実機で確認した不具合の回帰テスト)
     const photo = createPhoto('photo-1', 'file:///caches/photo-1-512.jpg');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
@@ -132,7 +132,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     (isPhotoAssetAvailableAsync as jest.Mock).mockResolvedValue(false);
 
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
@@ -141,7 +141,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('存在確認には保存済みの安定URIを使う', async () => {
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
@@ -151,7 +151,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('アセットが存在するのに取得できない場合は取得不可として扱う', async () => {
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
@@ -164,7 +164,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
     (isPhotoAssetAvailableAsync as jest.Mock).mockRejectedValue(new Error('native module unavailable'));
 
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
@@ -173,12 +173,12 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('同じ写真について存在確認を繰り返さない', async () => {
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
     await act(async () => {
-      view.rerender({ photo: createPhoto('photo-1'), hasHighResolutionPreview: false, isLoadingPreview: false });
+      await view.rerender({ photo: createPhoto('photo-1'), hasHighResolutionPreview: false, isLoadingPreview: false });
     });
     await flushPromises();
 
@@ -187,7 +187,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('閉じたあとは同じ写真で再表示しない', async () => {
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
     expect(view.result.current.photoUnavailableReason).toBe('unavailable');
@@ -203,7 +203,7 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('別の写真を開いたら改めて判定する', async () => {
     const firstPhoto = createPhoto('photo-1');
-    const view = renderReason({ photo: firstPhoto });
+    const view = await renderReason({ photo: firstPhoto });
 
     await advanceThroughPreviewAttempt(view, firstPhoto);
 
@@ -219,12 +219,12 @@ describe('写真を表示できない理由hook usePhotoUnavailableReason', () =
 
   it('拡大表示を閉じたら案内も消す', async () => {
     const photo = createPhoto('photo-1');
-    const view = renderReason({ photo });
+    const view = await renderReason({ photo });
 
     await advanceThroughPreviewAttempt(view, photo);
 
     await act(async () => {
-      view.rerender({ photo: null, hasHighResolutionPreview: false, isLoadingPreview: false });
+      await view.rerender({ photo: null, hasHighResolutionPreview: false, isLoadingPreview: false });
     });
     await flushPromises();
 

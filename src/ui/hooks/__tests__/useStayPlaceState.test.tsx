@@ -48,9 +48,9 @@ function createAccess(overrides: Partial<StayPlaceAccess> = {}): StayPlaceAccess
 }
 
 describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、失敗時は共有対象を安全側にする', () => {
-  it('読込完了前は有効な滞在場所をnullにして共有をfail-closedにする', () => {
+  it('読込完了前は有効な滞在場所をnullにして共有をfail-closedにする', async () => {
     const access = createAccess();
-    const { result } = renderHook(() => useStayPlaceState({ isReady: false, isPlusActive: true, access }));
+    const { result } = await renderHook(() => useStayPlaceState({ isReady: false, isPlusActive: true, access }));
 
     expect(result.current.status).toBe('loading');
     expect(result.current.activeStayPlaces).toBeNull();
@@ -59,7 +59,7 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
 
   it('読込に失敗した場合は有効な滞在場所をnullのままerror状態にする', async () => {
     const access = createAccess({ getStayPlaces: jest.fn().mockRejectedValue(new Error('読み込み失敗')) });
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
+    const { result } = await renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
 
     await waitFor(() => {
       expect(result.current.status).toBe('error');
@@ -72,7 +72,7 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
     const access = createAccess({
       getStayPlaces: jest.fn().mockResolvedValueOnce([home]).mockResolvedValueOnce([home, office]),
     });
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
+    const { result } = await renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
 
     await waitFor(() => {
       expect(result.current.activeStayPlaces).toEqual([home]);
@@ -92,7 +92,7 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
     const access = createAccess({
       getStayPlaces: jest.fn().mockResolvedValueOnce([home]).mockResolvedValueOnce([updatedHome]),
     });
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
+    const { result } = await renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
 
     await waitFor(() => {
       expect(result.current.activeStayPlaces).toEqual([home]);
@@ -110,7 +110,7 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
     const access = createAccess({
       getStayPlaces: jest.fn().mockResolvedValueOnce([home, office]).mockResolvedValueOnce([home]),
     });
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
+    const { result } = await renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
 
     await waitFor(() => {
       expect(result.current.activeStayPlaces).toEqual([home, office]);
@@ -127,7 +127,9 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
   it('無料版で2件目を追加しようとすると永続化せずPlus購入導線を開く', async () => {
     const access = createAccess({ getStayPlaces: jest.fn().mockResolvedValue([home]) });
     const onFreeStayPlaceLimitReached = jest.fn();
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }));
+    const { result } = await renderHook(() =>
+      useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }),
+    );
 
     await waitFor(() => {
       expect(result.current.activeStayPlaces).toEqual([home]);
@@ -144,7 +146,7 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
 
   it('Plusの解約と再契約で保存済みの滞在場所を削除せず有効対象だけ切り替える', async () => {
     const access = createAccess({ getStayPlaces: jest.fn().mockResolvedValue([home, office]) });
-    const { result, rerender } = renderHook(
+    const { result, rerender } = await renderHook(
       ({ isPlusActive }: { isPlusActive: boolean }) => useStayPlaceState({ isReady: true, isPlusActive, access }),
       { initialProps: { isPlusActive: true } },
     );
@@ -153,12 +155,12 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
       expect(result.current.activeStayPlaces).toEqual([home, office]);
     });
 
-    rerender({ isPlusActive: false });
+    await rerender({ isPlusActive: false });
 
     expect(result.current.stayPlaces).toEqual([home, office]);
     expect(result.current.activeStayPlaces).toEqual([home]);
 
-    rerender({ isPlusActive: true });
+    await rerender({ isPlusActive: true });
 
     expect(result.current.stayPlaces).toEqual([home, office]);
     expect(result.current.activeStayPlaces).toEqual([home, office]);
@@ -175,7 +177,9 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
     );
     const access = createAccess({ getStayPlaces });
     const onFreeStayPlaceLimitReached = jest.fn();
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }));
+    const { result } = await renderHook(() =>
+      useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }),
+    );
 
     let createPromise: Promise<void> | undefined;
     await act(async () => {
@@ -211,7 +215,9 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
       ),
     });
     const onFreeStayPlaceLimitReached = jest.fn();
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }));
+    const { result } = await renderHook(() =>
+      useStayPlaceState({ isReady: true, isPlusActive: false, access, onFreeStayPlaceLimitReached }),
+    );
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
 
@@ -238,7 +244,7 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
     const access = createAccess({
       getStayPlaces: jest.fn().mockResolvedValueOnce([]).mockRejectedValue(new Error('事前読込失敗')),
     });
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access }));
+    const { result } = await renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: false, access }));
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
 
@@ -255,7 +261,7 @@ describe('useStayPlaceStateは読込・CRUD・無料版1件制限を管理し、
       getStayPlaces: jest.fn().mockResolvedValue([home]),
       updateStayPlace: jest.fn().mockRejectedValue(new Error('保存失敗')),
     });
-    const { result } = renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
+    const { result } = await renderHook(() => useStayPlaceState({ isReady: true, isPlusActive: true, access }));
 
     await waitFor(() => {
       expect(result.current.activeStayPlaces).toEqual([home]);

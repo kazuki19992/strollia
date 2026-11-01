@@ -328,16 +328,16 @@ describe('不具合レポート設定の状態', () => {
   });
 
   it('設定画面のトグルを切り替えるとcrashReportingEnabledキーで保存する', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
+      await fireEvent.press(screen.getByLabelText('設定'));
     });
     await flushPromises();
 
     await act(async () => {
-      fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
+      await fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
     });
     await flushPromises();
 
@@ -354,16 +354,16 @@ describe('不具合レポート設定の状態', () => {
       return Promise.resolve(undefined);
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
+      await fireEvent.press(screen.getByLabelText('設定'));
     });
     await flushPromises();
 
     await act(async () => {
-      fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
+      await fireEvent(screen.getByLabelText('不具合レポートを送る'), 'valueChange', false);
     });
     await flushPromises();
 

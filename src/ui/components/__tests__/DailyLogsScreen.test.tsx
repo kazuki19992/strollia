@@ -36,7 +36,7 @@ describe('日別ログ画面 DailyLogsScreen', () => {
   });
 
   test('日別ログがない場合は空状態を表示する', async () => {
-    render(
+    await render(
       <DailyLogsScreen
         dailyLogs={[]}
         styles={styles as never}
@@ -54,7 +54,7 @@ describe('日別ログ画面 DailyLogsScreen', () => {
   });
 
   test('設定画面と同じ背景と共通ヘッダーで表示する', async () => {
-    render(
+    await render(
       <DailyLogsScreen
         dailyLogs={[]}
         styles={styles as never}
@@ -69,8 +69,10 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     });
 
     // SafeAreaView のスタイル確認
-    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    // RNTL v14 で UNSAFE_getByType が廃止されたため、ホスト要素の型名 'SafeAreaView' で唯一の要素を取得する
+    const safeAreaViews = screen.container.queryAll((node) => node.type === 'SafeAreaView');
+    expect(safeAreaViews).toHaveLength(1);
+    const container = safeAreaViews[0];
     const backButton = screen.getByLabelText('地図へ戻る');
 
     expect(container.props.style).toBe('appScreen');
@@ -90,7 +92,7 @@ describe('日別ログ画面 DailyLogsScreen', () => {
       endLocationPointId: 20,
     };
 
-    render(
+    await render(
       <DailyLogsScreen
         dailyLogs={[
           {
@@ -124,8 +126,8 @@ describe('日別ログ画面 DailyLogsScreen', () => {
     expect(screen.getByText('船橋市 ▶ 船橋市')).toBeTruthy();
     expect(screen.getByText('146.20km')).toBeTruthy();
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('5月31日（日）の記録を開く'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('5月31日（日）の記録を開く'));
     });
 
     expect(onOpenDailyLogDetail).toHaveBeenCalledWith(log);

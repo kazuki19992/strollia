@@ -1,4 +1,3 @@
-import { SafeAreaView } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import type { AchievementListItem } from '@/features/achievements/achievementRepository';
@@ -30,8 +29,8 @@ describe('実績画面 AchievementListScreen の画面共通UI', () => {
     jest.restoreAllMocks();
   });
 
-  test('設定画面と同じ背景と共通ヘッダーで表示する', () => {
-    render(
+  test('設定画面と同じ背景と共通ヘッダーで表示する', async () => {
+    await render(
       <AchievementListScreen
         items={[]}
         {...landmarkPackProps}
@@ -43,8 +42,10 @@ describe('実績画面 AchievementListScreen の画面共通UI', () => {
     );
 
     // SafeAreaView のスタイル確認
-    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(SafeAreaView);
+    // RNTL v14 で UNSAFE_getByType が廃止されたため、ホスト要素の型名 'SafeAreaView' で唯一の要素を取得する
+    const safeAreaViews = screen.container.queryAll((node) => node.type === 'SafeAreaView');
+    expect(safeAreaViews).toHaveLength(1);
+    const container = safeAreaViews[0];
     const backButton = screen.getByLabelText('地図へ戻る');
 
     expect(container.props.style).toBe(styles.appScreen);
@@ -76,9 +77,9 @@ function gridItem(id: string, sortOrder: number, unlockedAt: string | null): Ach
 describe('実績グリッドの3状態表示', () => {
   const items = [gridItem('d1', 1001, '2026-01-01T00:00:00.000Z'), gridItem('d2', 1002, null), gridItem('d3', 1003, null)];
 
-  test('解除済みタップで onSelectAchievement を呼ぶ', () => {
+  test('解除済みタップで onSelectAchievement を呼ぶ', async () => {
     const onSelectAchievement = jest.fn();
-    render(
+    await render(
       <AchievementListScreen
         items={items}
         {...landmarkPackProps}
@@ -89,14 +90,14 @@ describe('実績グリッドの3状態表示', () => {
       />,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('d1タイトル の詳細を見る'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('d1タイトル の詳細を見る'));
     });
     expect(onSelectAchievement).toHaveBeenCalledWith(items[0]);
   });
 
-  test('それ以降の実績はタイトルと進捗を伏せ字にする', () => {
-    render(
+  test('それ以降の実績はタイトルと進捗を伏せ字にする', async () => {
+    await render(
       <AchievementListScreen
         items={items}
         {...landmarkPackProps}
@@ -110,8 +111,8 @@ describe('実績グリッドの3状態表示', () => {
     expect(screen.getAllByText('？？？').length).toBeGreaterThan(0);
   });
 
-  test('次の実績はタイトルを表示し進捗ラベルを出す', () => {
-    render(
+  test('次の実績はタイトルを表示し進捗ラベルを出す', async () => {
+    await render(
       <AchievementListScreen
         items={items}
         {...landmarkPackProps}

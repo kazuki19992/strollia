@@ -59,39 +59,39 @@ describe('月次レポートルートのPlusゲート (/monthly-report 直接遷
     latestMonthlyReportScreenProps = null;
   });
 
-  test('Plus未加入のときは MonthlyReportScreen を描画せず地図(/)へリダイレクトする', () => {
+  test('Plus未加入のときは MonthlyReportScreen を描画せず地図(/)へリダイレクトする', async () => {
     mockState.premiumAccessState = { isPlusActive: false };
 
-    render(<MonthlyReportRoute />);
+    await render(<MonthlyReportRoute />);
 
     expect(screen.queryAllByTestId('monthly-report-screen')).toHaveLength(0);
     expect(screen.getByLabelText('redirect:/')).toBeTruthy();
   });
 
-  test('Plus加入済みのときは MonthlyReportScreen を描画しリダイレクトしない', () => {
+  test('Plus加入済みのときは MonthlyReportScreen を描画しリダイレクトしない', async () => {
     mockState.premiumAccessState = { isPlusActive: true };
 
-    render(<MonthlyReportRoute />);
+    await render(<MonthlyReportRoute />);
 
     expect(screen.getAllByTestId('monthly-report-screen').length).toBeGreaterThan(0);
     expect(screen.queryAllByTestId('redirect')).toHaveLength(0);
   });
 
-  test('現在有効な滞在場所を月次共有画面へ渡す', () => {
+  test('現在有効な滞在場所を月次共有画面へ渡す', async () => {
     mockState.premiumAccessState = { isPlusActive: true };
 
-    render(<MonthlyReportRoute />);
+    await render(<MonthlyReportRoute />);
 
     expect(latestMonthlyReportScreenProps?.activeStayPlaces).toEqual(activeStayPlaces);
     expect(latestMonthlyReportScreenProps?.stayPlacesStatus).toBe('ready');
   });
 
-  test('滞在場所の読込失敗状態も月次共有画面へ渡す', () => {
+  test('滞在場所の読込失敗状態も月次共有画面へ渡す', async () => {
     mockState.premiumAccessState = { isPlusActive: true };
     (mockState as { activeStayPlaces: typeof activeStayPlaces | null }).activeStayPlaces = null;
     mockState.stayPlacesStatus = 'error';
 
-    render(<MonthlyReportRoute />);
+    await render(<MonthlyReportRoute />);
 
     expect(latestMonthlyReportScreenProps?.activeStayPlaces).toBeNull();
     expect(latestMonthlyReportScreenProps?.stayPlacesStatus).toBe('error');

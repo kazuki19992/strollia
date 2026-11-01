@@ -1,4 +1,3 @@
-import { SafeAreaView } from 'react-native';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
@@ -22,28 +21,30 @@ describe('よくある質問画面 FaqScreen', () => {
     jest.restoreAllMocks();
   });
 
-  test('設定へ戻れる共通ヘッダーを表示する', () => {
+  test('設定へ戻れる共通ヘッダーを表示する', async () => {
     const styles = createStyles(lightTheme);
     const onBackToSettings = jest.fn();
 
-    render(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={onBackToSettings} />);
+    await render(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={onBackToSettings} />);
 
     // SafeAreaView のスタイル確認
-    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(SafeAreaView);
+    // RNTL v14 で UNSAFE_getByType が廃止されたため、ホスト要素の型名 'SafeAreaView' で唯一の要素を取得する
+    const safeAreaViews = screen.container.queryAll((node) => node.type === 'SafeAreaView');
+    expect(safeAreaViews).toHaveLength(1);
+    const container = safeAreaViews[0];
     const title = screen.getByText('よくある質問');
 
-    fireEvent.press(screen.getByLabelText('設定へ戻る'));
+    await fireEvent.press(screen.getByLabelText('設定へ戻る'));
 
     expect(container.props.style).toBe(styles.appScreen);
     expect(title).toBeTruthy();
     expect(onBackToSettings).toHaveBeenCalledTimes(1);
   });
 
-  test('5項目の質問タイトルをすべて表示する', () => {
+  test('5項目の質問タイトルをすべて表示する', async () => {
     const styles = createStyles(lightTheme);
 
-    render(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={jest.fn()} />);
+    await render(<FaqScreen styles={styles} theme={lightTheme} onBackToSettings={jest.fn()} />);
 
     expect(screen.getByText('止まっているのに距離や軌跡が記録されることがあります')).toBeTruthy();
     expect(screen.getByText('アプリを閉じても記録されますか？')).toBeTruthy();

@@ -42,35 +42,35 @@ describe('実績解除ダイアログ AchievementUnlockModal', () => {
     jest.useRealTimers();
   });
 
-  test('10秒経過すると自動で閉じる', () => {
+  test('10秒経過すると自動で閉じる', async () => {
     const onClose = jest.fn();
-    render(
+    await render(
       <AchievementUnlockModal achievement={achievement} animationKey="1:odo-1" styles={styles} onShareToX={jest.fn()} onClose={onClose} />,
     );
 
     expect(onClose).not.toHaveBeenCalled();
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(10_000);
     });
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  test('共有ボタンを押すと onShareToX を呼び自動クローズが止まる', () => {
+  test('共有ボタンを押すと onShareToX を呼び自動クローズが止まる', async () => {
     const onShareToX = jest.fn();
     const onClose = jest.fn();
-    render(
+    await render(
       <AchievementUnlockModal achievement={achievement} animationKey="1:odo-1" styles={styles} onShareToX={onShareToX} onClose={onClose} />,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('ともだちに自慢する'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('ともだちに自慢する'));
     });
 
     expect(onShareToX).toHaveBeenCalledWith(achievement);
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(10_000);
     });
     expect(onClose).not.toHaveBeenCalled();

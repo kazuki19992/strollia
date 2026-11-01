@@ -78,14 +78,14 @@ const spotItems: LandmarkSpotListItem[] = [
 ];
 
 /** パック詳細画面を描画する。 */
-function renderScreen(
+async function renderScreen(
   overrides: Partial<{
     spotItems: LandmarkSpotListItem[];
     onBack: () => void;
     onSelectVisitedSpot: (localDate: string) => void;
   }> = {},
 ) {
-  render(
+  await render(
     <LandmarkPackScreen
       pack={pack}
       spotItems={overrides.spotItems ?? spotItems}
@@ -108,15 +108,15 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     jest.restoreAllMocks();
   });
 
-  it('ヘッダーにパック名と分数の進捗を表示する', () => {
-    renderScreen();
+  it('ヘッダーにパック名と分数の進捗を表示する', async () => {
+    await renderScreen();
 
     expect(screen.getByText('日本三名瀑')).toBeTruthy();
     expect(screen.getByText('1/2')).toBeTruthy();
   });
 
-  it('スポット名・都道府県・到達日を並べる', () => {
-    renderScreen();
+  it('スポット名・都道府県・到達日を並べる', async () => {
+    await renderScreen();
 
     expect(screen.getByText('華厳の滝')).toBeTruthy();
     expect(screen.getByText('栃木県')).toBeTruthy();
@@ -125,46 +125,45 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     expect(screen.getByText('和歌山県')).toBeTruthy();
   });
 
-  it('先頭から何番目かを1始まりの番号バッジで表示する(order生値ではなく配列indexを使う)', () => {
-    renderScreen();
+  it('先頭から何番目かを1始まりの番号バッジで表示する(order生値ではなく配列indexを使う)', async () => {
+    await renderScreen();
 
     // 埋め込み地図にも同じ番号のマーカーが出るため、リスト行と合わせて2箇所ずつ現れる
     expect(screen.getAllByText('1')).toHaveLength(2);
     expect(screen.getAllByText('2')).toHaveLength(2);
   });
 
-  it('到達済みの行だけ訪問済みスタンプを表示する', () => {
-    renderScreen();
+  it('到達済みの行だけ訪問済みスタンプを表示する', async () => {
+    await renderScreen();
 
     expect(screen.getAllByLabelText('訪問済み')).toHaveLength(1);
   });
 
-  it('到達済みの行だけchevronを表示し、未到達の行は表示しない(地図ズームのみで画面遷移しないため)', () => {
-    renderScreen();
+  it('到達済みの行だけchevronを表示し、未到達の行は表示しない(地図ズームのみで画面遷移しないため)', async () => {
+    await renderScreen();
 
-    // Featherをテキストへモックしているため、name propで対象のアイコンを特定する
-    // (testing.mdで許容されているUNSAFE_系クエリの使用例)。
-    // モックのTextは合成要素+ホスト要素の2段でともにnamepropを持つため、1個描画されるごとに2件ヒットする。
-    // 2行中、到達済みの1行にのみ現れる想定なので、期待件数は 1件 × 2 = 2件
-    expect(screen.UNSAFE_getAllByProps({ name: 'chevron-right' })).toHaveLength(2);
+    // Featherをテキストへモックしているため、name propで対象のアイコンを特定する。
+    // v14 の container は host 要素のみを返すため、1個描画されるごとに host Text の1件だけヒットする。
+    // 2行中、到達済みの1行にのみ現れる想定なので、期待件数は1件
+    expect(screen.container.queryAll((node) => node.props.name === 'chevron-right')).toHaveLength(1);
   });
 
-  it('到達済みの行を押すとその日の記録へ遷移する', () => {
+  it('到達済みの行を押すとその日の記録へ遷移する', async () => {
     const onSelectVisitedSpot = jest.fn();
-    renderScreen({ onSelectVisitedSpot });
+    await renderScreen({ onSelectVisitedSpot });
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('華厳の滝の記録を開く'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('華厳の滝の記録を開く'));
     });
 
     expect(onSelectVisitedSpot).toHaveBeenCalledWith('2026-04-12');
   });
 
-  it('未到達の行を押すと埋め込み地図がそのスポットへズームする', () => {
-    renderScreen();
+  it('未到達の行を押すと埋め込み地図がそのスポットへズームする', async () => {
+    await renderScreen();
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
     });
 
     const nachiSpot = spotItems[1]?.spot;
@@ -174,36 +173,36 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     );
   });
 
-  it('未到達の行を連続で押すたびに再ズームする', () => {
+  it('未到達の行を連続で押すたびに再ズームする', async () => {
     // spotIdだけで要求を表すと、同じ行の連続タップで値が変わらずReactが更新をスキップし、
     // 地図を動かした後の再タップでズームし直せない不具合があった
-    renderScreen();
+    await renderScreen();
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
     });
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
   });
 
-  it('戻るボタンで実績一覧へ戻る', () => {
+  it('戻るボタンで実績一覧へ戻る', async () => {
     const onBack = jest.fn();
-    renderScreen({ onBack });
+    await renderScreen({ onBack });
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('実績へ戻る'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('実績へ戻る'));
     });
 
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('スポットが1件も無い場合でも進捗を0件として表示する', () => {
-    renderScreen({ spotItems: [] });
+  it('スポットが1件も無い場合でも進捗を0件として表示する', async () => {
+    await renderScreen({ spotItems: [] });
 
     expect(screen.getByText('0/0')).toBeTruthy();
   });
@@ -223,23 +222,23 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       },
     ];
 
-    it('都道府県と併記して現存しないことを示す', () => {
-      renderScreen({ spotItems: retiredSpotItems });
+    it('都道府県と併記して現存しないことを示す', async () => {
+      await renderScreen({ spotItems: retiredSpotItems });
 
       expect(screen.getByText(`茨城県・${LANDMARK_SPOT_RETIRED_NOTE}`)).toBeTruthy();
     });
 
-    it('完走判定の分母から外す', () => {
-      renderScreen({ spotItems: retiredSpotItems });
+    it('完走判定の分母から外す', async () => {
+      await renderScreen({ spotItems: retiredSpotItems });
 
       expect(screen.getByText('1/2')).toBeTruthy();
     });
 
-    it('押下時は未到達と同じ扱いで地図がズームする', () => {
-      renderScreen({ spotItems: retiredSpotItems });
+    it('押下時は未到達と同じ扱いで地図がズームする', async () => {
+      await renderScreen({ spotItems: retiredSpotItems });
 
-      act(() => {
-        fireEvent.press(screen.getByLabelText('幻の滝を地図で見る'));
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('幻の滝を地図で見る'));
       });
 
       const retiredSpot = retiredSpotItems[2]?.spot;

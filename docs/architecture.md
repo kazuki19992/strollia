@@ -292,3 +292,27 @@ GPSログ保存、行政区域解決、実績評価、通知・演出は責務�
 あとから実績定義を追加した場合でも、保存済みの進捗データから再評価し、すでに条件を満たしている実績を付与できるようにする。総移動距離は既存GPSログを含めて再評価し、ログ記録日数は既存daily_logsを含めて再評価し、都道府県・市区町村は行政区域記録機能の追加後に保存された訪問エリアの訪問数を対象にする。
 
 詳細は `docs/achievements.md` を参照する。
+
+## 14. ネイティブプロジェクト生成とローカルconfig plugin
+
+`ios/` と `android/` はgit管理せず、ビルドのたびに `expo prebuild` で生成する(CNG)。生成物を手で編集しても次のビルドで消えるため、ネイティブ設定の変更は `app.json` の `plugins` か、リポジトリ直下 `plugins/` のローカルconfig pluginで行う。
+
+| プラグイン                                | 目的                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `plugins/withPodDeploymentTargetFloor.js` | Xcode 27 はiOS 15.0未満のデプロイメントターゲットをエラーにする。`react_native_post_install` はPod本体のターゲットしか引き上げないため、Sentry・RevenueCat・RNSVG・view-shot などのリソースバンドル用ターゲットが古い値のまま残る。Podfileの `post_install` 末尾で全Podターゲットを、Podfileの `platform :ios` と同じ値(下記の対応下限18.0)まで引き上げる |
+
+### iOSの対応下限
+
+iOSの対応下限は 18.0 とし、`app.json` の `expo-build-properties` プラグインで `ios.deploymentTarget` を指定する。Expo SDK 58 のテンプレート既定値(16.4)をそのまま使わないのは、iOS 16〜17 の端末は少なく、古いOSの互換を保つコストに見合わないため。この値は `Podfile.properties.json` を通じて Podfile の `platform :ios` とアプリ本体ターゲットの `IPHONEOS_DEPLOYMENT_TARGET` に反映され、`withPodDeploymentTargetFloor` もこの値を下限に使う。
+
+### UISceneライフサイクル
+
+iOS 27 SDKでビルドしたアプリは UIScene ライフサイクルの採用が必須で、未採用だと起動直後に UIKit が強制終了させる(`UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`)。Expo SDK 57 のテンプレートは未対応だったため、SDK 58 へ移行して対応した。SDK 58 の prebuild は次の構成を生成する。
+
+- `SceneDelegate.swift`(`ExpoAppSceneDelegate` を継承)がwindowを作り、React Nativeを起動する
+- `AppDelegate` は `ExpoReactNativeFactoryProvider` に準拠し、React Nativeのfactoryを作って保持するだけにする
+- `Info.plist` の `UIApplicationSceneManifest` に単一ウィンドウのSceneDelegateを登録する
+
+この構成は `src/config/__tests__/nativePermissionsPrebuild.test.ts` で回帰を検知する。Scene方式では、OSがアプリをバックグラウンドで再起動したときにSceneが接続されずReact Nativeが起動しない可能性がある。バックグラウンドGPS記録への影響は実機で確認すること。
+
+ローカルconfig pluginはNodeから直接読み込まれるためCommonJSで書く。Podfileなど文字列を書き換える処理は純粋関数として切り出し、`plugins/__tests__/` で単体テストする。prebuild結果への反映は `src/config/__tests__/nativePermissionsPrebuild.test.ts` で実際にprebuildして検証する。

@@ -1,6 +1,6 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -96,12 +96,12 @@ export function DailyLogDetailScreen({
   const [gifRangeStart, setGifRangeStart] = useState(0);
   const [gifRangeEnd, setGifRangeEnd] = useState(0);
   const gifAbortRef = useRef(false);
-  const gifFrameRef = useRef<View>(null);
+  const gifFrameRef = useRef<ComponentRef<typeof View>>(null);
   const gifFrameResolveRef = useRef<(() => void) | null>(null);
   const gifMapReadyRef = useRef<(() => void) | null>(null);
   // 実行中の生成ループ。キャンセル後の再実行で、前のループ完了を待ってから次を始めるために使う。
   const gifGenerationRef = useRef<Promise<void> | null>(null);
-  const shareCardRef = useRef<View>(null);
+  const shareCardRef = useRef<ComponentRef<typeof View>>(null);
   const shareMapReadyRef = useRef<(() => void) | null>(null);
   const shareAbortRef = useRef(false);
   // 画面を離れたかどうか。離脱後のキャプチャ・アラート・state更新を抑止する。

@@ -38,8 +38,8 @@ function achievement(id: string, title: string, unlockedAt: string | null): Achi
 }
 
 describe('実績ハイライトレポート AchievementHighlightReportPage', () => {
-  it('対象月の実績がない場合は空状態を表示する', () => {
-    render(
+  it('対象月の実績がない場合は空状態を表示する', async () => {
+    await render(
       <AchievementHighlightReportPage
         report={report}
         achievements={[achievement('a', '3月実績', '2026-03-01T00:00:00.000Z')]}
@@ -52,8 +52,8 @@ describe('実績ハイライトレポート AchievementHighlightReportPage', () 
     expect(screen.getByText('今月はまだ実績達成なし')).toBeTruthy();
   });
 
-  it('対象月の実績は先頭3件だけ表示する', () => {
-    render(
+  it('対象月の実績は先頭3件だけ表示する', async () => {
+    await render(
       <AchievementHighlightReportPage
         report={report}
         achievements={[

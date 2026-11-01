@@ -57,42 +57,42 @@ describe('写真クラスタ診断フック usePhotoMapClusterDiagnostics', () =
     jest.clearAllMocks();
   });
 
-  it('enabled が false のときは送らない', () => {
+  it('enabled が false のときは送らない', async () => {
     const photos = [createPhoto('asset-1')];
     const clusters = [createCluster('cluster-1', photos)];
 
-    renderHook(() => usePhotoMapClusterDiagnostics({ enabled: false, isLoadingPhotos: false, photos, clusters }));
+    await renderHook(() => usePhotoMapClusterDiagnostics({ enabled: false, isLoadingPhotos: false, photos, clusters }));
 
     expect(reportPhotoMapDiagnostics).not.toHaveBeenCalled();
   });
 
-  it('enabled が true になった直後の空配列(読み込み開始前)では送らない', () => {
+  it('enabled が true になった直後の空配列(読み込み開始前)では送らない', async () => {
     // usePhotoMapOverlay の読み込み effect が走る前のコミット。photoCount: 0 の偽イベントを避ける
-    renderHook(() => usePhotoMapClusterDiagnostics({ enabled: true, isLoadingPhotos: false, photos: [], clusters: [] }));
+    await renderHook(() => usePhotoMapClusterDiagnostics({ enabled: true, isLoadingPhotos: false, photos: [], clusters: [] }));
 
     expect(reportPhotoMapDiagnostics).not.toHaveBeenCalled();
   });
 
-  it('写真の読み込み中は送らない', () => {
-    const { rerender } = renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
+  it('写真の読み込み中は送らない', async () => {
+    const { rerender } = await renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
       initialProps: { enabled: true, isLoadingPhotos: false, photos: [], clusters: [] },
     });
 
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
 
     expect(reportPhotoMapDiagnostics).not.toHaveBeenCalled();
   });
 
-  it('読み込み完了後に写真件数とクラスタ件数を1回だけ送る', () => {
-    const { rerender } = renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
+  it('読み込み完了後に写真件数とクラスタ件数を1回だけ送る', async () => {
+    const { rerender } = await renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
       initialProps: { enabled: true, isLoadingPhotos: false, photos: [], clusters: [] },
     });
 
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
 
     const loadedPhotos = [createPhoto('asset-1'), createPhoto('asset-2')];
     const loadedClusters = [createCluster('cluster-1', loadedPhotos)];
-    rerender({ enabled: true, isLoadingPhotos: false, photos: loadedPhotos, clusters: loadedClusters });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: loadedPhotos, clusters: loadedClusters });
 
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(1);
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('cluster', {
@@ -101,30 +101,30 @@ describe('写真クラスタ診断フック usePhotoMapClusterDiagnostics', () =
     });
   });
 
-  it('写真0件で読み込みが完了した場合も件数として1回送り、写真そのものは送らない', () => {
-    const { rerender } = renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
+  it('写真0件で読み込みが完了した場合も件数として1回送り、写真そのものは送らない', async () => {
+    const { rerender } = await renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
       initialProps: { enabled: true, isLoadingPhotos: false, photos: [], clusters: [] },
     });
 
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
     // 「読み込んだ結果0件」は原因切り分けに必要な診断なので送る。ただし送るのは件数だけ(AGENTS.md §5)
-    rerender({ enabled: true, isLoadingPhotos: false, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: [], clusters: [] });
 
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(1);
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledWith('cluster', { photoCount: 0, clusterCount: 0 });
   });
 
-  it('photos の参照が同じままなら clusters だけ変わっても再送しない', () => {
+  it('photos の参照が同じままなら clusters だけ変わっても再送しない', async () => {
     const loadedPhotos = [createPhoto('asset-1')];
-    const { rerender } = renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
+    const { rerender } = await renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
       initialProps: { enabled: true, isLoadingPhotos: false, photos: [], clusters: [] },
     });
 
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
-    rerender({ enabled: true, isLoadingPhotos: false, photos: loadedPhotos, clusters: [createCluster('cluster-1', loadedPhotos)] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: loadedPhotos, clusters: [createCluster('cluster-1', loadedPhotos)] });
 
     // ズーム変更でクラスタ半径だけが変わるケース。イベントが増えすぎるため送らない
-    rerender({
+    await rerender({
       enabled: true,
       isLoadingPhotos: false,
       photos: loadedPhotos,
@@ -134,17 +134,17 @@ describe('写真クラスタ診断フック usePhotoMapClusterDiagnostics', () =
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(1);
   });
 
-  it('再読み込みで photos の参照が変わったら再送する', () => {
+  it('再読み込みで photos の参照が変わったら再送する', async () => {
     const firstPhotos = [createPhoto('asset-1')];
-    const { rerender } = renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
+    const { rerender } = await renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
       initialProps: { enabled: true, isLoadingPhotos: false, photos: [], clusters: [] },
     });
 
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
-    rerender({ enabled: true, isLoadingPhotos: false, photos: firstPhotos, clusters: [createCluster('cluster-1', firstPhotos)] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: firstPhotos, clusters: [createCluster('cluster-1', firstPhotos)] });
 
     const secondPhotos = [createPhoto('asset-1'), createPhoto('asset-2')];
-    rerender({ enabled: true, isLoadingPhotos: false, photos: secondPhotos, clusters: [createCluster('cluster-1', secondPhotos)] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: secondPhotos, clusters: [createCluster('cluster-1', secondPhotos)] });
 
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(2);
     expect(reportPhotoMapDiagnostics).toHaveBeenLastCalledWith('cluster', {
@@ -153,36 +153,36 @@ describe('写真クラスタ診断フック usePhotoMapClusterDiagnostics', () =
     });
   });
 
-  it('enabled を false へ落としてから true へ戻すと、次の読み込み完了後にまた送る', () => {
+  it('enabled を false へ落としてから true へ戻すと、次の読み込み完了後にまた送る', async () => {
     const firstPhotos = [createPhoto('asset-1')];
-    const { rerender } = renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
+    const { rerender } = await renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
       initialProps: { enabled: true, isLoadingPhotos: false, photos: [], clusters: [] },
     });
 
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
-    rerender({ enabled: true, isLoadingPhotos: false, photos: firstPhotos, clusters: [createCluster('cluster-1', firstPhotos)] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: firstPhotos, clusters: [createCluster('cluster-1', firstPhotos)] });
 
-    rerender({ enabled: false, isLoadingPhotos: false, photos: [], clusters: [] });
+    await rerender({ enabled: false, isLoadingPhotos: false, photos: [], clusters: [] });
 
     const secondPhotos = [createPhoto('asset-2')];
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
-    rerender({ enabled: true, isLoadingPhotos: false, photos: secondPhotos, clusters: [createCluster('cluster-1', secondPhotos)] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: secondPhotos, clusters: [createCluster('cluster-1', secondPhotos)] });
 
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(2);
   });
 
-  it('enabled が true へ戻った直後、再読み込みが始まる前には送らない', () => {
+  it('enabled が true へ戻った直後、再読み込みが始まる前には送らない', async () => {
     const firstPhotos = [createPhoto('asset-1')];
-    const { rerender } = renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
+    const { rerender } = await renderHook((props: DiagnosticsProps) => usePhotoMapClusterDiagnostics(props), {
       initialProps: { enabled: true, isLoadingPhotos: false, photos: [], clusters: [] },
     });
 
-    rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
-    rerender({ enabled: true, isLoadingPhotos: false, photos: firstPhotos, clusters: [createCluster('cluster-1', firstPhotos)] });
-    rerender({ enabled: false, isLoadingPhotos: false, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: true, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: firstPhotos, clusters: [createCluster('cluster-1', firstPhotos)] });
+    await rerender({ enabled: false, isLoadingPhotos: false, photos: [], clusters: [] });
 
     // OFF で写真がクリアされた直後の空配列。読み込みを観測していないので送らない
-    rerender({ enabled: true, isLoadingPhotos: false, photos: [], clusters: [] });
+    await rerender({ enabled: true, isLoadingPhotos: false, photos: [], clusters: [] });
 
     expect(reportPhotoMapDiagnostics).toHaveBeenCalledTimes(1);
   });

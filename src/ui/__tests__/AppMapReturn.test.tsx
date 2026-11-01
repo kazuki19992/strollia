@@ -24,7 +24,6 @@ import { formatReportMonth, getPreviousReportMonth } from '@/features/reports/mo
 import { pickAndReadGpxFile } from '@/features/import/gpxImportService';
 import { parseGpxToLocationPoints } from '@/features/import/gpxImporter';
 import { importLocationPointsFromGpx } from '@/features/import/importRepository';
-import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog';
 import {
   getConfirmedPremiumAccessState,
   getDefaultPremiumAccessState,
@@ -44,6 +43,7 @@ import {
 import { getAchievementListItems, getPendingInAppAchievementNotifications } from '@/features/achievements/achievementRepository';
 import { filterDismissedAchievementNotifications } from '@/features/achievements/pendingNotifications';
 import type { LocationPoint } from '@/types/gps';
+import type { GpxImportProgressDialogProps } from '@/ui/components/GpxImportProgressDialog';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -65,6 +65,26 @@ jest.mock('expo-image-picker', () => ({
 jest.mock('expo-status-bar', () => ({
   StatusBar: () => null,
 }));
+
+/** GpxImportProgressDialog へ渡された props を記録するモック。RNTL v14 で型検索が廃止されたため、表示状態はこの記録から検証する。 */
+const mockGpxImportProgressDialogProps = jest.fn();
+
+jest.mock('@/ui/components/GpxImportProgressDialog', () => {
+  const actual = jest.requireActual('@/ui/components/GpxImportProgressDialog');
+  const { createElement } = jest.requireActual('react');
+  return {
+    ...actual,
+    // 実際のダイアログを描画したまま、渡された props だけを記録する
+    GpxImportProgressDialog: (props: GpxImportProgressDialogProps) => {
+      mockGpxImportProgressDialogProps(props);
+      return createElement(actual.GpxImportProgressDialog, props);
+    },
+  };
+});
+
+/** 直近の描画で GpxImportProgressDialog へ渡された props を返す。 */
+const getLatestGpxImportProgressDialogProps = (): GpxImportProgressDialogProps =>
+  mockGpxImportProgressDialogProps.mock.calls[mockGpxImportProgressDialogProps.mock.calls.length - 1][0];
 
 jest.mock('@/config/sentry', () => ({
   wrapWithSentry: (component: unknown) => component,
@@ -648,15 +668,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('別画面から地図へ戻ると現在地中心へ復元しvisited grid取得範囲も同期する', async () => {
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('現在地更新'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('現在地へ戻る'));
-    });
+    await fireEvent.press(screen.getByLabelText('現在地更新'));
+    await fireEvent.press(screen.getByLabelText('現在地へ戻る'));
 
     const callsBeforeReturn = mockAnimateToRegion.mock.calls.length;
     // 直前の「現在地へ戻る」操作で既にuserRegionを引数にgetGridBoundsForRegion / getVisitedCellsInBoundsが
@@ -664,12 +680,8 @@ describe('App 地図復帰時の表示範囲復元', () => {
     const gridBoundsCallsBeforeReturn = (getGridBoundsForRegion as jest.Mock).mock.calls.length;
     const visitedCellsCallsBeforeReturn = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('日ごとの記録'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('地図へ'));
-    });
+    await fireEvent.press(screen.getByLabelText('日ごとの記録'));
+    await fireEvent.press(screen.getByLabelText('地図へ'));
     await flushPromises();
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(callsBeforeReturn + 1);
@@ -698,20 +710,16 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (isGridBoundsContained as jest.Mock).mockReturnValue(true);
 
     try {
-      renderRouter('src/app');
+      await renderRouter('src/app');
       await flushPromises();
 
       // 同じ範囲へ一度移動して直近取得状態を確定させる。
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
-      });
+      await fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
       await flushPromises();
       const callsAfterFirst = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
       // 同じ範囲へ再移動 → 取得済み範囲内なので再取得しない（呼び出し回数が増えない）。
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
-      });
+      await fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
       await flushPromises();
 
       expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBe(callsAfterFirst);
@@ -725,17 +733,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     // 戻る退行が起きると、onPanDrag後でもonRegionChangeのたびにgridOverlayRegionが更新され、
     // このテストがfailする(isGridBoundsContainedを常にfalseへモックしているため、
     // regionが変わるたびに再取得条件を満たしてしまう)。
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     const callsBeforeDrag = (getVisitedCellsInBounds as jest.Mock).mock.calls.length;
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('地図をドラッグ'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('ドラッグ中に地図範囲を更新'));
-    });
+    await fireEvent.press(screen.getByLabelText('地図をドラッグ'));
+    await fireEvent.press(screen.getByLabelText('ドラッグ中に地図範囲を更新'));
     await flushPromises();
 
     expect((getVisitedCellsInBounds as jest.Mock).mock.calls.length).toBe(callsBeforeDrag);
@@ -762,7 +766,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       });
     (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(false);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.toJSON()).toBeTruthy();
@@ -779,7 +783,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('すでに記録中なら起動後に記録開始を重複実行しない', async () => {
     (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.toJSON()).toBeTruthy();
@@ -795,7 +799,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (isBackgroundLocationRecording as jest.Mock).mockResolvedValue(true);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(stopBackgroundLocationRecording).toHaveBeenCalledTimes(1);
@@ -804,7 +808,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('常時許可では権限取得後に背景タスク設定を更新し、OS標準アイコンの前景監視を開始しない', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect((getLocationPermissionState as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
@@ -821,7 +825,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(updateBackgroundLocationTaskOptionsIfNeeded).toHaveBeenCalledTimes(1);
@@ -843,7 +847,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       canAskBackground: false,
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
 
@@ -873,21 +877,21 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (stopBackgroundLocationRecording as jest.Mock).mockRejectedValueOnce(new Error('stop failed'));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
   });
 
   test('起動後にRevenueCat由来のPlus状態を読み込む', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(getPremiumAccessState).toHaveBeenCalledTimes(1);
   });
 
   test('起動後にRevenueCat Offeringを読み込む', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(getPremiumOfferingSummary).toHaveBeenCalledTimes(1);
@@ -896,19 +900,17 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('起動時にRevenueCat App User IDを取得し設定画面へ渡す', async () => {
     (getRevenueCatAppUserId as jest.Mock).mockResolvedValueOnce('$RCAnonymousID:abc123');
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(getRevenueCatAppUserId).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
     expect(mockLatestSettingsScreenProps.revenueCatAppUserId).toBe('$RCAnonymousID:abc123');
   });
 
   test('初回チュートリアル未完了の場合は初回チュートリアルを表示する', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.getByLabelText('初回チュートリアルを完了')).toBeTruthy();
@@ -922,7 +924,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       Promise.resolve(key === 'lastAcknowledgedUpdateNoticeVersion' ? '' : fallback),
     );
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.getByText('更新通知:automatic')).toBeTruthy();
@@ -935,9 +937,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     );
     expect(screen.queryByLabelText('ストアページへ')).toBeNull();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
-    });
+    await fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
 
     expect(setSetting).toHaveBeenCalledWith('lastAcknowledgedUpdateNoticeVersion', '1.3.0');
   });
@@ -950,26 +950,20 @@ describe('App 地図復帰時の表示範囲復元', () => {
       Promise.resolve(key === 'lastAcknowledgedUpdateNoticeVersion' ? '1.3.0' : fallback),
     );
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.queryByText('更新通知:automatic')).toBeNull();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(true);
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('最新の更新内容を見る'));
-    });
+    await fireEvent.press(screen.getByLabelText('最新の更新内容を見る'));
 
     expect(screen.getByText('更新通知:settings')).toBeTruthy();
     expect(screen.getByLabelText('ストアページへ')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
-    });
+    await fireEvent.press(screen.getByLabelText('更新通知を閉じる'));
 
     expect(setSetting).not.toHaveBeenCalledWith('lastAcknowledgedUpdateNoticeVersion', expect.anything());
   });
@@ -980,13 +974,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
       Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
     );
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.queryByLabelText('更新通知を閉じる')).toBeNull();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
     expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(false);
     expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
   });
@@ -997,13 +989,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
       Promise.resolve(key === 'firstLaunchTutorialCompleted' ? true : fallback),
     );
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.queryByLabelText('更新通知を閉じる')).toBeNull();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
     expect(mockLatestSettingsScreenProps.hasCurrentAppUpdateNotice).toBe(false);
     expect(screen.queryByLabelText('最新の更新内容を見る')).toBeNull();
   });
@@ -1023,7 +1013,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(false);
@@ -1034,7 +1024,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('滞在場所表示設定を更新してSQLiteへ保存する', async () => {
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) => Promise.resolve(fallback));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.showStayPlacesOnMap).toBe(true);
@@ -1048,7 +1038,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('滞在場所表示設定を連続更新してもSQLiteへ要求順に保存する', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     let resolveFirstWrite: (() => void) | undefined;
@@ -1065,7 +1055,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     let firstUpdate!: Promise<void>;
     let secondUpdate!: Promise<void>;
-    act(() => {
+    await act(() => {
       firstUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
       secondUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(true);
     });
@@ -1086,7 +1076,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('古い滞在場所表示設定の保存失敗では最新の表示要求を巻き戻さない', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     let rejectFirstWrite: ((error: Error) => void) | undefined;
@@ -1098,7 +1088,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     let firstUpdate!: Promise<void>;
     let secondUpdate!: Promise<void>;
-    act(() => {
+    await act(() => {
       firstUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
       secondUpdate = mockLatestMapScreenProps.onUpdateShowStayPlacesOnMap(false);
     });
@@ -1114,7 +1104,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('最新の滞在場所表示設定を保存できない場合は保存済みの表示状態へ戻してエラーを返す', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     (setSetting as jest.Mock).mockRejectedValueOnce(new Error('save failed'));
@@ -1138,7 +1128,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.showPhotosOnMap).toBe(false);
@@ -1181,7 +1171,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve();
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     await act(async () => {
@@ -1206,12 +1196,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('初回チュートリアル完了時に完了フラグと現在版通知の既読を原子的に保存する', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
-    });
+    await fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
 
     expect(setSettings).toHaveBeenCalledWith([
       { key: 'firstLaunchTutorialCompleted', value: true },
@@ -1220,14 +1208,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('初回チュートリアル未完了の場合は通知権限要求を完了後まで遅らせる', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(requestAchievementNotificationPermissionOnFirstLaunch).not.toHaveBeenCalled();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
-    });
+    await fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     await flushPromises();
 
     expect(requestAchievementNotificationPermissionOnFirstLaunch).toHaveBeenCalledTimes(1);
@@ -1242,7 +1228,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.queryAllByLabelText('初回チュートリアルを完了')).toHaveLength(0);
@@ -1257,7 +1243,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(requestAchievementNotificationPermissionOnFirstLaunch).toHaveBeenCalledTimes(1);
@@ -1272,17 +1258,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(screen.queryAllByLabelText('初回チュートリアルを完了')).toHaveLength(0);
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('チュートリアルを開く'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
+    await fireEvent.press(screen.getByLabelText('チュートリアルを開く'));
 
     expect(screen.getByLabelText('初回チュートリアルを完了')).toBeTruthy();
     expect(mockLatestFirstLaunchTutorialProps.completionButtonLabel).toBe('閉じる');
@@ -1297,20 +1279,14 @@ describe('App 地図復帰時の表示範囲復元', () => {
       return Promise.resolve(fallback);
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     jest.clearAllMocks();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('チュートリアルを開く'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
+    await fireEvent.press(screen.getByLabelText('チュートリアルを開く'));
+    await fireEvent.press(screen.getByLabelText('初回チュートリアルを完了'));
     await flushPromises();
 
     expect(setSetting).not.toHaveBeenCalledWith('firstLaunchTutorialCompleted', true);
@@ -1318,28 +1294,26 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('起動時にRevenueCat CustomerInfo更新を購読しアンマウント時に解除する', async () => {
-    const renderResult = renderRouter('src/app');
+    const renderResult = await renderRouter('src/app');
     await flushPromises();
 
     expect(subscribePremiumAccessStateUpdates).toHaveBeenCalledTimes(1);
 
-    act(() => {
-      renderResult.unmount();
+    await act(async () => {
+      await renderResult.unmount();
     });
 
     expect(mockPremiumUnsubscribe).toHaveBeenCalledTimes(1);
   });
 
   test('RevenueCat CustomerInfo更新でPlus状態を画面へ反映する', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
     expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(true);
 
-    act(() => {
+    await act(() => {
       mockPremiumCustomerInfoUpdate?.({ isPlusActive: false, entitlementId: 'strollia_plus' });
     });
 
@@ -1363,7 +1337,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: id === 'custom' && plus ? uri : null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///documents/strollia-custom-icons/saved.jpg');
@@ -1387,11 +1361,11 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: id === 'custom' && plus ? uri : null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///saved.jpg');
 
-    act(() => {
+    await act(() => {
       mockPremiumCustomerInfoUpdate?.({ isPlusActive: false, entitlementId: 'strollia_plus' });
     });
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
@@ -1408,7 +1382,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
@@ -1432,7 +1406,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     expect(mockLatestMapScreenProps).toBeNull();
 
@@ -1445,9 +1419,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(setSettings).not.toHaveBeenCalled();
     expect(setSetting).not.toHaveBeenCalledWith('userLocationIcon', 'default');
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
     expect(mockLatestSettingsScreenProps.premiumAccessState.isPlusActive).toBe(false);
 
     await act(async () => {
@@ -1466,7 +1438,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
@@ -1487,13 +1459,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
 
     // renderRouter が内部で jest.useFakeTimers() を呼び直すため、
     // clearTimeoutSpy はその後に設定する必要がある。
-    const renderResult = renderRouter('src/app');
+    const renderResult = await renderRouter('src/app');
     const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
     await flushPromises();
     expect(jest.getTimerCount()).toBeGreaterThan(0);
 
-    act(() => {
-      renderResult.unmount();
+    await act(async () => {
+      await renderResult.unmount();
     });
     // アンマウント後の非同期AbortError伝播を待つ
     await flushPromises();
@@ -1515,12 +1487,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    const renderResult = renderRouter('src/app');
+    const renderResult = await renderRouter('src/app');
     await flushPromises();
     expect(getDailyLogs).toHaveBeenCalled();
 
-    act(() => {
-      renderResult.unmount();
+    await act(async () => {
+      await renderResult.unmount();
     });
     jest.clearAllMocks();
     await act(async () => {
@@ -1543,12 +1515,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    const renderResult = renderRouter('src/app');
+    const renderResult = await renderRouter('src/app');
     await flushPromises();
     expect(startBackgroundLocationRecording).toHaveBeenCalledTimes(1);
 
-    act(() => {
-      renderResult.unmount();
+    await act(async () => {
+      await renderResult.unmount();
     });
     jest.clearAllMocks();
     await act(async () => {
@@ -1574,13 +1546,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    const renderResult = renderRouter('src/app');
+    const renderResult = await renderRouter('src/app');
     await flushPromises();
     expect(getAchievementListItems).toHaveBeenCalled();
     expect(getPendingInAppAchievementNotifications).toHaveBeenCalled();
 
-    act(() => {
-      renderResult.unmount();
+    await act(async () => {
+      await renderResult.unmount();
     });
     jest.clearAllMocks();
     await act(async () => {
@@ -1617,7 +1589,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: id === 'custom' && plus ? uri : null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
@@ -1650,7 +1622,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
@@ -1682,13 +1654,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     await act(async () => {
       jest.advanceTimersByTime(3000);
     });
     await flushPromises();
-    act(() => {
+    await act(() => {
       mockPremiumCustomerInfoUpdate?.({ isPlusActive: true, entitlementId: 'strollia_plus' });
     });
     await act(async () => {
@@ -1715,9 +1687,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: null,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
-    act(() => {
+    await act(() => {
       mockPremiumCustomerInfoUpdate?.({ isPlusActive: true, entitlementId: 'strollia_plus' });
     });
     await act(async () => {
@@ -1745,7 +1717,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: uri,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
     jest.clearAllMocks();
     await act(async () => {
@@ -1774,14 +1746,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({ canceled: false, assets: [{ uri: 'file:///crop.jpg' }] });
     const alertSpy = jest.spyOn(Alert, 'alert');
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
+    await fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     await flushPromises();
 
     expect(replaceCustomIconSelection).toHaveBeenCalledWith(
@@ -1811,14 +1779,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (replaceCustomIconSelection as jest.Mock).mockRejectedValue(new Error('保存失敗'));
     const alertSpy = jest.spyOn(Alert, 'alert');
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
+    await fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     await flushPromises();
 
     expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('custom');
@@ -1831,14 +1795,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (replaceCustomIconSelection as jest.Mock).mockRejectedValue(new Error('保存失敗'));
     const alertSpy = jest.spyOn(Alert, 'alert');
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
+    await fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     await flushPromises();
 
     expect(alertSpy).toHaveBeenCalledWith('設定失敗', expect.not.stringContaining('以前の設定'));
@@ -1852,14 +1812,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
       }),
     );
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
+    await fireEvent.press(screen.getByLabelText('設定'));
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
-    act(() => {
-      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
-      fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
+      await fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
+      await fireEvent.press(screen.getByLabelText('カスタムアイコンを選ぶ'));
     });
 
     expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalledTimes(1);
@@ -1879,7 +1837,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       migrated: true,
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(setSetting).toHaveBeenCalledWith('customIconImageUri', 'managed:migrated.jpg');
@@ -1905,7 +1863,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: uri,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(deleteManagedCustomIcon).toHaveBeenCalledWith('managed:migrated.jpg');
@@ -1930,7 +1888,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       customImageUri: uri,
     }));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(mockLatestMapScreenProps.userLocationIcon.customImageUri).toBe('file:///legacy.jpg');
@@ -1954,12 +1912,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (setSetting as jest.Mock).mockImplementation((key: string) => (key === 'customIconImageUri' ? migrationSave : Promise.resolve()));
 
-    const renderResult = renderRouter('src/app');
+    const renderResult = await renderRouter('src/app');
     await flushPromises();
     expect(setSetting).toHaveBeenCalledWith('customIconImageUri', 'managed:migrated.jpg');
 
-    act(() => {
-      renderResult.unmount();
+    await act(async () => {
+      await renderResult.unmount();
     });
     jest.clearAllMocks();
     rejectMigration(new Error('DB失敗'));
@@ -1980,11 +1938,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     expect(setSettings).toHaveBeenCalledWith([
       { key: 'customIconImageUri', value: '' },
@@ -2006,7 +1962,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(setSettings).toHaveBeenCalledWith([
@@ -2025,7 +1981,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(setSettings).toHaveBeenCalledWith([
@@ -2042,7 +1998,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     (resolveCustomIconReference as jest.Mock).mockRejectedValue(new Error('一時エラー'));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
     expect(setSettings).not.toHaveBeenCalled();
@@ -2058,11 +2014,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (resolveCustomIconReference as jest.Mock).mockResolvedValue(null);
     (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
@@ -2079,11 +2033,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (setSettings as jest.Mock).mockRejectedValue(new Error('DB失敗'));
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     expect(mockLatestSettingsScreenProps.selectedUserLocationIconId).toBe('default');
     expect(mockLatestMapScreenProps.userLocationIcon.useNativeUserLocation).toBe(true);
@@ -2092,37 +2044,27 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('設定画面からOSSライセンス画面と詳細画面を通常遷移で開き、それぞれ戻れる', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('OSSライセンス'));
-    });
+    await fireEvent.press(screen.getByLabelText('OSSライセンス'));
 
-    // UNSAFE_getByProps を使うのは画面遷移後に前画面が aria-hidden になるため。
+    // includeHiddenElements を使うのは画面遷移後に前画面が aria-hidden になるため。
     // 前画面のボタンが DOM に残っていることを確認するには aria-hidden を透過するクエリが必要。
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: 'OSSライセンス' })).toBeTruthy();
+    expect(screen.getByLabelText('OSSライセンス', { includeHiddenElements: true })).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('react のライセンス詳細を開く'));
-    });
+    await fireEvent.press(screen.getByLabelText('react のライセンス詳細を開く'));
 
-    // UNSAFE_getByProps を使うのは同上の理由による。
-    expect(screen.UNSAFE_getByProps({ accessibilityLabel: 'react のライセンス詳細を開く' })).toBeTruthy();
+    // includeHiddenElements を使うのは同上の理由による。
+    expect(screen.getByLabelText('react のライセンス詳細を開く', { includeHiddenElements: true })).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('ライセンス一覧へ戻る'));
-    });
+    await fireEvent.press(screen.getByLabelText('ライセンス一覧へ戻る'));
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定画面へ戻る'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定画面へ戻る'));
 
     expect(mockLatestSettingsScreenProps).toBeTruthy();
   });
@@ -2140,21 +2082,15 @@ describe('App 地図復帰時の表示範囲復元', () => {
       },
     ]);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('日ごとの記録'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('日別詳細を開く'));
-    });
+    await fireEvent.press(screen.getByLabelText('日ごとの記録'));
+    await fireEvent.press(screen.getByLabelText('日別詳細を開く'));
 
     expect(screen.getByLabelText('日別詳細から一覧へ戻る')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('日別詳細から一覧へ戻る'));
-    });
+    await fireEvent.press(screen.getByLabelText('日別詳細から一覧へ戻る'));
 
     expect(screen.getByLabelText('日別詳細を開く')).toBeTruthy();
   });
@@ -2178,12 +2114,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
 
     try {
-      renderRouter('src/app');
+      await renderRouter('src/app');
       await flushPromises();
 
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('設定'));
-      });
+      await fireEvent.press(screen.getByLabelText('設定'));
 
       let importPromise: Promise<void> = Promise.resolve();
       await act(async () => {
@@ -2235,15 +2169,13 @@ describe('App 地図復帰時の表示範囲復元', () => {
     );
 
     // 退場アニメーション中は中身が残るため、表示状態は Dialog の visible プロップで判定する。
-    const isImportDialogVisible = () => screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible;
+    const isImportDialogVisible = () => getLatestGpxImportProgressDialogProps().visible;
 
     try {
-      renderRouter('src/app');
+      await renderRouter('src/app');
       await flushPromises();
 
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('設定'));
-      });
+      await fireEvent.press(screen.getByLabelText('設定'));
 
       // 取り込み開始前はダイアログは出ていない。
       expect(isImportDialogVisible()).toBe(false);
@@ -2284,11 +2216,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (parseGpxToLocationPoints as jest.Mock).mockReturnValue([]);
 
     try {
-      renderRouter('src/app');
+      await renderRouter('src/app');
       await flushPromises();
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('設定'));
-      });
+      await fireEvent.press(screen.getByLabelText('設定'));
       await flushPromises();
       let importPromise: Promise<void> = Promise.resolve();
       await act(async () => {
@@ -2310,7 +2240,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       });
 
       // 大容量GPXの同期パースがJSスレッドを塞ぐ前に、解析中表示がコミットされている必要がある。
-      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.stage).toBe('parsing');
+      expect(getLatestGpxImportProgressDialogProps().stage).toBe('parsing');
       expect(parseGpxToLocationPoints).not.toHaveBeenCalled();
 
       await act(async () => {
@@ -2336,11 +2266,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (pickAndReadGpxFile as jest.Mock).mockResolvedValue(null);
 
     try {
-      renderRouter('src/app');
+      await renderRouter('src/app');
       await flushPromises();
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('設定'));
-      });
+      await fireEvent.press(screen.getByLabelText('設定'));
       await flushPromises();
 
       let importPromise: Promise<void> = Promise.resolve();
@@ -2349,7 +2277,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
         await Promise.resolve();
       });
 
-      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(true);
+      expect(getLatestGpxImportProgressDialogProps().visible).toBe(true);
       expect(pickAndReadGpxFile).not.toHaveBeenCalled();
 
       await act(async () => {
@@ -2364,7 +2292,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
       });
 
       expect(pickAndReadGpxFile).toHaveBeenCalledTimes(1);
-      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(false);
+      expect(getLatestGpxImportProgressDialogProps().visible).toBe(false);
     } finally {
       global.requestAnimationFrame = originalRaf;
     }
@@ -2383,11 +2311,9 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (pickAndReadGpxFile as jest.Mock).mockRejectedValue(new Error('GPXファイルを読み込めませんでした。'));
 
     try {
-      renderRouter('src/app');
+      await renderRouter('src/app');
       await flushPromises();
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('設定'));
-      });
+      await fireEvent.press(screen.getByLabelText('設定'));
       await flushPromises();
 
       let importPromise: Promise<void> = Promise.resolve();
@@ -2395,7 +2321,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
         importPromise = mockLatestSettingsScreenProps.onImportGpx();
         await Promise.resolve();
       });
-      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(true);
+      expect(getLatestGpxImportProgressDialogProps().visible).toBe(true);
 
       await act(async () => {
         rafCallbacks.shift()?.(0);
@@ -2406,7 +2332,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
         await importPromise;
       });
 
-      expect(screen.UNSAFE_getByType(GpxImportProgressDialog).props.visible).toBe(false);
+      expect(getLatestGpxImportProgressDialogProps().visible).toBe(false);
     } finally {
       global.requestAnimationFrame = originalRaf;
     }
@@ -2415,19 +2341,17 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('全データ削除の完了をAlertで通知する', async () => {
     const alertCalls: { title: string; message?: string }[] = [];
     jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
-      alertCalls.push({ title, message: message ?? undefined });
+      alertCalls.push({ title: title ?? '', message: message ?? undefined });
       // 確認ダイアログでは「削除する」を押したことにする
       if (title === 'すべてのデータを削除') {
         buttons?.find((button) => button.text === '削除する')?.onPress?.();
       }
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     await act(async () => {
       mockLatestSettingsScreenProps.onDeleteAllData();
@@ -2446,12 +2370,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     await act(async () => {
       mockLatestSettingsScreenProps.onPurchaseMonthlyPremiumPackage();
@@ -2468,12 +2390,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     await act(async () => {
       mockLatestSettingsScreenProps.onPurchaseYearlyPremiumPackage();
@@ -2488,12 +2408,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     await act(async () => {
       mockLatestSettingsScreenProps.onUpdateUserLocationIcon('walker');
@@ -2508,12 +2426,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('設定画面からRevenueCat Customer Centerを表示する', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     await act(async () => {
       mockLatestSettingsScreenProps.onPresentPremiumCustomerCenter();
@@ -2530,12 +2446,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     await act(async () => {
       mockLatestSettingsScreenProps.onPurchaseMonthlyPremiumPackage();
@@ -2551,12 +2465,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (presentPremiumCustomerCenter as jest.Mock).mockResolvedValueOnce(false);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('設定'));
-    });
+    await fireEvent.press(screen.getByLabelText('設定'));
 
     await act(async () => {
       mockLatestSettingsScreenProps.onPresentPremiumCustomerCenter();
@@ -2577,20 +2489,16 @@ describe('App 地図復帰時の表示範囲復元', () => {
       accessState: { isPlusActive: true, entitlementId: 'strollia_plus' },
     });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月次レポート'));
-    });
+    await fireEvent.press(screen.getByLabelText('月次レポート'));
     await flushPromises();
 
     // ペイウォールが開いていることを確認
     expect(screen.getByLabelText('月払いで購入')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月払いで購入'));
-    });
+    await fireEvent.press(screen.getByLabelText('月払いで購入'));
     await flushPromises();
 
     // 購入成功後にペイウォールが閉じる
@@ -2601,19 +2509,15 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: false, entitlementId: 'strollia_plus' });
     (restorePremiumPurchases as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月次レポート'));
-    });
+    await fireEvent.press(screen.getByLabelText('月次レポート'));
     await flushPromises();
 
     expect(screen.getByLabelText('購入を復元')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('購入を復元'));
-    });
+    await fireEvent.press(screen.getByLabelText('購入を復元'));
     await flushPromises();
 
     // 復元成功後にペイウォールが閉じる
@@ -2623,12 +2527,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('月次レポートボタンは無料ユーザーにペイウォールを表示する', async () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: false, entitlementId: 'strollia_plus' });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月次レポート'));
-    });
+    await fireEvent.press(screen.getByLabelText('月次レポート'));
     await flushPromises();
 
     // ペイウォールが表示され、月次レポート画面へは遷移しない
@@ -2659,12 +2561,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
       .mockResolvedValueOnce({ isPlusActive: false, entitlementId: 'strollia_plus' }) // 起動時
       .mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' }); // ボタン押下時
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月次レポート'));
-    });
+    await fireEvent.press(screen.getByLabelText('月次レポート'));
     await flushPromises();
 
     expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
@@ -2674,12 +2574,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
     (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月次レポート'));
-    });
+    await fireEvent.press(screen.getByLabelText('月次レポート'));
     await flushPromises();
 
     expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
@@ -2709,7 +2607,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     // 状態を再現するため、初期値そのものをPlus加入済みに差し替える。
     (getDefaultPremiumAccessState as jest.Mock).mockReturnValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
-    renderRouter('src/app', { initialUrl: '/monthly-report' });
+    await renderRouter('src/app', { initialUrl: '/monthly-report' });
     await flushPromises();
 
     const expectedMonth = formatReportMonth(getPreviousReportMonth());
@@ -2721,12 +2619,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getDailyLogs as jest.Mock).mockResolvedValueOnce([previousMonthDailyLog()]);
     (getPremiumAccessState as jest.Mock).mockResolvedValueOnce({ isPlusActive: true, entitlementId: 'strollia_plus' });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月次レポート'));
-    });
+    await fireEvent.press(screen.getByLabelText('月次レポート'));
     await flushPromises();
 
     expect(mockLatestMonthlyReportScreenProps).not.toBeNull();
@@ -2738,12 +2634,10 @@ describe('App 地図復帰時の表示範囲復元', () => {
     (getPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('月次レポート'));
-    });
+    await fireEvent.press(screen.getByLabelText('月次レポート'));
     await flushPromises();
 
     expect(alertSpy).toHaveBeenCalledWith('現在集計中です！', '来月になったらもう一度来てください！');
@@ -2753,35 +2647,25 @@ describe('App 地図復帰時の表示範囲復元', () => {
   test('初期状態は現在地に追従し、地図中心が現在地付近になっただけでは追従を再開しない', async () => {
     const userRegion = createUserCenteredRegion({ latitude: 35.681236, longitude: 139.767125 });
 
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('現在地更新'));
-    });
+    await fireEvent.press(screen.getByLabelText('現在地更新'));
 
     expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('地図をドラッグ'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('現在地更新'));
-    });
+    await fireEvent.press(screen.getByLabelText('地図をドラッグ'));
+    await fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
+    await fireEvent.press(screen.getByLabelText('現在地更新'));
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
   });
 
   test('不正な現在地座標ではMapKitへRegionを渡さない', async () => {
-    renderRouter('src/app');
+    await renderRouter('src/app');
     await flushPromises();
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('不正な現在地更新'));
-    });
+    await fireEvent.press(screen.getByLabelText('不正な現在地更新'));
 
     expect(mockAnimateToRegion).not.toHaveBeenCalled();
   });

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { lightTheme } from '@/theme/theme';
@@ -30,15 +30,17 @@ const place: StayPlace = {
 };
 
 describe('滞在場所地図マーカー StayPlaceMapMarker', () => {
-  test('Twemojiを四角い吹き出しに表示し、タップ時に場所を通知する', () => {
+  test('Twemojiを四角い吹き出しに表示し、タップ時に場所を通知する', async () => {
     const onPress = jest.fn();
-    render(<StayPlaceMapMarker place={place} styles={createStyles(lightTheme)} onPress={onPress} />);
+    await render(<StayPlaceMapMarker place={place} styles={createStyles(lightTheme)} onPress={onPress} />);
 
-    // Imageのsourceは利用者に見えない実装詳細のため、ここだけ型検索でTwemojiアセットを確認する。
-    expect(screen.UNSAFE_getByType(Image).props.source).toBeDefined();
+    // Imageのsourceは利用者に見えない実装詳細のため、ここだけホスト要素の型名検索でTwemojiアセットを確認する。
+    const images = screen.container.queryAll((node) => node.type === 'Image');
+    expect(images).toHaveLength(1);
+    expect(images[0].props.source).toBeDefined();
     expect(StyleSheet.flatten(screen.getByTestId('stay-place-map-marker-bubble').props.style)).toMatchObject({ borderRadius: 10 });
 
-    fireEvent.press(screen.getByLabelText('自宅を開く'));
+    await fireEvent.press(screen.getByLabelText('自宅を開く'));
 
     expect(onPress).toHaveBeenCalledWith(place);
   });

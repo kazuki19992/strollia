@@ -182,7 +182,7 @@ iOSからAndroidのようにストアをまたぐ復元は、匿名App User ID�
 
 Expo Goでは実購入テストは行わない。RevenueCatの実SDK動作と購入確認にはExpo development build、RevenueCat Dashboard設定、App Store ConnectまたはGoogle Play Consoleの商品設定が必要である。
 
-Expo SDK 55以降はNew Architecture専用であり、`newArchEnabled` オプション自体が廃止された。SDK 57 / React Native 0.86 への移行時(2026-07-11)に調査した結果、react-native-purchases 10.4系はNew Architecture対応済み(React Native Directory登録・公式サンプルのRN 0.86動作実績あり)と確認したため、New Architectureで運用する。移行時はdevelopment buildで購入・復元を再検証すること。
+Expo SDK 55以降はNew Architecture専用であり、`newArchEnabled` オプション自体が廃止された。SDK 57 / React Native 0.86 への移行時(2026-07-11)に調査した結果、react-native-purchases 10.4系はNew Architecture対応済み(React Native Directory登録・公式サンプルのRN 0.86動作実績あり)と確認したため、New Architectureで運用する。移行時はdevelopment buildで購入・復元を再検証すること。SDK 58 / React Native 0.88 への移行時(2026-10-31)は react-native-purchases 10.16系(peerDependencies は react-native >= 0.80)で継続利用している。
 
 ### 7.5 RevenueCat / Store実設定チェックリスト
 

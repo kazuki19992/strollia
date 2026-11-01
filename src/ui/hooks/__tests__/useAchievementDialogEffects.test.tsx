@@ -48,11 +48,11 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
   });
 
   describe('isAchievementDialogVisibleRef の更新', () => {
-    it('activeAchievementNotification があるときは ref が true になる', () => {
+    it('activeAchievementNotification があるときは ref が true になる', async () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: makeNotification(),
           isReady: true,
@@ -67,11 +67,11 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       expect(isAchievementDialogVisibleRef.current).toBe(true);
     });
 
-    it('activeAchievementNotification が null のときは ref が false になる', () => {
+    it('activeAchievementNotification が null のときは ref が false になる', async () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: true };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: null,
           isReady: true,
@@ -88,11 +88,11 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
   });
 
   describe('通知時の Haptics / Vibration', () => {
-    it('activeAchievementNotification が設定されると Haptics.notificationAsync を呼ぶ', () => {
+    it('activeAchievementNotification が設定されると Haptics.notificationAsync を呼ぶ', async () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: makeNotification(),
           isReady: true,
@@ -107,11 +107,11 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);
     });
 
-    it('activeAchievementNotification が設定されると Vibration.vibrate を呼ぶ', () => {
+    it('activeAchievementNotification が設定されると Vibration.vibrate を呼ぶ', async () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: makeNotification(),
           isReady: true,
@@ -126,11 +126,11 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       expect(Vibration.vibrate).toHaveBeenCalledWith(1000);
     });
 
-    it('activeAchievementNotification が null のときは Haptics を呼ばない', () => {
+    it('activeAchievementNotification が null のときは Haptics を呼ばない', async () => {
       const isAchievementDialogVisibleRef: MutableRefObject<boolean> = { current: false };
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: false };
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: null,
           isReady: true,
@@ -152,7 +152,7 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: true };
       const refreshData = jest.fn().mockResolvedValue(undefined);
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: null,
           isReady: true,
@@ -176,7 +176,7 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: true };
       const refreshData = jest.fn().mockResolvedValue(undefined);
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: makeNotification(),
           isReady: true,
@@ -200,7 +200,7 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const wasAchievementEvaluationPausedRef: MutableRefObject<boolean> = { current: true };
       const refreshData = jest.fn().mockResolvedValue(undefined);
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: null,
           isReady: false,
@@ -225,7 +225,7 @@ describe('実績ダイアログ副作用 useAchievementDialogEffects', () => {
       const setMessage = jest.fn();
       const refreshData = jest.fn().mockRejectedValue(new Error('load failed'));
 
-      renderHook(() =>
+      await renderHook(() =>
         useAchievementDialogEffects({
           activeAchievementNotification: null,
           isReady: true,

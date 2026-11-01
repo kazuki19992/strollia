@@ -18,64 +18,64 @@ describe('メニューアニメーション useMenuAnimation', () => {
     jest.restoreAllMocks();
   });
 
-  it('初期状態では isMenuVisible=false である', () => {
-    const { result } = renderHook(() => useMenuAnimation(false, 200));
+  it('初期状態では isMenuVisible=false である', async () => {
+    const { result } = await renderHook(() => useMenuAnimation(false, 200));
 
     expect(result.current.isMenuVisible).toBe(false);
   });
 
-  it('isMenuOpen=true に変えると isMenuVisible=true になる', () => {
-    const { result, rerender } = renderHook(
+  it('isMenuOpen=true に変えると isMenuVisible=true になる', async () => {
+    const { result, rerender } = await renderHook(
       ({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs),
       {
         initialProps: { isMenuOpen: false, durationMs: 200 },
       },
     );
 
-    act(() => {
-      rerender({ isMenuOpen: true, durationMs: 200 });
+    await act(async () => {
+      await rerender({ isMenuOpen: true, durationMs: 200 });
     });
 
     expect(result.current.isMenuVisible).toBe(true);
   });
 
-  it('isMenuOpen 変化時に Animated.timing が呼ばれる', () => {
-    const { rerender } = renderHook(
+  it('isMenuOpen 変化時に Animated.timing が呼ばれる', async () => {
+    const { rerender } = await renderHook(
       ({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs),
       {
         initialProps: { isMenuOpen: false, durationMs: 300 },
       },
     );
 
-    act(() => {
-      rerender({ isMenuOpen: true, durationMs: 300 });
+    await act(async () => {
+      await rerender({ isMenuOpen: true, durationMs: 300 });
     });
 
     expect(Animated.timing).toHaveBeenCalledWith(expect.any(Animated.Value), expect.objectContaining({ toValue: 1, duration: 300 }));
   });
 
-  it('resetMenuImmediately を呼ぶと isMenuVisible=false になる', () => {
-    const { result, rerender } = renderHook(
+  it('resetMenuImmediately を呼ぶと isMenuVisible=false になる', async () => {
+    const { result, rerender } = await renderHook(
       ({ isMenuOpen, durationMs }: { isMenuOpen: boolean; durationMs: number }) => useMenuAnimation(isMenuOpen, durationMs),
       {
         initialProps: { isMenuOpen: true, durationMs: 200 },
       },
     );
 
-    act(() => {
+    await act(() => {
       result.current.resetMenuImmediately();
     });
 
     // 再レンダー後の state を確認するため再度 rerender が必要
-    act(() => {
-      rerender({ isMenuOpen: true, durationMs: 200 });
+    await act(async () => {
+      await rerender({ isMenuOpen: true, durationMs: 200 });
     });
 
     expect(result.current.isMenuVisible).toBe(false);
   });
 
-  it('menuProgress が Animated.Value のインスタンスである', () => {
-    const { result } = renderHook(() => useMenuAnimation(false, 200));
+  it('menuProgress が Animated.Value のインスタンスである', async () => {
+    const { result } = await renderHook(() => useMenuAnimation(false, 200));
 
     expect(result.current.menuProgress).toBeInstanceOf(Animated.Value);
   });

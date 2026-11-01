@@ -7,19 +7,21 @@ jest.mock('@expo/vector-icons', () => ({
 }));
 
 describe('共有ボタン ShareButton', () => {
-  it('ラベル付き共有ボタンを押すとonPressを呼ぶ', () => {
+  it('ラベル付き共有ボタンを押すとonPressを呼ぶ', async () => {
     const onPress = jest.fn();
 
-    render(<ShareButton accessibilityLabel="共有する" iconColor="#ffffff" label="共有" style={{}} textStyle={{}} onPress={onPress} />);
+    await render(
+      <ShareButton accessibilityLabel="共有する" iconColor="#ffffff" label="共有" style={{}} textStyle={{}} onPress={onPress} />,
+    );
 
-    fireEvent.press(screen.getByLabelText('共有する'));
+    await fireEvent.press(screen.getByLabelText('共有する'));
 
     expect(screen.getByText('共有')).toBeTruthy();
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('ラベルなしのアイコン共有ボタンとしても表示できる', () => {
-    render(<ShareButton accessibilityLabel="レポートを共有" iconColor="#777777" style={{}} onPress={jest.fn()} />);
+  it('ラベルなしのアイコン共有ボタンとしても表示できる', async () => {
+    await render(<ShareButton accessibilityLabel="レポートを共有" iconColor="#777777" style={{}} onPress={jest.fn()} />);
 
     expect(screen.getByLabelText('レポートを共有')).toBeTruthy();
   });

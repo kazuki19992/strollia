@@ -1,4 +1,4 @@
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { render, screen, act } from '@testing-library/react-native';
 
 import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
@@ -40,15 +40,15 @@ describe('月間総移動距離レポート MonthlyDistanceReportPage', () => {
     expect(getNextDistanceMilestoneKilometers(123.45)).toBe(150);
   });
 
-  it('カウントアップ後にDSEGフォントで距離を表示する', () => {
-    render(<MonthlyDistanceReportPage report={report} pageCount={4} pageIndex={0} onShare={jest.fn()} />);
+  it('カウントアップ後にDSEGフォントで距離を表示する', async () => {
+    await render(<MonthlyDistanceReportPage report={report} pageCount={4} pageIndex={0} onShare={jest.fn()} />);
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(1500);
     });
 
-    // UNSAFE_getAllByType を使うのは fontFamily という非セマンティックな props を検証するため
-    const distanceText = screen.UNSAFE_getAllByType(Text).find((node) => node.props.children === ' 123.45');
+    // fontFamily という非セマンティックな props を検証するため、container からホスト Text 要素を検索する
+    const distanceText = screen.container.queryAll((node) => node.type === 'Text').find((node) => node.props.children === ' 123.45');
 
     expect(distanceText?.props.style.fontFamily).toBe(NUMERIC_DISPLAY_FONT);
   });

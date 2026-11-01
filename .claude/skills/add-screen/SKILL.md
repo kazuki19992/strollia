@@ -41,7 +41,7 @@ description: Use when adding a new screen to the Strollia app, or when restructu
 
 8. **テスト作成**: `src/ui/components/__tests__/XxxScreen.test.tsx`。書き方は `.ai/context/testing.md` 参照(日本語describe、accessibilityLabelで要素特定)
 
-9. **統合テスト追加**: ルートレベルの遷移テストは `src/ui/__tests__/AppMapReturn.test.tsx` またはその近傍に追加する。`renderRouter('src/app')` を使い、`screen.UNSAFE_getByProps` で要素を特定する
+9. **統合テスト追加**: ルートレベルの遷移テストは `src/ui/__tests__/AppMapReturn.test.tsx` またはその近傍に追加する。`await renderRouter('src/app')` を使い、`screen.getByLabelText` で要素を特定する(RTL v14 で `UNSAFE_` 系クエリは削除済み)
 
 10. **検証**: `npm run typecheck` と `npm test` と `npm run lint`。ライト/ダーク両方で背景・文字・境界線が破綻しないか確認(`DESIGN.md` §18 のチェックリスト)
 

@@ -52,7 +52,7 @@ describe('retiredスポットを含むパックの詳細', () => {
   });
 
   it('詳細の行にはretiredスポットも含める', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(result.current.getLandmarkPackDetail('pack-test')?.spotItems[1]?.visitedLocalDate).toBe('2026-04-12');
@@ -64,7 +64,7 @@ describe('retiredスポットを含むパックの詳細', () => {
 
   it('retiredスポットへ到達済みならその日の記録への導線を残す', async () => {
     // 一覧から消してしまうと、到達済みユーザーが記録へ辿り着けなくなる
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     // getLandmarkPackDetail は読み込み完了前でも非nullを返すため、到達日そのものを待つ
     await waitFor(() => {
@@ -74,7 +74,7 @@ describe('retiredスポットを含むパックの詳細', () => {
   });
 
   it('一覧の分母はretiredを除いた件数になる', async () => {
-    const { result } = renderHook(() => useLandmarkPackState(true));
+    const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems[0]?.totalCount).toBe(1);

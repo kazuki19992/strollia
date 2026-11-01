@@ -39,26 +39,26 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
   });
 
   describe('addNotificationResponseReceivedListener の購読', () => {
-    it('マウント時に addNotificationResponseReceivedListener を呼ぶ', () => {
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport: jest.fn() }));
+    it('マウント時に addNotificationResponseReceivedListener を呼ぶ', async () => {
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport: jest.fn() }));
 
       expect(Notifications.addNotificationResponseReceivedListener).toHaveBeenCalledTimes(1);
     });
 
-    it('アンマウント時に subscription.remove を呼ぶ', () => {
+    it('アンマウント時に subscription.remove を呼ぶ', async () => {
       const removeMock = jest.fn();
       (Notifications.addNotificationResponseReceivedListener as jest.Mock).mockReturnValue({ remove: removeMock });
 
-      const { unmount } = renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport: jest.fn() }));
+      const { unmount } = await renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport: jest.fn() }));
 
-      act(() => {
-        unmount();
+      await act(async () => {
+        await unmount();
       });
 
       expect(removeMock).toHaveBeenCalledTimes(1);
     });
 
-    it('月次レポート通知タップで isReady=true なら onOpenMonthlyReport を呼ぶ', () => {
+    it('月次レポート通知タップで isReady=true なら onOpenMonthlyReport を呼ぶ', async () => {
       let listener: ((response: Notifications.NotificationResponse) => void) | undefined;
       (Notifications.addNotificationResponseReceivedListener as jest.Mock).mockImplementation((cb) => {
         listener = cb;
@@ -66,16 +66,16 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
-      act(() => {
+      await act(() => {
         listener!(makeNotificationResponse('notif-1'));
       });
 
       expect(onOpenMonthlyReport).toHaveBeenCalledTimes(1);
     });
 
-    it('月次レポート通知タップで isReady=false なら onOpenMonthlyReport を呼ばない', () => {
+    it('月次レポート通知タップで isReady=false なら onOpenMonthlyReport を呼ばない', async () => {
       let listener: ((response: Notifications.NotificationResponse) => void) | undefined;
       (Notifications.addNotificationResponseReceivedListener as jest.Mock).mockImplementation((cb) => {
         listener = cb;
@@ -83,16 +83,16 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport }));
 
-      act(() => {
+      await act(() => {
         listener!(makeNotificationResponse('notif-1'));
       });
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
 
-    it('月次レポート以外の通知タップでは onOpenMonthlyReport を呼ばない', () => {
+    it('月次レポート以外の通知タップでは onOpenMonthlyReport を呼ばない', async () => {
       (isMonthlyReportNotification as jest.Mock).mockReturnValue(false);
 
       let listener: ((response: Notifications.NotificationResponse) => void) | undefined;
@@ -102,16 +102,16 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
-      act(() => {
+      await act(() => {
         listener!(makeNotificationResponse('notif-1'));
       });
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
 
-    it('同じ通知 ID が2回来ても onOpenMonthlyReport は1回しか呼ばれない', () => {
+    it('同じ通知 ID が2回来ても onOpenMonthlyReport は1回しか呼ばれない', async () => {
       let listener: ((response: Notifications.NotificationResponse) => void) | undefined;
       (Notifications.addNotificationResponseReceivedListener as jest.Mock).mockImplementation((cb) => {
         listener = cb;
@@ -119,9 +119,9 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       });
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
-      act(() => {
+      await act(() => {
         listener!(makeNotificationResponse('notif-dup'));
         listener!(makeNotificationResponse('notif-dup'));
       });
@@ -131,68 +131,68 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
   });
 
   describe('useLastNotificationResponse 経由の起動時処理', () => {
-    it('isReady=true かつ月次レポート通知が残っていれば onOpenMonthlyReport を呼ぶ', () => {
+    it('isReady=true かつ月次レポート通知が残っていれば onOpenMonthlyReport を呼ぶ', async () => {
       const response = makeNotificationResponse('launch-notif-1');
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).toHaveBeenCalledTimes(1);
     });
 
-    it('isReady=false のときは lastNotificationResponse があっても呼ばない', () => {
+    it('isReady=false のときは lastNotificationResponse があっても呼ばない', async () => {
       const response = makeNotificationResponse('launch-notif-2');
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: false, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
 
-    it('isReady が false → true に変わると lastNotificationResponse を処理する', () => {
+    it('isReady が false → true に変わると lastNotificationResponse を処理する', async () => {
       const response = makeNotificationResponse('launch-notif-3');
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-      const { rerender } = renderHook(
+      const { rerender } = await renderHook(
         ({ isReady }: { isReady: boolean }) => useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport }),
         { initialProps: { isReady: false } },
       );
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
 
-      act(() => {
-        rerender({ isReady: true });
+      await act(async () => {
+        await rerender({ isReady: true });
       });
 
       expect(onOpenMonthlyReport).toHaveBeenCalledTimes(1);
     });
 
-    it('lastNotificationResponse が null のときは何もしない', () => {
+    it('lastNotificationResponse が null のときは何もしない', async () => {
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(null);
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
 
-    it('月次レポート以外の lastNotificationResponse は無視する', () => {
+    it('月次レポート以外の lastNotificationResponse は無視する', async () => {
       (isMonthlyReportNotification as jest.Mock).mockReturnValue(false);
       const response = makeNotificationResponse('other-notif');
       (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
 
       const onOpenMonthlyReport = jest.fn();
-      renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
+      await renderHook(() => useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }));
 
       expect(onOpenMonthlyReport).not.toHaveBeenCalled();
     });
   });
 
   describe('onOpenMonthlyReport の最新化', () => {
-    it('onOpenMonthlyReport が更新されても通知リスナーは最新の関数を呼ぶ', () => {
+    it('onOpenMonthlyReport が更新されても通知リスナーは最新の関数を呼ぶ', async () => {
       let listener: ((response: Notifications.NotificationResponse) => void) | undefined;
       (Notifications.addNotificationResponseReceivedListener as jest.Mock).mockImplementation((cb) => {
         listener = cb;
@@ -202,17 +202,17 @@ describe('月次レポート通知応答 useMonthlyReportNotificationResponse', 
       const firstCallback = jest.fn();
       const secondCallback = jest.fn();
 
-      const { rerender } = renderHook(
+      const { rerender } = await renderHook(
         ({ onOpenMonthlyReport }: { onOpenMonthlyReport: jest.Mock }) =>
           useMonthlyReportNotificationResponse({ isReady: true, onOpenMonthlyReport }),
         { initialProps: { onOpenMonthlyReport: firstCallback } },
       );
 
-      act(() => {
-        rerender({ onOpenMonthlyReport: secondCallback });
+      await act(async () => {
+        await rerender({ onOpenMonthlyReport: secondCallback });
       });
 
-      act(() => {
+      await act(() => {
         listener!(makeNotificationResponse('notif-latest'));
       });
 

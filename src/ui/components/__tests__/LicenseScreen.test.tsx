@@ -58,8 +58,10 @@ describe('ライセンス画面 LicenseScreen', () => {
     jest.restoreAllMocks();
   });
 
-  test('生成済みOSSライセンスをライブラリ名だけのリストで表示する', () => {
-    render(<LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
+  test('生成済みOSSライセンスをライブラリ名だけのリストで表示する', async () => {
+    await render(
+      <LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />,
+    );
 
     expect(screen.getByText('ライセンス')).toBeTruthy();
     expect(screen.getByText('react')).toBeTruthy();
@@ -69,10 +71,10 @@ describe('ライセンス画面 LicenseScreen', () => {
     expect(screen.queryByText('MIT License text')).toBeNull();
   });
 
-  test('画面タイトルは中央配置の共通ヘッダーで表示する', () => {
+  test('画面タイトルは中央配置の共通ヘッダーで表示する', async () => {
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    render(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
+    await render(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={jest.fn()} />);
 
     const title = screen.getByText('ライセンス');
 
@@ -80,19 +82,21 @@ describe('ライセンス画面 LicenseScreen', () => {
     expect(flattenStyle(title.props.style).textAlign).toBe('center');
   });
 
-  test('設定ボタンで設定画面に戻る', () => {
+  test('設定ボタンで設定画面に戻る', async () => {
     const onBackToSettings = jest.fn();
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    render(<LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />);
+    await render(
+      <LicenseScreen styles={realStyles} theme={lightTheme} onBackToSettings={onBackToSettings} onOpenLicenseDetail={jest.fn()} />,
+    );
 
     // SafeAreaView のスタイル確認
-    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    // SafeAreaView はセマンティッククエリで取得できないため、ホスト要素の型で取得する
+    const container = screen.container.queryAll((node) => node.type === 'SafeAreaView')[0];
     const title = screen.getByText('ライセンス');
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('設定へ戻る'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('設定へ戻る'));
     });
 
     expect(container.props.style).toBe(realStyles.appScreen);
@@ -100,31 +104,31 @@ describe('ライセンス画面 LicenseScreen', () => {
     expect(onBackToSettings).toHaveBeenCalledTimes(1);
   });
 
-  test('リスト項目をタップすると選択したライセンス詳細へ遷移する', () => {
+  test('リスト項目をタップすると選択したライセンス詳細へ遷移する', async () => {
     const onOpenLicenseDetail = jest.fn();
 
-    render(
+    await render(
       <LicenseScreen styles={styles as never} theme={lightTheme} onBackToSettings={jest.fn()} onOpenLicenseDetail={onOpenLicenseDetail} />,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('react のライセンス詳細を開く'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('react のライセンス詳細を開く'));
     });
 
     expect(onOpenLicenseDetail).toHaveBeenCalledWith(OSS_LICENSES[0]);
   });
 
-  test('ライセンス詳細からライセンス一覧へ戻れる', () => {
+  test('ライセンス詳細からライセンス一覧へ戻れる', async () => {
     const onBackToLicenseList = jest.fn();
     const realStyles = require('../../appStyles').createStyles(lightTheme);
 
-    render(
+    await render(
       <LicenseDetailScreen license={OSS_LICENSES[0]} styles={realStyles} theme={lightTheme} onBackToLicenseList={onBackToLicenseList} />,
     );
 
     // SafeAreaView のスタイル確認
-    // RTL では UNSAFE_getByType を使って SafeAreaView を取得する
-    const container = screen.UNSAFE_getByType(require('react-native').SafeAreaView);
+    // SafeAreaView はセマンティッククエリで取得できないため、ホスト要素の型で取得する
+    const container = screen.container.queryAll((node) => node.type === 'SafeAreaView')[0];
     const title = screen.getByText('詳細');
 
     expect(screen.getByText('react')).toBeTruthy();
@@ -133,8 +137,8 @@ describe('ライセンス画面 LicenseScreen', () => {
     expect(screen.getByText('https://github.com/facebook/react')).toBeTruthy();
     expect(screen.getByText('MIT License text')).toBeTruthy();
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('ライセンスへ戻る'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('ライセンスへ戻る'));
     });
 
     expect(container.props.style).toBe(realStyles.appScreen);

@@ -289,11 +289,11 @@ const flushPromises = async () => {
 
 /** 実績一覧を開く。スポットセクションの進捗表示を検証する起点にする。 */
 const openAchievementList = async () => {
-  const router = renderRouter('src/app');
+  const router = await renderRouter('src/app');
   await flushPromises();
 
   await act(async () => {
-    fireEvent.press(screen.getByLabelText('実績'));
+    await fireEvent.press(screen.getByLabelText('実績'));
   });
   await flushPromises();
 
@@ -307,16 +307,16 @@ const openAchievementList = async () => {
  * レンダリング結果を呼び出し元へ返す。
  */
 const openLandmarkPackDetail = async () => {
-  const router = renderRouter('src/app');
+  const router = await renderRouter('src/app');
   await flushPromises();
 
   await act(async () => {
-    fireEvent.press(screen.getByLabelText('実績'));
+    await fireEvent.press(screen.getByLabelText('実績'));
   });
   await flushPromises();
 
   await act(async () => {
-    fireEvent.press(screen.getByLabelText('日本三名瀑の詳細を開く'));
+    await fireEvent.press(screen.getByLabelText('日本三名瀑の詳細を開く'));
   });
   await flushPromises();
 
@@ -369,7 +369,7 @@ describe('実績一覧からスポットパック詳細への遷移', () => {
     const router = await openLandmarkPackDetail();
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('実績へ戻る'));
+      await fireEvent.press(screen.getByLabelText('実績へ戻る'));
     });
     await flushPromises();
 
@@ -385,7 +385,7 @@ describe('実績一覧からスポットパック詳細への遷移', () => {
     const router = await openLandmarkPackDetail();
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
+      await fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
     });
     await flushPromises();
 

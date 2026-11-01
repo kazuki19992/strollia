@@ -34,10 +34,10 @@ describe('FirstLaunchTutorialDialog のサイズ変化アニメーション', ()
     jest.restoreAllMocks();
   });
 
-  it('「次へ」でステップを変える直前にリサイズアニメーションを設定する', () => {
+  it('「次へ」でステップを変える直前にリサイズアニメーションを設定する', async () => {
     const spy = jest.spyOn(LayoutAnimation, 'configureNext').mockImplementation(() => undefined);
 
-    render(
+    await render(
       <FirstLaunchTutorialDialog
         visible
         styles={styles}
@@ -47,8 +47,8 @@ describe('FirstLaunchTutorialDialog のサイズ変化アニメーション', ()
       />,
     );
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('次へ'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('次へ'));
     });
 
     expect(spy).toHaveBeenCalled();

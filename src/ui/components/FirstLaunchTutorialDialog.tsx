@@ -16,7 +16,7 @@ function resolveInstructionImageAspectRatio(source?: ImageSourcePropType): numbe
   }
 
   const asset = Image.resolveAssetSource(source);
-  if (!asset || asset.width <= 0 || asset.height <= 0) {
+  if (!asset?.width || !asset.height || asset.width <= 0 || asset.height <= 0) {
     return FALLBACK_INSTRUCTION_IMAGE_ASPECT_RATIO;
   }
 

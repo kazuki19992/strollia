@@ -1,4 +1,4 @@
-import { Animated, Text } from 'react-native';
+import { Animated } from 'react-native';
 import { render, screen, act } from '@testing-library/react-native';
 
 import { NewRecordPill } from '@/ui/components/reports/NewRecordPill';
@@ -16,22 +16,21 @@ describe('新記録ピル NewRecordPill', () => {
     jest.restoreAllMocks();
   });
 
-  it('visible=falseの場合は何も表示せずアニメーションを開始しない', () => {
-    render(<NewRecordPill visible={false} />);
+  it('visible=falseの場合は何も表示せずアニメーションを開始しない', async () => {
+    await render(<NewRecordPill visible={false} />);
 
-    // UNSAFE_queryAllByType を使うのは Text という型で要素が0件であることを確認するため
-    expect(screen.UNSAFE_queryAllByType(Text)).toHaveLength(0);
+    // Text ホスト要素が0件であることを確認する
+    expect(screen.container.queryAll((node) => node.type === 'Text')).toHaveLength(0);
     expect(loopAnimation.start).not.toHaveBeenCalled();
   });
 
-  it('visible=trueの場合は表示してアニメーションを開始し、アンマウント時に停止する', () => {
-    const { unmount } = render(<NewRecordPill visible />);
+  it('visible=trueの場合は表示してアニメーションを開始し、アンマウント時に停止する', async () => {
+    const { unmount } = await render(<NewRecordPill visible />);
 
-    // UNSAFE_getByType を使うのは Text という型で要素を取得するため
-    expect(screen.UNSAFE_getByType(Text).props.children).toBe('NEW RECORD!!');
+    expect(screen.getByText('NEW RECORD!!')).toBeTruthy();
     expect(loopAnimation.start).toHaveBeenCalledTimes(1);
 
-    act(() => unmount());
+    await act(async () => await unmount());
 
     expect(loopAnimation.stop).toHaveBeenCalledTimes(1);
   });

@@ -17,14 +17,13 @@ const report: MonthlyReport = {
 };
 
 describe('月間移動マップページ MonthlyMapReportPage', () => {
-  it('背景グリッドとルート装飾を表示する', () => {
-    render(<MonthlyMapReportPage report={report} pageCount={4} pageIndex={1} onShare={jest.fn()} />);
+  it('背景グリッドとルート装飾を表示する', async () => {
+    await render(<MonthlyMapReportPage report={report} pageCount={4} pageIndex={1} onShare={jest.fn()} />);
 
-    // UNSAFE_getAllByProps を使うのは testID という非セマンティックな props で要素を検索するため
-    expect(screen.UNSAFE_getAllByProps({ testID: 'monthly-map-background' }).length).toBeGreaterThan(0);
-    expect(screen.UNSAFE_getAllByProps({ testID: 'monthly-map-grid-line' }).length).toBeGreaterThanOrEqual(12);
-    expect(screen.UNSAFE_getAllByProps({ testID: 'monthly-map-route-halo' }).length).toBeGreaterThan(0);
-    expect(screen.UNSAFE_getAllByProps({ testID: 'monthly-map-route' }).length).toBeGreaterThan(0);
-    expect(screen.UNSAFE_getAllByProps({ testID: 'monthly-map-overlay' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('monthly-map-background').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('monthly-map-grid-line').length).toBeGreaterThanOrEqual(12);
+    expect(screen.getAllByTestId('monthly-map-route-halo').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('monthly-map-route').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('monthly-map-overlay').length).toBeGreaterThan(0);
   });
 });

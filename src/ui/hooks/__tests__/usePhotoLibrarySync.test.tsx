@@ -40,7 +40,7 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
   });
 
   it('全件モードで走査する', async () => {
-    const { result } = renderHook(() => usePhotoLibrarySync());
+    const { result } = await renderHook(() => usePhotoLibrarySync());
 
     await act(async () => {
       await result.current.startPhotoLibrarySync();
@@ -50,7 +50,7 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
   });
 
   it('計測用の走査上限を上書きしない(既定の解決に任せる)', async () => {
-    const { result } = renderHook(() => usePhotoLibrarySync());
+    const { result } = await renderHook(() => usePhotoLibrarySync());
 
     await act(async () => {
       await result.current.startPhotoLibrarySync();
@@ -68,9 +68,9 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
       }),
     );
 
-    const { result } = renderHook(() => usePhotoLibrarySync());
+    const { result } = await renderHook(() => usePhotoLibrarySync());
 
-    act(() => {
+    await act(() => {
       void result.current.startPhotoLibrarySync();
     });
     await flushPromises();
@@ -87,9 +87,9 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
   it('総数が分かるまで進捗はnullにする', async () => {
     (loadGeotaggedPhotos as jest.Mock).mockReturnValue(new Promise(() => undefined));
 
-    const { result } = renderHook(() => usePhotoLibrarySync());
+    const { result } = await renderHook(() => usePhotoLibrarySync());
 
-    act(() => {
+    await act(() => {
       void result.current.startPhotoLibrarySync();
     });
     await flushPromises();
@@ -106,9 +106,9 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
       return new Promise(() => undefined);
     });
 
-    const { result } = renderHook(() => usePhotoLibrarySync());
+    const { result } = await renderHook(() => usePhotoLibrarySync());
 
-    act(() => {
+    await act(() => {
       void result.current.startPhotoLibrarySync();
     });
     await flushPromises();
@@ -129,13 +129,13 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
     // 再レンダー数は**対象hookと同じroot**で数える。別のrenderHookで数えると、進捗stateの更新で
     // 再レンダーされるのは対象hook側だけなので、そもそも数えられない
     let renderCount = 0;
-    const { result } = renderHook(() => {
+    const { result } = await renderHook(() => {
       renderCount += 1;
 
       return usePhotoLibrarySync();
     });
 
-    act(() => {
+    await act(() => {
       void result.current.startPhotoLibrarySync();
     });
     await flushPromises();
@@ -169,7 +169,7 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
 
   it('完了したら呼び出し側へ通知する(地図の表示を最新化させるため)', async () => {
     const onCompleted = jest.fn();
-    const { result } = renderHook(() => usePhotoLibrarySync({ onCompleted }));
+    const { result } = await renderHook(() => usePhotoLibrarySync({ onCompleted }));
 
     await act(async () => {
       await result.current.startPhotoLibrarySync();
@@ -184,7 +184,7 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
     ];
     (loadGeotaggedPhotos as jest.Mock).mockResolvedValue({ photos: scannedPhotos, isCacheSaved: false, metrics, mode: 'full' });
     const onCompleted = jest.fn();
-    const { result } = renderHook(() => usePhotoLibrarySync({ onCompleted }));
+    const { result } = await renderHook(() => usePhotoLibrarySync({ onCompleted }));
 
     await act(async () => {
       await result.current.startPhotoLibrarySync();
@@ -199,7 +199,7 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
     (loadGeotaggedPhotos as jest.Mock).mockRejectedValue(new Error('database is locked'));
     const onCompleted = jest.fn();
 
-    const { result } = renderHook(() => usePhotoLibrarySync({ onCompleted }));
+    const { result } = await renderHook(() => usePhotoLibrarySync({ onCompleted }));
 
     await act(async () => {
       await result.current.startPhotoLibrarySync();
@@ -213,9 +213,9 @@ describe('写真ライブラリの全件再読み込みhook usePhotoLibrarySync'
   it('実行中に再度呼ばれても走査を二重に走らせない', async () => {
     (loadGeotaggedPhotos as jest.Mock).mockReturnValue(new Promise(() => undefined));
 
-    const { result } = renderHook(() => usePhotoLibrarySync());
+    const { result } = await renderHook(() => usePhotoLibrarySync());
 
-    act(() => {
+    await act(() => {
       void result.current.startPhotoLibrarySync();
       void result.current.startPhotoLibrarySync();
     });

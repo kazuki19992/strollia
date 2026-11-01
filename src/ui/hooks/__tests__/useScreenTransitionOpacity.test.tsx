@@ -18,36 +18,36 @@ describe('画面遷移フェードhook useScreenTransitionOpacity', () => {
     jest.restoreAllMocks();
   });
 
-  it('Animated.Value のインスタンスを返す', () => {
-    const { result } = renderHook(() => useScreenTransitionOpacity('map', 300));
+  it('Animated.Value のインスタンスを返す', async () => {
+    const { result } = await renderHook(() => useScreenTransitionOpacity('map', 300));
 
     expect(result.current).toBeInstanceOf(Animated.Value);
   });
 
-  it('マウント時に Animated.timing が呼ばれる', () => {
-    renderHook(() => useScreenTransitionOpacity('map', 300));
+  it('マウント時に Animated.timing が呼ばれる', async () => {
+    await renderHook(() => useScreenTransitionOpacity('map', 300));
 
     expect(Animated.timing).toHaveBeenCalledTimes(1);
     expect(Animated.timing).toHaveBeenCalledWith(expect.any(Animated.Value), expect.objectContaining({ toValue: 1, duration: 300 }));
   });
 
-  it('screenKey が変わると Animated.timing が再度呼ばれる', () => {
-    const { rerender } = renderHook(
+  it('screenKey が変わると Animated.timing が再度呼ばれる', async () => {
+    const { rerender } = await renderHook(
       ({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs),
       {
         initialProps: { screenKey: 'map', durationMs: 300 },
       },
     );
 
-    act(() => {
-      rerender({ screenKey: 'settings', durationMs: 300 });
+    await act(async () => {
+      await rerender({ screenKey: 'settings', durationMs: 300 });
     });
 
     expect(Animated.timing).toHaveBeenCalledTimes(2);
   });
 
-  it('screenKey と durationMs が同じ再レンダーでは追加のアニメーションが呼ばれない', () => {
-    const { rerender } = renderHook(
+  it('screenKey と durationMs が同じ再レンダーでは追加のアニメーションが呼ばれない', async () => {
+    const { rerender } = await renderHook(
       ({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs),
       {
         initialProps: { screenKey: 'map', durationMs: 300 },
@@ -55,37 +55,37 @@ describe('画面遷移フェードhook useScreenTransitionOpacity', () => {
     );
 
     // effect の依存配列 [durationMs, opacity, screenKey] がすべて同じなら再実行されない
-    act(() => {
-      rerender({ screenKey: 'map', durationMs: 300 });
+    await act(async () => {
+      await rerender({ screenKey: 'map', durationMs: 300 });
     });
 
     expect(Animated.timing).toHaveBeenCalledTimes(1);
   });
 
-  it('durationMs が変わると Animated.timing が再度呼ばれる（依存配列に含まれるため）', () => {
-    const { rerender } = renderHook(
+  it('durationMs が変わると Animated.timing が再度呼ばれる（依存配列に含まれるため）', async () => {
+    const { rerender } = await renderHook(
       ({ screenKey, durationMs }: { screenKey: string; durationMs: number }) => useScreenTransitionOpacity(screenKey, durationMs),
       {
         initialProps: { screenKey: 'map', durationMs: 300 },
       },
     );
 
-    act(() => {
-      rerender({ screenKey: 'map', durationMs: 500 });
+    await act(async () => {
+      await rerender({ screenKey: 'map', durationMs: 500 });
     });
 
     expect(Animated.timing).toHaveBeenCalledTimes(2);
     expect(Animated.timing).toHaveBeenLastCalledWith(expect.any(Animated.Value), expect.objectContaining({ duration: 500 }));
   });
 
-  it('toValue=1 へのアニメーションが指定される（フェードイン）', () => {
-    renderHook(() => useScreenTransitionOpacity('map', 400));
+  it('toValue=1 へのアニメーションが指定される（フェードイン）', async () => {
+    await renderHook(() => useScreenTransitionOpacity('map', 400));
 
     expect(Animated.timing).toHaveBeenCalledWith(expect.any(Animated.Value), expect.objectContaining({ toValue: 1 }));
   });
 
-  it('start() が呼ばれる（アニメーション開始）', () => {
-    renderHook(() => useScreenTransitionOpacity('map', 300));
+  it('start() が呼ばれる（アニメーション開始）', async () => {
+    await renderHook(() => useScreenTransitionOpacity('map', 300));
 
     expect(timingMocks[0]!.start).toHaveBeenCalledTimes(1);
   });

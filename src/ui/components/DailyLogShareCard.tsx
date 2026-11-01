@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { type ComponentRef, forwardRef } from 'react';
 import { Text, View } from 'react-native';
 
 import type { DailyDetailReport } from '@/features/reports/dailyReport';
@@ -45,7 +45,7 @@ export type DailyLogShareCardProps = {
  * 共有画像をキャプチャするための、画面外にマウントする日別記録カード。
  * 画面上のスライダーや共有ボタンを含まないため、共有時にUIが消えることなくキャプチャできる。
  */
-export const DailyLogShareCard = forwardRef<View, DailyLogShareCardProps>(function DailyLogShareCard(
+export const DailyLogShareCard = forwardRef<ComponentRef<typeof View>, DailyLogShareCardProps>(function DailyLogShareCard(
   {
     width,
     points,

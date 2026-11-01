@@ -1,4 +1,4 @@
-import { Alert, Text, View } from 'react-native';
+import { Alert } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
@@ -25,6 +25,20 @@ jest.mock('react-native-maps', () => {
   return { __esModule: true, default: View, Polyline: View };
 });
 
+/**
+ * 押下ハンドラが返す Promise の完了を待たずに要素を押下し、ハンドラ完了を表すPromiseを返す。
+ * RNTL v14 の fireEvent はハンドラの戻り値(共有処理のPromise)の完了まで待つため、共有準備中の状態を
+ * 検証したいテストではハンドラ完了前に制御を戻す必要がある。返した finished はテスト内で必ず await する。
+ */
+async function startPressWithoutWaitingHandler(element: Parameters<typeof fireEvent.press>[0]): Promise<{ finished: Promise<unknown> }> {
+  let finished: Promise<unknown> = Promise.resolve();
+  await act(async () => {
+    finished = fireEvent.press(element);
+    await Promise.resolve();
+  });
+  return { finished };
+}
+
 describe('月次レポート画面 MonthlyReportScreen', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -45,8 +59,8 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     jest.restoreAllMocks();
   });
 
-  it('スクロール型の月次レポートを表示する', () => {
-    render(
+  it('スクロール型の月次レポートを表示する', async () => {
+    await render(
       <MonthlyReportScreen
         dailyLogs={[
           {
@@ -76,10 +90,10 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     expect(screen.getByText('月間取得した実績')).toBeTruthy();
   });
 
-  it('閉じるボタンで地図へ戻る', () => {
+  it('閉じるボタンで地図へ戻る', async () => {
     const onBackToMap = jest.fn();
 
-    render(
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[]}
@@ -90,13 +104,13 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByLabelText('レポートを閉じる'));
+    await fireEvent.press(screen.getByLabelText('レポートを閉じる'));
 
     expect(onBackToMap).toHaveBeenCalledTimes(1);
   });
 
   it('共有ボタンでレポート画像を共有する', async () => {
-    render(
+    await render(
       <MonthlyReportScreen
         dailyLogs={[
           {
@@ -119,7 +133,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     );
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('レポートを共有'));
+      await fireEvent.press(screen.getByLabelText('レポートを共有'));
     });
 
     expect(captureRef).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ format: 'png' }));
@@ -135,7 +149,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       }),
     );
 
-    render(
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[]}
@@ -147,10 +161,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('レポートを共有'));
-      await Promise.resolve();
-    });
+    const { finished } = await startPressWithoutWaitingHandler(screen.getByLabelText('レポートを共有'));
 
     expect(screen.getByText('レポートを生成しています…')).toBeTruthy();
     expect(screen.getByText('少しお待ちください。')).toBeTruthy();
@@ -158,8 +169,9 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     await act(async () => {
       resolveSharingAvailability?.(true);
     });
+    await finished;
 
-    act(() => {
+    await act(() => {
       jest.advanceTimersByTime(600);
     });
 
@@ -174,7 +186,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       }),
     );
 
-    render(
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[]}
@@ -186,17 +198,18 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    await act(async () => {
-      fireEvent.press(screen.getByLabelText('レポートを共有'));
-      fireEvent.press(screen.getByLabelText('レポートを共有'));
-      await Promise.resolve();
-    });
+    // RNTL v14 では押下ごとに描画が反映されるため、2回目の押下は共有準備中の状態に対して行われる。
+    const shareButton = screen.getByLabelText('レポートを共有');
+    const first = await startPressWithoutWaitingHandler(shareButton);
+    const second = await startPressWithoutWaitingHandler(shareButton);
+    const finished = Promise.all([first.finished, second.finished]);
 
     expect(Sharing.isAvailableAsync).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       resolveSharingAvailability?.(true);
     });
+    await finished;
 
     expect(captureRef).toHaveBeenCalledTimes(1);
     expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
@@ -205,7 +218,7 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
   it('共有シートが使えない場合は画像生成せず警告する', async () => {
     (Sharing.isAvailableAsync as jest.Mock).mockResolvedValueOnce(false);
 
-    render(
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[]}
@@ -218,15 +231,15 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     );
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('レポートを共有'));
+      await fireEvent.press(screen.getByLabelText('レポートを共有'));
     });
 
     expect(captureRef).not.toHaveBeenCalled();
     expect(Alert.alert).toHaveBeenCalledWith('共有できません', 'この環境では共有シートを利用できません。');
   });
 
-  it('OS設定ではなくAppから渡されたテーマで表示色を決める', () => {
-    render(
+  it('OS設定ではなくAppから渡されたテーマで表示色を決める', async () => {
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[]}
@@ -237,9 +250,9 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    // UNSAFE_getAllByType(View) でViewに絞ってから style.backgroundColor で対象コンテナを特定する
-    const container = screen
-      .UNSAFE_getAllByType(View)
+    // View ホスト要素に絞ってから style.backgroundColor で対象コンテナを特定する
+    const container = screen.container
+      .queryAll((node) => node.type === 'View')
       .find(
         (node) =>
           Array.isArray(node.props.style) &&
@@ -249,8 +262,8 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     expect(container).toBeTruthy();
   });
 
-  it('共有する月次マップは非表示範囲で分割したPolylineだけを描く', () => {
-    render(
+  it('共有する月次マップは非表示範囲で分割したPolylineだけを描く', async () => {
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[
@@ -334,8 +347,10 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    // モックしたPolylineはReactコンポーネントとViewの両方が検索されるため、座標列を重複排除して区間数を検証する。
-    const renderedSegments = new Set(screen.UNSAFE_getAllByProps({ strokeWidth: 5 }).map((node) => JSON.stringify(node.props.coordinates)));
+    // View としてモックしたPolylineのホスト要素を strokeWidth で検索し、座標列を重複排除して区間数を検証する。
+    const renderedSegments = new Set(
+      screen.container.queryAll((node) => node.props.strokeWidth === 5).map((node) => JSON.stringify(node.props.coordinates)),
+    );
     expect(renderedSegments).toEqual(
       new Set([
         JSON.stringify([
@@ -350,8 +365,8 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     );
   });
 
-  it('滞在場所が未解決なら生ルートを描画せずレポート共有も無効にする', () => {
-    render(
+  it('滞在場所が未解決なら生ルートを描画せずレポート共有も無効にする', async () => {
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[
@@ -388,12 +403,12 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    expect(screen.UNSAFE_queryAllByProps({ strokeWidth: 5 })).toHaveLength(0);
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
+    expect(screen.container.queryAll((node) => node.props.strokeWidth === 5)).toHaveLength(0);
+    expect(screen.getByLabelText('レポートを共有')).toBeDisabled();
   });
 
-  it('滞在場所の読込失敗時は共有を無効化して安全なエラー状態を表示する', () => {
-    render(
+  it('滞在場所の読込失敗時は共有を無効化して安全なエラー状態を表示する', async () => {
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[]}
@@ -407,11 +422,11 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
     );
 
     expect(screen.getByText('滞在場所を読み込めないため、共有を準備できません。')).toBeTruthy();
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
+    expect(screen.getByLabelText('レポートを共有')).toBeDisabled();
   });
 
-  it('許可リスト外の非表示半径が1件でもあれば共有を無効化する', () => {
-    render(
+  it('許可リスト外の非表示半径が1件でもあれば共有を無効化する', async () => {
+    await render(
       <MonthlyReportScreen
         dailyLogs={[]}
         points={[]}
@@ -435,6 +450,6 @@ describe('月次レポート画面 MonthlyReportScreen', () => {
       />,
     );
 
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'レポートを共有' })[0].props.disabled).toBe(true);
+    expect(screen.getByLabelText('レポートを共有')).toBeDisabled();
   });
 });

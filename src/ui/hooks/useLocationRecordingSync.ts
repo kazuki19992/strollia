@@ -18,6 +18,7 @@ import { getDailyLogs, getLocationPointsBounds, LocationPointsBounds } from '@/f
 import { getMonthlyAreaReport, MonthlyAreaReport } from '@/features/reports/monthlyAreaReport';
 import { getPreviousReportMonth } from '@/features/reports/monthlyReport';
 import type { DailyLogSummary } from '@/types/gps';
+import { resolveAppStateStatus } from '@/ui/appStateStatus';
 import { shouldStartRecordingAutomatically } from '@/ui/autoRecording';
 import type { AutoStartStatus } from '@/ui/appTypes';
 
@@ -166,7 +167,7 @@ export function useLocationRecordingSync({
   const [pointsBounds, setPointsBounds] = useState<LocationPointsBounds | null>(null);
   const [distance, setDistance] = useState(0);
   const [monthlyAreaReport, setMonthlyAreaReport] = useState<MonthlyAreaReport | null>(null);
-  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+  const [appState, setAppState] = useState<AppStateStatus>(() => resolveAppStateStatus(AppState.currentState));
 
   /** DB、記録状態、権限状態をまとめて再読み込みし、画面表示を同期する。 */
   const refreshData = useCallback(

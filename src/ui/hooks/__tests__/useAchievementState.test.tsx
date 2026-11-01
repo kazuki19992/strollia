@@ -78,42 +78,42 @@ describe('実績状態フック useAchievementState', () => {
   });
 
   describe('初期状態', () => {
-    it('初期 selectedAchievement は null になる', () => {
-      const { result } = renderHook(() => useAchievementState());
+    it('初期 selectedAchievement は null になる', async () => {
+      const { result } = await renderHook(() => useAchievementState());
 
       expect(result.current.selectedAchievement).toBeNull();
     });
 
-    it('初期 achievementItems は空配列になる', () => {
-      const { result } = renderHook(() => useAchievementState());
+    it('初期 achievementItems は空配列になる', async () => {
+      const { result } = await renderHook(() => useAchievementState());
 
       expect(result.current.achievementItems).toEqual([]);
     });
 
-    it('初期 pendingAchievementNotifications は空配列になる', () => {
-      const { result } = renderHook(() => useAchievementState());
+    it('初期 pendingAchievementNotifications は空配列になる', async () => {
+      const { result } = await renderHook(() => useAchievementState());
 
       expect(result.current.pendingAchievementNotifications).toEqual([]);
     });
 
-    it('isAchievementDialogVisibleRef の初期値は false になる', () => {
-      const { result } = renderHook(() => useAchievementState());
+    it('isAchievementDialogVisibleRef の初期値は false になる', async () => {
+      const { result } = await renderHook(() => useAchievementState());
 
       expect(result.current.isAchievementDialogVisibleRef.current).toBe(false);
     });
 
-    it('wasAchievementEvaluationPausedRef の初期値は false になる', () => {
-      const { result } = renderHook(() => useAchievementState());
+    it('wasAchievementEvaluationPausedRef の初期値は false になる', async () => {
+      const { result } = await renderHook(() => useAchievementState());
 
       expect(result.current.wasAchievementEvaluationPausedRef.current).toBe(false);
     });
   });
 
   describe('setSelectedAchievement', () => {
-    it('setSelectedAchievement を呼ぶと selectedAchievement が更新される', () => {
-      const { result } = renderHook(() => useAchievementState());
+    it('setSelectedAchievement を呼ぶと selectedAchievement が更新される', async () => {
+      const { result } = await renderHook(() => useAchievementState());
 
-      act(() => {
+      await act(() => {
         result.current.setSelectedAchievement(MOCK_ACHIEVEMENT_ITEM);
       });
 
@@ -123,7 +123,7 @@ describe('実績状態フック useAchievementState', () => {
 
   describe('refreshAchievementState — 実績一覧の再読み込み', () => {
     it('getAchievementListItems を呼ぶ', async () => {
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.refreshAchievementState();
@@ -133,7 +133,7 @@ describe('実績状態フック useAchievementState', () => {
     });
 
     it('showPendingNotifications が true のとき getPendingInAppAchievementNotifications を呼ぶ', async () => {
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.refreshAchievementState(true);
@@ -143,7 +143,7 @@ describe('実績状態フック useAchievementState', () => {
     });
 
     it('showPendingNotifications が false のとき getPendingInAppAchievementNotifications を呼ばない', async () => {
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.refreshAchievementState(false);
@@ -154,7 +154,7 @@ describe('実績状態フック useAchievementState', () => {
 
     it('signal が abort 済みのとき state を更新しない', async () => {
       (getAchievementListItems as jest.Mock).mockResolvedValue([MOCK_ACHIEVEMENT_ITEM]);
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       const controller = new AbortController();
       controller.abort();
@@ -171,7 +171,7 @@ describe('実績状態フック useAchievementState', () => {
   describe('evaluateAchievementsIfDialogIdle — 実績評価', () => {
     it('ダイアログが表示されていないとき evaluateAchievementsAndNotify を呼ぶ', async () => {
       (canEvaluateAchievementsInForeground as jest.Mock).mockReturnValue(true);
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       let returnValue: boolean | undefined;
       await act(async () => {
@@ -184,7 +184,7 @@ describe('実績状態フック useAchievementState', () => {
 
     it('ダイアログが表示中のとき evaluateAchievementsAndNotify を呼ばず false を返す', async () => {
       (canEvaluateAchievementsInForeground as jest.Mock).mockReturnValue(false);
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       let returnValue: boolean | undefined;
       await act(async () => {
@@ -197,7 +197,7 @@ describe('実績状態フック useAchievementState', () => {
 
     it('ダイアログ表示中に呼ばれると wasAchievementEvaluationPausedRef が true になる', async () => {
       (canEvaluateAchievementsInForeground as jest.Mock).mockReturnValue(false);
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.evaluateAchievementsIfDialogIdle();
@@ -208,10 +208,10 @@ describe('実績状態フック useAchievementState', () => {
   });
 
   describe('closeAchievementUnlockModal — 実績解除モーダルを閉じる', () => {
-    it('pendingAchievementNotifications が空のとき何もしない', () => {
-      const { result } = renderHook(() => useAchievementState());
+    it('pendingAchievementNotifications が空のとき何もしない', async () => {
+      const { result } = await renderHook(() => useAchievementState());
 
-      act(() => {
+      await act(() => {
         result.current.closeAchievementUnlockModal();
       });
 
@@ -222,7 +222,7 @@ describe('実績状態フック useAchievementState', () => {
     it('通知がある場合 markAchievementShownInApp を呼び通知を1件除去する', async () => {
       (getPendingInAppAchievementNotifications as jest.Mock).mockResolvedValue([MOCK_PENDING_NOTIFICATION]);
       (filterDismissedAchievementNotifications as jest.Mock).mockReturnValue([MOCK_PENDING_NOTIFICATION]);
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.refreshAchievementState(true);
@@ -230,7 +230,7 @@ describe('実績状態フック useAchievementState', () => {
 
       expect(result.current.pendingAchievementNotifications).toHaveLength(1);
 
-      act(() => {
+      await act(() => {
         result.current.closeAchievementUnlockModal();
       });
 
@@ -243,13 +243,13 @@ describe('実績状態フック useAchievementState', () => {
       (getPendingInAppAchievementNotifications as jest.Mock).mockResolvedValue([MOCK_PENDING_NOTIFICATION]);
       (filterDismissedAchievementNotifications as jest.Mock).mockReturnValue([MOCK_PENDING_NOTIFICATION]);
 
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.refreshAchievementState(true);
       });
 
-      act(() => {
+      await act(() => {
         result.current.closeAchievementUnlockModal();
       });
 
@@ -263,9 +263,9 @@ describe('実績状態フック useAchievementState', () => {
       (getPendingInAppAchievementNotifications as jest.Mock).mockResolvedValue([MOCK_PENDING_NOTIFICATION]);
       (filterDismissedAchievementNotifications as jest.Mock).mockReturnValue([MOCK_PENDING_NOTIFICATION]);
 
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
-      act(() => {
+      await act(() => {
         result.current.initializeAchievementReviewState(false);
       });
 
@@ -273,7 +273,7 @@ describe('実績状態フック useAchievementState', () => {
         await result.current.refreshAchievementState(true);
       });
 
-      act(() => {
+      await act(() => {
         result.current.closeAchievementUnlockModal();
       });
 
@@ -291,10 +291,10 @@ describe('実績状態フック useAchievementState', () => {
       (getPendingInAppAchievementNotifications as jest.Mock).mockResolvedValue([MOCK_PENDING_NOTIFICATION]);
       (filterDismissedAchievementNotifications as jest.Mock).mockReturnValue([MOCK_PENDING_NOTIFICATION]);
 
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       // reviewPrompted=true で初期化
-      act(() => {
+      await act(() => {
         result.current.initializeAchievementReviewState(true);
       });
 
@@ -302,7 +302,7 @@ describe('実績状態フック useAchievementState', () => {
         await result.current.refreshAchievementState(true);
       });
 
-      act(() => {
+      await act(() => {
         result.current.closeAchievementUnlockModal();
       });
 
@@ -312,7 +312,7 @@ describe('実績状態フック useAchievementState', () => {
 
   describe('requestAchievementNotificationPermissionIfNeeded — 通知権限要求', () => {
     it('requestAchievementNotificationPermissionOnFirstLaunch を呼ぶ', async () => {
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.requestAchievementNotificationPermissionIfNeeded();
@@ -322,7 +322,7 @@ describe('実績状態フック useAchievementState', () => {
     });
 
     it('同一セッション内で2回呼んでも requestAchievementNotificationPermissionOnFirstLaunch は1回だけ呼ばれる', async () => {
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       await act(async () => {
         await result.current.requestAchievementNotificationPermissionIfNeeded();
@@ -334,12 +334,12 @@ describe('実績状態フック useAchievementState', () => {
   });
 
   describe('shareAchievementToX — 実績共有', () => {
-    it('呼び出すと expo-haptics の selectionAsync を呼ぶ', () => {
+    it('呼び出すと expo-haptics の selectionAsync を呼ぶ', async () => {
       const mockHaptics = require('expo-haptics');
-      const { result } = renderHook(() => useAchievementState());
+      const { result } = await renderHook(() => useAchievementState());
 
       // AchievementDefinition の必須フィールドは多いため、shareText だけが使われる最小オブジェクトをキャストして渡す。
-      act(() => {
+      await act(() => {
         result.current.shareAchievementToX({
           shareText: 'テスト共有',
         } as import('@/features/achievements/achievementDefinitions').AchievementDefinition);

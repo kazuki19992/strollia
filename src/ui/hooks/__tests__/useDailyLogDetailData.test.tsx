@@ -53,27 +53,35 @@ describe('useDailyLogDetailData フック', () => {
   });
 
   describe('初期状態', () => {
-    it('読み込み中フラグが true で始まる', () => {
-      (fetchDailyLogDetailData as jest.Mock).mockResolvedValue({
-        points: [],
-        report: mockReport,
-        routeEndpointsLabel: '-- ▶ --',
-      });
+    it('読み込み中フラグが true で始まる', async () => {
+      // v14 の async renderHook は解決済み Promise の更新まで流し切るため、
+      // 取得が完了する前の状態を観測できるよう解決を保留した Promise を返す
+      let resolveFetch: (value: unknown) => void = () => undefined;
+      (fetchDailyLogDetailData as jest.Mock).mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+      );
 
-      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
+      const { result } = await renderHook(() => useDailyLogDetailData(baseLog));
 
       // 最初のレンダリング（非同期が完了する前）の状態
       expect(result.current.isLoadingDetail).toBe(true);
+
+      await act(async () => {
+        resolveFetch({ points: [], report: mockReport, routeEndpointsLabel: '-- ▶ --' });
+      });
+      expect(result.current.isLoadingDetail).toBe(false);
     });
 
-    it('dailyPoints の初期値は空配列', () => {
+    it('dailyPoints の初期値は空配列', async () => {
       (fetchDailyLogDetailData as jest.Mock).mockResolvedValue({
         points: [],
         report: mockReport,
         routeEndpointsLabel: '-- ▶ --',
       });
 
-      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
+      const { result } = await renderHook(() => useDailyLogDetailData(baseLog));
 
       expect(result.current.dailyPoints).toEqual([]);
     });
@@ -87,7 +95,7 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '船橋市 ▶ 船橋市',
       });
 
-      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
+      const { result } = await renderHook(() => useDailyLogDetailData(baseLog));
 
       await act(async () => {
         await Promise.resolve();
@@ -106,7 +114,7 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '-- ▶ --',
       });
 
-      renderHook(() => useDailyLogDetailData(baseLog));
+      await renderHook(() => useDailyLogDetailData(baseLog));
 
       await act(async () => {
         await Promise.resolve();
@@ -120,7 +128,7 @@ describe('useDailyLogDetailData フック', () => {
     it('fetchDailyLogDetailData がエラーを投げると dailyPoints が空配列にリセットされる', async () => {
       (fetchDailyLogDetailData as jest.Mock).mockRejectedValue(new Error('DB エラー'));
 
-      const { result } = renderHook(() => useDailyLogDetailData(baseLog));
+      const { result } = await renderHook(() => useDailyLogDetailData(baseLog));
 
       await act(async () => {
         await Promise.resolve();
@@ -140,7 +148,7 @@ describe('useDailyLogDetailData フック', () => {
         routeEndpointsLabel: '-- ▶ --',
       });
 
-      const { rerender } = renderHook(({ log }: { log: typeof baseLog }) => useDailyLogDetailData(log), {
+      const { rerender } = await renderHook(({ log }: { log: typeof baseLog }) => useDailyLogDetailData(log), {
         initialProps: { log: baseLog },
       });
 
@@ -151,7 +159,7 @@ describe('useDailyLogDetailData フック', () => {
       expect(fetchDailyLogDetailData).toHaveBeenCalledTimes(1);
 
       await act(async () => {
-        rerender({ log: { ...baseLog, distanceMeters: 2000 } });
+        await rerender({ log: { ...baseLog, distanceMeters: 2000 } });
         await Promise.resolve();
       });
 

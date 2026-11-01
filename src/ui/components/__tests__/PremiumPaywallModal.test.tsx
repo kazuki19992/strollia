@@ -1,10 +1,9 @@
-import { Linking, Modal } from 'react-native';
+import { Linking } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '@/config/legalLinks';
 import { PremiumPaywallModal } from '@/ui/components/PremiumPaywallModal';
-import { ActionPill } from '@/ui/components/ActionPill';
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -39,101 +38,88 @@ describe('PremiumPaywallModal', () => {
   });
 
   test('visible=true のとき Modal が表示される', async () => {
-    render(<PremiumPaywallModal {...baseProps} visible={true} />);
+    await render(<PremiumPaywallModal {...baseProps} visible={true} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    // Modal の visible props を確認するために UNSAFE_getByType を使う
-    // RTL のセマンティッククエリでは Modal の visible 属性が検証できないため
-    const modal = screen.UNSAFE_getByType(Modal);
-    expect(modal.props.visible).toBe(true);
+    // RTL のセマンティッククエリでは Modal の visible 属性が検証できないため、ホスト要素の型で取得する
+    const modals = screen.container.queryAll((node) => node.type === 'Modal');
+    expect(modals).toHaveLength(1);
+    expect(modals[0].props.visible).toBe(true);
+    expect(screen.getByLabelText('ペイウォールを閉じる')).toBeTruthy();
   });
 
   test('visible=false のとき Modal が非表示になる', async () => {
-    render(<PremiumPaywallModal {...baseProps} visible={false} />);
+    await render(<PremiumPaywallModal {...baseProps} visible={false} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    const modal = screen.UNSAFE_getByType(Modal);
-    expect(modal.props.visible).toBe(false);
+    // visible=false の Modal はホスト要素も中身も描画されない
+    expect(screen.container.queryAll((node) => node.type === 'Modal')).toHaveLength(0);
+    expect(screen.queryByLabelText('ペイウォールを閉じる')).toBeNull();
   });
 
   test('閉じるボタンを押すと onClose が呼ばれる', async () => {
     const onClose = jest.fn();
-    render(<PremiumPaywallModal {...baseProps} onClose={onClose} />);
+    await render(<PremiumPaywallModal {...baseProps} onClose={onClose} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('ペイウォールを閉じる'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('ペイウォールを閉じる'));
     });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test('月払いボタンを押すと onPurchaseMonthlyPremiumPackage が呼ばれる', async () => {
     const onPurchase = jest.fn();
-    render(<PremiumPaywallModal {...baseProps} onPurchaseMonthlyPremiumPackage={onPurchase} />);
+    await render(<PremiumPaywallModal {...baseProps} onPurchaseMonthlyPremiumPackage={onPurchase} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    // ActionPill の label を確認するために UNSAFE_getAllByType を使う
-    // ActionPill は RTL のセマンティッククエリで直接取得できないため
-    const pills = screen.UNSAFE_getAllByType(ActionPill);
-    const monthlyPill = pills.find((p) => p.props.label?.includes('月額300円'));
-    act(() => {
-      monthlyPill!.props.onPress();
-    });
+    // ActionPill は label をアクセシビリティラベルに使うため、ラベルで取得して押下する
+    await fireEvent.press(screen.getByLabelText(/月額300円/));
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
 
   test('年払いボタンを押すと onPurchaseYearlyPremiumPackage が呼ばれる', async () => {
     const onPurchase = jest.fn();
-    render(<PremiumPaywallModal {...baseProps} onPurchaseYearlyPremiumPackage={onPurchase} />);
+    await render(<PremiumPaywallModal {...baseProps} onPurchaseYearlyPremiumPackage={onPurchase} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    const pills = screen.UNSAFE_getAllByType(ActionPill);
-    const yearlyPill = pills.find((p) => p.props.label?.includes('年額3300円'));
-    act(() => {
-      yearlyPill!.props.onPress();
-    });
+    await fireEvent.press(screen.getByLabelText(/年額3300円/));
     expect(onPurchase).toHaveBeenCalledTimes(1);
   });
 
   test('購入復元ボタンを押すと onRestorePremiumPurchases が呼ばれる', async () => {
     const onRestore = jest.fn();
-    render(<PremiumPaywallModal {...baseProps} onRestorePremiumPurchases={onRestore} />);
+    await render(<PremiumPaywallModal {...baseProps} onRestorePremiumPurchases={onRestore} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    const pills = screen.UNSAFE_getAllByType(ActionPill);
-    const restorePill = pills.find((p) => p.props.label?.includes('復元'));
-    act(() => {
-      restorePill!.props.onPress();
-    });
+    await fireEvent.press(screen.getByLabelText(/復元/));
     expect(onRestore).toHaveBeenCalledTimes(1);
   });
 
   test('購入ボタンは固定の月額300円・年額3300円を表示する', async () => {
-    render(<PremiumPaywallModal {...baseProps} />);
+    await render(<PremiumPaywallModal {...baseProps} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    const pills = screen.UNSAFE_getAllByType(ActionPill);
-    const labels = pills.map((p) => p.props.label);
-    expect(labels.some((l: string) => l?.includes('月額300円'))).toBe(true);
-    expect(labels.some((l: string) => l?.includes('年額3300円'))).toBe(true);
+    expect(screen.getByRole('button', { name: /月額300円/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /年額3300円/ })).toBeTruthy();
   });
 
   test('Strollia Plusの機能比較広告画像を表示する', async () => {
-    render(<PremiumPaywallModal {...baseProps} />);
+    await render(<PremiumPaywallModal {...baseProps} />);
     await act(async () => {
       await Promise.resolve();
     });
@@ -147,18 +133,18 @@ describe('PremiumPaywallModal', () => {
   });
 
   test('isPurchasingPremiumPackage=true のとき購入ボタンが無効化される', async () => {
-    render(<PremiumPaywallModal {...baseProps} isPurchasingPremiumPackage={true} />);
+    await render(<PremiumPaywallModal {...baseProps} isPurchasingPremiumPackage={true} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    const pills = screen.UNSAFE_getAllByType(ActionPill);
-    const buyPills = pills.filter((p) => p.props.label?.includes('購入処理中'));
+    const buyPills = screen.getAllByRole('button', { name: /購入処理中/ });
     expect(buyPills.length).toBeGreaterThanOrEqual(2);
+    buyPills.forEach((pill) => expect(pill).toBeDisabled());
   });
 
   test('isLoadingPremiumOffering=true のとき商品情報読み込み中テキストを表示する', async () => {
-    render(<PremiumPaywallModal {...baseProps} isLoadingPremiumOffering={true} />);
+    await render(<PremiumPaywallModal {...baseProps} isLoadingPremiumOffering={true} />);
     await act(async () => {
       await Promise.resolve();
     });
@@ -167,26 +153,23 @@ describe('PremiumPaywallModal', () => {
   });
 
   test('isRestoringPremiumPurchases=true のとき購入復元ボタンが無効化される', async () => {
-    render(<PremiumPaywallModal {...baseProps} isRestoringPremiumPurchases={true} />);
+    await render(<PremiumPaywallModal {...baseProps} isRestoringPremiumPurchases={true} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    const pills = screen.UNSAFE_getAllByType(ActionPill);
-    const restorePill = pills.find((p) => p.props.label?.includes('復元'));
-    expect(restorePill!.props.disabled).toBe(true);
+    expect(screen.getByRole('button', { name: /復元/ })).toBeDisabled();
   });
 
   test('自動更新サブスクの定型開示文を表示する（App Store 3.1.2 対応）', async () => {
-    render(<PremiumPaywallModal {...baseProps} />);
+    await render(<PremiumPaywallModal {...baseProps} />);
     await act(async () => {
       await Promise.resolve();
     });
 
     // 複数のテキスト要素を走査して自動更新を含む文を探す
-    // UNSAFE_getAllByType を使うのは特定の文字列を含むテキストを検索するため
-    const { Text } = require('react-native');
-    const textNodes = screen.UNSAFE_getAllByType(Text);
+    // 特定の文字列を含むテキストを検索するため Text ホスト要素を走査する
+    const textNodes = screen.container.queryAll((node) => node.type === 'Text');
     const disclosure = textNodes.map((node) => node.props.children).find((t: any) => typeof t === 'string' && t.includes('自動更新'));
     expect(disclosure).toBeDefined();
     expect(disclosure).toContain('自動的に更新');
@@ -195,18 +178,18 @@ describe('PremiumPaywallModal', () => {
 
   test('利用規約とプライバシーポリシーのリンクをそれぞれ開ける', async () => {
     const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
-    render(<PremiumPaywallModal {...baseProps} />);
+    await render(<PremiumPaywallModal {...baseProps} />);
     await act(async () => {
       await Promise.resolve();
     });
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('利用規約を開く'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('利用規約を開く'));
     });
     expect(openURL).toHaveBeenCalledWith(TERMS_OF_SERVICE_URL);
 
-    act(() => {
-      fireEvent.press(screen.getByLabelText('プライバシーポリシーを開く'));
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('プライバシーポリシーを開く'));
     });
     expect(openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
 

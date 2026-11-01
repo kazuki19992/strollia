@@ -34,7 +34,7 @@ describe('地図に表示する写真の上限設定hook usePhotoDisplayLimitSet
   it('保存済みの設定を読み込んで件数へ変換する', async () => {
     (getPhotoDisplayLimitId as jest.Mock).mockResolvedValue('1000');
 
-    const { result } = renderHook(() => usePhotoDisplayLimitSetting());
+    const { result } = await renderHook(() => usePhotoDisplayLimitSetting());
     await flushPromises();
 
     expect(result.current.photoDisplayLimitId).toBe('1000');
@@ -42,7 +42,7 @@ describe('地図に表示する写真の上限設定hook usePhotoDisplayLimitSet
   });
 
   it('上限なしの設定では件数をnullにする', async () => {
-    const { result } = renderHook(() => usePhotoDisplayLimitSetting());
+    const { result } = await renderHook(() => usePhotoDisplayLimitSetting());
     await flushPromises();
 
     expect(result.current.photoDisplayLimit).toBeNull();
@@ -52,14 +52,14 @@ describe('地図に表示する写真の上限設定hook usePhotoDisplayLimitSet
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (getPhotoDisplayLimitId as jest.Mock).mockRejectedValue(new Error('database is locked'));
 
-    const { result } = renderHook(() => usePhotoDisplayLimitSetting());
+    const { result } = await renderHook(() => usePhotoDisplayLimitSetting());
     await flushPromises();
 
     expect(result.current.photoDisplayLimitId).toBe('all');
   });
 
   it('選択を保存して状態へ反映する', async () => {
-    const { result } = renderHook(() => usePhotoDisplayLimitSetting());
+    const { result } = await renderHook(() => usePhotoDisplayLimitSetting());
     await flushPromises();
 
     await act(async () => {
@@ -78,7 +78,7 @@ describe('地図に表示する写真の上限設定hook usePhotoDisplayLimitSet
       }),
     );
 
-    const { result } = renderHook(() => usePhotoDisplayLimitSetting());
+    const { result } = await renderHook(() => usePhotoDisplayLimitSetting());
 
     // 初期読み込みが未完了のうちに設定画面で選び直す
     await act(async () => {
@@ -99,7 +99,7 @@ describe('地図に表示する写真の上限設定hook usePhotoDisplayLimitSet
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     (savePhotoDisplayLimitId as jest.Mock).mockRejectedValue(new Error('disk full'));
 
-    const { result } = renderHook(() => usePhotoDisplayLimitSetting());
+    const { result } = await renderHook(() => usePhotoDisplayLimitSetting());
     await flushPromises();
 
     await act(async () => {

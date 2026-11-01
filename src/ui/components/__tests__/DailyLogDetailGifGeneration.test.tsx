@@ -1,10 +1,53 @@
+import type React from 'react';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react-native';
 
 import { getLocationPointsByDate } from '@/features/logs/logRepository';
 import { lightTheme } from '@/theme/theme';
 import { DailyLogDetailScreen } from '@/ui/components/DailyLogDetailScreen';
-import { GifFrameRenderer } from '@/ui/components/GifFrameRenderer';
-import { RangeSlider } from '@/ui/components/RangeSlider';
+
+/**
+ * 合成コンポーネント名ごとに、マウント中のインスタンスが受け取った最新propsを保持する。
+ * RNTL v14 はホスト要素しか検索できないため、画面外のGIF描画コンポーネントや区間スライダーへ渡したpropsの検証に使う。
+ */
+const mockMountedProps: Record<string, Map<object, Record<string, any>>> = {};
+
+/**
+ * 実コンポーネントをそのまま描画しつつ、受け取ったpropsを mockMountedProps へ記録するラッパーを作る。
+ * jest.mock のファクトリから呼ぶため、巻き上げられる関数宣言にしている。
+ */
+function mockTrackProps<P extends object>(name: string, Actual: React.ComponentType<P>): React.ComponentType<P> {
+  return function TrackedComponent(props: P) {
+    const ReactActual = jest.requireActual<typeof React>('react');
+    const key = ReactActual.useRef({}).current;
+    (mockMountedProps[name] ??= new Map()).set(key, props as Record<string, any>);
+    ReactActual.useEffect(
+      () => () => {
+        mockMountedProps[name]?.delete(key);
+      },
+      [key],
+    );
+    return ReactActual.createElement(Actual, props);
+  };
+}
+
+/** マウント中の指定コンポーネントがちょうど1つであることを確認し、そのpropsを返す。 */
+function getMountedProps(name: string): Record<string, any> {
+  const all = [...(mockMountedProps[name]?.values() ?? [])];
+  if (all.length !== 1) {
+    throw new Error(`${name} のマウント数が1ではありません: ${all.length}`);
+  }
+  return all[0];
+}
+
+jest.mock('@/ui/components/GifFrameRenderer', () => {
+  const actual = jest.requireActual('@/ui/components/GifFrameRenderer');
+  return { ...actual, GifFrameRenderer: mockTrackProps('GifFrameRenderer', actual.GifFrameRenderer) };
+});
+
+jest.mock('@/ui/components/RangeSlider', () => {
+  const actual = jest.requireActual('@/ui/components/RangeSlider');
+  return { ...actual, RangeSlider: mockTrackProps('RangeSlider', actual.RangeSlider) };
+});
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
@@ -177,7 +220,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
   });
 
   test('日全体でプライバシー適用後の描画可能な線分がなければGIF出力を開始できない', async () => {
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -245,7 +288,7 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
         altitudeAccuracy: null,
       },
     ]);
-    render(
+    await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -258,21 +301,21 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     );
 
     await act(async () => {});
-    fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
+    await fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
     // RangeSliderの公開callbackを使うのは、両端の選択値を一度に変えるため。
-    act(() => {
-      const rangeSlider = screen.UNSAFE_getByType(RangeSlider);
-      rangeSlider.props.onChange(rangeSlider.props.minValue, rangeSlider.props.minValue + 15);
+    await act(() => {
+      const rangeSlider = getMountedProps('RangeSlider');
+      rangeSlider.onChange(rangeSlider.minValue, rangeSlider.minValue + 15);
     });
     await act(async () => {});
 
-    expect(screen.UNSAFE_getAllByProps({ accessibilityLabel: 'この範囲で出力' })[0].props.disabled).toBe(true);
+    expect(screen.getByLabelText('この範囲で出力')).toBeDisabled();
   });
 
   test('GIF出力ボタンを押すと初回フレームでデッドロックせず生成・共有まで完了する', async () => {
     const Sharing = require('expo-sharing');
 
-    const { unmount } = render(
+    const { unmount } = await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -289,12 +332,12 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
     // GIFボタンを押すと、まず区間指定ダイアログが開く。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
+      await fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
     });
 
     // 区間指定ダイアログの「この範囲で出力」を押すと生成が始まる（区間は初期値＝記録全体）。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('この範囲で出力'));
+      await fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
 
     // isGeneratingGif が true になった際に走る useEffect の RAF を先に消化しておく。
@@ -304,14 +347,13 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
       await flushAnimationFrames();
     });
 
-    // UNSAFE_getByType は画面外のGIF描画コンポーネントへ渡したpropsを確認するために使う。
-    expect(screen.UNSAFE_getByType(GifFrameRenderer).props.activeStayPlaces).toEqual([]);
-    expect(screen.UNSAFE_getByType(GifFrameRenderer).props.altitudePoints).toBeUndefined();
+    // 画面外のGIF描画コンポーネントへ渡したpropsを確認する。
+    expect(getMountedProps('GifFrameRenderer').activeStayPlaces).toEqual([]);
+    expect(getMountedProps('GifFrameRenderer').altitudePoints).toBeUndefined();
 
     // 画面外の GifFrameRenderer がマウントされ、地図のタイル描画完了を発火させる
     await act(async () => {
-      // UNSAFE_getByType を使うのは GifFrameRenderer という型で要素を取得するため
-      screen.UNSAFE_getByType(GifFrameRenderer).props.onMapLoaded();
+      getMountedProps('GifFrameRenderer').onMapLoaded();
     });
 
     // RAF駆動のフレーム解決を上限付きで進め、生成完了まで待つ
@@ -326,12 +368,12 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
 
     expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/strollia-2026-05-31.gif', expect.objectContaining({ mimeType: 'image/gif' }));
 
-    unmount();
+    await unmount();
   });
 
   it('生成中にキャンセルすると共有せず区間選択へ戻る', async () => {
     const Sharing = require('expo-sharing');
-    const { unmount } = render(
+    const { unmount } = await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -345,16 +387,16 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     await act(async () => {});
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
+      await fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
     });
     // 「この範囲で出力」を押すと生成が始まり、地図のタイル描画完了待ち（onMapLoaded前）で停止する。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('この範囲で出力'));
+      await fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
 
     // 生成中（キャンセルボタンが出ている）状態でキャンセルする。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('GIF生成をキャンセル'));
+      await fireEvent.press(screen.getByLabelText('GIF生成をキャンセル'));
     });
     await act(async () => {
       await flushAnimationFrames();
@@ -364,12 +406,12 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     expect(Sharing.shareAsync).not.toHaveBeenCalled();
     expect(screen.getByLabelText('この範囲で出力')).toBeTruthy();
 
-    unmount();
+    await unmount();
   });
 
   it('キャンセル直後に再度生成しても、前のループを待ってから生成・共有できる', async () => {
     const Sharing = require('expo-sharing');
-    const { unmount } = render(
+    const { unmount } = await render(
       <DailyLogDetailScreen
         log={log}
         styles={styles as never}
@@ -383,23 +425,22 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     await act(async () => {});
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
+      await fireEvent.press(screen.getByLabelText('移動記録をGIFで出力'));
     });
     // 1回目の出力 → 地図ロード待ちで停止 → キャンセル。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('この範囲で出力'));
+      await fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('GIF生成をキャンセル'));
+      await fireEvent.press(screen.getByLabelText('GIF生成をキャンセル'));
     });
 
     // 2回目の出力。前のループ完了を待ってから新しい生成が走る。
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('この範囲で出力'));
+      await fireEvent.press(screen.getByLabelText('この範囲で出力'));
     });
     await act(async () => {
-      // UNSAFE_getByType を使うのは GifFrameRenderer という型で要素を取得するため
-      screen.UNSAFE_getByType(GifFrameRenderer).props.onMapLoaded();
+      getMountedProps('GifFrameRenderer').onMapLoaded();
     });
     for (let i = 0; i < 50; i += 1) {
       if (Sharing.shareAsync.mock.calls.length > 0) {
@@ -413,6 +454,6 @@ describe('DailyLogDetailScreen GIF生成（実ループ）', () => {
     expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
     expect(Sharing.shareAsync).toHaveBeenCalledWith('/tmp/strollia-2026-05-31.gif', expect.objectContaining({ mimeType: 'image/gif' }));
 
-    unmount();
+    await unmount();
   });
 });

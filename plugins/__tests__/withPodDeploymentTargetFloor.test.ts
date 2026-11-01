@@ -4,10 +4,10 @@ const { applyPodDeploymentTargetFloor, POD_DEPLOYMENT_TARGET_FLOOR_TAG } = requi
   POD_DEPLOYMENT_TARGET_FLOOR_TAG: string;
 };
 
-/** Expo SDK 57のprebuildが生成するPodfileのpost_install部分を模したもの。 */
+/** Expo SDK 58のprebuildが生成するPodfileのplatform指定とpost_install部分を模したもの。 */
 const GENERATED_PODFILE = `podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
-platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
+platform :ios, podfile_properties['ios.deploymentTarget'] || '16.4'
 
 target 'app' do
   use_expo_modules!
@@ -43,7 +43,30 @@ describe('Podのデプロイメントターゲット下限を揃えるconfig plu
   test('下限はアプリ本体のplatform指定と同じ値を使う', () => {
     const postInstall = extractPostInstallBlock(applyPodDeploymentTargetFloor(GENERATED_PODFILE));
 
-    expect(postInstall).toContain("podfile_properties['ios.deploymentTarget'] || '15.1'");
+    expect(postInstall).toContain("minimum = podfile_properties['ios.deploymentTarget'] || '16.4'");
+  });
+
+  test('テンプレートのplatform既定値が変わっても、その値へ追従する', () => {
+    const podfile = GENERATED_PODFILE.replace("|| '16.4'", "|| '17.0'");
+    const postInstall = extractPostInstallBlock(applyPodDeploymentTargetFloor(podfile));
+
+    expect(postInstall).toContain("minimum = podfile_properties['ios.deploymentTarget'] || '17.0'");
+  });
+
+  test('platform指定が固定値の場合は、その値を下限にする', () => {
+    const podfile = GENERATED_PODFILE.replace(
+      "platform :ios, podfile_properties['ios.deploymentTarget'] || '16.4'",
+      "platform :ios, '16.0'",
+    );
+    const postInstall = extractPostInstallBlock(applyPodDeploymentTargetFloor(podfile));
+
+    expect(postInstall).toContain("minimum = '16.0'");
+  });
+
+  test('platform指定が見つからない場合は、推測で下限を決めずエラーにする', () => {
+    const podfile = GENERATED_PODFILE.replace("platform :ios, podfile_properties['ios.deploymentTarget'] || '16.4'\n", '');
+
+    expect(() => applyPodDeploymentTargetFloor(podfile)).toThrow('platform :ios');
   });
 
   test('react_native_post_install の後に実行され、RN側の設定で上書きされない', () => {
@@ -67,6 +90,6 @@ describe('Podのデプロイメントターゲット下限を揃えるconfig plu
   });
 
   test('post_install が見つからない場合は黙って壊さずエラーにする', () => {
-    expect(() => applyPodDeploymentTargetFloor("platform :ios, '15.1'\n")).toThrow('post_install');
+    expect(() => applyPodDeploymentTargetFloor("platform :ios, '16.4'\n")).toThrow('post_install');
   });
 });

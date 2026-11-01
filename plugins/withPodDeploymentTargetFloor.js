@@ -15,9 +15,11 @@ const END_MARKER = `# @generated end ${POD_DEPLOYMENT_TARGET_FLOOR_TAG}`;
  * podspec由来の古い値(9.0〜13.0)のまま残りビルドが失敗する。
  * pods_project.targets はリソースバンドルも含むので、ここで全ターゲットを
  * アプリ本体の platform 指定と同じ下限まで引き上げる。
+ *
+ * @param minimumExpression 下限を表すRuby式。Podfileの `platform :ios` 指定をそのまま使う
  */
-const FLOOR_SNIPPET = `    ${BEGIN_MARKER}
-    minimum = podfile_properties['ios.deploymentTarget'] || '15.1'
+const createFloorSnippet = (minimumExpression) => `    ${BEGIN_MARKER}
+    minimum = ${minimumExpression}
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |build_configuration|
         current = build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
@@ -45,8 +47,21 @@ function removeExistingSnippet(podfileContents) {
  * Podfileの post_install ブロック末尾(react_native_post_install の後)へ下限引き上げ処理を挿入する。
  * RN側の処理より後に実行し、その設定で上書きされないようにする。
  */
+/**
+ * Podfileの `platform :ios` に指定されたデプロイメントターゲットのRuby式を取り出す。
+ * テンプレートの既定値はSDKごとに変わる(SDK 58は16.4)ため、下限を独自に持たずPodfileの値へ揃える。
+ */
+function extractPlatformDeploymentTarget(podfileContents) {
+  const match = podfileContents.match(/^platform :ios, (.+)$/m);
+  if (!match) {
+    throw new Error('Podfileに platform :ios の指定が見つからないため、Podのデプロイメントターゲット下限を決められません');
+  }
+  return match[1].trim();
+}
+
 function applyPodDeploymentTargetFloor(podfileContents) {
   const contents = removeExistingSnippet(podfileContents);
+  const minimumExpression = extractPlatformDeploymentTarget(contents);
   const postInstallStart = contents.indexOf('post_install do |installer|');
   if (postInstallStart === -1) {
     throw new Error('Podfileに post_install ブロックが見つからないため、Podのデプロイメントターゲット下限を設定できません');
@@ -58,7 +73,7 @@ function applyPodDeploymentTargetFloor(podfileContents) {
   }
 
   const insertAt = closingEnd + 1;
-  return contents.slice(0, insertAt) + FLOOR_SNIPPET + contents.slice(insertAt);
+  return contents.slice(0, insertAt) + createFloorSnippet(minimumExpression) + contents.slice(insertAt);
 }
 
 /** prebuild時に生成されるPodfileへ、全Podターゲットのデプロイメントターゲット下限を設定する。 */

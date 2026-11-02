@@ -146,14 +146,12 @@ export function AchievementListScreen({
                 const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
                 const trophyState = resolveLandmarkTrophyDisplayState(ratio);
                 const TrophyIcon = item.pack.trophyIcon;
-                // Grayscale(react-native-color-matrix-image-filters)はネイティブ画像ビューの
-                // フィルタであり、react-native-svgのコンポーネントには効かない。
-                // そのため減光/白黒状態はSVGではなくPNG(trophyImage)をGrayscaleでラップして描画し、
+                // Grayscale(react-native-color-matrix-image-filters)とtintColorはネイティブ画像ビューの
+                // 機能であり、react-native-svgのコンポーネントには効かない。
+                // そのためシルエット/白黒状態はSVGではなくPNG(trophyImage)で描画し、
                 // フルカラー状態だけSVG(trophyIcon)をそのまま描画する。
                 const trophyImage = <TrophyIcon width={packTrophySize} height={packTrophySize} />;
-                const grayscaleTrophyImage = (
-                  <Image source={item.pack.trophyImage} style={{ width: packTrophySize, height: packTrophySize }} />
-                );
+                const trophyPngStyle = { width: packTrophySize, height: packTrophySize };
 
                 return (
                   <AppListItem
@@ -173,10 +171,13 @@ export function AchievementListScreen({
                       <View style={[styles.landmarkPackTrophy, { width: packTrophySize, height: packTrophySize }]}>
                         {trophyState === 'color' ? (
                           trophyImage
-                        ) : (
-                          <Grayscale style={trophyState === 'dim' ? styles.landmarkPackTrophyDim : undefined}>
-                            {grayscaleTrophyImage}
+                        ) : trophyState === 'grayscale' ? (
+                          <Grayscale>
+                            <Image source={item.pack.trophyImage} style={trophyPngStyle} />
                           </Grayscale>
+                        ) : (
+                          // 通常の実績トロフィーのシルエットと同じ色で塗りつぶす
+                          <Image source={item.pack.trophyImage} style={trophyPngStyle} tintColor={theme.colors.border} />
                         )}
                         {item.isLocked ? (
                           <View style={styles.landmarkPackLockBadge}>

@@ -35,17 +35,14 @@ const LANDMARK_SPOT_DETAIL_FADE_DURATION_MS = 220;
  */
 const LANDMARK_SPOT_CONTENT_REFRESH_MS = 500;
 
-/** 到達エリアの円の塗りの最終的な不透明度(16進2桁の値)。滞在場所の設定画面の円と同じ薄さ。 */
-const LANDMARK_SPOT_CIRCLE_FILL_ALPHA = 0x24;
-
 /**
- * 到達エリアの円のフェードを何段階で描くか。
+ * 到達エリアの円の塗りの不透明度(16進2桁)。滞在場所の設定画面の円と同じ薄さ。
  *
- * `Circle` は要素全体の opacity を持たないため、塗り色の不透明度を変えてフェードを表す。
- * 色を変えるたびにネイティブのオーバーレイ更新が走るので、毎フレームではなくこの段数に間引く。
- * 220ms で6段なら1段あたり約37msで、目で見て段差が分からない程度に滑らか。
+ * react-native-maps の `Circle` は値を変えるたびに地図から外して付け直すため、
+ * 色や大きさを段階的に変えるトランジションは iOS で途中が描かれず不安定になる。
+ * そこで円は表示範囲に関わらず常にこの薄さで描いておき、拡大するにつれて自然に見えてくるようにする。
  */
-const LANDMARK_SPOT_CIRCLE_FADE_STEPS = 6;
+const LANDMARK_SPOT_CIRCLE_FILL_ALPHA_HEX = '24';
 
 /** 地図へ描くスポットマーカー1件ぶんの表示データ。 */
 type LandmarkSpotMarker = {
@@ -59,7 +56,7 @@ type LandmarkSpotMarker = {
   isVisited: boolean;
   /** マーカーを置く緯度経度。 */
   coordinate: RouteCoordinate;
-  /** 到達エリアの半径(m)。拡大時の円と、詳細を出すしきい値・寄る範囲の計算に使う。 */
+  /** 到達エリアの半径(m)。常に描く円と、詳細を出すしきい値・寄る範囲の計算に使う。 */
   radiusMeters: number;
   /** バッジ下に出す解放条件(到達済みなら「到達済み」)。 */
   conditionLabel: string;
@@ -94,7 +91,8 @@ export type LandmarkPackMapPreviewProps = {
  * そのスポットへ寄せ、`null` へ戻っても勝手に引き戻さない(ユーザーが動かした表示位置を尊重する)。
  *
  * 拡大してスポットごとのしきい値(到達エリアの大きさに連動)を超えると、そのスポットの
- * スポット名(バッジの上)・解放条件(バッジの下)・到達エリアの円をフェードインで出し、縮小すると消す。
+ * スポット名(バッジの上)・解放条件(バッジの下)をフェードインで出し、縮小すると消す。
+ * 到達エリアの円は表示範囲に関わらず常に描く(縮尺に合わせて大きさが変わり、拡大につれて見えてくる)。
  */
 export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme }: LandmarkPackMapPreviewProps) {
   const mapRef = useRef<MapView | null>(null);
@@ -113,7 +111,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
    */
   const [laidOutMarkerCount, setLaidOutMarkerCount] = useState(0);
   /**
-   * 詳細(スポット名・解放条件・円)を表示するスポットIDを、ソートして連結したキー。
+   * 詳細(スポット名・解放条件)を表示するスポットIDを、ソートして連結したキー。
    *
    * 地図操作のたびに region は変わるが、表示可否の集合が同じなら同じ文字列になるため、
    * setState が同値として無視され余計な再描画が起きない。
@@ -141,16 +139,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
   /** スポットごとの撮り直し終了タイマー。内容が続けて変わったら延長する。 */
   const refreshTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-  /**
-   * スポットごとの円のフェード段階(0〜LANDMARK_SPOT_CIRCLE_FADE_STEPS)。未登録のスポットは0(透明)。
-   *
-   * ラベルと同じ opacity を購読し、段階が変わったときだけ更新して円の再描画を間引く。
-   */
-  const [circleFadeSteps, setCircleFadeSteps] = useState<ReadonlyMap<string, number>>(() => new Map());
-
   const markers = useMemo(() => toLandmarkSpotMarkers(spotItems), [spotItems]);
-  // 親が spotItems を作り直しても購読を張り直さないよう、スポットIDの並びだけを依存にする
-  const markerSpotIdsKey = markers.map((marker) => marker.spotId).join('\n');
   // 親が spotItems を作り直しても、表示内容が同じなら同じ文字列になり撮り直しは走らない
   const markerContentKey = markers.map(toMarkerContentLine).join('\n');
   const initialRegion = useMemo(() => createRegionFromBounds(toLandmarkSpotBounds(markers)), [markers]);
@@ -170,7 +159,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
     }
 
     // 円より狭く寄ると到達エリアの端が分からないため、円が余白付きで収まる範囲へ寄せる。
-    // この範囲は詳細表示のしきい値と連動しているので、寄った後は必ずスポット名・解放条件・円が出る。
+    // この範囲は詳細表示のしきい値と連動しているので、寄った後は必ずスポット名・解放条件が出る。
     mapRef.current?.animateToRegion(
       createLandmarkSpotFocusRegion({ latitude: focusedLatitude, longitude: focusedLongitude }, focusedRadiusMeters),
       LANDMARK_SPOT_FOCUS_DURATION_MS,
@@ -211,27 +200,6 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
       );
     }
   }, [markerContentKey]);
-
-  // 円の塗りをラベルと同じフェードに追従させる
-  useEffect(() => {
-    const spotIds = markerSpotIdsKey === '' ? [] : markerSpotIdsKey.split('\n');
-    const unsubscribes = spotIds.map((spotId) => {
-      const opacity = getDetailOpacity(detailOpacities, spotId);
-      const listenerId = opacity.addListener(({ value }) => {
-        const step = Math.round(value * LANDMARK_SPOT_CIRCLE_FADE_STEPS);
-
-        setCircleFadeSteps((current) => ((current.get(spotId) ?? 0) === step ? current : new Map(current).set(spotId, step)));
-      });
-
-      return () => opacity.removeListener(listenerId);
-    });
-
-    return () => {
-      for (const unsubscribe of unsubscribes) {
-        unsubscribe();
-      }
-    };
-  }, [detailOpacities, markerSpotIdsKey]);
 
   // アンマウント時に撮り直し終了タイマーを止め、外れたコンポーネントの state を触らない
   useEffect(() => {
@@ -330,25 +298,19 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
         onMapReady={() => setIsMapReady(true)}
         onRegionChangeComplete={handleRegionChangeComplete}
       >
-        {markers.map((marker) => {
-          const isFading = fadingSpotIds.has(marker.spotId);
-          // フェードアウト中も中身を残し、完了してから外す(いきなり消えないように)
-          const isDetailMounted = visibleSpotIds.has(marker.spotId) || isFading;
-
-          return isDetailMounted ? (
-            // react-native-maps の Circle は opacity を持たないため、塗り色の不透明度を段階的に変えてフェードさせる。
-            // 輪郭まで同じように変えると更新が倍になり、不透明な線だけが先に出て見えるため、輪郭は描かない。
-            <Circle
-              key={`circle-${marker.spotId}`}
-              center={marker.coordinate}
-              fillColor={`${theme.colors.primary}${toCircleFillAlphaHex(circleFadeSteps.get(marker.spotId) ?? 0)}`}
-              radius={marker.radiusMeters}
-              strokeColor="transparent"
-              strokeWidth={0}
-              testID={`landmark-spot-circle-${marker.spotId}`}
-            />
-          ) : null;
-        })}
+        {markers.map((marker) => (
+          // 円は常に描く。縮尺に合わせて大きさが変わるので、引いた表示では小さくなるだけで邪魔にならない。
+          // 輪郭は描かず、塗りだけの薄い円にする
+          <Circle
+            key={`circle-${marker.spotId}`}
+            center={marker.coordinate}
+            fillColor={`${theme.colors.primary}${LANDMARK_SPOT_CIRCLE_FILL_ALPHA_HEX}`}
+            radius={marker.radiusMeters}
+            strokeColor="transparent"
+            strokeWidth={0}
+            testID={`landmark-spot-circle-${marker.spotId}`}
+          />
+        ))}
         {markers.map((marker) => {
           const isFading = fadingSpotIds.has(marker.spotId);
           const isDetailMounted = visibleSpotIds.has(marker.spotId) || isFading;
@@ -455,15 +417,6 @@ function LandmarkSpotMapLabel({ label, styles }: { label: string; styles: AppSty
       </Text>
     </View>
   );
-}
-
-/** 円のフェード段階を、塗り色の末尾に付ける不透明度(16進2桁)へ変換する。 */
-function toCircleFillAlphaHex(step: number): string {
-  const ratio = Math.min(Math.max(step / LANDMARK_SPOT_CIRCLE_FADE_STEPS, 0), 1);
-
-  return Math.round(LANDMARK_SPOT_CIRCLE_FILL_ALPHA * ratio)
-    .toString(16)
-    .padStart(2, '0');
 }
 
 /**

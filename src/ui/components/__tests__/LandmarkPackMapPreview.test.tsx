@@ -265,14 +265,15 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       jest.useRealTimers();
     });
 
-    it('全体を見渡す表示ではスポット名・解放条件・円をどれも出さない', async () => {
+    it('全体を見渡す表示ではスポット名・解放条件を出さないが、到達エリアの円は描いておく', async () => {
       await renderPreview();
       await fireRegionChange(overviewRegion);
 
       expect(screen.queryByText('華厳の滝')).toBeNull();
       expect(screen.queryByText('1時間30分以上滞在で解放')).toBeNull();
       expect(screen.queryByText('到達済み')).toBeNull();
-      expect(screen.queryByTestId('landmark-spot-circle-spot-2')).toBeNull();
+      // 円は地図の縮尺に合わせて大きさが変わるので、引いた表示では小さくなるだけで邪魔にならない
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.radius).toBe(650);
     });
 
     it('寄った範囲を通知すると、そのスポットのスポット名・解放条件・到達エリアの円(半径=radiusMeters)を出す', async () => {
@@ -284,11 +285,10 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       const circle = screen.getByTestId('landmark-spot-circle-spot-2');
       expect(circle.props.radius).toBe(650);
       expect(circle.props.center).toEqual({ latitude: 33.675278, longitude: 135.8875 });
-      // 輪郭は透明度を段階的に変えられないため描かず、塗りだけの円にする
+      // 輪郭は描かず、塗りだけの薄い円にする
       expect(circle.props.strokeWidth).toBe(0);
-      // しきい値はスポットごとの半径に連動する。半径200mのスポットは、半径650mのスポットへ寄った範囲ではまだ出さない
+      // しきい値はスポットごとの半径に連動する。半径200mのスポットは、半径650mのスポットへ寄った範囲ではまだラベルを出さない
       expect(screen.queryByText('華厳の滝')).toBeNull();
-      expect(screen.queryByTestId('landmark-spot-circle-spot-1')).toBeNull();
     });
 
     it('到達済みスポットは解放条件の代わりに「到達済み」を出す', async () => {
@@ -317,7 +317,7 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
     });
 
-    it('再び広い範囲を通知するとフェードアウトし、完了後にスポット名・解放条件・円を消す', async () => {
+    it('再び広い範囲を通知するとフェードアウトし、完了後にスポット名・解放条件を消す(円は残す)', async () => {
       await renderPreview();
       await layoutAllMarkers();
       // 初回描画ぶんの追跡が止まっていることを前提にする
@@ -334,49 +334,28 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
 
       expect(screen.queryByText('那智の滝')).toBeNull();
       expect(screen.queryByText('1時間30分以上滞在で解放')).toBeNull();
-      expect(screen.queryByTestId('landmark-spot-circle-spot-2')).toBeNull();
+      expect(screen.getByTestId('landmark-spot-circle-spot-2')).toBeTruthy();
       expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
     });
 
-    it('到達エリアの円は塗りの透明度を段階的に上げてフェードインし、最後は滞在場所の設定画面と同じ薄さになる', async () => {
+    it('到達エリアの円は最初から滞在場所の設定画面と同じ薄さで描き、拡大・縮小しても塗りを変えない', async () => {
+      // 地図の円は描き直しを伴うため、色を段階的に変えるフェードはせず常に同じ見た目で出しておく
+      const expectedFill = `${lightTheme.colors.primary}24`;
       await renderPreview();
+
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(expectedFill);
+
       await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
-
-      // 出始めは透明で、いきなり最終の濃さでは出さない
-      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(`${lightTheme.colors.primary}00`);
-
       await act(() => {
         jest.advanceTimersByTime(110);
       });
-      const midwayAlpha = parseInt(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor.slice(-2), 16);
-      expect(midwayAlpha).toBeGreaterThan(0);
-      expect(midwayAlpha).toBeLessThan(0x24);
-
-      await act(() => {
-        jest.advanceTimersByTime(1000);
-      });
-      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(`${lightTheme.colors.primary}24`);
-    });
-
-    it('縮小すると到達エリアの円は塗りの透明度を段階的に下げてから消える', async () => {
-      await renderPreview();
-      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
-      await act(() => {
-        jest.advanceTimersByTime(1000);
-      });
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(expectedFill);
 
       await fireRegionChange(overviewRegion);
       await act(() => {
         jest.advanceTimersByTime(110);
       });
-      const midwayAlpha = parseInt(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor.slice(-2), 16);
-      expect(midwayAlpha).toBeGreaterThan(0);
-      expect(midwayAlpha).toBeLessThan(0x24);
-
-      await act(() => {
-        jest.advanceTimersByTime(1000);
-      });
-      expect(screen.queryByTestId('landmark-spot-circle-spot-2')).toBeNull();
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(expectedFill);
     });
 
     it('ラベル文字は端末の文字サイズ設定で拡大せず、固定高さの行からはみ出さない', async () => {

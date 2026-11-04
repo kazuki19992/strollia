@@ -47,6 +47,8 @@ jest.mock('react-native-maps', () => {
     __esModule: true,
     default: View,
     Marker: View,
+    // パック詳細の埋め込み地図は到達エリアの円を常に描くため Circle も代替する
+    Circle: View,
     Polygon: View,
     Polyline: View,
   };

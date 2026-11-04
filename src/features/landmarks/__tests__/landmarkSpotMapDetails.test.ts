@@ -3,6 +3,7 @@ import {
   LANDMARK_SPOT_FOCUS_PADDING_RATIO,
   METERS_PER_DEGREE_LATITUDE,
   createLandmarkSpotFocusRegion,
+  createLandmarkSpotsBounds,
   formatLandmarkUnlockCondition,
   shouldShowLandmarkSpotDetails,
 } from '@/features/landmarks/landmarkSpotMapDetails';
@@ -98,5 +99,35 @@ describe('スポット詳細の表示判定 shouldShowLandmarkSpotDetails', () =
 
     expect(shouldShowLandmarkSpotDetails(region, 650)).toBe(true);
     expect(shouldShowLandmarkSpotDetails(region, 150)).toBe(false);
+  });
+});
+
+describe('全スポットの到達エリアを含む外接境界 createLandmarkSpotsBounds', () => {
+  it('スポットが無い場合は null を返す(呼び出し側で既定位置にフォールバックさせるため)', () => {
+    expect(createLandmarkSpotsBounds([])).toBeNull();
+  });
+
+  it('各スポットの中心を到達エリアの半径ぶん外側へ広げた境界を返す(端のスポットの円が初期表示で欠けないように)', () => {
+    const bounds = createLandmarkSpotsBounds([
+      { latitude: 35, longitude: 139, radiusMeters: 1113.2 },
+      { latitude: 36, longitude: 140, radiusMeters: 0 },
+    ]);
+    const radiusLatitudeDegrees = 1113.2 / METERS_PER_DEGREE_LATITUDE;
+    const radiusLongitudeDegrees = 1113.2 / (METERS_PER_DEGREE_LATITUDE * Math.cos((35 * Math.PI) / 180));
+
+    expect(bounds?.minLatitude).toBeCloseTo(35 - radiusLatitudeDegrees, 10);
+    expect(bounds?.minLongitude).toBeCloseTo(139 - radiusLongitudeDegrees, 10);
+    expect(bounds?.maxLatitude).toBeCloseTo(36, 10);
+    expect(bounds?.maxLongitude).toBeCloseTo(140, 10);
+  });
+
+  it('大きな半径のスポットは、別スポットの中心より外側まで境界を広げる', () => {
+    const bounds = createLandmarkSpotsBounds([
+      { latitude: 35, longitude: 139, radiusMeters: 0 },
+      { latitude: 35.001, longitude: 139.001, radiusMeters: 2000 },
+    ]);
+
+    expect(bounds?.minLatitude).toBeLessThan(35);
+    expect(bounds?.minLongitude).toBeLessThan(139);
   });
 });

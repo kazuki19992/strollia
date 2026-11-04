@@ -11,8 +11,7 @@ import { getVisitedLandmarkSpotIds } from './landmarkVisitRepository';
  * 存在しない。`unavailable` は課金状態取得の一時的失敗を表し、次の正常取得まで滞在状態を保持する。
  */
 export type LandmarkDetectionSnapshot =
-  | { status: 'enabled'; spots: readonly LandmarkSpot[]; visitedSpotIds: ReadonlySet<string> }
-  | { status: 'unavailable' };
+  { status: 'enabled'; spots: readonly LandmarkSpot[]; visitedSpotIds: ReadonlySet<string> } | { status: 'unavailable' };
 
 /**
  * 記録時点の契約状態に対応するスポット検知の対象を取得する。
@@ -28,9 +27,7 @@ export async function getLandmarkDetectionSnapshotForRecording(): Promise<Landma
     // 有料パックの滞在計測を誤ってリセットしてしまう。ここでは失敗を例外のまま受け取り、
     // 下の catch で unavailable(状態を保持)へ落とす。
     const premiumAccessState = await getConfirmedPremiumAccessState();
-    const spots = getDetectableLandmarkSpots().filter(
-      (spot) => premiumAccessState.isPlusActive || isLandmarkSpotInFreePack(spot),
-    );
+    const spots = getDetectableLandmarkSpots().filter((spot) => premiumAccessState.isPlusActive || isLandmarkSpotInFreePack(spot));
 
     return { status: 'enabled', spots, visitedSpotIds: await getVisitedLandmarkSpotIds() };
   } catch (error: unknown) {

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import type { LandmarkPack, LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
-import { createUserCenteredRegion } from '@/ui/mapRegion';
+import { createLandmarkSpotFocusRegion } from '@/features/landmarks/landmarkSpotMapDetails';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
 import { LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
@@ -35,8 +35,10 @@ jest.mock('react-native-maps', () => {
   MapViewMock.displayName = 'MapViewMock';
   const MarkerMock = (props: Record<string, unknown>) => React.createElement(View, props, props.children);
   MarkerMock.displayName = 'MarkerMock';
+  const CircleMock = (props: Record<string, unknown>) => React.createElement(View, props);
+  CircleMock.displayName = 'CircleMock';
 
-  return { __esModule: true, default: MapViewMock, Marker: MarkerMock };
+  return { __esModule: true, default: MapViewMock, Marker: MarkerMock, Circle: CircleMock };
 });
 
 const styles = createStyles(lightTheme);
@@ -166,9 +168,10 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       await fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
     });
 
-    const nachiSpot = spotItems[1]?.spot;
+    const nachiSpot = spotItems[1]!.spot;
+    // 到達エリアの円が余白付きで収まる範囲へ寄る
     expect(mockAnimateToRegion).toHaveBeenCalledWith(
-      createUserCenteredRegion({ latitude: nachiSpot?.latitude, longitude: nachiSpot?.longitude }),
+      createLandmarkSpotFocusRegion({ latitude: nachiSpot.latitude, longitude: nachiSpot.longitude }, nachiSpot.radiusMeters),
       expect.any(Number),
     );
   });
@@ -241,9 +244,9 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
         await fireEvent.press(screen.getByLabelText('幻の滝を地図で見る'));
       });
 
-      const retiredSpot = retiredSpotItems[2]?.spot;
+      const retiredSpot = retiredSpotItems[2]!.spot;
       expect(mockAnimateToRegion).toHaveBeenCalledWith(
-        createUserCenteredRegion({ latitude: retiredSpot?.latitude, longitude: retiredSpot?.longitude }),
+        createLandmarkSpotFocusRegion({ latitude: retiredSpot.latitude, longitude: retiredSpot.longitude }, retiredSpot.radiusMeters),
         expect.any(Number),
       );
     });

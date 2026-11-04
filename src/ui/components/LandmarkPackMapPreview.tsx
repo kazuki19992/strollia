@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { Animated, Text, View } from 'react-native';
+import MapView, { Circle, Marker } from 'react-native-maps';
 
+import {
+  type LandmarkMapRegion,
+  createLandmarkSpotFocusRegion,
+  formatLandmarkUnlockCondition,
+  shouldShowLandmarkSpotDetails,
+} from '@/features/landmarks/landmarkSpotMapDetails';
 import {
   type RouteCoordinate,
   type RouteCoordinateBounds,
@@ -10,18 +16,42 @@ import {
 } from '@/features/map/routeMapper';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
+import { LANDMARK_SPOT_VISITED_LABEL } from '@/ui/appText';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
-import { createUserCenteredRegion } from '@/ui/mapRegion';
 import { LandmarkSpotNumberBadge } from './LandmarkSpotNumberBadge';
 
 /** スポットへ寄せるときのアニメーション時間(ms)。地図画面の非アニメーション移動と同じ値に揃える。 */
 const LANDMARK_SPOT_FOCUS_DURATION_MS = 250;
 
+/** スポット詳細(スポット名・解放条件)のフェード時間(ms)。寄る/離れる操作に遅れて見えない程度の短さにする。 */
+const LANDMARK_SPOT_DETAIL_FADE_DURATION_MS = 220;
+
+/**
+ * マーカーの表示内容(到達状態・ラベル)が変わったあと、ビュー変化を追跡し続ける時間(ms)。
+ *
+ * Android の Marker は `tracksViewChanges` が false の間、前回のビットマップを使い続ける。
+ * 固定高さのラベル行で文字だけが変わってもレイアウトイベントは来ないため、`onLayout` には頼らず、
+ * 内容が変わったマーカーだけ一定時間追跡して撮り直させる。描画が確定するまでの余裕を見た値。
+ */
+const LANDMARK_SPOT_CONTENT_REFRESH_MS = 500;
+
+/** 到達エリアの円の塗りの最終的な不透明度(16進2桁の値)。滞在場所の設定画面の円と同じ薄さ。 */
+const LANDMARK_SPOT_CIRCLE_FILL_ALPHA = 0x24;
+
+/**
+ * 到達エリアの円のフェードを何段階で描くか。
+ *
+ * `Circle` は要素全体の opacity を持たないため、塗り色の不透明度を変えてフェードを表す。
+ * 色を変えるたびにネイティブのオーバーレイ更新が走るので、毎フレームではなくこの段数に間引く。
+ * 220ms で6段なら1段あたり約37msで、目で見て段差が分からない程度に滑らか。
+ */
+const LANDMARK_SPOT_CIRCLE_FADE_STEPS = 6;
+
 /** 地図へ描くスポットマーカー1件ぶんの表示データ。 */
 type LandmarkSpotMarker = {
   /** スポットID。Reactのkeyとマーカー識別子に使う。 */
   spotId: string;
-  /** スポット名。読み上げラベルに使う。 */
+  /** スポット名。読み上げラベルと拡大時のラベルに使う。 */
   name: string;
   /** リストと同じ1始まりの表示番号。 */
   displayNumber: number;
@@ -29,6 +59,10 @@ type LandmarkSpotMarker = {
   isVisited: boolean;
   /** マーカーを置く緯度経度。 */
   coordinate: RouteCoordinate;
+  /** 到達エリアの半径(m)。拡大時の円と、詳細を出すしきい値・寄る範囲の計算に使う。 */
+  radiusMeters: number;
+  /** バッジ下に出す解放条件(到達済みなら「到達済み」)。 */
+  conditionLabel: string;
 };
 
 /**
@@ -58,6 +92,9 @@ export type LandmarkPackMapPreviewProps = {
  * 初期表示はパック内の全スポット(retired含む)が収まる範囲にして、「次はどこへ行こう」を
  * 地図の広がりから読み取れるようにする。行タップで渡される `focusRequest` が変わったときだけ
  * そのスポットへ寄せ、`null` へ戻っても勝手に引き戻さない(ユーザーが動かした表示位置を尊重する)。
+ *
+ * 拡大してスポットごとのしきい値(到達エリアの大きさに連動)を超えると、そのスポットの
+ * スポット名(バッジの上)・解放条件(バッジの下)・到達エリアの円をフェードインで出し、縮小すると消す。
  */
 export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme }: LandmarkPackMapPreviewProps) {
   const mapRef = useRef<MapView | null>(null);
@@ -75,8 +112,47 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
    * `tracksViewChanges` を止め、地図操作のたびにスナップショットを作り直させない。
    */
   const [laidOutMarkerCount, setLaidOutMarkerCount] = useState(0);
+  /**
+   * 詳細(スポット名・解放条件・円)を表示するスポットIDを、ソートして連結したキー。
+   *
+   * 地図操作のたびに region は変わるが、表示可否の集合が同じなら同じ文字列になるため、
+   * setState が同値として無視され余計な再描画が起きない。
+   */
+  const [visibleSpotKey, setVisibleSpotKey] = useState('');
+  /**
+   * フェード中のスポットID。
+   *
+   * Android の Marker はカスタムビューをビットマップで撮るため、opacity の変化を反映させるには
+   * フェード中だけ `tracksViewChanges` を true にする必要がある。完了したら外して撮り直しを止める。
+   */
+  const [fadingSpotIds, setFadingSpotIds] = useState<ReadonlySet<string>>(() => new Set());
+  /**
+   * スポットごとの詳細ラベルの opacity。スポットIDをキーに遅延生成し、再描画をまたいで保持する。
+   *
+   * 描画中に参照するため ref ではなく、setter を使わない state として同じ Map を持ち続ける。
+   */
+  const [detailOpacities] = useState(() => new Map<string, Animated.Value>());
+  /** スポットごとに最後に指示したフェードの目標(表示=true)。同じ目標への再アニメーションを避ける。 */
+  const detailTargetsRef = useRef(new Map<string, boolean>());
+  /** 表示内容が変わり、Android のビットマップを撮り直している最中のスポットID。 */
+  const [refreshingSpotIds, setRefreshingSpotIds] = useState<ReadonlySet<string>>(() => new Set());
+  /** 前回描画時のスポットごとの表示内容。初回は比較対象が無いため null。 */
+  const previousMarkerContentsRef = useRef<Map<string, string> | null>(null);
+  /** スポットごとの撮り直し終了タイマー。内容が続けて変わったら延長する。 */
+  const refreshTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  /**
+   * スポットごとの円のフェード段階(0〜LANDMARK_SPOT_CIRCLE_FADE_STEPS)。未登録のスポットは0(透明)。
+   *
+   * ラベルと同じ opacity を購読し、段階が変わったときだけ更新して円の再描画を間引く。
+   */
+  const [circleFadeSteps, setCircleFadeSteps] = useState<ReadonlyMap<string, number>>(() => new Map());
 
   const markers = useMemo(() => toLandmarkSpotMarkers(spotItems), [spotItems]);
+  // 親が spotItems を作り直しても購読を張り直さないよう、スポットIDの並びだけを依存にする
+  const markerSpotIdsKey = markers.map((marker) => marker.spotId).join('\n');
+  // 親が spotItems を作り直しても、表示内容が同じなら同じ文字列になり撮り直しは走らない
+  const markerContentKey = markers.map(toMarkerContentLine).join('\n');
   const initialRegion = useMemo(() => createRegionFromBounds(toLandmarkSpotBounds(markers)), [markers]);
 
   const focusedMarker = markers.find((marker) => marker.spotId === focusRequest?.spotId) ?? null;
@@ -84,27 +160,161 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
   // 同じ要求(nonce)を指している間は再フォーカスが走らないようにするため。
   const focusedLatitude = focusedMarker?.coordinate.latitude ?? null;
   const focusedLongitude = focusedMarker?.coordinate.longitude ?? null;
+  const focusedRadiusMeters = focusedMarker?.radiusMeters ?? null;
   const focusNonce = focusRequest?.nonce ?? null;
+  const visibleSpotIds = useMemo(() => new Set(visibleSpotKey === '' ? [] : visibleSpotKey.split('\n')), [visibleSpotKey]);
 
   useEffect(() => {
-    if (!isMapReady || focusNonce === null || focusedLatitude === null || focusedLongitude === null) {
+    if (!isMapReady || focusNonce === null || focusedLatitude === null || focusedLongitude === null || focusedRadiusMeters === null) {
       return;
     }
 
+    // 円より狭く寄ると到達エリアの端が分からないため、円が余白付きで収まる範囲へ寄せる。
+    // この範囲は詳細表示のしきい値と連動しているので、寄った後は必ずスポット名・解放条件・円が出る。
     mapRef.current?.animateToRegion(
-      createUserCenteredRegion({ latitude: focusedLatitude, longitude: focusedLongitude }),
+      createLandmarkSpotFocusRegion({ latitude: focusedLatitude, longitude: focusedLongitude }, focusedRadiusMeters),
       LANDMARK_SPOT_FOCUS_DURATION_MS,
     );
     // nonce をタップのたびに変えることで、同じスポットへの再タップでも
     // (座標が変わらず)確実にアニメーションを再実行する。
-  }, [focusNonce, focusedLatitude, focusedLongitude, isMapReady]);
+  }, [focusNonce, focusedLatitude, focusedLongitude, focusedRadiusMeters, isMapReady]);
+
+  useEffect(() => {
+    const nextContents = parseMarkerContentKey(markerContentKey);
+    const previousContents = previousMarkerContentsRef.current;
+    previousMarkerContentsRef.current = nextContents;
+
+    // 初回は初回レイアウトの追跡(isInitialLayoutPending)が撮影を担う
+    if (previousContents === null) {
+      return;
+    }
+
+    const changedSpotIds = [...nextContents]
+      .filter(([spotId, content]) => previousContents.has(spotId) && previousContents.get(spotId) !== content)
+      .map(([spotId]) => spotId);
+
+    if (changedSpotIds.length === 0) {
+      return;
+    }
+
+    setRefreshingSpotIds((current) => new Set([...current, ...changedSpotIds]));
+
+    for (const spotId of changedSpotIds) {
+      const timers = refreshTimersRef.current;
+      clearTimeout(timers.get(spotId));
+      timers.set(
+        spotId,
+        setTimeout(() => {
+          timers.delete(spotId);
+          setRefreshingSpotIds((current) => withoutSpotId(current, spotId));
+        }, LANDMARK_SPOT_CONTENT_REFRESH_MS),
+      );
+    }
+  }, [markerContentKey]);
+
+  // 円の塗りをラベルと同じフェードに追従させる
+  useEffect(() => {
+    const spotIds = markerSpotIdsKey === '' ? [] : markerSpotIdsKey.split('\n');
+    const unsubscribes = spotIds.map((spotId) => {
+      const opacity = getDetailOpacity(detailOpacities, spotId);
+      const listenerId = opacity.addListener(({ value }) => {
+        const step = Math.round(value * LANDMARK_SPOT_CIRCLE_FADE_STEPS);
+
+        setCircleFadeSteps((current) => ((current.get(spotId) ?? 0) === step ? current : new Map(current).set(spotId, step)));
+      });
+
+      return () => opacity.removeListener(listenerId);
+    });
+
+    return () => {
+      for (const unsubscribe of unsubscribes) {
+        unsubscribe();
+      }
+    };
+  }, [detailOpacities, markerSpotIdsKey]);
+
+  // アンマウント時に撮り直し終了タイマーを止め、外れたコンポーネントの state を触らない
+  useEffect(() => {
+    const timers = refreshTimersRef.current;
+
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+    };
+  }, []);
+
+  // アンマウント時に走行中のフェードを止める。停止時の完了コールバックは finished=false になり state を触らない。
+  useEffect(() => {
+    return () => {
+      for (const opacity of detailOpacities.values()) {
+        opacity.stopAnimation();
+      }
+    };
+  }, [detailOpacities]);
 
   // RouteMapPanel と同じく、描ける座標が無いときは地図を描画しない
   if (markers.length === 0) {
     return null;
   }
 
-  const tracksViewChanges = laidOutMarkerCount < markers.length;
+  const isInitialLayoutPending = laidOutMarkerCount < markers.length;
+
+  /** 表示範囲の変化を受け、詳細を出すスポットの集合を更新する。 */
+  const handleRegionChangeComplete = (region: LandmarkMapRegion) => {
+    // New Architecture等で onMapReady が発火しない環境のフォールバック。
+    // region変更完了が来た時点で地図は初期化済みで animateToRegion を受け付けられる。
+    setIsMapReady(true);
+
+    const nextVisibleSpotIds = markers
+      .filter((marker) => shouldShowLandmarkSpotDetails(region, marker.radiusMeters))
+      .map((marker) => marker.spotId);
+    const startedSpotIds = startDetailFades(nextVisibleSpotIds);
+
+    if (startedSpotIds.length > 0) {
+      setFadingSpotIds((current) => new Set([...current, ...startedSpotIds]));
+    }
+    setVisibleSpotKey([...nextVisibleSpotIds].sort().join('\n'));
+  };
+
+  /**
+   * 表示可否が変わったスポットだけフェードを開始し、開始したスポットIDを返す。
+   *
+   * 地図操作のたびに呼ばれるため、前回と同じ目標のスポットはアニメーションを作り直さない。
+   */
+  const startDetailFades = (nextVisibleSpotIds: string[]): string[] => {
+    const nextVisible = new Set(nextVisibleSpotIds);
+    const startedSpotIds: string[] = [];
+
+    for (const { spotId } of markers) {
+      const shouldShow = nextVisible.has(spotId);
+
+      if ((detailTargetsRef.current.get(spotId) ?? false) === shouldShow) {
+        continue;
+      }
+
+      detailTargetsRef.current.set(spotId, shouldShow);
+      startedSpotIds.push(spotId);
+      // opacity は JS ドライバで動かす。Android のマーカーはビューをビットマップへ撮り直して描くため、
+      // ネイティブドライバで React を経由せず変えた値がスナップショットへ確実に乗るとは限らない。
+      // 対象はパック内の数件だけなので JS ドライバでも負荷は小さい。
+      Animated.timing(getDetailOpacity(detailOpacities, spotId), {
+        toValue: shouldShow ? 1 : 0,
+        duration: LANDMARK_SPOT_DETAIL_FADE_DURATION_MS,
+        useNativeDriver: false,
+      }).start(({ finished }) => {
+        // 途中で逆向きのフェードに差し替えられた場合(finished=false)は、後発側の完了で外す
+        if (!finished) {
+          return;
+        }
+
+        setFadingSpotIds((current) => withoutSpotId(current, spotId));
+      });
+    }
+
+    return startedSpotIds;
+  };
 
   return (
     <View style={styles.landmarkPackMapFrame}>
@@ -118,33 +328,66 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
         style={styles.landmarkPackMap}
         testID="landmark-pack-map"
         onMapReady={() => setIsMapReady(true)}
-        // New Architecture等で onMapReady が発火しない環境のフォールバック。
-        // region変更完了が来た時点で地図は初期化済みで animateToRegion を受け付けられる。
-        onRegionChangeComplete={() => setIsMapReady(true)}
+        onRegionChangeComplete={handleRegionChangeComplete}
       >
-        {markers.map((marker) => (
-          <Marker
-            key={marker.spotId}
-            accessibilityLabel={`${marker.displayNumber}番目のスポット ${marker.name}`}
-            coordinate={marker.coordinate}
-            identifier={`landmark-spot-${marker.spotId}`}
-            tracksViewChanges={tracksViewChanges}
-          >
-            <View
-              collapsable={false}
-              style={styles.landmarkPackMapMarkerContainer}
-              onLayout={() => setLaidOutMarkerCount((count) => count + 1)}
+        {markers.map((marker) => {
+          const isFading = fadingSpotIds.has(marker.spotId);
+          // フェードアウト中も中身を残し、完了してから外す(いきなり消えないように)
+          const isDetailMounted = visibleSpotIds.has(marker.spotId) || isFading;
+
+          return isDetailMounted ? (
+            // react-native-maps の Circle は opacity を持たないため、塗り色の不透明度を段階的に変えてフェードさせる。
+            // 輪郭まで同じように変えると更新が倍になり、不透明な線だけが先に出て見えるため、輪郭は描かない。
+            <Circle
+              key={`circle-${marker.spotId}`}
+              center={marker.coordinate}
+              fillColor={`${theme.colors.primary}${toCircleFillAlphaHex(circleFadeSteps.get(marker.spotId) ?? 0)}`}
+              radius={marker.radiusMeters}
+              strokeColor="transparent"
+              strokeWidth={0}
+              testID={`landmark-spot-circle-${marker.spotId}`}
+            />
+          ) : null;
+        })}
+        {markers.map((marker) => {
+          const isFading = fadingSpotIds.has(marker.spotId);
+          const isDetailMounted = visibleSpotIds.has(marker.spotId) || isFading;
+          const opacity = getDetailOpacity(detailOpacities, marker.spotId);
+
+          return (
+            <Marker
+              key={marker.spotId}
+              accessibilityLabel={`${marker.displayNumber}番目のスポット ${marker.name}`}
+              // 上下のラベル行は同じ高さなので、中心アンカーでバッジがスポット座標に重なる
+              anchor={{ x: 0.5, y: 0.5 }}
+              coordinate={marker.coordinate}
+              identifier={`landmark-spot-${marker.spotId}`}
+              tracksViewChanges={isInitialLayoutPending || isFading || refreshingSpotIds.has(marker.spotId)}
             >
-              <LandmarkSpotNumberBadge
-                isVisited={marker.isVisited}
-                number={marker.displayNumber}
-                styles={styles}
-                theme={theme}
-                variant="map"
-              />
-            </View>
-          </Marker>
-        ))}
+              <View
+                collapsable={false}
+                style={styles.landmarkPackMapMarkerContainer}
+                testID={`landmark-spot-marker-${marker.spotId}`}
+                onLayout={() => setLaidOutMarkerCount((count) => count + 1)}
+              >
+                {/* 非表示時も行の高さは保ち、中身だけを外す(バッジの位置を動かさないため) */}
+                <Animated.View pointerEvents="none" style={[styles.landmarkPackMapLabelRow, { opacity }]}>
+                  {isDetailMounted ? <LandmarkSpotMapLabel label={marker.name} styles={styles} /> : null}
+                </Animated.View>
+                <LandmarkSpotNumberBadge
+                  isVisited={marker.isVisited}
+                  number={marker.displayNumber}
+                  styles={styles}
+                  theme={theme}
+                  variant="map"
+                />
+                <Animated.View pointerEvents="none" style={[styles.landmarkPackMapLabelRow, { opacity }]}>
+                  {isDetailMounted ? <LandmarkSpotMapLabel label={marker.conditionLabel} styles={styles} /> : null}
+                </Animated.View>
+              </View>
+            </Marker>
+          );
+        })}
       </MapView>
     </View>
   );
@@ -158,13 +401,20 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
  */
 function toLandmarkSpotMarkers(spotItems: LandmarkSpotListItem[]): LandmarkSpotMarker[] {
   return spotItems
-    .map(({ spot, visitedLocalDate }, index) => ({
-      spotId: spot.id,
-      name: spot.name,
-      displayNumber: index + 1,
-      isVisited: visitedLocalDate !== null,
-      coordinate: { latitude: spot.latitude, longitude: spot.longitude },
-    }))
+    .map(({ spot, visitedLocalDate }, index) => {
+      const isVisited = visitedLocalDate !== null;
+
+      return {
+        spotId: spot.id,
+        name: spot.name,
+        displayNumber: index + 1,
+        isVisited,
+        coordinate: { latitude: spot.latitude, longitude: spot.longitude },
+        radiusMeters: spot.radiusMeters,
+        // 到達済みに滞在条件を出すと「まだ解放されていない」と誤読されるため、状態だけを示す
+        conditionLabel: isVisited ? LANDMARK_SPOT_VISITED_LABEL : formatLandmarkUnlockCondition(spot.dwellSeconds),
+      };
+    })
     .filter((marker) => isValidRouteCoordinate(marker.coordinate));
 }
 
@@ -193,4 +443,71 @@ function toLandmarkSpotBounds(markers: LandmarkSpotMarker[]): RouteCoordinateBou
   }
 
   return { minLatitude, maxLatitude, minLongitude, maxLongitude };
+}
+
+/** 地図上のラベル1行(角丸の半透明の座布団に1行の文字)。長い名前は末尾を省略して行の高さを保つ。 */
+function LandmarkSpotMapLabel({ label, styles }: { label: string; styles: AppStyles }) {
+  return (
+    <View style={styles.landmarkPackMapLabelCushion}>
+      {/* 行の高さを固定しているため、端末の文字サイズ設定で拡大するとバッジへ重なる。地図上の固定UIと同じく拡大しない */}
+      <Text allowFontScaling={false} numberOfLines={1} style={styles.landmarkPackMapLabelText}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/** 円のフェード段階を、塗り色の末尾に付ける不透明度(16進2桁)へ変換する。 */
+function toCircleFillAlphaHex(step: number): string {
+  const ratio = Math.min(Math.max(step / LANDMARK_SPOT_CIRCLE_FADE_STEPS, 0), 1);
+
+  return Math.round(LANDMARK_SPOT_CIRCLE_FILL_ALPHA * ratio)
+    .toString(16)
+    .padStart(2, '0');
+}
+
+/**
+ * マーカー1件の表示内容を、比較用の1行(タブ区切り、先頭はスポットID)にする。
+ *
+ * Android で撮り直しが必要になる見た目の要素(番号・到達状態・スポット名・解放条件)だけを含める。
+ */
+function toMarkerContentLine(marker: LandmarkSpotMarker): string {
+  return [marker.spotId, marker.displayNumber, marker.isVisited, marker.name, marker.conditionLabel].join('\t');
+}
+
+/** `toMarkerContentLine` を連結したキーを、スポットIDごとの表示内容へ戻す。 */
+function parseMarkerContentKey(contentKey: string): Map<string, string> {
+  const contents = new Map<string, string>();
+
+  for (const line of contentKey === '' ? [] : contentKey.split('\n')) {
+    contents.set(line.split('\t')[0], line);
+  }
+
+  return contents;
+}
+
+/** スポットの詳細ラベル用 opacity を取得する。未作成なら非表示(0)で作って保持する。 */
+function getDetailOpacity(opacities: Map<string, Animated.Value>, spotId: string): Animated.Value {
+  const existing = opacities.get(spotId);
+
+  if (existing) {
+    return existing;
+  }
+
+  const created = new Animated.Value(0);
+  opacities.set(spotId, created);
+
+  return created;
+}
+
+/** 集合から1件を除いた新しい集合を返す。含まれていなければ同じ参照を返し、無駄な再描画を避ける。 */
+function withoutSpotId(spotIds: ReadonlySet<string>, spotId: string): ReadonlySet<string> {
+  if (!spotIds.has(spotId)) {
+    return spotIds;
+  }
+
+  const next = new Set(spotIds);
+  next.delete(spotId);
+
+  return next;
 }

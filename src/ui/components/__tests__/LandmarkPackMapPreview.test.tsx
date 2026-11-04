@@ -1,19 +1,21 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
+import { createLandmarkSpotFocusRegion, type LandmarkMapRegion } from '@/features/landmarks/landmarkSpotMapDetails';
 import { createRegionFromBounds } from '@/features/map/routeMapper';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
 import { LandmarkPackMapPreview, type LandmarkSpotFocusRequest } from '@/ui/components/LandmarkPackMapPreview';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
-import { createUserCenteredRegion } from '@/ui/mapRegion';
 
 /** モックMapViewのrefへ差し込む animateToRegion。フォーカス移動先の検証に使う。 */
 const mockAnimateToRegion = jest.fn();
 
 /** 最後に描画されたモックMapViewのprops。initialRegion検証と onMapReady の手動発火に使う。 */
-const mockMapViewProps: { current: { initialRegion?: unknown; onMapReady?: () => void } | null } = { current: null };
+const mockMapViewProps: {
+  current: { initialRegion?: unknown; onMapReady?: () => void; onRegionChangeComplete?: (region: LandmarkMapRegion) => void } | null;
+} = { current: null };
 
 jest.mock('react-native-maps', () => {
   const React = require('react'); // eslint-disable-line @typescript-eslint/no-require-imports
@@ -25,7 +27,11 @@ jest.mock('react-native-maps', () => {
   // onMapReady はテストから明示的に発火させたいので、propsを外へ公開して自動発火はしない。
   const MapViewMock = React.forwardRef((props: MockMapComponentProps, ref: React.Ref<unknown>) => {
     // mock定義側のローカル型と、テスト本体側で参照する型が構造的には同じでも別名として扱われるため明示キャストする
-    mockMapViewProps.current = props as { initialRegion?: unknown; onMapReady?: () => void };
+    mockMapViewProps.current = props as {
+      initialRegion?: unknown;
+      onMapReady?: () => void;
+      onRegionChangeComplete?: (region: LandmarkMapRegion) => void;
+    };
     React.useImperativeHandle(ref, () => ({ animateToRegion: mockAnimateToRegion }));
 
     return React.createElement(View, props, props.children);
@@ -33,14 +39,19 @@ jest.mock('react-native-maps', () => {
   MapViewMock.displayName = 'MapViewMock';
   const MarkerMock = (props: MockMapComponentProps) => React.createElement(View, props, props.children);
   MarkerMock.displayName = 'MarkerMock';
+  // Circle は子を持たない地図オーバーレイ。radius などの props を検証できるよう View で代替する
+  const CircleMock = (props: MockMapComponentProps) => React.createElement(View, props);
+  CircleMock.displayName = 'CircleMock';
 
-  return { __esModule: true, default: MapViewMock, Marker: MarkerMock };
+  return { __esModule: true, default: MapViewMock, Marker: MarkerMock, Circle: CircleMock };
 });
 
 const styles = createStyles(lightTheme);
 
 /** スポット1件を組み立てる。地図表示に必要な緯度経度以外は既定値で足りる。 */
-function createSpot(overrides: Pick<LandmarkSpot, 'id' | 'name' | 'latitude' | 'longitude'>): LandmarkSpot {
+function createSpot(
+  overrides: Pick<LandmarkSpot, 'id' | 'name' | 'latitude' | 'longitude'> & Partial<Pick<LandmarkSpot, 'radiusMeters' | 'dwellSeconds'>>,
+): LandmarkSpot {
   return {
     prefectures: ['TOCHIGI'],
     radiusMeters: 200,
@@ -57,7 +68,7 @@ const spotItems: LandmarkSpotListItem[] = [
     visitedLocalDate: '2026-04-12',
   },
   {
-    spot: createSpot({ id: 'spot-2', name: '那智の滝', latitude: 33.675278, longitude: 135.8875 }),
+    spot: createSpot({ id: 'spot-2', name: '那智の滝', latitude: 33.675278, longitude: 135.8875, radiusMeters: 650, dwellSeconds: 5400 }),
     visitedLocalDate: null,
   },
   {
@@ -81,6 +92,22 @@ async function renderPreview(focusRequest: LandmarkSpotFocusRequest = null, item
         <LandmarkPackMapPreview spotItems={nextItems} focusRequest={nextFocusRequest} styles={styles} theme={lightTheme} />,
       ),
   };
+}
+
+/** モックMapViewの onRegionChangeComplete を発火し、ユーザー操作やアニメーション後の表示範囲通知を再現する。 */
+async function fireRegionChange(region: LandmarkMapRegion): Promise<void> {
+  await act(() => {
+    mockMapViewProps.current?.onRegionChangeComplete?.(region);
+  });
+}
+
+/** 全マーカーの onLayout を発火し、初回描画時のスナップショット追跡が終わった状態にする。 */
+async function layoutAllMarkers(items: LandmarkSpotListItem[] = spotItems): Promise<void> {
+  for (const { spot } of items) {
+    await fireEvent(screen.getByTestId(`landmark-spot-marker-${spot.id}`), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 30, height: 78 } },
+    });
+  }
 }
 
 /** モックMapViewの onMapReady を発火し、ネイティブ地図の準備完了を再現する。 */
@@ -134,7 +161,7 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     expect(StyleSheet.flatten(unvisitedBadgeText.props.style)).toMatchObject({ color: '#ffffff' });
   });
 
-  it('focusRequestが変わるとそのスポット中心へアニメーションする', async () => {
+  it('focusRequestが変わると、そのスポットの到達エリアの円が余白付きで収まる範囲へアニメーションする', async () => {
     const { rerender } = await renderPreview();
     await fireMapReady();
 
@@ -143,7 +170,7 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
-    expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
+    expect(mockAnimateToRegion).toHaveBeenCalledWith(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650), 250);
   });
 
   it('同じスポットへ連続で再タップ(nonceだけ増加)しても再アニメーションする', async () => {
@@ -162,7 +189,11 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     });
 
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
-    expect(mockAnimateToRegion).toHaveBeenNthCalledWith(2, createUserCenteredRegion({ latitude: 33.675278, longitude: 135.8875 }), 250);
+    expect(mockAnimateToRegion).toHaveBeenNthCalledWith(
+      2,
+      createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650),
+      250,
+    );
   });
 
   it('focusRequestがnullへ戻っても追加のアニメーションは行わず初期表示のズームを保つ', async () => {
@@ -188,7 +219,10 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
 
     await fireMapReady();
 
-    expect(mockAnimateToRegion).toHaveBeenCalledWith(createUserCenteredRegion({ latitude: 36.767222, longitude: 140.398333 }), 250);
+    expect(mockAnimateToRegion).toHaveBeenCalledWith(
+      createLandmarkSpotFocusRegion({ latitude: 36.767222, longitude: 140.398333 }, 200),
+      250,
+    );
   });
 
   it('表示できるスポットが1件も無い場合は地図を描画しない', async () => {
@@ -208,5 +242,195 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     expect(screen.queryByLabelText('1番目のスポット 幻の滝')).toBeNull();
     // 2件目は配列indexのまま2番として描画され、リスト側の番号とズレない
     expect(screen.getByLabelText('2番目のスポット 那智の滝')).toBeTruthy();
+  });
+  describe('拡大時のスポット詳細(スポット名・解放条件・到達エリアの円)', () => {
+    /** パック全体を見渡す初期表示範囲。 */
+    const overviewRegion = createRegionFromBounds({
+      minLatitude: 33.675278,
+      maxLatitude: 36.767222,
+      minLongitude: 135.8875,
+      maxLongitude: 140.398333,
+    });
+
+    // フェードは Animated の JS ドライバで進むため、全テストをフェイクタイマーで動かし、
+    // 終了時に走行中のフェードを流し切る(テスト後に act 外で state 更新が起きて警告が出るのを防ぐ)
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(async () => {
+      await act(() => {
+        jest.runOnlyPendingTimers();
+      });
+      jest.useRealTimers();
+    });
+
+    it('全体を見渡す表示ではスポット名・解放条件・円をどれも出さない', async () => {
+      await renderPreview();
+      await fireRegionChange(overviewRegion);
+
+      expect(screen.queryByText('華厳の滝')).toBeNull();
+      expect(screen.queryByText('1時間30分以上滞在で解放')).toBeNull();
+      expect(screen.queryByText('到達済み')).toBeNull();
+      expect(screen.queryByTestId('landmark-spot-circle-spot-2')).toBeNull();
+    });
+
+    it('寄った範囲を通知すると、そのスポットのスポット名・解放条件・到達エリアの円(半径=radiusMeters)を出す', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+
+      expect(screen.getByText('那智の滝')).toBeTruthy();
+      expect(screen.getByText('1時間30分以上滞在で解放')).toBeTruthy();
+      const circle = screen.getByTestId('landmark-spot-circle-spot-2');
+      expect(circle.props.radius).toBe(650);
+      expect(circle.props.center).toEqual({ latitude: 33.675278, longitude: 135.8875 });
+      // 輪郭は透明度を段階的に変えられないため描かず、塗りだけの円にする
+      expect(circle.props.strokeWidth).toBe(0);
+      // しきい値はスポットごとの半径に連動する。半径200mのスポットは、半径650mのスポットへ寄った範囲ではまだ出さない
+      expect(screen.queryByText('華厳の滝')).toBeNull();
+      expect(screen.queryByTestId('landmark-spot-circle-spot-1')).toBeNull();
+    });
+
+    it('到達済みスポットは解放条件の代わりに「到達済み」を出す', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 36.737917, longitude: 139.501972 }, 200));
+
+      const visitedMarker = within(screen.getByTestId('landmark-spot-marker-spot-1'));
+      expect(visitedMarker.getByText('華厳の滝')).toBeTruthy();
+      expect(visitedMarker.getByText('到達済み')).toBeTruthy();
+      expect(visitedMarker.queryByText('3分以上滞在で解放')).toBeNull();
+    });
+
+    it('フェード中だけマーカーのビュー変化を追跡し、フェード完了後は止める(Androidのビットマップ撮り直しのため)', async () => {
+      await renderPreview();
+      await layoutAllMarkers();
+      // 初回描画ぶんの追跡が止まっていることを前提にする
+      expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+
+      expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(true);
+
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
+    });
+
+    it('再び広い範囲を通知するとフェードアウトし、完了後にスポット名・解放条件・円を消す', async () => {
+      await renderPreview();
+      await layoutAllMarkers();
+      // 初回描画ぶんの追跡が止まっていることを前提にする
+      expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      await fireRegionChange(overviewRegion);
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.queryByText('那智の滝')).toBeNull();
+      expect(screen.queryByText('1時間30分以上滞在で解放')).toBeNull();
+      expect(screen.queryByTestId('landmark-spot-circle-spot-2')).toBeNull();
+      expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
+    });
+
+    it('到達エリアの円は塗りの透明度を段階的に上げてフェードインし、最後は滞在場所の設定画面と同じ薄さになる', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+
+      // 出始めは透明で、いきなり最終の濃さでは出さない
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(`${lightTheme.colors.primary}00`);
+
+      await act(() => {
+        jest.advanceTimersByTime(110);
+      });
+      const midwayAlpha = parseInt(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor.slice(-2), 16);
+      expect(midwayAlpha).toBeGreaterThan(0);
+      expect(midwayAlpha).toBeLessThan(0x24);
+
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(`${lightTheme.colors.primary}24`);
+    });
+
+    it('縮小すると到達エリアの円は塗りの透明度を段階的に下げてから消える', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      await fireRegionChange(overviewRegion);
+      await act(() => {
+        jest.advanceTimersByTime(110);
+      });
+      const midwayAlpha = parseInt(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor.slice(-2), 16);
+      expect(midwayAlpha).toBeGreaterThan(0);
+      expect(midwayAlpha).toBeLessThan(0x24);
+
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(screen.queryByTestId('landmark-spot-circle-spot-2')).toBeNull();
+    });
+
+    it('ラベル文字は端末の文字サイズ設定で拡大せず、固定高さの行からはみ出さない', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+
+      expect(screen.getByText('那智の滝').props.allowFontScaling).toBe(false);
+      expect(screen.getByText('1時間30分以上滞在で解放').props.allowFontScaling).toBe(false);
+    });
+
+    it('表示中のマーカーの到達状態が変わると、一定時間だけビュー変化を追跡して撮り直す(Androidのビットマップ更新のため)', async () => {
+      const { rerender } = await renderPreview();
+      await layoutAllMarkers();
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(false);
+
+      const visitedItems = spotItems.map((item) => (item.spot.id === 'spot-3' ? { ...item, visitedLocalDate: '2026-11-04' } : item));
+      await rerender(null, visitedItems);
+
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(true);
+      // 変わっていないマーカーは撮り直さない
+      expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
+
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(false);
+    });
+
+    it('同じ内容のスポット行を作り直して渡しただけでは撮り直さない', async () => {
+      const { rerender } = await renderPreview();
+      await layoutAllMarkers();
+
+      await rerender(
+        null,
+        spotItems.map((item) => ({ ...item, spot: { ...item.spot } })),
+      );
+
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(false);
+    });
+
+    it('行タップで寄った範囲では、そのスポットの詳細が必ず表示される', async () => {
+      const { rerender } = await renderPreview();
+      await fireMapReady();
+
+      await act(async () => {
+        await rerender(focusRequestFor('spot-3'));
+      });
+      const [focusRegion] = mockAnimateToRegion.mock.calls[0] as [LandmarkMapRegion];
+      await fireRegionChange(focusRegion);
+
+      expect(screen.getByText('袋田の滝')).toBeTruthy();
+      expect(screen.getByText('3分以上滞在で解放')).toBeTruthy();
+      expect(screen.getByTestId('landmark-spot-circle-spot-3').props.radius).toBe(200);
+    });
   });
 });

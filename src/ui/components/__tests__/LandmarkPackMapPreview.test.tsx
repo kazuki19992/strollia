@@ -252,7 +252,16 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       maxLongitude: 140.398333,
     });
 
-    afterEach(() => {
+    // フェードは Animated の JS ドライバで進むため、全テストをフェイクタイマーで動かし、
+    // 終了時に走行中のフェードを流し切る(テスト後に act 外で state 更新が起きて警告が出るのを防ぐ)
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(async () => {
+      await act(() => {
+        jest.runOnlyPendingTimers();
+      });
       jest.useRealTimers();
     });
 
@@ -275,10 +284,8 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       const circle = screen.getByTestId('landmark-spot-circle-spot-2');
       expect(circle.props.radius).toBe(650);
       expect(circle.props.center).toEqual({ latitude: 33.675278, longitude: 135.8875 });
-      // 滞在場所の設定画面と同じ見た目の薄い円にする
-      expect(circle.props.fillColor).toBe(`${lightTheme.colors.primary}24`);
-      expect(circle.props.strokeColor).toBe(lightTheme.colors.primary);
-      expect(circle.props.strokeWidth).toBe(1);
+      // 輪郭は透明度を段階的に変えられないため描かず、塗りだけの円にする
+      expect(circle.props.strokeWidth).toBe(0);
       // しきい値はスポットごとの半径に連動する。半径200mのスポットは、半径650mのスポットへ寄った範囲ではまだ出さない
       expect(screen.queryByText('華厳の滝')).toBeNull();
       expect(screen.queryByTestId('landmark-spot-circle-spot-1')).toBeNull();
@@ -295,7 +302,6 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     });
 
     it('フェード中だけマーカーのビュー変化を追跡し、フェード完了後は止める(Androidのビットマップ撮り直しのため)', async () => {
-      jest.useFakeTimers();
       await renderPreview();
       await layoutAllMarkers();
       // 初回描画ぶんの追跡が止まっていることを前提にする
@@ -312,7 +318,6 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     });
 
     it('再び広い範囲を通知するとフェードアウトし、完了後にスポット名・解放条件・円を消す', async () => {
-      jest.useFakeTimers();
       await renderPreview();
       await layoutAllMarkers();
       // 初回描画ぶんの追跡が止まっていることを前提にする
@@ -333,6 +338,47 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
     });
 
+    it('到達エリアの円は塗りの透明度を段階的に上げてフェードインし、最後は滞在場所の設定画面と同じ薄さになる', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+
+      // 出始めは透明で、いきなり最終の濃さでは出さない
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(`${lightTheme.colors.primary}00`);
+
+      await act(() => {
+        jest.advanceTimersByTime(110);
+      });
+      const midwayAlpha = parseInt(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor.slice(-2), 16);
+      expect(midwayAlpha).toBeGreaterThan(0);
+      expect(midwayAlpha).toBeLessThan(0x24);
+
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(`${lightTheme.colors.primary}24`);
+    });
+
+    it('縮小すると到達エリアの円は塗りの透明度を段階的に下げてから消える', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      await fireRegionChange(overviewRegion);
+      await act(() => {
+        jest.advanceTimersByTime(110);
+      });
+      const midwayAlpha = parseInt(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor.slice(-2), 16);
+      expect(midwayAlpha).toBeGreaterThan(0);
+      expect(midwayAlpha).toBeLessThan(0x24);
+
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(screen.queryByTestId('landmark-spot-circle-spot-2')).toBeNull();
+    });
+
     it('ラベル文字は端末の文字サイズ設定で拡大せず、固定高さの行からはみ出さない', async () => {
       await renderPreview();
       await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
@@ -342,7 +388,6 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     });
 
     it('表示中のマーカーの到達状態が変わると、一定時間だけビュー変化を追跡して撮り直す(Androidのビットマップ更新のため)', async () => {
-      jest.useFakeTimers();
       const { rerender } = await renderPreview();
       await layoutAllMarkers();
       expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(false);

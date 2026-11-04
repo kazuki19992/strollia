@@ -35,6 +35,18 @@ const LANDMARK_SPOT_DETAIL_FADE_DURATION_MS = 220;
  */
 const LANDMARK_SPOT_CONTENT_REFRESH_MS = 500;
 
+/** 到達エリアの円の塗りの最終的な不透明度(16進2桁の値)。滞在場所の設定画面の円と同じ薄さ。 */
+const LANDMARK_SPOT_CIRCLE_FILL_ALPHA = 0x24;
+
+/**
+ * 到達エリアの円のフェードを何段階で描くか。
+ *
+ * `Circle` は要素全体の opacity を持たないため、塗り色の不透明度を変えてフェードを表す。
+ * 色を変えるたびにネイティブのオーバーレイ更新が走るので、毎フレームではなくこの段数に間引く。
+ * 220ms で6段なら1段あたり約37msで、目で見て段差が分からない程度に滑らか。
+ */
+const LANDMARK_SPOT_CIRCLE_FADE_STEPS = 6;
+
 /** 地図へ描くスポットマーカー1件ぶんの表示データ。 */
 type LandmarkSpotMarker = {
   /** スポットID。Reactのkeyとマーカー識別子に使う。 */
@@ -129,7 +141,16 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
   /** スポットごとの撮り直し終了タイマー。内容が続けて変わったら延長する。 */
   const refreshTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
+  /**
+   * スポットごとの円のフェード段階(0〜LANDMARK_SPOT_CIRCLE_FADE_STEPS)。未登録のスポットは0(透明)。
+   *
+   * ラベルと同じ opacity を購読し、段階が変わったときだけ更新して円の再描画を間引く。
+   */
+  const [circleFadeSteps, setCircleFadeSteps] = useState<ReadonlyMap<string, number>>(() => new Map());
+
   const markers = useMemo(() => toLandmarkSpotMarkers(spotItems), [spotItems]);
+  // 親が spotItems を作り直しても購読を張り直さないよう、スポットIDの並びだけを依存にする
+  const markerSpotIdsKey = markers.map((marker) => marker.spotId).join('\n');
   // 親が spotItems を作り直しても、表示内容が同じなら同じ文字列になり撮り直しは走らない
   const markerContentKey = markers.map(toMarkerContentLine).join('\n');
   const initialRegion = useMemo(() => createRegionFromBounds(toLandmarkSpotBounds(markers)), [markers]);
@@ -190,6 +211,27 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
       );
     }
   }, [markerContentKey]);
+
+  // 円の塗りをラベルと同じフェードに追従させる
+  useEffect(() => {
+    const spotIds = markerSpotIdsKey === '' ? [] : markerSpotIdsKey.split('\n');
+    const unsubscribes = spotIds.map((spotId) => {
+      const opacity = getDetailOpacity(detailOpacities, spotId);
+      const listenerId = opacity.addListener(({ value }) => {
+        const step = Math.round(value * LANDMARK_SPOT_CIRCLE_FADE_STEPS);
+
+        setCircleFadeSteps((current) => ((current.get(spotId) ?? 0) === step ? current : new Map(current).set(spotId, step)));
+      });
+
+      return () => opacity.removeListener(listenerId);
+    });
+
+    return () => {
+      for (const unsubscribe of unsubscribes) {
+        unsubscribe();
+      }
+    };
+  }, [detailOpacities, markerSpotIdsKey]);
 
   // アンマウント時に撮り直し終了タイマーを止め、外れたコンポーネントの state を触らない
   useEffect(() => {
@@ -294,15 +336,15 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
           const isDetailMounted = visibleSpotIds.has(marker.spotId) || isFading;
 
           return isDetailMounted ? (
-            // react-native-maps の Circle は opacity を持たず、fill/stroke の色をフレームごとに差し替えると
-            // ネイティブのオーバーレイ更新が毎フレーム走るため、ラベルと同じ期間だけマウントする切り替えで代替する。
+            // react-native-maps の Circle は opacity を持たないため、塗り色の不透明度を段階的に変えてフェードさせる。
+            // 輪郭まで同じように変えると更新が倍になり、不透明な線だけが先に出て見えるため、輪郭は描かない。
             <Circle
               key={`circle-${marker.spotId}`}
               center={marker.coordinate}
-              fillColor={`${theme.colors.primary}24`}
+              fillColor={`${theme.colors.primary}${toCircleFillAlphaHex(circleFadeSteps.get(marker.spotId) ?? 0)}`}
               radius={marker.radiusMeters}
-              strokeColor={theme.colors.primary}
-              strokeWidth={1}
+              strokeColor="transparent"
+              strokeWidth={0}
               testID={`landmark-spot-circle-${marker.spotId}`}
             />
           ) : null;
@@ -413,6 +455,15 @@ function LandmarkSpotMapLabel({ label, styles }: { label: string; styles: AppSty
       </Text>
     </View>
   );
+}
+
+/** 円のフェード段階を、塗り色の末尾に付ける不透明度(16進2桁)へ変換する。 */
+function toCircleFillAlphaHex(step: number): string {
+  const ratio = Math.min(Math.max(step / LANDMARK_SPOT_CIRCLE_FADE_STEPS, 0), 1);
+
+  return Math.round(LANDMARK_SPOT_CIRCLE_FILL_ALPHA * ratio)
+    .toString(16)
+    .padStart(2, '0');
 }
 
 /**

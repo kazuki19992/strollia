@@ -5,15 +5,11 @@ import MapView, { Circle, Marker } from 'react-native-maps';
 import {
   type LandmarkMapRegion,
   createLandmarkSpotFocusRegion,
+  createLandmarkSpotsBounds,
   formatLandmarkUnlockCondition,
   shouldShowLandmarkSpotDetails,
 } from '@/features/landmarks/landmarkSpotMapDetails';
-import {
-  type RouteCoordinate,
-  type RouteCoordinateBounds,
-  createRegionFromBounds,
-  isValidRouteCoordinate,
-} from '@/features/map/routeMapper';
+import { type RouteCoordinate, createRegionFromBounds, isValidRouteCoordinate } from '@/features/map/routeMapper';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
 import { LANDMARK_SPOT_VISITED_LABEL } from '@/ui/appText';
@@ -142,7 +138,15 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
   const markers = useMemo(() => toLandmarkSpotMarkers(spotItems), [spotItems]);
   // 親が spotItems を作り直しても、表示内容が同じなら同じ文字列になり撮り直しは走らない
   const markerContentKey = markers.map(toMarkerContentLine).join('\n');
-  const initialRegion = useMemo(() => createRegionFromBounds(toLandmarkSpotBounds(markers)), [markers]);
+  const initialRegion = useMemo(
+    () =>
+      createRegionFromBounds(
+        createLandmarkSpotsBounds(
+          markers.map(({ coordinate, radiusMeters }) => ({ latitude: coordinate.latitude, longitude: coordinate.longitude, radiusMeters })),
+        ),
+      ),
+    [markers],
+  );
 
   const focusedMarker = markers.find((marker) => marker.spotId === focusRequest?.spotId) ?? null;
   // 座標を数値へ分解して依存配列に入れる。親が spotItems を毎レンダー作り直しても、
@@ -378,33 +382,6 @@ function toLandmarkSpotMarkers(spotItems: LandmarkSpotListItem[]): LandmarkSpotM
       };
     })
     .filter((marker) => isValidRouteCoordinate(marker.coordinate));
-}
-
-/**
- * マーカー群の外接境界を求める。
- *
- * `createRegionFromBounds` は境界がnullなら既定位置を返すため、1件も無い場合はnullを返す。
- */
-function toLandmarkSpotBounds(markers: LandmarkSpotMarker[]): RouteCoordinateBounds | null {
-  const first = markers[0];
-
-  if (!first) {
-    return null;
-  }
-
-  let minLatitude = first.coordinate.latitude;
-  let maxLatitude = first.coordinate.latitude;
-  let minLongitude = first.coordinate.longitude;
-  let maxLongitude = first.coordinate.longitude;
-
-  for (const { coordinate } of markers) {
-    if (coordinate.latitude < minLatitude) minLatitude = coordinate.latitude;
-    if (coordinate.latitude > maxLatitude) maxLatitude = coordinate.latitude;
-    if (coordinate.longitude < minLongitude) minLongitude = coordinate.longitude;
-    if (coordinate.longitude > maxLongitude) maxLongitude = coordinate.longitude;
-  }
-
-  return { minLatitude, maxLatitude, minLongitude, maxLongitude };
 }
 
 /** 地図上のラベル1行(角丸の半透明の座布団に1行の文字)。長い名前は末尾を省略して行の高さを保つ。 */

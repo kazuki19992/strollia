@@ -2,7 +2,11 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react-n
 import { StyleSheet } from 'react-native';
 
 import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
-import { createLandmarkSpotFocusRegion, type LandmarkMapRegion } from '@/features/landmarks/landmarkSpotMapDetails';
+import {
+  createLandmarkSpotFocusRegion,
+  createLandmarkSpotsBounds,
+  type LandmarkMapRegion,
+} from '@/features/landmarks/landmarkSpotMapDetails';
 import { createRegionFromBounds } from '@/features/map/routeMapper';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
@@ -126,13 +130,12 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
   it('全スポットが収まる表示範囲を initialRegion に渡す', async () => {
     await renderPreview();
 
-    // 期待値はパック内の全スポット(retired含む)の外接境界から作った範囲と一致する
-    const expectedRegion = createRegionFromBounds({
-      minLatitude: 33.675278,
-      maxLatitude: 36.767222,
-      minLongitude: 135.8875,
-      maxLongitude: 140.398333,
-    });
+    // 期待値はパック内の全スポット(retired含む)の到達エリアの円まで含めた外接境界から作った範囲と一致する
+    const expectedRegion = createRegionFromBounds(
+      createLandmarkSpotsBounds(
+        spotItems.map(({ spot }) => ({ latitude: spot.latitude, longitude: spot.longitude, radiusMeters: spot.radiusMeters })),
+      ),
+    );
 
     expect(screen.getByTestId('landmark-pack-map').props.initialRegion).toEqual(expectedRegion);
   });
@@ -273,7 +276,9 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.queryByText('1時間30分以上滞在で解放')).toBeNull();
       expect(screen.queryByText('到達済み')).toBeNull();
       // 円は地図の縮尺に合わせて大きさが変わるので、引いた表示では小さくなるだけで邪魔にならない
-      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.radius).toBe(650);
+      for (const { spot } of spotItems) {
+        expect(screen.getByTestId(`landmark-spot-circle-${spot.id}`).props.radius).toBe(spot.radiusMeters);
+      }
     });
 
     it('寄った範囲を通知すると、そのスポットのスポット名・解放条件・到達エリアの円(半径=radiusMeters)を出す', async () => {
@@ -354,6 +359,12 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       await fireRegionChange(overviewRegion);
       await act(() => {
         jest.advanceTimersByTime(110);
+      });
+      expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(expectedFill);
+
+      // ラベルのフェード(約220ms)が終わった後も塗りは変わらない
+      await act(() => {
+        jest.advanceTimersByTime(1000);
       });
       expect(screen.getByTestId('landmark-spot-circle-spot-2').props.fillColor).toBe(expectedFill);
     });

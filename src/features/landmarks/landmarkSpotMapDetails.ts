@@ -1,3 +1,5 @@
+import type { RouteCoordinateBounds } from '@/features/map/routeMapper';
+
 /** 緯度1度あたりのメートル数(概算)。経度側は cos(緯度) を掛けて求める。 */
 export const METERS_PER_DEGREE_LATITUDE = 111320;
 
@@ -86,4 +88,40 @@ export function shouldShowLandmarkSpotDetails(region: LandmarkMapRegion, radiusM
   const shortSideMeters = Math.min(heightMeters, widthMeters);
 
   return shortSideMeters <= radiusMeters * 2 * LANDMARK_SPOT_FOCUS_PADDING_RATIO * LANDMARK_SPOT_DISPLAY_TOLERANCE_RATIO;
+}
+
+/** 外接境界を求めるスポット1件の中心と到達エリアの半径。 */
+export type LandmarkSpotArea = LandmarkMapCenter & {
+  /** 到達エリアの半径(m)。 */
+  radiusMeters: number;
+};
+
+/**
+ * 全スポットの到達エリア(円)まで含めた外接境界を返す。スポットが無ければ null。
+ *
+ * 到達エリアの円は全体表示でも常に描くため、中心点だけで境界を取ると端のスポットの円が初期表示で欠ける。
+ * 各スポットの中心を半径ぶん南北・東西へ広げてから外接境界を取る(経度方向は cos(緯度) で補正)。
+ */
+export function createLandmarkSpotsBounds(spots: readonly LandmarkSpotArea[]): RouteCoordinateBounds | null {
+  if (spots.length === 0) {
+    return null;
+  }
+
+  let minLatitude = Infinity;
+  let maxLatitude = -Infinity;
+  let minLongitude = Infinity;
+  let maxLongitude = -Infinity;
+
+  for (const { latitude, longitude, radiusMeters } of spots) {
+    const radius = Number.isFinite(radiusMeters) && radiusMeters > 0 ? radiusMeters : 0;
+    const latitudeOffset = radius / METERS_PER_DEGREE_LATITUDE;
+    const longitudeOffset = radius / (METERS_PER_DEGREE_LATITUDE * longitudeScale(latitude));
+
+    minLatitude = Math.min(minLatitude, latitude - latitudeOffset);
+    maxLatitude = Math.max(maxLatitude, latitude + latitudeOffset);
+    minLongitude = Math.min(minLongitude, longitude - longitudeOffset);
+    maxLongitude = Math.max(maxLongitude, longitude + longitudeOffset);
+  }
+
+  return { minLatitude, maxLatitude, minLongitude, maxLongitude };
 }

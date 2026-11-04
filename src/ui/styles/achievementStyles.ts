@@ -124,6 +124,29 @@ export function createAchievementStyles(theme: AppTheme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    // 拡大時にバッジの上下へ出すスポット名・解放条件の行。上下で同じ固定高さにして、
+    // ラベルの有無に関わらずバッジがマーカー中心(=スポット座標)に来るようにする
+    landmarkPackMapLabelRow: {
+      alignItems: 'center',
+      height: 24,
+      justifyContent: 'center',
+    },
+    // 地図タイルの上でも文字が読めるよう敷く角丸の半透明面。ライト/ダークはテーマの地図上半透明面に追従する
+    landmarkPackMapLabelCushion: {
+      backgroundColor: colors.surfaceOverlay,
+      borderRadius: 6,
+      maxWidth: 180,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    // ラベル文字は太字にしない(DESIGN.md: 太字は見出し類に限定)
+    landmarkPackMapLabelText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '400',
+      includeFontPadding: false,
+      lineHeight: 16,
+    },
     // スポット行の番号バッジ(AppListItemのleadingスロットへ差す)
     landmarkSpotNumberBadge: {
       alignItems: 'center',

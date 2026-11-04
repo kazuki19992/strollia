@@ -34,6 +34,16 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.confettiLayer).toBeDefined();
       expect(styles.confettiPiece).toBeDefined();
       expect(styles.landmarkSpotNumberBadgeMap).toBeDefined();
+      expect(styles.landmarkPackMapLabelRow).toBeDefined();
+      expect(styles.landmarkPackMapLabelCushion).toBeDefined();
+      expect(styles.landmarkPackMapLabelText).toBeDefined();
+    });
+
+    test('埋め込み地図のスポットラベルは太字にせず、テーマの半透明面を座布団に敷く', () => {
+      const styles = createAchievementStyles(theme);
+
+      expect(StyleSheet.flatten(styles.landmarkPackMapLabelText)).toMatchObject({ fontWeight: '400' });
+      expect(StyleSheet.flatten(styles.landmarkPackMapLabelCushion)).toMatchObject({ backgroundColor: theme.colors.surfaceOverlay });
     });
   });
 
@@ -142,7 +152,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全424キーが存在する（過不足なし）', () => {
+    test('全427キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -160,7 +170,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + パック詳細画面のレイアウト3キー + 埋め込み地図3キー
       //       + 地図マーカーバッジ(白リング・影)4キー
       //       - パックトロフィーの減光(landmarkPackTrophyDim)1キー(シルエット表示へ置き換え)
-      expect(keys.length).toBe(424);
+      //       + 埋め込み地図の拡大時スポットラベル(行・座布団・文字)3キー
+      expect(keys.length).toBe(427);
     });
   });
 });

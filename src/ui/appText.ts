@@ -148,6 +148,13 @@ export const LANDMARK_PACK_PLUS_PROMOTION_NOTE = 'Strollia Plus なら、有料�
  */
 export const LANDMARK_SPOT_RETIRED_NOTE = '現存せず';
 
+/**
+ * パック詳細の埋め込み地図で、到達済みスポットのバッジ下へ解放条件の代わりに出す表示。
+ *
+ * 解放済みのスポットに滞在条件を出し続けると「まだ条件を満たしていない」と誤読されるため、状態だけを示す。
+ */
+export const LANDMARK_SPOT_VISITED_LABEL = '到達済み';
+
 /** 初回チュートリアルの不具合レポート告知ステップのタイトル。 */
 export const CRASH_REPORTING_TUTORIAL_TITLE = '不具合レポートについて';
 

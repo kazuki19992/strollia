@@ -432,5 +432,27 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.getByText('3分以上滞在で解放')).toBeTruthy();
       expect(screen.getByTestId('landmark-spot-circle-spot-3').props.radius).toBe(200);
     });
+
+    it('ラベルの表示・非表示でマーカーの外枠の幅を変えない(iOSのマーカーは縮んだ中身に追従せずバッジが左へずれるため)', async () => {
+      /** マーカー外枠の幅。フェードアウトでラベルが外れても同じ値でなければならない。 */
+      const markerWidth = () => StyleSheet.flatten(screen.getByTestId('landmark-spot-marker-spot-2').props.style).width;
+
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      const widthWhileShown = markerWidth();
+
+      await fireRegionChange(overviewRegion);
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.queryByText('那智の滝')).toBeNull();
+      // ラベルの最大幅と同じ固定幅にして、中身の有無で大きさが変わらないようにする
+      expect(widthWhileShown).toBe(StyleSheet.flatten(styles.landmarkPackMapLabelCushion)?.maxWidth);
+      expect(markerWidth()).toBe(widthWhileShown);
+    });
   });
 });

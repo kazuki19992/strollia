@@ -5,6 +5,13 @@ import type { AppTheme } from '@/theme/theme';
 import { getSettingsDerivedColors, hexToRgba } from './styleHelpers';
 
 /**
+ * パック詳細地図のラベル(スポット名・解放条件)の最大幅。
+ *
+ * マーカーの外枠もこの幅に固定し、ラベルの有無でマーカーの大きさが変わらないようにする。
+ */
+const LANDMARK_PACK_MAP_LABEL_MAX_WIDTH = 180;
+
+/**
  * 実績・アンロックモーダル・チュートリアルダイアログ・コンフェッティ関連のスタイルを生成する。
  *
  * @param theme - アプリテーマ。
@@ -120,9 +127,14 @@ export function createAchievementStyles(theme: AppTheme) {
       height: '100%',
       width: '100%',
     },
+    // 地図マーカーの外枠。ラベルの最大幅(landmarkPackMapLabelCushion.maxWidth)と同じ固定幅にする。
+    // iOS(New Architecture)のマーカーは中身が大きくなると枠を広げるが、縮んでも枠を縮めない。
+    // 幅を中身任せにすると、フェードアウトでラベルを外した瞬間に細くなった中身が枠の左端へ寄り、
+    // バッジがスポット座標から左へずれる。固定幅ならラベルの有無で大きさが変わらない
     landmarkPackMapMarkerContainer: {
       alignItems: 'center',
       justifyContent: 'center',
+      width: LANDMARK_PACK_MAP_LABEL_MAX_WIDTH,
     },
     // 拡大時にバッジの上下へ出すスポット名・解放条件の行。上下で同じ固定高さにして、
     // ラベルの有無に関わらずバッジがマーカー中心(=スポット座標)に来るようにする
@@ -135,7 +147,7 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackMapLabelCushion: {
       backgroundColor: colors.surfaceOverlay,
       borderRadius: 6,
-      maxWidth: 180,
+      maxWidth: LANDMARK_PACK_MAP_LABEL_MAX_WIDTH,
       paddingHorizontal: 6,
       paddingVertical: 2,
     },

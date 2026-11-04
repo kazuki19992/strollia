@@ -333,6 +333,46 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
     });
 
+    it('ラベル文字は端末の文字サイズ設定で拡大せず、固定高さの行からはみ出さない', async () => {
+      await renderPreview();
+      await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 33.675278, longitude: 135.8875 }, 650));
+
+      expect(screen.getByText('那智の滝').props.allowFontScaling).toBe(false);
+      expect(screen.getByText('1時間30分以上滞在で解放').props.allowFontScaling).toBe(false);
+    });
+
+    it('表示中のマーカーの到達状態が変わると、一定時間だけビュー変化を追跡して撮り直す(Androidのビットマップ更新のため)', async () => {
+      jest.useFakeTimers();
+      const { rerender } = await renderPreview();
+      await layoutAllMarkers();
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(false);
+
+      const visitedItems = spotItems.map((item) => (item.spot.id === 'spot-3' ? { ...item, visitedLocalDate: '2026-11-04' } : item));
+      await rerender(null, visitedItems);
+
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(true);
+      // 変わっていないマーカーは撮り直さない
+      expect(screen.getByLabelText('2番目のスポット 那智の滝').props.tracksViewChanges).toBe(false);
+
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(false);
+    });
+
+    it('同じ内容のスポット行を作り直して渡しただけでは撮り直さない', async () => {
+      const { rerender } = await renderPreview();
+      await layoutAllMarkers();
+
+      await rerender(
+        null,
+        spotItems.map((item) => ({ ...item, spot: { ...item.spot } })),
+      );
+
+      expect(screen.getByLabelText('3番目のスポット 袋田の滝').props.tracksViewChanges).toBe(false);
+    });
+
     it('行タップで寄った範囲では、そのスポットの詳細が必ず表示される', async () => {
       const { rerender } = await renderPreview();
       await fireMapReady();

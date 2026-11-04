@@ -26,6 +26,15 @@ const LANDMARK_SPOT_FOCUS_DURATION_MS = 250;
 /** スポット詳細(スポット名・解放条件)のフェード時間(ms)。寄る/離れる操作に遅れて見えない程度の短さにする。 */
 const LANDMARK_SPOT_DETAIL_FADE_DURATION_MS = 220;
 
+/**
+ * マーカーの表示内容(到達状態・ラベル)が変わったあと、ビュー変化を追跡し続ける時間(ms)。
+ *
+ * Android の Marker は `tracksViewChanges` が false の間、前回のビットマップを使い続ける。
+ * 固定高さのラベル行で文字だけが変わってもレイアウトイベントは来ないため、`onLayout` には頼らず、
+ * 内容が変わったマーカーだけ一定時間追跡して撮り直させる。描画が確定するまでの余裕を見た値。
+ */
+const LANDMARK_SPOT_CONTENT_REFRESH_MS = 500;
+
 /** 地図へ描くスポットマーカー1件ぶんの表示データ。 */
 type LandmarkSpotMarker = {
   /** スポットID。Reactのkeyとマーカー識別子に使う。 */
@@ -113,8 +122,16 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
   const [detailOpacities] = useState(() => new Map<string, Animated.Value>());
   /** スポットごとに最後に指示したフェードの目標(表示=true)。同じ目標への再アニメーションを避ける。 */
   const detailTargetsRef = useRef(new Map<string, boolean>());
+  /** 表示内容が変わり、Android のビットマップを撮り直している最中のスポットID。 */
+  const [refreshingSpotIds, setRefreshingSpotIds] = useState<ReadonlySet<string>>(() => new Set());
+  /** 前回描画時のスポットごとの表示内容。初回は比較対象が無いため null。 */
+  const previousMarkerContentsRef = useRef<Map<string, string> | null>(null);
+  /** スポットごとの撮り直し終了タイマー。内容が続けて変わったら延長する。 */
+  const refreshTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const markers = useMemo(() => toLandmarkSpotMarkers(spotItems), [spotItems]);
+  // 親が spotItems を作り直しても、表示内容が同じなら同じ文字列になり撮り直しは走らない
+  const markerContentKey = markers.map(toMarkerContentLine).join('\n');
   const initialRegion = useMemo(() => createRegionFromBounds(toLandmarkSpotBounds(markers)), [markers]);
 
   const focusedMarker = markers.find((marker) => marker.spotId === focusRequest?.spotId) ?? null;
@@ -140,6 +157,51 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
     // nonce をタップのたびに変えることで、同じスポットへの再タップでも
     // (座標が変わらず)確実にアニメーションを再実行する。
   }, [focusNonce, focusedLatitude, focusedLongitude, focusedRadiusMeters, isMapReady]);
+
+  useEffect(() => {
+    const nextContents = parseMarkerContentKey(markerContentKey);
+    const previousContents = previousMarkerContentsRef.current;
+    previousMarkerContentsRef.current = nextContents;
+
+    // 初回は初回レイアウトの追跡(isInitialLayoutPending)が撮影を担う
+    if (previousContents === null) {
+      return;
+    }
+
+    const changedSpotIds = [...nextContents]
+      .filter(([spotId, content]) => previousContents.has(spotId) && previousContents.get(spotId) !== content)
+      .map(([spotId]) => spotId);
+
+    if (changedSpotIds.length === 0) {
+      return;
+    }
+
+    setRefreshingSpotIds((current) => new Set([...current, ...changedSpotIds]));
+
+    for (const spotId of changedSpotIds) {
+      const timers = refreshTimersRef.current;
+      clearTimeout(timers.get(spotId));
+      timers.set(
+        spotId,
+        setTimeout(() => {
+          timers.delete(spotId);
+          setRefreshingSpotIds((current) => withoutSpotId(current, spotId));
+        }, LANDMARK_SPOT_CONTENT_REFRESH_MS),
+      );
+    }
+  }, [markerContentKey]);
+
+  // アンマウント時に撮り直し終了タイマーを止め、外れたコンポーネントの state を触らない
+  useEffect(() => {
+    const timers = refreshTimersRef.current;
+
+    return () => {
+      for (const timer of timers.values()) {
+        clearTimeout(timer);
+      }
+      timers.clear();
+    };
+  }, []);
 
   // アンマウント時に走行中のフェードを止める。停止時の完了コールバックは finished=false になり state を触らない。
   useEffect(() => {
@@ -258,7 +320,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
               anchor={{ x: 0.5, y: 0.5 }}
               coordinate={marker.coordinate}
               identifier={`landmark-spot-${marker.spotId}`}
-              tracksViewChanges={isInitialLayoutPending || isFading}
+              tracksViewChanges={isInitialLayoutPending || isFading || refreshingSpotIds.has(marker.spotId)}
             >
               <View
                 collapsable={false}
@@ -345,11 +407,32 @@ function toLandmarkSpotBounds(markers: LandmarkSpotMarker[]): RouteCoordinateBou
 function LandmarkSpotMapLabel({ label, styles }: { label: string; styles: AppStyles }) {
   return (
     <View style={styles.landmarkPackMapLabelCushion}>
-      <Text numberOfLines={1} style={styles.landmarkPackMapLabelText}>
+      {/* 行の高さを固定しているため、端末の文字サイズ設定で拡大するとバッジへ重なる。地図上の固定UIと同じく拡大しない */}
+      <Text allowFontScaling={false} numberOfLines={1} style={styles.landmarkPackMapLabelText}>
         {label}
       </Text>
     </View>
   );
+}
+
+/**
+ * マーカー1件の表示内容を、比較用の1行(タブ区切り、先頭はスポットID)にする。
+ *
+ * Android で撮り直しが必要になる見た目の要素(番号・到達状態・スポット名・解放条件)だけを含める。
+ */
+function toMarkerContentLine(marker: LandmarkSpotMarker): string {
+  return [marker.spotId, marker.displayNumber, marker.isVisited, marker.name, marker.conditionLabel].join('\t');
+}
+
+/** `toMarkerContentLine` を連結したキーを、スポットIDごとの表示内容へ戻す。 */
+function parseMarkerContentKey(contentKey: string): Map<string, string> {
+  const contents = new Map<string, string>();
+
+  for (const line of contentKey === '' ? [] : contentKey.split('\n')) {
+    contents.set(line.split('\t')[0], line);
+  }
+
+  return contents;
 }
 
 /** スポットの詳細ラベル用 opacity を取得する。未作成なら非表示(0)で作って保持する。 */

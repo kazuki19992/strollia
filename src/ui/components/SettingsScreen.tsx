@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { Alert, Platform, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from 'react-native';
 import type { MapType } from 'react-native-maps';
 import { PlusAdImage } from './PlusAdImage';
+import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 
 import {
   CRASH_REPORTING_SETTING_DESCRIPTION,
@@ -232,6 +233,66 @@ export function SettingsScreen({
   onDeleteAllData,
 }: SettingsScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
+  const isLandscape = useIsLandscapeLayout();
+  // 縦横2つのレイアウトで同じ要素を使い回すため、Plus案内の部品を変数にまとめる
+  const plusIntroInfo = (
+    <InfoBlock
+      description="月額300円の有料サービスです。年払いにすると1か月分オトクです!"
+      styles={styles}
+      title="Strollia Plus(有料サブスクリプション)のごあんない"
+    />
+  );
+  const plusAdImage = <PlusAdImage accessibilityLabel="Strollia Plusの機能比較広告" width="100%" />;
+  const plusCancelNote = <DescriptionText styles={styles}>いつでも解約できます。</DescriptionText>;
+  const plusPurchaseBackground = theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)';
+  const plusPurchaseButtons = (
+    <>
+      <ActionPill
+        alignLeft
+        backgroundColor={plusPurchaseBackground}
+        borderColor={theme.colors.primary}
+        disabled={isPurchasingPremiumPackage}
+        icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
+        label={isPurchasingPremiumPackage ? '購入処理中...' : '月額300円ではじめる！'}
+        styles={styles}
+        textColor={theme.colors.primary}
+        onPress={onPurchaseMonthlyPremiumPackage}
+      />
+      <ActionPill
+        alignLeft
+        backgroundColor={plusPurchaseBackground}
+        borderColor={theme.colors.primary}
+        disabled={isPurchasingPremiumPackage}
+        icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
+        label={isPurchasingPremiumPackage ? '購入処理中...' : '年額3300円ではじめる！'}
+        styles={styles}
+        textColor={theme.colors.primary}
+        onPress={onPurchaseYearlyPremiumPackage}
+      />
+      <ActionPill
+        alignLeft
+        disabled={isRestoringPremiumPurchases}
+        icon={<MaterialCommunityIcons name="restore" size={24} color={theme.colors.text} />}
+        label={isRestoringPremiumPurchases ? '復元中...' : 'Strollia Plusの購入を復元する'}
+        styles={styles}
+        onPress={onRestorePremiumPurchases}
+      />
+    </>
+  );
+  const plusLoadingNote = isLoadingPremiumOffering ? <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText> : null;
+  const plusLegal = (
+    <View style={styles.paywallLegal}>
+      <DescriptionText styles={styles}>{SUBSCRIPTION_DISCLOSURE_TEXT}</DescriptionText>
+      <View style={styles.paywallLegalLinks}>
+        <Pressable accessibilityRole="link" accessibilityLabel="利用規約を開く" onPress={onOpenTermsOfService}>
+          <Text style={styles.paywallLegalLink}>利用規約</Text>
+        </Pressable>
+        <Pressable accessibilityRole="link" accessibilityLabel="プライバシーポリシーを開く" onPress={onOpenPrivacyPolicy}>
+          <Text style={styles.paywallLegalLink}>プライバシーポリシー</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
   const subscriptionDescription = isPlusActive
     ? `退会する場合は${getSubscriptionStoreName(Platform.OS)}のサブスク設定から行ってください。`
     : undefined;
@@ -430,59 +491,34 @@ export function SettingsScreen({
               />
             </View>
           )}
-          {!isPlusActive && (
+          {!isPlusActive && isLandscape ? (
             <View style={styles.settingsSubscriptionActions}>
-              <InfoBlock
-                description="月額300円の有料サービスです。年払いにすると1か月分オトクです!"
-                styles={styles}
-                title="Strollia Plus(有料サブスクリプション)のごあんない"
-              />
-              <PlusAdImage accessibilityLabel="Strollia Plusの機能比較広告" width="100%" />
-              <DescriptionText styles={styles}>いつでも解約できます。</DescriptionText>
-              <ActionPill
-                alignLeft
-                backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
-                borderColor={theme.colors.primary}
-                disabled={isPurchasingPremiumPackage}
-                icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPurchasingPremiumPackage ? '購入処理中...' : '月額300円ではじめる！'}
-                styles={styles}
-                textColor={theme.colors.primary}
-                onPress={onPurchaseMonthlyPremiumPackage}
-              />
-              <ActionPill
-                alignLeft
-                backgroundColor={theme.name === 'dark' ? 'rgba(115, 199, 162, 0.08)' : 'rgba(31, 122, 92, 0.08)'}
-                borderColor={theme.colors.primary}
-                disabled={isPurchasingPremiumPackage}
-                icon={<MaterialCommunityIcons name="currency-usd" size={21} color={theme.colors.primary} />}
-                label={isPurchasingPremiumPackage ? '購入処理中...' : '年額3300円ではじめる！'}
-                styles={styles}
-                textColor={theme.colors.primary}
-                onPress={onPurchaseYearlyPremiumPackage}
-              />
-              <ActionPill
-                alignLeft
-                disabled={isRestoringPremiumPurchases}
-                icon={<MaterialCommunityIcons name="restore" size={24} color={theme.colors.text} />}
-                label={isRestoringPremiumPurchases ? '復元中...' : 'Strollia Plusの購入を復元する'}
-                styles={styles}
-                onPress={onRestorePremiumPurchases}
-              />
-              {isLoadingPremiumOffering && <DescriptionText styles={styles}>商品情報を確認しています...</DescriptionText>}
-              <View style={styles.paywallLegal}>
-                <DescriptionText styles={styles}>{SUBSCRIPTION_DISCLOSURE_TEXT}</DescriptionText>
-                <View style={styles.paywallLegalLinks}>
-                  <Pressable accessibilityRole="link" accessibilityLabel="利用規約を開く" onPress={onOpenTermsOfService}>
-                    <Text style={styles.paywallLegalLink}>利用規約</Text>
-                  </Pressable>
-                  <Pressable accessibilityRole="link" accessibilityLabel="プライバシーポリシーを開く" onPress={onOpenPrivacyPolicy}>
-                    <Text style={styles.paywallLegalLink}>プライバシーポリシー</Text>
-                  </Pressable>
+              <View style={styles.settingsSubscriptionColumns}>
+                <View style={styles.settingsSubscriptionTextColumn} testID="plus-intro-text-column">
+                  {plusIntroInfo}
+                  <View style={styles.settingsSubscriptionActionsBottom}>
+                    {plusCancelNote}
+                    {plusPurchaseButtons}
+                    {plusLoadingNote}
+                  </View>
+                </View>
+                <View style={styles.settingsSubscriptionImageColumn} testID="plus-intro-image-column">
+                  {plusAdImage}
                 </View>
               </View>
+              {plusLegal}
             </View>
-          )}
+          ) : null}
+          {!isPlusActive && !isLandscape ? (
+            <View style={styles.settingsSubscriptionActions}>
+              {plusIntroInfo}
+              {plusAdImage}
+              {plusCancelNote}
+              {plusPurchaseButtons}
+              {plusLoadingNote}
+              {plusLegal}
+            </View>
+          ) : null}
         </ScreenSection>
 
         <ScreenSection styles={styles} title="データ管理">

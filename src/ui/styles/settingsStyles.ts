@@ -310,6 +310,22 @@ export function createSettingsStyles(theme: AppTheme) {
     settingsSubscriptionActions: {
       gap: 16,
     },
+    settingsSubscriptionColumns: {
+      alignItems: 'stretch',
+      flexDirection: 'row',
+      gap: 16,
+    },
+    settingsSubscriptionTextColumn: {
+      flex: 1,
+      gap: 16,
+      justifyContent: 'space-between',
+    },
+    settingsSubscriptionActionsBottom: {
+      gap: 16,
+    },
+    settingsSubscriptionImageColumn: {
+      flex: 1,
+    },
     settingsSubscriptionRow: {
       alignItems: 'center',
       flexDirection: 'row',

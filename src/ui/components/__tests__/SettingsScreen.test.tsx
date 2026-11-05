@@ -1,5 +1,6 @@
+import * as ReactNative from 'react-native';
 import { StyleSheet } from 'react-native';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, act, within } from '@testing-library/react-native';
 
 import { AppColorPresetId } from '@/features/customization/colorPresets';
 
@@ -892,5 +893,51 @@ describe('設定画面 ライブラリを再読み込み', () => {
 
     // Pressable の disabled は accessibilityState へマッピングされ props.disabled では検証できない
     expect(screen.getByLabelText(PHOTO_LIBRARY_RELOAD_LABEL).props.accessibilityState).toMatchObject({ disabled: true });
+  });
+  describe('横画面のStrollia Plus案内', () => {
+    /** 画面寸法を差し替えて横画面/縦画面を再現する。 */
+    function mockWindow(width: number, height: number) {
+      jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width, height, scale: 2, fontScale: 1 });
+    }
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    test('横画面ではPlus案内のボタン群を左列、宣伝画像を右列に置く', async () => {
+      mockWindow(1180, 820);
+      await render(<SettingsScreen {...createProps()} />);
+
+      const textColumn = within(screen.getByTestId('plus-intro-text-column'));
+      expect(textColumn.getByText('月額300円ではじめる！')).toBeTruthy();
+      expect(textColumn.getByText('年額3300円ではじめる！')).toBeTruthy();
+      expect(textColumn.getByText('Strollia Plusの購入を復元する')).toBeTruthy();
+      const imageColumn = within(screen.getByTestId('plus-intro-image-column'));
+      expect(imageColumn.getByLabelText('Strollia Plusの機能比較広告')).toBeTruthy();
+    });
+
+    test('横画面でも規約リンクは2列の外に置く', async () => {
+      mockWindow(1180, 820);
+      await render(<SettingsScreen {...createProps()} />);
+
+      expect(within(screen.getByTestId('plus-intro-text-column')).queryByLabelText('利用規約を開く')).toBeNull();
+      expect(within(screen.getByTestId('plus-intro-image-column')).queryByLabelText('利用規約を開く')).toBeNull();
+      expect(screen.getAllByLabelText('利用規約を開く').length).toBeGreaterThan(0);
+    });
+
+    test('Plus加入済みなら横画面でも案内の2列を出さない', async () => {
+      mockWindow(1180, 820);
+      await render(<SettingsScreen {...createProps()} premiumAccessState={{ isPlusActive: true, entitlementId: 'strollia_plus' }} />);
+
+      expect(screen.queryByTestId('plus-intro-text-column')).toBeNull();
+    });
+
+    test('縦画面ではPlus案内を2列にしない', async () => {
+      mockWindow(820, 1180);
+      await render(<SettingsScreen {...createProps()} />);
+
+      expect(screen.queryByTestId('plus-intro-text-column')).toBeNull();
+      expect(screen.queryByTestId('plus-intro-image-column')).toBeNull();
+    });
   });
 });

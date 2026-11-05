@@ -155,7 +155,7 @@ describe('実績グリッドの列数', () => {
   test('横画面では実績タイルを6列幅で並べる', async () => {
     const style = await renderTileStyle(1180, 820);
 
-    expect(style.flexBasis).toBe((1180 - 48 - 50) / 6);
+    expect(style.flexBasis).toBe(Math.floor((1180 - 48 - 50) / 6));
     expect(style.flexGrow).toBe(0);
   });
 
@@ -163,5 +163,8 @@ describe('実績グリッドの列数', () => {
     const style = await renderTileStyle(393, 852);
 
     expect(style.flexBasis).toBe('30%');
+    // 横画面用の上書き(flexGrow: 0)が載っていないこと
+    expect(style).toEqual(ReactNative.StyleSheet.flatten(styles.achievementGridTile));
+    expect(style.flexGrow).toBeUndefined();
   });
 });

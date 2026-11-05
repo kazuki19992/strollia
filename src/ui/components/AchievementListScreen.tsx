@@ -62,7 +62,7 @@ export function getAchievementGridLayout(windowWidth: number, columns: number): 
   return { tileWidth, imageSize: Math.max(0, Math.floor(tileWidth * 0.86)) };
 }
 
-/** 実績画面を2列グリッドで描画する。 */
+/** 実績画面を描画する。実績タイルは縦画面で3列、横画面で6列のグリッドに並べる。 */
 export function AchievementListScreen({
   items,
   landmarkPackItems,
@@ -82,7 +82,10 @@ export function AchievementListScreen({
     isLandscape ? ACHIEVEMENT_GRID_COLUMNS_LANDSCAPE : ACHIEVEMENT_GRID_COLUMNS_PORTRAIT,
   );
   // 横画面だけタイル幅を固定して6列に並べる。縦画面は従来の achievementGridTile(30%)のまま。
-  const tileStyle = isLandscape ? [styles.achievementGridTile, { flexBasis: tileWidth, flexGrow: 0 }] : styles.achievementGridTile;
+  // 6*tileWidth+余白がコンテナ幅とちょうど一致するため、Yogaの丸め誤差で6枚目が折り返さないよう切り捨てる。
+  const tileStyle = isLandscape
+    ? [styles.achievementGridTile, { flexBasis: Math.floor(tileWidth), flexGrow: 0 }]
+    : styles.achievementGridTile;
   // スポットパックのトロフィーも Grayscale を通すため数値サイズが必要。
   // 一覧行のアイコンは設計書 §9.3.1 の 60〜80pt を目安にし、狭い端末では縮めて上限で止める。
   const packTrophySize = Math.min(72, Math.max(48, Math.floor((windowWidth - 24 * 2) * 0.2)));

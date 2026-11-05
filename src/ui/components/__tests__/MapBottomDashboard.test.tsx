@@ -439,6 +439,30 @@ describe('マップ下部ダッシュボードのセーフエリア', () => {
     expect(StyleSheet.flatten(group.props.style)).toEqual(expect.objectContaining(getDashboardGroupStyle(889)));
   });
 
+  test('表示設定パネルの幅も左右のセーフエリアを除いた利用幅に収める', async () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 400, height: 844, scale: 3, fontScale: 1 });
+
+    await render(
+      <SafeAreaProvider
+        initialMetrics={{ frame: { x: 0, y: 0, width: 400, height: 844 }, insets: { top: 0, left: 59, right: 59, bottom: 0 } }}
+      >
+        <MapBottomDashboard {...createProps()} />
+      </SafeAreaProvider>,
+    );
+
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
+    });
+
+    // パネル要素はaccessibilityLabelを持たないため、幅でホスト要素を検索する。
+    // 利用幅282pt(400 - 59 - 59)から左右余白16ptを除いた266ptになり、画面幅基準の384ptにはならない
+    const findPanelWithWidth = (width: number) =>
+      screen.container.queryAll((node) => StyleSheet.flatten(node.props.style)?.width === width);
+
+    expect(findPanelWithWidth(266)).toHaveLength(1);
+    expect(findPanelWithWidth(384)).toHaveLength(0);
+  });
+
   test('SafeAreaProviderの外で描画された場合はセーフエリア0として従来どおり描く', async () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 393, height: 852, scale: 3, fontScale: 1 });
 

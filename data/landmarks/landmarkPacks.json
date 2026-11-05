@@ -16,5 +16,23 @@
     "trophyIcon": "jra-racecourses-10",
     "sortOrder": 200,
     "isFree": false
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000003",
+    "name": "JR鉄道博物館",
+    "description": "JR3社が運営する3つの大型鉄道博物館を巡る",
+    "trophyImage": "jr-railway-museums-3.png",
+    "trophyIcon": "jr-railway-museums-3",
+    "sortOrder": 300,
+    "isFree": false
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000004",
+    "name": "のぼれる灯台",
+    "description": "内部を一般公開している全国16基の参観灯台を巡る",
+    "trophyImage": "climbable-lighthouses-16.png",
+    "trophyIcon": "climbable-lighthouses-16",
+    "sortOrder": 400,
+    "isFree": false
   }
 ]

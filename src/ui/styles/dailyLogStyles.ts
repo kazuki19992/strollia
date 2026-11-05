@@ -72,6 +72,14 @@ export function createDailyLogStyles(theme: AppTheme) {
       gap: 28,
       paddingBottom: 34,
     },
+    // 横画面の右ペイン。地図(flex)が残り高さを占め、シークバー・GIFボタンをその下に置く
+    dailyLogDetailMapPane: {
+      flex: 1,
+      gap: 18,
+      paddingBottom: 24,
+      paddingHorizontal: 24,
+      paddingTop: 24,
+    },
     dailyLogDetailPlusLabel: {
       color: theme.colors.routeMapEmptyText,
       fontSize: 16,

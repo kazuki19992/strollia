@@ -152,7 +152,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全430キーが存在する（過不足なし）', () => {
+    test('全431キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -173,7 +173,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 埋め込み地図の拡大時スポットラベル(行・座布団・文字)3キー
       //       + 横画面の2段レイアウト(twoPaneRow・twoPanePane)2キー
       //       + 移動地図の高さいっぱい表示(routeMapFrameFill)1キー
-      expect(keys.length).toBe(430);
+      //       + 日ごとの記録詳細の横画面右ペイン(dailyLogDetailMapPane)1キー
+      expect(keys.length).toBe(431);
     });
   });
 });

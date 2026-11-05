@@ -3,7 +3,8 @@ import { Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-ico
 import * as ReactNative from 'react-native';
 import { Alert, Animated, Pressable, Switch, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import type { AreaLabel } from '@/ui/areaName';
 import type { AppStyles } from '@/ui/appStyles';
@@ -14,6 +15,7 @@ import {
   FIXED_MAP_UI_TEXT_PROPS,
   formatDistanceKilometers,
   getDashboardGroupStyle,
+  getDashboardSafeAreaFrame,
   getDashboardScale,
   getScaledDashboardIconSizes,
   getScaledDashboardLayout,
@@ -34,6 +36,7 @@ export {
   DASHBOARD_WIDE_SCREEN_EDGE_INSET,
   formatDistanceKilometers,
   getDashboardGroupStyle,
+  getDashboardSafeAreaFrame,
   getDashboardScale,
   getSpeedMeterAppearance,
   METER_CLUSTER_BACKGROUND_PATH,
@@ -50,6 +53,9 @@ export type { SpeedMeterArcStroke } from './dashboardScaling';
 
 /** 表示設定パネルは、ダッシュボードの左右8px余白を除いた幅に収める。 */
 const MAP_DISPLAY_PANEL_HORIZONTAL_INSET = 16;
+
+/** SafeAreaProviderの外(単体テストなど)で描画されたときに使う、セーフエリア0の値。 */
+const NO_SAFE_AREA_INSETS = { left: 0, right: 0 };
 
 /** 表示設定パネルの通常時の最大幅。 */
 const MAP_DISPLAY_PANEL_MAX_WIDTH = 336;
@@ -125,7 +131,12 @@ export function MapBottomDashboard({
   onUpdateShowStayPlacesOnMap,
 }: MapBottomDashboardProps) {
   const [isMapDisplayPanelVisible, setIsMapDisplayPanelVisible] = useState(false);
-  const { width } = ReactNative.useWindowDimensions();
+  const { width: windowWidth } = ReactNative.useWindowDimensions();
+  // Providerが無くても落ちないよう、useSafeAreaInsetsではなくContextを直接読む。
+  const safeAreaInsets = useContext(SafeAreaInsetsContext) ?? NO_SAFE_AREA_INSETS;
+  const safeAreaFrame = getDashboardSafeAreaFrame(windowWidth, safeAreaInsets);
+  // 以降の倍率・上限幅・パネル幅はすべてセーフエリアを除いた幅で計算する。
+  const width = safeAreaFrame.contentWidth;
   const dashboardScale = getDashboardScale(width);
   const dashboardLayout = getScaledDashboardLayout(dashboardScale);
   const mapDisplayPanelWidth = Math.min(MAP_DISPLAY_PANEL_MAX_WIDTH, Math.max(0, width - MAP_DISPLAY_PANEL_HORIZONTAL_INSET));
@@ -144,7 +155,11 @@ export function MapBottomDashboard({
         />
       )}
 
-      <View pointerEvents="box-none" style={styles.bottomDashboard}>
+      <View
+        pointerEvents="box-none"
+        style={[styles.bottomDashboard, { left: safeAreaFrame.left, right: safeAreaFrame.right }]}
+        testID="map-bottom-dashboard"
+      >
         {/* 横長画面で帯だけが伸びないよう、現在地ボタン・計器・ボタン列・表示パネルを上限幅のグループにまとめる。 */}
         <View pointerEvents="box-none" style={getDashboardGroupStyle(width)} testID="map-bottom-dashboard-group">
           <Animated.View

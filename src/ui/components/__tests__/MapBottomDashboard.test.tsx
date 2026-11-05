@@ -1,6 +1,7 @@
 import * as ReactNative from 'react-native';
 import { Animated, StyleSheet } from 'react-native';
 import { render, screen, fireEvent, act, within } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
@@ -9,6 +10,7 @@ import {
   DASHBOARD_WIDE_SCREEN_EDGE_INSET,
   DASHBOARD_WIDE_SCREEN_ALIGNMENT,
   getDashboardGroupStyle,
+  getDashboardSafeAreaFrame,
   getDashboardScale,
   getScaledSpeedDialLayout,
   getSpeedMeterAppearance,
@@ -405,5 +407,45 @@ describe('マップ下部ダッシュボードの速度帯', () => {
 
   test('連続円弧の外径を黒い背景リングに合わせる', () => {
     expect(SPEED_METER_ARC_RADIUS + SPEED_METER_ARC_STROKE_WIDTH / 2).toBeCloseTo(49.5);
+  });
+});
+
+describe('マップ下部ダッシュボードのセーフエリア', () => {
+  test('左右のセーフエリアの分だけ利用幅を減らし、左右余白8ptをセーフエリアの内側に取る', () => {
+    expect(getDashboardSafeAreaFrame(951, { left: 0, right: 62 })).toEqual({ contentWidth: 889, left: 8, right: 70 });
+    expect(getDashboardSafeAreaFrame(852, { left: 59, right: 59 })).toEqual({ contentWidth: 734, left: 67, right: 67 });
+  });
+
+  test('セーフエリアが無い縦向きiPhoneでは従来どおり左右8ptで画面幅いっぱいを使う', () => {
+    expect(getDashboardSafeAreaFrame(393, { left: 0, right: 0 })).toEqual({ contentWidth: 393, left: 8, right: 8 });
+  });
+
+  test('Duoのように右端にシステムの縦バーがある画面では、速度パネルとボタン群を縦バーの内側に置く', async () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 951, height: 669, scale: 3, fontScale: 1 });
+
+    await render(
+      <SafeAreaProvider
+        initialMetrics={{ frame: { x: 0, y: 0, width: 951, height: 669 }, insets: { top: 0, left: 0, right: 62, bottom: 20 } }}
+      >
+        <MapBottomDashboard {...createProps()} />
+      </SafeAreaProvider>,
+    );
+
+    const dashboard = screen.getByTestId('map-bottom-dashboard');
+    const group = screen.getByTestId('map-bottom-dashboard-group');
+
+    expect(StyleSheet.flatten(dashboard.props.style)).toEqual(expect.objectContaining({ left: 8, right: 70 }));
+    // グループの右余白もセーフエリアを除いた利用幅(889pt)で判定する
+    expect(StyleSheet.flatten(group.props.style)).toEqual(expect.objectContaining(getDashboardGroupStyle(889)));
+  });
+
+  test('SafeAreaProviderの外で描画された場合はセーフエリア0として従来どおり描く', async () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 393, height: 852, scale: 3, fontScale: 1 });
+
+    await render(<MapBottomDashboard {...createProps()} />);
+
+    expect(StyleSheet.flatten(screen.getByTestId('map-bottom-dashboard').props.style)).toEqual(
+      expect.objectContaining({ left: 8, right: 8 }),
+    );
   });
 });

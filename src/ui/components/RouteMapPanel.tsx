@@ -23,6 +23,8 @@ export type RouteMapPanelProps = {
   theme: AppTheme;
   /** 地図のタイル描画完了通知（任意）。共有画像のキャプチャ前待ちに使う。 */
   onMapLoaded?: () => void;
+  /** trueなら固定高さ(332)ではなく親の高さいっぱいに広がる。横画面の2段レイアウトで右ペインを埋めるために使う。既定はfalse。 */
+  fillHeight?: boolean;
 };
 
 /** 保存済みルートを、ユーザーがスクロール・ズームできるMapViewで表示する。 */
@@ -34,6 +36,7 @@ export function RouteMapPanel({
   styles,
   theme,
   onMapLoaded,
+  fillHeight = false,
 }: RouteMapPanelProps) {
   const routeSegments =
     activeStayPlaces === undefined
@@ -46,14 +49,14 @@ export function RouteMapPanel({
 
   if (regionPoints.length === 0 || (hasPrivacyRoute && routeSegments.length === 0)) {
     return (
-      <View style={styles.routeMapEmptyPanel}>
+      <View testID="route-map-empty" style={fillHeight ? [styles.routeMapEmptyPanel, styles.routeMapFrameFill] : styles.routeMapEmptyPanel}>
         <Text style={styles.routeMapEmptyText}>{emptyLabel}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.routeMapFrame}>
+    <View testID="route-map-frame" style={fillHeight ? [styles.routeMapFrame, styles.routeMapFrameFill] : styles.routeMapFrame}>
       <MapView
         style={styles.routeMap}
         initialRegion={hasPrivacyRoute ? createInitialRegionFromCoordinates(routeCoordinates) : createInitialRegion(regionPoints)}

@@ -4,7 +4,8 @@ jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,
 }));
 
-const { getAchievementProgressLabel } = require('../AchievementListScreen') as typeof import('@/ui/components/AchievementListScreen');
+const { getAchievementProgressLabel, getAchievementGridLayout } =
+  require('../AchievementListScreen') as typeof import('@/ui/components/AchievementListScreen');
 
 /** テスト用の実績一覧項目を作る。 */
 function item(condition: AchievementDefinition['condition'], progressValue: number, unlockedAt: string | null = null): AchievementListItem {
@@ -49,5 +50,21 @@ describe('実績進捗ラベル getAchievementProgressLabel', () => {
 
   test('市区町村訪問数の進捗を表示する', () => {
     expect(getAchievementProgressLabel(item({ type: 'municipalityCount', threshold: 1000 }, 50))).toBe('50 / 1000 市区町村');
+  });
+});
+
+describe('実績グリッド寸法 getAchievementGridLayout', () => {
+  test('3列のタイル幅と画像サイズは従来の計算と一致する', () => {
+    const tileWidth = (393 - 48 - 20) / 3;
+
+    expect(getAchievementGridLayout(393, 3)).toEqual({ tileWidth, imageSize: Math.floor(tileWidth * 0.86) });
+  });
+
+  test('6列では列間の余白5つ分を引いて6等分する', () => {
+    expect(getAchievementGridLayout(1180, 6).tileWidth).toBe((1180 - 48 - 50) / 6);
+  });
+
+  test('画面幅が極端に狭くても画像サイズは負にならない', () => {
+    expect(getAchievementGridLayout(10, 6).imageSize).toBe(0);
   });
 });

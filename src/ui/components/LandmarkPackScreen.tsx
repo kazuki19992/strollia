@@ -7,10 +7,12 @@ import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
 import { LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
+import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import { AppListItem } from './AppListItem';
 import { AppScreenHeader } from './AppScreenHeader';
 import { LandmarkPackMapPreview, type LandmarkSpotFocusRequest } from './LandmarkPackMapPreview';
 import { LandmarkSpotNumberBadge } from './LandmarkSpotNumberBadge';
+import { TwoPaneLayout } from './TwoPaneLayout';
 
 /** 到達済みスポット行に表示するスタンプ画像。全スポット共通の1種類のみ用意している。 */
 const LANDMARK_SPOT_VISITED_STAMP_SOURCE = require('../../../assets/achievements/spots/spots-visited-stamp.png');
@@ -52,6 +54,50 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
    * 「同じスポットへの再フォーカス要求」も新しい状態として確実に伝える。
    */
   const [focusRequest, setFocusRequest] = useState<LandmarkSpotFocusRequest>(null);
+  const isLandscape = useIsLandscapeLayout();
+
+  const mapSection = (
+    <View style={styles.landmarkPackMapSection}>
+      <LandmarkPackMapPreview focusRequest={focusRequest} spotItems={spotItems} styles={styles} theme={theme} />
+    </View>
+  );
+
+  /** 縦横どちらでも共通のスポット行。ScrollViewの外枠だけ向きごとに変える。 */
+  const spotRows = (
+    <>
+      {spotItems.map(({ spot, visitedLocalDate }, index) => {
+        const isVisited = visitedLocalDate !== null;
+        // 番号は spot.packs[].order の生値ではなく配列index(1始まり)を使う。
+        // order に欠番があっても表示が1,2,3...と連番になるようにするため
+        // (spotItems は既にorder昇順でソート済みなので、そのままindexを採番に使える)。
+        const displayNumber = index + 1;
+
+        return (
+          <AppListItem
+            key={spot.id}
+            accessibilityLabel={isVisited ? `${spot.name}の記録を開く` : `${spot.name}を地図で見る`}
+            detail={visitedLocalDate ? formatLandmarkVisitedDate(visitedLocalDate) : undefined}
+            leading={<LandmarkSpotNumberBadge isVisited={isVisited} number={displayNumber} styles={styles} theme={theme} />}
+            showChevron={isVisited}
+            styles={styles}
+            subtitle={buildSpotSubtitle(spot)}
+            theme={theme}
+            title={spot.name}
+            trailing={
+              isVisited ? (
+                <Image accessibilityLabel="訪問済み" source={LANDMARK_SPOT_VISITED_STAMP_SOURCE} style={styles.landmarkSpotVisitedStamp} />
+              ) : undefined
+            }
+            onPress={
+              isVisited
+                ? () => onSelectVisitedSpot(visitedLocalDate)
+                : () => setFocusRequest((prev) => ({ spotId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
+            }
+          />
+        );
+      })}
+    </>
+  );
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -64,49 +110,20 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
         onBack={onBack}
       />
 
-      <View style={styles.landmarkPackScreenBody}>
-        <View style={styles.landmarkPackMapSection}>
-          <LandmarkPackMapPreview focusRequest={focusRequest} spotItems={spotItems} styles={styles} theme={theme} />
+      {isLandscape ? (
+        <TwoPaneLayout
+          styles={styles}
+          primary={<ScrollView contentContainerStyle={styles.screenList}>{spotRows}</ScrollView>}
+          secondary={mapSection}
+        />
+      ) : (
+        <View style={styles.landmarkPackScreenBody}>
+          {mapSection}
+          <ScrollView style={styles.landmarkPackListSection} contentContainerStyle={styles.screenList}>
+            {spotRows}
+          </ScrollView>
         </View>
-
-        <ScrollView style={styles.landmarkPackListSection} contentContainerStyle={styles.screenList}>
-          {spotItems.map(({ spot, visitedLocalDate }, index) => {
-            const isVisited = visitedLocalDate !== null;
-            // 番号は spot.packs[].order の生値ではなく配列index(1始まり)を使う。
-            // order に欠番があっても表示が1,2,3...と連番になるようにするため
-            // (spotItems は既にorder昇順でソート済みなので、そのままindexを採番に使える)。
-            const displayNumber = index + 1;
-
-            return (
-              <AppListItem
-                key={spot.id}
-                accessibilityLabel={isVisited ? `${spot.name}の記録を開く` : `${spot.name}を地図で見る`}
-                detail={visitedLocalDate ? formatLandmarkVisitedDate(visitedLocalDate) : undefined}
-                leading={<LandmarkSpotNumberBadge isVisited={isVisited} number={displayNumber} styles={styles} theme={theme} />}
-                showChevron={isVisited}
-                styles={styles}
-                subtitle={buildSpotSubtitle(spot)}
-                theme={theme}
-                title={spot.name}
-                trailing={
-                  isVisited ? (
-                    <Image
-                      accessibilityLabel="訪問済み"
-                      source={LANDMARK_SPOT_VISITED_STAMP_SOURCE}
-                      style={styles.landmarkSpotVisitedStamp}
-                    />
-                  ) : undefined
-                }
-                onPress={
-                  isVisited
-                    ? () => onSelectVisitedSpot(visitedLocalDate)
-                    : () => setFocusRequest((prev) => ({ spotId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
-                }
-              />
-            );
-          })}
-        </ScrollView>
-      </View>
+      )}
     </SafeAreaView>
   );
 }

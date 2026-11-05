@@ -30,6 +30,7 @@ import {
 } from '@/ui/dailyRouteTimeline';
 import { formatDailyLogDetailTitle, formatDistanceKm, formatGifFrameDateLabel } from '@/ui/dailyLogDisplay';
 import { useDailyLogDetailData } from '@/ui/hooks/useDailyLogDetailData';
+import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import { totalDistanceMeters } from '@/utils/distance';
 import type { AppStyles } from '@/ui/appStyles';
 import { AchievementScroller } from './AchievementScroller';
@@ -44,6 +45,7 @@ import { RangeSlider } from './RangeSlider';
 import { RouteMapPanel } from './RouteMapPanel';
 import { SectionTitle } from './SectionTitle';
 import { StepSlider } from './StepSlider';
+import { TwoPaneLayout } from './TwoPaneLayout';
 
 /** GIF区間指定スライダーの選択粒度（分）。最小単位時間と同じ15分刻みで、00/15/30/45分に揃える。 */
 const GIF_RANGE_STEP_MINUTES = GIF_MIN_RANGE_MINUTES;
@@ -83,6 +85,7 @@ export function DailyLogDetailScreen({
   onOpenPremiumPaywall,
 }: DailyLogDetailScreenProps) {
   const isPlusActive = premiumAccessState.isPlusActive;
+  const isLandscape = useIsLandscapeLayout();
   const resolvedStayPlacesStatus = stayPlacesStatus ?? (activeStayPlaces == null ? 'loading' : 'ready');
   const isSharePrivacyReady =
     resolvedStayPlacesStatus === 'ready' && activeStayPlaces != null && hasValidStayPlacePrivacyConfiguration(activeStayPlaces);
@@ -90,6 +93,11 @@ export function DailyLogDetailScreen({
     useDailyLogDetailData(log);
   const [isSharingDetail, setIsSharingDetail] = useState(false);
   const [isSliderDragging, setIsSliderDragging] = useState(false);
+
+  // 回転でStepSliderが再マウントされると onDragEnd が届かないため、向きの変化でドラッグ状態を解除する
+  useEffect(() => {
+    setIsSliderDragging(false);
+  }, [isLandscape]);
   const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
   const [gifFrameIndex, setGifFrameIndex] = useState(-1);
   const [isSelectingGifRange, setIsSelectingGifRange] = useState(false);
@@ -347,6 +355,110 @@ export function DailyLogDetailScreen({
     setIsSelectingGifRange(true);
   }
 
+  // 縦横で並べ替えて使う表示ブロック。縦画面の要素順・ラッパーは従来どおり。
+  /** 移動地図。横画面の右ペインでは高さいっぱいに広げる。 */
+  const routeMapPanel = (
+    <RouteMapPanel
+      emptyLabel="移動地図を表示できません"
+      points={visibleRoutePoints}
+      regionPoints={dailyPoints}
+      fillHeight={isLandscape}
+      styles={styles}
+      theme={theme}
+    />
+  );
+  /** 移動地図の表示時刻シークバー（Plusかつ十分な記録時間があるときのみ）。 */
+  const stepSlider = showSlider && (
+    <StepSlider
+      accessibilityLabel="移動地図の表示時刻"
+      minValue={DAILY_ROUTE_START_MINUTES}
+      maxValue={routeMaxMinutes}
+      stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
+      startLabel={formatTimelineTimeLabel(DAILY_ROUTE_START_MINUTES)}
+      endLabel={formatTimelineTimeLabel(routeMaxMinutes)}
+      value={routeEndMinutes}
+      valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
+      styles={styles}
+      theme={theme}
+      onDragStart={() => setIsSliderDragging(true)}
+      onDragEnd={() => setIsSliderDragging(false)}
+      onValueChange={setRouteEndMinutes}
+    />
+  );
+  /** GIF出力ボタン（出力可能なときのみ）。 */
+  const gifExportButton = canExportGif && (
+    <ActionPill
+      disabled={isGeneratingGif}
+      icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
+      label="移動記録をGIFで出力"
+      styles={styles}
+      onPress={openGifRangeSelection}
+    />
+  );
+  /** 移動のデータなど共有画像と共通の項目群。 */
+  const shareSections = (
+    <DailyLogShareSections
+      isPlusActive={isPlusActive}
+      distanceLabel={distanceLabel}
+      routeEndpointsLabel={routeEndpointsLabel}
+      dailyDetailReport={dailyDetailReport}
+      isLoadingDetail={isLoadingDetail}
+      altitudePoints={dailyPoints}
+      showAltitudeUnavailableMessage
+      styles={styles}
+      theme={theme}
+    />
+  );
+  /** おもいでのブラーセクション（一般ユーザーのみ）。 */
+  const memoriesSection = !isPlusActive && (
+    <View style={[styles.dailyLogDetailSection, styles.dailyLogDetailPlusSection]}>
+      <SectionTitle styles={styles}>おもいで</SectionTitle>
+      <Text style={styles.dailyLogDetailSubTitle}>{isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}</Text>
+      <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
+      <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, styles.lockedOverlay]}>
+        <Text style={styles.dailyLogDetailPlusLabel}>Plusでくわしく！</Text>
+      </View>
+    </View>
+  );
+  /** 共有・Plus導線のアクションボタン群（キャプチャ範囲外）。 */
+  const actionsSection = (
+    <View style={styles.dailyLogDetailActions}>
+      {!isSharePrivacyReady && (
+        <DescriptionText styles={styles}>
+          {resolvedStayPlacesStatus === 'error'
+            ? '滞在場所を読み込めないため、共有を準備できません。'
+            : '滞在場所を確認中です。共有は確認後に利用できます。'}
+        </DescriptionText>
+      )}
+      <ActionPill
+        disabled={isSharingDetail || isLoadingDetail || !isSharePrivacyReady}
+        icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
+        label={isSharingDetail ? '画像を作っています……' : 'この日の記録を共有'}
+        styles={styles}
+        onPress={() => {
+          shareDailyLogImage().catch(() => undefined);
+        }}
+      />
+      {!isPlusActive && (
+        <>
+          <ActionPill
+            backgroundColor={theme.colors.plusCtaBackground}
+            borderColor={theme.colors.primary}
+            icon={<MaterialCommunityIcons name="chevron-right" size={21} color={theme.colors.primary} />}
+            label="Plusでもっと詳しく！"
+            styles={styles}
+            textColor={theme.colors.primary}
+            onPress={onOpenPremiumPaywall}
+          />
+          <DescriptionText styles={styles}>
+            移動軌跡を時系列でふりかえられたり、獲得した実績、エリア数などもみることができます！
+          </DescriptionText>
+        </>
+      )}
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader
@@ -357,110 +469,44 @@ export function DailyLogDetailScreen({
         subtitle={title.subtitle}
         onBack={onBackToDailyLogs}
       />
-      <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
-        {/* 画面表示用。共有画像は画面外の DailyLogShareCard をキャプチャするため、
-            ここにあるスライダー・GIFボタンは共有時も消えない。 */}
-        <View style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
-          <View style={styles.routeTimeline}>
-            <RouteMapPanel
-              emptyLabel="移動地図を表示できません"
-              points={visibleRoutePoints}
-              regionPoints={dailyPoints}
-              styles={styles}
-              theme={theme}
-            />
-            {showSlider && (
-              <StepSlider
-                accessibilityLabel="移動地図の表示時刻"
-                minValue={DAILY_ROUTE_START_MINUTES}
-                maxValue={routeMaxMinutes}
-                stepValue={DAILY_ROUTE_TIME_STEP_MINUTES}
-                startLabel={formatTimelineTimeLabel(DAILY_ROUTE_START_MINUTES)}
-                endLabel={formatTimelineTimeLabel(routeMaxMinutes)}
-                value={routeEndMinutes}
-                valueLabel={formatTimelineTimeLabel(routeEndMinutes)}
-                styles={styles}
-                theme={theme}
-                onDragStart={() => setIsSliderDragging(true)}
-                onDragEnd={() => setIsSliderDragging(false)}
-                onValueChange={setRouteEndMinutes}
-              />
-            )}
-            {canExportGif && (
-              <ActionPill
-                disabled={isGeneratingGif}
-                icon={<MaterialCommunityIcons name="image-multiple" size={20} color={theme.colors.text} />}
-                label="移動記録をGIFで出力"
-                styles={styles}
-                onPress={openGifRangeSelection}
-              />
-            )}
-          </View>
-
-          <DailyLogShareSections
-            isPlusActive={isPlusActive}
-            distanceLabel={distanceLabel}
-            routeEndpointsLabel={routeEndpointsLabel}
-            dailyDetailReport={dailyDetailReport}
-            isLoadingDetail={isLoadingDetail}
-            altitudePoints={dailyPoints}
-            showAltitudeUnavailableMessage
-            styles={styles}
-            theme={theme}
-          />
-        </View>
-
-        {/* ブラーセクション（一般ユーザーのみ） */}
-        {!isPlusActive && (
-          <View style={[styles.dailyLogDetailSection, styles.dailyLogDetailPlusSection]}>
-            <SectionTitle styles={styles}>おもいで</SectionTitle>
-            <Text style={styles.dailyLogDetailSubTitle}>
-              {isLoadingDetail ? 'この日に獲得した実績を読み込み中' : 'この日に獲得した実績'}
-            </Text>
-            <AchievementScroller achievements={dailyDetailReport?.unlockedAchievements ?? []} styles={styles} />
-            <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={[StyleSheet.absoluteFill, styles.lockedOverlay]}>
-              <Text style={styles.dailyLogDetailPlusLabel}>Plusでくわしく！</Text>
+      {isLandscape ? (
+        <TwoPaneLayout
+          styles={styles}
+          primary={
+            <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
+              <View style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>{shareSections}</View>
+              {memoriesSection}
+              {actionsSection}
+            </ScrollView>
+          }
+          secondary={
+            // 右ペインはスクロールさせず、地図が残り高さを占めてシークバー・GIFボタンをその下に置く。
+            <View style={styles.dailyLogDetailMapPane}>
+              {routeMapPanel}
+              {stepSlider}
+              {gifExportButton}
             </View>
-          </View>
-        )}
+          }
+        />
+      ) : (
+        <ScrollView scrollEnabled={!isSliderDragging} contentContainerStyle={styles.dailyLogDetailContent}>
+          {/* 画面表示用。共有画像は画面外の DailyLogShareCard をキャプチャするため、
+              ここにあるスライダー・GIFボタンは共有時も消えない。 */}
+          <View style={[styles.dailyLogDetailCapture, { backgroundColor: theme.colors.background }]}>
+            <View style={styles.routeTimeline}>
+              {routeMapPanel}
+              {stepSlider}
+              {gifExportButton}
+            </View>
 
-        {/* アクションボタン群（キャプチャ範囲外） */}
-        <View style={styles.dailyLogDetailActions}>
-          {!isSharePrivacyReady && (
-            <DescriptionText styles={styles}>
-              {resolvedStayPlacesStatus === 'error'
-                ? '滞在場所を読み込めないため、共有を準備できません。'
-                : '滞在場所を確認中です。共有は確認後に利用できます。'}
-            </DescriptionText>
-          )}
-          <ActionPill
-            disabled={isSharingDetail || isLoadingDetail || !isSharePrivacyReady}
-            icon={<Feather name="share-2" size={20} color={theme.colors.text} />}
-            label={isSharingDetail ? '画像を作っています……' : 'この日の記録を共有'}
-            styles={styles}
-            onPress={() => {
-              shareDailyLogImage().catch(() => undefined);
-            }}
-          />
-          {!isPlusActive && (
-            <>
-              <ActionPill
-                backgroundColor={theme.colors.plusCtaBackground}
-                borderColor={theme.colors.primary}
-                icon={<MaterialCommunityIcons name="chevron-right" size={21} color={theme.colors.primary} />}
-                label="Plusでもっと詳しく！"
-                styles={styles}
-                textColor={theme.colors.primary}
-                onPress={onOpenPremiumPaywall}
-              />
-              <DescriptionText styles={styles}>
-                移動軌跡を時系列でふりかえられたり、獲得した実績、エリア数などもみることができます！
-              </DescriptionText>
-            </>
-          )}
-        </View>
-      </ScrollView>
+            {shareSections}
+          </View>
+
+          {memoriesSection}
+
+          {actionsSection}
+        </ScrollView>
+      )}
 
       {isSharingDetail && isSharePrivacyReady && activeStayPlaces != null && (
         <DailyLogShareCard

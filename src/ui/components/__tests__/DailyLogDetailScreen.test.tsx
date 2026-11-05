@@ -1,11 +1,13 @@
 import type React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, act, within } from '@testing-library/react-native';
+import * as ReactNative from 'react-native';
 
 import { getLocationPointAdminAreaName } from '@/features/achievements/adminAreaRepository';
 import { getAchievementUnlocksByDate } from '@/features/achievements/achievementRepository';
 import { getVisitedCellsByIds } from '@/features/location/visitedCellRepository';
 import { getLocationPointsByDate } from '@/features/logs/logRepository';
 import { lightTheme } from '@/theme/theme';
+import { createStyles } from '@/ui/appStyles';
 import { DailyLogDetailScreen } from '@/ui/components/DailyLogDetailScreen';
 import { DailyLogShareCard } from '@/ui/components/DailyLogShareCard';
 
@@ -874,5 +876,105 @@ describe('日別ログ詳細画面 DailyLogDetailScreen', () => {
     });
 
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('日ごとの記録詳細 横画面の2段構成', () => {
+  /** 地図枠の flex を検証するため、プロキシではなく実際の共通スタイルを使う。 */
+  const realStyles = createStyles(lightTheme);
+
+  /** 指定寸法のウィンドウとして描画し、非同期の詳細データ読み込みを待つ。 */
+  async function renderWithWindow(width: number, height: number): Promise<void> {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width, height, scale: 2, fontScale: 1 });
+    await render(
+      <DailyLogDetailScreen
+        log={log}
+        styles={realStyles}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />,
+    );
+    await act(async () => {});
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { getTodayLocalDate, getCurrentMinutesOfDay } = require('@/ui/dailyRouteTimeline');
+    getTodayLocalDate.mockReturnValue('2026-06-04');
+    getCurrentMinutesOfDay.mockReturnValue(750);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('横画面では地図とシークバーを右ペイン、共有ボタンを左ペインに置く', async () => {
+    await renderWithWindow(1180, 820);
+
+    const secondary = within(screen.getByTestId('two-pane-secondary'));
+    const primary = within(screen.getByTestId('two-pane-primary'));
+    expect(secondary.getByLabelText('移動地図の表示時刻')).toBeTruthy();
+    expect(secondary.getByTestId('route-map-frame')).toBeTruthy();
+    expect(primary.getByText('この日の記録を共有')).toBeTruthy();
+    expect(primary.getByText('移動のデータ')).toBeTruthy();
+    expect(primary.queryByLabelText('移動地図の表示時刻')).toBeNull();
+  });
+
+  test('横画面では地図枠を高さいっぱいに広げる', async () => {
+    await renderWithWindow(1180, 820);
+
+    const frame = within(screen.getByTestId('two-pane-secondary')).getByTestId('route-map-frame');
+    expect(ReactNative.StyleSheet.flatten(frame.props.style).flex).toBe(1);
+  });
+
+  test('ルートが無い日も横画面では2段構成で空表示を右ペインに出す', async () => {
+    (getLocationPointsByDate as jest.Mock).mockResolvedValueOnce([]);
+
+    await renderWithWindow(1180, 820);
+
+    const secondary = within(screen.getByTestId('two-pane-secondary'));
+    expect(secondary.getByText('移動地図を表示できません')).toBeTruthy();
+    expect(screen.getByTestId('two-pane-primary')).toBeTruthy();
+  });
+
+  test('シークバーのドラッグ中に横画面へ回転しても左ペインのスクロールを無効のままにしない', async () => {
+    const dimensions = jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 820, height: 1180, scale: 2, fontScale: 1 });
+    // 同一要素の再利用だと再描画が省略されるため、描画のたびに新しい要素を作る
+    const createElement = () => (
+      <DailyLogDetailScreen
+        log={log}
+        styles={realStyles}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />
+    );
+    const { rerender } = await render(createElement());
+    await act(async () => {});
+
+    await act(async () => {
+      getMountedProps('StepSlider').onDragStart?.();
+    });
+    expect(getVerticalScrollView().props.scrollEnabled).toBe(false);
+
+    // 回転でStepSliderが再マウントされ onDragEnd が来ない状況を再現する
+    dimensions.mockReturnValue({ width: 1180, height: 820, scale: 2, fontScale: 1 });
+    await rerender(createElement());
+    await act(async () => {});
+
+    expect(getVerticalScrollView().props.scrollEnabled).not.toBe(false);
+  });
+
+  test('縦画面では2段構成にしない', async () => {
+    await renderWithWindow(820, 1180);
+
+    expect(screen.queryByTestId('two-pane-primary')).toBeNull();
+    expect(screen.queryByTestId('two-pane-secondary')).toBeNull();
   });
 });

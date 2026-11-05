@@ -72,6 +72,14 @@ export function createDailyLogStyles(theme: AppTheme) {
       gap: 28,
       paddingBottom: 34,
     },
+    // 横画面の右ペイン。地図(flex)が残り高さを占め、シークバー・GIFボタンをその下に置く
+    dailyLogDetailMapPane: {
+      flex: 1,
+      gap: 18,
+      paddingBottom: 24,
+      paddingHorizontal: 24,
+      paddingTop: 24,
+    },
     dailyLogDetailPlusLabel: {
       color: theme.colors.routeMapEmptyText,
       fontSize: 16,
@@ -181,6 +189,14 @@ export function createDailyLogStyles(theme: AppTheme) {
       height: 332,
       overflow: 'hidden',
       width: '100%',
+    },
+    // fillHeight時にrouteMapFrame/routeMapEmptyPanelへ重ね、固定高さ332を打ち消して親いっぱいに広げる
+    routeMapFrameFill: {
+      flex: 1,
+      height: undefined,
+      // 右ペインはスクロールしないため、短いウィンドウでは地図側だけを縮めて
+      // シークバー・GIFボタンを画面内に残す(下限を設けると操作部が画面外へ押し出される)。
+      minHeight: 0,
     },
     routeTimeline: {
       gap: 18,

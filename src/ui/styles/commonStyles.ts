@@ -31,6 +31,14 @@ export function createCommonStyles(theme: AppTheme) {
     screenTransition: {
       flex: 1,
     },
+    // 横画面の2段レイアウト(左右50:50)
+    twoPaneRow: {
+      flex: 1,
+      flexDirection: 'row',
+    },
+    twoPanePane: {
+      flex: 1,
+    },
 
     // Empty states
     emptyCard: {

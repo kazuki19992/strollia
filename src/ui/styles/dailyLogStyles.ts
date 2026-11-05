@@ -182,6 +182,11 @@ export function createDailyLogStyles(theme: AppTheme) {
       overflow: 'hidden',
       width: '100%',
     },
+    // fillHeight時にrouteMapFrame/routeMapEmptyPanelへ重ね、固定高さ332を打ち消して親いっぱいに広げる
+    routeMapFrameFill: {
+      flex: 1,
+      height: undefined,
+    },
     routeTimeline: {
       gap: 18,
     },

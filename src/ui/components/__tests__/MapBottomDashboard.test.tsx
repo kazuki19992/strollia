@@ -1,6 +1,6 @@
 import * as ReactNative from 'react-native';
 import { Animated, StyleSheet } from 'react-native';
-import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, act, within } from '@testing-library/react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
@@ -292,9 +292,9 @@ describe('マップ下部ダッシュボード', () => {
 });
 
 describe('マップ下部ダッシュボードの横幅上限', () => {
-  test('縦向きiPhoneの最大幅(440pt)では上限がかからず従来どおり画面幅に追従する', () => {
+  test('上限幅は縦向きiPhoneの最大幅(440pt)から左右余白を除いた424ptちょうどで、縦向きiPhoneでは従来どおり画面幅に追従する', () => {
     // bottomDashboardは左右8ptずつ内側に置かれるため、幅440ptの画面での利用幅は424pt
-    expect(DASHBOARD_GROUP_MAX_WIDTH).toBeGreaterThanOrEqual(440 - 16);
+    expect(DASHBOARD_GROUP_MAX_WIDTH).toBe(440 - 16);
   });
 
   test('横幅上限と寄せ位置をまとめたスタイルを返す', () => {
@@ -315,8 +315,10 @@ describe('マップ下部ダッシュボードの横幅上限', () => {
     expect(StyleSheet.flatten(group.props.style)).toEqual(
       expect.objectContaining({ alignSelf: 'flex-end', maxWidth: DASHBOARD_GROUP_MAX_WIDTH, width: '100%' }),
     );
-    expect(screen.getByLabelText('マップの表示')).toBeTruthy();
-    expect(screen.getByLabelText('設定')).toBeTruthy();
+    // 上限幅のグループ内に現在地ボタン・マップ表示ボタン・ナビゲーションが収まっていること
+    expect(within(group).getByLabelText('現在地へ戻る')).toBeTruthy();
+    expect(within(group).getByLabelText('マップの表示')).toBeTruthy();
+    expect(within(group).getByLabelText('設定')).toBeTruthy();
   });
 });
 

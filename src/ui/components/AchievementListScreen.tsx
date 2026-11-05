@@ -1,5 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { Image, Pressable, SafeAreaView, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+// useWindowDimensionsはテストで寸法を差し替えるため名前空間経由で参照する(useIsLandscapeLayoutと同じ寸法を見る)。
+import * as ReactNative from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { Grayscale } from 'react-native-color-matrix-image-filters';
 
 import { AchievementCategory, formatAchievementDistance } from '@/features/achievements/achievementDefinitions';
@@ -8,6 +10,7 @@ import { resolveLandmarkTrophyDisplayState } from '@/features/landmarks/landmark
 import { AppTheme } from '@/theme/theme';
 import { AppStyles } from '@/ui/appStyles';
 import { LANDMARK_PACK_PLUS_PROMOTION_NOTE, LANDMARK_PACK_SECTION_TITLE } from '@/ui/appText';
+import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import type { LandmarkPackListItem } from '@/ui/hooks/useLandmarkPackState';
 import { resolveAchievementDisplayStates } from './achievementDisplayState';
 import { AppListItem } from './AppListItem';
@@ -45,6 +48,20 @@ const categorySections: { category: AchievementCategory; title: string }[] = [
   { category: 'municipality', title: '市区町村' },
 ];
 
+/** 縦画面の実績グリッド列数。 */
+export const ACHIEVEMENT_GRID_COLUMNS_PORTRAIT = 3;
+/** 横画面の実績グリッド列数。 */
+export const ACHIEVEMENT_GRID_COLUMNS_LANDSCAPE = 6;
+
+/**
+ * 実績グリッドのタイル幅と画像サイズを画面幅から算出する。
+ * Grayscale ネイティブフィルタは数値サイズが必要なため。余白は screenList.paddingHorizontal=24・achievementGrid.gap=10 に対応する。
+ */
+export function getAchievementGridLayout(windowWidth: number, columns: number): { tileWidth: number; imageSize: number } {
+  const tileWidth = (windowWidth - 24 * 2 - 10 * (columns - 1)) / columns;
+  return { tileWidth, imageSize: Math.max(0, Math.floor(tileWidth * 0.86)) };
+}
+
 /** 実績画面を2列グリッドで描画する。 */
 export function AchievementListScreen({
   items,
@@ -58,11 +75,14 @@ export function AchievementListScreen({
   onRequestPremium,
 }: AchievementListScreenProps) {
   const displayStates = resolveAchievementDisplayStates(items);
-  const { width: windowWidth } = useWindowDimensions();
-  // Grayscale ネイティブフィルタは数値サイズが必要なため、画面幅からタイル画像サイズを算出する。
-  // 余白は screenList.paddingHorizontal=24・achievementGrid.gap=10・3列に対応する。
-  const tileWidth = (windowWidth - 24 * 2 - 10 * 2) / 3;
-  const grayscaleImageSize = Math.max(0, Math.floor(tileWidth * 0.86));
+  const { width: windowWidth } = ReactNative.useWindowDimensions();
+  const isLandscape = useIsLandscapeLayout();
+  const { tileWidth, imageSize: grayscaleImageSize } = getAchievementGridLayout(
+    windowWidth,
+    isLandscape ? ACHIEVEMENT_GRID_COLUMNS_LANDSCAPE : ACHIEVEMENT_GRID_COLUMNS_PORTRAIT,
+  );
+  // 横画面だけタイル幅を固定して6列に並べる。縦画面は従来の achievementGridTile(30%)のまま。
+  const tileStyle = isLandscape ? [styles.achievementGridTile, { flexBasis: tileWidth, flexGrow: 0 }] : styles.achievementGridTile;
   // スポットパックのトロフィーも Grayscale を通すため数値サイズが必要。
   // 一覧行のアイコンは設計書 §9.3.1 の 60〜80pt を目安にし、狭い端末では縮めて上限で止める。
   const packTrophySize = Math.min(72, Math.max(48, Math.floor((windowWidth - 24 * 2) * 0.2)));
@@ -114,7 +134,7 @@ export function AchievementListScreen({
                     return (
                       <Pressable
                         key={item.definition.id}
-                        style={styles.achievementGridTile}
+                        style={tileStyle}
                         accessibilityRole="button"
                         accessibilityLabel={`${item.definition.title} の詳細を見る`}
                         onPress={() => onSelectAchievement(item)}
@@ -125,7 +145,7 @@ export function AchievementListScreen({
                   }
 
                   return (
-                    <View key={item.definition.id} style={styles.achievementGridTile}>
+                    <View key={item.definition.id} style={tileStyle}>
                       {tile}
                     </View>
                   );

@@ -1,3 +1,4 @@
+import * as ReactNative from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import type { AchievementListItem } from '@/features/achievements/achievementRepository';
@@ -124,5 +125,43 @@ describe('実績グリッドの3状態表示', () => {
     );
 
     expect(screen.getByText('d2タイトル')).toBeTruthy();
+  });
+});
+
+describe('実績グリッドの列数', () => {
+  const items = [gridItem('d1', 1001, '2026-01-01T00:00:00.000Z')];
+
+  /** 解除済みタイル(Pressable)のflatten済みstyleを返す。 */
+  async function renderTileStyle(width: number, height: number) {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width, height, scale: 2, fontScale: 1 });
+    await render(
+      <AchievementListScreen
+        items={items}
+        {...landmarkPackProps}
+        styles={styles}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onSelectAchievement={jest.fn()}
+      />,
+    );
+    return ReactNative.StyleSheet.flatten(screen.getByLabelText('d1タイトル の詳細を見る').props.style);
+  }
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('横画面では実績タイルを6列幅で並べる', async () => {
+    const style = await renderTileStyle(1180, 820);
+
+    expect(style.flexBasis).toBe((1180 - 48 - 50) / 6);
+    expect(style.flexGrow).toBe(0);
+  });
+
+  test('縦画面ではタイル幅を変えない', async () => {
+    const style = await renderTileStyle(393, 852);
+
+    expect(style.flexBasis).toBe('30%');
   });
 });

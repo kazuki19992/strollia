@@ -36,7 +36,9 @@ describe('移動地図パネル RouteMapPanel', () => {
   test('fillHeightを指定しない場合は従来どおり高さ332で描く', async () => {
     await render(<RouteMapPanel emptyLabel="なし" points={points} styles={styles} theme={theme} />);
 
-    expect(StyleSheet.flatten(screen.getByTestId('route-map-frame').props.style).height).toBe(332);
+    const style = StyleSheet.flatten(screen.getByTestId('route-map-frame').props.style);
+    expect(style.height).toBe(332);
+    expect(style.minHeight).toBeUndefined();
   });
 
   test('fillHeightを指定すると地図枠が親の高さいっぱいに広がる', async () => {
@@ -45,6 +47,7 @@ describe('移動地図パネル RouteMapPanel', () => {
     const style = StyleSheet.flatten(screen.getByTestId('route-map-frame').props.style);
     expect(style.flex).toBe(1);
     expect(style.height).not.toBe(332);
+    expect(style.minHeight).toBe(200);
   });
 
   test('ルートが無い場合もfillHeightで空表示が高さいっぱいに広がる', async () => {

@@ -93,6 +93,11 @@ export function DailyLogDetailScreen({
     useDailyLogDetailData(log);
   const [isSharingDetail, setIsSharingDetail] = useState(false);
   const [isSliderDragging, setIsSliderDragging] = useState(false);
+
+  // 回転でStepSliderが再マウントされると onDragEnd が届かないため、向きの変化でドラッグ状態を解除する
+  useEffect(() => {
+    setIsSliderDragging(false);
+  }, [isLandscape]);
   const [gifProgress, setGifProgress] = useState<{ done: number; total: number } | null>(null);
   const [gifFrameIndex, setGifFrameIndex] = useState(-1);
   const [isSelectingGifRange, setIsSelectingGifRange] = useState(false);

@@ -941,6 +941,36 @@ describe('日ごとの記録詳細 横画面の2段構成', () => {
     expect(screen.getByTestId('two-pane-primary')).toBeTruthy();
   });
 
+  test('シークバーのドラッグ中に横画面へ回転しても左ペインのスクロールを無効のままにしない', async () => {
+    const dimensions = jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 820, height: 1180, scale: 2, fontScale: 1 });
+    // 同一要素の再利用だと再描画が省略されるため、描画のたびに新しい要素を作る
+    const createElement = () => (
+      <DailyLogDetailScreen
+        log={log}
+        styles={realStyles}
+        theme={lightTheme}
+        premiumAccessState={plusAccessState}
+        activeStayPlaces={[]}
+        onBackToDailyLogs={jest.fn()}
+        onOpenPremiumPaywall={jest.fn()}
+      />
+    );
+    const { rerender } = await render(createElement());
+    await act(async () => {});
+
+    await act(async () => {
+      getMountedProps('StepSlider').onDragStart?.();
+    });
+    expect(getVerticalScrollView().props.scrollEnabled).toBe(false);
+
+    // 回転でStepSliderが再マウントされ onDragEnd が来ない状況を再現する
+    dimensions.mockReturnValue({ width: 1180, height: 820, scale: 2, fontScale: 1 });
+    await rerender(createElement());
+    await act(async () => {});
+
+    expect(getVerticalScrollView().props.scrollEnabled).not.toBe(false);
+  });
+
   test('縦画面では2段構成にしない', async () => {
     await renderWithWindow(820, 1180);
 

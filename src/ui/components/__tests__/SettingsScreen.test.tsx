@@ -908,8 +908,14 @@ describe('横画面のStrollia Plus案内', () => {
 
   test('横画面ではPlus案内のボタン群を左列、宣伝画像を右列に置く', async () => {
     mockWindow(1180, 820);
-    await render(<SettingsScreen {...createProps()} />);
+    // 列のレイアウト指定を検証するため、空のstylesプロキシではなく実スタイルで描画する
+    await render(<SettingsScreen {...createProps()} styles={createStyles(lightTheme)} />);
 
+    const textColumnStyle = flattenStyle(screen.getByTestId('plus-intro-text-column').props.style);
+    expect(textColumnStyle.flex).toBe(1);
+    expect(textColumnStyle.gap).toBe(16);
+    expect(textColumnStyle.justifyContent).toBe('space-between');
+    expect(flattenStyle(screen.getByTestId('plus-intro-image-column').props.style).flex).toBe(1);
     const textColumn = within(screen.getByTestId('plus-intro-text-column'));
     expect(textColumn.getByText('月額300円ではじめる！')).toBeTruthy();
     expect(textColumn.getByText('年額3300円ではじめる！')).toBeTruthy();

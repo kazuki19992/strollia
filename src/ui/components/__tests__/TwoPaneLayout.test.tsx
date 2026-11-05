@@ -15,9 +15,10 @@ describe('2段レイアウト TwoPaneLayout', () => {
     expect(within(screen.getByTestId('two-pane-secondary')).getByText('右')).toBeTruthy();
   });
 
-  test('左右のペインは同じ幅(flex 1)で並ぶ', async () => {
-    await render(<TwoPaneLayout primary={<Text>左</Text>} secondary={<Text>右</Text>} styles={styles} />);
+  test('左右のペインは同じ幅(flex 1)で横に並ぶ', async () => {
+    await render(<TwoPaneLayout primary={<Text>左</Text>} secondary={<Text>右</Text>} styles={styles} testID="two-pane-root" />);
 
+    expect(StyleSheet.flatten(screen.getByTestId('two-pane-root').props.style).flexDirection).toBe('row');
     expect(StyleSheet.flatten(screen.getByTestId('two-pane-primary').props.style).flex).toBe(1);
     expect(StyleSheet.flatten(screen.getByTestId('two-pane-secondary').props.style).flex).toBe(1);
   });

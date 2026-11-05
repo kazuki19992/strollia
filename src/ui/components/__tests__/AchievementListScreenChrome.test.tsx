@@ -159,6 +159,32 @@ describe('実績グリッドの列数', () => {
     expect(style.flexGrow).toBe(0);
   });
 
+  test('横画面では次の実績・伏せ字の実績(非Pressableタイル)も6列幅で並べる', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 1180, height: 820, scale: 2, fontScale: 1 });
+    const mixedItems = [gridItem('d1', 1001, '2026-01-01T00:00:00.000Z'), gridItem('d2', 1002, null), gridItem('d3', 1003, null)];
+    await render(
+      <AchievementListScreen
+        items={mixedItems}
+        {...landmarkPackProps}
+        styles={styles}
+        theme={lightTheme}
+        onBackToMap={jest.fn()}
+        onSelectAchievement={jest.fn()}
+      />,
+    );
+
+    // 未解除タイルは accessibilityLabel を持たない素の View のため、標準クエリでは特定できない。
+    // ホスト要素から横画面用の上書き(flexGrow: 0 + 数値flexBasis)を持つタイルを数える。
+    const expectedBasis = Math.floor((1180 - 48 - 50) / 6);
+    const landscapeTiles = screen.container.queryAll((node) => {
+      if (typeof node.type !== 'string') return false;
+      const style = ReactNative.StyleSheet.flatten(node.props.style);
+      return style?.flexGrow === 0 && style?.flexBasis === expectedBasis;
+    });
+    expect(landscapeTiles).toHaveLength(3);
+  });
+
   test('縦画面ではタイル幅を変えない', async () => {
     const style = await renderTileStyle(393, 852);
 

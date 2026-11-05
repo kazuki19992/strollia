@@ -30,6 +30,28 @@ export const DASHBOARD_WIDE_SCREEN_ALIGNMENT = 'flex-end' as const;
 /** `bottomDashboard` が画面の左右に置いている余白の合計(左右8ptずつ)。 */
 const DASHBOARD_HORIZONTAL_SCREEN_INSET = 16;
 
+/** `bottomDashboard` が画面の左右それぞれに置いている余白。 */
+const DASHBOARD_SIDE_SCREEN_INSET = DASHBOARD_HORIZONTAL_SCREEN_INSET / 2;
+
+/**
+ * 下部ダッシュボードを左右のセーフエリアの内側に置くための位置と利用幅を返す。
+ *
+ * ダッシュボードは地図の上に絶対配置しており、親の `SafeAreaView` の余白が効かない。
+ * iPhone Duo の右端のシステム縦バーや、横向きiPhoneのノッチに速度パネルとボタン群が
+ * 重ならないよう、左右の余白(8pt)をセーフエリアの内側に取り、幅計算もその内側で行う。
+ *
+ * @param windowWidth - 画面幅(pt)。
+ * @param insets - 左右のセーフエリア(pt)。
+ * @returns `contentWidth` はセーフエリアを除いた幅、`left` / `right` はダッシュボードの絶対配置位置。
+ */
+export function getDashboardSafeAreaFrame(windowWidth: number, insets: { left: number; right: number }) {
+  return {
+    contentWidth: windowWidth - insets.left - insets.right,
+    left: DASHBOARD_SIDE_SCREEN_INSET + insets.left,
+    right: DASHBOARD_SIDE_SCREEN_INSET + insets.right,
+  };
+}
+
 /**
  * 横幅上限に達した画面で、グループと画面右端の間に足す余白。
  *

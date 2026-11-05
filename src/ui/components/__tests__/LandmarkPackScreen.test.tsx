@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import * as ReactNative from 'react-native';
 
 import type { LandmarkPack, LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 import { createLandmarkSpotFocusRegion } from '@/features/landmarks/landmarkSpotMapDetails';
@@ -249,6 +250,46 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
         createLandmarkSpotFocusRegion({ latitude: retiredSpot.latitude, longitude: retiredSpot.longitude }, retiredSpot.radiusMeters),
         expect.any(Number),
       );
+    });
+  });
+
+  describe('横画面レイアウト', () => {
+    /** 指定寸法のウィンドウとして描画する。 */
+    async function renderWithWindow(width: number, height: number): Promise<void> {
+      jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width, height, scale: 2, fontScale: 1 });
+      await renderScreen();
+    }
+
+    it('横画面ではスポット一覧を左ペイン、地図を右ペインに置く', async () => {
+      await renderWithWindow(1180, 820);
+
+      const primary = within(screen.getByTestId('two-pane-primary'));
+      const secondary = within(screen.getByTestId('two-pane-secondary'));
+      expect(primary.getByText('華厳の滝')).toBeTruthy();
+      expect(primary.queryByTestId('landmark-pack-map')).toBeNull();
+      expect(secondary.getByTestId('landmark-pack-map')).toBeTruthy();
+      expect(secondary.queryByText('華厳の滝')).toBeNull();
+    });
+
+    it('横画面でも未到達の行を押すと埋め込み地図がそのスポットへズームする', async () => {
+      await renderWithWindow(1180, 820);
+
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('那智の滝を地図で見る'));
+      });
+
+      const nachiSpot = spotItems[1]!.spot;
+      expect(mockAnimateToRegion).toHaveBeenCalledWith(
+        createLandmarkSpotFocusRegion({ latitude: nachiSpot.latitude, longitude: nachiSpot.longitude }, nachiSpot.radiusMeters),
+        expect.any(Number),
+      );
+    });
+
+    it('縦画面では2段構成にしない', async () => {
+      await renderWithWindow(820, 1180);
+
+      expect(screen.queryByTestId('two-pane-primary')).toBeNull();
+      expect(screen.queryByTestId('two-pane-secondary')).toBeNull();
     });
   });
 });

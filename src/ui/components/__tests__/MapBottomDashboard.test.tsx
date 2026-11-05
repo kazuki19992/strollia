@@ -5,6 +5,9 @@ import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
 import {
+  DASHBOARD_GROUP_MAX_WIDTH,
+  DASHBOARD_WIDE_SCREEN_ALIGNMENT,
+  getDashboardGroupStyle,
   getDashboardScale,
   getScaledSpeedDialLayout,
   getSpeedMeterAppearance,
@@ -285,6 +288,35 @@ describe('マップ下部ダッシュボード', () => {
 
     expect(ringBase.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.ringBase)]));
     expect(arcSvg.props.style).toEqual(expect.arrayContaining([expect.objectContaining(layout.arcSvg)]));
+  });
+});
+
+describe('マップ下部ダッシュボードの横幅上限', () => {
+  test('縦向きiPhoneの最大幅(440pt)では上限がかからず従来どおり画面幅に追従する', () => {
+    // bottomDashboardは左右8ptずつ内側に置かれるため、幅440ptの画面での利用幅は424pt
+    expect(DASHBOARD_GROUP_MAX_WIDTH).toBeGreaterThanOrEqual(440 - 16);
+  });
+
+  test('横幅上限と寄せ位置をまとめたスタイルを返す', () => {
+    expect(getDashboardGroupStyle()).toEqual({
+      alignSelf: DASHBOARD_WIDE_SCREEN_ALIGNMENT,
+      maxWidth: DASHBOARD_GROUP_MAX_WIDTH,
+      width: '100%',
+    });
+  });
+
+  test('横長画面では速度パネルとボタン群を上限幅に収めて右端へ寄せる', async () => {
+    jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 1024, height: 768, scale: 2, fontScale: 1 });
+
+    await render(<MapBottomDashboard {...createProps()} />);
+
+    const group = screen.getByTestId('map-bottom-dashboard-group');
+
+    expect(StyleSheet.flatten(group.props.style)).toEqual(
+      expect.objectContaining({ alignSelf: 'flex-end', maxWidth: DASHBOARD_GROUP_MAX_WIDTH, width: '100%' }),
+    );
+    expect(screen.getByLabelText('マップの表示')).toBeTruthy();
+    expect(screen.getByLabelText('設定')).toBeTruthy();
   });
 });
 

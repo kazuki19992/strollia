@@ -10,6 +10,34 @@ export const SMALL_DASHBOARD_BASE_WIDTH = 430;
 export const SMALL_DASHBOARD_MIN_SCALE = 0.86;
 
 /**
+ * 速度パネルとボタン群をまとめたグループの横幅上限。
+ *
+ * ダッシュボードは高さが倍率1で頭打ちになる一方、横幅は画面に追従して伸びるため、
+ * iPadや横向き画面では帯だけが横長に崩れる。幅440pt(iPhone Pro Max縦向き)の画面で
+ * 左右8ptずつの余白を除いた424ptを上限にし、縦向きiPhoneでは従来表示のまま、
+ * それより広い画面ではグループの縦横比を保つ。
+ */
+export const DASHBOARD_GROUP_MAX_WIDTH = 424;
+
+/**
+ * 横幅上限に達した画面でのグループの寄せ位置。
+ *
+ * 現在は右端寄せ。中央寄せに変える場合は `'center'` にする。
+ * 現在地ボタンとマップ表示パネルもグループ内に置いているため一緒に移動する。
+ */
+export const DASHBOARD_WIDE_SCREEN_ALIGNMENT = 'flex-end' as const;
+
+/** 下部ダッシュボードのグループへ適用する、横幅上限と寄せ位置のスタイル。 */
+export function getDashboardGroupStyle() {
+  return {
+    alignSelf: DASHBOARD_WIDE_SCREEN_ALIGNMENT,
+    maxWidth: DASHBOARD_GROUP_MAX_WIDTH,
+    // alignSelfを指定すると内容幅まで縮むため、上限以下では親の幅いっぱいに広げる。
+    width: '100%' as const,
+  };
+}
+
+/**
  * ダッシュボードの基準寸法。
  *
  * `appStyles` の同名スタイル値と対応させ、大画面では既存表示を保ったまま

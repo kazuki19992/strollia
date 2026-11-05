@@ -13,6 +13,7 @@ import {
   DASHBOARD_BASE_TEXT,
   FIXED_MAP_UI_TEXT_PROPS,
   formatDistanceKilometers,
+  getDashboardGroupStyle,
   getDashboardScale,
   getScaledDashboardIconSizes,
   getScaledDashboardLayout,
@@ -28,7 +29,10 @@ import type { MapType } from 'react-native-maps';
 
 // Public API re-exports — テストがこのモジュールからインポートする。
 export {
+  DASHBOARD_GROUP_MAX_WIDTH,
+  DASHBOARD_WIDE_SCREEN_ALIGNMENT,
   formatDistanceKilometers,
+  getDashboardGroupStyle,
   getDashboardScale,
   getSpeedMeterAppearance,
   METER_CLUSTER_BACKGROUND_PATH,
@@ -140,184 +144,158 @@ export function MapBottomDashboard({
       )}
 
       <View pointerEvents="box-none" style={styles.bottomDashboard}>
-        <Animated.View
-          pointerEvents={isMapDisplayPanelVisible || isFollowingUserLocation ? 'none' : 'auto'}
-          style={[
-            styles.recenterButtonContainer,
-            { opacity: recenterButtonOpacity },
-            isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
-          ]}
-        >
-          <Pressable
-            accessibilityLabel="現在地へ戻る"
-            disabled={isMapDisplayPanelVisible}
-            onPress={onRecenterOnUserLocation}
-            style={styles.recenterButton}
-          >
-            <Feather name="navigation" size={28} color="#ffffff" />
-          </Pressable>
-        </Animated.View>
-
-        <View
-          pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
-          style={[
-            styles.dashboardMeterCluster,
-            dashboardLayout.meterCluster,
-            isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
-          ]}
-        >
-          {/* 横幅は画面に追従し、高さだけ小画面倍率に合わせて速度メーター中心と揃える。 */}
-          <Svg
-            accessibilityElementsHidden
-            focusable={false}
-            preserveAspectRatio="none"
-            style={[styles.dashboardMeterBackground, dashboardLayout.meterBackground]}
-            viewBox="0 0 402 104"
-          >
-            <Path d={METER_CLUSTER_BACKGROUND_PATH} fill="rgba(51, 51, 51, 0.80)" />
-          </Svg>
-          <View style={[styles.dashboardSummaryPanel, dashboardLayout.summaryPanel]}>
-            <DashboardDistanceMetric label="ODO" parts={odometerParts} scale={dashboardScale} styles={styles} />
-            <DashboardDistanceMetric label="TODAY" parts={todayDistanceParts} scale={dashboardScale} styles={styles} />
-            <View style={[styles.dashboardPlaceMetric, dashboardLayout.placeMetric]}>
-              <Text
-                {...FIXED_MAP_UI_TEXT_PROPS}
-                adjustsFontSizeToFit
-                minimumFontScale={dashboardScale < 1 ? 0.72 : 0.9}
-                numberOfLines={1}
-                style={[styles.dashboardPlacePrimary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placePrimary, dashboardScale)]}
-              >
-                {currentAreaLabel.primary}
-              </Text>
-              {currentAreaLabel.secondary && (
-                <Text
-                  {...FIXED_MAP_UI_TEXT_PROPS}
-                  adjustsFontSizeToFit
-                  minimumFontScale={dashboardScale < 1 ? 0.76 : 0.9}
-                  numberOfLines={1}
-                  style={[styles.dashboardPlaceSecondary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placeSecondary, dashboardScale)]}
-                >
-                  {currentAreaLabel.secondary}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          <SpeedDial
-            currentSpeedKmh={currentSpeedKmh}
-            progressPercent={speedMeter.progressPercent}
-            scale={dashboardScale}
-            speedColor={speedMeter.color}
-            styles={styles}
-          />
-        </View>
-
-        <View style={[styles.dashboardActionsRow, dashboardLayout.actionsRow]}>
-          <View
-            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
+        {/* 横長画面で帯だけが伸びないよう、現在地ボタン・計器・ボタン列・表示パネルを上限幅のグループにまとめる。 */}
+        <View pointerEvents="box-none" style={getDashboardGroupStyle()} testID="map-bottom-dashboard-group">
+          <Animated.View
+            pointerEvents={isMapDisplayPanelVisible || isFollowingUserLocation ? 'none' : 'auto'}
             style={[
-              styles.dashboardNavPanel,
-              dashboardLayout.navPanel,
+              styles.recenterButtonContainer,
+              { opacity: recenterButtonOpacity },
               isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
             ]}
           >
-            <DashboardAction
-              icon={<Feather name="calendar" size={iconSizes.calendar} color="#ffffff" />}
-              label="日ごとの記録"
+            <Pressable
+              accessibilityLabel="現在地へ戻る"
               disabled={isMapDisplayPanelVisible}
-              onPress={onOpenDailyLogs}
-              scale={dashboardScale}
-              styles={styles}
-            />
-            <DashboardAction
-              icon={<MaterialCommunityIcons name="trophy-outline" size={iconSizes.trophy} color="#ffffff" />}
-              label="実績"
-              disabled={isMapDisplayPanelVisible}
-              onPress={onOpenAchievements}
-              scale={dashboardScale}
-              styles={styles}
-            />
-            <DashboardAction
-              icon={<MaterialIcons name="history" size={iconSizes.history} color="#ffffff" />}
-              label="レポートを見る"
-              disabled={isMapDisplayPanelVisible}
-              onPress={onOpenMonthlyReport}
-              scale={dashboardScale}
-              styles={styles}
-            />
-            <DashboardAction
-              icon={<Feather name="settings" size={iconSizes.settings} color="#ffffff" />}
-              label="設定"
-              disabled={isMapDisplayPanelVisible}
-              onPress={onOpenSettings}
-              scale={dashboardScale}
-              styles={styles}
-            />
-          </View>
-          <Pressable
-            accessibilityLabel="マップの表示"
-            accessibilityRole="button"
-            onPress={() => setIsMapDisplayPanelVisible((visible) => !visible)}
-            style={[styles.dashboardMapButton, dashboardLayout.mapButton]}
-          >
-            <Feather name="map" size={iconSizes.map} color="#ffffff" />
-          </Pressable>
-        </View>
+              onPress={onRecenterOnUserLocation}
+              style={styles.recenterButton}
+            >
+              <Feather name="navigation" size={28} color="#ffffff" />
+            </Pressable>
+          </Animated.View>
 
-        {isMapDisplayPanelVisible && (
-          <View style={[styles.mapDisplayPanel, { width: mapDisplayPanelWidth }]}>
-            <View style={styles.mapDisplayTypeRow}>
-              <MapDisplayTypeButton
-                icon="map-outline"
-                isSelected={mapType === 'standard'}
-                label="標準マップ"
-                onPress={() => {
-                  if (mapType !== 'standard') {
-                    onToggleMapType();
-                  }
-                }}
-                styles={styles}
-              />
-              <MapDisplayTypeButton
-                icon="satellite-variant"
-                isSelected={mapType !== 'standard'}
-                label="航空写真"
-                onPress={() => {
-                  if (mapType === 'standard') {
-                    onToggleMapType();
-                  }
-                }}
-                styles={styles}
-              />
-            </View>
-            <View style={styles.mapDisplayPhotoRow}>
-              <View style={styles.mapDisplayPhotoTextColumn}>
+          <View
+            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
+            style={[
+              styles.dashboardMeterCluster,
+              dashboardLayout.meterCluster,
+              isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
+            ]}
+          >
+            {/* 横幅は画面に追従し、高さだけ小画面倍率に合わせて速度メーター中心と揃える。 */}
+            <Svg
+              accessibilityElementsHidden
+              focusable={false}
+              preserveAspectRatio="none"
+              style={[styles.dashboardMeterBackground, dashboardLayout.meterBackground]}
+              viewBox="0 0 402 104"
+            >
+              <Path d={METER_CLUSTER_BACKGROUND_PATH} fill="rgba(51, 51, 51, 0.80)" />
+            </Svg>
+            <View style={[styles.dashboardSummaryPanel, dashboardLayout.summaryPanel]}>
+              <DashboardDistanceMetric label="ODO" parts={odometerParts} scale={dashboardScale} styles={styles} />
+              <DashboardDistanceMetric label="TODAY" parts={todayDistanceParts} scale={dashboardScale} styles={styles} />
+              <View style={[styles.dashboardPlaceMetric, dashboardLayout.placeMetric]}>
                 <Text
                   {...FIXED_MAP_UI_TEXT_PROPS}
                   adjustsFontSizeToFit
-                  minimumFontScale={0.78}
+                  minimumFontScale={dashboardScale < 1 ? 0.72 : 0.9}
                   numberOfLines={1}
-                  style={styles.mapDisplayPhotoTitle}
+                  style={[styles.dashboardPlacePrimary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placePrimary, dashboardScale)]}
                 >
-                  マップ上に写真を表示
+                  {currentAreaLabel.primary}
                 </Text>
-                <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoDescription}>
-                  写真ライブラリの読込権限が必要です
-                </Text>
+                {currentAreaLabel.secondary && (
+                  <Text
+                    {...FIXED_MAP_UI_TEXT_PROPS}
+                    adjustsFontSizeToFit
+                    minimumFontScale={dashboardScale < 1 ? 0.76 : 0.9}
+                    numberOfLines={1}
+                    style={[styles.dashboardPlaceSecondary, getScaledTextStyle(DASHBOARD_BASE_TEXT.placeSecondary, dashboardScale)]}
+                  >
+                    {currentAreaLabel.secondary}
+                  </Text>
+                )}
               </View>
-              <Switch
-                disabled={isUpdatingPhotoSetting}
-                onValueChange={(enabled) => {
-                  onUpdateShowPhotosOnMap(enabled).catch((error: unknown) => {
-                    Alert.alert('写真設定失敗', error instanceof Error ? error.message : '写真表示設定を保存できませんでした。');
-                  });
-                }}
-                trackColor={{ false: '#767676', true: '#30d158' }}
-                thumbColor="#ffffff"
-                value={showPhotosOnMap}
+            </View>
+
+            <SpeedDial
+              currentSpeedKmh={currentSpeedKmh}
+              progressPercent={speedMeter.progressPercent}
+              scale={dashboardScale}
+              speedColor={speedMeter.color}
+              styles={styles}
+            />
+          </View>
+
+          <View style={[styles.dashboardActionsRow, dashboardLayout.actionsRow]}>
+            <View
+              pointerEvents={isMapDisplayPanelVisible ? 'none' : 'auto'}
+              style={[
+                styles.dashboardNavPanel,
+                dashboardLayout.navPanel,
+                isMapDisplayPanelVisible && styles.mapDisplayBackgroundControlsDimmed,
+              ]}
+            >
+              <DashboardAction
+                icon={<Feather name="calendar" size={iconSizes.calendar} color="#ffffff" />}
+                label="日ごとの記録"
+                disabled={isMapDisplayPanelVisible}
+                onPress={onOpenDailyLogs}
+                scale={dashboardScale}
+                styles={styles}
+              />
+              <DashboardAction
+                icon={<MaterialCommunityIcons name="trophy-outline" size={iconSizes.trophy} color="#ffffff" />}
+                label="実績"
+                disabled={isMapDisplayPanelVisible}
+                onPress={onOpenAchievements}
+                scale={dashboardScale}
+                styles={styles}
+              />
+              <DashboardAction
+                icon={<MaterialIcons name="history" size={iconSizes.history} color="#ffffff" />}
+                label="レポートを見る"
+                disabled={isMapDisplayPanelVisible}
+                onPress={onOpenMonthlyReport}
+                scale={dashboardScale}
+                styles={styles}
+              />
+              <DashboardAction
+                icon={<Feather name="settings" size={iconSizes.settings} color="#ffffff" />}
+                label="設定"
+                disabled={isMapDisplayPanelVisible}
+                onPress={onOpenSettings}
+                scale={dashboardScale}
+                styles={styles}
               />
             </View>
-            {hasStayPlaces ? (
+            <Pressable
+              accessibilityLabel="マップの表示"
+              accessibilityRole="button"
+              onPress={() => setIsMapDisplayPanelVisible((visible) => !visible)}
+              style={[styles.dashboardMapButton, dashboardLayout.mapButton]}
+            >
+              <Feather name="map" size={iconSizes.map} color="#ffffff" />
+            </Pressable>
+          </View>
+
+          {isMapDisplayPanelVisible && (
+            <View style={[styles.mapDisplayPanel, { width: mapDisplayPanelWidth }]}>
+              <View style={styles.mapDisplayTypeRow}>
+                <MapDisplayTypeButton
+                  icon="map-outline"
+                  isSelected={mapType === 'standard'}
+                  label="標準マップ"
+                  onPress={() => {
+                    if (mapType !== 'standard') {
+                      onToggleMapType();
+                    }
+                  }}
+                  styles={styles}
+                />
+                <MapDisplayTypeButton
+                  icon="satellite-variant"
+                  isSelected={mapType !== 'standard'}
+                  label="航空写真"
+                  onPress={() => {
+                    if (mapType === 'standard') {
+                      onToggleMapType();
+                    }
+                  }}
+                  styles={styles}
+                />
+              </View>
               <View style={styles.mapDisplayPhotoRow}>
                 <View style={styles.mapDisplayPhotoTextColumn}>
                   <Text
@@ -327,30 +305,59 @@ export function MapBottomDashboard({
                     numberOfLines={1}
                     style={styles.mapDisplayPhotoTitle}
                   >
-                    {SHOW_STAY_PLACES_ON_MAP_LABEL}
+                    マップ上に写真を表示
                   </Text>
                   <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoDescription}>
-                    {SHOW_STAY_PLACES_ON_MAP_DESCRIPTION}
+                    写真ライブラリの読込権限が必要です
                   </Text>
                 </View>
                 <Switch
-                  accessibilityLabel={SHOW_STAY_PLACES_ON_MAP_LABEL}
+                  disabled={isUpdatingPhotoSetting}
                   onValueChange={(enabled) => {
-                    onUpdateShowStayPlacesOnMap(enabled).catch((error: unknown) => {
-                      Alert.alert(
-                        '滞在場所表示設定失敗',
-                        error instanceof Error ? error.message : '滞在場所表示設定を保存できませんでした。',
-                      );
+                    onUpdateShowPhotosOnMap(enabled).catch((error: unknown) => {
+                      Alert.alert('写真設定失敗', error instanceof Error ? error.message : '写真表示設定を保存できませんでした。');
                     });
                   }}
                   trackColor={{ false: '#767676', true: '#30d158' }}
                   thumbColor="#ffffff"
-                  value={showStayPlacesOnMap}
+                  value={showPhotosOnMap}
                 />
               </View>
-            ) : null}
-          </View>
-        )}
+              {hasStayPlaces ? (
+                <View style={styles.mapDisplayPhotoRow}>
+                  <View style={styles.mapDisplayPhotoTextColumn}>
+                    <Text
+                      {...FIXED_MAP_UI_TEXT_PROPS}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.78}
+                      numberOfLines={1}
+                      style={styles.mapDisplayPhotoTitle}
+                    >
+                      {SHOW_STAY_PLACES_ON_MAP_LABEL}
+                    </Text>
+                    <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.mapDisplayPhotoDescription}>
+                      {SHOW_STAY_PLACES_ON_MAP_DESCRIPTION}
+                    </Text>
+                  </View>
+                  <Switch
+                    accessibilityLabel={SHOW_STAY_PLACES_ON_MAP_LABEL}
+                    onValueChange={(enabled) => {
+                      onUpdateShowStayPlacesOnMap(enabled).catch((error: unknown) => {
+                        Alert.alert(
+                          '滞在場所表示設定失敗',
+                          error instanceof Error ? error.message : '滞在場所表示設定を保存できませんでした。',
+                        );
+                      });
+                    }}
+                    trackColor={{ false: '#767676', true: '#30d158' }}
+                    thumbColor="#ffffff"
+                    value={showStayPlacesOnMap}
+                  />
+                </View>
+              ) : null}
+            </View>
+          )}
+        </View>
       </View>
     </>
   );

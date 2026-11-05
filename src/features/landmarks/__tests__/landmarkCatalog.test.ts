@@ -106,4 +106,21 @@ describe('スポット実績カタログ landmarkCatalog', () => {
     expect(getLandmarkPackById(packId)?.isFree).toBe(false);
     expect(getActiveSpotsForPack(packId)).toHaveLength(count);
   });
+
+  it.each([
+    ['01a0c450-6c00-7000-8000-000000000002', 'JRA競馬場', 'データソース: © OpenStreetMap contributors'],
+    ['01a0c450-6c00-7000-8000-000000000003', 'JR鉄道博物館', 'データソース: 国土地理院'],
+    [
+      '01a0c450-6c00-7000-8000-000000000004',
+      'のぼれる灯台',
+      '工事・点検・天候などで灯台に登れない日があるほか、季節によって公開していない灯台もあります。データソース: 燈光会、国土地理院',
+    ],
+  ])('パック %s(%s)は特記事項 notice を持つ', (packId, name, notice) => {
+    expect(getLandmarkPackById(packId)?.name).toBe(name);
+    expect(getLandmarkPackById(packId)?.notice).toBe(notice);
+  });
+
+  it('無料の日本三名瀑パックは特記事項を持たない', () => {
+    expect(getLandmarkPackById(FALLS_PACK_ID)?.notice).toBeUndefined();
+  });
 });

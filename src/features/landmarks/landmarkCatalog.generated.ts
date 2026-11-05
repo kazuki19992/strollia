@@ -52,6 +52,8 @@ export type GeneratedLandmarkPack = {
   sortOrder: number;
   /** trueなら無料で誰でも到達検知・完走できる。falseならStrollia Plusのサブスクが必要。 */
   isFree: boolean;
+  /** パック詳細画面のスポット一覧の最下部に小さく表示する特記事項(データソースを含む)。持たないパックは何も表示しない。 */
+  notice?: string;
 };
 
 export const GENERATED_LANDMARK_SPOTS: readonly GeneratedLandmarkSpot[] = [
@@ -429,6 +431,7 @@ export const GENERATED_LANDMARK_PACKS: readonly GeneratedLandmarkPack[] = [
     trophyIcon: require('../../../assets/achievements/spots/svg/jra-racecourses-10.svg').default,
     sortOrder: 200,
     isFree: false,
+    notice: "データソース: © OpenStreetMap contributors",
   },
   {
     id: "01a0c450-6c00-7000-8000-000000000003",
@@ -439,6 +442,7 @@ export const GENERATED_LANDMARK_PACKS: readonly GeneratedLandmarkPack[] = [
     trophyIcon: require('../../../assets/achievements/spots/svg/jr-railway-museums-3.svg').default,
     sortOrder: 300,
     isFree: false,
+    notice: "データソース: 国土地理院",
   },
   {
     id: "01a0c450-6c00-7000-8000-000000000004",
@@ -449,5 +453,6 @@ export const GENERATED_LANDMARK_PACKS: readonly GeneratedLandmarkPack[] = [
     trophyIcon: require('../../../assets/achievements/spots/svg/climbable-lighthouses-16.svg').default,
     sortOrder: 400,
     isFree: false,
+    notice: "工事・点検・天候などで灯台に登れない日があるほか、季節によって公開していない灯台もあります。データソース: 燈光会、国土地理院",
   },
 ];

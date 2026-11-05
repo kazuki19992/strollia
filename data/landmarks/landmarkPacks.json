@@ -15,7 +15,8 @@
     "trophyImage": "jra-racecourses-10.png",
     "trophyIcon": "jra-racecourses-10",
     "sortOrder": 200,
-    "isFree": false
+    "isFree": false,
+    "notice": "データソース: © OpenStreetMap contributors"
   },
   {
     "id": "01a0c450-6c00-7000-8000-000000000003",
@@ -24,7 +25,8 @@
     "trophyImage": "jr-railway-museums-3.png",
     "trophyIcon": "jr-railway-museums-3",
     "sortOrder": 300,
-    "isFree": false
+    "isFree": false,
+    "notice": "データソース: 国土地理院"
   },
   {
     "id": "01a0c450-6c00-7000-8000-000000000004",
@@ -33,6 +35,7 @@
     "trophyImage": "climbable-lighthouses-16.png",
     "trophyIcon": "climbable-lighthouses-16",
     "sortOrder": 400,
-    "isFree": false
+    "isFree": false,
+    "notice": "工事・点検・天候などで灯台に登れない日があるほか、季節によって公開していない灯台もあります。データソース: 燈光会、国土地理院"
   }
 ]

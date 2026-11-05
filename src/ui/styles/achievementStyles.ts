@@ -116,6 +116,13 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackListSection: {
       flex: 2,
     },
+    // パック詳細のスポット一覧末尾に置く特記事項(データソース等)。本文より一段控えめな補足説明の扱いにする
+    landmarkPackNoticeText: {
+      color: colors.mutedText,
+      fontSize: 11,
+      lineHeight: 16,
+      paddingTop: 8,
+    },
     // パック詳細画面の埋め込み地図。高さは固定pxではなく親セクションのflexで決める
     landmarkPackMapFrame: {
       borderRadius: 8,

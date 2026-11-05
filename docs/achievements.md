@@ -436,12 +436,12 @@ src/app/components/ConfettiOverlay.tsx
 スポットとパックの実体は `data/landmarks/` のJSONに置く。JSON Schema が型の正であり、
 `npm run generate:landmarks` で検証しながら `src/features/landmarks/landmarkCatalog.generated.ts` を生成する。
 
-| ファイル                                   | 役割                               |
-| ------------------------------------------ | ---------------------------------- |
-| `data/landmarks/landmarkSpots.schema.json` | スポットのJSON Schema              |
-| `data/landmarks/landmarkPacks.schema.json` | パックのJSON Schema                |
-| `data/landmarks/landmarkSpots.json`        | スポット実体(座標・半径・滞在秒)   |
-| `data/landmarks/landmarkPacks.json`        | パック定義(名称・説明・トロフィー) |
+| ファイル                                   | 役割                                         |
+| ------------------------------------------ | -------------------------------------------- |
+| `data/landmarks/landmarkSpots.schema.json` | スポットのJSON Schema                        |
+| `data/landmarks/landmarkPacks.schema.json` | パックのJSON Schema                          |
+| `data/landmarks/landmarkSpots.json`        | スポット実体(座標・半径・滞在秒)             |
+| `data/landmarks/landmarkPacks.json`        | パック定義(名称・説明・トロフィー・特記事項) |
 
 スポットとパックは多対多で、スポット側が所属パックと表示順を持つ。識別子はUUIDv7で、
 到達記録(`landmark_spot_visits.spot_id`)に保存されるため後から変更しない。
@@ -449,6 +449,10 @@ src/app/components/ConfettiOverlay.tsx
 パックの完走トロフィーは、表示用SVGアイコン(`trophyIcon`)と、通知添付・汎用実績システム互換用の
 生成PNG(`trophyImage`)の組で持つ。PNGは`npm run generate:landmarks`がSVGから自動生成するため、
 手作業では用意しない。詳細は`docs/superpowers/specs/2026-10-07-landmark-pack-svg-trophy-design.md`を参照する。
+
+パックは任意の特記事項(`notice`)を持てる。時期に依らない一般的な注意事項とデータソースを1文で書き
+(例: `工事・点検・天候などで灯台に登れない日があるほか、…。データソース: 燈光会、国土地理院`)、
+特定の工事期間など日付つきの一時的な情報は書かない。持たないパックは何も表示しない。
 
 生成時に以下を検証し、問題があればビルド前に失敗させる。
 
@@ -486,6 +490,7 @@ src/app/components/ConfettiOverlay.tsx
 - 実績一覧(`/achievements`)の既存グリッドの下に「スタンプラリー」セクションをリスト形式で追加する
 - パック行はトロフィー画像・パック名・説明・`3/4` の分数とプログレスバーを表示する
 - 行をタップするとパック詳細(`/achievements/[packId]`)へ遷移する
+- パック詳細のスポット一覧の最後(全スポット行の後ろ)に、パックの特記事項(`notice`)を太字にせず小さな補足色(`mutedText`)で表示する。縦画面・横画面(左ペインの一覧)のどちらでも同じ位置に置き、`notice` が無いパックでは表示しない
 - パック詳細の行タップは、到達済みならその日の日別記録詳細へ、未到達なら画面内の埋め込み地図がそのスポットへズームする(メイン地図への画面遷移はしない)。寄る範囲は、そのスポットの到達エリアの円(半径 `radiusMeters`)が余白付きで完全に収まる範囲にする(短辺 = 直径 × 余白倍率 1.6)。円より狭く寄ると到達エリアの端が分からないため、固定の縮尺では寄らない
 - パック詳細の埋め込み地図は、全体を見渡している間は番号バッジと到達エリアの円だけを表示する。拡大してしきい値を超えたスポットにはスポット名・解放条件を表示し、縮小してしきい値を下回ると消す。スポット名・解放条件は約220msでフェードイン/フェードアウトする
   - スポット名: 番号バッジのすぐ上

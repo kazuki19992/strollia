@@ -6,6 +6,7 @@ import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
 import {
   DASHBOARD_GROUP_MAX_WIDTH,
+  DASHBOARD_WIDE_SCREEN_EDGE_INSET,
   DASHBOARD_WIDE_SCREEN_ALIGNMENT,
   getDashboardGroupStyle,
   getDashboardScale,
@@ -297,15 +298,35 @@ describe('マップ下部ダッシュボードの横幅上限', () => {
     expect(DASHBOARD_GROUP_MAX_WIDTH).toBe(440 - 16);
   });
 
-  test('横幅上限と寄せ位置をまとめたスタイルを返す', () => {
-    expect(getDashboardGroupStyle()).toEqual({
-      alignSelf: DASHBOARD_WIDE_SCREEN_ALIGNMENT,
-      maxWidth: DASHBOARD_GROUP_MAX_WIDTH,
-      width: '100%',
-    });
+  test('縦向きiPhoneの幅では右端の追加余白を付けず従来表示のままにする', () => {
+    for (const width of [320, 375, 393, 430, 440]) {
+      expect(getDashboardGroupStyle(width)).toEqual({
+        alignSelf: DASHBOARD_WIDE_SCREEN_ALIGNMENT,
+        marginRight: 0,
+        maxWidth: DASHBOARD_GROUP_MAX_WIDTH,
+        width: '100%',
+      });
+    }
   });
 
-  test('横長画面では速度パネルとボタン群を上限幅に収めて右端へ寄せる', async () => {
+  test('横長画面では右端に12ptの追加余白を付ける', () => {
+    expect(DASHBOARD_WIDE_SCREEN_EDGE_INSET).toBe(12);
+    expect(getDashboardGroupStyle(1024).marginRight).toBe(12);
+    expect(getDashboardGroupStyle(820).marginRight).toBe(12);
+  });
+
+  test('上限幅に届く境目では余白を0から徐々に増やし、グループ幅を上限より縮めない', () => {
+    // 幅446ptの画面は利用幅430ptで、上限424ptを6pt上回る分だけ余白にする
+    expect(getDashboardGroupStyle(446).marginRight).toBe(6);
+    expect(getDashboardGroupStyle(452).marginRight).toBe(12);
+  });
+
+  test('画面幅が不正な値なら余白を付けない', () => {
+    expect(getDashboardGroupStyle(Number.NaN).marginRight).toBe(0);
+    expect(getDashboardGroupStyle(0).marginRight).toBe(0);
+  });
+
+  test('横長画面では速度パネルとボタン群を上限幅に収め、右端に少し余白を空けて寄せる', async () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width: 1024, height: 768, scale: 2, fontScale: 1 });
 
     await render(<MapBottomDashboard {...createProps()} />);
@@ -313,7 +334,7 @@ describe('マップ下部ダッシュボードの横幅上限', () => {
     const group = screen.getByTestId('map-bottom-dashboard-group');
 
     expect(StyleSheet.flatten(group.props.style)).toEqual(
-      expect.objectContaining({ alignSelf: 'flex-end', maxWidth: DASHBOARD_GROUP_MAX_WIDTH, width: '100%' }),
+      expect.objectContaining({ alignSelf: 'flex-end', marginRight: 12, maxWidth: DASHBOARD_GROUP_MAX_WIDTH, width: '100%' }),
     );
     // 上限幅のグループ内に現在地ボタン・マップ表示ボタン・ナビゲーションが収まっていること
     expect(within(group).getByLabelText('現在地へ戻る')).toBeTruthy();

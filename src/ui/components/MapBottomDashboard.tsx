@@ -31,6 +31,7 @@ import type { MapType } from 'react-native-maps';
 export {
   DASHBOARD_GROUP_MAX_WIDTH,
   DASHBOARD_WIDE_SCREEN_ALIGNMENT,
+  DASHBOARD_WIDE_SCREEN_EDGE_INSET,
   formatDistanceKilometers,
   getDashboardGroupStyle,
   getDashboardScale,
@@ -145,7 +146,7 @@ export function MapBottomDashboard({
 
       <View pointerEvents="box-none" style={styles.bottomDashboard}>
         {/* 横長画面で帯だけが伸びないよう、現在地ボタン・計器・ボタン列・表示パネルを上限幅のグループにまとめる。 */}
-        <View pointerEvents="box-none" style={getDashboardGroupStyle()} testID="map-bottom-dashboard-group">
+        <View pointerEvents="box-none" style={getDashboardGroupStyle(width)} testID="map-bottom-dashboard-group">
           <Animated.View
             pointerEvents={isMapDisplayPanelVisible || isFollowingUserLocation ? 'none' : 'auto'}
             style={[

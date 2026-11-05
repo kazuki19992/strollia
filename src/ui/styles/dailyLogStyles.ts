@@ -194,8 +194,9 @@ export function createDailyLogStyles(theme: AppTheme) {
     routeMapFrameFill: {
       flex: 1,
       height: undefined,
-      // 横画面の短いウィンドウで地図が潰れないよう下限を設ける
-      minHeight: 200,
+      // 右ペインはスクロールしないため、短いウィンドウでは地図側だけを縮めて
+      // シークバー・GIFボタンを画面内に残す(下限を設けると操作部が画面外へ押し出される)。
+      minHeight: 0,
     },
     routeTimeline: {
       gap: 18,

@@ -47,7 +47,8 @@ describe('移動地図パネル RouteMapPanel', () => {
     const style = StyleSheet.flatten(screen.getByTestId('route-map-frame').props.style);
     expect(style.flex).toBe(1);
     expect(style.height).not.toBe(332);
-    expect(style.minHeight).toBe(200);
+    // 短いウィンドウでも操作部を押し出さないよう、地図側が縮められること
+    expect(style.minHeight).toBe(0);
   });
 
   test('ルートが無い場合もfillHeightで空表示が高さいっぱいに広がる', async () => {

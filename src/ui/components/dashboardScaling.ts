@@ -10,6 +10,56 @@ export const SMALL_DASHBOARD_BASE_WIDTH = 430;
 export const SMALL_DASHBOARD_MIN_SCALE = 0.86;
 
 /**
+ * 速度パネルとボタン群をまとめたグループの横幅上限。
+ *
+ * ダッシュボードは高さが倍率1で頭打ちになる一方、横幅は画面に追従して伸びるため、
+ * iPadや横向き画面では帯だけが横長に崩れる。幅440pt(iPhone Pro Max縦向き)の画面で
+ * 左右8ptずつの余白を除いた424ptを上限にし、縦向きiPhoneでは従来表示のまま、
+ * それより広い画面ではグループの縦横比を保つ。
+ */
+export const DASHBOARD_GROUP_MAX_WIDTH = 424;
+
+/**
+ * 横幅上限に達した画面でのグループの寄せ位置。
+ *
+ * 現在は右端寄せ。中央寄せに変える場合は `'center'` にする。
+ * 現在地ボタンとマップ表示パネルもグループ内に置いているため一緒に移動する。
+ */
+export const DASHBOARD_WIDE_SCREEN_ALIGNMENT = 'flex-end' as const;
+
+/** `bottomDashboard` が画面の左右に置いている余白の合計(左右8ptずつ)。 */
+const DASHBOARD_HORIZONTAL_SCREEN_INSET = 16;
+
+/**
+ * 横幅上限に達した画面で、グループと画面右端の間に足す余白。
+ *
+ * `bottomDashboard` の8ptと合わせて右端から20ptとし、下端からの距離(20pt)と揃える。
+ * iPadのリスト表示のように、横長画面では端に張り付かず気持ち内側に置くため。
+ */
+export const DASHBOARD_WIDE_SCREEN_EDGE_INSET = 12;
+
+/**
+ * 下部ダッシュボードのグループへ適用する、横幅上限・寄せ位置・右端余白のスタイル。
+ *
+ * 右端余白は、利用幅が上限を超えた分だけ(最大 `DASHBOARD_WIDE_SCREEN_EDGE_INSET`)付ける。
+ * これにより縦向きiPhoneでは余白0で従来表示のまま、境目の幅でもグループが上限幅より縮まない。
+ *
+ * @param windowWidth - 画面幅(pt)。
+ */
+export function getDashboardGroupStyle(windowWidth: number) {
+  const availableWidth = Number.isFinite(windowWidth) ? windowWidth - DASHBOARD_HORIZONTAL_SCREEN_INSET : 0;
+  const marginRight = Math.min(DASHBOARD_WIDE_SCREEN_EDGE_INSET, Math.max(0, availableWidth - DASHBOARD_GROUP_MAX_WIDTH));
+
+  return {
+    alignSelf: DASHBOARD_WIDE_SCREEN_ALIGNMENT,
+    marginRight,
+    maxWidth: DASHBOARD_GROUP_MAX_WIDTH,
+    // alignSelfを指定すると内容幅まで縮むため、上限以下では親の幅いっぱいに広げる。
+    width: '100%' as const,
+  };
+}
+
+/**
  * ダッシュボードの基準寸法。
  *
  * `appStyles` の同名スタイル値と対応させ、大画面では既存表示を保ったまま

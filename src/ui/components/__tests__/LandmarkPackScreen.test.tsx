@@ -57,7 +57,7 @@ const pack: LandmarkPack = {
 };
 
 /** テスト用の特記事項。 */
-const PACK_NOTICE = '工事や点検などで登れない場合があります。データソース: テスト';
+const PACK_NOTICE = '工事や点検などで登れない場合があります。';
 
 /** スポット1件を組み立てる。到達日以外はパック詳細の表示に必要な最小構成。 */
 function createSpot(overrides: Partial<LandmarkSpot> & Pick<LandmarkSpot, 'id' | 'name' | 'prefectures'>): LandmarkSpot {

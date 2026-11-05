@@ -116,7 +116,7 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackListSection: {
       flex: 2,
     },
-    // パック詳細のスポット一覧末尾に置く特記事項(データソース等)。本文より一段控えめな補足説明の扱いにする
+    // パック詳細のスポット一覧末尾に置く特記事項。本文より一段控えめな補足説明の扱いにする
     landmarkPackNoticeText: {
       color: colors.mutedText,
       fontSize: 11,

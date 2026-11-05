@@ -221,7 +221,7 @@ export type GeneratedLandmarkPack = {
   sortOrder: number;
   /** trueなら無料で誰でも到達検知・完走できる。falseならStrollia Plusのサブスクが必要。 */
   isFree: boolean;
-  /** パック詳細画面のスポット一覧の最下部に小さく表示する特記事項(データソースを含む)。持たないパックは何も表示しない。 */
+  /** パック詳細画面のスポット一覧の最下部に小さく表示する特記事項。持たないパックは何も表示しない。 */
   notice?: string;
 };
 

@@ -152,7 +152,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全427キーが存在する（過不足なし）', () => {
+    test('全429キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -171,7 +171,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 地図マーカーバッジ(白リング・影)4キー
       //       - パックトロフィーの減光(landmarkPackTrophyDim)1キー(シルエット表示へ置き換え)
       //       + 埋め込み地図の拡大時スポットラベル(行・座布団・文字)3キー
-      expect(keys.length).toBe(427);
+      //       + 横画面の2段レイアウト(twoPaneRow・twoPanePane)2キー
+      expect(keys.length).toBe(429);
     });
   });
 });

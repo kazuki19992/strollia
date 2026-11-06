@@ -56,6 +56,9 @@ const pack: LandmarkPack = {
   isFree: true,
 };
 
+/** テスト用の特記事項。 */
+const PACK_NOTICE = '工事や点検などで登れない場合があります。';
+
 /** スポット1件を組み立てる。到達日以外はパック詳細の表示に必要な最小構成。 */
 function createSpot(overrides: Partial<LandmarkSpot> & Pick<LandmarkSpot, 'id' | 'name' | 'prefectures'>): LandmarkSpot {
   return {
@@ -83,6 +86,7 @@ const spotItems: LandmarkSpotListItem[] = [
 /** パック詳細画面を描画する。 */
 async function renderScreen(
   overrides: Partial<{
+    pack: LandmarkPack;
     spotItems: LandmarkSpotListItem[];
     onBack: () => void;
     onSelectVisitedSpot: (localDate: string) => void;
@@ -90,7 +94,7 @@ async function renderScreen(
 ) {
   await render(
     <LandmarkPackScreen
-      pack={pack}
+      pack={overrides.pack ?? pack}
       spotItems={overrides.spotItems ?? spotItems}
       styles={styles}
       theme={lightTheme}
@@ -253,11 +257,41 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     });
   });
 
+  describe('特記事項 notice', () => {
+    it('パックに特記事項があればスポット一覧の最後に表示する', async () => {
+      await renderScreen({ pack: { ...pack, notice: PACK_NOTICE } });
+
+      expect(screen.getByTestId('landmark-pack-notice')).toBeTruthy();
+      // 描画順で最後のスポット行より後ろにあることを確かめる。標準クエリでは要素間の順序を
+      // 取れないため、ホスト要素の Text を描画順に列挙して文言の位置を比べる
+      const texts = screen.container
+        .queryAll((node) => node.type === 'Text')
+        .map((node) => node.props.children)
+        .filter((children): children is string => typeof children === 'string');
+      expect(texts.indexOf(PACK_NOTICE)).toBeGreaterThan(texts.lastIndexOf('那智の滝'));
+    });
+
+    it('特記事項は太字にせず控えめな色で表示する', async () => {
+      await renderScreen({ pack: { ...pack, notice: PACK_NOTICE } });
+
+      const style = ReactNative.StyleSheet.flatten(screen.getByText(PACK_NOTICE).props.style);
+      expect(style.color).toBe(lightTheme.colors.mutedText);
+      expect(style.fontWeight ?? '400').toBe('400');
+    });
+
+    it('パックに特記事項がなければ何も表示しない', async () => {
+      await renderScreen();
+
+      expect(screen.queryByText(PACK_NOTICE)).toBeNull();
+      expect(screen.queryByTestId('landmark-pack-notice')).toBeNull();
+    });
+  });
+
   describe('横画面レイアウト', () => {
     /** 指定寸法のウィンドウとして描画する。 */
-    async function renderWithWindow(width: number, height: number): Promise<void> {
+    async function renderWithWindow(width: number, height: number, overrides: Parameters<typeof renderScreen>[0] = {}): Promise<void> {
       jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({ width, height, scale: 2, fontScale: 1 });
-      await renderScreen();
+      await renderScreen(overrides);
     }
 
     it('横画面ではスポット一覧を左ペイン、地図を右ペインに置く', async () => {
@@ -283,6 +317,14 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
         createLandmarkSpotFocusRegion({ latitude: nachiSpot.latitude, longitude: nachiSpot.longitude }, nachiSpot.radiusMeters),
         expect.any(Number),
       );
+    });
+
+    it('横画面でも特記事項をスポット一覧(左ペイン)の末尾に表示する', async () => {
+      await renderWithWindow(1180, 820, { pack: { ...pack, notice: PACK_NOTICE } });
+
+      const primary = within(screen.getByTestId('two-pane-primary'));
+      expect(primary.getByText(PACK_NOTICE)).toBeTruthy();
+      expect(within(screen.getByTestId('two-pane-secondary')).queryByText(PACK_NOTICE)).toBeNull();
     });
 
     it('縦画面では2段構成にしない', async () => {

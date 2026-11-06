@@ -6,6 +6,7 @@ import {
   getLandmarkPackCompletionAchievementId,
   getLandmarkSpotById,
 } from '@/features/landmarks/landmarkCatalog';
+import { distanceMeters } from '@/utils/distance';
 
 /** パイロットの日本三名瀑パックID。 */
 const FALLS_PACK_ID = '01a0c450-6c00-7000-8000-000000000001';
@@ -79,5 +80,48 @@ describe('スポット実績カタログ landmarkCatalog', () => {
     for (const pack of LANDMARK_PACKS) {
       expect(pack.trophyIcon).toBeDefined();
     }
+  });
+
+  it('異なるスポットの到達エリアの円が重ならない', () => {
+    // 円が重なると1か所の滞在で2スポットが同時に到達扱いになるため、マスタの段階で防ぐ
+    const spots = LANDMARK_SPOTS.filter((spot) => !spot.retired);
+    for (const [index, spot] of spots.entries()) {
+      for (const other of spots.slice(index + 1)) {
+        expect({
+          pair: `${spot.name}/${other.name}`,
+          overlaps: distanceMeters(spot, other) < spot.radiusMeters + other.radiusMeters,
+        }).toEqual({
+          pair: `${spot.name}/${other.name}`,
+          overlaps: false,
+        });
+      }
+    }
+  });
+
+  it.each([
+    ['01a0c450-6c00-7000-8000-000000000003', 'JR鉄道博物館', 3],
+    ['01a0c450-6c00-7000-8000-000000000004', 'のぼれる灯台', 16],
+  ])('有料パック %s(%s)は%i件のスポットを持つ', (packId, name, count) => {
+    expect(getLandmarkPackById(packId)?.name).toBe(name);
+    expect(getLandmarkPackById(packId)?.isFree).toBe(false);
+    expect(getActiveSpotsForPack(packId)).toHaveLength(count);
+  });
+
+  it('のぼれる灯台パックは参観できない日があることを特記事項 notice に持つ', () => {
+    expect(getLandmarkPackById('01a0c450-6c00-7000-8000-000000000004')?.notice).toBe(
+      '工事・点検・天候などで灯台に登れない日があるほか、季節によって公開していない灯台もあります。',
+    );
+  });
+
+  it.each([
+    ['01a0c450-6c00-7000-8000-000000000002', 'JRA競馬場'],
+    ['01a0c450-6c00-7000-8000-000000000003', 'JR鉄道博物館'],
+  ])('パック %s(%s)は特記事項を持たない', (packId, name) => {
+    expect(getLandmarkPackById(packId)?.name).toBe(name);
+    expect(getLandmarkPackById(packId)?.notice).toBeUndefined();
+  });
+
+  it('無料の日本三名瀑パックは特記事項を持たない', () => {
+    expect(getLandmarkPackById(FALLS_PACK_ID)?.notice).toBeUndefined();
   });
 });

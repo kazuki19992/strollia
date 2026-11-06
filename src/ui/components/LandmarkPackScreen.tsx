@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, View } from 'react-native';
+import { Image, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import type { LandmarkPack, LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 import { formatLandmarkPrefectures } from '@/features/landmarks/landmarkPrefectureLabel';
@@ -62,7 +62,7 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
     </View>
   );
 
-  /** 縦横どちらでも共通のスポット行。ScrollViewの外枠だけ向きごとに変える。 */
+  /** 縦横どちらでも共通のスポット行(末尾に特記事項)。ScrollViewの外枠だけ向きごとに変える。 */
   const spotRows = (
     <>
       {spotItems.map(({ spot, visitedLocalDate }, index) => {
@@ -96,6 +96,12 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
           />
         );
       })}
+      {/* 特記事項はスポットを全部見たあとに読む補足なので、一覧の最後尾に小さく置く */}
+      {pack.notice ? (
+        <Text style={styles.landmarkPackNoticeText} testID="landmark-pack-notice">
+          {pack.notice}
+        </Text>
+      ) : null}
     </>
   );
 

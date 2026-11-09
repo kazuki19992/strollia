@@ -16,7 +16,7 @@ export type GpxImportProgressDialogProps = {
   styles: AppStyles;
   /** 配色テーマ（将来の拡張用）。 */
   theme: AppTheme;
-  /** 取り込み開始時点の通算距離。単位はm。 */
+  /** 表示する通算距離。取り込み開始時点の値に取り込み済み距離を加算して随時更新される。単位はm。 */
   odometerDistanceMeters: number;
   /** 現在の処理段階。 */
   stage: GpxImportProgressStage;

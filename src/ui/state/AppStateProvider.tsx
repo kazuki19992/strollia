@@ -1324,7 +1324,13 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
       let result: GpxImportResult;
       try {
         setGpxImportProgressStage('saving');
-        result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName);
+        // 取り込み開始時点の通算距離へ、コミット済みチャンクの累積距離を足してODOをリアルタイム更新する
+        const odometerStartDistanceMeters = distance;
+        result = await importLocationPointsFromGpx(pointsToImport, pickedFile.fileName, {
+          onProgress: ({ importedDistanceMeters }) => {
+            setGpxImportOdometerDistanceMeters(odometerStartDistanceMeters + importedDistanceMeters);
+          },
+        });
       } finally {
         // 成否にかかわらず優先モードを解除し、退避分をまとめて取り込む。
         await flushLocationsBufferedDuringGpxImport({

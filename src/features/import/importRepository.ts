@@ -15,6 +15,24 @@ export type GpxImportResult = {
   skippedPointCount: number;
 };
 
+/** GPX インポートの途中経過。チャンクのコミットごとに通知する。 */
+export type GpxImportProgress = {
+  /** ここまでに取り込んだ(コミット済みの)ポイント数。 */
+  importedPointCount: number;
+  /** ここまでに取り込んだポイントで日別ログへ加算した累積距離。単位はm。 */
+  importedDistanceMeters: number;
+};
+
+/** GPX インポートのオプション。 */
+export type GpxImportOptions = {
+  /**
+   * チャンクのトランザクションがコミットされるたびに呼ばれる。
+   * 取り込み中のODO表示などをリアルタイムに更新するために使う。
+   * ロールバックされたチャンクの分は含まない。
+   */
+  onProgress?: (progress: GpxImportProgress) => void;
+};
+
 /**
  * チャンク分割インポートの途中失敗を表すエラー。
  *
@@ -63,12 +81,18 @@ export const IMPORT_TRANSACTION_CHUNK_SIZE = 100;
  *   途中失敗時はそのチャンクだけロールバックされ、取り込み済みチャンクは残る。
  *   その場合は取り込み済み件数を含む {@link GpxImportInterruptedError} を投げる。
  *   `INSERT OR IGNORE` により再インポートで重複せず安全にリトライできる。
+ * - チャンクのコミットごとに `options.onProgress` へ取り込み済み件数と累積距離を通知する。
  */
-export async function importLocationPointsFromGpx(points: NewLocationPoint[], fileName: string): Promise<GpxImportResult> {
+export async function importLocationPointsFromGpx(
+  points: NewLocationPoint[],
+  fileName: string,
+  options: GpxImportOptions = {},
+): Promise<GpxImportResult> {
   const sortedPoints = [...points].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
   const now = new Date().toISOString();
   let importedPointCount = 0;
   let skippedPointCount = 0;
+  let importedDistanceMeters = 0;
   let previousImportedPoint: NewLocationPoint | null = null;
 
   const chunkCount = Math.max(1, Math.ceil(sortedPoints.length / IMPORT_TRANSACTION_CHUNK_SIZE));
@@ -80,6 +104,8 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
     // チャンク開始時点の件数。失敗チャンクはロールバックされるため、この時点の値が取り込み済みの実態になる
     const importedCountBeforeChunk = importedPointCount;
     const skippedCountBeforeChunk = skippedPointCount;
+    // チャンク内で加算した距離。コミット成功後にだけ累積へ反映し、ロールバック分を通知しない
+    let chunkDistanceMeters = 0;
 
     try {
       await withExclusiveTransaction(async (txn) => {
@@ -98,17 +124,19 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
               effectiveLongitude: point.longitude,
               snappedStayPlaceId: null,
             };
-            const wasInserted = await insertImportedLocationPoint(
+            const insertedSegmentDistanceMeters = await insertImportedLocationPoint(
               importedPoint,
               previousImportedPoint,
               now,
               insertPointStatement,
               upsertDailyLogStatement,
             );
-            if (!wasInserted) {
+            if (insertedSegmentDistanceMeters === null) {
               skippedPointCount += 1;
               continue;
             }
+
+            chunkDistanceMeters += insertedSegmentDistanceMeters;
 
             const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, importedPoint);
             visitedCellVisits.push(...visitedCells.map((cell) => ({ cell, visitedAt: importedPoint.recordedAt })));
@@ -131,6 +159,9 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
       // 取り込み済み件数を添えて伝える
       throw new GpxImportInterruptedError(importedCountBeforeChunk, skippedCountBeforeChunk, error);
     }
+
+    importedDistanceMeters += chunkDistanceMeters;
+    options.onProgress?.({ importedPointCount, importedDistanceMeters });
   }
 
   return { importedPointCount, skippedPointCount };
@@ -180,7 +211,8 @@ ON CONFLICT(local_date) DO UPDATE SET
   updated_at = excluded.updated_at`;
 
 /**
- * 1ポイントをトランザクション内に挿入し、挿入できたかどうかを返す。
+ * 1ポイントをトランザクション内に挿入し、挿入できた場合は日別ログへ加算した区間距離(m)を、
+ * 既存データ優先でスキップした場合は null を返す。
  *
  * daily_logs は UPSERT（ON CONFLICT DO UPDATE）で集計値を更新する。
  * 同一日付の前のポイントとの距離を distance_meters に累積する。
@@ -192,7 +224,7 @@ async function insertImportedLocationPoint(
   now: string,
   insertPointStatement: SQLite.SQLiteStatement,
   upsertDailyLogStatement: SQLite.SQLiteStatement,
-): Promise<boolean> {
+): Promise<number | null> {
   const segmentDistanceMeters = previousPoint?.localDate === point.localDate ? distanceMeters(previousPoint, point) : 0;
 
   const insertResult = await insertPointStatement.executeAsync(
@@ -212,12 +244,12 @@ async function insertImportedLocationPoint(
   );
 
   if ((insertResult.changes ?? 1) === 0) {
-    return false;
+    return null;
   }
 
   await upsertDailyLogStatement.executeAsync(point.localDate, point.recordedAt, point.recordedAt, segmentDistanceMeters, now, now);
 
-  return true;
+  return segmentDistanceMeters;
 }
 
 /**

@@ -15,6 +15,27 @@ export type GpxImportResult = {
   skippedPointCount: number;
 };
 
+/** GPX インポートの途中経過。チャンクのコミットごとに通知する。 */
+export type GpxImportProgress = {
+  /** ここまでに取り込んだ(コミット済みの)ポイント数。 */
+  importedPointCount: number;
+  /**
+   * ここまでに取り込んだポイントの区間距離の累積。単位はm。
+   * 距離未保存(NULL)の日は取り込み後に全GPS点から再計算されるため、その日の分は進捗表示用の概算になる。
+   */
+  importedDistanceMeters: number;
+};
+
+/** GPX インポートのオプション。 */
+export type GpxImportOptions = {
+  /**
+   * チャンクのトランザクションがコミットされるたびに呼ばれる。
+   * 取り込み中のODO表示などをリアルタイムに更新するために使う。
+   * ロールバックされたチャンクの分は含まない。
+   */
+  onProgress?: (progress: GpxImportProgress) => void;
+};
+
 /**
  * チャンク分割インポートの途中失敗を表すエラー。
  *
@@ -63,12 +84,18 @@ export const IMPORT_TRANSACTION_CHUNK_SIZE = 100;
  *   途中失敗時はそのチャンクだけロールバックされ、取り込み済みチャンクは残る。
  *   その場合は取り込み済み件数を含む {@link GpxImportInterruptedError} を投げる。
  *   `INSERT OR IGNORE` により再インポートで重複せず安全にリトライできる。
+ * - チャンクのコミットごとに `options.onProgress` へ取り込み済み件数と累積距離を通知する。
  */
-export async function importLocationPointsFromGpx(points: NewLocationPoint[], fileName: string): Promise<GpxImportResult> {
+export async function importLocationPointsFromGpx(
+  points: NewLocationPoint[],
+  fileName: string,
+  options: GpxImportOptions = {},
+): Promise<GpxImportResult> {
   const sortedPoints = [...points].sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
   const now = new Date().toISOString();
   let importedPointCount = 0;
   let skippedPointCount = 0;
+  let importedDistanceMeters = 0;
   let previousImportedPoint: NewLocationPoint | null = null;
 
   const chunkCount = Math.max(1, Math.ceil(sortedPoints.length / IMPORT_TRANSACTION_CHUNK_SIZE));
@@ -80,6 +107,8 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
     // チャンク開始時点の件数。失敗チャンクはロールバックされるため、この時点の値が取り込み済みの実態になる
     const importedCountBeforeChunk = importedPointCount;
     const skippedCountBeforeChunk = skippedPointCount;
+    // チャンク内で加算した距離。コミット成功後にだけ累積へ反映し、ロールバック分を通知しない
+    let chunkDistanceMeters = 0;
 
     try {
       await withExclusiveTransaction(async (txn) => {
@@ -98,17 +127,19 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
               effectiveLongitude: point.longitude,
               snappedStayPlaceId: null,
             };
-            const wasInserted = await insertImportedLocationPoint(
+            const insertedSegmentDistanceMeters = await insertImportedLocationPoint(
               importedPoint,
               previousImportedPoint,
               now,
               insertPointStatement,
               upsertDailyLogStatement,
             );
-            if (!wasInserted) {
+            if (insertedSegmentDistanceMeters === null) {
               skippedPointCount += 1;
               continue;
             }
+
+            chunkDistanceMeters += insertedSegmentDistanceMeters;
 
             const visitedCells = getVisitedCellsForLocationPoint(previousImportedPoint, importedPoint);
             visitedCellVisits.push(...visitedCells.map((cell) => ({ cell, visitedAt: importedPoint.recordedAt })));
@@ -131,6 +162,9 @@ export async function importLocationPointsFromGpx(points: NewLocationPoint[], fi
       // 取り込み済み件数を添えて伝える
       throw new GpxImportInterruptedError(importedCountBeforeChunk, skippedCountBeforeChunk, error);
     }
+
+    importedDistanceMeters += chunkDistanceMeters;
+    options.onProgress?.({ importedPointCount, importedDistanceMeters });
   }
 
   return { importedPointCount, skippedPointCount };
@@ -154,7 +188,13 @@ const INSERT_LOCATION_POINT_SQL = `INSERT OR IGNORE INTO location_points (
   created_at
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`;
 
-/** 日別ログの集計値を更新するUPSERT SQL。チャンク内でプリペアして使い回す。 */
+/**
+ * 日別ログの集計値を更新するUPSERT SQL。チャンク内でプリペアして使い回す。
+ *
+ * 既存の `distance_meters` が NULL(距離未保存の古い日)の場合は NULL を維持する。
+ * NULL の日は表示側が全GPS点から距離を再計算するため、取り込んだ区間だけの部分距離で
+ * 上書きすると通算距離が減ってしまう。通常記録(`logRepository`)と同じ扱いにそろえる。
+ */
 const UPSERT_DAILY_LOG_SQL = `INSERT INTO daily_logs (
   local_date,
   started_at,
@@ -176,11 +216,15 @@ ON CONFLICT(local_date) DO UPDATE SET
     ELSE daily_logs.ended_at
   END,
   point_count = daily_logs.point_count + 1,
-  distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
+  distance_meters = CASE
+    WHEN daily_logs.distance_meters IS NULL THEN NULL
+    ELSE daily_logs.distance_meters + excluded.distance_meters
+  END,
   updated_at = excluded.updated_at`;
 
 /**
- * 1ポイントをトランザクション内に挿入し、挿入できたかどうかを返す。
+ * 1ポイントをトランザクション内に挿入し、挿入できた場合は日別ログへ加算した区間距離(m)を、
+ * 既存データ優先でスキップした場合は null を返す。
  *
  * daily_logs は UPSERT（ON CONFLICT DO UPDATE）で集計値を更新する。
  * 同一日付の前のポイントとの距離を distance_meters に累積する。
@@ -192,7 +236,7 @@ async function insertImportedLocationPoint(
   now: string,
   insertPointStatement: SQLite.SQLiteStatement,
   upsertDailyLogStatement: SQLite.SQLiteStatement,
-): Promise<boolean> {
+): Promise<number | null> {
   const segmentDistanceMeters = previousPoint?.localDate === point.localDate ? distanceMeters(previousPoint, point) : 0;
 
   const insertResult = await insertPointStatement.executeAsync(
@@ -212,12 +256,12 @@ async function insertImportedLocationPoint(
   );
 
   if ((insertResult.changes ?? 1) === 0) {
-    return false;
+    return null;
   }
 
   await upsertDailyLogStatement.executeAsync(point.localDate, point.recordedAt, point.recordedAt, segmentDistanceMeters, now, now);
 
-  return true;
+  return segmentDistanceMeters;
 }
 
 /**

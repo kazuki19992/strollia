@@ -1,5 +1,6 @@
 import { db, withExclusiveTransaction } from '@/db/database';
 import { GpxImportInterruptedError, IMPORT_TRANSACTION_CHUNK_SIZE, importLocationPointsFromGpx } from '@/features/import/importRepository';
+import { distanceMeters } from '@/utils/distance';
 
 let mockActiveTransactionDepth = 0;
 
@@ -152,5 +153,50 @@ describe('GPXインポート保存 transaction境界', () => {
       importedPointCount: IMPORT_TRANSACTION_CHUNK_SIZE,
       skippedPointCount: 0,
     });
+  });
+  it('チャンクのコミットごとに取り込み済みの累積距離をonProgressへ通知する', async () => {
+    // 同じ日付で北へ少しずつ進むポイント列。2チャンクに分かれる件数にする
+    const movingPoints = Array.from({ length: IMPORT_TRANSACTION_CHUNK_SIZE + 1 }, (_, index) => ({
+      ...point,
+      latitude: point.latitude + index * 0.0001,
+      recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
+    }));
+    const segmentDistanceUntil = (count: number) =>
+      movingPoints.slice(1, count).reduce((sum, current, index) => sum + distanceMeters(movingPoints[index], current), 0);
+    const onProgress = jest.fn();
+
+    await importLocationPointsFromGpx(movingPoints, 'strollia-all.gpx', { onProgress });
+
+    expect(onProgress).toHaveBeenCalledTimes(2);
+    expect(onProgress.mock.calls[0][0].importedPointCount).toBe(IMPORT_TRANSACTION_CHUNK_SIZE);
+    expect(onProgress.mock.calls[0][0].importedDistanceMeters).toBeCloseTo(segmentDistanceUntil(IMPORT_TRANSACTION_CHUNK_SIZE), 6);
+    expect(onProgress.mock.calls[1][0].importedPointCount).toBe(IMPORT_TRANSACTION_CHUNK_SIZE + 1);
+    expect(onProgress.mock.calls[1][0].importedDistanceMeters).toBeCloseTo(segmentDistanceUntil(IMPORT_TRANSACTION_CHUNK_SIZE + 1), 6);
+  });
+
+  it('失敗してロールバックされたチャンクの距離はonProgressへ通知しない', async () => {
+    const movingPoints = Array.from({ length: IMPORT_TRANSACTION_CHUNK_SIZE + 1 }, (_, index) => ({
+      ...point,
+      latitude: point.latitude + index * 0.0001,
+      recordedAt: `2026-05-25T16:${String(Math.floor(index / 60)).padStart(2, '0')}:${String(index % 60).padStart(2, '0')}.000Z`,
+    }));
+    (withExclusiveTransaction as jest.Mock)
+      .mockImplementationOnce(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn))
+      .mockImplementationOnce(async () => {
+        throw new Error('database is locked');
+      });
+    const onProgress = jest.fn();
+
+    await expect(importLocationPointsFromGpx(movingPoints, 'strollia-all.gpx', { onProgress })).rejects.toBeInstanceOf(
+      GpxImportInterruptedError,
+    );
+
+    // 通知は成功した1チャンク目の分だけで、ロールバックされた2チャンク目の距離は含まない
+    const firstChunkDistance = movingPoints
+      .slice(1, IMPORT_TRANSACTION_CHUNK_SIZE)
+      .reduce((sum, current, index) => sum + distanceMeters(movingPoints[index], current), 0);
+    expect(onProgress).toHaveBeenCalledTimes(1);
+    expect(onProgress.mock.calls[0][0].importedPointCount).toBe(IMPORT_TRANSACTION_CHUNK_SIZE);
+    expect(onProgress.mock.calls[0][0].importedDistanceMeters).toBeCloseTo(firstChunkDistance, 6);
   });
 });

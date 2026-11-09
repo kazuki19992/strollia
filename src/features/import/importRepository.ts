@@ -19,7 +19,10 @@ export type GpxImportResult = {
 export type GpxImportProgress = {
   /** ここまでに取り込んだ(コミット済みの)ポイント数。 */
   importedPointCount: number;
-  /** ここまでに取り込んだポイントで日別ログへ加算した累積距離。単位はm。 */
+  /**
+   * ここまでに取り込んだポイントの区間距離の累積。単位はm。
+   * 距離未保存(NULL)の日は取り込み後に全GPS点から再計算されるため、その日の分は進捗表示用の概算になる。
+   */
   importedDistanceMeters: number;
 };
 
@@ -185,7 +188,13 @@ const INSERT_LOCATION_POINT_SQL = `INSERT OR IGNORE INTO location_points (
   created_at
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'gpx-import', ?)`;
 
-/** 日別ログの集計値を更新するUPSERT SQL。チャンク内でプリペアして使い回す。 */
+/**
+ * 日別ログの集計値を更新するUPSERT SQL。チャンク内でプリペアして使い回す。
+ *
+ * 既存の `distance_meters` が NULL(距離未保存の古い日)の場合は NULL を維持する。
+ * NULL の日は表示側が全GPS点から距離を再計算するため、取り込んだ区間だけの部分距離で
+ * 上書きすると通算距離が減ってしまう。通常記録(`logRepository`)と同じ扱いにそろえる。
+ */
 const UPSERT_DAILY_LOG_SQL = `INSERT INTO daily_logs (
   local_date,
   started_at,
@@ -207,7 +216,10 @@ ON CONFLICT(local_date) DO UPDATE SET
     ELSE daily_logs.ended_at
   END,
   point_count = daily_logs.point_count + 1,
-  distance_meters = COALESCE(daily_logs.distance_meters, 0) + excluded.distance_meters,
+  distance_meters = CASE
+    WHEN daily_logs.distance_meters IS NULL THEN NULL
+    ELSE daily_logs.distance_meters + excluded.distance_meters
+  END,
   updated_at = excluded.updated_at`;
 
 /**

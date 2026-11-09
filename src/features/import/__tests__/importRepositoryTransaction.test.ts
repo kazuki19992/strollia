@@ -191,6 +191,12 @@ describe('GPXインポート保存 transaction境界', () => {
       GpxImportInterruptedError,
     );
 
+    // 通知は成功した1チャンク目の分だけで、ロールバックされた2チャンク目の距離は含まない
+    const firstChunkDistance = movingPoints
+      .slice(1, IMPORT_TRANSACTION_CHUNK_SIZE)
+      .reduce((sum, current, index) => sum + distanceMeters(movingPoints[index], current), 0);
     expect(onProgress).toHaveBeenCalledTimes(1);
+    expect(onProgress.mock.calls[0][0].importedPointCount).toBe(IMPORT_TRANSACTION_CHUNK_SIZE);
+    expect(onProgress.mock.calls[0][0].importedDistanceMeters).toBeCloseTo(firstChunkDistance, 6);
   });
 });

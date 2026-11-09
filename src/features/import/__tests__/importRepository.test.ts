@@ -141,6 +141,15 @@ describe('GPXインポート保存 importRepository', () => {
     );
   });
 
+  it('距離が未保存(NULL)の日へ取り込んでも部分距離で上書きせずNULLを維持する', async () => {
+    // NULLの日は表示側が全GPS点から距離を再計算する。部分距離で上書きすると通算距離が減ってしまう
+    await importLocationPointsFromGpx([point], 'walk.gpx');
+
+    const upsertSql = findStatement('INSERT INTO daily_logs')!.sql;
+    expect(upsertSql).toMatch(/WHEN daily_logs\.distance_meters IS NULL THEN NULL/);
+    expect(upsertSql).not.toMatch(/COALESCE\(daily_logs\.distance_meters, 0\)/);
+  });
+
   it('GPXインポートは吸着せず、生座標と同じ有効座標を保存する', async () => {
     await importLocationPointsFromGpx([point], 'walk.gpx');
 

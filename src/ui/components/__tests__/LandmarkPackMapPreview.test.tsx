@@ -328,6 +328,20 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.getByText('地点B')).toBeTruthy();
       expect(screen.getByText('1分以上滞在で解放')).toBeTruthy();
       expect(screen.getByText('2分以上滞在で解放')).toBeTruthy();
+
+      // フェードインが完了すると、各地点のラベル行が不透明になる(フェードを地点ID単位で管理していることの確認)
+      await act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      for (const label of ['地点A', '地点B']) {
+        // ラベルの座布団View→Text の親を遡り、opacity を持つ行(Animated.View)を探す
+        let node = screen.getByText(label).parent;
+        while (node && !JSON.stringify(node.props.style ?? '').includes('opacity')) {
+          node = node.parent;
+        }
+        const opacities = node?.props.style;
+        expect(JSON.stringify(opacities)).toContain('"opacity":1');
+      }
     });
 
     it('到達済みスポットは解放条件の代わりに「到達済み」を出す', async () => {

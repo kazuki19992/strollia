@@ -327,6 +327,21 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 `spot_id`をマスタのUUIDv7そのままにすることで、座標や半径を後から調整しても訪問記録が壊れない。マスタから消えたスポットの行は孤児として無害に残り、再追加すれば復活する。書き込みは`INSERT OR IGNORE`で行い、再到達しても初回の`visited_at`を上書きしない。`location_point_id`には外部キーを設定しない（根拠GPS点が後から削除されても到達実績は取り消さないため）。
 
+### 4.16 `landmark_area_visits`
+
+複数地点で構成されるスポット（全地点への到達でスポット到達とする）の、地点ごとの到達を保存するテーブル。円1つのスポットは地点IDがスポットIDと同値の1地点として扱う。
+
+| カラム               | 型           | 説明                                                                  |
+| -------------------- | ------------ | --------------------------------------------------------------------- |
+| `area_id`            | TEXT         | 主キー。地点ID（円1つのスポットではスポットIDと同値）                 |
+| `spot_id`            | TEXT         | 地点が属するスポットのUUIDv7                                          |
+| `visited_at`         | TEXT         | 到達確定時刻（ISO 8601）                                              |
+| `visited_local_date` | TEXT         | 到達日のローカル日付                                                  |
+| `location_point_id`  | INTEGER NULL | 到達を確定した根拠GPSポイント。保存されない観測で確定した場合は`NULL` |
+| `created_at`         | TEXT         | 作成日時（ISO 8601）                                                  |
+
+書き込みは`INSERT OR IGNORE`で行い、初回の到達を正とする。`landmark_spot_visits`は無変更で、パック完走・実績は引き続きそちらだけを見る。`location_recording_state.landmark_candidate_spot_id`は「計測中の地点ID」を指し、円1つのスポットではスポットIDと同値になる。
+
 ## 5. インデックス方針
 
 GPSログは時系列検索と日付検索が中心になるため、以下のインデックスを作成する。
@@ -347,6 +362,7 @@ GPSログは時系列検索と日付検索が中心になるため、以下の�
 - `photo_assets(latitude, longitude)` （マップ表示範囲での絞り込みに使う）
 - `photo_assets(taken_at)` （表示上限「全体の最新N件」の絞り込みと、撮影期間での絞り込みに使う）
 - `landmark_spot_visits(visited_local_date)` （到達日から日別記録を引くために使う）
+- `landmark_area_visits(spot_id)` （スポットごとの到達済み地点数を数えるために使う）
 
 from-to エクスポートでは `recorded_at` 範囲検索を使う。
 
@@ -434,12 +450,13 @@ Visited Grid Overlayでは、有効な観測が存在した100mセルを `visite
 - `achievement_unlocks`
 - `achievement_notification_queue`
 - `landmark_spot_visits`
+- `landmark_area_visits`
 - `stay_places`
 - `photo_assets`
 
 `location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
 
-`landmark_spot_visits` は `achievement_unlocks` と対になる到達記録のため、片方だけ残すと「完走実績は未解除なのに全スポット到達済み」という矛盾状態になる。合わせて削除する。
+`landmark_spot_visits` は `achievement_unlocks` と対になる到達記録のため、片方だけ残すと「完走実績は未解除なのに全スポット到達済み」という矛盾状態になる。合わせて削除する。`landmark_area_visits` もスポット到達の元データのため同様に削除する。
 
 `photo_assets` は写真ライブラリから読み取ったメタデータのキャッシュだが、撮影位置は端末内に残る個人データであるため削除対象に含める。写真ライブラリ側の写真は削除しない。
 

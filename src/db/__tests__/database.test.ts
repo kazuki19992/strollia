@@ -360,6 +360,17 @@ describe('database initializeDatabase マイグレーション', () => {
   });
 
   describe('スポット到達記録のスキーマ', () => {
+    it('複数地点スポット向けの地点到達テーブルとスポットIDインデックスを作成する', async () => {
+      (db.getAllAsync as jest.Mock).mockResolvedValue([]);
+
+      await initializeDatabase();
+
+      const schemaSql = (db.execAsync as jest.Mock).mock.calls.map(([sql]) => String(sql)).join('\n');
+      expect(schemaSql).toContain('CREATE TABLE IF NOT EXISTS landmark_area_visits');
+      expect(schemaSql).toContain('area_id TEXT PRIMARY KEY');
+      expect(schemaSql).toContain('CREATE INDEX IF NOT EXISTS idx_landmark_area_visits_spot_id');
+    });
+
     it('新規インストール向けに到達記録テーブルと日付インデックスを作成する', async () => {
       (db.getAllAsync as jest.Mock).mockResolvedValue([]);
 

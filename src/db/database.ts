@@ -210,6 +210,15 @@ async function runDatabaseInitialization(): Promise<void> {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS landmark_area_visits (
+      area_id TEXT PRIMARY KEY,
+      spot_id TEXT NOT NULL,
+      visited_at TEXT NOT NULL,
+      visited_local_date TEXT NOT NULL,
+      location_point_id INTEGER NULL,
+      created_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 
@@ -257,6 +266,9 @@ async function runDatabaseInitialization(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_landmark_spot_visits_local_date
       ON landmark_spot_visits (visited_local_date);
+
+    CREATE INDEX IF NOT EXISTS idx_landmark_area_visits_spot_id
+      ON landmark_area_visits(spot_id);
   `);
 
   await ensureColumn('achievement_unlocks', 'unlocked_local_date', 'TEXT NULL');

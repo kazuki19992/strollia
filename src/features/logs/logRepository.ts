@@ -305,6 +305,8 @@ export async function deleteAllUserData(): Promise<void> {
     await txn.runAsync('DELETE FROM achievement_unlocks');
     // 完走実績を消しつつ到達記録だけ残すと「未解除なのに全スポット到達済み」という矛盾が残るため一緒に消す
     await txn.runAsync('DELETE FROM landmark_spot_visits');
+    // 地点到達はスポット到達の元データ。残すと再到達判定が食い違うため同時に消す
+    await txn.runAsync('DELETE FROM landmark_area_visits');
     await txn.runAsync('DELETE FROM visited_admin_areas');
     await txn.runAsync('DELETE FROM location_point_admin_areas');
     await txn.runAsync('DELETE FROM stay_places');

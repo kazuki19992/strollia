@@ -307,7 +307,7 @@ describe('スポット到達時の通知と実績評価', () => {
     mockRecordLocationObservation
       .mockResolvedValueOnce({
         status: 'not-saved',
-        landmarkArrival: { type: 'area', spotId: arrivedSpotId, areaId: 'area-2', visitedAreaCount: 2, totalAreaCount: 2 },
+        landmarkArrival: { type: 'area', spotId: arrivedSpotId, areaId: 'area-1', visitedAreaCount: 1, totalAreaCount: 2 },
       })
       .mockResolvedValueOnce({ status: 'not-saved', landmarkArrival: { type: 'spot', spotId: arrivedSpotId } });
     const session = await createLocationRecordingSession();

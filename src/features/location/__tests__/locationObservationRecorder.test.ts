@@ -790,6 +790,11 @@ describe('複数地点スポットの到達記録', () => {
 
     const result = await recordLocationObservation({ ...input(arrival), landmarkDetection: multiDetection(['multi-b', 'multi-c']) });
 
+    expect(mockInsertAreaVisit).toHaveBeenCalledWith(
+      { areaId: 'multi-a', spotId: 'multi-spot', visitedAt: arrival.recordedAt, visitedLocalDate: arrival.localDate, locationPointId: 1 },
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
     expect(mockCountAreaVisits).toHaveBeenCalledWith('multi-spot', mockTxn);
     expect(mockInsertLandmarkVisit).toHaveBeenCalledWith(
       { spotId: 'multi-spot', visitedAt: arrival.recordedAt, visitedLocalDate: arrival.localDate, locationPointId: 1 },

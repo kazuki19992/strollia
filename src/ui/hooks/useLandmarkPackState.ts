@@ -87,7 +87,7 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
   useEffect(() => {
     // 読み込みに失敗しても実績画面全体を落とさない。進捗0のまま一覧は表示できる
     reloadLandmarkState().catch((error: unknown) => {
-      console.warn('Failed to load landmark spot visits:', error);
+      console.warn('Failed to load landmark visits:', error);
     });
   }, [reloadLandmarkState]);
 

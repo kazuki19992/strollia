@@ -61,10 +61,10 @@ export async function insertLandmarkSpotVisitInCurrentTransaction(
 /**
  * 複数地点スポットの地点1つへの到達記録1件。
  *
- * 円1つのスポットでは `areaId` が `spotId` と同値の1地点として扱う。
+ * 書き込むのは複数地点スポットだけ。円1つのスポットの到達は `landmark_spot_visits` にのみ保存する。
  */
 export type LandmarkAreaVisit = {
-  /** 地点ID(円1つのスポットではスポットIDと同値)。 */
+  /** 地点ID(スポットIDとも他の地点IDとも重複しない)。 */
   areaId: string;
   /** 地点が属するスポットのUUIDv7。 */
   spotId: string;

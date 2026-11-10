@@ -95,7 +95,7 @@ for (const spot of spots) {
   }
 }
 
-// 地点IDはスポットID・他の地点IDと全体で一意(landmark_spot_area_visits.area_id が単独でキーになるため)
+// 地点IDはスポットID・他の地点IDと全体で一意(landmark_area_visits.area_id が単独でキーになるため)
 const areaIds = new Map();
 for (const spot of spots) {
   for (const area of spot.areas) {

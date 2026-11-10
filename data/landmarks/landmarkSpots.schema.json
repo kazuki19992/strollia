@@ -136,7 +136,7 @@
             "id": {
               "type": "string",
               "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-              "description": "地点のUUIDv7。landmark_spot_area_visits.area_id に保存する安定識別子。スポットIDとも他の地点IDとも重複できない"
+              "description": "地点のUUIDv7。landmark_area_visits.area_id に保存する安定識別子。スポットIDとも他の地点IDとも重複できない"
             },
             "name": {
               "type": "string",

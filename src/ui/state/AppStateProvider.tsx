@@ -638,7 +638,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     async (...args: Parameters<typeof refreshAchievementStateRef.current>) => {
       await refreshAchievementStateRef.current(...args);
       await reloadLandmarkState().catch((error: unknown) => {
-        console.warn('Failed to reload landmark spot visits:', error);
+        console.warn('Failed to reload landmark visits:', error);
       });
     },
     [reloadLandmarkState],

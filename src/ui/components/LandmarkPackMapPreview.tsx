@@ -50,7 +50,7 @@ type LandmarkSpotMarker = {
   name: string;
   /** リストと同じ1始まりの表示番号。 */
   displayNumber: number;
-  /** 到達済みかどうか。バッジの配色に使う。 */
+  /** 到達済みかどうか。バッジの配色に使う。複数地点スポットは地点の到達、円1つはスポットの到達で決まる。 */
   isVisited: boolean;
   /** マーカーを置く緯度経度。 */
   coordinate: RouteCoordinate;
@@ -63,11 +63,14 @@ type LandmarkSpotMarker = {
 /**
  * 埋め込み地図へのズーム要求。
  *
- * spotIdだけで表すと、同じスポットへの連続タップ(ズーム→地図操作→再タップ)で値が変わらず
+ * targetIdだけで表すと、同じ対象への連続タップ(ズーム→地図操作→再タップ)で値が変わらず
  * Reactが更新をスキップしてしまう。タップのたびに変わるnonceを添えて、
- * 「同じスポットへの再フォーカス要求」も新しい要求として区別できるようにする。
+ * 「同じ対象への再フォーカス要求」も新しい要求として区別できるようにする。
+ *
+ * targetId は地点IDまたはスポットID。地点IDならその地点の円が収まる範囲、
+ * 複数地点スポットのスポットIDなら全地点の円が収まる範囲へ寄せる(円1つのスポットは地点IDと同じ)。
  */
-export type LandmarkSpotFocusRequest = { spotId: string; nonce: number } | null;
+export type LandmarkSpotFocusRequest = { targetId: string; nonce: number } | null;
 
 /** パック詳細画面の埋め込み地図のprops。 */
 export type LandmarkPackMapPreviewProps = {
@@ -109,32 +112,32 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
    */
   const [laidOutMarkerCount, setLaidOutMarkerCount] = useState(0);
   /**
-   * 詳細(スポット名・解放条件)を表示するスポットIDを、ソートして連結したキー。
+   * 詳細(地点名・解放条件)を表示する地点IDを、ソートして連結したキー。
    *
    * 地図操作のたびに region は変わるが、表示可否の集合が同じなら同じ文字列になるため、
    * setState が同値として無視され余計な再描画が起きない。
    */
-  const [visibleSpotKey, setVisibleSpotKey] = useState('');
+  const [visibleAreaKey, setVisibleAreaKey] = useState('');
   /**
-   * フェード中のスポットID。
+   * フェード中の地点ID。
    *
    * Android の Marker はカスタムビューをビットマップで撮るため、opacity の変化を反映させるには
    * フェード中だけ `tracksViewChanges` を true にする必要がある。完了したら外して撮り直しを止める。
    */
-  const [fadingSpotIds, setFadingSpotIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [fadingAreaIds, setFadingAreaIds] = useState<ReadonlySet<string>>(() => new Set());
   /**
-   * スポットごとの詳細ラベルの opacity。スポットIDをキーに遅延生成し、再描画をまたいで保持する。
+   * 地点ごとの詳細ラベルの opacity。地点IDをキーに遅延生成し、再描画をまたいで保持する。
    *
    * 描画中に参照するため ref ではなく、setter を使わない state として同じ Map を持ち続ける。
    */
   const [detailOpacities] = useState(() => new Map<string, Animated.Value>());
-  /** スポットごとに最後に指示したフェードの目標(表示=true)。同じ目標への再アニメーションを避ける。 */
+  /** 地点ごとに最後に指示したフェードの目標(表示=true)。同じ目標への再アニメーションを避ける。 */
   const detailTargetsRef = useRef(new Map<string, boolean>());
-  /** 表示内容が変わり、Android のビットマップを撮り直している最中のスポットID。 */
-  const [refreshingSpotIds, setRefreshingSpotIds] = useState<ReadonlySet<string>>(() => new Set());
-  /** 前回描画時のスポットごとの表示内容。初回は比較対象が無いため null。 */
+  /** 表示内容が変わり、Android のビットマップを撮り直している最中の地点ID。 */
+  const [refreshingAreaIds, setRefreshingAreaIds] = useState<ReadonlySet<string>>(() => new Set());
+  /** 前回描画時の地点ごとの表示内容。初回は比較対象が無いため null。 */
   const previousMarkerContentsRef = useRef<Map<string, string> | null>(null);
-  /** スポットごとの撮り直し終了タイマー。内容が続けて変わったら延長する。 */
+  /** 地点ごとの撮り直し終了タイマー。内容が続けて変わったら延長する。 */
   const refreshTimersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const markers = useMemo(() => toLandmarkSpotMarkers(spotItems), [spotItems]);
@@ -150,29 +153,27 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
     [markers],
   );
 
-  const focusedMarker = markers.find((marker) => marker.spotId === focusRequest?.spotId) ?? null;
-  // 座標を数値へ分解して依存配列に入れる。親が spotItems を毎レンダー作り直しても、
-  // 同じ要求(nonce)を指している間は再フォーカスが走らないようにするため。
-  const focusedLatitude = focusedMarker?.coordinate.latitude ?? null;
-  const focusedLongitude = focusedMarker?.coordinate.longitude ?? null;
-  const focusedRadiusMeters = focusedMarker?.radiusMeters ?? null;
+  const focusRegionKey = useMemo(() => {
+    const region = resolveFocusRegion(markers, focusRequest?.targetId ?? null);
+
+    // 親が spotItems を毎レンダー作り直しても、同じ要求(nonce)を指している間は再フォーカスが走らないよう、
+    // 範囲を文字列にして依存配列へ入れる。
+    return region === null ? null : JSON.stringify(region);
+  }, [markers, focusRequest?.targetId]);
   const focusNonce = focusRequest?.nonce ?? null;
-  const visibleSpotIds = useMemo(() => new Set(visibleSpotKey === '' ? [] : visibleSpotKey.split('\n')), [visibleSpotKey]);
+  const visibleAreaIds = useMemo(() => new Set(visibleAreaKey === '' ? [] : visibleAreaKey.split('\n')), [visibleAreaKey]);
 
   useEffect(() => {
-    if (!isMapReady || focusNonce === null || focusedLatitude === null || focusedLongitude === null || focusedRadiusMeters === null) {
+    if (!isMapReady || focusNonce === null || focusRegionKey === null) {
       return;
     }
 
     // 円より狭く寄ると到達エリアの端が分からないため、円が余白付きで収まる範囲へ寄せる。
-    // この範囲は詳細表示のしきい値と連動しているので、寄った後は必ずスポット名・解放条件が出る。
-    mapRef.current?.animateToRegion(
-      createLandmarkSpotFocusRegion({ latitude: focusedLatitude, longitude: focusedLongitude }, focusedRadiusMeters),
-      LANDMARK_SPOT_FOCUS_DURATION_MS,
-    );
-    // nonce をタップのたびに変えることで、同じスポットへの再タップでも
-    // (座標が変わらず)確実にアニメーションを再実行する。
-  }, [focusNonce, focusedLatitude, focusedLongitude, focusedRadiusMeters, isMapReady]);
+    // 地点の範囲は詳細表示のしきい値と連動しているので、寄った後は必ずラベル・解放条件が出る。
+    mapRef.current?.animateToRegion(JSON.parse(focusRegionKey) as LandmarkMapRegion, LANDMARK_SPOT_FOCUS_DURATION_MS);
+    // nonce をタップのたびに変えることで、同じ対象への再タップでも
+    // (範囲が変わらず)確実にアニメーションを再実行する。
+  }, [focusNonce, focusRegionKey, isMapReady]);
 
   useEffect(() => {
     const nextContents = parseMarkerContentKey(markerContentKey);
@@ -184,24 +185,24 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
       return;
     }
 
-    const changedSpotIds = [...nextContents]
-      .filter(([spotId, content]) => previousContents.has(spotId) && previousContents.get(spotId) !== content)
-      .map(([spotId]) => spotId);
+    const changedAreaIds = [...nextContents]
+      .filter(([areaId, content]) => previousContents.has(areaId) && previousContents.get(areaId) !== content)
+      .map(([areaId]) => areaId);
 
-    if (changedSpotIds.length === 0) {
+    if (changedAreaIds.length === 0) {
       return;
     }
 
-    setRefreshingSpotIds((current) => new Set([...current, ...changedSpotIds]));
+    setRefreshingAreaIds((current) => new Set([...current, ...changedAreaIds]));
 
-    for (const spotId of changedSpotIds) {
+    for (const areaId of changedAreaIds) {
       const timers = refreshTimersRef.current;
-      clearTimeout(timers.get(spotId));
+      clearTimeout(timers.get(areaId));
       timers.set(
-        spotId,
+        areaId,
         setTimeout(() => {
-          timers.delete(spotId);
-          setRefreshingSpotIds((current) => withoutSpotId(current, spotId));
+          timers.delete(areaId);
+          setRefreshingAreaIds((current) => withoutAreaId(current, areaId));
         }, LANDMARK_SPOT_CONTENT_REFRESH_MS),
       );
     }
@@ -235,31 +236,31 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
 
   const isInitialLayoutPending = laidOutMarkerCount < markers.length;
 
-  /** 表示範囲の変化を受け、詳細を出すスポットの集合を更新する。 */
+  /** 表示範囲の変化を受け、詳細を出す地点の集合を更新する。 */
   const handleRegionChangeComplete = (region: LandmarkMapRegion) => {
     // New Architecture等で onMapReady が発火しない環境のフォールバック。
     // region変更完了が来た時点で地図は初期化済みで animateToRegion を受け付けられる。
     setIsMapReady(true);
 
-    const nextVisibleSpotIds = markers
+    const nextVisibleAreaIds = markers
       .filter((marker) => shouldShowLandmarkSpotDetails(region, marker.radiusMeters))
       .map((marker) => marker.areaId);
-    const startedSpotIds = startDetailFades(nextVisibleSpotIds);
+    const startedAreaIds = startDetailFades(nextVisibleAreaIds);
 
-    if (startedSpotIds.length > 0) {
-      setFadingSpotIds((current) => new Set([...current, ...startedSpotIds]));
+    if (startedAreaIds.length > 0) {
+      setFadingAreaIds((current) => new Set([...current, ...startedAreaIds]));
     }
-    setVisibleSpotKey([...nextVisibleSpotIds].sort().join('\n'));
+    setVisibleAreaKey([...nextVisibleAreaIds].sort().join('\n'));
   };
 
   /**
-   * 表示可否が変わったスポットだけフェードを開始し、開始したスポットIDを返す。
+   * 表示可否が変わった地点だけフェードを開始し、開始した地点IDを返す。
    *
-   * 地図操作のたびに呼ばれるため、前回と同じ目標のスポットはアニメーションを作り直さない。
+   * 地図操作のたびに呼ばれるため、前回と同じ目標の地点はアニメーションを作り直さない。
    */
   const startDetailFades = (nextVisibleAreaIds: string[]): string[] => {
     const nextVisible = new Set(nextVisibleAreaIds);
-    const startedSpotIds: string[] = [];
+    const startedAreaIds: string[] = [];
 
     for (const { areaId } of markers) {
       const shouldShow = nextVisible.has(areaId);
@@ -269,7 +270,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
       }
 
       detailTargetsRef.current.set(areaId, shouldShow);
-      startedSpotIds.push(areaId);
+      startedAreaIds.push(areaId);
       // opacity は JS ドライバで動かす。Android のマーカーはビューをビットマップへ撮り直して描くため、
       // ネイティブドライバで React を経由せず変えた値がスナップショットへ確実に乗るとは限らない。
       // 対象はパック内の数件だけなので JS ドライバでも負荷は小さい。
@@ -283,11 +284,11 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
           return;
         }
 
-        setFadingSpotIds((current) => withoutSpotId(current, areaId));
+        setFadingAreaIds((current) => withoutAreaId(current, areaId));
       });
     }
 
-    return startedSpotIds;
+    return startedAreaIds;
   };
 
   return (
@@ -318,8 +319,8 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
           />
         ))}
         {markers.map((marker) => {
-          const isFading = fadingSpotIds.has(marker.areaId);
-          const isDetailMounted = visibleSpotIds.has(marker.areaId) || isFading;
+          const isFading = fadingAreaIds.has(marker.areaId);
+          const isDetailMounted = visibleAreaIds.has(marker.areaId) || isFading;
           const opacity = getDetailOpacity(detailOpacities, marker.areaId);
 
           return (
@@ -330,7 +331,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
               anchor={{ x: 0.5, y: 0.5 }}
               coordinate={marker.coordinate}
               identifier={`landmark-spot-${marker.areaId}`}
-              tracksViewChanges={isInitialLayoutPending || isFading || refreshingSpotIds.has(marker.areaId)}
+              tracksViewChanges={isInitialLayoutPending || isFading || refreshingAreaIds.has(marker.areaId)}
             >
               <View
                 collapsable={false}
@@ -369,23 +370,58 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
  */
 function toLandmarkSpotMarkers(spotItems: LandmarkSpotListItem[]): LandmarkSpotMarker[] {
   return spotItems
-    .flatMap(({ spot, visitedLocalDate }, index) => {
-      const isVisited = visitedLocalDate !== null;
-
+    .flatMap(({ spot, visitedLocalDate, areaItems }, index) => {
       // 複数地点スポットは地点ごとにマーカーを作る。番号はスポットの番号を共有する
-      return spot.areas.map((area) => ({
-        areaId: area.id,
-        spotId: spot.id,
-        name: area.name,
-        displayNumber: index + 1,
-        isVisited,
-        coordinate: { latitude: area.latitude, longitude: area.longitude },
-        radiusMeters: area.radiusMeters,
-        // 到達済みに滞在条件を出すと「まだ解放されていない」と誤読されるため、状態だけを示す
-        conditionLabel: isVisited ? LANDMARK_SPOT_VISITED_LABEL : formatLandmarkUnlockCondition(area.dwellSeconds),
-      }));
+      return spot.areas.map((area) => {
+        // 複数地点スポットは地点ごとの到達で決め、円1つのスポットは従来どおりスポットの到達で決める
+        const isVisited = spot.isMultiArea
+          ? (areaItems.find((item) => item.area.id === area.id)?.visitedLocalDate ?? null) !== null
+          : visitedLocalDate !== null;
+
+        return {
+          areaId: area.id,
+          spotId: spot.id,
+          name: area.name,
+          displayNumber: index + 1,
+          isVisited,
+          coordinate: { latitude: area.latitude, longitude: area.longitude },
+          radiusMeters: area.radiusMeters,
+          // 到達済みに滞在条件を出すと「まだ解放されていない」と誤読されるため、状態だけを示す
+          conditionLabel: isVisited ? LANDMARK_SPOT_VISITED_LABEL : formatLandmarkUnlockCondition(area.dwellSeconds),
+        };
+      });
     })
     .filter((marker) => isValidRouteCoordinate(marker.coordinate));
+}
+
+/**
+ * フォーカス対象IDから、地図を寄せる表示範囲を求める。対象が見つからなければ null。
+ *
+ * 地点ID(円1つのスポットのスポットIDも同じ)なら、その円が余白付きで収まる範囲。
+ * 複数地点スポットのスポットIDなら、全地点の円が収まる範囲。
+ */
+function resolveFocusRegion(markers: LandmarkSpotMarker[], targetId: string | null): LandmarkMapRegion | null {
+  if (targetId === null) {
+    return null;
+  }
+
+  const areaMarker = markers.find((marker) => marker.areaId === targetId);
+
+  if (areaMarker) {
+    return createLandmarkSpotFocusRegion(areaMarker.coordinate, areaMarker.radiusMeters);
+  }
+
+  const spotMarkers = markers.filter((marker) => marker.spotId === targetId);
+
+  if (spotMarkers.length === 0) {
+    return null;
+  }
+
+  return createRegionFromBounds(
+    createLandmarkSpotsBounds(
+      spotMarkers.map(({ coordinate, radiusMeters }) => ({ latitude: coordinate.latitude, longitude: coordinate.longitude, radiusMeters })),
+    ),
+  );
 }
 
 /** 地図上のラベル1行(角丸の半透明の座布団に1行の文字)。長い名前は末尾を省略して行の高さを保つ。 */
@@ -409,7 +445,7 @@ function toMarkerContentLine(marker: LandmarkSpotMarker): string {
   return [marker.areaId, marker.displayNumber, marker.isVisited, marker.name, marker.conditionLabel].join('\t');
 }
 
-/** `toMarkerContentLine` を連結したキーを、スポットIDごとの表示内容へ戻す。 */
+/** `toMarkerContentLine` を連結したキーを、地点IDごとの表示内容へ戻す。 */
 function parseMarkerContentKey(contentKey: string): Map<string, string> {
   const contents = new Map<string, string>();
 
@@ -420,28 +456,28 @@ function parseMarkerContentKey(contentKey: string): Map<string, string> {
   return contents;
 }
 
-/** スポットの詳細ラベル用 opacity を取得する。未作成なら非表示(0)で作って保持する。 */
-function getDetailOpacity(opacities: Map<string, Animated.Value>, spotId: string): Animated.Value {
-  const existing = opacities.get(spotId);
+/** 地点の詳細ラベル用 opacity を取得する。未作成なら非表示(0)で作って保持する。 */
+function getDetailOpacity(opacities: Map<string, Animated.Value>, areaId: string): Animated.Value {
+  const existing = opacities.get(areaId);
 
   if (existing) {
     return existing;
   }
 
   const created = new Animated.Value(0);
-  opacities.set(spotId, created);
+  opacities.set(areaId, created);
 
   return created;
 }
 
-/** 集合から1件を除いた新しい集合を返す。含まれていなければ同じ参照を返し、無駄な再描画を避ける。 */
-function withoutSpotId(spotIds: ReadonlySet<string>, spotId: string): ReadonlySet<string> {
-  if (!spotIds.has(spotId)) {
-    return spotIds;
+/** 地点ID集合から1件を除いた新しい集合を返す。含まれていなければ同じ参照を返し、無駄な再描画を避ける。 */
+function withoutAreaId(areaIds: ReadonlySet<string>, areaId: string): ReadonlySet<string> {
+  if (!areaIds.has(areaId)) {
+    return areaIds;
   }
 
-  const next = new Set(spotIds);
-  next.delete(spotId);
+  const next = new Set(areaIds);
+  next.delete(areaId);
 
   return next;
 }

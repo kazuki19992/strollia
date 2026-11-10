@@ -91,7 +91,7 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
             onPress={
               isVisited
                 ? () => onSelectVisitedSpot(visitedLocalDate)
-                : () => setFocusRequest((prev) => ({ spotId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
+                : () => setFocusRequest((prev) => ({ targetId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
             }
           />
         );

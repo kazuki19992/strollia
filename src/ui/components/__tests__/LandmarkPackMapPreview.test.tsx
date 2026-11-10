@@ -88,9 +88,9 @@ const spotItems: LandmarkSpotListItem[] = [
   },
 ];
 
-/** 指定スポットへの1回目のフォーカス要求を作る。 */
-function focusRequestFor(spotId: string, nonce = 1): LandmarkSpotFocusRequest {
-  return { spotId, nonce };
+/** 指定スポットまたは地点への1回目のフォーカス要求を作る。 */
+function focusRequestFor(targetId: string, nonce = 1): LandmarkSpotFocusRequest {
+  return { targetId, nonce };
 }
 
 /** 地図プレビューを描画する。focusRequest を切り替えるため rerender を返す。 */
@@ -261,6 +261,87 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     // 2件目は配列indexのまま2番として描画され、リスト側の番号とズレない
     expect(screen.getByLabelText('2番目のスポット 那智の滝')).toBeTruthy();
   });
+  describe('複数地点スポット', () => {
+    /** 地点A(到達済み)・地点B(未到達)を持つ複数地点スポット。 */
+    const multiSpot: LandmarkSpot = {
+      id: 'spot-multi',
+      name: '複数地点スポット',
+      prefectures: ['TOCHIGI'],
+      areas: [
+        { id: 'area-a', name: '地点A', latitude: 36.0, longitude: 139.0, radiusMeters: 100, dwellSeconds: 60 },
+        { id: 'area-b', name: '地点B', latitude: 36.01, longitude: 139.02, radiusMeters: 150, dwellSeconds: 120 },
+      ],
+      isMultiArea: true,
+      packs: [{ packId: '01a0c450-6c00-7000-8000-000000000001', order: 1 }],
+    };
+    const multiItems: LandmarkSpotListItem[] = [
+      {
+        spot: multiSpot,
+        visitedLocalDate: null,
+        areaItems: [
+          { area: multiSpot.areas[0], visitedLocalDate: '2026-05-01' },
+          { area: multiSpot.areas[1], visitedLocalDate: null },
+        ],
+      },
+    ];
+
+    it('複数地点スポットは地点ごとに円を描く', async () => {
+      await renderPreview(null, multiItems);
+
+      expect(screen.getByTestId('landmark-spot-circle-area-a').props.center).toEqual({ latitude: 36.0, longitude: 139.0 });
+      expect(screen.getByTestId('landmark-spot-circle-area-a').props.radius).toBe(100);
+      expect(screen.getByTestId('landmark-spot-circle-area-b').props.center).toEqual({ latitude: 36.01, longitude: 139.02 });
+      expect(screen.getByTestId('landmark-spot-circle-area-b').props.radius).toBe(150);
+    });
+
+    it('到達済みの地点だけ到達済みの見た目になる', async () => {
+      jest.useFakeTimers();
+      try {
+        await renderPreview(null, multiItems);
+        await fireRegionChange({ latitude: 36.005, longitude: 139.01, latitudeDelta: 0.003, longitudeDelta: 0.003 });
+
+        expect(within(screen.getByTestId('landmark-spot-marker-area-a')).getByText('到達済み')).toBeTruthy();
+        expect(within(screen.getByTestId('landmark-spot-marker-area-b')).queryByText('到達済み')).toBeNull();
+        expect(within(screen.getByTestId('landmark-spot-marker-area-b')).getByText('2分以上滞在で解放')).toBeTruthy();
+      } finally {
+        await act(() => {
+          jest.runOnlyPendingTimers();
+        });
+        jest.useRealTimers();
+      }
+    });
+
+    it('地点IDのフォーカスでその地点へズームする', async () => {
+      const { rerender } = await renderPreview(null, multiItems);
+      await fireMapReady();
+
+      await act(async () => {
+        await rerender(focusRequestFor('area-b'));
+      });
+
+      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+      expect(mockAnimateToRegion).toHaveBeenCalledWith(createLandmarkSpotFocusRegion({ latitude: 36.01, longitude: 139.02 }, 150), 250);
+    });
+
+    it('複数地点スポットのIDのフォーカスで全地点が収まる範囲へズームする', async () => {
+      const { rerender } = await renderPreview(null, multiItems);
+      await fireMapReady();
+
+      await act(async () => {
+        await rerender(focusRequestFor('spot-multi'));
+      });
+
+      const expected = createRegionFromBounds(
+        createLandmarkSpotsBounds([
+          { latitude: 36.0, longitude: 139.0, radiusMeters: 100 },
+          { latitude: 36.01, longitude: 139.02, radiusMeters: 150 },
+        ]),
+      );
+      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+      expect(mockAnimateToRegion).toHaveBeenCalledWith(expected, 250);
+    });
+  });
+
   describe('拡大時のスポット詳細(スポット名・解放条件・到達エリアの円)', () => {
     /** パック全体を見渡す初期表示範囲。 */
     const overviewRegion = createRegionFromBounds({

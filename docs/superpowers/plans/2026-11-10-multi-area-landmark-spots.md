@@ -277,12 +277,12 @@
 - 表示(DESIGN.md と既存の `AppListItem` の拡張で実現。新コンポーネントが必要なら作る前に理由を報告する):
   - 複数地点スポット行の `detail` に進捗 `${到達地点数}/${地点数}`(コンプリート後は従来どおり到達日)
   - その下に地点行を字下げして並べる。地点行は地点名と、到達済みなら到達日
-  - コンプリート済みの複数地点スポット行の trailing は `spots-completed-stamp.png`(accessibilityLabel `コンプリート`)、円1つは従来の `訪問済み`
+  - 複数地点スポット行の trailing は2段階: 1地点以上到達・未コンプリートなら従来の訪問済みスタンプ(accessibilityLabel `訪問済み`)、コンプリート済みなら `spots-completed-stamp.png`(accessibilityLabel `コンプリート`)、未到達なら無し。円1つは従来の `訪問済み`
   - タップ: 到達済み地点行 → その日の記録 / 未到達地点行 → `{ targetId: 地点ID }` / 未コンプリートの複数地点スポット行 → `{ targetId: スポットID }` / コンプリート済み → 最後の地点の日の記録(=スポット到達日)
   - accessibilityLabel: 地点行は到達済み `${area.name}の記録を開く`、未到達 `${area.name}を地図で見る`
 
 - [ ] **Step 1: スタンプPNGを作る** — `node -e` で sharp を使い SVG を 600×600 の透過PNG(`palette: true`)へ変換し、目視で確認(Read で画像を開く)
-- [ ] **Step 2: 失敗するテストを書く** — `複数地点スポットの行に到達地点数の進捗を表示する`(`1/3`)/ `地点行を表示し、到達済みの地点には到達日を出す` / `コンプリート済みの複数地点スポットにはコンプリート記念スタンプを出す` / `円1つのスポットは訪問済みスタンプのまま` / 上記4種類のタップ挙動
+- [ ] **Step 2: 失敗するテストを書く** — `複数地点スポットの行に到達地点数の進捗を表示する`(`1/3`)/ `地点行を表示し、到達済みの地点には到達日を出す` / `複数地点スポットは1地点だけ到達で訪問済みスタンプを出す` / `複数地点スポットはコンプリートで訪問済みスタンプがコンプリート記念スタンプに置き換わる` / `未到達の複数地点スポットにはスタンプを出さない` / `円1つのスポットは訪問済みスタンプのまま` / 上記4種類のタップ挙動
 - [ ] **Step 3: 失敗を確認** — Run: `npx jest src/ui/components/__tests__/LandmarkPackScreen.test.tsx` Expected: FAIL
 - [ ] **Step 4: 実装とドキュメント更新**
 - [ ] **Step 5: 全体検証** — Run: `npm run typecheck && npm test && npm run lint && npx prettier --check docs src data scripts` Expected: すべて PASS、lint error 0

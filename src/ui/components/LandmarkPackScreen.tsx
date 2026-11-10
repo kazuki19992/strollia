@@ -5,7 +5,7 @@ import type { LandmarkPack, LandmarkSpot } from '@/features/landmarks/landmarkCa
 import { formatLandmarkPrefectures } from '@/features/landmarks/landmarkPrefectureLabel';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
-import { LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
+import { LANDMARK_SPOT_COMPLETED_STAMP_LABEL, LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
 import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import { AppListItem } from './AppListItem';
@@ -16,6 +16,12 @@ import { TwoPaneLayout } from './TwoPaneLayout';
 
 /** 到達済みスポット行に表示するスタンプ画像。全スポット共通の1種類のみ用意している。 */
 const LANDMARK_SPOT_VISITED_STAMP_SOURCE = require('../../../assets/achievements/spots/spots-visited-stamp.png');
+
+/**
+ * 複数地点スポットを全地点到達したときに、訪問済みスタンプの代わりに出すコンプリート記念スタンプ。
+ * 日付やスポット名を持たない固定画像(円1つのスポットでは使わない)。
+ */
+const LANDMARK_SPOT_COMPLETED_STAMP_SOURCE = require('../../../assets/achievements/spots/spots-completed-stamp.png');
 
 /** パック詳細画面のprops。 */
 export type LandmarkPackScreenProps = {
@@ -65,35 +71,73 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
   /** 縦横どちらでも共通のスポット行(末尾に特記事項)。ScrollViewの外枠だけ向きごとに変える。 */
   const spotRows = (
     <>
-      {spotItems.map(({ spot, visitedLocalDate }, index) => {
+      {spotItems.map(({ spot, visitedLocalDate, areaItems }, index) => {
         const isVisited = visitedLocalDate !== null;
         // 番号は spot.packs[].order の生値ではなく配列index(1始まり)を使う。
         // order に欠番があっても表示が1,2,3...と連番になるようにするため
         // (spotItems は既にorder昇順でソート済みなので、そのままindexを採番に使える)。
         const displayNumber = index + 1;
+        // 複数地点スポットは「1地点以上到達=訪問済み、全地点到達=コンプリート」の2段階でスタンプを出す。
+        // visitedLocalDate は全地点到達の日(=コンプリート)のときだけ非nullになる。
+        const reachedAreaCount = areaItems.filter((areaItem) => areaItem.visitedLocalDate !== null).length;
+        const isMultiArea = spot.isMultiArea;
+        const showVisitedStamp = isMultiArea ? reachedAreaCount > 0 && !isVisited : isVisited;
+        const detail = isVisited
+          ? formatLandmarkVisitedDate(visitedLocalDate)
+          : isMultiArea
+            ? `${reachedAreaCount}/${areaItems.length}`
+            : undefined;
 
         return (
-          <AppListItem
-            key={spot.id}
-            accessibilityLabel={isVisited ? `${spot.name}の記録を開く` : `${spot.name}を地図で見る`}
-            detail={visitedLocalDate ? formatLandmarkVisitedDate(visitedLocalDate) : undefined}
-            leading={<LandmarkSpotNumberBadge isVisited={isVisited} number={displayNumber} styles={styles} theme={theme} />}
-            showChevron={isVisited}
-            styles={styles}
-            subtitle={buildSpotSubtitle(spot)}
-            theme={theme}
-            title={spot.name}
-            trailing={
-              isVisited ? (
-                <Image accessibilityLabel="訪問済み" source={LANDMARK_SPOT_VISITED_STAMP_SOURCE} style={styles.landmarkSpotVisitedStamp} />
-              ) : undefined
-            }
-            onPress={
-              isVisited
-                ? () => onSelectVisitedSpot(visitedLocalDate)
-                : () => setFocusRequest((prev) => ({ targetId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
-            }
-          />
+          <View key={spot.id}>
+            <AppListItem
+              accessibilityLabel={isVisited ? `${spot.name}の記録を開く` : `${spot.name}を地図で見る`}
+              detail={detail}
+              leading={<LandmarkSpotNumberBadge isVisited={isVisited} number={displayNumber} styles={styles} theme={theme} />}
+              showChevron={isVisited}
+              styles={styles}
+              subtitle={buildSpotSubtitle(spot)}
+              theme={theme}
+              title={spot.name}
+              trailing={
+                isMultiArea && isVisited ? (
+                  <Image
+                    accessibilityLabel={LANDMARK_SPOT_COMPLETED_STAMP_LABEL}
+                    source={LANDMARK_SPOT_COMPLETED_STAMP_SOURCE}
+                    style={styles.landmarkSpotVisitedStamp}
+                  />
+                ) : showVisitedStamp ? (
+                  <Image
+                    accessibilityLabel="訪問済み"
+                    source={LANDMARK_SPOT_VISITED_STAMP_SOURCE}
+                    style={styles.landmarkSpotVisitedStamp}
+                  />
+                ) : undefined
+              }
+              onPress={
+                isVisited
+                  ? () => onSelectVisitedSpot(visitedLocalDate)
+                  : () => setFocusRequest((prev) => ({ targetId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
+              }
+            />
+            {areaItems.map(({ area, visitedLocalDate: areaVisitedDate }) => (
+              <View key={area.id} style={styles.landmarkAreaRowIndent}>
+                <AppListItem
+                  accessibilityLabel={areaVisitedDate ? `${area.name}の記録を開く` : `${area.name}を地図で見る`}
+                  detail={areaVisitedDate ? formatLandmarkVisitedDate(areaVisitedDate) : undefined}
+                  showChevron={areaVisitedDate !== null}
+                  styles={styles}
+                  theme={theme}
+                  title={area.name}
+                  onPress={
+                    areaVisitedDate
+                      ? () => onSelectVisitedSpot(areaVisitedDate)
+                      : () => setFocusRequest((prev) => ({ targetId: area.id, nonce: (prev?.nonce ?? 0) + 1 }))
+                  }
+                />
+              </View>
+            ))}
+          </View>
         );
       })}
       {/* 特記事項はスポットを全部見たあとに読む補足なので、一覧の最後尾に小さく置く */}

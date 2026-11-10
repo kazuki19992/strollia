@@ -176,7 +176,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 日ごとの記録詳細の横画面右ペイン(dailyLogDetailMapPane)1キー
       //       + 設定のPlus案内の2列レイアウト(settingsSubscriptionColumns・TextColumn・ActionsBottom・ImageColumn)4キー
       //       + パック詳細の特記事項(landmarkPackNoticeText)1キー
-      expect(keys.length).toBe(436);
+      expect(keys.length).toBe(437);
     });
   });
 });

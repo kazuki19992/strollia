@@ -264,6 +264,130 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     });
   });
 
+  describe('複数地点スポット', () => {
+    /** 松島(地点3つ)。到達状況は引数で変える。 */
+    function createMultiAreaItem(dates: (string | null)[]): LandmarkSpotListItem {
+      const names = ['五大堂', '瑞巌寺', '福浦島'];
+      const areas = names.map((name, i) => ({
+        id: `01a0c450-6c00-7000-8000-00000000030${i}`,
+        name,
+        latitude: 38.36 + i * 0.01,
+        longitude: 141.06,
+        radiusMeters: 150,
+        dwellSeconds: 120,
+      }));
+      const reached = dates.filter((d): d is string => d !== null);
+      const complete = reached.length === areas.length;
+      return {
+        spot: {
+          id: '01a0c450-6c00-7000-8000-000000000300',
+          name: '松島',
+          prefectures: ['MIYAGI'],
+          areas,
+          isMultiArea: true,
+          packs: [{ packId: pack.id, order: 1 }],
+        } as LandmarkSpot,
+        visitedLocalDate: complete ? reached.sort().at(-1)! : null,
+        areaItems: areas.map((area, i) => ({ area, visitedLocalDate: dates[i] ?? null })),
+      };
+    }
+
+    it('複数地点スポットの行に到達地点数の進捗を表示する', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(screen.getByText('1/3')).toBeTruthy();
+    });
+
+    it('地点行を表示し、到達済みの地点には到達日を出す', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(screen.getByText('五大堂')).toBeTruthy();
+      expect(screen.getByText('瑞巌寺')).toBeTruthy();
+      expect(screen.getByText('福浦島')).toBeTruthy();
+      expect(screen.getByText('2026/05/01')).toBeTruthy();
+    });
+
+    it('複数地点スポットは1地点だけ到達で訪問済みスタンプを出す', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(screen.getAllByLabelText('訪問済み')).toHaveLength(1);
+      expect(screen.queryByLabelText('コンプリート')).toBeNull();
+    });
+
+    it('複数地点スポットはコンプリートで訪問済みスタンプがコンプリート記念スタンプに置き換わる', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', '2026-05-02', '2026-05-03'])] });
+
+      expect(screen.getAllByLabelText('コンプリート')).toHaveLength(1);
+      expect(screen.queryByLabelText('訪問済み')).toBeNull();
+      // コンプリート後はスポット行の detail が到達日(最後の地点の日)になる
+      expect(screen.getAllByText('2026/05/03').length).toBeGreaterThan(0);
+    });
+
+    it('未到達の複数地点スポットにはスタンプを出さない', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem([null, null, null])] });
+
+      expect(screen.queryByLabelText('訪問済み')).toBeNull();
+      expect(screen.queryByLabelText('コンプリート')).toBeNull();
+    });
+
+    it('円1つのスポットは訪問済みスタンプのままでコンプリートは出さない', async () => {
+      await renderScreen();
+
+      expect(screen.getAllByLabelText('訪問済み')).toHaveLength(1);
+      expect(screen.queryByLabelText('コンプリート')).toBeNull();
+    });
+
+    it('到達済みの地点行を押すとその日の記録へ遷移する', async () => {
+      const onSelectVisitedSpot = jest.fn();
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])], onSelectVisitedSpot });
+
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('五大堂の記録を開く'));
+      });
+
+      expect(onSelectVisitedSpot).toHaveBeenCalledWith('2026-05-01');
+    });
+
+    it('未到達の地点行を押すと埋め込み地図がその地点へズームする', async () => {
+      const item = createMultiAreaItem(['2026-05-01', null, null]);
+      await renderScreen({ spotItems: [item] });
+
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('瑞巌寺を地図で見る'));
+      });
+
+      const area = item.spot.areas[1]!;
+      expect(mockAnimateToRegion).toHaveBeenCalledWith(
+        createLandmarkSpotFocusRegion({ latitude: area.latitude, longitude: area.longitude }, area.radiusMeters),
+        expect.any(Number),
+      );
+    });
+
+    it('未コンプリートの複数地点スポット行を押すと埋め込み地図がスポット全体へ寄る', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('松島を地図で見る'));
+      });
+
+      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+    });
+
+    it('コンプリート済みの複数地点スポット行を押すとスポット到達日の記録へ遷移する', async () => {
+      const onSelectVisitedSpot = jest.fn();
+      await renderScreen({
+        spotItems: [createMultiAreaItem(['2026-05-01', '2026-05-03', '2026-05-02'])],
+        onSelectVisitedSpot,
+      });
+
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('松島の記録を開く'));
+      });
+
+      expect(onSelectVisitedSpot).toHaveBeenCalledWith('2026-05-03');
+    });
+  });
+
   describe('特記事項 notice', () => {
     it('パックに特記事項があればスポット一覧の最後に表示する', async () => {
       await renderScreen({ pack: { ...pack, notice: PACK_NOTICE } });

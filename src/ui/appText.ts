@@ -148,6 +148,9 @@ export const LANDMARK_PACK_PLUS_PROMOTION_NOTE = 'Strollia Plus なら、有料�
  */
 export const LANDMARK_SPOT_RETIRED_NOTE = '現存せず';
 
+/** 複数地点スポットを全地点到達したときのコンプリート記念スタンプのアクセシビリティラベル。 */
+export const LANDMARK_SPOT_COMPLETED_STAMP_LABEL = 'コンプリート';
+
 /**
  * パック詳細の埋め込み地図で、到達済みスポットのバッジ下へ解放条件の代わりに出す表示。
  *

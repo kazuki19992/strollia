@@ -226,6 +226,10 @@ export function createAchievementStyles(theme: AppTheme) {
       height: 32,
       width: 32,
     },
+    // 複数地点スポットの地点行。スポット行(番号バッジぶん)より一段内側に見せる字下げ
+    landmarkAreaRowIndent: {
+      paddingLeft: 40,
+    },
     achievementDialogDate: {
       color: colors.mutedText,
       fontSize: 13,

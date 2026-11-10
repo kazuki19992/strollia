@@ -1,7 +1,7 @@
 import { getConfirmedPremiumAccessState } from '@/features/premium/revenueCatAccess';
 
 import { getDetectableLandmarkSpots, isLandmarkSpotInFreePack, type LandmarkSpot } from './landmarkCatalog';
-import { getVisitedLandmarkSpotIds } from './landmarkVisitRepository';
+import { getVisitedLandmarkAreaIds, getVisitedLandmarkSpotIds } from './landmarkVisitRepository';
 
 /**
  * 1配信バッチぶんのスポット検知の対象。
@@ -11,7 +11,15 @@ import { getVisitedLandmarkSpotIds } from './landmarkVisitRepository';
  * 存在しない。`unavailable` は課金状態取得の一時的失敗を表し、次の正常取得まで滞在状態を保持する。
  */
 export type LandmarkDetectionSnapshot =
-  { status: 'enabled'; spots: readonly LandmarkSpot[]; visitedSpotIds: ReadonlySet<string> } | { status: 'unavailable' };
+  | {
+      status: 'enabled';
+      spots: readonly LandmarkSpot[];
+      /** 到達済みスポットID。円1つのスポットの到達はここで除外される。 */
+      visitedSpotIds: ReadonlySet<string>;
+      /** 到達済み地点ID。複数地点スポットの到達済み地点をここで除外する。 */
+      visitedAreaIds: ReadonlySet<string>;
+    }
+  | { status: 'unavailable' };
 
 /**
  * 記録時点の契約状態に対応するスポット検知の対象を取得する。
@@ -29,7 +37,12 @@ export async function getLandmarkDetectionSnapshotForRecording(): Promise<Landma
     const premiumAccessState = await getConfirmedPremiumAccessState();
     const spots = getDetectableLandmarkSpots().filter((spot) => premiumAccessState.isPlusActive || isLandmarkSpotInFreePack(spot));
 
-    return { status: 'enabled', spots, visitedSpotIds: await getVisitedLandmarkSpotIds() };
+    return {
+      status: 'enabled',
+      spots,
+      visitedSpotIds: await getVisitedLandmarkSpotIds(),
+      visitedAreaIds: await getVisitedLandmarkAreaIds(),
+    };
   } catch (error: unknown) {
     console.warn('Landmark detection snapshot loading failed:', error);
     return { status: 'unavailable' };

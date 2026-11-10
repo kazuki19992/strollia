@@ -1,7 +1,11 @@
 import { withExclusiveTransaction } from '@/db/database';
 import { resolveLandmarkArrival, type LandmarkAreaArrival, type LandmarkArrivalState } from '@/features/landmarks/landmarkArrivalResolver';
 import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
-import { insertLandmarkSpotVisitInCurrentTransaction } from '@/features/landmarks/landmarkVisitRepository';
+import {
+  countLandmarkAreaVisitsForSpotInCurrentTransaction,
+  insertLandmarkAreaVisitInCurrentTransaction,
+  insertLandmarkSpotVisitInCurrentTransaction,
+} from '@/features/landmarks/landmarkVisitRepository';
 import {
   getLatestLocationPointInCurrentTransaction,
   hasLocationPointRawIdentityInCurrentTransaction,
@@ -37,15 +41,24 @@ export type RecordLocationObservationInput = {
 };
 
 /**
+ * この観測で新たに確定したスポット関連の到達イベント。
+ *
+ * `spot` はスポット到達(円1つのスポットの到達、または複数地点スポットの全地点コンプリート)、
+ * `area` は複数地点スポットの途中の地点到達を表す。
+ */
+export type LandmarkArrivalEvent =
+  { type: 'spot'; spotId: string } | { type: 'area'; spotId: string; areaId: string; visitedAreaCount: number; totalAreaCount: number };
+
+/**
  * 原子的な位置観測記録の結果。
  *
- * `arrivedLandmarkSpotId` は保存の有無に関わらず返す。停止中はGPS保存フィルタがほとんどの点を
+ * `landmarkArrival` は保存の有無に関わらず返す。停止中はGPS保存フィルタがほとんどの点を
  * 捨てるため、到達は保存されない観測でこそ確定する。呼び出し側が保存点だけを見ていると
  * 到達通知とパック完走実績が歩き出すまで遅れてしまう。
  */
 export type RecordLocationObservationResult =
-  | { status: 'saved'; point: NewLocationPoint; locationPointId: number; arrivedLandmarkSpotId: string | null }
-  | { status: 'not-saved'; arrivedLandmarkSpotId: string | null }
+  | { status: 'saved'; point: NewLocationPoint; locationPointId: number; landmarkArrival: LandmarkArrivalEvent | null }
+  | { status: 'not-saved'; landmarkArrival: LandmarkArrivalEvent | null }
   | { status: 'stale' | 'duplicate' };
 
 /** トランザクション内で求めた結果をコールバック外へ受け渡す箱。 */
@@ -109,8 +122,7 @@ function resolveLandmarkArrivalForObservation(
     observation: { latitude: rawPoint.latitude, longitude: rawPoint.longitude, recordedAt: rawPoint.recordedAt },
     spots: detection.spots,
     visitedSpotIds: detection.visitedSpotIds,
-    // 円1つのスポットは地点ID=スポットIDのため、当面スポットの到達済みIDをそのまま渡して正しい(複数地点の記録はTask 3)
-    visitedAreaIds: detection.visitedSpotIds,
+    visitedAreaIds: detection.visitedAreaIds,
   });
 }
 
@@ -172,29 +184,39 @@ export async function recordLocationObservation(input: RecordLocationObservation
     const landmarkResult = resolveLandmarkArrivalForObservation(persistedState, rawPoint, input.landmarkDetection);
 
     /**
-     * この観測で「初めて」到達が確定したスポットID。
+     * この観測で「初めて」確定した到達イベント。
      *
-     * 到達判定は確定後に状態を初期化するため、同じスポットが同一配信バッチ内で再び候補になりうる。
+     * 到達判定は確定後に状態を初期化するため、同じスポット・地点が同一配信バッチ内で再び候補になりうる。
      * 検知対象の到達済みID集合は配信バッチ単位のスナップショットで、直前の到達を含まないためである。
      * 行が実際に増えたときだけ報告し、通知と実績評価が重複して走るのを防ぐ。
      */
-    let arrivedLandmarkSpotId: string | null = null;
+    let landmarkArrival: LandmarkArrivalEvent | null = null;
 
-    // 複数地点の到達記録は後続タスクで扱う。円1つのスポット(地点ID=スポットID)だけ従来どおりスポット到達を記録する
-    if (landmarkResult.arrival && landmarkResult.arrival.areaId === landmarkResult.arrival.spotId) {
-      const inserted = await insertLandmarkSpotVisitInCurrentTransaction(
-        {
-          spotId: landmarkResult.arrival.spotId,
-          visitedAt: rawPoint.recordedAt,
-          visitedLocalDate: rawPoint.localDate,
-          // 保存対象外の観測で確定した場合は根拠GPS点が存在しないためnullになる
-          locationPointId,
-        },
-        now,
-        txn,
-      );
+    if (landmarkResult.arrival && input.landmarkDetection.status === 'enabled') {
+      const { spotId, areaId } = landmarkResult.arrival;
+      const arrivedSpot = input.landmarkDetection.spots.find((candidate) => candidate.id === spotId);
+      /** 到達の根拠(日時・日付・根拠GPS点)。保存対象外の観測で確定した場合は根拠GPS点が存在しないためnullになる。 */
+      const evidence = { visitedAt: rawPoint.recordedAt, visitedLocalDate: rawPoint.localDate, locationPointId };
 
-      arrivedLandmarkSpotId = inserted ? landmarkResult.arrival.spotId : null;
+      if (arrivedSpot && !arrivedSpot.isMultiArea) {
+        const inserted = await insertLandmarkSpotVisitInCurrentTransaction({ spotId, ...evidence }, now, txn);
+        landmarkArrival = inserted ? { type: 'spot', spotId } : null;
+      } else if (arrivedSpot) {
+        const areaInserted = await insertLandmarkAreaVisitInCurrentTransaction({ areaId, spotId, ...evidence }, now, txn);
+
+        if (areaInserted) {
+          const visitedAreaCount = await countLandmarkAreaVisitsForSpotInCurrentTransaction(spotId, txn);
+          const totalAreaCount = arrivedSpot.areas.length;
+
+          if (visitedAreaCount >= totalAreaCount) {
+            // 全地点が揃った観測でスポット到達を同一トランザクションで確定する。日時・根拠GPS点はこの観測のもの
+            const spotInserted = await insertLandmarkSpotVisitInCurrentTransaction({ spotId, ...evidence }, now, txn);
+            landmarkArrival = spotInserted ? { type: 'spot', spotId } : null;
+          } else {
+            landmarkArrival = { type: 'area', spotId, areaId, visitedAreaCount, totalAreaCount };
+          }
+        }
+      }
     }
 
     const lastVisitedGridPoint =
@@ -216,9 +238,7 @@ export async function recordLocationObservation(input: RecordLocationObservation
     );
 
     result.value =
-      locationPointId == null
-        ? { status: 'not-saved', arrivedLandmarkSpotId }
-        : { status: 'saved', point, locationPointId, arrivedLandmarkSpotId };
+      locationPointId == null ? { status: 'not-saved', landmarkArrival } : { status: 'saved', point, locationPointId, landmarkArrival };
   });
 
   if (!result.value) {

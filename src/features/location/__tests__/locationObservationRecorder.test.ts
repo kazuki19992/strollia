@@ -22,6 +22,8 @@ const mockShouldSave = jest.fn();
 const mockGetVisitedCells = jest.fn();
 const mockUpsertVisitedCells = jest.fn();
 const mockInsertLandmarkVisit = jest.fn();
+const mockInsertAreaVisit = jest.fn();
+const mockCountAreaVisits = jest.fn();
 
 jest.mock('@/db/database', () => ({
   withExclusiveTransaction: jest.fn(async (callback: (txn: typeof mockTxn) => Promise<void>) => callback(mockTxn)),
@@ -52,6 +54,8 @@ jest.mock('@/features/location/visitedCellRepository', () => ({
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   insertLandmarkSpotVisitInCurrentTransaction: (...args: unknown[]) => mockInsertLandmarkVisit(...args),
+  insertLandmarkAreaVisitInCurrentTransaction: (...args: unknown[]) => mockInsertAreaVisit(...args),
+  countLandmarkAreaVisitsForSpotInCurrentTransaction: (...args: unknown[]) => mockCountAreaVisits(...args),
 }));
 
 const initialPersistedState = {
@@ -121,7 +125,7 @@ const snapRadiusSpot: LandmarkSpot = {
 
 /** Plus有効時の検知スナップショットを作る。 */
 function enabledLandmarkDetection(visitedSpotIds: string[] = []): LandmarkDetectionSnapshot {
-  return { status: 'enabled', spots: [spot], visitedSpotIds: new Set(visitedSpotIds) };
+  return { status: 'enabled', spots: [spot], visitedSpotIds: new Set(visitedSpotIds), visitedAreaIds: new Set<string>() };
 }
 
 /** 指定時刻の生GPS観測を作る。 */
@@ -166,7 +170,7 @@ function input(rawPoint: NewLocationPoint): RecordLocationObservationInput {
   return {
     rawPoint,
     activeStayPlaces: { status: 'ready', stayPlaces: [home] },
-    landmarkDetection: { status: 'enabled', spots: [], visitedSpotIds: new Set() },
+    landmarkDetection: { status: 'enabled', spots: [], visitedSpotIds: new Set(), visitedAreaIds: new Set() },
     now: '2026-08-23T01:00:00.000Z',
   };
 }
@@ -184,6 +188,8 @@ function resetMocksToDefaults(): void {
   mockUpsertVisitedCells.mockResolvedValue(undefined);
   // 実装は新規に行を追加できたときtrueを返す。既定は初回到達として扱う
   mockInsertLandmarkVisit.mockResolvedValue(true);
+  mockInsertAreaVisit.mockResolvedValue(true);
+  mockCountAreaVisits.mockResolvedValue(1);
 }
 
 describe('原子的な位置観測記録 recordLocationObservation', () => {
@@ -331,7 +337,7 @@ describe('原子的な位置観測記録 recordLocationObservation', () => {
     mockShouldSave.mockReturnValue(false);
     mockGetVisitedCells.mockReturnValue([cell]);
 
-    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'not-saved', arrivedLandmarkSpotId: null });
+    await expect(recordLocationObservation(input(rawPoint))).resolves.toEqual({ status: 'not-saved', landmarkArrival: null });
 
     expect(mockHasRawIdentity).toHaveBeenCalledWith(rawPoint, mockTxn);
     expect(mockInsert).not.toHaveBeenCalled();
@@ -555,7 +561,7 @@ describe('スポット到達の記録', () => {
 
     await recordLocationObservation({
       ...input(pointAtHome('2026-08-23T00:05:00.000Z')),
-      landmarkDetection: { status: 'enabled', spots: [], visitedSpotIds: new Set() },
+      landmarkDetection: { status: 'enabled', spots: [], visitedSpotIds: new Set(), visitedAreaIds: new Set() },
     });
 
     expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
@@ -623,8 +629,8 @@ describe('スポット到達の記録', () => {
     const arrivalResult = await recordLocationObservation({ ...input(arrival), landmarkDetection: detection });
 
     // 呼び出し側が到達通知と完走実績評価をこの戻り値だけで判断できるようにする
-    expect(beforeArrival).toEqual(expect.objectContaining({ status: 'saved', arrivedLandmarkSpotId: null }));
-    expect(arrivalResult).toEqual(expect.objectContaining({ status: 'saved', arrivedLandmarkSpotId: spot.id }));
+    expect(beforeArrival).toEqual(expect.objectContaining({ status: 'saved', landmarkArrival: null }));
+    expect(arrivalResult).toEqual(expect.objectContaining({ status: 'saved', landmarkArrival: { type: 'spot', spotId: spot.id } }));
     expect(mockInsertLandmarkVisit).toHaveBeenCalledTimes(1);
     expect(mockInsertLandmarkVisit).toHaveBeenCalledWith(
       {
@@ -652,7 +658,7 @@ describe('スポット到達の記録', () => {
 
     await expect(recordLocationObservation({ ...input(arrival), landmarkDetection: enabledLandmarkDetection() })).resolves.toEqual({
       status: 'not-saved',
-      arrivedLandmarkSpotId: spot.id,
+      landmarkArrival: { type: 'spot', spotId: spot.id },
     });
 
     expect(mockInsert).not.toHaveBeenCalled();
@@ -700,7 +706,7 @@ describe('スポット到達の記録', () => {
     });
 
     expect(mockInsertLandmarkVisit).toHaveBeenCalled();
-    expect(result).toEqual(expect.objectContaining({ arrivedLandmarkSpotId: null }));
+    expect(result).toEqual(expect.objectContaining({ landmarkArrival: null }));
   });
 
   it('吸着中でも生座標でスポットを判定する', async () => {
@@ -710,7 +716,12 @@ describe('スポット到達の記録', () => {
 
     const result = await recordLocationObservation({
       ...input(rawPoint),
-      landmarkDetection: { status: 'enabled', spots: [snapRadiusSpot], visitedSpotIds: new Set<string>() },
+      landmarkDetection: {
+        status: 'enabled',
+        spots: [snapRadiusSpot],
+        visitedSpotIds: new Set<string>(),
+        visitedAreaIds: new Set<string>(),
+      },
     });
 
     expect(result).toEqual(expect.objectContaining({ point: expect.objectContaining({ snappedStayPlaceId: home.id }) }));
@@ -719,5 +730,114 @@ describe('スポット到達の記録', () => {
       '2026-08-23T01:00:00.000Z',
       mockTxn,
     );
+  });
+});
+
+describe('複数地点スポットの到達記録', () => {
+  /** 自宅位置の地点Aと、離れた地点B・Cを持つ3地点の複数地点スポット。 */
+  const multiSpot: LandmarkSpot = {
+    id: 'multi-spot',
+    name: '複数地点スポット',
+    prefectures: ['TOKYO'],
+    areas: [
+      { id: 'multi-a', name: '地点A', latitude: 35, longitude: 139, radiusMeters: 200, dwellSeconds: 180 },
+      { id: 'multi-b', name: '地点B', latitude: 36, longitude: 139, radiusMeters: 200, dwellSeconds: 180 },
+      { id: 'multi-c', name: '地点C', latitude: 37, longitude: 139, radiusMeters: 200, dwellSeconds: 180 },
+    ],
+    isMultiArea: true,
+    packs: [{ packId: 'pack', order: 1 }],
+  };
+
+  /** 地点Aで滞在が成立する直前の永続状態。 */
+  const dwellingAtAreaA = {
+    ...initialPersistedState,
+    landmarkCandidateSpotId: 'multi-a',
+    landmarkCandidateEnteredAt: '2026-08-23T00:00:00.000Z',
+  };
+
+  /** 複数地点スポットだけを検知対象にしたスナップショット。 */
+  function multiDetection(visitedAreaIds: string[] = []): LandmarkDetectionSnapshot {
+    return { status: 'enabled', spots: [multiSpot], visitedSpotIds: new Set<string>(), visitedAreaIds: new Set(visitedAreaIds) };
+  }
+
+  beforeEach(() => {
+    resetMocksToDefaults();
+    mockGetState.mockResolvedValue({ ...dwellingAtAreaA });
+  });
+
+  it('複数地点スポットの途中の地点ではスポット到達を記録せず area イベントを返す', async () => {
+    mockCountAreaVisits.mockResolvedValue(1);
+    const arrival = pointAtHome('2026-08-23T00:03:00.000Z');
+
+    const result = await recordLocationObservation({ ...input(arrival), landmarkDetection: multiDetection() });
+
+    expect(mockInsertAreaVisit).toHaveBeenCalledWith(
+      { areaId: 'multi-a', spotId: 'multi-spot', visitedAt: arrival.recordedAt, visitedLocalDate: arrival.localDate, locationPointId: 1 },
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+    expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
+    expect(result).toEqual(
+      expect.objectContaining({
+        landmarkArrival: { type: 'area', spotId: 'multi-spot', areaId: 'multi-a', visitedAreaCount: 1, totalAreaCount: 3 },
+      }),
+    );
+  });
+
+  it('最後の地点で同じトランザクション内にスポット到達を記録し spot イベントを返す', async () => {
+    mockCountAreaVisits.mockResolvedValue(3);
+    const arrival = pointAtHome('2026-08-23T00:03:00.000Z');
+
+    const result = await recordLocationObservation({ ...input(arrival), landmarkDetection: multiDetection(['multi-b', 'multi-c']) });
+
+    expect(mockCountAreaVisits).toHaveBeenCalledWith('multi-spot', mockTxn);
+    expect(mockInsertLandmarkVisit).toHaveBeenCalledWith(
+      { spotId: 'multi-spot', visitedAt: arrival.recordedAt, visitedLocalDate: arrival.localDate, locationPointId: 1 },
+      '2026-08-23T01:00:00.000Z',
+      mockTxn,
+    );
+    expect(result).toEqual(expect.objectContaining({ landmarkArrival: { type: 'spot', spotId: 'multi-spot' } }));
+  });
+
+  it('同じ地点への再到達は行が増えずイベントを返さない', async () => {
+    mockInsertAreaVisit.mockResolvedValue(false);
+
+    const result = await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:03:00.000Z')),
+      landmarkDetection: multiDetection(),
+    });
+
+    expect(mockCountAreaVisits).not.toHaveBeenCalled();
+    expect(mockInsertLandmarkVisit).not.toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({ landmarkArrival: null }));
+  });
+
+  it('最後の地点でスポット到達の行が既にある場合はイベントを返さない', async () => {
+    mockCountAreaVisits.mockResolvedValue(3);
+    mockInsertLandmarkVisit.mockResolvedValue(false);
+
+    const result = await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:03:00.000Z')),
+      landmarkDetection: multiDetection(['multi-b', 'multi-c']),
+    });
+
+    expect(mockInsertLandmarkVisit).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(expect.objectContaining({ landmarkArrival: null }));
+  });
+
+  it('円1つのスポットは従来どおり spot イベントを返し地点記録を作らない', async () => {
+    mockGetState.mockResolvedValue({
+      ...initialPersistedState,
+      landmarkCandidateSpotId: spot.id,
+      landmarkCandidateEnteredAt: '2026-08-23T00:00:00.000Z',
+    });
+
+    const result = await recordLocationObservation({
+      ...input(pointAtHome('2026-08-23T00:03:00.000Z')),
+      landmarkDetection: enabledLandmarkDetection(),
+    });
+
+    expect(mockInsertAreaVisit).not.toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({ landmarkArrival: { type: 'spot', spotId: spot.id } }));
   });
 });

@@ -86,8 +86,9 @@ export async function createLocationRecordingSession(options: LocationRecordingS
             savedPoints.push({ point: result.point, locationPointId: result.locationPointId });
           }
 
-          if ((result.status === 'saved' || result.status === 'not-saved') && result.arrivedLandmarkSpotId) {
-            arrivedLandmarkSpotIds.push(result.arrivedLandmarkSpotId);
+          if ((result.status === 'saved' || result.status === 'not-saved') && result.landmarkArrival?.type === 'spot') {
+            // 地点到達(area)の通知は後続タスクで扱う。ここではスポット到達だけを従来どおり集める
+            arrivedLandmarkSpotIds.push(result.landmarkArrival.spotId);
           }
 
           processedCount += 1;

@@ -146,6 +146,7 @@ jest.mock('@/features/achievements/achievementEvaluationGate', () => ({
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getLandmarkSpotVisits: jest.fn().mockResolvedValue([]),
+  getLandmarkAreaVisits: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock('@/features/achievements/achievementService', () => ({

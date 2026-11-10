@@ -2,6 +2,7 @@ import {
   LANDMARK_PACKS,
   LANDMARK_SPOTS,
   getActiveSpotsForPack,
+  getLandmarkAreaById,
   getLandmarkPackById,
   getLandmarkPackCompletionAchievementId,
   getLandmarkSpotById,
@@ -12,6 +13,19 @@ import { distanceMeters } from '@/utils/distance';
 const FALLS_PACK_ID = '01a0c450-6c00-7000-8000-000000000001';
 
 describe('スポット実績カタログ landmarkCatalog', () => {
+  it('円1つのスポットのIDから、地点IDがスポットIDと同じ地点と所属スポットを取得できる', () => {
+    const spot = LANDMARK_SPOTS[0];
+
+    const found = getLandmarkAreaById(spot.id);
+
+    expect(found?.spot).toBe(spot);
+    expect(found?.area.id).toBe(spot.id);
+  });
+
+  it('未知の地点IDはnullを返す', () => {
+    expect(getLandmarkAreaById('unknown-area')).toBeNull();
+  });
+
   it('スポットIDが重複していない', () => {
     const ids = LANDMARK_SPOTS.map((spot) => spot.id);
 

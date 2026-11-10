@@ -257,23 +257,23 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
    *
    * 地図操作のたびに呼ばれるため、前回と同じ目標のスポットはアニメーションを作り直さない。
    */
-  const startDetailFades = (nextVisibleSpotIds: string[]): string[] => {
-    const nextVisible = new Set(nextVisibleSpotIds);
+  const startDetailFades = (nextVisibleAreaIds: string[]): string[] => {
+    const nextVisible = new Set(nextVisibleAreaIds);
     const startedSpotIds: string[] = [];
 
-    for (const { spotId } of markers) {
-      const shouldShow = nextVisible.has(spotId);
+    for (const { areaId } of markers) {
+      const shouldShow = nextVisible.has(areaId);
 
-      if ((detailTargetsRef.current.get(spotId) ?? false) === shouldShow) {
+      if ((detailTargetsRef.current.get(areaId) ?? false) === shouldShow) {
         continue;
       }
 
-      detailTargetsRef.current.set(spotId, shouldShow);
-      startedSpotIds.push(spotId);
+      detailTargetsRef.current.set(areaId, shouldShow);
+      startedSpotIds.push(areaId);
       // opacity は JS ドライバで動かす。Android のマーカーはビューをビットマップへ撮り直して描くため、
       // ネイティブドライバで React を経由せず変えた値がスナップショットへ確実に乗るとは限らない。
       // 対象はパック内の数件だけなので JS ドライバでも負荷は小さい。
-      Animated.timing(getDetailOpacity(detailOpacities, spotId), {
+      Animated.timing(getDetailOpacity(detailOpacities, areaId), {
         toValue: shouldShow ? 1 : 0,
         duration: LANDMARK_SPOT_DETAIL_FADE_DURATION_MS,
         useNativeDriver: false,
@@ -283,7 +283,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
           return;
         }
 
-        setFadingSpotIds((current) => withoutSpotId(current, spotId));
+        setFadingSpotIds((current) => withoutSpotId(current, areaId));
       });
     }
 

@@ -304,6 +304,32 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.queryByText('華厳の滝')).toBeNull();
     });
 
+    it('複数地点スポットは地点ごとにマーカーを描き、番号を共有して、寄ると各地点のラベルと解放条件を出す', async () => {
+      const multiSpot: LandmarkSpot = {
+        id: 'spot-multi',
+        name: '複数地点スポット',
+        prefectures: ['TOCHIGI'],
+        areas: [
+          { id: 'area-a', name: '地点A', latitude: 36.0, longitude: 139.0, radiusMeters: 100, dwellSeconds: 60 },
+          { id: 'area-b', name: '地点B', latitude: 36.001, longitude: 139.0, radiusMeters: 100, dwellSeconds: 120 },
+        ],
+        isMultiArea: true,
+        packs: [{ packId: '01a0c450-6c00-7000-8000-000000000001', order: 1 }],
+      };
+      await renderPreview(null, [{ spot: multiSpot, visitedLocalDate: null }]);
+
+      // 2地点とも同じ表示番号(スポットの番号)で描く
+      expect(screen.getByLabelText('1番目のスポット 地点A')).toBeTruthy();
+      expect(screen.getByLabelText('1番目のスポット 地点B')).toBeTruthy();
+
+      await fireRegionChange({ latitude: 36.0005, longitude: 139.0, latitudeDelta: 0.003, longitudeDelta: 0.003 });
+
+      expect(screen.getByText('地点A')).toBeTruthy();
+      expect(screen.getByText('地点B')).toBeTruthy();
+      expect(screen.getByText('1分以上滞在で解放')).toBeTruthy();
+      expect(screen.getByText('2分以上滞在で解放')).toBeTruthy();
+    });
+
     it('到達済みスポットは解放条件の代わりに「到達済み」を出す', async () => {
       await renderPreview();
       await fireRegionChange(createLandmarkSpotFocusRegion({ latitude: 36.737917, longitude: 139.501972 }, 200));

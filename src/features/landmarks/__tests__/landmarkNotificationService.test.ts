@@ -1,12 +1,37 @@
 import * as Notifications from 'expo-notifications';
 
-import { notifyLandmarkSpotArrival } from '@/features/landmarks/landmarkNotificationService';
+import { notifyLandmarkAreaArrival, notifyLandmarkSpotArrival } from '@/features/landmarks/landmarkNotificationService';
 import { getVisitedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
   scheduleNotificationAsync: jest.fn(),
 }));
+
+/** テスト用の複数地点スポットID。マスタに複数地点スポットが無くても検証できるよう差し替える。 */
+const MULTI_SPOT_ID = 'multi-spot';
+
+/** テスト用の複数地点スポット。日本三名瀑パックに所属させ、進捗の書式を既存と同じ経路で確かめる。 */
+const MULTI_SPOT = {
+  id: 'multi-spot',
+  name: '二地点スポット',
+  areas: [
+    { id: 'multi-area-a', name: '地点A', latitude: 35, longitude: 139, radiusMeters: 100, dwellSeconds: 60 },
+    { id: 'multi-area-b', name: '地点B', latitude: 35.1, longitude: 139.1, radiusMeters: 100, dwellSeconds: 60 },
+  ],
+  isMultiArea: true,
+  packs: [{ packId: '01a0c450-6c00-7000-8000-000000000001', order: 9 }],
+};
+
+jest.mock('@/features/landmarks/landmarkCatalog', () => {
+  const actual = jest.requireActual('@/features/landmarks/landmarkCatalog');
+  return {
+    ...actual,
+    getLandmarkSpotById: (id: string) => (id === 'multi-spot' ? MULTI_SPOT : actual.getLandmarkSpotById(id)),
+    getLandmarkAreaById: (id: string) =>
+      id === 'multi-area-a' ? { area: MULTI_SPOT.areas[0], spot: MULTI_SPOT } : actual.getLandmarkAreaById(id),
+  };
+});
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getVisitedLandmarkSpotIds: jest.fn(),
@@ -97,5 +122,50 @@ describe('スポット到達通知 landmarkNotificationService', () => {
 
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     expect(getVisitedLandmarkSpotIds).not.toHaveBeenCalled();
+  });
+
+  it('複数地点スポットのコンプリートは専用の文言で通知する', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+
+    await notifyLandmarkSpotArrival(MULTI_SPOT_ID);
+
+    const [[request]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+    expect(request.content.title).toBe('スポットをコンプリートしました！');
+    expect(request.content.body).toBe('二地点スポットをコンプリートしました（日本三名瀑 1/3）');
+    expect(request.content.data).toEqual({ landmarkSpotId: MULTI_SPOT_ID });
+  });
+});
+
+describe('地点到達通知 notifyLandmarkAreaArrival', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('地点名とスポット内の進捗を本文に含め、地点IDとスポットIDを添える', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+
+    await notifyLandmarkAreaArrival({ areaId: 'multi-area-a', visitedAreaCount: 1, totalAreaCount: 2 });
+
+    const [[request]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+    expect(request.content.title).toBe('地点に到達しました！');
+    expect(request.content.body).toBe('地点Aに到達しました（二地点スポット 1/2）');
+    expect(request.content.data).toEqual({ landmarkAreaId: 'multi-area-a', landmarkSpotId: MULTI_SPOT_ID });
+    expect(request.content.channelId).toBe('achievements');
+  });
+
+  it('通知が許可されていなければ何も送らない', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: false });
+
+    await notifyLandmarkAreaArrival({ areaId: 'multi-area-a', visitedAreaCount: 1, totalAreaCount: 2 });
+
+    expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it('マスタに存在しない地点IDでは何も送らない', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+
+    await notifyLandmarkAreaArrival({ areaId: 'unknown-area', visitedAreaCount: 1, totalAreaCount: 2 });
+
+    expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 });

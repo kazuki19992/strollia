@@ -11,6 +11,7 @@ const mockInitializeDatabase = jest.fn();
 const mockProcessAchievementsForSavedPoint = jest.fn();
 const mockEvaluateAchievementsAndNotify = jest.fn();
 const mockNotifyLandmarkSpotArrival = jest.fn();
+const mockNotifyLandmarkAreaArrival = jest.fn();
 const mockGetLatestLocationPoint = jest.fn();
 const mockRecordLocationObservation = jest.fn();
 const mockToLocationPoint = jest.fn();
@@ -26,6 +27,7 @@ jest.mock('@/features/achievements/achievementService', () => ({
 
 jest.mock('@/features/landmarks/landmarkNotificationService', () => ({
   notifyLandmarkSpotArrival: (...args: unknown[]) => mockNotifyLandmarkSpotArrival(...args),
+  notifyLandmarkAreaArrival: (...args: unknown[]) => mockNotifyLandmarkAreaArrival(...args),
 }));
 
 jest.mock('@/features/logs/logRepository', () => ({
@@ -273,6 +275,46 @@ describe('スポット到達時の通知と実績評価', () => {
     mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
     mockEvaluateAchievementsAndNotify.mockResolvedValue([]);
     mockNotifyLandmarkSpotArrival.mockResolvedValue(undefined);
+  });
+
+  it('area イベントは地点到達通知を出し、実績の再評価はしない', async () => {
+    mockNotifyLandmarkAreaArrival.mockResolvedValue(undefined);
+    mockRecordLocationObservation.mockResolvedValue({
+      status: 'not-saved',
+      landmarkArrival: { type: 'area', spotId: arrivedSpotId, areaId: 'area-1', visitedAreaCount: 1, totalAreaCount: 2 },
+    });
+    const session = await createLocationRecordingSession();
+
+    await session.recordLocations([firstLocation]);
+
+    expect(mockNotifyLandmarkAreaArrival).toHaveBeenCalledWith({ areaId: 'area-1', visitedAreaCount: 1, totalAreaCount: 2 });
+    expect(mockNotifyLandmarkSpotArrival).not.toHaveBeenCalled();
+    expect(mockEvaluateAchievementsAndNotify).not.toHaveBeenCalled();
+  });
+
+  it('地点到達とコンプリートは到達順に実績処理より前に通知する', async () => {
+    const order: string[] = [];
+    mockNotifyLandmarkAreaArrival.mockImplementation(async () => {
+      order.push('area');
+    });
+    mockNotifyLandmarkSpotArrival.mockImplementation(async () => {
+      order.push('spot');
+    });
+    mockEvaluateAchievementsAndNotify.mockImplementation(async () => {
+      order.push('achievement');
+      return [];
+    });
+    mockRecordLocationObservation
+      .mockResolvedValueOnce({
+        status: 'not-saved',
+        landmarkArrival: { type: 'area', spotId: arrivedSpotId, areaId: 'area-2', visitedAreaCount: 2, totalAreaCount: 2 },
+      })
+      .mockResolvedValueOnce({ status: 'not-saved', landmarkArrival: { type: 'spot', spotId: arrivedSpotId } });
+    const session = await createLocationRecordingSession();
+
+    await session.recordLocations([firstLocation, secondLocation]);
+
+    expect(order).toEqual(['area', 'spot', 'achievement']);
   });
 
   it('保存されない観測で到達しても通知する', async () => {

@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 
 import { ACHIEVEMENT_NOTIFICATION_CHANNEL_ID } from '@/features/achievements/achievementNotificationService';
-import { getLandmarkPackById, getLandmarkSpotById, type LandmarkSpot } from './landmarkCatalog';
+import { getLandmarkAreaById, getLandmarkPackById, getLandmarkSpotById, type LandmarkSpot } from './landmarkCatalog';
 import { resolveLandmarkPackProgress } from './landmarkPackProgress';
 import { getVisitedLandmarkSpotIds } from './landmarkVisitRepository';
 
@@ -32,10 +32,50 @@ export async function notifyLandmarkSpotArrival(spotId: string): Promise<void> {
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'スポットに到達しました！',
+      // 複数地点スポットは全地点の到達で初めてスポット到達になるため「コンプリート」と伝える
+      title: spot.isMultiArea ? 'スポットをコンプリートしました！' : 'スポットに到達しました！',
       channelId: ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
       body,
       data: { landmarkSpotId: spot.id },
+      sound: true,
+      vibrate: [0, 1000],
+    } as Notifications.NotificationContentInput & { channelId: string },
+    trigger: null,
+  });
+}
+
+/**
+ * 複数地点スポットの途中の地点到達をローカル通知する。
+ *
+ * スポット全体の到達ではないため実績処理は伴わず、通知のみ。進捗(visited/total)は
+ * 記録側が確定した値を受け取る。通知チャンネルはスポット到達通知と同じ。
+ */
+export async function notifyLandmarkAreaArrival(event: {
+  areaId: string;
+  visitedAreaCount: number;
+  totalAreaCount: number;
+}): Promise<void> {
+  const resolved = getLandmarkAreaById(event.areaId);
+
+  // マスタから消えた地点は表示名が解決できないため通知しない
+  if (!resolved) {
+    return;
+  }
+
+  const permissions = await Notifications.getPermissionsAsync();
+
+  if (!permissions.granted) {
+    return;
+  }
+
+  const { area, spot } = resolved;
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: '地点に到達しました！',
+      channelId: ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
+      body: `${area.name}に到達しました（${spot.name} ${event.visitedAreaCount}/${event.totalAreaCount}）`,
+      data: { landmarkAreaId: area.id, landmarkSpotId: spot.id },
       sound: true,
       vibrate: [0, 1000],
     } as Notifications.NotificationContentInput & { channelId: string },
@@ -62,5 +102,7 @@ async function createArrivalBody(spot: LandmarkSpot): Promise<string> {
     })
     .filter((summary): summary is string => summary != null);
 
-  return packSummaries.length > 0 ? `${spot.name}に到達しました（${packSummaries.join('・')}）` : `${spot.name}に到達しました`;
+  const verb = spot.isMultiArea ? 'をコンプリートしました' : 'に到達しました';
+
+  return packSummaries.length > 0 ? `${spot.name}${verb}（${packSummaries.join('・')}）` : `${spot.name}${verb}`;
 }

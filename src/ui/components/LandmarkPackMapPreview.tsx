@@ -42,9 +42,11 @@ const LANDMARK_SPOT_CIRCLE_FILL_ALPHA_HEX = '24';
 
 /** 地図へ描くスポットマーカー1件ぶんの表示データ。 */
 type LandmarkSpotMarker = {
-  /** スポットID。Reactのkeyとマーカー識別子に使う。 */
+  /** 地点ID。Reactのkeyとマーカー識別子に使う。円1つのスポットではスポットIDと同じ。 */
+  areaId: string;
+  /** 地点が属するスポットのID。ズーム要求との突き合わせに使う。 */
   spotId: string;
-  /** スポット名。読み上げラベルと拡大時のラベルに使う。 */
+  /** 地点名。読み上げラベルと拡大時のラベルに使う。 */
   name: string;
   /** リストと同じ1始まりの表示番号。 */
   displayNumber: number;
@@ -241,7 +243,7 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
 
     const nextVisibleSpotIds = markers
       .filter((marker) => shouldShowLandmarkSpotDetails(region, marker.radiusMeters))
-      .map((marker) => marker.spotId);
+      .map((marker) => marker.areaId);
     const startedSpotIds = startDetailFades(nextVisibleSpotIds);
 
     if (startedSpotIds.length > 0) {
@@ -306,34 +308,34 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
           // 円は常に描く。縮尺に合わせて大きさが変わるので、引いた表示では小さくなるだけで邪魔にならない。
           // 輪郭は描かず、塗りだけの薄い円にする
           <Circle
-            key={`circle-${marker.spotId}`}
+            key={`circle-${marker.areaId}`}
             center={marker.coordinate}
             fillColor={`${theme.colors.primary}${LANDMARK_SPOT_CIRCLE_FILL_ALPHA_HEX}`}
             radius={marker.radiusMeters}
             strokeColor="transparent"
             strokeWidth={0}
-            testID={`landmark-spot-circle-${marker.spotId}`}
+            testID={`landmark-spot-circle-${marker.areaId}`}
           />
         ))}
         {markers.map((marker) => {
-          const isFading = fadingSpotIds.has(marker.spotId);
-          const isDetailMounted = visibleSpotIds.has(marker.spotId) || isFading;
-          const opacity = getDetailOpacity(detailOpacities, marker.spotId);
+          const isFading = fadingSpotIds.has(marker.areaId);
+          const isDetailMounted = visibleSpotIds.has(marker.areaId) || isFading;
+          const opacity = getDetailOpacity(detailOpacities, marker.areaId);
 
           return (
             <Marker
-              key={marker.spotId}
+              key={marker.areaId}
               accessibilityLabel={`${marker.displayNumber}番目のスポット ${marker.name}`}
               // 上下のラベル行は同じ高さなので、中心アンカーでバッジがスポット座標に重なる
               anchor={{ x: 0.5, y: 0.5 }}
               coordinate={marker.coordinate}
-              identifier={`landmark-spot-${marker.spotId}`}
-              tracksViewChanges={isInitialLayoutPending || isFading || refreshingSpotIds.has(marker.spotId)}
+              identifier={`landmark-spot-${marker.areaId}`}
+              tracksViewChanges={isInitialLayoutPending || isFading || refreshingSpotIds.has(marker.areaId)}
             >
               <View
                 collapsable={false}
                 style={styles.landmarkPackMapMarkerContainer}
-                testID={`landmark-spot-marker-${marker.spotId}`}
+                testID={`landmark-spot-marker-${marker.areaId}`}
                 onLayout={() => setLaidOutMarkerCount((count) => count + 1)}
               >
                 {/* 非表示時も行の高さは保ち、中身だけを外す(バッジの位置を動かさないため) */}
@@ -367,19 +369,21 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
  */
 function toLandmarkSpotMarkers(spotItems: LandmarkSpotListItem[]): LandmarkSpotMarker[] {
   return spotItems
-    .map(({ spot, visitedLocalDate }, index) => {
+    .flatMap(({ spot, visitedLocalDate }, index) => {
       const isVisited = visitedLocalDate !== null;
 
-      return {
+      // 複数地点スポットは地点ごとにマーカーを作る。番号はスポットの番号を共有する
+      return spot.areas.map((area) => ({
+        areaId: area.id,
         spotId: spot.id,
-        name: spot.name,
+        name: area.name,
         displayNumber: index + 1,
         isVisited,
-        coordinate: { latitude: spot.latitude, longitude: spot.longitude },
-        radiusMeters: spot.radiusMeters,
+        coordinate: { latitude: area.latitude, longitude: area.longitude },
+        radiusMeters: area.radiusMeters,
         // 到達済みに滞在条件を出すと「まだ解放されていない」と誤読されるため、状態だけを示す
-        conditionLabel: isVisited ? LANDMARK_SPOT_VISITED_LABEL : formatLandmarkUnlockCondition(spot.dwellSeconds),
-      };
+        conditionLabel: isVisited ? LANDMARK_SPOT_VISITED_LABEL : formatLandmarkUnlockCondition(area.dwellSeconds),
+      }));
     })
     .filter((marker) => isValidRouteCoordinate(marker.coordinate));
 }
@@ -397,12 +401,12 @@ function LandmarkSpotMapLabel({ label, styles }: { label: string; styles: AppSty
 }
 
 /**
- * マーカー1件の表示内容を、比較用の1行(タブ区切り、先頭はスポットID)にする。
+ * マーカー1件の表示内容を、比較用の1行(タブ区切り、先頭は地点ID)にする。
  *
  * Android で撮り直しが必要になる見た目の要素(番号・到達状態・スポット名・解放条件)だけを含める。
  */
 function toMarkerContentLine(marker: LandmarkSpotMarker): string {
-  return [marker.spotId, marker.displayNumber, marker.isVisited, marker.name, marker.conditionLabel].join('\t');
+  return [marker.areaId, marker.displayNumber, marker.isVisited, marker.name, marker.conditionLabel].join('\t');
 }
 
 /** `toMarkerContentLine` を連結したキーを、スポットIDごとの表示内容へ戻す。 */

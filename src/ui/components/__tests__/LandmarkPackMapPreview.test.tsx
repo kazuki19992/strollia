@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
-import type { LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
+import type { LandmarkArea, LandmarkSpot } from '@/features/landmarks/landmarkCatalog';
 import {
   createLandmarkSpotFocusRegion,
   createLandmarkSpotsBounds,
@@ -54,14 +54,18 @@ const styles = createStyles(lightTheme);
 
 /** スポット1件を組み立てる。地図表示に必要な緯度経度以外は既定値で足りる。 */
 function createSpot(
-  overrides: Pick<LandmarkSpot, 'id' | 'name' | 'latitude' | 'longitude'> & Partial<Pick<LandmarkSpot, 'radiusMeters' | 'dwellSeconds'>>,
+  overrides: Pick<LandmarkArea, 'id' | 'name' | 'latitude' | 'longitude'> & Partial<Pick<LandmarkArea, 'radiusMeters' | 'dwellSeconds'>>,
 ): LandmarkSpot {
+  const { id, name, latitude, longitude, radiusMeters = 200, dwellSeconds = 180 } = overrides;
+
   return {
+    id,
+    name,
     prefectures: ['TOCHIGI'],
-    radiusMeters: 200,
-    dwellSeconds: 180,
+    // 円1つのスポットは地点ID・地点名がスポットと同じ1件に正規化される
+    areas: [{ id, name, latitude, longitude, radiusMeters, dwellSeconds }],
+    isMultiArea: false,
     packs: [{ packId: '01a0c450-6c00-7000-8000-000000000001', order: 1 }],
-    ...overrides,
   };
 }
 
@@ -133,7 +137,11 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
     // 期待値はパック内の全スポット(retired含む)の到達エリアの円まで含めた外接境界から作った範囲と一致する
     const expectedRegion = createRegionFromBounds(
       createLandmarkSpotsBounds(
-        spotItems.map(({ spot }) => ({ latitude: spot.latitude, longitude: spot.longitude, radiusMeters: spot.radiusMeters })),
+        spotItems.map(({ spot }) => ({
+          latitude: spot.areas[0].latitude,
+          longitude: spot.areas[0].longitude,
+          radiusMeters: spot.areas[0].radiusMeters,
+        })),
       ),
     );
 
@@ -277,7 +285,7 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.queryByText('到達済み')).toBeNull();
       // 円は地図の縮尺に合わせて大きさが変わるので、引いた表示では小さくなるだけで邪魔にならない
       for (const { spot } of spotItems) {
-        expect(screen.getByTestId(`landmark-spot-circle-${spot.id}`).props.radius).toBe(spot.radiusMeters);
+        expect(screen.getByTestId(`landmark-spot-circle-${spot.id}`).props.radius).toBe(spot.areas[0].radiusMeters);
       }
     });
 

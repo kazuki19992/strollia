@@ -1,5 +1,5 @@
 import { withExclusiveTransaction } from '@/db/database';
-import { resolveLandmarkArrival, type LandmarkArrivalState } from '@/features/landmarks/landmarkArrivalResolver';
+import { resolveLandmarkArrival, type LandmarkAreaArrival, type LandmarkArrivalState } from '@/features/landmarks/landmarkArrivalResolver';
 import type { LandmarkDetectionSnapshot } from '@/features/landmarks/landmarkRecordingService';
 import { insertLandmarkSpotVisitInCurrentTransaction } from '@/features/landmarks/landmarkVisitRepository';
 import {
@@ -80,7 +80,7 @@ function preserveSnapState(state: PersistedLocationRecordingState): StayPlaceSna
 /** 永続化された記録状態からスポット到達判定の状態を取り出す。 */
 function toLandmarkArrivalState(state: PersistedLocationRecordingState): LandmarkArrivalState {
   return {
-    candidateSpotId: state.landmarkCandidateSpotId,
+    candidateAreaId: state.landmarkCandidateSpotId,
     candidateEnteredAt: state.landmarkCandidateEnteredAt,
     outsideCount: state.landmarkOutsideCount,
   };
@@ -97,9 +97,9 @@ function resolveLandmarkArrivalForObservation(
   persistedState: PersistedLocationRecordingState,
   rawPoint: NewLocationPoint,
   detection: LandmarkDetectionSnapshot,
-): { state: LandmarkArrivalState; arrivedSpotId: string | null } {
+): { state: LandmarkArrivalState; arrival: LandmarkAreaArrival | null } {
   if (detection.status === 'unavailable') {
-    return { state: toLandmarkArrivalState(persistedState), arrivedSpotId: null };
+    return { state: toLandmarkArrivalState(persistedState), arrival: null };
   }
 
   return resolveLandmarkArrival({
@@ -109,6 +109,8 @@ function resolveLandmarkArrivalForObservation(
     observation: { latitude: rawPoint.latitude, longitude: rawPoint.longitude, recordedAt: rawPoint.recordedAt },
     spots: detection.spots,
     visitedSpotIds: detection.visitedSpotIds,
+    // 円1つのスポットは地点ID=スポットIDのため、当面スポットの到達済みIDをそのまま渡して正しい(複数地点の記録はTask 3)
+    visitedAreaIds: detection.visitedSpotIds,
   });
 }
 
@@ -178,10 +180,11 @@ export async function recordLocationObservation(input: RecordLocationObservation
      */
     let arrivedLandmarkSpotId: string | null = null;
 
-    if (landmarkResult.arrivedSpotId) {
+    // 複数地点の到達記録は後続タスクで扱う。円1つのスポット(地点ID=スポットID)だけ従来どおりスポット到達を記録する
+    if (landmarkResult.arrival && landmarkResult.arrival.areaId === landmarkResult.arrival.spotId) {
       const inserted = await insertLandmarkSpotVisitInCurrentTransaction(
         {
-          spotId: landmarkResult.arrivedSpotId,
+          spotId: landmarkResult.arrival.spotId,
           visitedAt: rawPoint.recordedAt,
           visitedLocalDate: rawPoint.localDate,
           // 保存対象外の観測で確定した場合は根拠GPS点が存在しないためnullになる
@@ -191,7 +194,7 @@ export async function recordLocationObservation(input: RecordLocationObservation
         txn,
       );
 
-      arrivedLandmarkSpotId = inserted ? landmarkResult.arrivedSpotId : null;
+      arrivedLandmarkSpotId = inserted ? landmarkResult.arrival.spotId : null;
     }
 
     const lastVisitedGridPoint =
@@ -204,7 +207,7 @@ export async function recordLocationObservation(input: RecordLocationObservation
         lastObservedAt: rawPoint.recordedAt,
         lastVisitedGridPoint,
         // 単一行を丸ごと上書きするため、到達判定で求めた途中状態も必ず書き戻す
-        landmarkCandidateSpotId: landmarkResult.state.candidateSpotId,
+        landmarkCandidateSpotId: landmarkResult.state.candidateAreaId,
         landmarkCandidateEnteredAt: landmarkResult.state.candidateEnteredAt,
         landmarkOutsideCount: landmarkResult.state.outsideCount,
       },

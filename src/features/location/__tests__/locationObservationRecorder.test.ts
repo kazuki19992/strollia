@@ -84,10 +84,17 @@ const spot: LandmarkSpot = {
   id: '01a0c450-6c00-7000-8000-000000000101',
   name: 'テスト用スポット',
   prefectures: ['TOKYO'],
-  latitude: 35,
-  longitude: 139,
-  radiusMeters: 200,
-  dwellSeconds: 180,
+  areas: [
+    {
+      id: '01a0c450-6c00-7000-8000-000000000101',
+      name: 'テスト用スポット',
+      latitude: 35,
+      longitude: 139,
+      radiusMeters: 200,
+      dwellSeconds: 180,
+    },
+  ],
+  isMultiArea: false,
   packs: [{ packId: '01a0c450-6c00-7000-8000-000000000001', order: 1 }],
 };
 
@@ -100,9 +107,16 @@ const snapRadiusSpot: LandmarkSpot = {
   ...spot,
   id: '01a0c450-6c00-7000-8000-000000000102',
   name: '吸着半径内のスポット',
-  latitude: 35 + 40 / 6_371_000 / (Math.PI / 180),
-  radiusMeters: 20,
-  dwellSeconds: 0,
+  areas: [
+    {
+      id: '01a0c450-6c00-7000-8000-000000000102',
+      name: '吸着半径内のスポット',
+      latitude: 35 + 40 / 6_371_000 / (Math.PI / 180),
+      longitude: 139,
+      radiusMeters: 20,
+      dwellSeconds: 0,
+    },
+  ],
 };
 
 /** Plus有効時の検知スナップショットを作る。 */

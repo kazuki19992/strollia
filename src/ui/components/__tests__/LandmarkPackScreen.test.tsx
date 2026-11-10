@@ -62,10 +62,8 @@ const PACK_NOTICE = '工事や点検などで登れない場合があります�
 /** スポット1件を組み立てる。到達日以外はパック詳細の表示に必要な最小構成。 */
 function createSpot(overrides: Partial<LandmarkSpot> & Pick<LandmarkSpot, 'id' | 'name' | 'prefectures'>): LandmarkSpot {
   return {
-    latitude: 36.737917,
-    longitude: 139.501972,
-    radiusMeters: 200,
-    dwellSeconds: 180,
+    areas: [{ id: overrides.id, name: overrides.name, latitude: 36.737917, longitude: 139.501972, radiusMeters: 200, dwellSeconds: 180 }],
+    isMultiArea: false,
     packs: [{ packId: pack.id, order: 1 }],
     ...overrides,
   };
@@ -176,7 +174,10 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     const nachiSpot = spotItems[1]!.spot;
     // 到達エリアの円が余白付きで収まる範囲へ寄る
     expect(mockAnimateToRegion).toHaveBeenCalledWith(
-      createLandmarkSpotFocusRegion({ latitude: nachiSpot.latitude, longitude: nachiSpot.longitude }, nachiSpot.radiusMeters),
+      createLandmarkSpotFocusRegion(
+        { latitude: nachiSpot.areas[0].latitude, longitude: nachiSpot.areas[0].longitude },
+        nachiSpot.areas[0].radiusMeters,
+      ),
       expect.any(Number),
     );
   });
@@ -251,7 +252,10 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
 
       const retiredSpot = retiredSpotItems[2]!.spot;
       expect(mockAnimateToRegion).toHaveBeenCalledWith(
-        createLandmarkSpotFocusRegion({ latitude: retiredSpot.latitude, longitude: retiredSpot.longitude }, retiredSpot.radiusMeters),
+        createLandmarkSpotFocusRegion(
+          { latitude: retiredSpot.areas[0].latitude, longitude: retiredSpot.areas[0].longitude },
+          retiredSpot.areas[0].radiusMeters,
+        ),
         expect.any(Number),
       );
     });
@@ -314,7 +318,10 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
 
       const nachiSpot = spotItems[1]!.spot;
       expect(mockAnimateToRegion).toHaveBeenCalledWith(
-        createLandmarkSpotFocusRegion({ latitude: nachiSpot.latitude, longitude: nachiSpot.longitude }, nachiSpot.radiusMeters),
+        createLandmarkSpotFocusRegion(
+          { latitude: nachiSpot.areas[0].latitude, longitude: nachiSpot.areas[0].longitude },
+          nachiSpot.areas[0].radiusMeters,
+        ),
         expect.any(Number),
       );
     });

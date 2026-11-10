@@ -3,12 +3,16 @@ import { Image } from 'react-native';
 import {
   GENERATED_LANDMARK_PACKS,
   GENERATED_LANDMARK_SPOTS,
+  type GeneratedLandmarkArea,
   type GeneratedLandmarkPack,
   type GeneratedLandmarkSpot,
 } from './landmarkCatalog.generated';
 
-/** 到達判定の対象となる1地点。 */
+/** 到達判定の対象となるスポット。1つ以上の到達地点(円)を持つ。 */
 export type LandmarkSpot = GeneratedLandmarkSpot;
+
+/** スポットを構成する1つの到達地点(円)。 */
+export type LandmarkArea = GeneratedLandmarkArea;
 
 /** 完走トロフィーの通知添付URIを含むパック定義。 */
 export type LandmarkPack = GeneratedLandmarkPack & {
@@ -27,6 +31,19 @@ export const LANDMARK_PACKS: readonly LandmarkPack[] = [...GENERATED_LANDMARK_PA
 /** IDからスポットを取得する。未知のIDはnull。 */
 export function getLandmarkSpotById(id: string): LandmarkSpot | null {
   return LANDMARK_SPOTS.find((spot) => spot.id === id) ?? null;
+}
+
+/** 地点IDから地点と所属スポットを取得する。未知のIDはnull。 */
+export function getLandmarkAreaById(areaId: string): { area: LandmarkArea; spot: LandmarkSpot } | null {
+  for (const spot of LANDMARK_SPOTS) {
+    const area = spot.areas.find((candidate) => candidate.id === areaId);
+
+    if (area) {
+      return { area, spot };
+    }
+  }
+
+  return null;
 }
 
 /** IDからパックを取得する。未知のIDはnull。 */

@@ -74,14 +74,17 @@ const spotItems: LandmarkSpotListItem[] = [
   {
     spot: createSpot({ id: 'spot-1', name: '華厳の滝', latitude: 36.737917, longitude: 139.501972 }),
     visitedLocalDate: '2026-04-12',
+    areaItems: [],
   },
   {
     spot: createSpot({ id: 'spot-2', name: '那智の滝', latitude: 33.675278, longitude: 135.8875, radiusMeters: 650, dwellSeconds: 5400 }),
     visitedLocalDate: null,
+    areaItems: [],
   },
   {
     spot: createSpot({ id: 'spot-3', name: '袋田の滝', latitude: 36.767222, longitude: 140.398333 }),
     visitedLocalDate: null,
+    areaItems: [],
   },
 ];
 
@@ -244,7 +247,11 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
 
   it('緯度経度が壊れたスポットはマーカーから除き、番号の連番は残りのスポットで保つ', async () => {
     const brokenItems: LandmarkSpotListItem[] = [
-      { spot: createSpot({ id: 'spot-broken', name: '幻の滝', latitude: Number.NaN, longitude: 139 }), visitedLocalDate: null },
+      {
+        spot: createSpot({ id: 'spot-broken', name: '幻の滝', latitude: Number.NaN, longitude: 139 }),
+        visitedLocalDate: null,
+        areaItems: [],
+      },
       spotItems[1],
     ];
 
@@ -316,7 +323,7 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
         isMultiArea: true,
         packs: [{ packId: '01a0c450-6c00-7000-8000-000000000001', order: 1 }],
       };
-      await renderPreview(null, [{ spot: multiSpot, visitedLocalDate: null }]);
+      await renderPreview(null, [{ spot: multiSpot, visitedLocalDate: null, areaItems: [] }]);
 
       // 2地点とも同じ表示番号(スポットの番号)で描く
       expect(screen.getByLabelText('1番目のスポット 地点A')).toBeTruthy();

@@ -74,10 +74,12 @@ const spotItems: LandmarkSpotListItem[] = [
   {
     spot: createSpot({ id: '01a0c450-6c00-7000-8000-000000000101', name: '華厳の滝', prefectures: ['TOCHIGI'] }),
     visitedLocalDate: '2026-04-12',
+    areaItems: [],
   },
   {
     spot: createSpot({ id: '01a0c450-6c00-7000-8000-000000000102', name: '那智の滝', prefectures: ['WAKAYAMA'] }),
     visitedLocalDate: null,
+    areaItems: [],
   },
 ];
 
@@ -228,6 +230,7 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
           retired: true,
         }),
         visitedLocalDate: null,
+        areaItems: [],
       },
     ];
 

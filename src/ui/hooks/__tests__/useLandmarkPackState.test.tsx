@@ -39,7 +39,7 @@ describe('スポットパック状態 useLandmarkPackState', () => {
       expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
     });
 
-    expect(result.current.landmarkPackItems.length).toBe(4);
+    expect(result.current.landmarkPackItems.length).toBe(5);
     expect(result.current.landmarkPackItems[0]?.isLocked).toBe(false);
     expect(result.current.landmarkPackItems[0]?.totalCount).toBe(3);
     expect(result.current.landmarkPackItems.slice(1).every((item) => item.isLocked)).toBe(true);

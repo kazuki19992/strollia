@@ -35,5 +35,14 @@
     "sortOrder": 400,
     "isFree": false,
     "notice": "工事・点検・天候などで灯台に登れない日があるほか、季節によって公開していない灯台もあります。"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000005",
+    "name": "日本三景",
+    "description": "松島・天橋立・宮島の日本三景を、それぞれの見どころを回って巡る",
+    "trophyImage": "japan-three-views-3.png",
+    "trophyIcon": "japan-three-views-3",
+    "sortOrder": 500,
+    "isFree": false
   }
 ]

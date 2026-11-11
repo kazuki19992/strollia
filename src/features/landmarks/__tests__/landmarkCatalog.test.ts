@@ -115,10 +115,23 @@ describe('スポット実績カタログ landmarkCatalog', () => {
   it.each([
     ['01a0c450-6c00-7000-8000-000000000003', 'JR鉄道博物館', 3],
     ['01a0c450-6c00-7000-8000-000000000004', 'のぼれる灯台', 16],
+    ['01a0c450-6c00-7000-8000-000000000005', '日本三景', 3],
   ])('有料パック %s(%s)は%i件のスポットを持つ', (packId, name, count) => {
     expect(getLandmarkPackById(packId)?.name).toBe(name);
     expect(getLandmarkPackById(packId)?.isFree).toBe(false);
     expect(getActiveSpotsForPack(packId)).toHaveLength(count);
+  });
+
+  it.each([
+    ['松島', 3],
+    ['天橋立', 4],
+    ['宮島', 3],
+  ])('日本三景の%sは%i地点の複数地点スポットで、観光案内所を地点に含む', (spotName, areaCount) => {
+    const spot = getActiveSpotsForPack('01a0c450-6c00-7000-8000-000000000005').find((candidate) => candidate.name === spotName);
+
+    expect(spot?.isMultiArea).toBe(true);
+    expect(spot?.areas).toHaveLength(areaCount);
+    expect(spot?.areas.map((area) => area.name)).toContain(`観光案内所（${spotName}）`);
   });
 
   it('のぼれる灯台パックは参観できない日があることを特記事項 notice に持つ', () => {
@@ -130,6 +143,7 @@ describe('スポット実績カタログ landmarkCatalog', () => {
   it.each([
     ['01a0c450-6c00-7000-8000-000000000002', 'JRA競馬場'],
     ['01a0c450-6c00-7000-8000-000000000003', 'JR鉄道博物館'],
+    ['01a0c450-6c00-7000-8000-000000000005', '日本三景'],
   ])('パック %s(%s)は特記事項を持たない', (packId, name) => {
     expect(getLandmarkPackById(packId)?.name).toBe(name);
     expect(getLandmarkPackById(packId)?.notice).toBeUndefined();

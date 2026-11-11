@@ -1,5 +1,5 @@
 import { getLandmarkDetectionSnapshotForRecording } from '@/features/landmarks/landmarkRecordingService';
-import { getVisitedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
+import { getVisitedLandmarkAreaIds, getVisitedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
 import { getConfirmedPremiumAccessState } from '@/features/premium/revenueCatAccess';
 
 jest.mock('@/features/premium/revenueCatAccess', () => ({
@@ -8,12 +8,14 @@ jest.mock('@/features/premium/revenueCatAccess', () => ({
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getVisitedLandmarkSpotIds: jest.fn(),
+  getVisitedLandmarkAreaIds: jest.fn(),
 }));
 
 describe('スポット検知の記録境界 landmarkRecordingService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (getVisitedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set());
+    (getVisitedLandmarkAreaIds as jest.Mock).mockResolvedValue(new Set());
   });
 
   it('Plus有効なら検知対象のスポットと到達済みIDを返す', async () => {
@@ -26,6 +28,18 @@ describe('スポット検知の記録境界 landmarkRecordingService', () => {
     if (snapshot.status === 'enabled') {
       expect(snapshot.spots.length).toBeGreaterThan(0);
       expect(snapshot.visitedSpotIds.has('01a0c450-6c00-7000-8000-000000000101')).toBe(true);
+    }
+  });
+
+  it('検知対象に到達済み地点IDの集合を含める', async () => {
+    (getConfirmedPremiumAccessState as jest.Mock).mockResolvedValue({ isPlusActive: true, entitlementId: 'strollia_plus' });
+    (getVisitedLandmarkAreaIds as jest.Mock).mockResolvedValue(new Set(['area-1']));
+
+    const snapshot = await getLandmarkDetectionSnapshotForRecording();
+
+    expect(snapshot.status).toBe('enabled');
+    if (snapshot.status === 'enabled') {
+      expect(snapshot.visitedAreaIds.has('area-1')).toBe(true);
     }
   });
 

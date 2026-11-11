@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   LANDMARK_PACKS,
+  type LandmarkArea,
   type LandmarkPack,
   type LandmarkSpot,
   getAllSpotsForPack,
   getLandmarkPackById,
 } from '@/features/landmarks/landmarkCatalog';
 import { resolveLandmarkPackProgress } from '@/features/landmarks/landmarkPackProgress';
-import { getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
+import { getLandmarkAreaVisits, getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
 
 /** 実績画面のスポットセクションに表示するパック行。 */
 export type LandmarkPackListItem = {
@@ -22,12 +23,22 @@ export type LandmarkPackListItem = {
   isLocked: boolean;
 };
 
+/** 複数地点スポットの1地点ぶんの行。 */
+export type LandmarkAreaListItem = {
+  /** 地点定義。 */
+  area: LandmarkArea;
+  /** 到達した日のローカル日付(YYYY-MM-DD)。未到達はnull。 */
+  visitedLocalDate: string | null;
+};
+
 /** パック詳細画面に表示するスポット行。 */
 export type LandmarkSpotListItem = {
   /** スポット定義。 */
   spot: LandmarkSpot;
   /** 到達した日のローカル日付(YYYY-MM-DD)。未到達はnull。 */
   visitedLocalDate: string | null;
+  /** 複数地点スポットだけ地点ごとの行(マスタ順)。円1つのスポットは空配列。 */
+  areaItems: LandmarkAreaListItem[];
 };
 
 /** パック詳細画面へ渡す1パックぶんの表示データ。 */
@@ -62,16 +73,21 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
   /** 到達済みスポットIDから到達日を引くMap。詳細画面の日別記録遷移にも使う。 */
   const [visitedLocalDateBySpotId, setVisitedLocalDateBySpotId] = useState<ReadonlyMap<string, string>>(() => new Map());
 
-  const reloadLandmarkState = useCallback(async (): Promise<void> => {
-    const visits = await getLandmarkSpotVisits();
+  /** 到達済み地点IDから到達日を引くMap。パック進捗(スポット単位)には使わず、地点行の表示にだけ使う。 */
+  const [visitedLocalDateByAreaId, setVisitedLocalDateByAreaId] = useState<ReadonlyMap<string, string>>(() => new Map());
 
-    setVisitedLocalDateBySpotId(new Map(visits.map((visit) => [visit.spotId, visit.visitedLocalDate])));
+  const reloadLandmarkState = useCallback(async (): Promise<void> => {
+    // スポットと地点の到達は別テーブル。片方だけ新しい状態を見せないよう、両方読めてから反映する
+    const [spotVisits, areaVisits] = await Promise.all([getLandmarkSpotVisits(), getLandmarkAreaVisits()]);
+
+    setVisitedLocalDateBySpotId(new Map(spotVisits.map((visit) => [visit.spotId, visit.visitedLocalDate])));
+    setVisitedLocalDateByAreaId(new Map(areaVisits.map((visit) => [visit.areaId, visit.visitedLocalDate])));
   }, []);
 
   useEffect(() => {
     // 読み込みに失敗しても実績画面全体を落とさない。進捗0のまま一覧は表示できる
     reloadLandmarkState().catch((error: unknown) => {
-      console.warn('Failed to load landmark spot visits:', error);
+      console.warn('Failed to load landmark visits:', error);
     });
   }, [reloadLandmarkState]);
 
@@ -107,10 +123,14 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
         spotItems: getAllSpotsForPack(packId).map((spot) => ({
           spot,
           visitedLocalDate: visitedLocalDateBySpotId.get(spot.id) ?? null,
+          // 円1つのスポットは地点行を出さない(スポット行がそのまま地点を表す)
+          areaItems: spot.isMultiArea
+            ? spot.areas.map((area) => ({ area, visitedLocalDate: visitedLocalDateByAreaId.get(area.id) ?? null }))
+            : [],
         })),
       };
     },
-    [visitedLocalDateBySpotId],
+    [visitedLocalDateBySpotId, visitedLocalDateByAreaId],
   );
 
   return { landmarkPackItems, getLandmarkPackDetail, reloadLandmarkState };

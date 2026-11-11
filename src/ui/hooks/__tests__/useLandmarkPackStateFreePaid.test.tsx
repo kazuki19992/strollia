@@ -1,10 +1,11 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 
-import { getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
+import { getLandmarkAreaVisits, getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
 import { useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getLandmarkSpotVisits: jest.fn(),
+  getLandmarkAreaVisits: jest.fn().mockResolvedValue([]),
 }));
 
 /**
@@ -23,20 +24,16 @@ jest.mock('@/features/landmarks/landmarkCatalog.generated', () => ({
       id: 'spot-free',
       name: '無料スポット',
       prefectures: ['TOKYO'],
-      latitude: 35.0,
-      longitude: 139.0,
-      radiusMeters: 200,
-      dwellSeconds: 180,
+      areas: [{ id: 'spot-free', name: '無料スポット', latitude: 35.0, longitude: 139.0, radiusMeters: 200, dwellSeconds: 180 }],
+      isMultiArea: false,
       packs: [{ packId: 'pack-free', order: 1 }],
     },
     {
       id: 'spot-paid',
       name: '有料スポット',
       prefectures: ['TOKYO'],
-      latitude: 35.1,
-      longitude: 139.1,
-      radiusMeters: 200,
-      dwellSeconds: 180,
+      areas: [{ id: 'spot-paid', name: '有料スポット', latitude: 35.1, longitude: 139.1, radiusMeters: 200, dwellSeconds: 180 }],
+      isMultiArea: false,
       packs: [{ packId: 'pack-paid', order: 1 }],
     },
   ],

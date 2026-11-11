@@ -1,10 +1,11 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 
-import { getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
+import { getLandmarkAreaVisits, getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
 import { useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getLandmarkSpotVisits: jest.fn(),
+  getLandmarkAreaVisits: jest.fn().mockResolvedValue([]),
 }));
 
 /**
@@ -23,20 +24,16 @@ jest.mock('@/features/landmarks/landmarkCatalog.generated', () => {
         id: 'spot-active',
         name: '現存するスポット',
         prefectures: ['TOKYO'],
-        latitude: 35.0,
-        longitude: 139.0,
-        radiusMeters: 200,
-        dwellSeconds: 180,
+        areas: [{ id: 'spot-active', name: '現存するスポット', latitude: 35.0, longitude: 139.0, radiusMeters: 200, dwellSeconds: 180 }],
+        isMultiArea: false,
         packs: [{ packId, order: 1 }],
       },
       {
         id: 'spot-retired',
         name: '現存しないスポット',
         prefectures: ['TOKYO'],
-        latitude: 35.1,
-        longitude: 139.1,
-        radiusMeters: 200,
-        dwellSeconds: 180,
+        areas: [{ id: 'spot-retired', name: '現存しないスポット', latitude: 35.1, longitude: 139.1, radiusMeters: 200, dwellSeconds: 180 }],
+        isMultiArea: false,
         retired: true,
         packs: [{ packId, order: 2 }],
       },

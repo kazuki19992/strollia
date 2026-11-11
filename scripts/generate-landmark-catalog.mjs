@@ -12,8 +12,11 @@ import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dataDir = resolve(rootDir, 'data/landmarks');
-const outputPath = resolve(rootDir, 'src/features/landmarks/landmarkCatalog.generated.ts');
+// テストから入出力先を差し替えられるよう環境変数を受け付ける
+const dataDir = process.env.LANDMARK_DATA_DIR ? resolve(process.env.LANDMARK_DATA_DIR) : resolve(rootDir, 'data/landmarks');
+const outputPath = process.env.LANDMARK_CATALOG_OUTPUT
+  ? resolve(process.env.LANDMARK_CATALOG_OUTPUT)
+  : resolve(rootDir, 'src/features/landmarks/landmarkCatalog.generated.ts');
 
 /** JSONファイルを読み込む。 */
 function readJson(fileName) {
@@ -70,6 +73,69 @@ for (const spot of spots) {
     errors.push(`スポットIDが重複しています: ${spot.id} (${spot.name})`);
   }
   spotIds.add(spot.id);
+}
+
+/**
+ * スポットは常に areas(1件以上)を持つ。1件なら円1つのスポット、2件以上なら複数地点スポット。
+ *
+ * 円1つのスポットの地点は id/name を省略させ、スポットの id/name を補う。
+ * 地点IDをスポットIDと同じにすることで、計測中状態(landmark_candidate_spot_id)に
+ * スポットIDを保存していた既存データをそのまま地点IDとして読める。
+ * 複数地点スポットの地点は到達記録に保存するため、id/name を必須にする。
+ */
+for (const spot of spots) {
+  spot.isMultiArea = spot.areas.length >= 2;
+  if (spot.isMultiArea) {
+    for (const area of spot.areas) {
+      if (area.id === undefined || area.name === undefined) {
+        errors.push(`複数地点スポットの地点には id と name が必要です: ${spot.name}`);
+      }
+    }
+  } else {
+    const [area] = spot.areas;
+    if (area.id !== undefined || area.name !== undefined) {
+      errors.push(`地点が1件のスポットでは地点の id と name を省略してください(スポットの id/name を使います): ${spot.name}`);
+    }
+    spot.areas = [{ ...area, id: spot.id, name: spot.name }];
+  }
+}
+
+if (errors.length > 0) {
+  fail(errors);
+}
+
+// 地点IDはスポットID・他の地点IDと全体で一意(landmark_area_visits.area_id が単独でキーになるため)
+const areaIds = new Map();
+for (const spot of spots) {
+  for (const area of spot.areas) {
+    if (spot.isMultiArea && spotIds.has(area.id)) {
+      errors.push(`地点IDがスポットIDと重複しています: ${area.id} (${spot.name} / ${area.name})`);
+    } else if (areaIds.has(area.id) && !(areaIds.get(area.id) === spot && !spot.isMultiArea)) {
+      errors.push(`地点IDが重複しています: ${area.id} (${spot.name} / ${area.name})`);
+    }
+    areaIds.set(area.id, spot);
+  }
+}
+
+/** 2点間のハバーサイン距離(メートル)。 */
+function haversineMeters(a, b) {
+  const toRad = (degrees) => (degrees * Math.PI) / 180;
+  const h =
+    Math.sin(toRad(b.latitude - a.latitude) / 2) ** 2 +
+    Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(toRad(b.longitude - a.longitude) / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.sqrt(h));
+}
+
+// 円の重なり検証(retired を除く)。重なると最寄り判定で片方が選ばれ続け、到達の取り逃しが起きうる
+const activeAreas = spots.filter((spot) => !spot.retired).flatMap((spot) => spot.areas.map((area) => ({ spot, area })));
+for (let i = 0; i < activeAreas.length; i += 1) {
+  for (let j = i + 1; j < activeAreas.length; j += 1) {
+    const left = activeAreas[i];
+    const right = activeAreas[j];
+    if (haversineMeters(left.area, right.area) < left.area.radiusMeters + right.area.radiusMeters) {
+      errors.push(`円が重なっています: ${left.spot.name} / ${left.area.name} と ${right.spot.name} / ${right.area.name}`);
+    }
+  }
 }
 
 // 参照整合性・order重複・空パック
@@ -138,10 +204,21 @@ const spotEntries = spots
     id: ${toLiteral(spot.id)},
     name: ${toLiteral(spot.name)},
     prefectures: [${spot.prefectures.map((prefecture) => toLiteral(prefecture)).join(', ')}],
-    latitude: ${spot.latitude},
-    longitude: ${spot.longitude},
-    radiusMeters: ${spot.radiusMeters},
-    dwellSeconds: ${spot.dwellSeconds},${spot.retired ? '\n    retired: true,' : ''}${spot.note ? `\n    note: ${toLiteral(spot.note)},` : ''}
+    areas: [
+${spot.areas
+  .map(
+    (area) => `      {
+        id: ${toLiteral(area.id)},
+        name: ${toLiteral(area.name)},
+        latitude: ${area.latitude},
+        longitude: ${area.longitude},
+        radiusMeters: ${area.radiusMeters},
+        dwellSeconds: ${area.dwellSeconds},${area.note ? `\n        note: ${toLiteral(area.note)},` : ''}
+      },`,
+  )
+  .join('\n')}
+    ],
+    isMultiArea: ${spot.isMultiArea},${spot.retired ? '\n    retired: true,' : ''}${spot.note ? `\n    note: ${toLiteral(spot.note)},` : ''}
     packs: [${spot.packs.map((membership) => `{ packId: ${toLiteral(membership.packId)}, order: ${membership.order} }`).join(', ')}],
   },`,
   )
@@ -183,7 +260,23 @@ export type LandmarkPackMembership = {
   order: number;
 };
 
-/** 到達判定の対象となる1地点。 */
+/** スポットを構成する1つの到達地点(円)。 */
+export type GeneratedLandmarkArea = {
+  /** UUIDv7。円1つのスポットではスポットIDと同じ。 */
+  id: string;
+  /** 地点の表示名。円1つのスポットではスポット名と同じ。 */
+  name: string;
+  latitude: number;
+  longitude: number;
+  /** 到達判定の半径(メートル)。境界値は範囲内として扱う。 */
+  radiusMeters: number;
+  /** 到達確定に必要な滞在時間(秒)。 */
+  dwellSeconds: number;
+  /** 座標や半径をその値にした理由のメモ。 */
+  note?: string;
+};
+
+/** 到達判定の対象となるスポット。全地点に到達すると到達済みになる。 */
 export type GeneratedLandmarkSpot = {
   /** UUIDv7。landmark_spot_visits.spot_id に保存する安定識別子。 */
   id: string;
@@ -191,12 +284,10 @@ export type GeneratedLandmarkSpot = {
   name: string;
   /** 所属都道府県。大文字スネークケースの固定値の配列。富士山のように複数県にまたがるスポットは複数件持つ(1件以上、重複なし)。 */
   prefectures: readonly string[];
-  latitude: number;
-  longitude: number;
-  /** 到達判定の半径(メートル)。境界値は範囲内として扱う。 */
-  radiusMeters: number;
-  /** 到達確定に必要な滞在時間(秒)。 */
-  dwellSeconds: number;
+  /** 到達地点。1件以上。円1つのスポットは id/name がスポットと同じ1件に正規化済み。 */
+  areas: readonly GeneratedLandmarkArea[];
+  /** マスタで areas を持つスポットなら true。 */
+  isMultiArea: boolean;
   /** 現存しなくなったスポット。完走判定の分母から外す。 */
   retired?: boolean;
   /** 座標や半径をその値にした理由のメモ。 */

@@ -638,7 +638,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     async (...args: Parameters<typeof refreshAchievementStateRef.current>) => {
       await refreshAchievementStateRef.current(...args);
       await reloadLandmarkState().catch((error: unknown) => {
-        console.warn('Failed to reload landmark spot visits:', error);
+        console.warn('Failed to reload landmark visits:', error);
       });
     },
     [reloadLandmarkState],
@@ -943,7 +943,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         onPress: () => {
           deleteAllUserData()
             .then(async () => {
-              // 全削除では landmark_spot_visits も消えるため、スポット到達も合わせて読み直す
+              // 全削除では landmark_spot_visits / landmark_area_visits も消えるため、スポット・地点の到達も合わせて読み直す
               await refreshDeletedUserDataState(refreshData, stableRefreshAchievementState);
               // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
               Alert.alert('削除完了', DELETE_ALL_DATA_SUCCESS_MESSAGE);

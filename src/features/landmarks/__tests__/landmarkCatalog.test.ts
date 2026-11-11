@@ -2,6 +2,7 @@ import {
   LANDMARK_PACKS,
   LANDMARK_SPOTS,
   getActiveSpotsForPack,
+  getLandmarkAreaById,
   getLandmarkPackById,
   getLandmarkPackCompletionAchievementId,
   getLandmarkSpotById,
@@ -12,6 +13,19 @@ import { distanceMeters } from '@/utils/distance';
 const FALLS_PACK_ID = '01a0c450-6c00-7000-8000-000000000001';
 
 describe('スポット実績カタログ landmarkCatalog', () => {
+  it('円1つのスポットのIDから、地点IDがスポットIDと同じ地点と所属スポットを取得できる', () => {
+    const spot = LANDMARK_SPOTS[0];
+
+    const found = getLandmarkAreaById(spot.id);
+
+    expect(found?.spot).toBe(spot);
+    expect(found?.area.id).toBe(spot.id);
+  });
+
+  it('未知の地点IDはnullを返す', () => {
+    expect(getLandmarkAreaById('unknown-area')).toBeNull();
+  });
+
   it('スポットIDが重複していない', () => {
     const ids = LANDMARK_SPOTS.map((spot) => spot.id);
 
@@ -19,18 +33,18 @@ describe('スポット実績カタログ landmarkCatalog', () => {
   });
 
   it('緯度経度が日本国内の範囲に収まっている', () => {
-    for (const spot of LANDMARK_SPOTS) {
-      expect(spot.latitude).toBeGreaterThanOrEqual(20);
-      expect(spot.latitude).toBeLessThanOrEqual(46);
-      expect(spot.longitude).toBeGreaterThanOrEqual(122);
-      expect(spot.longitude).toBeLessThanOrEqual(154);
+    for (const area of LANDMARK_SPOTS.flatMap((spot) => spot.areas)) {
+      expect(area.latitude).toBeGreaterThanOrEqual(20);
+      expect(area.latitude).toBeLessThanOrEqual(46);
+      expect(area.longitude).toBeGreaterThanOrEqual(122);
+      expect(area.longitude).toBeLessThanOrEqual(154);
     }
   });
 
   it('半径は正の値、滞在時間は0以上である', () => {
-    for (const spot of LANDMARK_SPOTS) {
-      expect(spot.radiusMeters).toBeGreaterThan(0);
-      expect(spot.dwellSeconds).toBeGreaterThanOrEqual(0);
+    for (const area of LANDMARK_SPOTS.flatMap((spot) => spot.areas)) {
+      expect(area.radiusMeters).toBeGreaterThan(0);
+      expect(area.dwellSeconds).toBeGreaterThanOrEqual(0);
     }
   });
 
@@ -82,16 +96,16 @@ describe('スポット実績カタログ landmarkCatalog', () => {
     }
   });
 
-  it('異なるスポットの到達エリアの円が重ならない', () => {
+  it('すべての地点の到達エリアの円が重ならない', () => {
     // 円が重なると1か所の滞在で2スポットが同時に到達扱いになるため、マスタの段階で防ぐ
-    const spots = LANDMARK_SPOTS.filter((spot) => !spot.retired);
-    for (const [index, spot] of spots.entries()) {
-      for (const other of spots.slice(index + 1)) {
+    const areas = LANDMARK_SPOTS.filter((spot) => !spot.retired).flatMap((spot) => spot.areas.map((area) => ({ spot, area })));
+    for (const [index, { spot, area }] of areas.entries()) {
+      for (const { spot: otherSpot, area: other } of areas.slice(index + 1)) {
         expect({
-          pair: `${spot.name}/${other.name}`,
-          overlaps: distanceMeters(spot, other) < spot.radiusMeters + other.radiusMeters,
+          pair: `${spot.name}/${area.name}:${otherSpot.name}/${other.name}`,
+          overlaps: distanceMeters(area, other) < area.radiusMeters + other.radiusMeters,
         }).toEqual({
-          pair: `${spot.name}/${other.name}`,
+          pair: `${spot.name}/${area.name}:${otherSpot.name}/${other.name}`,
           overlaps: false,
         });
       }

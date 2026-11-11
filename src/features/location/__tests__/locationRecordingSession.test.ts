@@ -11,6 +11,7 @@ const mockInitializeDatabase = jest.fn();
 const mockProcessAchievementsForSavedPoint = jest.fn();
 const mockEvaluateAchievementsAndNotify = jest.fn();
 const mockNotifyLandmarkSpotArrival = jest.fn();
+const mockNotifyLandmarkAreaArrival = jest.fn();
 const mockGetLatestLocationPoint = jest.fn();
 const mockRecordLocationObservation = jest.fn();
 const mockToLocationPoint = jest.fn();
@@ -26,6 +27,7 @@ jest.mock('@/features/achievements/achievementService', () => ({
 
 jest.mock('@/features/landmarks/landmarkNotificationService', () => ({
   notifyLandmarkSpotArrival: (...args: unknown[]) => mockNotifyLandmarkSpotArrival(...args),
+  notifyLandmarkAreaArrival: (...args: unknown[]) => mockNotifyLandmarkAreaArrival(...args),
 }));
 
 jest.mock('@/features/logs/logRepository', () => ({
@@ -80,7 +82,12 @@ const home: StayPlace = {
 };
 
 /** Plus有効時のスポット検知スナップショット。 */
-const enabledDetection: LandmarkDetectionSnapshot = { status: 'enabled', spots: [], visitedSpotIds: new Set<string>() };
+const enabledDetection: LandmarkDetectionSnapshot = {
+  status: 'enabled',
+  spots: [],
+  visitedSpotIds: new Set<string>(),
+  visitedAreaIds: new Set<string>(),
+};
 
 /** 到達確定を表すスポットID(華厳の滝)。 */
 const arrivedSpotId = '01a0c450-6c00-7000-8000-000000000101';
@@ -100,7 +107,7 @@ describe('位置情報保存セッション', () => {
     jest.clearAllMocks();
     mockInitializeDatabase.mockResolvedValue(undefined);
     mockToLocationPoint.mockImplementation((item: LocationObject) => (item.timestamp === 1 ? firstPoint : secondPoint));
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: null });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', landmarkArrival: null });
     mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
     mockEvaluateAchievementsAndNotify.mockResolvedValue([]);
     mockNotifyLandmarkSpotArrival.mockResolvedValue(undefined);
@@ -169,7 +176,7 @@ describe('位置情報保存セッション', () => {
       status: 'saved',
       point: effectivePoint,
       locationPointId: 11,
-      arrivedLandmarkSpotId: null,
+      landmarkArrival: null,
     });
     const session = await createLocationRecordingSession();
 
@@ -183,7 +190,7 @@ describe('位置情報保存セッション', () => {
       status: 'saved',
       point: effectivePoint,
       locationPointId: 11,
-      arrivedLandmarkSpotId: null,
+      landmarkArrival: null,
     });
     mockProcessAchievementsForSavedPoint.mockRejectedValueOnce(new Error('achievement failed'));
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -264,14 +271,54 @@ describe('スポット到達時の通知と実績評価', () => {
     jest.clearAllMocks();
     mockInitializeDatabase.mockResolvedValue(undefined);
     mockToLocationPoint.mockImplementation((item: LocationObject) => (item.timestamp === 1 ? firstPoint : secondPoint));
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: null });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', landmarkArrival: null });
     mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
     mockEvaluateAchievementsAndNotify.mockResolvedValue([]);
     mockNotifyLandmarkSpotArrival.mockResolvedValue(undefined);
   });
 
+  it('area イベントは地点到達通知を出し、実績の再評価はしない', async () => {
+    mockNotifyLandmarkAreaArrival.mockResolvedValue(undefined);
+    mockRecordLocationObservation.mockResolvedValue({
+      status: 'not-saved',
+      landmarkArrival: { type: 'area', spotId: arrivedSpotId, areaId: 'area-1', visitedAreaCount: 1, totalAreaCount: 2 },
+    });
+    const session = await createLocationRecordingSession();
+
+    await session.recordLocations([firstLocation]);
+
+    expect(mockNotifyLandmarkAreaArrival).toHaveBeenCalledWith({ areaId: 'area-1', visitedAreaCount: 1, totalAreaCount: 2 });
+    expect(mockNotifyLandmarkSpotArrival).not.toHaveBeenCalled();
+    expect(mockEvaluateAchievementsAndNotify).not.toHaveBeenCalled();
+  });
+
+  it('地点到達とコンプリートは到達順に実績処理より前に通知する', async () => {
+    const order: string[] = [];
+    mockNotifyLandmarkAreaArrival.mockImplementation(async () => {
+      order.push('area');
+    });
+    mockNotifyLandmarkSpotArrival.mockImplementation(async () => {
+      order.push('spot');
+    });
+    mockEvaluateAchievementsAndNotify.mockImplementation(async () => {
+      order.push('achievement');
+      return [];
+    });
+    mockRecordLocationObservation
+      .mockResolvedValueOnce({
+        status: 'not-saved',
+        landmarkArrival: { type: 'area', spotId: arrivedSpotId, areaId: 'area-1', visitedAreaCount: 1, totalAreaCount: 2 },
+      })
+      .mockResolvedValueOnce({ status: 'not-saved', landmarkArrival: { type: 'spot', spotId: arrivedSpotId } });
+    const session = await createLocationRecordingSession();
+
+    await session.recordLocations([firstLocation, secondLocation]);
+
+    expect(order).toEqual(['area', 'spot', 'achievement']);
+  });
+
   it('保存されない観測で到達しても通知する', async () => {
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: arrivedSpotId });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', landmarkArrival: { type: 'spot', spotId: arrivedSpotId } });
     const session = await createLocationRecordingSession();
 
     await session.recordLocations([firstLocation]);
@@ -285,7 +332,7 @@ describe('スポット到達時の通知と実績評価', () => {
       status: 'saved',
       point: effectivePoint,
       locationPointId: 11,
-      arrivedLandmarkSpotId: arrivedSpotId,
+      landmarkArrival: { type: 'spot', spotId: arrivedSpotId },
     });
     const session = await createLocationRecordingSession();
 
@@ -303,7 +350,7 @@ describe('スポット到達時の通知と実績評価', () => {
   });
 
   it('到達通知の失敗は呼び出し元へ伝播させない', async () => {
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: arrivedSpotId });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', landmarkArrival: { type: 'spot', spotId: arrivedSpotId } });
     mockNotifyLandmarkSpotArrival.mockRejectedValueOnce(new Error('notification failed'));
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const session = await createLocationRecordingSession();
@@ -316,7 +363,7 @@ describe('スポット到達時の通知と実績評価', () => {
 
   it('保存点が無い配信バッチでも到達があれば実績を評価する', async () => {
     // 立ち止まって到達した瞬間にパック完走実績を解除するため、保存点がなくても評価する
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: arrivedSpotId });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', landmarkArrival: { type: 'spot', spotId: arrivedSpotId } });
     const session = await createLocationRecordingSession();
 
     await session.recordLocations([firstLocation]);
@@ -330,7 +377,7 @@ describe('スポット到達時の通知と実績評価', () => {
       status: 'saved',
       point: effectivePoint,
       locationPointId: 11,
-      arrivedLandmarkSpotId: arrivedSpotId,
+      landmarkArrival: { type: 'spot', spotId: arrivedSpotId },
     });
     const session = await createLocationRecordingSession();
 
@@ -350,7 +397,7 @@ describe('スポット到達時の通知と実績評価', () => {
   });
 
   it('到達による実績評価の失敗は呼び出し元へ伝播させない', async () => {
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: arrivedSpotId });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', landmarkArrival: { type: 'spot', spotId: arrivedSpotId } });
     mockEvaluateAchievementsAndNotify.mockRejectedValueOnce(new Error('achievement failed'));
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const session = await createLocationRecordingSession();
@@ -368,7 +415,7 @@ describe('スポット到達時の通知と実績評価', () => {
       status: 'saved',
       point: effectivePoint,
       locationPointId: 11,
-      arrivedLandmarkSpotId: arrivedSpotId,
+      landmarkArrival: { type: 'spot', spotId: arrivedSpotId },
     });
     mockNotifyLandmarkSpotArrival.mockImplementation(async () => {
       callOrder.push('arrival');
@@ -390,7 +437,7 @@ describe('GPXインポート優先モードのバッファリング', () => {
     resetGpxImportPriorityForTest();
     mockInitializeDatabase.mockResolvedValue(undefined);
     mockToLocationPoint.mockImplementation((item: LocationObject) => (item.timestamp === 1 ? firstPoint : secondPoint));
-    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: null });
+    mockRecordLocationObservation.mockResolvedValue({ status: 'not-saved', landmarkArrival: null });
     mockProcessAchievementsForSavedPoint.mockResolvedValue(undefined);
     mockEvaluateAchievementsAndNotify.mockResolvedValue([]);
     mockNotifyLandmarkSpotArrival.mockResolvedValue(undefined);
@@ -446,9 +493,9 @@ describe('GPXインポート優先モードのバッファリング', () => {
   it('ソート後の未処理観測だけを失敗時に再キューする', async () => {
     mockToLocationPoint.mockImplementation((item: LocationObject) => point(String(item.timestamp).padStart(3, '0')));
     mockRecordLocationObservation
-      .mockResolvedValueOnce({ status: 'not-saved', arrivedLandmarkSpotId: null })
+      .mockResolvedValueOnce({ status: 'not-saved', landmarkArrival: null })
       .mockRejectedValueOnce(new Error('database is locked'))
-      .mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: null });
+      .mockResolvedValue({ status: 'not-saved', landmarkArrival: null });
     const session = await createLocationRecordingSession();
 
     await expect(session.recordLocations([location(20), location(10)])).rejects.toThrow('database is locked');
@@ -461,9 +508,9 @@ describe('GPXインポート優先モードのバッファリング', () => {
   it('後続Recorderが失敗しても確定済み点を実績処理し、失敗観測以降だけを再キューする', async () => {
     const recordingError = new Error('second observation failed');
     mockRecordLocationObservation
-      .mockResolvedValueOnce({ status: 'saved', point: effectivePoint, locationPointId: 11, arrivedLandmarkSpotId: null })
+      .mockResolvedValueOnce({ status: 'saved', point: effectivePoint, locationPointId: 11, landmarkArrival: null })
       .mockRejectedValueOnce(recordingError)
-      .mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: null });
+      .mockResolvedValue({ status: 'not-saved', landmarkArrival: null });
     const session = await createLocationRecordingSession();
 
     await expect(session.recordLocations([firstLocation, secondLocation])).rejects.toBe(recordingError);
@@ -482,7 +529,7 @@ describe('GPXインポート優先モードのバッファリング', () => {
     const recordingError = new Error('second observation failed');
     const achievementError = new Error('achievement failed');
     mockRecordLocationObservation
-      .mockResolvedValueOnce({ status: 'saved', point: effectivePoint, locationPointId: 11, arrivedLandmarkSpotId: null })
+      .mockResolvedValueOnce({ status: 'saved', point: effectivePoint, locationPointId: 11, landmarkArrival: null })
       .mockRejectedValueOnce(recordingError);
     mockProcessAchievementsForSavedPoint.mockRejectedValueOnce(achievementError);
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -513,7 +560,7 @@ describe('GPXインポート優先モードのバッファリング', () => {
   it('flush中の記録失敗ではrecordLocations側だけがバッファへ戻し、二重復元しない', async () => {
     mockRecordLocationObservation
       .mockRejectedValueOnce(new Error('database is locked'))
-      .mockResolvedValue({ status: 'not-saved', arrivedLandmarkSpotId: null });
+      .mockResolvedValue({ status: 'not-saved', landmarkArrival: null });
     const session = await createLocationRecordingSession();
     beginGpxImportPriority();
     await session.recordLocations([firstLocation]);

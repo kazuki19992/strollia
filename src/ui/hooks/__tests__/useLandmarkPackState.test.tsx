@@ -1,10 +1,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
-import { getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
+import { getLandmarkAreaVisits, getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
 import { useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getLandmarkSpotVisits: jest.fn(),
+  getLandmarkAreaVisits: jest.fn().mockResolvedValue([]),
 }));
 
 /** パイロットの日本三名瀑パックID。 */

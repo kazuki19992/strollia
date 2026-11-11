@@ -76,23 +76,32 @@ for (const spot of spots) {
 }
 
 /**
- * 円1つのスポットは id/name がスポットと同じ1件の地点へ正規化する。
- * 実行時コードは常に areas を走査すれば済み、単一/複数の分岐が不要になる。
+ * スポットは常に areas(1件以上)を持つ。1件なら円1つのスポット、2件以上なら複数地点スポット。
+ *
+ * 円1つのスポットの地点は id/name を省略させ、スポットの id/name を補う。
+ * 地点IDをスポットIDと同じにすることで、計測中状態(landmark_candidate_spot_id)に
+ * スポットIDを保存していた既存データをそのまま地点IDとして読める。
+ * 複数地点スポットの地点は到達記録に保存するため、id/name を必須にする。
  */
 for (const spot of spots) {
-  spot.isMultiArea = Array.isArray(spot.areas);
-  if (!spot.isMultiArea) {
-    spot.areas = [
-      {
-        id: spot.id,
-        name: spot.name,
-        latitude: spot.latitude,
-        longitude: spot.longitude,
-        radiusMeters: spot.radiusMeters,
-        dwellSeconds: spot.dwellSeconds,
-      },
-    ];
+  spot.isMultiArea = spot.areas.length >= 2;
+  if (spot.isMultiArea) {
+    for (const area of spot.areas) {
+      if (area.id === undefined || area.name === undefined) {
+        errors.push(`複数地点スポットの地点には id と name が必要です: ${spot.name}`);
+      }
+    }
+  } else {
+    const [area] = spot.areas;
+    if (area.id !== undefined || area.name !== undefined) {
+      errors.push(`地点が1件のスポットでは地点の id と name を省略してください(スポットの id/name を使います): ${spot.name}`);
+    }
+    spot.areas = [{ ...area, id: spot.id, name: spot.name }];
   }
+}
+
+if (errors.length > 0) {
+  fail(errors);
 }
 
 // 地点IDはスポットID・他の地点IDと全体で一意(landmark_area_visits.area_id が単独でキーになるため)

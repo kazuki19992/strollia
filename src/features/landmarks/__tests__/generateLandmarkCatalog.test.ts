@@ -27,16 +27,13 @@ const PACKS = [
 
 type SpotJson = Record<string, unknown>;
 
-/** 円1つのスポットJSONを作る。 */
+/** 円1つのスポットJSONを作る。地点が1件の areas を持ち、地点の id・name は省略する。 */
 function singleSpot(id: string, name: string, latitude: number, order = 1): SpotJson {
   return {
     id,
     name,
     prefectures: ['TOKYO'],
-    latitude,
-    longitude: 139.7,
-    radiusMeters: 100,
-    dwellSeconds: 60,
+    areas: [{ latitude, longitude: 139.7, radiusMeters: 100, dwellSeconds: 60 }],
     packs: [{ packId: PACK_ID, order }],
   };
 }
@@ -100,15 +97,60 @@ describe('スポットカタログ生成スクリプト', () => {
     expect(result.generated.split(SPOT_A).length - 1).toBe(2);
   });
 
-  it('areas と latitude を両方持つスポットはエラーになる', () => {
-    const spot = { ...multiSpot(SPOT_A, '複数スポット', [35.0, 35.009]), latitude: 35.0 };
+  it('スポット直下に latitude などの判定値を持つとエラーになる', () => {
+    const spot = { ...singleSpot(SPOT_A, '単一スポット', 35.0), latitude: 35.0 };
 
     expect(runGenerator([spot]).status).not.toBe(0);
   });
 
-  it('areas が1件のスポットはエラーになる', () => {
+  it('areas を持たないスポットはエラーになる', () => {
+    const spot = singleSpot(SPOT_A, '単一スポット', 35.0);
+    delete spot.areas;
+
+    expect(runGenerator([spot]).status).not.toBe(0);
+  });
+
+  it('areas が0件のスポットはエラーになる', () => {
+    const spot = singleSpot(SPOT_A, '単一スポット', 35.0);
+    spot.areas = [];
+
+    expect(runGenerator([spot]).status).not.toBe(0);
+  });
+
+  it('地点が1件のスポットで地点に id を書くとエラーになる', () => {
+    const spot = singleSpot(SPOT_A, '単一スポット', 35.0);
+    spot.areas = [{ ...(spot.areas as SpotJson[])[0], id: AREA_1 }];
+
+    const result = runGenerator([spot]);
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('単一スポット');
+  });
+
+  it('地点が1件のスポットで地点に name を書くとエラーになる', () => {
+    const spot = singleSpot(SPOT_A, '単一スポット', 35.0);
+    spot.areas = [{ ...(spot.areas as SpotJson[])[0], name: '地点名' }];
+
+    expect(runGenerator([spot]).status).not.toBe(0);
+  });
+
+  it('地点が2件以上のスポットで id の無い地点があるとエラーになる', () => {
     const spot = multiSpot(SPOT_A, '複数スポット', [35.0, 35.009]);
-    spot.areas = (spot.areas as unknown[]).slice(0, 1);
+    const [first, second] = spot.areas as SpotJson[];
+    const { id: _omittedId, ...secondWithoutId } = second;
+    spot.areas = [first, secondWithoutId];
+
+    const result = runGenerator([spot]);
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('複数スポット');
+  });
+
+  it('地点が2件以上のスポットで name の無い地点があるとエラーになる', () => {
+    const spot = multiSpot(SPOT_A, '複数スポット', [35.0, 35.009]);
+    const [first, second] = spot.areas as SpotJson[];
+    const { name: _omittedName, ...secondWithoutName } = second;
+    spot.areas = [first, secondWithoutName];
 
     expect(runGenerator([spot]).status).not.toBe(0);
   });

@@ -5,7 +5,7 @@
   "type": "array",
   "items": {
     "type": "object",
-    "required": ["id", "name", "prefectures", "packs"],
+    "required": ["id", "name", "prefectures", "areas", "packs"],
     "additionalProperties": false,
     "properties": {
       "id": {
@@ -75,73 +75,24 @@
           ]
         }
       },
-      "latitude": {
-        "type": "number",
-        "minimum": 20,
-        "maximum": 46,
-        "description": "円1つのスポットの到達判定値。areas を持つスポットでは使わない"
-      },
-      "longitude": {
-        "type": "number",
-        "minimum": 122,
-        "maximum": 154,
-        "description": "円1つのスポットの到達判定値。areas を持つスポットでは使わない"
-      },
-      "radiusMeters": {
-        "type": "number",
-        "exclusiveMinimum": 0,
-        "maximum": 2000,
-        "description": "円1つのスポットの到達判定値。areas を持つスポットでは使わない"
-      },
-      "dwellSeconds": {
-        "type": "integer",
-        "minimum": 0,
-        "maximum": 3600,
-        "description": "円1つのスポットの到達判定値。areas を持つスポットでは使わない"
-      },
-      "packs": {
-        "type": "array",
-        "minItems": 1,
-        "items": {
-          "type": "object",
-          "required": ["packId", "order"],
-          "additionalProperties": false,
-          "properties": {
-            "packId": {
-              "type": "string",
-              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-            },
-            "order": {
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        }
-      },
-      "retired": {
-        "type": "boolean"
-      },
-      "note": {
-        "type": "string"
-      },
       "areas": {
         "type": "array",
-        "minItems": 2,
-        "description": "複数地点スポットの到達地点。全地点に到達するとスポット到達になる。円1つのスポットでは使わず、スポット直下の4項目を使う",
+        "minItems": 1,
+        "description": "スポットの到達地点(円)。1件なら従来の円1つのスポット、2件以上なら全地点への到達でスポット到達(コンプリート)になる複数地点スポット",
         "items": {
           "type": "object",
-          "required": ["id", "name", "latitude", "longitude", "radiusMeters", "dwellSeconds"],
+          "required": ["latitude", "longitude", "radiusMeters", "dwellSeconds"],
           "additionalProperties": false,
           "properties": {
             "id": {
               "type": "string",
               "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-              "description": "地点のUUIDv7。landmark_area_visits.area_id に保存する安定識別子。スポットIDとも他の地点IDとも重複できない"
+              "description": "地点のUUIDv7。地点が2件以上のときだけ書く(1件のときは省略し、スポットIDを地点IDとして使う)。landmark_area_visits.area_id に保存する安定識別子。スポットIDとも他の地点IDとも重複できない"
             },
             "name": {
               "type": "string",
               "minLength": 1,
-              "description": "地点の表示名"
+              "description": "地点の表示名。地点が2件以上のときだけ書く(1件のときは省略し、スポット名を使う)"
             },
             "latitude": {
               "type": "number",
@@ -173,34 +124,32 @@
             }
           }
         }
-      }
-    },
-    "oneOf": [
-      {
-        "required": ["latitude", "longitude", "radiusMeters", "dwellSeconds"],
-        "not": {
-          "required": ["areas"]
+      },
+      "packs": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["packId", "order"],
+          "additionalProperties": false,
+          "properties": {
+            "packId": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "order": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
         }
       },
-      {
-        "required": ["areas"],
-        "not": {
-          "anyOf": [
-            {
-              "required": ["latitude"]
-            },
-            {
-              "required": ["longitude"]
-            },
-            {
-              "required": ["radiusMeters"]
-            },
-            {
-              "required": ["dwellSeconds"]
-            }
-          ]
-        }
+      "retired": {
+        "type": "boolean"
+      },
+      "note": {
+        "type": "string"
       }
-    ]
+    }
   }
 }

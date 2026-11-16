@@ -127,7 +127,7 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
 
     expect(screen.getByText('華厳の滝')).toBeTruthy();
     expect(screen.getByText('栃木県')).toBeTruthy();
-    expect(screen.getByText('2026/04/12')).toBeTruthy();
+    expect(screen.getByText('初訪問日: 2026/04/12')).toBeTruthy();
     expect(screen.getByText('那智の滝')).toBeTruthy();
     expect(screen.getByText('和歌山県')).toBeTruthy();
   });
@@ -312,7 +312,7 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       expect(screen.getByText('五大堂')).toBeTruthy();
       expect(screen.getByText('瑞巌寺')).toBeTruthy();
       expect(screen.getByText('福浦島')).toBeTruthy();
-      expect(screen.getByText('2026/05/01')).toBeTruthy();
+      expect(screen.getByText('初訪問日: 2026/05/01')).toBeTruthy();
     });
 
     it('複数地点スポットは1地点だけ到達で訪問済みスタンプを出す', async () => {
@@ -327,8 +327,9 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
 
       expect(screen.getAllByLabelText('コンプリート')).toHaveLength(1);
       expect(screen.queryByLabelText('訪問済み')).toBeNull();
-      // コンプリート後はスポット行の detail が到達日(最後の地点の日)になる
-      expect(screen.getAllByText('2026/05/03').length).toBeGreaterThan(0);
+      // コンプリート後はスポット行の detail が全地点そろった日になる。地点行は各地点の初訪問日
+      expect(screen.getByText('コンプリート日: 2026/05/03')).toBeTruthy();
+      expect(screen.getByText('初訪問日: 2026/05/03')).toBeTruthy();
     });
 
     it('未到達の複数地点スポットにはスタンプを出さない', async () => {

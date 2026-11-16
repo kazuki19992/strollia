@@ -151,6 +151,12 @@ export const LANDMARK_SPOT_RETIRED_NOTE = '現存せず';
 /** 複数地点スポットを全地点到達したときのコンプリート記念スタンプのアクセシビリティラベル。 */
 export const LANDMARK_SPOT_COMPLETED_STAMP_LABEL = 'コンプリート';
 
+/** スポット・地点の到達日の前に付ける見出し。到達日は「最初に到達した日」で、再訪しても更新されないため。 */
+export const LANDMARK_FIRST_VISIT_DATE_PREFIX = '初訪問日: ';
+
+/** 複数地点スポットで全地点がそろった日の前に付ける見出し。最初の地点に到達した日ではないことを区別する。 */
+export const LANDMARK_COMPLETED_DATE_PREFIX = 'コンプリート日: ';
+
 /**
  * パック詳細の埋め込み地図で、到達済みスポットのバッジ下へ解放条件の代わりに出す表示。
  *

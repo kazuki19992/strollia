@@ -365,7 +365,7 @@ describe('実績一覧からスポットパック詳細への遷移', () => {
     expect(screen.getByLabelText('華厳の滝の記録を開く')).toBeTruthy();
     expect(screen.getByLabelText('那智の滝を地図で見る')).toBeTruthy();
     expect(screen.getByText('1/3')).toBeTruthy();
-    expect(screen.getByText('2026/04/12')).toBeTruthy();
+    expect(screen.getByText('初訪問日: 2026/04/12')).toBeTruthy();
   });
 
   it('パック詳細の戻るボタンで実績一覧へ戻る', async () => {

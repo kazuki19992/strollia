@@ -105,6 +105,12 @@ describe('pathnameToAchievementsSentryScreenName', () => {
     );
   });
 
+  it('"/achievements/[packId]/[date]" は Achievements:LandmarkPackDailyLogDetail を返す', () => {
+    expect(pathnameToAchievementsSentryScreenName('/achievements/01a0c450-6c00-7000-8000-000000000001/2026-04-12')).toBe(
+      'Achievements:LandmarkPackDailyLogDetail',
+    );
+  });
+
   it('実績系でないパスは Achievements:AchievementList にフォールバックする', () => {
     expect(pathnameToAchievementsSentryScreenName('/settings')).toBe('Achievements:AchievementList');
   });

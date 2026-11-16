@@ -93,6 +93,11 @@ export function pathnameToAchievementsSentryScreenName(pathname: string): string
     return 'Achievements:AchievementList';
   }
 
+  // /achievements/[packId]/[date] → Achievements:LandmarkPackDailyLogDetail(パック詳細から開く日別記録詳細)
+  if (after.slice(1).includes('/')) {
+    return 'Achievements:LandmarkPackDailyLogDetail';
+  }
+
   // /achievements/[packId] → Achievements:LandmarkPackDetail
   return 'Achievements:LandmarkPackDetail';
 }

@@ -240,6 +240,20 @@ describe('database initializeDatabase マイグレーション', () => {
       expect(pragmaOrder).toBeLessThan(taskOrder);
     });
 
+    it('task より先に空の書き込みで書き込みロックを確保する(読み→書きの格上げ時に他接続のコミットで即 database is locked になるのを防ぐため)', async () => {
+      const mockTxn = { execAsync: jest.fn().mockResolvedValue(undefined), runAsync: jest.fn() };
+      (db.withExclusiveTransactionAsync as jest.Mock).mockImplementation(async (callback) => callback(mockTxn));
+      const task = jest.fn().mockResolvedValue(undefined);
+
+      await withExclusiveTransaction(task);
+
+      const statements = mockTxn.execAsync.mock.calls.map((call) => call[0] as string);
+      // busy_timeout → 書き込みロック確保の順。ロック確保が busy_timeout より前だと待たずに失敗する
+      expect(statements).toEqual(['PRAGMA busy_timeout = 5000', 'UPDATE app_settings SET key = key WHERE 0']);
+      const lockOrder = mockTxn.execAsync.mock.invocationCallOrder[1];
+      expect(lockOrder).toBeLessThan(task.mock.invocationCallOrder[0]);
+    });
+
     it('task内のエラーは呼び出し元へ伝播する', async () => {
       const mockTxn = { execAsync: jest.fn().mockResolvedValue(undefined) };
       (db.withExclusiveTransactionAsync as jest.Mock).mockImplementation(async (callback) => callback(mockTxn));

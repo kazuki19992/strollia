@@ -222,9 +222,10 @@ export function createAchievementStyles(theme: AppTheme) {
       textAlign: 'center',
     },
     // 到達済み行の右端(chevron手前)に表示するスタンプ画像(AppListItemのtrailingスロットへ差す)
+    // 「訪問済」の文字が読める大きさにする。行(3行分の高さ)に収まる上限付近
     landmarkSpotVisitedStamp: {
-      height: 32,
-      width: 32,
+      height: 64,
+      width: 64,
     },
     // 複数地点スポットの地点行。スポット行(番号バッジぶん)より一段内側に見せる字下げ
     landmarkAreaRowIndent: {

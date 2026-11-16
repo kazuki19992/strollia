@@ -146,6 +146,14 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     expect(screen.getAllByLabelText('訪問済み')).toHaveLength(1);
   });
 
+  it('訪問済みスタンプは「訪問済」の文字が読める64pt四方で表示する', async () => {
+    await renderScreen();
+
+    expect(ReactNative.StyleSheet.flatten(screen.getByLabelText('訪問済み').props.style)).toEqual(
+      expect.objectContaining({ height: 64, width: 64 }),
+    );
+  });
+
   it('到達済みの行だけchevronを表示し、未到達の行は表示しない(地図ズームのみで画面遷移しないため)', async () => {
     await renderScreen();
 

@@ -67,11 +67,19 @@ export type DailyLogDetailScreenProps = {
   activeStayPlaces?: StayPlace[] | null;
   /** 滞在場所の読込状態。共有開始のfail-closed判定と説明文に使う。 */
   stayPlacesStatus?: StayPlacesStatus;
-  /** 日別ログ一覧へ戻る処理。 */
+  /**
+   * 戻るボタンに出す戻り先の名前。省略時は「日ごとの記録」。
+   * スポットパック詳細から開いた場合はパック名を渡し、実際の戻り先と一致させる。
+   */
+  backLabel?: string;
+  /** 前の画面(日別ログ一覧、またはスポットパック詳細)へ戻る処理。 */
   onBackToDailyLogs: () => void;
   /** ペイウォールモーダルを開く処理。 */
   onOpenPremiumPaywall: () => void;
 };
+
+/** 日別ログ一覧から開いたときの戻るボタンのラベル(戻り先の画面名)。 */
+const DAILY_LOGS_BACK_LABEL = '日ごとの記録';
 
 /** 日ごとの記録の詳細画面を描画する。 */
 export function DailyLogDetailScreen({
@@ -81,6 +89,7 @@ export function DailyLogDetailScreen({
   premiumAccessState,
   activeStayPlaces = null,
   stayPlacesStatus,
+  backLabel = DAILY_LOGS_BACK_LABEL,
   onBackToDailyLogs,
   onOpenPremiumPaywall,
 }: DailyLogDetailScreenProps) {
@@ -462,7 +471,7 @@ export function DailyLogDetailScreen({
   return (
     <SafeAreaView style={styles.appScreen}>
       <AppScreenHeader
-        backLabel="日ごとの記録"
+        backLabel={backLabel}
         styles={styles}
         theme={theme}
         title={title.title}

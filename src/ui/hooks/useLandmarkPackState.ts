@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { initializeDatabase } from '@/db/database';
 import {
   LANDMARK_PACKS,
   type LandmarkArea,
@@ -85,10 +86,14 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
   }, []);
 
   useEffect(() => {
+    // 初回はDB初期化(テーブル作成)の完了を待ってから読む。マウント直後は起動初期化と並走しており、
+    // 新規インストール直後はテーブルがまだ無いため。initializeDatabase はプロセス内1回にメモ化済み。
     // 読み込みに失敗しても実績画面全体を落とさない。進捗0のまま一覧は表示できる
-    reloadLandmarkState().catch((error: unknown) => {
-      console.warn('Failed to load landmark visits:', error);
-    });
+    initializeDatabase()
+      .then(reloadLandmarkState)
+      .catch((error: unknown) => {
+        console.warn('Failed to load landmark visits:', error);
+      });
   }, [reloadLandmarkState]);
 
   const landmarkPackItems = useMemo<LandmarkPackListItem[]>(() => {

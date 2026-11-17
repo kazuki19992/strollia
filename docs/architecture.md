@@ -216,6 +216,8 @@ iOSでは `showsBackgroundLocationIndicator: false` を維持しつつ、Core Lo
 
 1観測はSQLite排他トランザクション内で、永続吸着状態とGrid補間起点、保存判定用の最新GPS点を読み、古い観測の除外、吸着判定、有効座標による保存判定、Visited Grid、GPS点挿入、日別距離の差分加算、状態更新までを確定する。GPS点が保存対象外でもVisited Gridと吸着状態を更新し、セルを更新できた有効座標は次のGrid補間起点として保存する。滞在場所取得が一時的に失敗した観測は生座標を使いつつ吸着状態を維持する。トランザクション確定後、保存済みGPS点だけを実績処理へ渡す。バッチ後半の記録に失敗した場合は失敗観測以降だけを再キューし、先に確定した点の実績処理を終えてから元の記録エラーを返す。実績処理の失敗は警告に留め、記録エラーを上書きしない。
 
+排他トランザクション(`src/db/database.ts` の `withExclusiveTransaction`)は、トランザクション開始直後に `busy_timeout` を設定し、続けて行を変更しない書き込み(`UPDATE app_settings SET key = key WHERE 0`)で書き込みロックを確保してから処理本体を実行する。expo-sqlite の `withExclusiveTransactionAsync` は別接続で遅延トランザクション(`BEGIN`)を開始するため、読み込み後の書き込みへの格上げ時に他接続(フォアグラウンドの実績保存など)が先にコミットしていると、WALでは `busy_timeout` を待たずに即 `database is locked` になり、その観測の記録とスポット到達判定が失われる。先にロックを確保すれば、競合時はロック取得側で `busy_timeout` まで待つ。
+
 権限状態ごとの保存元は以下とする。
 
 | 権限状態                                     | AppState                  | 保存元                          |

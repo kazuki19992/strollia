@@ -3,6 +3,11 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { getLandmarkAreaVisits, getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
 import { useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
 
+// 初回読み込みはDB初期化の完了を待つ。テストでは即完了させる
+jest.mock('@/db/database', () => ({
+  initializeDatabase: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getLandmarkSpotVisits: jest.fn(),
   getLandmarkAreaVisits: jest.fn(),

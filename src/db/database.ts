@@ -6,6 +6,14 @@ export const db = SQLite.openDatabaseSync('strollia.db');
 /** ロック競合時に即エラーにせず書き込みを待つ時間(ミリ秒)。 */
 const BUSY_TIMEOUT_MS = 5000;
 
+/**
+ * 行を変更せずに書き込みロック(RESERVED)だけを確保するSQL。
+ *
+ * `WHERE 0` で対象行は無いが、UPDATE文は実行開始時に書き込みトランザクションを開始する。
+ * 対象の `app_settings` は初期化で必ず作成される。
+ */
+const ACQUIRE_WRITE_LOCK_SQL = 'UPDATE app_settings SET key = key WHERE 0';
+
 /** 排他トランザクション内で使うDBランナー。expo-sqliteがtaskへ渡すTransactionの型。 */
 export type ExclusiveTransaction = Parameters<Parameters<typeof db.withExclusiveTransactionAsync>[0]>[0];
 
@@ -16,10 +24,17 @@ export type ExclusiveTransaction = Parameters<Parameters<typeof db.withExclusive
  * バックグラウンドGPS記録(メイン接続)とフォアグラウンドの書き込みが別接続同士で
  * 競合すると即 SQLITE_BUSY(database is locked)になる。busy_timeoutは接続ごとの
  * 設定でメイン接続側のPRAGMAが引き継がれないため、トランザクション先頭で毎回設定する。
+ *
+ * さらに、expo-sqliteは名前に反して遅延トランザクション(`BEGIN`)を開始する。task が
+ * 読み込んでから書き込む間に別接続がコミットすると、WALでは書き込みへの格上げが
+ * busy_timeoutを待たずに即 SQLITE_BUSY になる(バックグラウンドGPS記録の位置・到達判定が
+ * 丸ごと失われていた)。そのため task の前に空の書き込みで書き込みロックを確保し、
+ * `BEGIN IMMEDIATE` と同じく「ロック取得はbusy_timeoutで待ち、取得後は格上げで失敗しない」状態にする。
  */
 export async function withExclusiveTransaction(task: (txn: ExclusiveTransaction) => Promise<void>): Promise<void> {
   await db.withExclusiveTransactionAsync(async (txn) => {
     await txn.execAsync(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+    await txn.execAsync(ACQUIRE_WRITE_LOCK_SQL);
     await task(txn);
   });
 }

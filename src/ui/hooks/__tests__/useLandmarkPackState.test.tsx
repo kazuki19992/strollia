@@ -1,7 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
+import { initializeDatabase } from '@/db/database';
 import { getLandmarkAreaVisits, getLandmarkSpotVisits } from '@/features/landmarks/landmarkVisitRepository';
 import { useLandmarkPackState } from '@/ui/hooks/useLandmarkPackState';
+
+jest.mock('@/db/database', () => ({
+  initializeDatabase: jest.fn().mockResolvedValue(undefined),
+}));
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
   getLandmarkSpotVisits: jest.fn(),
@@ -18,6 +23,28 @@ describe('スポットパック状態 useLandmarkPackState', () => {
     (getLandmarkSpotVisits as jest.Mock).mockResolvedValue([
       { spotId: KEGON_ID, visitedAt: '2026-04-12T02:00:00.000Z', visitedLocalDate: '2026-04-12', locationPointId: 1 },
     ]);
+  });
+
+  it('DB初期化が終わるまで到達記録を読まない(新規インストール直後はテーブルが無く読み込みが失敗するため)', async () => {
+    let finishInitialization: () => void = () => undefined;
+    (initializeDatabase as jest.Mock).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishInitialization = resolve;
+      }),
+    );
+    (getLandmarkSpotVisits as jest.Mock).mockClear();
+
+    const { result } = await renderHook(() => useLandmarkPackState(true));
+
+    expect(getLandmarkSpotVisits).not.toHaveBeenCalled();
+
+    await act(async () => {
+      finishInitialization();
+    });
+
+    await waitFor(() => {
+      expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
+    });
   });
 
   it('Plus有効なら到達数つきのパック一覧を返す', async () => {

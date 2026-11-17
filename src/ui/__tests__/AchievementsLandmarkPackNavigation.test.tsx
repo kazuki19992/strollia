@@ -264,7 +264,17 @@ jest.mock('@/ui/components/PhotoPreviewModals', () => ({ PhotoPreviewModals: () 
 jest.mock('@/ui/components/FirstLaunchTutorialDialog', () => ({ FirstLaunchTutorialDialog: () => null }));
 jest.mock('@/ui/components/PremiumPaywallModal', () => ({ PremiumPaywallModal: () => null }));
 jest.mock('@/ui/components/reports/MonthlyReportScreen', () => ({ MonthlyReportScreen: () => null }));
-jest.mock('@/ui/components/DailyLogDetailScreen', () => ({ DailyLogDetailScreen: () => null }));
+// 日別記録詳細は地図・共有など依存が重いため、戻るボタン(ラベルと戻る操作)だけを描くモックにする
+jest.mock('@/ui/components/DailyLogDetailScreen', () => {
+  const { Pressable, Text } = require('react-native');
+  return {
+    DailyLogDetailScreen: ({ backLabel = '日ごとの記録', onBackToDailyLogs }: { backLabel?: string; onBackToDailyLogs: () => void }) => (
+      <Pressable accessibilityLabel={`${backLabel}へ戻る`} accessibilityRole="button" onPress={onBackToDailyLogs}>
+        <Text>{backLabel}</Text>
+      </Pressable>
+    ),
+  };
+});
 jest.mock('@/ui/components/LicenseScreen', () => ({ LicenseScreen: () => null, LicenseDetailScreen: () => null }));
 jest.mock('@/ui/components/DailyLogsScreen', () => ({ DailyLogsScreen: () => null }));
 
@@ -365,7 +375,40 @@ describe('実績一覧からスポットパック詳細への遷移', () => {
     expect(screen.getByLabelText('華厳の滝の記録を開く')).toBeTruthy();
     expect(screen.getByLabelText('那智の滝を地図で見る')).toBeTruthy();
     expect(screen.getByText('1/3')).toBeTruthy();
-    expect(screen.getByText('2026/04/12')).toBeTruthy();
+    expect(screen.getByText('初訪問日: 2026/04/12')).toBeTruthy();
+  });
+
+  it('到達済みスポットを押すと実績スタックの子画面として日別記録を開き、戻るラベルはパック名になる', async () => {
+    const { getDailyLogs } = require('@/features/logs/logRepository');
+    (getDailyLogs as jest.Mock).mockResolvedValue([
+      {
+        localDate: '2026-04-12',
+        pointCount: 5,
+        startedAt: '2026-04-12T00:00:00.000Z',
+        endedAt: '2026-04-12T01:00:00.000Z',
+        distanceMeters: 1500,
+        startLocationPointId: null,
+        endLocationPointId: null,
+      },
+    ]);
+    const router = await openLandmarkPackDetail();
+
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('華厳の滝の記録を開く'));
+    });
+    await flushPromises();
+
+    // 日別記録スタック(/daily-logs)ではなく実績スタックの子に積む。戻ればパック詳細へ帰る
+    expect(router.getPathname()).toBe('/achievements/01a0c450-6c00-7000-8000-000000000001/2026-04-12');
+    expect(screen.getByLabelText('日本三名瀑へ戻る')).toBeTruthy();
+    expect(screen.queryByLabelText('日ごとの記録へ戻る')).toBeNull();
+
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('日本三名瀑へ戻る'));
+    });
+    await flushPromises();
+
+    expect(router.getPathname()).toBe('/achievements/01a0c450-6c00-7000-8000-000000000001');
   });
 
   it('パック詳細の戻るボタンで実績一覧へ戻る', async () => {

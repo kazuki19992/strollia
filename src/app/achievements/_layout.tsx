@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 /**
  * 実績スタックのレイアウト。
  *
- * 子ルート(index / [packId])に slide_from_right アニメーションと
+ * 子ルート(index / [packId]/index / [packId]/[date])に slide_from_right アニメーションと
  * iOS スワイプバックを適用する。
  */
 export default function AchievementsLayout(): React.ReactElement {

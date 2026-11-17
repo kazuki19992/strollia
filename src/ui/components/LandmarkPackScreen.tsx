@@ -5,7 +5,12 @@ import type { LandmarkPack, LandmarkSpot } from '@/features/landmarks/landmarkCa
 import { formatLandmarkPrefectures } from '@/features/landmarks/landmarkPrefectureLabel';
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
-import { LANDMARK_SPOT_COMPLETED_STAMP_LABEL, LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
+import {
+  LANDMARK_COMPLETED_DATE_PREFIX,
+  LANDMARK_FIRST_VISIT_DATE_PREFIX,
+  LANDMARK_SPOT_COMPLETED_STAMP_LABEL,
+  LANDMARK_SPOT_RETIRED_NOTE,
+} from '@/ui/appText';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
 import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import { AppListItem } from './AppListItem';
@@ -82,8 +87,9 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
         const reachedAreaCount = areaItems.filter((areaItem) => areaItem.visitedLocalDate !== null).length;
         const isMultiArea = spot.isMultiArea;
         const showVisitedStamp = isMultiArea ? reachedAreaCount > 0 && !isVisited : isVisited;
+        // 複数地点スポットの行の日付は「全地点そろった日」なので、地点行の初訪問日と見出しを分ける
         const detail = isVisited
-          ? formatLandmarkVisitedDate(visitedLocalDate)
+          ? `${isMultiArea ? LANDMARK_COMPLETED_DATE_PREFIX : LANDMARK_FIRST_VISIT_DATE_PREFIX}${formatLandmarkVisitedDate(visitedLocalDate)}`
           : isMultiArea
             ? `${reachedAreaCount}/${areaItems.length}`
             : undefined;
@@ -124,7 +130,7 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
               <View key={area.id} style={styles.landmarkAreaRowIndent}>
                 <AppListItem
                   accessibilityLabel={areaVisitedDate ? `${area.name}の記録を開く` : `${area.name}を地図で見る`}
-                  detail={areaVisitedDate ? formatLandmarkVisitedDate(areaVisitedDate) : undefined}
+                  detail={areaVisitedDate ? `${LANDMARK_FIRST_VISIT_DATE_PREFIX}${formatLandmarkVisitedDate(areaVisitedDate)}` : undefined}
                   showChevron={areaVisitedDate !== null}
                   styles={styles}
                   theme={theme}

@@ -56,7 +56,10 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
   // 完走判定と同じ数え方に揃えるため、retired なスポットは分母・分子から外す
   // (`resolveLandmarkPackProgress` が retired を除いた有効スポットだけを数えるのと同じ基準)。
   const activeSpotItems = spotItems.filter((item) => !item.spot.retired);
-  const visitedCount = activeSpotItems.filter((item) => item.visitedLocalDate !== null).length;
+  // 複数地点スポットは1地点でも到達していれば訪問済み(コンプリート=visitedLocalDate は求めない)
+  const visitedCount = activeSpotItems.filter(
+    (item) => item.visitedLocalDate !== null || item.areaItems.some((areaItem) => areaItem.visitedLocalDate !== null),
+  ).length;
   /**
    * 埋め込み地図がズームして中心表示するリクエスト。未タップならnull(全スポットが収まる表示範囲)。
    *

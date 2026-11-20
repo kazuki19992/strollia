@@ -306,6 +306,18 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       expect(screen.getByText('1/3')).toBeTruthy();
     });
 
+    it('ヘッダーの進捗は複数地点スポットを1地点でも訪問していれば1と数える', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(screen.getByText('1/1')).toBeTruthy();
+    });
+
+    it('ヘッダーの進捗は複数地点スポットを1地点も訪問していなければ数えない', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem([null, null, null])] });
+
+      expect(screen.getByText('0/1')).toBeTruthy();
+    });
+
     it('地点行を表示し、到達済みの地点には到達日を出す', async () => {
       await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
 

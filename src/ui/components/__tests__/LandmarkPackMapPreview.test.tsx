@@ -294,6 +294,16 @@ describe('パック詳細の埋め込み地図 LandmarkPackMapPreview', () => {
       expect(screen.getByTestId('landmark-spot-circle-area-b').props.radius).toBe(150);
     });
 
+    it('地点マーカーが重なっても到達済みの地点が上に描かれるよう、到達済みのマーカーのzIndexを高くする', async () => {
+      await renderPreview(null, multiItems);
+
+      // Marker モックは props をそのまま View へ渡すため、identifier でホスト要素を引いて zIndex を検証する
+      const zIndexOf = (areaId: string) =>
+        screen.container.queryAll((node) => node.props.identifier === `landmark-spot-${areaId}`)[0]?.props.zIndex ?? 0;
+
+      expect(zIndexOf('area-a')).toBeGreaterThan(zIndexOf('area-b'));
+    });
+
     it('到達済みの地点だけ到達済みの見た目になる', async () => {
       jest.useFakeTimers();
       try {

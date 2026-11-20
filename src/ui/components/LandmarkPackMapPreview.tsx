@@ -331,6 +331,9 @@ export function LandmarkPackMapPreview({ spotItems, focusRequest, styles, theme 
               anchor={{ x: 0.5, y: 0.5 }}
               coordinate={marker.coordinate}
               identifier={`landmark-spot-${marker.areaId}`}
+              // 縮小時は同じスポットの地点マーカーがほぼ同じ位置に重なる。訪問済みの地点を上に描き、
+              // 未到達の灰色に隠れて「訪問済みなのに灰色」に見えないようにする
+              zIndex={marker.isVisited ? 1 : 0}
               tracksViewChanges={isInitialLayoutPending || isFading || refreshingAreaIds.has(marker.areaId)}
             >
               <View

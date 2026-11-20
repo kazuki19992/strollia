@@ -102,7 +102,16 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
             <AppListItem
               accessibilityLabel={isVisited ? `${spot.name}の記録を開く` : `${spot.name}を地図で見る`}
               detail={detail}
-              leading={<LandmarkSpotNumberBadge isVisited={isVisited} number={displayNumber} styles={styles} theme={theme} />}
+              // 番号バッジはパック進捗と同じ「訪問」基準で塗る。複数地点スポットは1地点でも到達していれば訪問済み
+              // (コンプリートはスタンプと「コンプリート日」で区別する。色はプライマリカラー1色のため段階を分けない)
+              leading={
+                <LandmarkSpotNumberBadge
+                  isVisited={isVisited || reachedAreaCount > 0}
+                  number={displayNumber}
+                  styles={styles}
+                  theme={theme}
+                />
+              }
               showChevron={isVisited}
               styles={styles}
               subtitle={buildSpotSubtitle(spot)}

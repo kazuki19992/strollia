@@ -306,6 +306,43 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       expect(screen.getByText('1/3')).toBeTruthy();
     });
 
+    it('ヘッダーの進捗は複数地点スポットを1地点でも訪問していれば1と数える', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(screen.getByText('1/1')).toBeTruthy();
+    });
+
+    /**
+     * リスト行の番号バッジ「1」の文字色を返す。地図マーカーにも同じ番号が出るため、
+     * リスト用の文字スタイル(訪問済み/未訪問)のどちらかを持つ Text だけを対象にする。
+     */
+    const listBadgeTextColor = () => {
+      const listColors = [styles.landmarkSpotNumberBadgeTextVisited.color, styles.landmarkSpotNumberBadgeTextUnvisited.color];
+      const badge = screen
+        .getAllByText('1')
+        .map((node) => ReactNative.StyleSheet.flatten(node.props.style))
+        .find((style) => listColors.includes(style?.color as string));
+      return badge?.color;
+    };
+
+    it('複数地点スポットを1地点でも訪問していれば、番号バッジを訪問済み(プライマリカラー)にする', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(listBadgeTextColor()).toBe(styles.landmarkSpotNumberBadgeTextVisited.color);
+    });
+
+    it('複数地点スポットを1地点も訪問していなければ、番号バッジは未訪問のままにする', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem([null, null, null])] });
+
+      expect(listBadgeTextColor()).toBe(styles.landmarkSpotNumberBadgeTextUnvisited.color);
+    });
+
+    it('ヘッダーの進捗は複数地点スポットを1地点も訪問していなければ数えない', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem([null, null, null])] });
+
+      expect(screen.getByText('0/1')).toBeTruthy();
+    });
+
     it('地点行を表示し、到達済みの地点には到達日を出す', async () => {
       await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
 

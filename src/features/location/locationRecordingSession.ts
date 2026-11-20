@@ -130,8 +130,9 @@ export async function createLocationRecordingSession(options: LocationRecordingS
       // フィルタがほとんどの点を捨てるため、保存点の実績処理だけに任せると歩き出すまで完走実績が
       // 解除されない。保存点があった場合は processAchievementsForSavedPoint が既に評価済みなので、
       // ここで再評価すると二重に走ってしまうため保存点なしの場合だけ呼ぶ。
-      // 地点到達(area)はスポット到達ではないためパック完走に影響せず、再評価の対象にしない。
-      if (landmarkArrivals.some((arrival) => arrival.type === 'spot') && savedPoints.length === 0) {
+      // 複数地点スポットは1地点の到達(area)でもパックの訪問数が進むため、スポット到達(spot)と
+      // 同様に地点到達も再評価の対象にする。
+      if (landmarkArrivals.length > 0 && savedPoints.length === 0) {
         await evaluateAchievementsAndNotify().catch((error: unknown) => {
           console.warn('Achievement processing failed:', error);
         });

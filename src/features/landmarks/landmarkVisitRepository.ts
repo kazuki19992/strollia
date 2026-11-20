@@ -32,6 +32,23 @@ export async function getVisitedLandmarkSpotIds(): Promise<Set<string>> {
 }
 
 /**
+ * パックの進捗・完走判定で「訪問済み」と数えるスポットIDの集合を取得する。
+ *
+ * 円1つのスポットは `landmark_spot_visits` の行、複数地点スポットは `landmark_area_visits` に
+ * 1行でもあれば訪問済みとする(全地点のコンプリートは求めない)。離れた地点を回るパックで
+ * 全地点到達まで完走の条件にすると負担が大きいため。コンプリート判定(`getVisitedLandmarkSpotIds`)
+ * とは意味が違う点に注意する。
+ */
+export async function getPackCountedLandmarkSpotIds(): Promise<Set<string>> {
+  const rows = await db.getAllAsync<{ spotId: string }>(
+    `SELECT spot_id AS spotId FROM landmark_spot_visits
+     UNION
+     SELECT spot_id AS spotId FROM landmark_area_visits`,
+  );
+  return new Set(rows.map((row) => row.spotId));
+}
+
+/**
  * 現在の排他トランザクション内で到達を記録する。
  *
  * INSERT OR IGNORE とすることで、同じスポットの再到達で初回の到達日時を上書きしない。

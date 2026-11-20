@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { ACHIEVEMENT_NOTIFICATION_CHANNEL_ID } from '@/features/achievements/achievementNotificationService';
 import { getLandmarkAreaById, getLandmarkPackById, getLandmarkSpotById, type LandmarkSpot } from './landmarkCatalog';
 import { resolveLandmarkPackProgress } from './landmarkPackProgress';
-import { getVisitedLandmarkSpotIds } from './landmarkVisitRepository';
+import { getPackCountedLandmarkSpotIds } from './landmarkVisitRepository';
 
 /**
  * スポット到達をローカル通知する。
@@ -47,8 +47,9 @@ export async function notifyLandmarkSpotArrival(spotId: string): Promise<void> {
 /**
  * 複数地点スポットの途中の地点到達をローカル通知する。
  *
- * スポット全体の到達ではないため実績処理は伴わず、通知のみ。進捗(visited/total)は
- * 記録側が確定した値を受け取る。通知チャンネルはスポット到達通知と同じ。
+ * 地点進捗(visited/total)は記録側が確定した値を受け取り、所属パックの進捗はDBから取り直して添える
+ * (1地点目の到達でもパックの訪問数が進むため)。パック完走の実績評価は呼び出し側が行い、ここは通知のみ。
+ * 通知チャンネルはスポット到達通知と同じ。
  */
 export async function notifyLandmarkAreaArrival(event: {
   areaId: string;
@@ -69,12 +70,16 @@ export async function notifyLandmarkAreaArrival(event: {
   }
 
   const { area, spot } = resolved;
+  const progressSummaries = [
+    `${spot.name} ${event.visitedAreaCount}/${event.totalAreaCount}`,
+    ...(await createPackProgressSummaries(spot)),
+  ];
 
   await Notifications.scheduleNotificationAsync({
     content: {
       title: '地点に到達しました！',
       channelId: ACHIEVEMENT_NOTIFICATION_CHANNEL_ID,
-      body: `${area.name}に到達しました（${spot.name} ${event.visitedAreaCount}/${event.totalAreaCount}）`,
+      body: `${area.name}に到達しました（${progressSummaries.join('・')}）`,
       data: { landmarkAreaId: area.id, landmarkSpotId: spot.id },
       sound: true,
       vibrate: [0, 1000],
@@ -86,14 +91,27 @@ export async function notifyLandmarkAreaArrival(event: {
 /**
  * 「華厳の滝に到達しました（日本三名瀑 1/3）」形式の本文を作る。
  *
- * 進捗はDBから到達済みIDを取り直して数える。到達のINSERTはトランザクション確定後に
+ * 進捗はDBから訪問済みスポットIDを取り直して数える。到達のINSERTはトランザクション確定後に
  * 通知されるため、この再取得には今回の到達が含まれ、分子が1つ足りなくならない。
  */
 async function createArrivalBody(spot: LandmarkSpot): Promise<string> {
-  const visitedSpotIds = await getVisitedLandmarkSpotIds();
+  const packSummaries = await createPackProgressSummaries(spot);
+  const verb = spot.isMultiArea ? 'をコンプリートしました' : 'に到達しました';
+
+  return packSummaries.length > 0 ? `${spot.name}${verb}（${packSummaries.join('・')}）` : `${spot.name}${verb}`;
+}
+
+/**
+ * スポットが所属するパックごとの「パック名 訪問数/総数」を返す。
+ *
+ * 訪問数は複数地点スポットを1地点でも訪問していれば1と数える(`getPackCountedLandmarkSpotIds`)。
+ * マスタから解決できないパックは含めない。
+ */
+async function createPackProgressSummaries(spot: LandmarkSpot): Promise<string[]> {
+  const visitedSpotIds = await getPackCountedLandmarkSpotIds();
   const progressByPackId = new Map(resolveLandmarkPackProgress(visitedSpotIds).map((progress) => [progress.packId, progress]));
 
-  const packSummaries = spot.packs
+  return spot.packs
     .map((membership) => {
       const pack = getLandmarkPackById(membership.packId);
       const progress = progressByPackId.get(membership.packId);
@@ -101,8 +119,4 @@ async function createArrivalBody(spot: LandmarkSpot): Promise<string> {
       return pack && progress ? `${pack.name} ${progress.visitedCount}/${progress.totalCount}` : null;
     })
     .filter((summary): summary is string => summary != null);
-
-  const verb = spot.isMultiArea ? 'をコンプリートしました' : 'に到達しました';
-
-  return packSummaries.length > 0 ? `${spot.name}${verb}（${packSummaries.join('・')}）` : `${spot.name}${verb}`;
 }

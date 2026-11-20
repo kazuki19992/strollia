@@ -164,6 +164,23 @@ export function createCommonStyles(theme: AppTheme) {
       height: '100%',
     },
 
+    // Plus label (PlusBadge: Plus用の機能・パックに付ける小さなラベル。太字にはしない)
+    plusBadge: {
+      alignSelf: 'center',
+      backgroundColor: colors.plusCtaBackground,
+      borderColor: colors.primary,
+      borderRadius: 6,
+      borderWidth: 1,
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+    },
+    plusBadgeText: {
+      color: colors.primary,
+      fontSize: 11,
+      fontWeight: '400',
+      lineHeight: 15,
+    },
+
     // Development flag banner
     developmentFlagBannerContainer: {
       alignItems: 'center',

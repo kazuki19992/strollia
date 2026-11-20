@@ -778,22 +778,22 @@ export const GENERATED_LANDMARK_PACKS: readonly GeneratedLandmarkPack[] = [
     isFree: true,
   },
   {
-    id: "01a0c450-6c00-7000-8000-000000000002",
-    name: "JRA競馬場",
-    description: "JRAが開催する全国10箇所の競馬場を巡る",
-    // 所属スポット: 札幌競馬場, 函館競馬場, 福島競馬場, 新潟競馬場, 東京競馬場, 中山競馬場, 中京競馬場, 京都競馬場, 阪神競馬場, 小倉競馬場
-    trophyImage: require('../../../assets/achievements/spots/jra-racecourses-10.png'),
-    trophyIcon: require('../../../assets/achievements/spots/svg/jra-racecourses-10.svg').default,
-    sortOrder: 200,
-    isFree: false,
-  },
-  {
     id: "01a0c450-6c00-7000-8000-000000000003",
     name: "JR鉄道博物館",
     description: "JR3社が運営する3つの大型鉄道博物館を巡る",
     // 所属スポット: 鉄道博物館, リニア・鉄道館, 京都鉄道博物館
     trophyImage: require('../../../assets/achievements/spots/jr-railway-museums-3.png'),
     trophyIcon: require('../../../assets/achievements/spots/svg/jr-railway-museums-3.svg').default,
+    sortOrder: 200,
+    isFree: false,
+  },
+  {
+    id: "01a0c450-6c00-7000-8000-000000000002",
+    name: "JRA競馬場",
+    description: "JRAが開催する全国10箇所の競馬場を巡る",
+    // 所属スポット: 札幌競馬場, 函館競馬場, 福島競馬場, 新潟競馬場, 東京競馬場, 中山競馬場, 中京競馬場, 京都競馬場, 阪神競馬場, 小倉競馬場
+    trophyImage: require('../../../assets/achievements/spots/jra-racecourses-10.png'),
+    trophyIcon: require('../../../assets/achievements/spots/svg/jra-racecourses-10.svg').default,
     sortOrder: 300,
     isFree: false,
   },

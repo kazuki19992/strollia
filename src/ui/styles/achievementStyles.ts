@@ -106,6 +106,48 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackProgressBarArea: {
       flex: 1,
     },
+    // 無料ユーザー向けの背景色グラデーションの導線。購入ボタンを固定高さの領域の中央へ重ねるための基準
+    landmarkPackTeaser: {
+      position: 'relative',
+    },
+    // Plus用パックの2件目以降を置く領域。高さは呼び出し側が固定値で渡し、はみ出した行は切り取る
+    landmarkPackTeaserHiddenArea: {
+      overflow: 'hidden',
+    },
+    // グラデーションの上に重ねる購入ボタンの置き場。位置と高さは1件目の行の高さに合わせて呼び出し側が渡す
+    landmarkPackTeaserCtaArea: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      left: 0,
+      position: 'absolute',
+      right: 0,
+    },
+    // 購入ボタンの上に置く販促の見出しとパックの例のまとまり
+    landmarkPackTeaserPromotion: {
+      alignItems: 'center',
+      gap: 4,
+      marginBottom: 12,
+    },
+    // 販促の見出し。購入導線の入口として目を引くよう、大きめの太字にする(ユーザー指定)
+    landmarkPackTeaserHeadline: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '700',
+      lineHeight: 26,
+      textAlign: 'center',
+    },
+    // 見出しの下に小さく置くPlus用パックの例
+    landmarkPackTeaserExamples: {
+      color: colors.mutedText,
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 16,
+      textAlign: 'center',
+    },
+    // 購入ボタンの下の誘導文との間隔
+    landmarkPackTeaserNote: {
+      marginTop: 10,
+    },
     // パック詳細画面のレイアウト(上1/3が地図、下2/3がスポット一覧)
     landmarkPackScreenBody: {
       flex: 1,

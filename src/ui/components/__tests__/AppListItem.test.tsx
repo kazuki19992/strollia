@@ -110,4 +110,20 @@ describe('共通リスト行 AppListItem', () => {
 
     expect(screen.container.queryAll((node) => node.props.name === 'chevron-right')).toHaveLength(0);
   });
+
+  it('titleAccessoryスロットの要素をタイトルの横に表示する', async () => {
+    await render(
+      <AppListItem
+        accessibilityLabel="行を開く"
+        styles={styles}
+        theme={lightTheme}
+        title="タイトル"
+        titleAccessory={<Text>ラベル要素</Text>}
+        onPress={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('タイトル')).toBeTruthy();
+    expect(screen.getByText('ラベル要素')).toBeTruthy();
+  });
 });

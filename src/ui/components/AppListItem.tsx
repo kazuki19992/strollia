@@ -23,6 +23,8 @@ export type AppListItemProps = {
   theme: AppTheme;
   /** 行タイトル。 */
   title: string;
+  /** タイトルの横に表示する補助要素を差す汎用スロット。Plusラベルなどに使う。 */
+  titleAccessory?: ReactNode;
   /** 行の右端(chevron-rightの手前)に表示する補助要素を差す汎用スロット。到達済みバッジなどに使う。 */
   trailing?: ReactNode;
   /** 押下処理。 */
@@ -43,6 +45,7 @@ export function AppListItem({
   subtitle,
   theme,
   title,
+  titleAccessory,
   trailing,
   prominent = false,
   showChevron = true,
@@ -52,7 +55,16 @@ export function AppListItem({
     <Pressable accessibilityLabel={accessibilityLabel} accessibilityRole="button" onPress={onPress} style={styles.appListItem}>
       {leading ? <View>{leading}</View> : null}
       <View style={styles.appListItemTextColumn}>
-        <Text style={[styles.appListItemTitle, prominent && styles.appListItemTitleProminent]}>{title}</Text>
+        {titleAccessory ? (
+          <View style={styles.appListItemTitleRow}>
+            <Text style={[styles.appListItemTitle, styles.appListItemTitleInRow, prominent && styles.appListItemTitleProminent]}>
+              {title}
+            </Text>
+            {titleAccessory}
+          </View>
+        ) : (
+          <Text style={[styles.appListItemTitle, prominent && styles.appListItemTitleProminent]}>{title}</Text>
+        )}
         {subtitle ? <Text style={styles.appListItemSubtitle}>{subtitle}</Text> : null}
         {detail ? <Text style={styles.appListItemDetail}>{detail}</Text> : null}
         {footer ? <View style={styles.appListItemFooter}>{footer}</View> : null}

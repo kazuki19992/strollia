@@ -21,7 +21,7 @@
 
 - `PlusBadge.tsx`(props: styles) — 小さなピル表示。accessibilityLabel は付けない(行ラベルに含める)
 - `AppListItem` に `titleAccessory?: ReactNode` を追加し、タイトルと横並び(折り返し可)で表示
-- `GradientFadeOverlay.tsx`(props: `color: string`, `gradientTop: number`, `gradientHeight: number`, `maxOpacity?: number`(既定0.8), `steps?: number`(既定16)) — 絶対配置。`gradientTop` から `gradientHeight` の間を `steps` 本の帯で不透明度を段階的に上げ、その下を最大不透明度1枚で覆う。`pointerEvents="none"`(当初は `GradientBlurOverlay` でぼかしていたが、ユーザー確認で背景色のグラデーションのみに変更)
+- `GradientFadeOverlay.tsx`(props: `color: string`, `gradientTop: number`, `gradientHeight: number`, `maxOpacity?: number`(既定1), `steps?: number`(既定16)) — 絶対配置。`gradientTop` から `gradientHeight` の間を `steps` 本の帯で不透明度を段階的に上げ、その下を最大不透明度1枚で覆う。`pointerEvents="none"`(当初は `GradientBlurOverlay` でぼかしていたが、ユーザー確認で背景色のグラデーションのみに変更)
 - 各テスト
 
 ## Task 3: 実績画面への組み込み

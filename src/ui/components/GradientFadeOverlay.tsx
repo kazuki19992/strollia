@@ -9,8 +9,8 @@ export type GradientFadeOverlayProps = {
   /** 不透明度を段階的に上げていく区間の高さ(pt)。 */
   gradientHeight: number;
   /**
-   * 最大の不透明度。グラデーション区間の最後の帯と、その下の全体に使う。既定は0.8。
-   * 1にすると下の内容が完全に隠れるため、うっすら見せたい場合は1未満にする。
+   * 最大の不透明度。グラデーション区間の最後の帯と、その下の全体に使う。
+   * 既定は1で、グラデーション区間より下の内容は完全に隠れる。うっすら見せたい場合だけ1未満にする。
    */
   maxOpacity?: number;
   /** グラデーション区間を分割する帯の本数。多いほど滑らかになる。既定は16。 */
@@ -25,7 +25,7 @@ export type GradientFadeOverlayProps = {
  * 重ねた色自体はタッチを受け付けず(`pointerEvents="none"`)下の要素へ通すため、
  * 下の内容を押させたくない場合は、呼び出し側で対象の要素自体を押せない状態にしておくこと。
  */
-export function GradientFadeOverlay({ color, gradientTop, gradientHeight, maxOpacity = 0.8, steps = 16 }: GradientFadeOverlayProps) {
+export function GradientFadeOverlay({ color, gradientTop, gradientHeight, maxOpacity = 1, steps = 16 }: GradientFadeOverlayProps) {
   const bandHeight = gradientHeight / steps;
 
   return (

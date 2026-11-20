@@ -323,7 +323,7 @@ describe('実績画面のスポットセクション', () => {
       expect(heightWithHiddenRows).toBe(LANDMARK_PACK_TEASER_HIDDEN_HEIGHT);
     });
 
-    it('1件目の行は上端(0%)から下端(100%)まで背景色を段階的に濃く重ね、ぼかしは使わない', async () => {
+    it('1件目の行は上端(0%)から下端(100%)まで背景色を段階的に濃く重ね、それより下は完全に隠す', async () => {
       await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
 
       await fireEvent(screen.getByTestId('landmark-pack-teaser-peek-row', { includeHiddenElements: true }), 'layout', {
@@ -337,8 +337,11 @@ describe('実績画面のスポットセクション', () => {
       });
       const tops = bands.map((band) => StyleSheet.flatten(band.props.style).top);
       expect(tops[0]).toBe(0);
-      // 最後の1枚(最大の不透明度)は行の下端から始まる
+      // 最後の1枚は行の下端から始まり、2件目以降の領域を不透明度1で完全に隠す
       expect(tops[tops.length - 1]).toBe(100);
+      expect(StyleSheet.flatten(bands[bands.length - 1].props.style).opacity).toBe(1);
+      // 1件目の下端の帯も不透明度1(100%)に達する
+      expect(StyleSheet.flatten(bands[bands.length - 2].props.style).opacity).toBe(1);
       expect(screen.container.queryAll((node) => node.props.intensity !== undefined)).toHaveLength(0);
     });
 

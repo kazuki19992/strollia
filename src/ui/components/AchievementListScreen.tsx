@@ -61,8 +61,8 @@ export const ACHIEVEMENT_GRID_COLUMNS_LANDSCAPE = 6;
 /**
  * 無料ユーザー向けのグラデーション領域で、Plus用パックの2件目以降を置く領域の高さ(pt)。
  *
- * 件数によらず固定にし、はみ出した行は切り取る。2件目以降はうっすら見えるため、
- * 見た目の高さからPlus用パックの件数を読み取れないようにする。
+ * 2件目以降は背景色で完全に隠れるが、件数によらず高さを固定にし、はみ出した行は切り取る。
+ * 見た目の余白の高さからPlus用パックの件数を読み取れないようにするため。
  */
 export const LANDMARK_PACK_TEASER_HIDDEN_HEIGHT = 160;
 
@@ -102,7 +102,7 @@ export function AchievementListScreen({
   // スポットパックのトロフィーも Grayscale を通すため数値サイズが必要。
   // 一覧行のアイコンは設計書 §9.3.1 の 60〜80pt を目安にし、狭い端末では縮めて上限で止める。
   const packTrophySize = Math.min(72, Math.max(48, Math.floor((windowWidth - 24 * 2) * 0.2)));
-  // 無料ユーザーにはPlus用パックを0.5件(上端から下端へ背景色を段階的に重ねた1件目)だけ見せ、残りは背景色でうっすら隠して件数を読み取れないようにする
+  // 無料ユーザーにはPlus用パックを0.5件(上端から下端へ背景色を段階的に重ねた1件目)だけ見せ、残りは背景色で完全に隠して件数を読み取れないようにする
   const { visibleItems, peekItem, hiddenItems } = splitLandmarkPacksForTeaser(landmarkPackItems, isPlusActive);
   /** 背景色を段階的に重ねる1件目の行の高さ。計測前は0で、そのあいだはグラデーション領域全体を最大の不透明度で覆う。 */
   const [peekRowHeight, setPeekRowHeight] = useState(0);
@@ -262,7 +262,7 @@ export function AchievementListScreen({
                     </View>
                     <GradientFadeOverlay
                       // 途中から始めるとグラデーションがかかっていることが分かりにくいため、行の上端から下端まで段階的に濃くする。
-                      // 完全に読めないと訴求しにくいため、ぼかしは使わず背景色を重ねて、下の行もうっすら見えるようにする
+                      // 1件目の内容は読めるようにするため、ぼかしは使わず背景色だけを重ねる。下端で不透明度1に達し、2件目以降は完全に隠す
                       color={theme.colors.background}
                       gradientHeight={peekRowHeight}
                       gradientTop={0}

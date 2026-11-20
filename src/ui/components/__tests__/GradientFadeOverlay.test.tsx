@@ -21,12 +21,13 @@ describe('背景色のグラデーション GradientFadeOverlay', () => {
     expect(bands[4].props.style.bottom).toBe(0);
   });
 
-  it('既定では16本の帯と最大不透明度0.8で描画する', async () => {
+  it('既定では16本の帯で描画し、下端とその下を不透明度1で完全に覆う', async () => {
     await render(<GradientFadeOverlay color="#202020" gradientHeight={80} gradientTop={0} />);
 
     const bands = findFadeBands('#202020');
     expect(bands).toHaveLength(17);
-    expect(bands[bands.length - 1].props.style.opacity).toBe(0.8);
+    expect(bands[bands.length - 2].props.style.opacity).toBe(1);
+    expect(bands[bands.length - 1].props.style.opacity).toBe(1);
   });
 
   it('ぼかしは使わない(BlurViewのintensityを持つ要素を描画しない)', async () => {

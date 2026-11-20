@@ -128,11 +128,11 @@ export function createAchievementStyles(theme: AppTheme) {
       gap: 4,
       marginBottom: 12,
     },
-    // 販促の見出し。太字にはせず、大きさで目を引く
+    // 販促の見出し。購入導線の入口として目を引くよう、大きめの太字にする(ユーザー指定)
     landmarkPackTeaserHeadline: {
       color: colors.text,
       fontSize: 20,
-      fontWeight: '400',
+      fontWeight: '700',
       lineHeight: 26,
       textAlign: 'center',
     },

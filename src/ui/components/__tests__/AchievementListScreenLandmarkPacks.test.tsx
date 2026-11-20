@@ -350,7 +350,9 @@ describe('実績画面のスポットセクション', () => {
     it('購入導線の領域に、販促の見出し・パックの例・購入ボタン・誘導文を上から順に置き、誘導文は1回だけ中央揃えで出す', async () => {
       await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
 
-      expect(LANDMARK_PACK_PLUS_TEASER_HEADLINE).toBe('ほかにも色々！！');
+      expect(LANDMARK_PACK_PLUS_TEASER_HEADLINE).toBe('ほかにも色々！');
+      // 販促の見出しは情報階層として目立たせるため太字にする
+      expect(StyleSheet.flatten(screen.getByText(LANDMARK_PACK_PLUS_TEASER_HEADLINE).props.style).fontWeight).toBe('700');
       expect(LANDMARK_PACK_PLUS_TEASER_EXAMPLES).toBe('のぼれる灯台 日本三景 博物館 And more!');
 
       const ctaArea = screen.getByTestId('landmark-pack-teaser-cta-area');

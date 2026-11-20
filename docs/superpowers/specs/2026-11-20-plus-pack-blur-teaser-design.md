@@ -45,7 +45,7 @@ issue: #192
   - Plus有効、または Plus用パックが1件以下なら、全件を `visibleItems` に入れ、`peekItem` は null、`hiddenItems` は空にする。
   - それ以外は、無料パックと Plus用パックの1件目を `visibleItems`、Plus用パックの2件目を `peekItem`、3件目以降を `hiddenItems` にする。`visibleItems` は元の表示順を保つ。
 - **Plusラベル**: 汎用の `PlusBadge` コンポーネントを新設する。`AppListItem` に、タイトルの横に要素を差し込む汎用スロット `titleAccessory` を追加する。
-- **グラデーション状のぼかし**: `expo-blur` には段階的なぼかしがないため、強さの違う `BlurView` を細い帯状に縦に重ね、上から下へ強くしていく汎用の `GradientBlurOverlay` を新設する。グラデーションの帯より下は最大の強さの `BlurView` 1枚で覆う。
+- **グラデーション状のぼかし**: `expo-blur` には段階的なぼかしがないため、強さの違う `BlurView` を細い帯状に縦に重ね、上から下へ強くしていく汎用の `GradientBlurOverlay` を新設する。グラデーションの帯より下は最大の強さの `BlurView` 1枚で覆う。弱いぼかしでも帯の境目が目立つため、強さは二次曲線で序盤ほどゆるやかに上げる。また BlurView の色味が背景とわずかに違い、ぼかした範囲が箱のように見えるため、同じ帯で画面の背景色を段階的に重ねて背景へ溶け込ませる(シミュレータ確認後の調整)。
 - **固定高さ**: 3件目以降を置く領域は固定の高さにし、`overflow: hidden` で切り取る。Plus用パックが2件だけで3件目がない場合も、同じ高さの空の領域をぼかして置く。そのため見た目の高さから件数は分からない。
 - 文言(`Plus`、`Plusでもっと挑戦する`)は `src/ui/appText.ts` に置く。スタイルは `src/ui/styles/achievementStyles.ts` などに追加する。
 

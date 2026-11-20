@@ -266,6 +266,7 @@ export function AchievementListScreen({
                     <GradientBlurOverlay
                       gradientHeight={peekRowHeight * (1 - LANDMARK_PACK_TEASER_GRADIENT_START_RATIO)}
                       gradientTop={peekRowHeight * LANDMARK_PACK_TEASER_GRADIENT_START_RATIO}
+                      fadeColor={theme.colors.background}
                       tint={theme.name === 'dark' ? 'dark' : 'light'}
                     />
                   </View>

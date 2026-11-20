@@ -506,7 +506,7 @@ src/app/components/ConfettiOverlay.tsx
 - Plus未加入時は、有料パック(`isFree: false`)だけを施錠表示にする。無料パックは進捗つきで通常表示する。施錠中の行タップでペイウォールへ遷移する
 - Plus未加入時は、有料パックを全部は見せず、残りの件数を読み取れないようにする(`docs/superpowers/specs/2026-11-20-plus-pack-blur-teaser-design.md`)。分割は `src/features/landmarks/landmarkPackTeaser.ts` の `splitLandmarkPacksForTeaser` で行う
   - 無料パックと有料パックの1件目: 通常表示(有料パックは鍵バッジつき・進捗なし)
-  - 有料パックの2件目: ぼかし領域の先頭に置く。行の上半分は読め、中ほどから下へ向けてぼかしを段階的に強める(`GradientBlurOverlay`。expo-blur に段階的なぼかしがないため、強さの違う `BlurView` を細い帯状に重ねる)
+  - 有料パックの2件目: ぼかし領域の先頭に置く。行の上半分は読め、中ほどから下へ向けてぼかしを段階的に強める(`GradientBlurOverlay`。expo-blur に段階的なぼかしがないため、強さの違う `BlurView` を細い帯状に重ね、背景色も段階的に重ねて背景へ溶け込ませる)
   - 有料パックの3件目以降: 2件目の下の固定の高さ(160pt)の領域に置き、はみ出した分は切り取って最大の強さでぼかす。有料パックが2件だけでも同じ高さの空の領域を置き、見た目の高さから件数が分からないようにする
   - ぼかし領域の中の行は押せず、スクリーンリーダーにも読ませない
   - 固定の高さの領域の中央に「Plusでもっと挑戦する」ボタンを重ね、押すとペイウォールを開く。既存の誘導文(`LANDMARK_PACK_PLUS_PROMOTION_NOTE`)はその下に残す

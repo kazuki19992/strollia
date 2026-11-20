@@ -11,6 +11,11 @@ export type AppListItemProps = {
   accessibilityLabel: string;
   /** 補足情報。 */
   detail?: string;
+  /**
+   * 開閉できる行の開閉状態。指定すると右端に上下の矢印(開いていれば chevron-up、閉じていれば chevron-down)を出し、
+   * `accessibilityState.expanded` を付ける。右向きの矢印(showChevron)は出さない。未指定なら従来どおり。
+   */
+  expanded?: boolean;
   /** タイトル・サブタイトルの下に表示する追加要素。進捗バーなどを差す汎用スロット。 */
   footer?: ReactNode;
   /** 行の先頭に表示する補助アイコンなどの要素。 */
@@ -39,6 +44,7 @@ export type AppListItemProps = {
 export function AppListItem({
   accessibilityLabel,
   detail,
+  expanded,
   footer,
   leading,
   styles,
@@ -52,7 +58,13 @@ export function AppListItem({
   onPress,
 }: AppListItemProps) {
   return (
-    <Pressable accessibilityLabel={accessibilityLabel} accessibilityRole="button" onPress={onPress} style={styles.appListItem}>
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      accessibilityState={expanded === undefined ? undefined : { expanded }}
+      onPress={onPress}
+      style={styles.appListItem}
+    >
       {leading ? <View>{leading}</View> : null}
       <View style={styles.appListItemTextColumn}>
         {titleAccessory ? (
@@ -70,7 +82,11 @@ export function AppListItem({
         {footer ? <View style={styles.appListItemFooter}>{footer}</View> : null}
       </View>
       {trailing ? <View>{trailing}</View> : null}
-      {showChevron ? <Feather name="chevron-right" size={24} color={theme.colors.mutedText} /> : null}
+      {expanded !== undefined ? (
+        <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={24} color={theme.colors.mutedText} />
+      ) : showChevron ? (
+        <Feather name="chevron-right" size={24} color={theme.colors.mutedText} />
+      ) : null}
     </Pressable>
   );
 }

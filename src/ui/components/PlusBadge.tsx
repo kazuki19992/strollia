@@ -1,7 +1,6 @@
-import { Text, View } from 'react-native';
-
 import type { AppStyles } from '@/ui/appStyles';
 import { PLUS_BADGE_LABEL } from '@/ui/appText';
+import { LabelBadge } from './LabelBadge';
 
 /** PlusBadge のprops。 */
 export type PlusBadgeProps = {
@@ -9,15 +8,7 @@ export type PlusBadgeProps = {
   styles: AppStyles;
 };
 
-/**
- * Plus用の機能・パックであることを示す小さなピル型ラベル。
- *
- * 読み上げは行全体の accessibilityLabel に含める前提のため、ラベル単体には accessibilityLabel を付けない。
- */
+/** Plus用の機能・パックであることを示すラベル。汎用の {@link LabelBadge} に「Plus」を渡すだけの薄いラッパー。 */
 export function PlusBadge({ styles }: PlusBadgeProps) {
-  return (
-    <View style={styles.plusBadge}>
-      <Text style={styles.plusBadgeText}>{PLUS_BADGE_LABEL}</Text>
-    </View>
-  );
+  return <LabelBadge label={PLUS_BADGE_LABEL} styles={styles} />;
 }

@@ -5,7 +5,8 @@ import type { LandmarkPack, LandmarkSpot } from '@/features/landmarks/landmarkCa
 import { createLandmarkSpotFocusRegion } from '@/features/landmarks/landmarkSpotMapDetails';
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
-import { LANDMARK_SPOT_RETIRED_NOTE } from '@/ui/appText';
+import { LANDMARK_SPOT_RETIRED_NOTE, MULTI_AREA_SPOT_BADGE_LABEL } from '@/ui/appText';
+import { LIST_EXPANSION_DURATION_MS } from '@/ui/components/listExpansionAnimation';
 import { LandmarkPackScreen } from '@/ui/components/LandmarkPackScreen';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
 
@@ -300,14 +301,101 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       };
     }
 
-    it('複数地点スポットの行に到達地点数の進捗を表示する', async () => {
+    /** 松島の行を押して地点リストを開く。 */
+    async function openMatsushima(): Promise<void> {
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('松島の地点を開く'));
+      });
+    }
+
+    it('複数地点スポットの行に到達地点数と進捗バーを表示する', async () => {
       await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
 
       expect(screen.getByText('1/3')).toBeTruthy();
+      expect(screen.getByLabelText('松島の進捗')).toBeTruthy();
+    });
+
+    it('コンプリート後も3/3と進捗バーを出し、右側の補足にはコンプリート日だけを出す', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', '2026-05-02', '2026-05-03'])] });
+
+      expect(screen.getByText('3/3')).toBeTruthy();
+      expect(screen.getByLabelText('松島の進捗')).toBeTruthy();
+      expect(screen.getByText('コンプリート日: 2026/05/03')).toBeTruthy();
+    });
+
+    it('複数地点スポットの行に「複数スポット」ラベルを出し、円1つのスポットには出さない', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem([null, null, null]), ...spotItems] });
+
+      expect(screen.getAllByText(MULTI_AREA_SPOT_BADGE_LABEL)).toHaveLength(1);
+    });
+
+    it('円1つのスポットには開閉の矢印・進捗バーを出さない', async () => {
+      await renderScreen();
+
+      expect(screen.container.queryAll((node) => node.props.name === 'chevron-down' || node.props.name === 'chevron-up')).toHaveLength(0);
+      expect(screen.queryByLabelText('華厳の滝の進捗')).toBeNull();
+    });
+
+    it('初期状態では地点の行が出ておらず、開閉の矢印は下向きで読み上げは「開く」になる', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(screen.queryByText('五大堂')).toBeNull();
+      expect(screen.queryByText('瑞巌寺')).toBeNull();
+      expect(screen.container.queryAll((node) => node.props.name === 'chevron-down')).toHaveLength(1);
+      expect(screen.getByLabelText('松島の地点を開く').props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
+    });
+
+    it('スポット行を押すと地点の行が出て地図がスポット全体へズームし、もう一度押すと消えて再ズームする', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      await openMatsushima();
+
+      expect(screen.getByText('五大堂')).toBeTruthy();
+      expect(screen.getByText('福浦島')).toBeTruthy();
+      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
+      expect(screen.getByLabelText('松島の地点を閉じる').props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
+      expect(screen.container.queryAll((node) => node.props.name === 'chevron-up')).toHaveLength(1);
+
+      await act(async () => {
+        await fireEvent.press(screen.getByLabelText('松島の地点を閉じる'));
+      });
+
+      expect(screen.queryByText('五大堂')).toBeNull();
+      expect(screen.queryByLabelText('五大堂を地図で見る')).toBeNull();
+      expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
+      expect(screen.getByLabelText('松島の地点を開く')).toBeTruthy();
+    });
+
+    it('開閉のたびに状態更新の前にLayoutAnimationが250msのアニメーションで呼ばれる', async () => {
+      const configureNext = jest.spyOn(ReactNative.LayoutAnimation, 'configureNext').mockImplementation(() => undefined);
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      await openMatsushima();
+
+      expect(configureNext).toHaveBeenCalledTimes(1);
+      expect(configureNext).toHaveBeenCalledWith(expect.objectContaining({ duration: LIST_EXPANSION_DURATION_MS }));
+    });
+
+    it('複数のスポットの開閉は互いに独立している', async () => {
+      const other = createMultiAreaItem([null, null, null]);
+      other.spot = {
+        ...other.spot,
+        id: '01a0c450-6c00-7000-8000-000000000400',
+        name: '天橋立',
+        areas: other.spot.areas.map((area, i) => ({ ...area, id: `01a0c450-6c00-7000-8000-00000000040${i}`, name: `天橋立${i}` })),
+      };
+      other.areaItems = other.spot.areas.map((area) => ({ area, visitedLocalDate: null }));
+      await renderScreen({ spotItems: [createMultiAreaItem([null, null, null]), other] });
+
+      await openMatsushima();
+
+      expect(screen.getByText('五大堂')).toBeTruthy();
+      expect(screen.queryByText('天橋立0')).toBeNull();
     });
 
     it('地点行を表示し、到達済みの地点には到達日を出す', async () => {
       await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+      await openMatsushima();
 
       expect(screen.getByText('五大堂')).toBeTruthy();
       expect(screen.getByText('瑞巌寺')).toBeTruthy();
@@ -328,6 +416,7 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       expect(screen.getAllByLabelText('コンプリート')).toHaveLength(1);
       expect(screen.queryByLabelText('訪問済み')).toBeNull();
       // コンプリート後はスポット行の detail が全地点そろった日になる。地点行は各地点の初訪問日
+      await openMatsushima();
       expect(screen.getByText('コンプリート日: 2026/05/03')).toBeTruthy();
       expect(screen.getByText('初訪問日: 2026/05/03')).toBeTruthy();
     });
@@ -349,6 +438,7 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     it('到達済みの地点行を押すとその日の記録へ遷移する', async () => {
       const onSelectVisitedSpot = jest.fn();
       await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])], onSelectVisitedSpot });
+      await openMatsushima();
 
       await act(async () => {
         await fireEvent.press(screen.getByLabelText('五大堂の記録を開く'));
@@ -360,6 +450,8 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     it('未到達の地点行を押すと埋め込み地図がその地点へズームする', async () => {
       const item = createMultiAreaItem(['2026-05-01', null, null]);
       await renderScreen({ spotItems: [item] });
+      await openMatsushima();
+      mockAnimateToRegion.mockClear();
 
       await act(async () => {
         await fireEvent.press(screen.getByLabelText('瑞巌寺を地図で見る'));
@@ -372,28 +464,18 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       );
     });
 
-    it('未コンプリートの複数地点スポット行を押すと埋め込み地図がスポット全体へ寄る', async () => {
-      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
-
-      await act(async () => {
-        await fireEvent.press(screen.getByLabelText('松島を地図で見る'));
-      });
-
-      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
-    });
-
-    it('コンプリート済みの複数地点スポット行を押すとスポット到達日の記録へ遷移する', async () => {
+    it('コンプリート済みの複数地点スポット行を押しても記録へ遷移せず、地点リストを開く', async () => {
       const onSelectVisitedSpot = jest.fn();
       await renderScreen({
         spotItems: [createMultiAreaItem(['2026-05-01', '2026-05-03', '2026-05-02'])],
         onSelectVisitedSpot,
       });
 
-      await act(async () => {
-        await fireEvent.press(screen.getByLabelText('松島の記録を開く'));
-      });
+      await openMatsushima();
 
-      expect(onSelectVisitedSpot).toHaveBeenCalledWith('2026-05-03');
+      expect(onSelectVisitedSpot).not.toHaveBeenCalled();
+      expect(screen.getByText('五大堂')).toBeTruthy();
+      expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
     });
   });
 

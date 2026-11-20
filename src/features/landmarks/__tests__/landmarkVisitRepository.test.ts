@@ -3,6 +3,7 @@ import {
   countLandmarkAreaVisitsForSpotInCurrentTransaction,
   getLandmarkAreaVisits,
   getLandmarkSpotVisits,
+  getPackCountedLandmarkSpotIds,
   getVisitedLandmarkAreaIds,
   getVisitedLandmarkSpotIds,
   insertLandmarkAreaVisitInCurrentTransaction,
@@ -56,6 +57,18 @@ describe('スポット訪問リポジトリ landmarkVisitRepository', () => {
 
     expect(ids.has('01a0c450-6c00-7000-8000-000000000101')).toBe(true);
     expect(ids.has('01a0c450-6c00-7000-8000-000000000102')).toBe(false);
+  });
+
+  it('パック進捗用の訪問済みスポットIDは、スポット到達と地点到達のスポットIDを合わせて返す', async () => {
+    (db.getAllAsync as jest.Mock).mockResolvedValue([{ spotId: 'spot-a' }, { spotId: 'spot-b' }]);
+
+    const ids = await getPackCountedLandmarkSpotIds();
+
+    expect(ids).toEqual(new Set(['spot-a', 'spot-b']));
+    const sql = (db.getAllAsync as jest.Mock).mock.calls[0][0] as string;
+    expect(sql).toContain('landmark_spot_visits');
+    expect(sql).toContain('landmark_area_visits');
+    expect(sql).toContain('UNION');
   });
 
   it('同じスポットの再INSERTは既存行を書き換えない', async () => {

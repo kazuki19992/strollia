@@ -13,4 +13,14 @@ describe('説明テキスト DescriptionText', () => {
     const textNode = screen.getByText('移動距離はGPSのブレにより本来の距離より多く記録される場合があります。');
     expect(textNode.props.style).toBe('formItemDescription');
   });
+
+  it('centered を指定すると中央揃えのスタイルを重ねる', async () => {
+    await render(
+      <DescriptionText centered styles={styles as never}>
+        中央に置く補足
+      </DescriptionText>,
+    );
+
+    expect(screen.getByText('中央に置く補足').props.style).toEqual(['formItemDescription', 'descriptionTextCentered']);
+  });
 });

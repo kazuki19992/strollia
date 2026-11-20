@@ -474,6 +474,10 @@ export function createSettingsStyles(theme: AppTheme) {
       fontWeight: '400',
       lineHeight: 14,
     },
+    // DescriptionText を中央揃えにするときに formItemDescription へ重ねる
+    descriptionTextCentered: {
+      textAlign: 'center',
+    },
     formItemTitle: {
       color: settingsText,
       fontSize: 14,

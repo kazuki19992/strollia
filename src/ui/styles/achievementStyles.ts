@@ -122,6 +122,32 @@ export function createAchievementStyles(theme: AppTheme) {
       position: 'absolute',
       right: 0,
     },
+    // 購入ボタンの上に置く販促の見出しとパックの例のまとまり
+    landmarkPackTeaserPromotion: {
+      alignItems: 'center',
+      gap: 4,
+      marginBottom: 12,
+    },
+    // 販促の見出し。太字にはせず、大きさで目を引く
+    landmarkPackTeaserHeadline: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: '400',
+      lineHeight: 26,
+      textAlign: 'center',
+    },
+    // 見出しの下に小さく置くPlus用パックの例
+    landmarkPackTeaserExamples: {
+      color: colors.mutedText,
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 16,
+      textAlign: 'center',
+    },
+    // 購入ボタンの下の誘導文との間隔
+    landmarkPackTeaserNote: {
+      marginTop: 10,
+    },
     // パック詳細画面のレイアウト(上1/3が地図、下2/3がスポット一覧)
     landmarkPackScreenBody: {
       flex: 1,

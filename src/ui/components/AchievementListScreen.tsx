@@ -11,7 +11,13 @@ import { splitLandmarkPacksForTeaser } from '@/features/landmarks/landmarkPackTe
 import { resolveLandmarkTrophyDisplayState } from '@/features/landmarks/landmarkTrophyDisplayState';
 import { AppTheme } from '@/theme/theme';
 import { AppStyles } from '@/ui/appStyles';
-import { LANDMARK_PACK_PLUS_PROMOTION_NOTE, LANDMARK_PACK_PLUS_TEASER_CTA, LANDMARK_PACK_SECTION_TITLE } from '@/ui/appText';
+import {
+  LANDMARK_PACK_PLUS_PROMOTION_NOTE,
+  LANDMARK_PACK_PLUS_TEASER_CTA,
+  LANDMARK_PACK_PLUS_TEASER_EXAMPLES,
+  LANDMARK_PACK_PLUS_TEASER_HEADLINE,
+  LANDMARK_PACK_SECTION_TITLE,
+} from '@/ui/appText';
 import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import type { LandmarkPackListItem } from '@/ui/hooks/useLandmarkPackState';
 import { resolveAchievementDisplayStates } from './achievementDisplayState';
@@ -63,8 +69,9 @@ export const ACHIEVEMENT_GRID_COLUMNS_LANDSCAPE = 6;
  *
  * 2件目以降は背景色で完全に隠れるが、件数によらず高さを固定にし、はみ出した行は切り取る。
  * 見た目の余白の高さからPlus用パックの件数を読み取れないようにするため。
+ * 購入導線(販促の見出し・パックの例・購入ボタン・誘導文)もこの高さの中に収める。
  */
-export const LANDMARK_PACK_TEASER_HIDDEN_HEIGHT = 160;
+export const LANDMARK_PACK_TEASER_HIDDEN_HEIGHT = 200;
 
 /**
  * 実績グリッドのタイル幅と画像サイズを画面幅から算出する。
@@ -271,7 +278,12 @@ export function AchievementListScreen({
                   <View
                     pointerEvents="box-none"
                     style={[styles.landmarkPackTeaserCtaArea, { top: peekRowHeight, height: LANDMARK_PACK_TEASER_HIDDEN_HEIGHT }]}
+                    testID="landmark-pack-teaser-cta-area"
                   >
+                    <View style={styles.landmarkPackTeaserPromotion}>
+                      <Text style={styles.landmarkPackTeaserHeadline}>{LANDMARK_PACK_PLUS_TEASER_HEADLINE}</Text>
+                      <Text style={styles.landmarkPackTeaserExamples}>{LANDMARK_PACK_PLUS_TEASER_EXAMPLES}</Text>
+                    </View>
                     <ActionPill
                       backgroundColor={theme.colors.plusCtaBackground}
                       borderColor={theme.colors.primary}
@@ -281,11 +293,17 @@ export function AchievementListScreen({
                       textColor={theme.colors.primary}
                       onPress={onRequestPremium}
                     />
+                    <View style={styles.landmarkPackTeaserNote}>
+                      <DescriptionText centered styles={styles}>
+                        {LANDMARK_PACK_PLUS_PROMOTION_NOTE}
+                      </DescriptionText>
+                    </View>
                   </View>
                 </View>
               ) : null}
 
-              {landmarkPackItems.some((item) => item.isLocked) ? (
+              {/* 購入導線を出す場合は誘導文をボタンの下に置くため、ここでは出さない */}
+              {!peekItem && landmarkPackItems.some((item) => item.isLocked) ? (
                 <DescriptionText styles={styles}>{LANDMARK_PACK_PLUS_PROMOTION_NOTE}</DescriptionText>
               ) : null}
             </View>

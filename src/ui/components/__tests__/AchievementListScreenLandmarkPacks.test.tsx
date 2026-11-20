@@ -6,6 +6,8 @@ import { createStyles } from '@/ui/appStyles';
 import {
   LANDMARK_PACK_PLUS_PROMOTION_NOTE,
   LANDMARK_PACK_PLUS_TEASER_CTA,
+  LANDMARK_PACK_PLUS_TEASER_EXAMPLES,
+  LANDMARK_PACK_PLUS_TEASER_HEADLINE,
   LANDMARK_PACK_SECTION_TITLE,
   PLUS_BADGE_LABEL,
 } from '@/ui/appText';
@@ -343,6 +345,28 @@ describe('実績画面のスポットセクション', () => {
       // 1件目の下端の帯も不透明度1(100%)に達する
       expect(StyleSheet.flatten(bands[bands.length - 2].props.style).opacity).toBe(1);
       expect(screen.container.queryAll((node) => node.props.intensity !== undefined)).toHaveLength(0);
+    });
+
+    it('購入導線の領域に、販促の見出し・パックの例・購入ボタン・誘導文を上から順に置き、誘導文は1回だけ中央揃えで出す', async () => {
+      await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
+
+      expect(LANDMARK_PACK_PLUS_TEASER_HEADLINE).toBe('ほかにも色々！！');
+      expect(LANDMARK_PACK_PLUS_TEASER_EXAMPLES).toBe('のぼれる灯台 日本三景 博物館 And more!');
+
+      const ctaArea = screen.getByTestId('landmark-pack-teaser-cta-area');
+      // 購入導線の領域内の文字(ホストの Text 要素)を描画順に取り出して並びを確かめる
+      const texts = ctaArea
+        .queryAll((node) => node.type === 'Text' && typeof node.props.children === 'string')
+        .map((node) => node.props.children);
+      expect(texts).toEqual([
+        LANDMARK_PACK_PLUS_TEASER_HEADLINE,
+        LANDMARK_PACK_PLUS_TEASER_EXAMPLES,
+        LANDMARK_PACK_PLUS_TEASER_CTA,
+        LANDMARK_PACK_PLUS_PROMOTION_NOTE,
+      ]);
+
+      expect(screen.getAllByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toHaveLength(1);
+      expect(StyleSheet.flatten(screen.getByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE).props.style).textAlign).toBe('center');
     });
 
     it('Plus用パックが1件だけでも、件数を読み取らせないためグラデーション領域と購入導線を出す', async () => {

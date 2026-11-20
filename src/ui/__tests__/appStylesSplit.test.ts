@@ -152,7 +152,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全437キーが存在する（過不足なし）', () => {
+    test('全441キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -177,7 +177,8 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + 設定のPlus案内の2列レイアウト(settingsSubscriptionColumns・TextColumn・ActionsBottom・ImageColumn)4キー
       //       + パック詳細の特記事項(landmarkPackNoticeText)1キー
       //       + 複数地点スポットの地点行の字下げ(landmarkAreaRowIndent)1キー
-      expect(keys.length).toBe(437);
+      //       + Plusラベル(plusBadge・plusBadgeText)2キー + リスト行titleAccessoryスロット(appListItemTitleRow・TitleInRow)2キー
+      expect(keys.length).toBe(441);
     });
   });
 });

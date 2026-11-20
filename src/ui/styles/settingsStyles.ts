@@ -160,6 +160,18 @@ export function createSettingsStyles(theme: AppTheme) {
       fontWeight: '400',
       lineHeight: 20,
     },
+    // titleAccessory を差したときのタイトル行。ラベルが収まらない場合は次の行へ折り返す
+    appListItemTitleRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    // タイトル行の中では幅いっぱいに伸ばさず、ラベルをタイトルのすぐ横に置く
+    appListItemTitleInRow: {
+      flex: 0,
+      flexShrink: 1,
+    },
     appListItemTitleProminent: {
       fontSize: 23,
       lineHeight: 30,

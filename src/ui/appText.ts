@@ -173,3 +173,9 @@ export const CRASH_REPORTING_TUTORIAL_PARAGRAPHS = [
   'ただし、アプリが固まったり落ちたりしたときの不具合の記録だけは、改善のために開発者へ自動で送ります(あなたを特定できる情報は含みません)。下のスイッチか設定画面で切り替えられます。',
   'アプリ改善にご協力をお願いします。',
 ];
+
+/** Plus用の機能・パックであることを示す小さなラベルの文言。 */
+export const PLUS_BADGE_LABEL = 'Plus';
+
+/** 無料ユーザー向けに、ぼかしたPlus用スタンプラリーの上へ置く購入導線の文言。 */
+export const LANDMARK_PACK_PLUS_TEASER_CTA = 'Plusでもっと挑戦する';

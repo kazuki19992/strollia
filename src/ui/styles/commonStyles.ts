@@ -164,8 +164,8 @@ export function createCommonStyles(theme: AppTheme) {
       height: '100%',
     },
 
-    // Plus label (PlusBadge: Plus用の機能・パックに付ける小さなラベル。太字にはしない)
-    plusBadge: {
+    // Label badge (LabelBadge: Plus・複数スポットなどに付ける小さなラベル。太字にはしない)
+    labelBadge: {
       alignSelf: 'center',
       backgroundColor: colors.plusCtaBackground,
       borderColor: colors.primary,
@@ -174,7 +174,7 @@ export function createCommonStyles(theme: AppTheme) {
       paddingHorizontal: 6,
       paddingVertical: 1,
     },
-    plusBadgeText: {
+    labelBadgeText: {
       color: colors.primary,
       fontSize: 11,
       fontWeight: '400',

@@ -1,15 +1,24 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import { View } from 'react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { lightTheme } from '@/theme/theme';
 import { createStyles } from '@/ui/appStyles';
-import { LANDMARK_PACK_PLUS_PROMOTION_NOTE, LANDMARK_PACK_SECTION_TITLE } from '@/ui/appText';
-import { AchievementListScreen } from '@/ui/components/AchievementListScreen';
+import {
+  LANDMARK_PACK_PLUS_PROMOTION_NOTE,
+  LANDMARK_PACK_PLUS_TEASER_CTA,
+  LANDMARK_PACK_SECTION_TITLE,
+  PLUS_BADGE_LABEL,
+} from '@/ui/appText';
+import { AchievementListScreen, LANDMARK_PACK_TEASER_HIDDEN_HEIGHT } from '@/ui/components/AchievementListScreen';
 import type { LandmarkPackListItem } from '@/ui/hooks/useLandmarkPackState';
 
 jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,
   Feather: require('react-native').Text,
+}));
+
+jest.mock('expo-blur', () => ({
+  BlurView: require('react-native').View,
 }));
 
 const styles = createStyles(lightTheme);
@@ -198,6 +207,132 @@ describe('実績画面のスポットセクション', () => {
       const images = queryAllImages();
       expect(images).toHaveLength(1);
       expect(images[0].props.tintColor).toBe(lightTheme.colors.border);
+    });
+  });
+
+  describe('Plus用パックのラベルとぼかし導線', () => {
+    /** 無料パック行。 */
+    const freePack: LandmarkPackListItem = fallsPackItem;
+
+    /** IDの末尾と名前からPlus用パック行を作る。未加入時は施錠・進捗なしになる。 */
+    function plusPack(suffix: string, name: string, isLocked: boolean): LandmarkPackListItem {
+      return {
+        pack: { ...fallsPackItem.pack, id: `01a0c450-6c00-7000-8000-00000000010${suffix}`, name, isFree: false },
+        visitedCount: 0,
+        totalCount: 3,
+        isLocked,
+      };
+    }
+
+    /** ぼかし領域の中の固定高さの領域。スクリーンリーダーから隠しているため includeHiddenElements で取得する。 */
+    const getHiddenArea = () => screen.getByTestId('landmark-pack-teaser-hidden-area', { includeHiddenElements: true });
+
+    it('Plus未加入時は、Plus用パックの行にだけPlusラベルを付ける', async () => {
+      await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
+
+      expect(within(screen.getByLabelText('JRA競馬場はStrollia Plus限定です')).getByText(PLUS_BADGE_LABEL)).toBeTruthy();
+      expect(within(screen.getByLabelText('日本三名瀑の詳細を開く')).queryByText(PLUS_BADGE_LABEL)).toBeNull();
+    });
+
+    it('Plus加入済みでも、Plus用パックの行にPlusラベルを付け、読み上げにもPlusを含める', async () => {
+      await renderScreen({
+        landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', false), plusPack('2', 'のぼれる灯台', false)],
+        isPlusActive: true,
+      });
+
+      expect(within(screen.getByLabelText('JRA競馬場(Plus)の詳細を開く')).getByText(PLUS_BADGE_LABEL)).toBeTruthy();
+      expect(within(screen.getByLabelText('のぼれる灯台(Plus)の詳細を開く')).getByText(PLUS_BADGE_LABEL)).toBeTruthy();
+      expect(within(screen.getByLabelText('日本三名瀑の詳細を開く')).queryByText(PLUS_BADGE_LABEL)).toBeNull();
+    });
+
+    it('Plus加入済みなら全件を通常表示し、購入導線を出さない', async () => {
+      await renderScreen({
+        landmarkPackItems: [
+          freePack,
+          plusPack('1', 'JRA競馬場', false),
+          plusPack('2', 'のぼれる灯台', false),
+          plusPack('3', '日本三景', false),
+        ],
+        isPlusActive: true,
+      });
+
+      expect(screen.queryByLabelText(LANDMARK_PACK_PLUS_TEASER_CTA)).toBeNull();
+      expect(screen.getByLabelText('日本三景(Plus)の詳細を開く')).toBeTruthy();
+    });
+
+    it('Plus未加入でPlus用パックが複数あると、購入導線を表示し、押すとペイウォールを開く', async () => {
+      const onRequestPremium = jest.fn();
+      await renderScreen({
+        landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true), plusPack('2', 'のぼれる灯台', true)],
+        isPlusActive: false,
+        onRequestPremium,
+      });
+
+      const cta = screen.getByLabelText(LANDMARK_PACK_PLUS_TEASER_CTA);
+      expect(cta.props.accessibilityRole).toBe('button');
+      await fireEvent.press(cta);
+
+      expect(onRequestPremium).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(LANDMARK_PACK_PLUS_PROMOTION_NOTE)).toBeTruthy();
+    });
+
+    it('Plus未加入では無料パックとPlus用パック1件目だけを通常表示し、2件目以降はスクリーンリーダーから隠して押せなくする', async () => {
+      const onRequestPremium = jest.fn();
+      const onSelectLandmarkPack = jest.fn();
+      await renderScreen({
+        landmarkPackItems: [
+          freePack,
+          plusPack('1', 'JRA競馬場', true),
+          plusPack('2', 'のぼれる灯台', true),
+          plusPack('3', '日本三景', true),
+        ],
+        isPlusActive: false,
+        onRequestPremium,
+        onSelectLandmarkPack,
+      });
+
+      expect(screen.getByLabelText('日本三名瀑の詳細を開く')).toBeTruthy();
+      expect(screen.getByLabelText('JRA競馬場はStrollia Plus限定です')).toBeTruthy();
+      // パック名や件数を読み取れないよう、ぼかし領域内の行は読み上げ対象から外す
+      expect(screen.queryByLabelText('のぼれる灯台はStrollia Plus限定です')).toBeNull();
+      expect(screen.queryByText('日本三景')).toBeNull();
+
+      // 隠した行は存在するが押せない
+      await fireEvent.press(screen.getByLabelText('のぼれる灯台はStrollia Plus限定です', { includeHiddenElements: true }));
+      await fireEvent.press(screen.getByLabelText('日本三景はStrollia Plus限定です', { includeHiddenElements: true }));
+
+      expect(onRequestPremium).not.toHaveBeenCalled();
+      expect(onSelectLandmarkPack).not.toHaveBeenCalled();
+    });
+
+    it('3件目以降を置く領域は、件数によらず固定の高さにする', async () => {
+      await renderScreen({
+        landmarkPackItems: [plusPack('1', 'JRA競馬場', true), plusPack('2', 'のぼれる灯台', true)],
+        isPlusActive: false,
+      });
+      const heightWithoutHiddenRows = StyleSheet.flatten(getHiddenArea().props.style).height;
+
+      await renderScreen({
+        landmarkPackItems: [
+          plusPack('1', 'JRA競馬場', true),
+          plusPack('2', 'のぼれる灯台', true),
+          plusPack('3', '日本三景', true),
+          plusPack('4', '追加パック', true),
+        ],
+        isPlusActive: false,
+      });
+      const heightWithHiddenRows = StyleSheet.flatten(getHiddenArea().props.style).height;
+
+      expect(heightWithoutHiddenRows).toBe(LANDMARK_PACK_TEASER_HIDDEN_HEIGHT);
+      expect(heightWithHiddenRows).toBe(LANDMARK_PACK_TEASER_HIDDEN_HEIGHT);
+    });
+
+    it('Plus用パックが1件だけならぼかし領域を作らず、購入導線も出さない', async () => {
+      await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
+
+      expect(screen.getByLabelText('JRA競馬場はStrollia Plus限定です')).toBeTruthy();
+      expect(screen.queryByLabelText(LANDMARK_PACK_PLUS_TEASER_CTA)).toBeNull();
+      expect(screen.queryByTestId('landmark-pack-teaser-hidden-area', { includeHiddenElements: true })).toBeNull();
     });
   });
 });

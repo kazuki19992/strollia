@@ -1,4 +1,5 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useState } from 'react';
 // useWindowDimensionsはテストで寸法を差し替えるため名前空間経由で参照する(useIsLandscapeLayoutと同じ寸法を見る)。
 import * as ReactNative from 'react-native';
 import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from 'react-native';
@@ -6,17 +7,21 @@ import { Grayscale } from 'react-native-color-matrix-image-filters';
 
 import { AchievementCategory, formatAchievementDistance } from '@/features/achievements/achievementDefinitions';
 import { AchievementListItem } from '@/features/achievements/achievementRepository';
+import { splitLandmarkPacksForTeaser } from '@/features/landmarks/landmarkPackTeaser';
 import { resolveLandmarkTrophyDisplayState } from '@/features/landmarks/landmarkTrophyDisplayState';
 import { AppTheme } from '@/theme/theme';
 import { AppStyles } from '@/ui/appStyles';
-import { LANDMARK_PACK_PLUS_PROMOTION_NOTE, LANDMARK_PACK_SECTION_TITLE } from '@/ui/appText';
+import { LANDMARK_PACK_PLUS_PROMOTION_NOTE, LANDMARK_PACK_PLUS_TEASER_CTA, LANDMARK_PACK_SECTION_TITLE } from '@/ui/appText';
 import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import type { LandmarkPackListItem } from '@/ui/hooks/useLandmarkPackState';
 import { resolveAchievementDisplayStates } from './achievementDisplayState';
+import { ActionPill } from './ActionPill';
 import { AppListItem } from './AppListItem';
 import { AppProgressBar } from './AppProgressBar';
 import { AppScreenHeader } from './AppScreenHeader';
 import { DescriptionText } from './DescriptionText';
+import { GradientBlurOverlay } from './GradientBlurOverlay';
+import { PlusBadge } from './PlusBadge';
 
 /** 実績一覧画面のprops。 */
 export type AchievementListScreenProps = {
@@ -54,6 +59,17 @@ export const ACHIEVEMENT_GRID_COLUMNS_PORTRAIT = 3;
 export const ACHIEVEMENT_GRID_COLUMNS_LANDSCAPE = 6;
 
 /**
+ * 無料ユーザー向けのぼかし領域で、Plus用パックの3件目以降を置く領域の高さ(pt)。
+ *
+ * 件数によらず固定にし、はみ出した行は切り取る。ぼかしが効かない環境(Android の BlurView、#144)でも
+ * 見た目の高さからPlus用パックの件数を読み取れないようにするため。
+ */
+export const LANDMARK_PACK_TEASER_HIDDEN_HEIGHT = 160;
+
+/** 半分だけ見せる行で、ぼかしを始める位置(行の高さに対する割合)。 */
+const LANDMARK_PACK_TEASER_GRADIENT_START_RATIO = 0.5;
+
+/**
  * 実績グリッドのタイル幅と画像サイズを画面幅から算出する。
  * Grayscale ネイティブフィルタは数値サイズが必要なため。余白は screenList.paddingHorizontal=24・achievementGrid.gap=10 に対応する。
  */
@@ -89,6 +105,74 @@ export function AchievementListScreen({
   // スポットパックのトロフィーも Grayscale を通すため数値サイズが必要。
   // 一覧行のアイコンは設計書 §9.3.1 の 60〜80pt を目安にし、狭い端末では縮めて上限で止める。
   const packTrophySize = Math.min(72, Math.max(48, Math.floor((windowWidth - 24 * 2) * 0.2)));
+  // 無料ユーザーにはPlus用パックを1.5件だけ見せ、残りはぼかして件数を読み取れないようにする
+  const { visibleItems, peekItem, hiddenItems } = splitLandmarkPacksForTeaser(landmarkPackItems, isPlusActive);
+  /** 半分だけ見せる行の高さ。計測前は0で、そのあいだはぼかし領域全体を最大の強さでぼかす。 */
+  const [peekRowHeight, setPeekRowHeight] = useState(0);
+
+  /**
+   * スポットパック1行を描画する。
+   *
+   * @param item - 描画するパック行。
+   * @param isTeaser - ぼかし領域の中に置く行か。押されても何もしない(領域全体も押下・読み上げの対象外にする)。
+   */
+  const renderLandmarkPackRow = (item: LandmarkPackListItem, isTeaser: boolean) => {
+    // 施錠中は検知していないため、到達率を0として未到達と同じ見た目にする
+    const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
+    const trophyState = resolveLandmarkTrophyDisplayState(ratio);
+    const TrophyIcon = item.pack.trophyIcon;
+    const isPlusPack = !item.pack.isFree;
+    // Grayscale(react-native-color-matrix-image-filters)とtintColorはネイティブ画像ビューの
+    // 機能であり、react-native-svgのコンポーネントには効かない。
+    // そのためシルエット/白黒状態はSVGではなくPNG(trophyImage)で描画し、
+    // フルカラー状態だけSVG(trophyIcon)をそのまま描画する。
+    const trophyImage = <TrophyIcon width={packTrophySize} height={packTrophySize} />;
+    const trophyPngStyle = { width: packTrophySize, height: packTrophySize };
+
+    return (
+      <AppListItem
+        key={item.pack.id}
+        accessibilityLabel={
+          item.isLocked ? `${item.pack.name}はStrollia Plus限定です` : `${item.pack.name}${isPlusPack ? '(Plus)' : ''}の詳細を開く`
+        }
+        footer={
+          item.isLocked ? undefined : (
+            <View style={styles.landmarkPackProgressRow}>
+              <Text style={styles.landmarkPackProgressText}>{`${item.visitedCount}/${item.totalCount}`}</Text>
+              <View style={styles.landmarkPackProgressBarArea}>
+                <AppProgressBar accessibilityLabel={`${item.pack.name}の進捗`} ratio={ratio} styles={styles} theme={theme} />
+              </View>
+            </View>
+          )
+        }
+        leading={
+          <View style={[styles.landmarkPackTrophy, { width: packTrophySize, height: packTrophySize }]}>
+            {trophyState === 'color' ? (
+              trophyImage
+            ) : trophyState === 'grayscale' ? (
+              <Grayscale>
+                <Image source={item.pack.trophyImage} style={trophyPngStyle} />
+              </Grayscale>
+            ) : (
+              // 通常の実績トロフィーのシルエットと同じ色で塗りつぶす
+              <Image source={item.pack.trophyImage} style={trophyPngStyle} tintColor={theme.colors.border} />
+            )}
+            {item.isLocked ? (
+              <View style={styles.landmarkPackLockBadge}>
+                <Feather name="lock" size={14} color={theme.colors.mutedText} />
+              </View>
+            ) : null}
+          </View>
+        }
+        styles={styles}
+        subtitle={item.pack.description}
+        theme={theme}
+        title={item.pack.name}
+        titleAccessory={isPlusPack ? <PlusBadge styles={styles} /> : undefined}
+        onPress={isTeaser ? () => undefined : item.isLocked ? onRequestPremium : () => onSelectLandmarkPack(item.pack.id)}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.appScreen}>
@@ -164,59 +248,43 @@ export function AchievementListScreen({
           <View style={styles.achievementSection}>
             <Text style={styles.screenSectionHeading}>{LANDMARK_PACK_SECTION_TITLE}</Text>
             <View style={styles.screenSectionBody}>
-              {landmarkPackItems.map((item) => {
-                // 施錠中は検知していないため、到達率を0として未到達と同じ見た目にする
-                const ratio = item.isLocked || item.totalCount <= 0 ? 0 : item.visitedCount / item.totalCount;
-                const trophyState = resolveLandmarkTrophyDisplayState(ratio);
-                const TrophyIcon = item.pack.trophyIcon;
-                // Grayscale(react-native-color-matrix-image-filters)とtintColorはネイティブ画像ビューの
-                // 機能であり、react-native-svgのコンポーネントには効かない。
-                // そのためシルエット/白黒状態はSVGではなくPNG(trophyImage)で描画し、
-                // フルカラー状態だけSVG(trophyIcon)をそのまま描画する。
-                const trophyImage = <TrophyIcon width={packTrophySize} height={packTrophySize} />;
-                const trophyPngStyle = { width: packTrophySize, height: packTrophySize };
+              {visibleItems.map((item) => renderLandmarkPackRow(item, false))}
 
-                return (
-                  <AppListItem
-                    key={item.pack.id}
-                    accessibilityLabel={item.isLocked ? `${item.pack.name}はStrollia Plus限定です` : `${item.pack.name}の詳細を開く`}
-                    footer={
-                      item.isLocked ? undefined : (
-                        <View style={styles.landmarkPackProgressRow}>
-                          <Text style={styles.landmarkPackProgressText}>{`${item.visitedCount}/${item.totalCount}`}</Text>
-                          <View style={styles.landmarkPackProgressBarArea}>
-                            <AppProgressBar accessibilityLabel={`${item.pack.name}の進捗`} ratio={ratio} styles={styles} theme={theme} />
-                          </View>
-                        </View>
-                      )
-                    }
-                    leading={
-                      <View style={[styles.landmarkPackTrophy, { width: packTrophySize, height: packTrophySize }]}>
-                        {trophyState === 'color' ? (
-                          trophyImage
-                        ) : trophyState === 'grayscale' ? (
-                          <Grayscale>
-                            <Image source={item.pack.trophyImage} style={trophyPngStyle} />
-                          </Grayscale>
-                        ) : (
-                          // 通常の実績トロフィーのシルエットと同じ色で塗りつぶす
-                          <Image source={item.pack.trophyImage} style={trophyPngStyle} tintColor={theme.colors.border} />
-                        )}
-                        {item.isLocked ? (
-                          <View style={styles.landmarkPackLockBadge}>
-                            <Feather name="lock" size={14} color={theme.colors.mutedText} />
-                          </View>
-                        ) : null}
-                      </View>
-                    }
-                    styles={styles}
-                    subtitle={item.pack.description}
-                    theme={theme}
-                    title={item.pack.name}
-                    onPress={item.isLocked ? onRequestPremium : () => onSelectLandmarkPack(item.pack.id)}
-                  />
-                );
-              })}
+              {peekItem ? (
+                <View style={styles.landmarkPackTeaser}>
+                  {/* パック名や件数を読み取れないよう、ぼかし領域の中は押下・読み上げの対象から外す */}
+                  <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none">
+                    <View onLayout={(event) => setPeekRowHeight(event.nativeEvent.layout.height)}>
+                      {renderLandmarkPackRow(peekItem, true)}
+                    </View>
+                    <View
+                      testID="landmark-pack-teaser-hidden-area"
+                      style={[styles.landmarkPackTeaserHiddenArea, { height: LANDMARK_PACK_TEASER_HIDDEN_HEIGHT }]}
+                    >
+                      {hiddenItems.map((item) => renderLandmarkPackRow(item, true))}
+                    </View>
+                    <GradientBlurOverlay
+                      gradientHeight={peekRowHeight * (1 - LANDMARK_PACK_TEASER_GRADIENT_START_RATIO)}
+                      gradientTop={peekRowHeight * LANDMARK_PACK_TEASER_GRADIENT_START_RATIO}
+                      tint={theme.name === 'dark' ? 'dark' : 'light'}
+                    />
+                  </View>
+                  <View
+                    pointerEvents="box-none"
+                    style={[styles.landmarkPackTeaserCtaArea, { top: peekRowHeight, height: LANDMARK_PACK_TEASER_HIDDEN_HEIGHT }]}
+                  >
+                    <ActionPill
+                      backgroundColor={theme.colors.plusCtaBackground}
+                      borderColor={theme.colors.primary}
+                      icon={<MaterialCommunityIcons name="chevron-right" size={21} color={theme.colors.primary} />}
+                      label={LANDMARK_PACK_PLUS_TEASER_CTA}
+                      styles={styles}
+                      textColor={theme.colors.primary}
+                      onPress={onRequestPremium}
+                    />
+                  </View>
+                </View>
+              ) : null}
 
               {landmarkPackItems.some((item) => item.isLocked) ? (
                 <DescriptionText styles={styles}>{LANDMARK_PACK_PLUS_PROMOTION_NOTE}</DescriptionText>

@@ -106,6 +106,22 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackProgressBarArea: {
       flex: 1,
     },
+    // 無料ユーザー向けのぼかし導線。購入ボタンを固定高さの領域の中央へ重ねるための基準
+    landmarkPackTeaser: {
+      position: 'relative',
+    },
+    // Plus用パックの3件目以降を置く領域。高さは呼び出し側が固定値で渡し、はみ出した行は切り取る
+    landmarkPackTeaserHiddenArea: {
+      overflow: 'hidden',
+    },
+    // ぼかしの上に重ねる購入ボタンの置き場。位置と高さは半分見せる行の高さに合わせて呼び出し側が渡す
+    landmarkPackTeaserCtaArea: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      left: 0,
+      position: 'absolute',
+      right: 0,
+    },
     // パック詳細画面のレイアウト(上1/3が地図、下2/3がスポット一覧)
     landmarkPackScreenBody: {
       flex: 1,

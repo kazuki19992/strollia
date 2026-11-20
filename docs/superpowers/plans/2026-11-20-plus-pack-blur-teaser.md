@@ -1,6 +1,6 @@
 # Plus用パックのラベルとぼかし導線 実装計画
 
-**Goal:** 実績画面のスポットセクションで、Plus用パックに「Plus」ラベルを付け、無料ユーザーにはPlus用パックを1.5件だけ見せて残りをグラデーション状のぼかしで隠し、「Plusでもっと挑戦する」導線を出す。
+**Goal:** 実績画面のスポットセクションで、Plus用パックに「Plus」ラベルを付け、無料ユーザーにはPlus用パックを0.5件だけ見せて残りをグラデーション状のぼかしで隠し、「Plusでもっと挑戦する」導線を出す。
 
 **Spec:** `docs/superpowers/specs/2026-11-20-plus-pack-blur-teaser-design.md`
 
@@ -29,7 +29,7 @@
 - Plus用パック行に `titleAccessory={<PlusBadge/>}`、行の accessibilityLabel に「Plus」が分かる文言を含める
 - `splitLandmarkPacksForTeaser` で分割し、peekItem があればぼかし領域を描画:
   - コンテナ(`accessibilityElementsHidden` + `importantForAccessibility="no-hide-descendants"`, `pointerEvents="none"`)内に peek 行と、固定高さ(定数 `LANDMARK_PACK_TEASER_HIDDEN_HEIGHT`)・`overflow: hidden` の hidden 行領域
-  - peek 行の高さを onLayout で測り、`gradientTop = peekHeight * 0.5`, `gradientHeight = peekHeight * 0.5` で `GradientBlurOverlay`
+  - peek 行の高さを onLayout で測り、`gradientTop = 0`, `gradientHeight = peekHeight`(行の上端から下端まで) で `GradientBlurOverlay`
   - 固定高さ領域の中央付近に `ActionPill`(既存のPlus CTA と同じ配色)「Plusでもっと挑戦する」→ `onRequestPremium`。こちらはアクセシブル
 - 既存の `LANDMARK_PACK_PLUS_PROMOTION_NOTE` は残す
 - テスト: ラベル有無(未加入/加入済み)、CTA 押下、ぼかし内の行がラベルで取得できない、Plus会員はCTAなし

@@ -59,15 +59,12 @@ export const ACHIEVEMENT_GRID_COLUMNS_PORTRAIT = 3;
 export const ACHIEVEMENT_GRID_COLUMNS_LANDSCAPE = 6;
 
 /**
- * 無料ユーザー向けのぼかし領域で、Plus用パックの3件目以降を置く領域の高さ(pt)。
+ * 無料ユーザー向けのぼかし領域で、Plus用パックの2件目以降を置く領域の高さ(pt)。
  *
  * 件数によらず固定にし、はみ出した行は切り取る。ぼかしが効かない環境(Android の BlurView、#144)でも
  * 見た目の高さからPlus用パックの件数を読み取れないようにするため。
  */
 export const LANDMARK_PACK_TEASER_HIDDEN_HEIGHT = 160;
-
-/** 半分だけ見せる行で、ぼかしを始める位置(行の高さに対する割合)。 */
-const LANDMARK_PACK_TEASER_GRADIENT_START_RATIO = 0.5;
 
 /**
  * 実績グリッドのタイル幅と画像サイズを画面幅から算出する。
@@ -105,9 +102,9 @@ export function AchievementListScreen({
   // スポットパックのトロフィーも Grayscale を通すため数値サイズが必要。
   // 一覧行のアイコンは設計書 §9.3.1 の 60〜80pt を目安にし、狭い端末では縮めて上限で止める。
   const packTrophySize = Math.min(72, Math.max(48, Math.floor((windowWidth - 24 * 2) * 0.2)));
-  // 無料ユーザーにはPlus用パックを1.5件だけ見せ、残りはぼかして件数を読み取れないようにする
+  // 無料ユーザーにはPlus用パックを0.5件(上端から下端へ段階的にぼかした1件目)だけ見せ、残りはぼかして件数を読み取れないようにする
   const { visibleItems, peekItem, hiddenItems } = splitLandmarkPacksForTeaser(landmarkPackItems, isPlusActive);
-  /** 半分だけ見せる行の高さ。計測前は0で、そのあいだはぼかし領域全体を最大の強さでぼかす。 */
+  /** 段階的にぼかす1件目の行の高さ。計測前は0で、そのあいだはぼかし領域全体を最大の強さでぼかす。 */
   const [peekRowHeight, setPeekRowHeight] = useState(0);
 
   /**
@@ -254,7 +251,7 @@ export function AchievementListScreen({
                 <View style={styles.landmarkPackTeaser}>
                   {/* パック名や件数を読み取れないよう、ぼかし領域の中は押下・読み上げの対象から外す */}
                   <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none">
-                    <View onLayout={(event) => setPeekRowHeight(event.nativeEvent.layout.height)}>
+                    <View testID="landmark-pack-teaser-peek-row" onLayout={(event) => setPeekRowHeight(event.nativeEvent.layout.height)}>
                       {renderLandmarkPackRow(peekItem, true)}
                     </View>
                     <View
@@ -264,8 +261,9 @@ export function AchievementListScreen({
                       {hiddenItems.map((item) => renderLandmarkPackRow(item, true))}
                     </View>
                     <GradientBlurOverlay
-                      gradientHeight={peekRowHeight * (1 - LANDMARK_PACK_TEASER_GRADIENT_START_RATIO)}
-                      gradientTop={peekRowHeight * LANDMARK_PACK_TEASER_GRADIENT_START_RATIO}
+                      // 途中から始めるとぼかしがかかっていることが分かりにくいため、行の上端から下端まで段階的に強める
+                      gradientHeight={peekRowHeight}
+                      gradientTop={0}
                       fadeColor={theme.colors.background}
                       tint={theme.name === 'dark' ? 'dark' : 'light'}
                     />

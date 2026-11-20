@@ -110,7 +110,7 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackTeaser: {
       position: 'relative',
     },
-    // Plus用パックの3件目以降を置く領域。高さは呼び出し側が固定値で渡し、はみ出した行は切り取る
+    // Plus用パックの2件目以降を置く領域。高さは呼び出し側が固定値で渡し、はみ出した行は切り取る
     landmarkPackTeaserHiddenArea: {
       overflow: 'hidden',
     },

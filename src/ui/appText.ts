@@ -177,5 +177,5 @@ export const CRASH_REPORTING_TUTORIAL_PARAGRAPHS = [
 /** Plus用の機能・パックであることを示す小さなラベルの文言。 */
 export const PLUS_BADGE_LABEL = 'Plus';
 
-/** 無料ユーザー向けに、ぼかしたPlus用スタンプラリーの上へ置く購入導線の文言。 */
+/** 無料ユーザー向けに、背景色を重ねてうっすら隠したPlus用スタンプラリーの上へ置く購入導線の文言。 */
 export const LANDMARK_PACK_PLUS_TEASER_CTA = 'Plusでもっと挑戦する';

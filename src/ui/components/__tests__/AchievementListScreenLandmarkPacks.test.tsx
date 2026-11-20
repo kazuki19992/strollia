@@ -17,10 +17,6 @@ jest.mock('@expo/vector-icons', () => ({
   Feather: require('react-native').Text,
 }));
 
-jest.mock('expo-blur', () => ({
-  BlurView: require('react-native').View,
-}));
-
 const styles = createStyles(lightTheme);
 
 /**
@@ -210,7 +206,7 @@ describe('実績画面のスポットセクション', () => {
     });
   });
 
-  describe('Plus用パックのラベルとぼかし導線', () => {
+  describe('Plus用パックのラベルと背景色グラデーションの導線', () => {
     /** 無料パック行。 */
     const freePack: LandmarkPackListItem = fallsPackItem;
 
@@ -224,13 +220,13 @@ describe('実績画面のスポットセクション', () => {
       };
     }
 
-    /** ぼかし領域の中の固定高さの領域。スクリーンリーダーから隠しているため includeHiddenElements で取得する。 */
+    /** グラデーション領域の中の固定高さの領域。スクリーンリーダーから隠しているため includeHiddenElements で取得する。 */
     const getHiddenArea = () => screen.getByTestId('landmark-pack-teaser-hidden-area', { includeHiddenElements: true });
 
     it('Plus未加入時は、Plus用パックの行にだけPlusラベルを付ける', async () => {
       await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
 
-      // Plus用パックの1件目は上半分だけ見せるぼかし領域内の行のため、読み上げ対象外の要素も含めて取得する
+      // Plus用パックの1件目は背景色を重ねるグラデーション領域内の行のため、読み上げ対象外の要素も含めて取得する
       const plusRow = screen.getByLabelText('JRA競馬場はStrollia Plus限定です', { includeHiddenElements: true });
       expect(within(plusRow).getByText(PLUS_BADGE_LABEL, { includeHiddenElements: true })).toBeTruthy();
       expect(within(screen.getByLabelText('日本三名瀑の詳細を開く')).queryByText(PLUS_BADGE_LABEL)).toBeNull();
@@ -294,7 +290,7 @@ describe('実績画面のスポットセクション', () => {
       });
 
       expect(screen.getByLabelText('日本三名瀑の詳細を開く')).toBeTruthy();
-      // パック名や件数を読み取れないよう、上半分だけ見せる1件目も含め、ぼかし領域内の行は読み上げ対象から外す
+      // 件数を読み取れないよう、1件目も含めグラデーション領域内の行は読み上げ対象から外す
       expect(screen.queryByLabelText('JRA競馬場はStrollia Plus限定です')).toBeNull();
       expect(screen.queryByLabelText('のぼれる灯台はStrollia Plus限定です')).toBeNull();
       expect(screen.queryByText('日本三景')).toBeNull();
@@ -327,22 +323,26 @@ describe('実績画面のスポットセクション', () => {
       expect(heightWithHiddenRows).toBe(LANDMARK_PACK_TEASER_HIDDEN_HEIGHT);
     });
 
-    it('1件目の行は上端(0%)から下端(100%)まで段階的にぼかしを強める', async () => {
+    it('1件目の行は上端(0%)から下端(100%)まで背景色を段階的に濃く重ね、ぼかしは使わない', async () => {
       await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
 
       await fireEvent(screen.getByTestId('landmark-pack-teaser-peek-row', { includeHiddenElements: true }), 'layout', {
         nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 100 } },
       });
 
-      // BlurViewをViewへモックしているため、intensity propを持つホスト要素をぼかしの帯として検索する
-      const bands = screen.container.queryAll((node) => typeof node.props.intensity === 'number');
+      // 背景色を塗り不透明度を持つホスト要素を、グラデーションの帯として検索する
+      const bands = screen.container.queryAll((node) => {
+        const style = StyleSheet.flatten(node.props.style);
+        return style?.backgroundColor === lightTheme.colors.background && typeof style.opacity === 'number';
+      });
       const tops = bands.map((band) => StyleSheet.flatten(band.props.style).top);
       expect(tops[0]).toBe(0);
-      // 最後の1枚(最大の強さ)は行の下端から始まる
+      // 最後の1枚(最大の不透明度)は行の下端から始まる
       expect(tops[tops.length - 1]).toBe(100);
+      expect(screen.container.queryAll((node) => node.props.intensity !== undefined)).toHaveLength(0);
     });
 
-    it('Plus用パックが1件だけでも、件数を読み取らせないためぼかし領域と購入導線を出す', async () => {
+    it('Plus用パックが1件だけでも、件数を読み取らせないためグラデーション領域と購入導線を出す', async () => {
       await renderScreen({ landmarkPackItems: [freePack, plusPack('1', 'JRA競馬場', true)], isPlusActive: false });
 
       expect(screen.queryByLabelText('JRA競馬場はStrollia Plus限定です')).toBeNull();

@@ -8,8 +8,8 @@ function item(id: string, isFree: boolean): TestItem {
   return { id, pack: { isFree } };
 }
 
-describe('Plus用パックのぼかし導線の分割 splitLandmarkPacksForTeaser', () => {
-  it('Plus有効なら全件を通常表示にし、ぼかし対象を作らない', () => {
+describe('Plus用パックのグラデーション導線の分割 splitLandmarkPacksForTeaser', () => {
+  it('Plus有効なら全件を通常表示にし、グラデーションの対象を作らない', () => {
     const items = [item('free1', true), item('plus1', false), item('plus2', false), item('plus3', false)];
 
     expect(splitLandmarkPacksForTeaser(items, true)).toEqual({ visibleItems: items, peekItem: null, hiddenItems: [] });

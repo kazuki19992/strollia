@@ -178,7 +178,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + パック詳細の特記事項(landmarkPackNoticeText)1キー
       //       + 複数地点スポットの地点行の字下げ(landmarkAreaRowIndent)1キー
       //       + Plusラベル(plusBadge・plusBadgeText)2キー + リスト行titleAccessoryスロット(appListItemTitleRow・TitleInRow)2キー
-      //       + Plus用パックのぼかし導線(landmarkPackTeaser・HiddenArea・CtaArea)3キー
+      //       + Plus用パックのグラデーション導線(landmarkPackTeaser・HiddenArea・CtaArea)3キー
       expect(keys.length).toBe(444);
     });
   });

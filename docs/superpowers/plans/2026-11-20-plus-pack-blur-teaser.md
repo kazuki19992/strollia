@@ -21,7 +21,7 @@
 
 - `PlusBadge.tsx`(props: styles) — 小さなピル表示。accessibilityLabel は付けない(行ラベルに含める)
 - `AppListItem` に `titleAccessory?: ReactNode` を追加し、タイトルと横並び(折り返し可)で表示
-- `GradientBlurOverlay.tsx`(props: `gradientTop: number`, `gradientHeight: number`, `maxIntensity?: number`(既定90), `steps?: number`(既定8), `tint`) — 絶対配置。`gradientTop` から `gradientHeight` の間を `steps` 本の帯で強さを段階的に上げ、その下を最大強度1枚で覆う。`pointerEvents="none"`
+- `GradientFadeOverlay.tsx`(props: `color: string`, `gradientTop: number`, `gradientHeight: number`, `maxOpacity?: number`(既定0.8), `steps?: number`(既定16)) — 絶対配置。`gradientTop` から `gradientHeight` の間を `steps` 本の帯で不透明度を段階的に上げ、その下を最大不透明度1枚で覆う。`pointerEvents="none"`(当初は `GradientBlurOverlay` でぼかしていたが、ユーザー確認で背景色のグラデーションのみに変更)
 - 各テスト
 
 ## Task 3: 実績画面への組み込み
@@ -29,7 +29,7 @@
 - Plus用パック行に `titleAccessory={<PlusBadge/>}`、行の accessibilityLabel に「Plus」が分かる文言を含める
 - `splitLandmarkPacksForTeaser` で分割し、peekItem があればぼかし領域を描画:
   - コンテナ(`accessibilityElementsHidden` + `importantForAccessibility="no-hide-descendants"`, `pointerEvents="none"`)内に peek 行と、固定高さ(定数 `LANDMARK_PACK_TEASER_HIDDEN_HEIGHT`)・`overflow: hidden` の hidden 行領域
-  - peek 行の高さを onLayout で測り、`gradientTop = 0`, `gradientHeight = peekHeight`(行の上端から下端まで) で `GradientBlurOverlay`
+  - peek 行の高さを onLayout で測り、`gradientTop = 0`, `gradientHeight = peekHeight`(行の上端から下端まで) で `GradientFadeOverlay`
   - 固定高さ領域の中央付近に `ActionPill`(既存のPlus CTA と同じ配色)「Plusでもっと挑戦する」→ `onRequestPremium`。こちらはアクセシブル
 - 既存の `LANDMARK_PACK_PLUS_PROMOTION_NOTE` は残す
 - テスト: ラベル有無(未加入/加入済み)、CTA 押下、ぼかし内の行がラベルで取得できない、Plus会員はCTAなし

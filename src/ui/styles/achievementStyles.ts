@@ -106,7 +106,7 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackProgressBarArea: {
       flex: 1,
     },
-    // 無料ユーザー向けのぼかし導線。購入ボタンを固定高さの領域の中央へ重ねるための基準
+    // 無料ユーザー向けの背景色グラデーションの導線。購入ボタンを固定高さの領域の中央へ重ねるための基準
     landmarkPackTeaser: {
       position: 'relative',
     },
@@ -114,7 +114,7 @@ export function createAchievementStyles(theme: AppTheme) {
     landmarkPackTeaserHiddenArea: {
       overflow: 'hidden',
     },
-    // ぼかしの上に重ねる購入ボタンの置き場。位置と高さは半分見せる行の高さに合わせて呼び出し側が渡す
+    // グラデーションの上に重ねる購入ボタンの置き場。位置と高さは1件目の行の高さに合わせて呼び出し側が渡す
     landmarkPackTeaserCtaArea: {
       alignItems: 'center',
       justifyContent: 'center',

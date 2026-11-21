@@ -313,16 +313,12 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     });
 
     /**
-     * リスト行の番号バッジ「1」の文字色を返す。地図マーカーにも同じ番号が出るため、
-     * リスト用の文字スタイル(訪問済み/未訪問)のどちらかを持つ Text だけを対象にする。
+     * 松島のリスト行に描かれた番号バッジ「1」の文字色を返す。
+     * 地図マーカーにも同じ番号が出るため、検索範囲を行の読み上げラベルで特定した行の中に絞る。
      */
     const listBadgeTextColor = () => {
-      const listColors = [styles.landmarkSpotNumberBadgeTextVisited.color, styles.landmarkSpotNumberBadgeTextUnvisited.color];
-      const badge = screen
-        .getAllByText('1')
-        .map((node) => ReactNative.StyleSheet.flatten(node.props.style))
-        .find((style) => listColors.includes(style?.color as string));
-      return badge?.color;
+      const row = screen.getByLabelText('松島を地図で見る');
+      return ReactNative.StyleSheet.flatten(within(row).getByText('1').props.style)?.color;
     };
 
     it('複数地点スポットを1地点でも訪問していれば、番号バッジを訪問済み(プライマリカラー)にする', async () => {

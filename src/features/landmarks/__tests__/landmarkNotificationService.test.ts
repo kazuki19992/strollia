@@ -172,6 +172,18 @@ describe('地点到達通知 notifyLandmarkAreaArrival', () => {
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
+  it('パック進捗の集計に失敗しても、地点の進捗だけで地点到達通知を1回送る', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockRejectedValue(new Error('db locked'));
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await notifyLandmarkAreaArrival({ areaId: 'multi-area-a', visitedAreaCount: 1, totalAreaCount: 2 });
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    const [[request]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+    expect(request.content.body).toBe('地点Aに到達しました（二地点スポット 1/2）');
+  });
+
   it('マスタに存在しない地点IDでは何も送らない', async () => {
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
 

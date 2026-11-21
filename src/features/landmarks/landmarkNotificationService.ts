@@ -72,7 +72,12 @@ export async function notifyLandmarkAreaArrival(event: {
   const { area, spot } = resolved;
   const progressSummaries = [
     `${spot.name} ${event.visitedAreaCount}/${event.totalAreaCount}`,
-    ...(await createPackProgressSummaries(spot)),
+    // パック進捗はDBの再集計に依存する。集計に失敗しても地点到達の通知自体は届けたいため、
+    // 失敗時はパック進捗を省いて地点の進捗だけで通知する
+    ...(await createPackProgressSummaries(spot).catch((error: unknown) => {
+      console.warn('Failed to load landmark pack progress for notification:', error);
+      return [];
+    })),
   ];
 
   await Notifications.scheduleNotificationAsync({

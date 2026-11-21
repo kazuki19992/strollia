@@ -44,5 +44,25 @@
     "trophyIcon": "japan-three-views-3",
     "sortOrder": 500,
     "isFree": false
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000006",
+    "name": "国立博物館",
+    "description": "東京・京都・奈良・九州の4つの国立博物館を巡る",
+    "trophyImage": "national-museums-4.png",
+    "trophyIcon": "national-museums-4",
+    "sortOrder": 600,
+    "isFree": false,
+    "notice": "休館日や展示替えのための休館期間があります。訪れる前に各館の開館日をご確認ください。"
+  },
+  {
+    "id": "01a0c450-6c00-7000-8000-000000000007",
+    "name": "国立国会図書館",
+    "description": "東京本館・関西館・国際子ども図書館の3館を巡る",
+    "trophyImage": "national-diet-libraries-3.png",
+    "trophyIcon": "national-diet-libraries-3",
+    "sortOrder": 700,
+    "isFree": false,
+    "notice": "東京本館と関西館は、原則として満18歳以上の方が利用できます。国際子ども図書館は年齢を問わず利用できます。休館日もあるため、訪れる前に開館日をご確認ください。"
   }
 ]

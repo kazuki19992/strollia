@@ -116,6 +116,8 @@ describe('スポット実績カタログ landmarkCatalog', () => {
     ['01a0c450-6c00-7000-8000-000000000003', 'JR鉄道博物館', 3],
     ['01a0c450-6c00-7000-8000-000000000004', 'のぼれる灯台', 16],
     ['01a0c450-6c00-7000-8000-000000000005', '日本三景', 3],
+    ['01a0c450-6c00-7000-8000-000000000006', '国立博物館', 4],
+    ['01a0c450-6c00-7000-8000-000000000007', '国立国会図書館', 3],
   ])('有料パック %s(%s)は%i件のスポットを持つ', (packId, name, count) => {
     expect(getLandmarkPackById(packId)?.name).toBe(name);
     expect(getLandmarkPackById(packId)?.isFree).toBe(false);
@@ -132,6 +134,14 @@ describe('スポット実績カタログ landmarkCatalog', () => {
     expect(spot?.isMultiArea).toBe(true);
     expect(spot?.areas).toHaveLength(areaCount);
     expect(spot?.areas.map((area) => area.name)).toContain(`観光案内所（${spotName}）`);
+  });
+
+  it('国立国会図書館パックは東京本館・関西館の年齢条件を特記事項 notice に持つ', () => {
+    expect(getLandmarkPackById('01a0c450-6c00-7000-8000-000000000007')?.notice).toContain('満18歳以上');
+  });
+
+  it('国立博物館パックは休館日があることを特記事項 notice に持つ', () => {
+    expect(getLandmarkPackById('01a0c450-6c00-7000-8000-000000000006')?.notice).toContain('休館日');
   });
 
   it('のぼれる灯台パックは参観できない日があることを特記事項 notice に持つ', () => {

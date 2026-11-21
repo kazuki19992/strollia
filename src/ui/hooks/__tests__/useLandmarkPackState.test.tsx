@@ -59,14 +59,14 @@ describe('スポットパック状態 useLandmarkPackState', () => {
   });
 
   it('Plus無効でも無料パックは施錠されず進捗つきで返る', async () => {
-    // 実マスタのパックは「日本三名瀑」(isFree: true)と、有料の「JRA競馬場」「JR鉄道博物館」「のぼれる灯台」の4件
+    // 実マスタのパックは「日本三名瀑」(isFree: true)と、有料の「JR鉄道博物館」「JRA競馬場」「のぼれる灯台」「日本三景」「国立博物館」「国立国会図書館」の7件
     const { result } = await renderHook(() => useLandmarkPackState(false));
 
     await waitFor(() => {
       expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
     });
 
-    expect(result.current.landmarkPackItems.length).toBe(5);
+    expect(result.current.landmarkPackItems.length).toBe(7);
     expect(result.current.landmarkPackItems[0]?.isLocked).toBe(false);
     expect(result.current.landmarkPackItems[0]?.totalCount).toBe(3);
     expect(result.current.landmarkPackItems.slice(1).every((item) => item.isLocked)).toBe(true);

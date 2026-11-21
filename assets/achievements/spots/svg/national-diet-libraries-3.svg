@@ -1,0 +1,7 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- 仮アイコン: 正式なトロフィーSVGが用意できたら同名ファイルで差し替え、npm run generate:landmarks を実行する -->
+<rect x="40" y="40" width="220" height="220" rx="28" fill="#D9D9D9"/>
+<path d="M150 98C128 84 98 80 70 84V212C98 208 128 212 150 226V98Z" fill="#8A8A8A"/>
+<path d="M150 98C172 84 202 80 230 84V212C202 208 172 212 150 226V98Z" fill="#6B6B6B"/>
+<rect x="147" y="96" width="6" height="132" rx="3" fill="#4A4A4A"/>
+</svg>

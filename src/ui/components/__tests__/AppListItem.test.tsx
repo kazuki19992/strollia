@@ -11,6 +11,9 @@ jest.mock('@expo/vector-icons', () => ({
 
 const styles = createStyles(lightTheme);
 
+/** モックした Feather(Text)をアイコン名で検索する。標準クエリでは特定できないホスト要素のため container を使う。 */
+const iconsNamed = (name: string) => screen.container.queryAll((node) => node.props.name === name);
+
 describe('共通リスト行 AppListItem', () => {
   it('タイトル・サブタイトル・補足を表示し、押下で通知する', async () => {
     const onPress = jest.fn();
@@ -125,5 +128,31 @@ describe('共通リスト行 AppListItem', () => {
 
     expect(screen.getByText('タイトル')).toBeTruthy();
     expect(screen.getByText('ラベル要素')).toBeTruthy();
+  });
+
+  it('expandedを指定しない場合は右向きの矢印のままで、開閉状態を持たない', async () => {
+    await render(<AppListItem accessibilityLabel="行" styles={styles} theme={lightTheme} title="タイトル" onPress={jest.fn()} />);
+
+    expect(iconsNamed('chevron-right')).toHaveLength(1);
+    expect(iconsNamed('chevron-down')).toHaveLength(0);
+    expect(screen.getByLabelText('行').props.accessibilityState?.expanded).toBeUndefined();
+  });
+
+  it('expanded=falseなら下向きの矢印を出し、右向きの矢印は出さない', async () => {
+    await render(
+      <AppListItem accessibilityLabel="行" expanded={false} styles={styles} theme={lightTheme} title="タイトル" onPress={jest.fn()} />,
+    );
+
+    expect(iconsNamed('chevron-down')).toHaveLength(1);
+    expect(iconsNamed('chevron-right')).toHaveLength(0);
+    expect(screen.getByLabelText('行').props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
+  });
+
+  it('expanded=trueなら上向きの矢印を出し、accessibilityState.expandedがtrueになる', async () => {
+    await render(<AppListItem accessibilityLabel="行" expanded styles={styles} theme={lightTheme} title="タイトル" onPress={jest.fn()} />);
+
+    expect(iconsNamed('chevron-up')).toHaveLength(1);
+    expect(iconsNamed('chevron-right')).toHaveLength(0);
+    expect(screen.getByLabelText('行').props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
   });
 });

@@ -4,7 +4,7 @@ import {
   getAchievementProgress,
   getAchievementUnlocksByDate,
 } from '@/features/achievements/achievementRepository';
-import { getVisitedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
+import { getPackCountedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
 
 const mockTxn = {
   runAsync: jest.fn(),
@@ -21,7 +21,7 @@ jest.mock('@/db/database', () => ({
 
 // スポット到達の取得はリポジトリ境界でモックし、db.getAllAsync のモック順序に依存させない。
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
-  getVisitedLandmarkSpotIds: jest.fn(),
+  getPackCountedLandmarkSpotIds: jest.fn(),
 }));
 
 /** パイロットの日本三名瀑パックID。 */
@@ -33,7 +33,7 @@ const KEGON_ID = '01a0c450-6c00-7000-8000-000000000101';
 describe('実績リポジトリ achievementRepository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getVisitedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set<string>());
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set<string>());
   });
 
   it('SQLite集計から実績進捗を取得する', async () => {
@@ -52,13 +52,13 @@ describe('実績リポジトリ achievementRepository', () => {
     });
   });
 
-  it('スポット到達記録からパックごとの到達数を数える', async () => {
+  it('訪問済みスポット(複数地点は1地点でも)からパックごとの訪問数を数える', async () => {
     (db.getAllAsync as jest.Mock).mockResolvedValueOnce([]);
     (db.getFirstAsync as jest.Mock)
       .mockResolvedValueOnce({ logDays: 0 })
       .mockResolvedValueOnce({ count: 0 })
       .mockResolvedValueOnce({ count: 0 });
-    (getVisitedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID]));
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID]));
 
     const progress = await getAchievementProgress();
 

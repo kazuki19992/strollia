@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 
 import { notifyLandmarkAreaArrival, notifyLandmarkSpotArrival } from '@/features/landmarks/landmarkNotificationService';
-import { getVisitedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
+import { getPackCountedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
 
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),
@@ -34,7 +34,7 @@ jest.mock('@/features/landmarks/landmarkCatalog', () => {
 });
 
 jest.mock('@/features/landmarks/landmarkVisitRepository', () => ({
-  getVisitedLandmarkSpotIds: jest.fn(),
+  getPackCountedLandmarkSpotIds: jest.fn(),
 }));
 
 // 実績通知チャンネルIDの参照だけで設定リポジトリ経由の実SQLiteを開かないよう遮断する
@@ -56,7 +56,7 @@ const NACHI_ID = '01a0c450-6c00-7000-8000-000000000102';
 describe('スポット到達通知 landmarkNotificationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getVisitedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID]));
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID]));
   });
 
   it('通知が許可されていなければ何も送らない', async () => {
@@ -80,7 +80,7 @@ describe('スポット到達通知 landmarkNotificationService', () => {
 
   it('進捗は到達記録を取り直した結果で数える', async () => {
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
-    (getVisitedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID, NACHI_ID]));
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID, NACHI_ID]));
 
     await notifyLandmarkSpotArrival(NACHI_ID);
 
@@ -121,7 +121,7 @@ describe('スポット到達通知 landmarkNotificationService', () => {
     await notifyLandmarkSpotArrival('01a0c450-6c00-7000-8000-00000000ffff');
 
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
-    expect(getVisitedLandmarkSpotIds).not.toHaveBeenCalled();
+    expect(getPackCountedLandmarkSpotIds).not.toHaveBeenCalled();
   });
 
   it('複数地点スポットのコンプリートは専用の文言で通知する', async () => {
@@ -139,6 +139,7 @@ describe('スポット到達通知 landmarkNotificationService', () => {
 describe('地点到達通知 notifyLandmarkAreaArrival', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID]));
   });
 
   it('地点名とスポット内の進捗を本文に含め、地点IDとスポットIDを添える', async () => {
@@ -148,9 +149,19 @@ describe('地点到達通知 notifyLandmarkAreaArrival', () => {
 
     const [[request]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
     expect(request.content.title).toBe('地点に到達しました！');
-    expect(request.content.body).toBe('地点Aに到達しました（二地点スポット 1/2）');
+    expect(request.content.body).toBe('地点Aに到達しました（二地点スポット 1/2・日本三名瀑 1/3）');
     expect(request.content.data).toEqual({ landmarkAreaId: 'multi-area-a', landmarkSpotId: MULTI_SPOT_ID });
     expect(request.content.channelId).toBe('achievements');
+  });
+
+  it('所属パックの進捗(訪問済みスポット数)を地点進捗のあとに「・」区切りで添える', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockResolvedValue(new Set([KEGON_ID, NACHI_ID]));
+
+    await notifyLandmarkAreaArrival({ areaId: 'multi-area-a', visitedAreaCount: 1, totalAreaCount: 2 });
+
+    const [[request]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+    expect(request.content.body).toBe('地点Aに到達しました（二地点スポット 1/2・日本三名瀑 2/3）');
   });
 
   it('通知が許可されていなければ何も送らない', async () => {
@@ -159,6 +170,18 @@ describe('地点到達通知 notifyLandmarkAreaArrival', () => {
     await notifyLandmarkAreaArrival({ areaId: 'multi-area-a', visitedAreaCount: 1, totalAreaCount: 2 });
 
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it('パック進捗の集計に失敗しても、地点の進捗だけで地点到達通知を1回送る', async () => {
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+    (getPackCountedLandmarkSpotIds as jest.Mock).mockRejectedValue(new Error('db locked'));
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await notifyLandmarkAreaArrival({ areaId: 'multi-area-a', visitedAreaCount: 1, totalAreaCount: 2 });
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    const [[request]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+    expect(request.content.body).toBe('地点Aに到達しました（二地点スポット 1/2）');
   });
 
   it('マスタに存在しない地点IDでは何も送らない', async () => {

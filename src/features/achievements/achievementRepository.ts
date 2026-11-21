@@ -1,6 +1,6 @@
 import { db, withExclusiveTransaction } from '@/db/database';
 import { resolveLandmarkPackProgress } from '@/features/landmarks/landmarkPackProgress';
-import { getVisitedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
+import { getPackCountedLandmarkSpotIds } from '@/features/landmarks/landmarkVisitRepository';
 import { calculateTotalDistanceMeters } from '@/features/logs/dailyLogsService';
 import { toLocalDate } from '@/utils/date';
 import { ACHIEVEMENT_DEFINITIONS, AchievementDefinition, getAchievementDefinition } from './achievementDefinitions';
@@ -27,7 +27,7 @@ export type PendingAchievementNotification = {
   definition: AchievementDefinition;
 };
 
-/** 現在の進捗をSQLiteの集計テーブルから取得する。 */
+/** 現在の進捗をSQLiteの集計テーブルから取得する。パック進捗は複数地点スポットを1地点でも訪問していれば1と数える。 */
 export async function getAchievementProgress(): Promise<AchievementProgress> {
   const [dailyDistanceRows, logDaysRow, prefectureRow, municipalityRow, visitedLandmarkSpotIds] = await Promise.all([
     db.getAllAsync<{ localDate: string; distanceMeters: number | null }>(
@@ -36,7 +36,7 @@ export async function getAchievementProgress(): Promise<AchievementProgress> {
     db.getFirstAsync<{ logDays: number }>('SELECT COUNT(*) as logDays FROM daily_logs WHERE point_count > 0'),
     db.getFirstAsync<{ count: number }>("SELECT COUNT(*) as count FROM visited_admin_areas WHERE area_type = 'prefecture'"),
     db.getFirstAsync<{ count: number }>("SELECT COUNT(*) as count FROM visited_admin_areas WHERE area_type = 'municipality'"),
-    getVisitedLandmarkSpotIds(),
+    getPackCountedLandmarkSpotIds(),
   ]);
 
   return {

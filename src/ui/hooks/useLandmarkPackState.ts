@@ -16,7 +16,7 @@ import { getLandmarkAreaVisits, getLandmarkSpotVisits } from '@/features/landmar
 export type LandmarkPackListItem = {
   /** パック定義。 */
   pack: LandmarkPack;
-  /** 到達済みスポット数。 */
+  /** 訪問済みスポット数。複数地点スポットは1地点でも到達していれば1と数える。 */
   visitedCount: number;
   /** 完走に必要なスポット数(retiredを除く)。 */
   totalCount: number;
@@ -74,8 +74,14 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
   /** 到達済みスポットIDから到達日を引くMap。詳細画面の日別記録遷移にも使う。 */
   const [visitedLocalDateBySpotId, setVisitedLocalDateBySpotId] = useState<ReadonlyMap<string, string>>(() => new Map());
 
-  /** 到達済み地点IDから到達日を引くMap。パック進捗(スポット単位)には使わず、地点行の表示にだけ使う。 */
+  /** 到達済み地点IDから到達日を引くMap。地点行の表示に使う。 */
   const [visitedLocalDateByAreaId, setVisitedLocalDateByAreaId] = useState<ReadonlyMap<string, string>>(() => new Map());
+
+  /**
+   * 1地点以上到達した複数地点スポットのID集合。パック進捗(訪問済みスポット数)の算出に使う。
+   * コンプリート(全地点到達)でなくても訪問済みと数えるため、`visitedLocalDateBySpotId` とは別に持つ。
+   */
+  const [areaVisitedSpotIds, setAreaVisitedSpotIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const reloadLandmarkState = useCallback(async (): Promise<void> => {
     // スポットと地点の到達は別テーブル。片方だけ新しい状態を見せないよう、両方読めてから反映する
@@ -83,6 +89,7 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
 
     setVisitedLocalDateBySpotId(new Map(spotVisits.map((visit) => [visit.spotId, visit.visitedLocalDate])));
     setVisitedLocalDateByAreaId(new Map(areaVisits.map((visit) => [visit.areaId, visit.visitedLocalDate])));
+    setAreaVisitedSpotIds(new Set(areaVisits.map((visit) => visit.spotId)));
   }, []);
 
   useEffect(() => {
@@ -97,9 +104,9 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
   }, [reloadLandmarkState]);
 
   const landmarkPackItems = useMemo<LandmarkPackListItem[]>(() => {
-    const progressByPackId = new Map(
-      resolveLandmarkPackProgress(new Set(visitedLocalDateBySpotId.keys())).map((progress) => [progress.packId, progress]),
-    );
+    // 訪問済み = スポット到達(円1つ・コンプリート) ∪ 地点到達のあるスポット。複数地点スポットは1地点で数える
+    const countedSpotIds = new Set([...visitedLocalDateBySpotId.keys(), ...areaVisitedSpotIds]);
+    const progressByPackId = new Map(resolveLandmarkPackProgress(countedSpotIds).map((progress) => [progress.packId, progress]));
     return LANDMARK_PACKS.map((pack) => {
       const progress = progressByPackId.get(pack.id);
       const isLocked = !pack.isFree && !isPlusActive;
@@ -111,7 +118,7 @@ export function useLandmarkPackState(isPlusActive: boolean): UseLandmarkPackStat
         isLocked,
       };
     });
-  }, [isPlusActive, visitedLocalDateBySpotId]);
+  }, [isPlusActive, visitedLocalDateBySpotId, areaVisitedSpotIds]);
 
   const getLandmarkPackDetail = useCallback(
     (packId: string): LandmarkPackDetail | null => {

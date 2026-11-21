@@ -74,15 +74,26 @@ describe('複数地点スポットを含むパック状態 useLandmarkPackState'
     expect(result.current.getLandmarkPackDetail('pack-multi')?.spotItems[1]?.areaItems).toEqual([]);
   });
 
-  it('地点だけ到達してもパックの到達数は増えない', async () => {
+  it('複数地点スポットを1地点だけ訪問するとパックの訪問数が1進み、スポット自体の到達日(コンプリート)は付かない', async () => {
     const { result } = await renderHook(() => useLandmarkPackState(true));
 
     await waitFor(() => {
       expect(result.current.getLandmarkPackDetail('pack-multi')?.spotItems[0]?.areaItems[0]?.visitedLocalDate).toBe('2026-04-12');
     });
 
-    expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(0);
+    expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(1);
     expect(result.current.landmarkPackItems[0]?.totalCount).toBe(2);
     expect(result.current.getLandmarkPackDetail('pack-multi')?.spotItems[0]?.visitedLocalDate).toBeNull();
+  });
+
+  it('複数地点スポットの1地点訪問と円1つのスポットの到達は別スポットとして合算して数える', async () => {
+    (getLandmarkSpotVisits as jest.Mock).mockResolvedValue([
+      { spotId: 'spot-single', visitedAt: '2026-04-13T02:00:00.000Z', visitedLocalDate: '2026-04-13', locationPointId: 2 },
+    ]);
+    const { result } = await renderHook(() => useLandmarkPackState(true));
+
+    await waitFor(() => {
+      expect(result.current.landmarkPackItems[0]?.visitedCount).toBe(2);
+    });
   });
 });

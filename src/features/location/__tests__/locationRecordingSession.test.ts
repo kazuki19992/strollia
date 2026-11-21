@@ -277,7 +277,7 @@ describe('スポット到達時の通知と実績評価', () => {
     mockNotifyLandmarkSpotArrival.mockResolvedValue(undefined);
   });
 
-  it('area イベントは地点到達通知を出し、実績の再評価はしない', async () => {
+  it('area イベントは地点到達通知を出し、保存点が無くてもパック完走のため実績を再評価する', async () => {
     mockNotifyLandmarkAreaArrival.mockResolvedValue(undefined);
     mockRecordLocationObservation.mockResolvedValue({
       status: 'not-saved',
@@ -289,7 +289,7 @@ describe('スポット到達時の通知と実績評価', () => {
 
     expect(mockNotifyLandmarkAreaArrival).toHaveBeenCalledWith({ areaId: 'area-1', visitedAreaCount: 1, totalAreaCount: 2 });
     expect(mockNotifyLandmarkSpotArrival).not.toHaveBeenCalled();
-    expect(mockEvaluateAchievementsAndNotify).not.toHaveBeenCalled();
+    expect(mockEvaluateAchievementsAndNotify).toHaveBeenCalledTimes(1);
   });
 
   it('地点到達とコンプリートは到達順に実績処理より前に通知する', async () => {

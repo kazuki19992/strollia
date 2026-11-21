@@ -177,6 +177,20 @@ export const CRASH_REPORTING_TUTORIAL_PARAGRAPHS = [
 /** Plus用の機能・パックであることを示す小さなラベルの文言。 */
 export const PLUS_BADGE_LABEL = 'Plus';
 
+/** 複数地点スポットの行のタイトル横に出すラベルの文言。 */
+export const MULTI_AREA_SPOT_BADGE_LABEL = '複数スポット';
+/** 閉じている複数地点スポット行の読み上げラベルの末尾(スポット名の後ろに付ける)。 */
+export const LANDMARK_AREA_EXPAND_LABEL_SUFFIX = 'の地点を開く';
+/** 開いている複数地点スポット行の読み上げラベルの末尾(スポット名の後ろに付ける)。 */
+export const LANDMARK_AREA_COLLAPSE_LABEL_SUFFIX = 'の地点を閉じる';
+/**
+ * 複数地点スポット行の読み上げラベルの末尾に付ける到達状況。
+ * 閉じた行でも何地点中何地点に到達したかを読み上げで伝えるため、開閉の文言と併せて使う。
+ */
+export function formatLandmarkAreaProgressLabel(reachedCount: number, totalCount: number): string {
+  return `、${totalCount}地点中${reachedCount}地点に到達済み`;
+}
+
 /** 無料ユーザー向けに、背景色を重ねてうっすら隠したPlus用スタンプラリーの上へ置く購入導線の文言。 */
 export const LANDMARK_PACK_PLUS_TEASER_CTA = 'Plusでもっと挑戦する';
 /** 無料ユーザー向けのPlus用パックの購入導線で、ボタンの上に置く販促の見出し。 */

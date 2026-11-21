@@ -6,17 +6,24 @@ import { formatLandmarkPrefectures } from '@/features/landmarks/landmarkPrefectu
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
 import {
+  formatLandmarkAreaProgressLabel,
+  LANDMARK_AREA_COLLAPSE_LABEL_SUFFIX,
+  LANDMARK_AREA_EXPAND_LABEL_SUFFIX,
   LANDMARK_COMPLETED_DATE_PREFIX,
   LANDMARK_FIRST_VISIT_DATE_PREFIX,
   LANDMARK_SPOT_COMPLETED_STAMP_LABEL,
   LANDMARK_SPOT_RETIRED_NOTE,
+  MULTI_AREA_SPOT_BADGE_LABEL,
 } from '@/ui/appText';
 import type { LandmarkSpotListItem } from '@/ui/hooks/useLandmarkPackState';
 import { useIsLandscapeLayout } from '@/ui/hooks/useIsLandscapeLayout';
 import { AppListItem } from './AppListItem';
+import { AppProgressBar } from './AppProgressBar';
 import { AppScreenHeader } from './AppScreenHeader';
+import { LabelBadge } from './LabelBadge';
 import { LandmarkPackMapPreview, type LandmarkSpotFocusRequest } from './LandmarkPackMapPreview';
 import { LandmarkSpotNumberBadge } from './LandmarkSpotNumberBadge';
+import { animateListExpansion } from './listExpansionAnimation';
 import { TwoPaneLayout } from './TwoPaneLayout';
 
 /** 到達済みスポット行に表示するスタンプ画像。全スポット共通の1種類のみ用意している。 */
@@ -50,6 +57,7 @@ export type LandmarkPackScreenProps = {
  * 到達済みの行はその日の記録へ導く。未到達の行は画面上部の埋め込み地図が
  * そのスポットへズームするだけで、メイン地図への画面遷移はしない
  * (この画面の中で「次はどこへ行こう」が完結する体験にする)。
+ * 複数地点スポットの行は、押すと地点リストを開閉しつつ地図をスポット全体へズームする(日別記録は開いた地点の行から開く)。
  * カードを重ねず、帯状のリストで残りが読み取れる形にしている。
  */
 export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onSelectVisitedSpot }: LandmarkPackScreenProps) {
@@ -68,7 +76,26 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
    * 「同じスポットへの再フォーカス要求」も新しい状態として確実に伝える。
    */
   const [focusRequest, setFocusRequest] = useState<LandmarkSpotFocusRequest>(null);
+  /**
+   * 地点リストを開いている複数地点スポットのID。初期は空(すべて閉じる)。
+   *
+   * 画面内だけのUI状態なので保存せず、AppStateProvider にも載せない。日別記録へ進んで戻っても
+   * この画面は残るため開閉状態は保たれ、パック詳細を開き直すとすべて閉じた状態に戻る。
+   */
+  const [expandedSpotIds, setExpandedSpotIds] = useState<ReadonlySet<string>>(() => new Set());
   const isLandscape = useIsLandscapeLayout();
+
+  /** 複数地点スポットの地点リストを開閉する。アニメーションは state 更新の直前に仕込む。 */
+  const toggleSpotExpansion = (spotId: string) => {
+    animateListExpansion();
+    setExpandedSpotIds((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(spotId)) {
+        next.add(spotId);
+      }
+      return next;
+    });
+  };
 
   const mapSection = (
     <View style={styles.landmarkPackMapSection}>
@@ -90,18 +117,49 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
         const reachedAreaCount = areaItems.filter((areaItem) => areaItem.visitedLocalDate !== null).length;
         const isMultiArea = spot.isMultiArea;
         const showVisitedStamp = isMultiArea ? reachedAreaCount > 0 && !isVisited : isVisited;
-        // 複数地点スポットの行の日付は「全地点そろった日」なので、地点行の初訪問日と見出しを分ける
+        const isExpanded = expandedSpotIds.has(spot.id);
+        // 複数地点スポットの行の日付は「全地点そろった日」なので、地点行の初訪問日と見出しを分ける。
+        // 到達地点数は detail ではなく footer の進捗バーの横に出す。
         const detail = isVisited
           ? `${isMultiArea ? LANDMARK_COMPLETED_DATE_PREFIX : LANDMARK_FIRST_VISIT_DATE_PREFIX}${formatLandmarkVisitedDate(visitedLocalDate)}`
-          : isMultiArea
-            ? `${reachedAreaCount}/${areaItems.length}`
-            : undefined;
+          : undefined;
+        const onPressSpot = isMultiArea
+          ? () => {
+              // 開閉と同時に、開くときも閉じるときも地図をスポット全体へズームする(行タップで毎回同じことが起きるように)
+              toggleSpotExpansion(spot.id);
+              setFocusRequest((prev) => ({ targetId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }));
+            }
+          : isVisited
+            ? () => onSelectVisitedSpot(visitedLocalDate)
+            : () => setFocusRequest((prev) => ({ targetId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }));
 
         return (
           <View key={spot.id}>
             <AppListItem
-              accessibilityLabel={isVisited ? `${spot.name}の記録を開く` : `${spot.name}を地図で見る`}
+              accessibilityLabel={
+                isMultiArea
+                  ? `${spot.name}${isExpanded ? LANDMARK_AREA_COLLAPSE_LABEL_SUFFIX : LANDMARK_AREA_EXPAND_LABEL_SUFFIX}${formatLandmarkAreaProgressLabel(reachedAreaCount, areaItems.length)}`
+                  : isVisited
+                    ? `${spot.name}の記録を開く`
+                    : `${spot.name}を地図で見る`
+              }
               detail={detail}
+              expanded={isMultiArea ? isExpanded : undefined}
+              footer={
+                isMultiArea ? (
+                  <View style={styles.landmarkPackProgressRow}>
+                    <Text style={styles.landmarkPackProgressText}>{`${reachedAreaCount}/${areaItems.length}`}</Text>
+                    <View style={styles.landmarkPackProgressBarArea}>
+                      <AppProgressBar
+                        accessibilityLabel={`${spot.name}の進捗`}
+                        ratio={areaItems.length > 0 ? reachedAreaCount / areaItems.length : 0}
+                        styles={styles}
+                        theme={theme}
+                      />
+                    </View>
+                  </View>
+                ) : undefined
+              }
               // 番号バッジはパック進捗と同じ「訪問」基準で塗る。複数地点スポットは1地点でも到達していれば訪問済み
               // (コンプリートはスタンプと「コンプリート日」で区別する。色はプライマリカラー1色のため段階を分けない)
               leading={
@@ -117,6 +175,7 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
               subtitle={buildSpotSubtitle(spot)}
               theme={theme}
               title={spot.name}
+              titleAccessory={isMultiArea ? <LabelBadge label={MULTI_AREA_SPOT_BADGE_LABEL} styles={styles} /> : undefined}
               trailing={
                 isMultiArea && isVisited ? (
                   <Image
@@ -132,29 +191,28 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
                   />
                 ) : undefined
               }
-              onPress={
-                isVisited
-                  ? () => onSelectVisitedSpot(visitedLocalDate)
-                  : () => setFocusRequest((prev) => ({ targetId: spot.id, nonce: (prev?.nonce ?? 0) + 1 }))
-              }
+              onPress={onPressSpot}
             />
-            {areaItems.map(({ area, visitedLocalDate: areaVisitedDate }) => (
-              <View key={area.id} style={styles.landmarkAreaRowIndent}>
-                <AppListItem
-                  accessibilityLabel={areaVisitedDate ? `${area.name}の記録を開く` : `${area.name}を地図で見る`}
-                  detail={areaVisitedDate ? `${LANDMARK_FIRST_VISIT_DATE_PREFIX}${formatLandmarkVisitedDate(areaVisitedDate)}` : undefined}
-                  showChevron={areaVisitedDate !== null}
-                  styles={styles}
-                  theme={theme}
-                  title={area.name}
-                  onPress={
-                    areaVisitedDate
-                      ? () => onSelectVisitedSpot(areaVisitedDate)
-                      : () => setFocusRequest((prev) => ({ targetId: area.id, nonce: (prev?.nonce ?? 0) + 1 }))
-                  }
-                />
-              </View>
-            ))}
+            {isExpanded &&
+              areaItems.map(({ area, visitedLocalDate: areaVisitedDate }) => (
+                <View key={area.id} style={styles.landmarkAreaRowIndent}>
+                  <AppListItem
+                    accessibilityLabel={areaVisitedDate ? `${area.name}の記録を開く` : `${area.name}を地図で見る`}
+                    detail={
+                      areaVisitedDate ? `${LANDMARK_FIRST_VISIT_DATE_PREFIX}${formatLandmarkVisitedDate(areaVisitedDate)}` : undefined
+                    }
+                    showChevron={areaVisitedDate !== null}
+                    styles={styles}
+                    theme={theme}
+                    title={area.name}
+                    onPress={
+                      areaVisitedDate
+                        ? () => onSelectVisitedSpot(areaVisitedDate)
+                        : () => setFocusRequest((prev) => ({ targetId: area.id, nonce: (prev?.nonce ?? 0) + 1 }))
+                    }
+                  />
+                </View>
+              ))}
           </View>
         );
       })}

@@ -455,39 +455,42 @@ OSSライセンスは設定画面から開く。
 - 押下可能な要素には `accessibilityLabel` と `accessibilityRole="button"` を必ず付ける
 - 1ファイル1コンポーネント、named export
 
-| コンポーネント             | 用途                                               | 主なprops                                                                                                                                                |
-| -------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AppScreenHeader`          | 子画面の共通ヘッダー(中央タイトル+戻る)            | `backLabel`, `title`, `subtitle?`, `onBack`, `styles`, `theme`                                                                                           |
-| `AppBackButton`            | 左上の戻るボタン(chevron-left+ラベル)              | `label`, `onPress`, `styles`, `theme`                                                                                                                    |
-| `AppListItem`              | 詳細遷移リスト行(右端chevron-right)                | `title`, `subtitle?`, `detail?`, `prominent?`, `leading?`, `footer?`, `trailing?`, `titleAccessory?`, `accessibilityLabel`, `onPress`, `styles`, `theme` |
-| `AppProgressBar`           | 汎用プログレスバー(割合を塗る)                     | `ratio`(0〜1にクランプ), `accessibilityLabel`, `styles`, `theme`                                                                                         |
-| `PlusBadge`                | Plus用の機能・パックに付ける小さなラベル           | `styles`                                                                                                                                                 |
-| `GradientFadeOverlay`      | 上から下へ段階的に濃くなる色(背景色など)を重ねる   | `color`, `gradientTop`, `gradientHeight`, `maxOpacity?`, `steps?`                                                                                        |
-| `DailyLogListItem`         | 日別ログ行(AppListItemのラッパー)                  | `log`, `startAreaName?`, `endAreaName?`, `onPress`, `styles`, `theme`                                                                                    |
-| `ScreenSection`            | セクション見出し+本文領域                          | `title`, `children`, `styles`                                                                                                                            |
-| `SectionTitle`             | セクション見出し単体                               | `children`, `styles`                                                                                                                                     |
-| `DescriptionText`          | ミュートカラーの補足説明                           | `children`, `styles`, `centered?`                                                                                                                        |
-| `InfoBlock`                | 見出し+補足のブロック(ボタン群の前置き)            | `title`, `description?`, `styles`                                                                                                                        |
-| `DataSummaryRow`           | ラベルと値を罫線付きで並べる行                     | `label`, `value`, `styles`                                                                                                                               |
-| `ActionPill`               | アウトラインのピル型アクションボタン               | `label`, `icon?`, `danger?`, `disabled?`, `alignLeft?`, `onPress`, `styles`                                                                              |
-| `SelectionTile`            | primary枠+10%塗りで選択状態を表すタイル            | `label`, `icon?`, `swatchColor?`, `isSelected?`, `wide?`, `onPress?`, `styles`                                                                           |
-| `OptionGroup`              | 2択/3択の横並び選択ボタン群                        | `title`, `note?`, `children`, `styles`                                                                                                                   |
-| `ShareButton`              | 共有ボタン(icon/wideバリアント)                    | `accessibilityLabel`, `iconColor`, `label?`, `variant?`, `onPress`                                                                                       |
-| `StepSlider`               | 単一つまみのスライダー                             | -                                                                                                                                                        |
-| `RangeSlider`              | 2つまみの範囲スライダー(時間帯選択)                | `minValue`, `maxValue`, `stepValue`, `startValue`, `endValue`, `onChange` 他                                                                             |
-| `Dialog`                   | 共通ダイアログ(スワイプ閉じ・紙吹雪・自動クローズ) | `visible`, `children`, `dismissible?`, `swipeToClose?`, `showConfetti?`, `autoClose?`, `onClose`, `styles`                                               |
-| `RouteMapPanel`            | 保存済みルートのMapView表示                        | `points`, `regionPoints?`, `emptyLabel`, `onMapLoaded?`, `styles`, `theme`                                                                               |
-| `TopToast`                 | 画面上部のトースト                                 | -                                                                                                                                                        |
-| `IndeterminateProgressBar` | 不定長プログレスバー                               | -                                                                                                                                                        |
+| コンポーネント             | 用途                                               | 主なprops                                                                                                                                                             |
+| -------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AppScreenHeader`          | 子画面の共通ヘッダー(中央タイトル+戻る)            | `backLabel`, `title`, `subtitle?`, `onBack`, `styles`, `theme`                                                                                                        |
+| `AppBackButton`            | 左上の戻るボタン(chevron-left+ラベル)              | `label`, `onPress`, `styles`, `theme`                                                                                                                                 |
+| `AppListItem`              | 詳細遷移リスト行(右端chevron-right)                | `title`, `subtitle?`, `detail?`, `prominent?`, `leading?`, `footer?`, `trailing?`, `titleAccessory?`, `expanded?`, `accessibilityLabel`, `onPress`, `styles`, `theme` |
+| `AppProgressBar`           | 汎用プログレスバー(割合を塗る)                     | `ratio`(0〜1にクランプ), `accessibilityLabel`, `styles`, `theme`                                                                                                      |
+| `LabelBadge`               | タイトル横などに添える小さなピル型ラベル           | `label`, `styles`                                                                                                                                                     |
+| `PlusBadge`                | Plus用ラベル(`LabelBadge` に「Plus」を渡す)        | `styles`                                                                                                                                                              |
+| `GradientFadeOverlay`      | 上から下へ段階的に濃くなる色(背景色など)を重ねる   | `color`, `gradientTop`, `gradientHeight`, `maxOpacity?`, `steps?`                                                                                                     |
+| `DailyLogListItem`         | 日別ログ行(AppListItemのラッパー)                  | `log`, `startAreaName?`, `endAreaName?`, `onPress`, `styles`, `theme`                                                                                                 |
+| `ScreenSection`            | セクション見出し+本文領域                          | `title`, `children`, `styles`                                                                                                                                         |
+| `SectionTitle`             | セクション見出し単体                               | `children`, `styles`                                                                                                                                                  |
+| `DescriptionText`          | ミュートカラーの補足説明                           | `children`, `styles`, `centered?`                                                                                                                                     |
+| `InfoBlock`                | 見出し+補足のブロック(ボタン群の前置き)            | `title`, `description?`, `styles`                                                                                                                                     |
+| `DataSummaryRow`           | ラベルと値を罫線付きで並べる行                     | `label`, `value`, `styles`                                                                                                                                            |
+| `ActionPill`               | アウトラインのピル型アクションボタン               | `label`, `icon?`, `danger?`, `disabled?`, `alignLeft?`, `onPress`, `styles`                                                                                           |
+| `SelectionTile`            | primary枠+10%塗りで選択状態を表すタイル            | `label`, `icon?`, `swatchColor?`, `isSelected?`, `wide?`, `onPress?`, `styles`                                                                                        |
+| `OptionGroup`              | 2択/3択の横並び選択ボタン群                        | `title`, `note?`, `children`, `styles`                                                                                                                                |
+| `ShareButton`              | 共有ボタン(icon/wideバリアント)                    | `accessibilityLabel`, `iconColor`, `label?`, `variant?`, `onPress`                                                                                                    |
+| `StepSlider`               | 単一つまみのスライダー                             | -                                                                                                                                                                     |
+| `RangeSlider`              | 2つまみの範囲スライダー(時間帯選択)                | `minValue`, `maxValue`, `stepValue`, `startValue`, `endValue`, `onChange` 他                                                                                          |
+| `Dialog`                   | 共通ダイアログ(スワイプ閉じ・紙吹雪・自動クローズ) | `visible`, `children`, `dismissible?`, `swipeToClose?`, `showConfetti?`, `autoClose?`, `onClose`, `styles`                                                            |
+| `RouteMapPanel`            | 保存済みルートのMapView表示                        | `points`, `regionPoints?`, `emptyLabel`, `onMapLoaded?`, `styles`, `theme`                                                                                            |
+| `TopToast`                 | 画面上部のトースト                                 | -                                                                                                                                                                     |
+| `IndeterminateProgressBar` | 不定長プログレスバー                               | -                                                                                                                                                                     |
 
 `AppListItem` の任意スロットは以下の用途で使う。特定画面に閉じた拡張はせず、汎用スロットとして扱う。
 
-| スロット          | 位置                          | 用途例                                                   |
-| ----------------- | ----------------------------- | -------------------------------------------------------- |
-| `leading?`        | 行の先頭(タイトルの左)        | スポットパックのトロフィー画像、状態アイコン、番号バッジ |
-| `footer?`         | タイトル・サブタイトルの下    | `AppProgressBar` と分数ラベル(スポットパックの到達進捗)  |
-| `trailing?`       | 行の右端(chevron-rightの手前) | 到達済みスタンプなどの補助表示                           |
-| `titleAccessory?` | タイトルの横                  | Plusラベル(`PlusBadge`)                                  |
+| スロット          | 位置                          | 用途例                                                    |
+| ----------------- | ----------------------------- | --------------------------------------------------------- |
+| `leading?`        | 行の先頭(タイトルの左)        | スポットパックのトロフィー画像、状態アイコン、番号バッジ  |
+| `footer?`         | タイトル・サブタイトルの下    | `AppProgressBar` と分数ラベル(スポットパックの到達進捗)   |
+| `trailing?`       | 行の右端(chevron-rightの手前) | 到達済みスタンプなどの補助表示                            |
+| `titleAccessory?` | タイトルの横                  | Plusラベル(`PlusBadge`)、複数スポットラベル(`LabelBadge`) |
+
+`AppListItem` に `expanded?` を渡すと開閉できる行になり、右端に上下の矢印(開いていれば `chevron-up`、閉じていれば `chevron-down`)と `accessibilityState.expanded` が付く(右向きの `showChevron` は出ない)。開閉による行の増減は、state 更新の直前に `animateListExpansion()`(`LayoutAnimation`)を呼んでアニメーションする。
 
 `AppProgressBar` は割合だけを受け取り、`3/4` の分数か `75%` のパーセントかといったラベル表記は呼び出し側が決める。バーの色は固定色ではなく `theme.colors.primary` を参照し、ライト/ダークとカラープリセットに追従する。
 

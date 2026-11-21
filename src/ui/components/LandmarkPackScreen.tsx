@@ -6,6 +6,7 @@ import { formatLandmarkPrefectures } from '@/features/landmarks/landmarkPrefectu
 import type { AppTheme } from '@/theme/theme';
 import type { AppStyles } from '@/ui/appStyles';
 import {
+  formatLandmarkAreaProgressLabel,
   LANDMARK_AREA_COLLAPSE_LABEL_SUFFIX,
   LANDMARK_AREA_EXPAND_LABEL_SUFFIX,
   LANDMARK_COMPLETED_DATE_PREFIX,
@@ -134,7 +135,7 @@ export function LandmarkPackScreen({ pack, spotItems, styles, theme, onBack, onS
             <AppListItem
               accessibilityLabel={
                 isMultiArea
-                  ? `${spot.name}${isExpanded ? LANDMARK_AREA_COLLAPSE_LABEL_SUFFIX : LANDMARK_AREA_EXPAND_LABEL_SUFFIX}`
+                  ? `${spot.name}${isExpanded ? LANDMARK_AREA_COLLAPSE_LABEL_SUFFIX : LANDMARK_AREA_EXPAND_LABEL_SUFFIX}${formatLandmarkAreaProgressLabel(reachedAreaCount, areaItems.length)}`
                   : isVisited
                     ? `${spot.name}の記録を開く`
                     : `${spot.name}を地図で見る`

@@ -304,9 +304,19 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
     /** 松島の行を押して地点リストを開く。 */
     async function openMatsushima(): Promise<void> {
       await act(async () => {
-        await fireEvent.press(screen.getByLabelText('松島の地点を開く'));
+        await fireEvent.press(screen.getByLabelText(/^松島の地点を開く/));
       });
     }
+
+    it('開閉ボタンの読み上げに到達地点数を含め、閉じた状態でも進捗が分かる', async () => {
+      await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
+
+      expect(screen.getByLabelText('松島の地点を開く、3地点中1地点に到達済み')).toBeTruthy();
+
+      await openMatsushima();
+
+      expect(screen.getByLabelText('松島の地点を閉じる、3地点中1地点に到達済み')).toBeTruthy();
+    });
 
     it('複数地点スポットの行に到達地点数と進捗バーを表示する', async () => {
       await renderScreen({ spotItems: [createMultiAreaItem(['2026-05-01', null, null])] });
@@ -342,7 +352,7 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       expect(screen.queryByText('五大堂')).toBeNull();
       expect(screen.queryByText('瑞巌寺')).toBeNull();
       expect(screen.container.queryAll((node) => node.props.name === 'chevron-down')).toHaveLength(1);
-      expect(screen.getByLabelText('松島の地点を開く').props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
+      expect(screen.getByLabelText(/^松島の地点を開く/).props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
     });
 
     it('スポット行を押すと地点の行が出て地図がスポット全体へズームし、もう一度押すと消えて再ズームする', async () => {
@@ -353,17 +363,17 @@ describe('パック詳細画面 LandmarkPackScreen', () => {
       expect(screen.getByText('五大堂')).toBeTruthy();
       expect(screen.getByText('福浦島')).toBeTruthy();
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
-      expect(screen.getByLabelText('松島の地点を閉じる').props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
+      expect(screen.getByLabelText(/^松島の地点を閉じる/).props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
       expect(screen.container.queryAll((node) => node.props.name === 'chevron-up')).toHaveLength(1);
 
       await act(async () => {
-        await fireEvent.press(screen.getByLabelText('松島の地点を閉じる'));
+        await fireEvent.press(screen.getByLabelText(/^松島の地点を閉じる/));
       });
 
       expect(screen.queryByText('五大堂')).toBeNull();
       expect(screen.queryByLabelText('五大堂を地図で見る')).toBeNull();
       expect(mockAnimateToRegion).toHaveBeenCalledTimes(2);
-      expect(screen.getByLabelText('松島の地点を開く')).toBeTruthy();
+      expect(screen.getByLabelText(/^松島の地点を開く/)).toBeTruthy();
     });
 
     it('開閉のたびに状態更新の前にLayoutAnimationが250msのアニメーションで呼ばれる', async () => {

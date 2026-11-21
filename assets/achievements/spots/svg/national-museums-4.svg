@@ -1,7 +1,6 @@
 <svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
 <!-- 仮アイコン(「仮」の字のシルエット): 正式なトロフィーSVGができたら同名ファイルで差し替え、npm run generate:landmarks を実行する -->
-<rect x="40" y="40" width="220" height="220" rx="28" fill="#D9D9D9"/>
-<g stroke="#4A4A4A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+<g stroke="#4A4A4A" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
 <path d="M112 72L78 142"/>
 <path d="M98 116V232"/>
 <path d="M132 80L224 72"/>

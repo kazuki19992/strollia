@@ -7,6 +7,7 @@ export type DistanceComparison = {
   label: string;
   /** 基準距離に対する倍数（小数1桁）。 */
   value: number;
+  /** 倍数の後ろに付ける単位（往復・周回・縦断の回数）。比較対象ごとに固定。 */
   unit: DistanceComparisonUnit;
   /** 2地点間の比較のときの両端の地名。周回（日本・地球）は null。 */
   endpoints: [string, string] | null;
@@ -15,6 +16,10 @@ export type DistanceComparison = {
 /** 距離の段階（1が最も短い）。 */
 export type DistanceTier = 1 | 2 | 3 | 4;
 
+/**
+ * 比較対象の定義。表示用の `DistanceComparison` から倍数を除き、倍数の計算に使う基準距離（メートル）を持つ。
+ * 往復の比較対象は、片道の距離の2倍を基準距離にしている。
+ */
 type ComparisonTarget = Omit<DistanceComparison, 'value'> & { baseMeters: number };
 
 /** 比較対象の一覧。基準距離の大きい順に並べ、最初に1以上になるものを採用する（spec §4.1）。 */

@@ -384,10 +384,12 @@ export type AnnualReportRecord =
   - `useAnnualReportState(args: { isReady: boolean; now?: () => Date; alwaysAvailable?: boolean }): AnnualReportState`
     - 起動時（`isReady` が true になったとき）と、アプリが前面に戻ったとき（`AppState` の `active`）に評価し直す。
     - `resolveAggregationWindow` が null なら何もしない。保存済みが completed ならそれを使う。開発用フラグ時は、起動ごとに1回だけ `deleteAnnualReport` してから集計し直す。
+    - 開発用フラグ時は、さらにレポート画面を開いたときと閉じたときにも `deleteAnnualReport(year)` する（spec §10.1）。開いたときは削除だけ行い、`availableReport` はメモリ上の値を保持する。閉じたときは削除後に集計を最初からやり直し、完了するまでは直前の `availableReport` を保持する。通知の予約は起動ごとに1回だけ（作り直しの完了では再予約しない）。フラグなしではどちらも何もしない。
+  - `useAnnualReportState` の戻り値に `onReportOpened: () => void` と `onReportClosed: () => void` を追加する（`AnnualReportState` 型にも含める）。
     - 未完了なら `InteractionManager.runAfterInteractions` の後に `runAnnualReportStep` を1回実行し、`progressed` なら `saveAnnualReportProgress` して次のステップを再び `runAfterInteractions` で予約する（ステップの間でUIへ制御を返す）。`completed` なら `completeAnnualReport` し、`resolveNotificationTime` が非nullなら `scheduleAnnualReportNotification` → 成功で `markAnnualReportNotificationScheduled`。`insufficient` なら何も保存しない。
     - アプリが背面へ回ったら、次のステップを予約しない（実行中のステップは完了させて保存する）。
     - ステップで例外が出たら Sentry（既存の `captureException` 系ラッパー）へ記録し、そのセッション中は再試行しない。
-  - `AppStateContextValue` に `annualReport: AnnualReportPayloadV1 | null`、`annualReportDaysLeft: number | null`、`openAnnualReport: () => void` を追加。通知タップは `useAnnualReportNotificationResponse` から `openAnnualReport` を呼ぶ（`availableReport` が null なら何もしない＝地図のまま）。
+  - `AppStateContextValue` に `annualReport: AnnualReportPayloadV1 | null`、`annualReportDaysLeft: number | null`、`openAnnualReport: () => void`、`closeAnnualReport: () => void` を追加。`openAnnualReport` は遷移と同時に `onReportOpened` を、`closeAnnualReport` は地図へ戻る遷移と同時に `onReportClosed` を呼ぶ。通知タップは `useAnnualReportNotificationResponse` から `openAnnualReport` を呼ぶ（`availableReport` が null なら何もしない＝地図のまま）。
   - `src/app/annual-report.tsx`: `annualReport` が null なら `<Redirect href="/" />`。
 
 - [ ] **Step 1:** フックのテスト（リポジトリ・アグリゲーター・通知サービスをモック、`now` を注入）
@@ -398,6 +400,9 @@ export type AnnualReportRecord =
   - `背面へ回ったら次のステップを予約しない`
   - `前面復帰時に日付が1/16になっていれば availableReport が null になる`（Review Focus 1）
   - `開発用フラグ時は起動ごとに作り直す`
+  - `開発用フラグ時は画面を開いたときに保存データを削除し、availableReport は保持する`
+  - `開発用フラグ時は画面を閉じたときに保存データを削除して集計をやり直し、通知は再予約しない`
+  - `開発用フラグなしでは開閉で保存データを削除しない`
   - pathname: `/annual-report` → `'annualReport'`
 - [ ] **Step 2:** FAIL → **Step 3:** 実装 → **Step 4:** PASS、`npm run typecheck`
 - [ ] **Step 5:** コミット `feat(annual-report): 年次レポートの集計起動と画面遷移を結線`
@@ -495,5 +500,6 @@ export type AnnualReportRecord =
 
 - 地図にふりかえりボタンとバッジが出る。集計中も地図操作が引っかからない。
 - 約10秒後に通知が届き、タップでストーリーが開く（アプリを終了した状態からも）。
+- レポートを開いて閉じたあと、保存データが消えて作り直され、もう一度開いても同じ内容が表示される（デバッグ版→製品版の切り替え確認）。
 - 7秒の自動送り、左右タップ、長押しの一時停止、ズーム＋ぼかしのトランジション、各ページのアニメーション。
 - 滞在場所に非表示範囲を設定し、地図ページで共有 → ダイアログ → 「隠して共有」で範囲内が消えた画像になる。

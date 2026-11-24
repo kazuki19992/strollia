@@ -7,6 +7,7 @@ import {
   setupAchievementNotificationChannel,
 } from '@/features/achievements/achievementNotificationService';
 import { evaluateAchievementsAndNotify } from '@/features/achievements/achievementService';
+import { setupAnnualReportNotificationChannel } from '@/features/annualReport/annualReportNotificationService';
 import { setupMonthlyReportNotificationChannel, syncMonthlyReportNotification } from '@/features/reports/monthlyReportNotificationService';
 import { isWhileInUseOnlyMode } from '@/features/location/locationPermission';
 import { getDefaultPremiumAccessState, getConfirmedPremiumAccessState } from '@/features/premium/revenueCatAccess';
@@ -185,6 +186,7 @@ export function useAppInitialization({
         initializeAchievementNotificationHandler();
         await setupAchievementNotificationChannel().catch(() => undefined);
         await setupMonthlyReportNotificationChannel().catch(() => undefined);
+        await setupAnnualReportNotificationChannel().catch(() => undefined);
         if (signal.aborted) return;
         if (savedFirstLaunchTutorialCompleted) {
           await requestAchievementNotificationPermissionIfNeeded();

@@ -1,6 +1,8 @@
 import { act, cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { Alert, AppState } from 'react-native';
 
+import { deleteAllUserData } from '@/features/logs/logRepository';
+
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
   impactAsync: jest.fn().mockResolvedValue(undefined),
@@ -408,7 +410,6 @@ describe('地図画面の年間レポートふりかえりボタン', () => {
     });
     await flushPromises();
 
-    const { deleteAllUserData } = require('@/features/logs/logRepository');
     expect(deleteAllUserData).toHaveBeenCalledTimes(1);
     expect(mockAnnualReportState.resetAfterDataDeletion).toHaveBeenCalledTimes(1);
   });

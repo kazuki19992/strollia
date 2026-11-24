@@ -3,10 +3,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { reportInvestigatedError } from '@/config/sentry';
 import { runAnnualReportStep } from '@/features/annualReport/annualReportAggregator';
-import {
-  cancelAnnualReportNotification,
-  scheduleAnnualReportNotification,
-} from '@/features/annualReport/annualReportNotificationService';
+import { cancelAnnualReportNotification, scheduleAnnualReportNotification } from '@/features/annualReport/annualReportNotificationService';
 import {
   completeAnnualReport,
   deleteAnnualReport,

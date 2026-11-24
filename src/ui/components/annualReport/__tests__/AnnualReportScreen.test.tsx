@@ -119,6 +119,33 @@ function collectPolylineCoordinates(): AnnualReportCoordinate[] {
     .flatMap((node) => (node.props as { coordinates: AnnualReportCoordinate[] }).coordinates);
 }
 
+/** モックした Marker(ホストの View)の数。最遠日ページの現在地点の丸。 */
+function countMarkers(): number {
+  // モックした地図要素の props 検証のため、ホスト要素を直接検索する
+  return screen.container.queryAll((node) => (node.props as { coordinate?: unknown }).coordinate != null).length;
+}
+
+/** キャプチャした瞬間の Polyline 座標・Marker 数・見出しを記録するよう captureRef を差し替える。 */
+function recordCaptures(): { coordinates: AnnualReportCoordinate[]; markers: number; texts: string[] }[] {
+  const captures: { coordinates: AnnualReportCoordinate[]; markers: number; texts: string[] }[] = [];
+  (captureRef as jest.Mock).mockImplementation(async () => {
+    captures.push({
+      coordinates: collectPolylineCoordinates(),
+      markers: countMarkers(),
+      texts: ['1年の移動マップ', 'いちばん遠くまで出かけた日', '月ごとの移動距離', '2026年のまとめ'].filter(
+        (text) => screen.queryByText(text) != null,
+      ),
+    });
+    return 'file:///tmp/annual-report.png';
+  });
+  return captures;
+}
+
+/** 非表示半径の外にある座標だけか。 */
+function allOutsideHome(coordinates: AnnualReportCoordinate[]): boolean {
+  return coordinates.every((coordinate) => distanceMeters(coordinate, home) > 100);
+}
+
 /** 共有を押してから、フレーム待ちと共有処理の完了まで流す。 */
 async function pressAndFinish(element: Parameters<typeof fireEvent.press>[0]): Promise<void> {
   await fireEvent.press(element);
@@ -334,6 +361,135 @@ describe('年間レポートのストーリー画面 AnnualReportScreen', () => 
     expect(screen.getByLabelText('1 / 10 ページ')).toBeTruthy();
 
     await fireEvent(right, 'pressOut');
+    await advance(7_100);
+    expect(screen.getByLabelText('2 / 10 ページ')).toBeTruthy();
+  });
+
+  test('ページ送りの直後に共有しても、退場中の前のページは写さない', async () => {
+    const captures = recordCaptures();
+    await render(<AnnualReportScreen payload={createPayload()} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(3);
+    // 1年の移動マップ → 月ごとの移動距離。トランジションを終わらせずにすぐ共有する
+    await fireEvent.press(screen.getByLabelText('次のページ'));
+
+    await pressAndFinish(screen.getByLabelText('このページを共有'));
+
+    expect(captures).toHaveLength(1);
+    expect(captures[0].coordinates).toEqual([]);
+    expect(captures[0].texts).toEqual(['月ごとの移動距離']);
+  });
+
+  test('最遠日の直後のまとめで隠して共有しても、最遠日の生ルートと点は写さない', async () => {
+    const captures = recordCaptures();
+    const payload = createPayload({
+      newPrefectures: [],
+      newMunicipalityCount: 0,
+      newCellCount: 0,
+      achievements: { count: 0, highlights: [] },
+      spots: { count: 0, highlights: [] },
+    });
+    await render(<AnnualReportScreen payload={payload} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(5);
+    expect(screen.getByText('いちばん遠くまで出かけた日')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('次のページ'));
+    await fireEvent.press(screen.getByLabelText('このページを共有'));
+
+    await pressAndFinish(screen.getByLabelText('隠して共有'));
+
+    expect(captures).toHaveLength(1);
+    expect(captures[0].texts).toEqual(['2026年のまとめ']);
+    expect(captures[0].markers).toBe(0);
+    expect(captures[0].coordinates.length).toBeGreaterThan(0);
+    expect(allOutsideHome(captures[0].coordinates)).toBe(true);
+  });
+
+  test('最遠日のページで隠して共有すると、点も範囲内の軌跡も写さない', async () => {
+    const captures = recordCaptures();
+    await render(<AnnualReportScreen payload={createPayload()} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(5);
+    expect(countMarkers()).toBe(1);
+    await fireEvent.press(screen.getByLabelText('このページを共有'));
+
+    await pressAndFinish(screen.getByLabelText('隠して共有'));
+
+    expect(captures).toHaveLength(1);
+    expect(captures[0].markers).toBe(0);
+    expect(captures[0].coordinates.length).toBeGreaterThan(0);
+    expect(allOutsideHome(captures[0].coordinates)).toBe(true);
+  });
+
+  test('隠して共有の途中で滞在場所が読み込み直しになっても、生ルートで撮らない', async () => {
+    const captures = recordCaptures();
+    const view = (stayPlaces: StayPlace[] | null, status: 'loading' | 'ready') => (
+      <AnnualReportScreen payload={createPayload()} activeStayPlaces={stayPlaces} stayPlacesStatus={status} onClose={jest.fn()} />
+    );
+    const { rerender } = await render(view([home], 'ready'));
+    await goForward(3);
+    await fireEvent.press(screen.getByLabelText('このページを共有'));
+    await fireEvent.press(screen.getByLabelText('隠して共有'));
+
+    // フレーム待ちの間に読み込み直し(activeStayPlaces が null になる)
+    await rerender(view(null, 'loading'));
+    for (let index = 0; index < 5; index += 1) {
+      await advance(20);
+    }
+
+    expect(captures).toHaveLength(1);
+    expect(captures[0].coordinates.length).toBeGreaterThan(0);
+    expect(allOutsideHome(captures[0].coordinates)).toBe(true);
+  });
+
+  test('確認ダイアログ中に滞在場所が読み込み直しになったら、隠して共有は撮らずにエラーを出す', async () => {
+    const captures = recordCaptures();
+    const view = (stayPlaces: StayPlace[] | null, status: 'loading' | 'ready') => (
+      <AnnualReportScreen payload={createPayload()} activeStayPlaces={stayPlaces} stayPlacesStatus={status} onClose={jest.fn()} />
+    );
+    const { rerender } = await render(view([home], 'ready'));
+    await goForward(3);
+    await fireEvent.press(screen.getByLabelText('このページを共有'));
+    await rerender(view(null, 'loading'));
+
+    await pressAndFinish(screen.getByLabelText('隠して共有'));
+
+    expect(captures).toHaveLength(0);
+    expect(Alert.alert).toHaveBeenCalledWith('共有できません', '滞在場所を確認中です。共有は確認後に利用できます。');
+  });
+
+  test('確認ダイアログを出している間は自動でページを送らない', async () => {
+    await render(<AnnualReportScreen payload={createPayload()} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(3);
+    await fireEvent.press(screen.getByLabelText('このページを共有'));
+
+    await advance(10_000);
+    expect(screen.getByLabelText('4 / 10 ページ')).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText('キャンセル'));
+    await advance(7_100);
+    expect(screen.getByLabelText('5 / 10 ページ')).toBeTruthy();
+  });
+
+  test('共有中は自動でページを送らず、長押しを離しても再開しない', async () => {
+    let finishShare: () => void = () => undefined;
+    (Sharing.shareAsync as jest.Mock).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishShare = resolve;
+        }),
+    );
+    await render(<AnnualReportScreen payload={createPayload()} activeStayPlaces={[]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+
+    await pressAndFinish(screen.getByLabelText('このページを共有'));
+    expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
+    const right = screen.getByLabelText('次のページ');
+    await fireEvent(right, 'pressIn');
+    await fireEvent(right, 'longPress');
+    await fireEvent(right, 'pressOut');
+    await advance(10_000);
+    expect(screen.getByLabelText('1 / 10 ページ')).toBeTruthy();
+
+    await act(async () => {
+      finishShare();
+    });
     await advance(7_100);
     expect(screen.getByLabelText('2 / 10 ページ')).toBeTruthy();
   });

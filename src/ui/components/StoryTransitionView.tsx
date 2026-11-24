@@ -8,6 +8,11 @@ export type StoryTransitionViewProps = {
   pageKey: string;
   /** 表示するページ内容。 */
   children: ReactNode;
+  /**
+   * true のとき遷移を打ち切り、退場中のページを捨てて現在ページだけを完成状態(拡大なし・不透明・ぼかしなし)で描く。
+   * 共有画像のキャプチャに前のページや遷移途中の見た目が写らないようにするために使う。
+   */
+  settled?: boolean;
 };
 
 type Layer = { key: string; children: ReactNode };
@@ -41,7 +46,7 @@ function AnimatedBlur({ progress, direction }: { progress: Animated.Value; direc
  * 現在ページは props から直接描画するため、children の更新が1レンダー遅れない。
  * 遷移中にさらにページが変わった場合は、途中のアニメーションを止めて、直前に表示していたページを新たな退場側にして再開する。
  */
-export function StoryTransitionView({ pageKey, children }: StoryTransitionViewProps) {
+export function StoryTransitionView({ pageKey, children, settled = false }: StoryTransitionViewProps) {
   /** 直近にレンダーしたページ。次の遷移で退場側になる。 */
   const lastShownRef = useRef<Layer>({ key: pageKey, children });
   const [trackedKey, setTrackedKey] = useState(pageKey);
@@ -56,12 +61,25 @@ export function StoryTransitionView({ pageKey, children }: StoryTransitionViewPr
     setLeaving(lastShownRef.current);
   }
 
+  // 打ち切り中は退場側を捨てる(render 中の state 調整。解除後に前のページが戻らないようにするため)。
+  if (settled && leaving) {
+    setLeaving(null);
+  }
+
   useEffect(() => {
     lastShownRef.current = { key: pageKey, children };
   });
 
+  // 打ち切り: 描画は下の showLeaving / settled 分岐で即座に完成状態になる。ここでは状態とアニメーションを片付ける。
   useLayoutEffect(() => {
-    if (!leaving) return;
+    if (!settled) return;
+    animationRef.current?.stop();
+    enter.setValue(1);
+    exit.setValue(1);
+  }, [settled, enter, exit]);
+
+  useLayoutEffect(() => {
+    if (!leaving || settled) return;
     animationRef.current?.stop();
     // 描画前に初期値へ戻し、新ページが一瞬フル表示されるちらつきを防ぐ。
     enter.setValue(0);
@@ -75,6 +93,7 @@ export function StoryTransitionView({ pageKey, children }: StoryTransitionViewPr
       if (finished) setLeaving(null);
     });
     // leaving が差し替わる（遷移開始）ごとにだけ走らせる。
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- settled の変化では遷移を始め直さない
   }, [leaving, enter, exit]);
 
   useEffect(() => () => animationRef.current?.stop(), []);
@@ -89,17 +108,20 @@ export function StoryTransitionView({ pageKey, children }: StoryTransitionViewPr
     pointerEvents: 'none' as const,
   };
 
+  // settled の間は state の片付け(layout effect)を待たず、この描画から退場側を出さない。
+  const showLeaving = leaving != null && !settled;
+
   return (
     <>
-      {leaving ? (
+      {showLeaving && leaving ? (
         <Animated.View key={leaving.key} style={[StyleSheet.absoluteFill, exitStyle]}>
           {leaving.children}
           <AnimatedBlur progress={exit} direction="out" />
         </Animated.View>
       ) : null}
-      <Animated.View key={pageKey} style={[StyleSheet.absoluteFill, enterStyle]}>
+      <Animated.View key={pageKey} style={[StyleSheet.absoluteFill, settled ? null : enterStyle]}>
         {children}
-        {leaving ? <AnimatedBlur progress={enter} direction="in" /> : null}
+        {showLeaving ? <AnimatedBlur progress={enter} direction="in" /> : null}
       </Animated.View>
     </>
   );

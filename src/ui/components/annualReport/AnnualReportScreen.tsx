@@ -61,8 +61,13 @@ const SHARE_BUTTON_BOTTOM = 22;
 /** 共有ボタンの領域(タップ送りの領域から外す高さ)。 */
 const SHARE_AREA_HEIGHT = 70;
 
-/** 共有画像を撮る間の状態。hidePrivate なら非表示範囲を除いたルートで描き直す。 */
-type CaptureState = { hidePrivate: boolean };
+/**
+ * 共有画像を撮る間の状態。
+ * hiddenStayPlaces があれば、その滞在場所で非表示範囲を除いたルートで描き直す。選んだ時点の滞在場所を
+ * 写し取って持つのは、撮るまでの間に読み込み直し(activeStayPlaces が null になる)が起きても
+ * 生ルートへ戻らないようにするため(隠すと選んだのに隠さずに撮る fail-open を防ぐ)。
+ */
+type CaptureState = { hiddenStayPlaces: StayPlace[] | null };
 
 /** 次の描画フレームまで待つ。描き直したルートがネイティブ側に反映されてから撮るため。 */
 function waitForFrame(): Promise<void> {
@@ -102,20 +107,18 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
     () => (payload.farthestDay ? [payload.farthestDay.route.map(({ latitude, longitude }) => ({ latitude, longitude }))] : []),
     [payload.farthestDay],
   );
-  const hidePrivate = capture?.hidePrivate === true && activeStayPlaces != null;
+  // 隠すときは、選んだ時点で写し取った滞在場所だけを使う(現在の activeStayPlaces は見ない)
+  const hiddenStayPlaces = capture?.hiddenStayPlaces ?? null;
   const yearSegments = useMemo(
     () =>
-      hidePrivate && activeStayPlaces
-        ? toPrivacyCoordinateSegments(payload.yearRouteSegments, activeStayPlaces).map((segment) => segment.coordinates)
+      hiddenStayPlaces
+        ? toPrivacyCoordinateSegments(payload.yearRouteSegments, hiddenStayPlaces).map((segment) => segment.coordinates)
         : payload.yearRouteSegments,
-    [hidePrivate, activeStayPlaces, payload.yearRouteSegments],
+    [hiddenStayPlaces, payload.yearRouteSegments],
   );
   const farthestPrivacySegments = useMemo(
-    () =>
-      hidePrivate && activeStayPlaces
-        ? toPrivacyCoordinateSegments(farthestRoute, activeStayPlaces).map((segment) => segment.coordinates)
-        : null,
-    [hidePrivate, activeStayPlaces, farthestRoute],
+    () => (hiddenStayPlaces ? toPrivacyCoordinateSegments(farthestRoute, hiddenStayPlaces).map((segment) => segment.coordinates) : null),
+    [hiddenStayPlaces, farthestRoute],
   );
 
   /** 地図ページに描くルート(非表示範囲の判定対象)。 */
@@ -124,15 +127,16 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
   }
 
   /** 表示中のページを撮って共有する。撮る間は自動送りとページ内アニメーションを止め、完成状態で撮る。 */
-  async function startShare(hide: boolean): Promise<void> {
+  async function startShare(hiddenStayPlaces: StayPlace[] | null): Promise<void> {
     isSharingRef.current = true;
     player.pause();
-    setCapture({ hidePrivate: hide });
+    // capture を立てると遷移が打ち切られ(StoryTransitionView の settled)、ページは完成状態で描かれる
+    setCapture({ hiddenStayPlaces });
 
     await shareViewAsPng(captureRef, {
       dialogTitle: `すとろりあ 年間レポート ${payload.year}`,
       errorFallbackMessage: 'レポート画像を共有できませんでした。',
-      // 完成状態・描き直したルートが描画に反映されるまで2フレーム待つ
+      // 退場中ページの除去・完成状態・描き直したルートが描画に反映されるまで2フレーム待つ
       onBeforeCapture: async () => {
         await waitForFrame();
         await waitForFrame();
@@ -148,6 +152,14 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
     });
   }
 
+  /** 滞在場所を確認できないときのエラー表示(月次レポートと同じ文言)。 */
+  function alertStayPlacesUnavailable(): void {
+    Alert.alert(
+      STAY_PLACES_SHARE_UNAVAILABLE_TITLE,
+      stayPlacesStatus === 'error' ? STAY_PLACES_SHARE_ERROR_MESSAGE : STAY_PLACES_SHARE_LOADING_MESSAGE,
+    );
+  }
+
   /** 共有ボタン。地図ページは滞在場所の確認(fail-closed)と、非表示範囲がかかるときの確認ダイアログを挟む。 */
   function handleSharePress(): void {
     if (isSharingRef.current || isPrivacyDialogVisible) {
@@ -156,10 +168,7 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
     if (isMapPage(pageId)) {
       // 設定が壊れていても hasPrivacyRadiusInSegments は true を返すため、先に読込状態を確認して共有自体を止める
       if (stayPlacesStatus !== 'ready' || activeStayPlaces == null) {
-        Alert.alert(
-          STAY_PLACES_SHARE_UNAVAILABLE_TITLE,
-          stayPlacesStatus === 'error' ? STAY_PLACES_SHARE_ERROR_MESSAGE : STAY_PLACES_SHARE_LOADING_MESSAGE,
-        );
+        alertStayPlacesUnavailable();
         return;
       }
       if (hasPrivacyRadiusInSegments(routeSegmentsOf(pageId), activeStayPlaces)) {
@@ -169,7 +178,7 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
       }
     }
     // 共有の完了は待たない(エラーは shareViewAsPng 内で通知される)
-    void startShare(false);
+    void startShare(null);
   }
 
   /** 確認ダイアログでの選択。 */
@@ -179,7 +188,13 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
       player.resume();
       return;
     }
-    void startShare(choice === 'hide');
+    // ダイアログ表示中に読み込み直し・失敗になった場合は、地図ページの共有自体をやめる(fail-closed)
+    if (stayPlacesStatus !== 'ready' || activeStayPlaces == null) {
+      alertStayPlacesUnavailable();
+      player.resume();
+      return;
+    }
+    void startShare(choice === 'hide' ? [...activeStayPlaces] : null);
   }
 
   const pageProps: AnnualReportPageProps = {
@@ -216,13 +231,32 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
     }
   }
 
+  /** 共有中・確認ダイアログ表示中はタップ送りと長押しを受け付けない(その一時停止を解除させないため)。 */
+  const isTapDisabled = capture != null || isPrivacyDialogVisible;
+
+  /** 長押しで一時停止する。共有中など、ほかの理由で止めている間は何もしない。 */
+  function handleLongPress(): void {
+    if (isSharingRef.current || isPrivacyDialogVisible) return;
+    longPressedRef.current = true;
+    player.pause();
+  }
+
+  /** 指を離したとき、長押し自身が止めた場合だけ再開する。 */
+  function handlePressOut(): void {
+    if (!longPressedRef.current) return;
+    longPressedRef.current = false;
+    player.resume();
+  }
+
   const tapZoneVertical = { top: insets.top + 60, bottom: insets.bottom + SHARE_AREA_HEIGHT };
 
   return (
     <View style={annualReportStyles.screen}>
       {/* 共有画像に写す範囲。進行バー・閉じる・共有ボタンは含めない */}
       <View ref={captureRef} collapsable={false} style={annualReportStyles.capture}>
-        <StoryTransitionView pageKey={pageId}>{renderPage(pageId)}</StoryTransitionView>
+        <StoryTransitionView pageKey={pageId} settled={capture != null}>
+          {renderPage(pageId)}
+        </StoryTransitionView>
         <View style={[annualReportStyles.header, { top: insets.top + 26 }]}>
           <Image source={require('../../../../assets/icon.png')} style={annualReportStyles.headerIcon} />
           <View>
@@ -241,16 +275,9 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
         accessibilityLabel="前のページ"
         delayLongPress={LONG_PRESS_DELAY_MS}
         style={[annualReportStyles.tapZoneLeft, tapZoneVertical]}
-        onPressIn={() => {
-          longPressedRef.current = false;
-        }}
-        onLongPress={() => {
-          longPressedRef.current = true;
-          player.pause();
-        }}
-        onPressOut={() => {
-          if (longPressedRef.current) player.resume();
-        }}
+        disabled={isTapDisabled}
+        onLongPress={handleLongPress}
+        onPressOut={handlePressOut}
         onPress={player.prev}
       />
       <Pressable
@@ -258,16 +285,9 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
         accessibilityLabel="次のページ"
         delayLongPress={LONG_PRESS_DELAY_MS}
         style={[annualReportStyles.tapZoneRight, tapZoneVertical]}
-        onPressIn={() => {
-          longPressedRef.current = false;
-        }}
-        onLongPress={() => {
-          longPressedRef.current = true;
-          player.pause();
-        }}
-        onPressOut={() => {
-          if (longPressedRef.current) player.resume();
-        }}
+        disabled={isTapDisabled}
+        onLongPress={handleLongPress}
+        onPressOut={handlePressOut}
         onPress={player.next}
       />
 

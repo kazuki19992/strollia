@@ -83,4 +83,26 @@ describe('ストーリー切替コンテナ StoryTransitionView', () => {
     expect(screen.queryByText('ページb')).toBeNull();
     expect(screen.queryByText('ページa')).toBeNull();
   });
+
+  test('settled=true にすると遷移中でも退場中のページを消し、現在ページだけを完成状態で描く', async () => {
+    const view = (key: string, settled: boolean) => (
+      <StoryTransitionView pageKey={key} settled={settled}>
+        <Text>{`ページ${key}`}</Text>
+      </StoryTransitionView>
+    );
+    const { rerender } = await render(view('a', false));
+    await rerender(view('b', false));
+    expect(screen.queryByText('ページa')).toBeTruthy();
+
+    await rerender(view('b', true));
+
+    expect(screen.queryByText('ページa')).toBeNull();
+    expect(screen.queryByText('ページb')).toBeTruthy();
+    // 完成状態のため、入場中のぼかし(モックした BlurView)も残らない
+    expect(screen.container.queryAll((node) => (node.props as { tint?: string }).tint === 'dark')).toHaveLength(0);
+
+    // 解除後も退場中のページは戻らない
+    await rerender(view('b', false));
+    expect(screen.queryByText('ページa')).toBeNull();
+  });
 });

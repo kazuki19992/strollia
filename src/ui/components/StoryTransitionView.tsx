@@ -1,13 +1,11 @@
 import { BlurView } from 'expo-blur';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
 
 /** StoryTransitionView の props。 */
 export type StoryTransitionViewProps = {
   /** 表示中ページの識別子。変わるとトランジションが走る。 */
   pageKey: string;
-  /** 遷移の向き。 */
-  direction: 'next' | 'prev';
   /** 表示するページ内容。 */
   children: ReactNode;
 };
@@ -21,70 +19,6 @@ const EXIT_MS = 500;
 /** ぼかしの最大強度。 */
 const BLUR_MAX = 40;
 
-/**
- * ページ切り替え時に「ズーム＋ぼかし」でつなぐコンテナ。
- *
- * 入る側は scale 1.15→1・opacity 0→1（700ms）、出る側は scale 1→0.9・opacity 1→0（500ms）。
- * ぼかしは BlurView を重ねて intensity を下げて表現する。実機で重い場合は BlurView を外せば拡大縮小＋フェードのみになる。
- */
-export function StoryTransitionView({ pageKey, direction, children }: StoryTransitionViewProps) {
-  const [current, setCurrent] = useState<Layer>({ key: pageKey, children });
-  const [leaving, setLeaving] = useState<Layer | null>(null);
-  const enter = useRef(new Animated.Value(1)).current;
-  const exit = useRef(new Animated.Value(0)).current;
-  const currentRef = useRef(current);
-
-  useEffect(() => {
-    if (pageKey === currentRef.current.key) {
-      // 同一ページ内の再レンダーは内容だけ差し替える。
-      const updated = { key: pageKey, children };
-      currentRef.current = updated;
-      setCurrent(updated);
-      return;
-    }
-    setLeaving(currentRef.current);
-    const nextLayer = { key: pageKey, children };
-    currentRef.current = nextLayer;
-    setCurrent(nextLayer);
-    enter.setValue(0);
-    exit.setValue(0);
-    Animated.parallel([
-      Animated.timing(enter, { toValue: 1, duration: ENTER_MS, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
-      Animated.timing(exit, { toValue: 1, duration: EXIT_MS, easing: Easing.in(Easing.cubic), useNativeDriver: false }),
-    ]).start(({ finished }) => {
-      if (finished) setLeaving(null);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- pageKey の変化時のみ遷移を開始する
-  }, [pageKey]);
-
-  // 戻る場合も同じズーム方向を使う（direction は将来の向き別演出のために受け取る）。
-  void direction;
-
-  const enterStyle = {
-    opacity: enter,
-    transform: [{ scale: enter.interpolate({ inputRange: [0, 1], outputRange: [1.15, 1] }) }],
-  };
-  const exitStyle = {
-    opacity: exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-    transform: [{ scale: exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }) }],
-  };
-
-  return (
-    <>
-      {leaving ? (
-        <Animated.View key={leaving.key} style={[StyleSheet.absoluteFill, exitStyle]} pointerEvents="none">
-          {leaving.children}
-          <AnimatedBlur progress={exit} direction="out" />
-        </Animated.View>
-      ) : null}
-      <Animated.View key={current.key} style={[StyleSheet.absoluteFill, enterStyle]}>
-        {current.children}
-        {leaving ? <AnimatedBlur progress={enter} direction="in" /> : null}
-      </Animated.View>
-    </>
-  );
-}
-
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 /** 進行度に応じてぼかし強度を変える BlurView。入る側は強→0、出る側は0→強。 */
@@ -93,5 +27,80 @@ function AnimatedBlur({ progress, direction }: { progress: Animated.Value; direc
     inputRange: [0, 1],
     outputRange: direction === 'in' ? [BLUR_MAX, 0] : [0, BLUR_MAX],
   });
-  return <AnimatedBlurView pointerEvents="none" tint="dark" intensity={intensity as unknown as number} style={StyleSheet.absoluteFill} />;
+  // BlurView の intensity は number 型だが、Animated 経由でアニメーション値（補間ノード）を渡せるため型だけ合わせる。
+  return (
+    <AnimatedBlurView tint="dark" intensity={intensity as unknown as number} style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]} />
+  );
+}
+
+/**
+ * ページ切り替え時に「ズーム＋ぼかし」でつなぐコンテナ。
+ *
+ * 入る側は scale 1.15→1・opacity 0→1（700ms）、出る側は scale 1→0.9・opacity 1→0（500ms）。
+ * ぼかしは BlurView を重ねて intensity を下げて表現する。実機で重い場合は AnimatedBlur を外せば拡大縮小＋フェードのみになる。
+ * 現在ページは props から直接描画するため、children の更新が1レンダー遅れない。
+ * 遷移中にさらにページが変わった場合は、途中のアニメーションを止めて、直前に表示していたページを新たな退場側にして再開する。
+ */
+export function StoryTransitionView({ pageKey, children }: StoryTransitionViewProps) {
+  /** 直近にレンダーしたページ。次の遷移で退場側になる。 */
+  const lastShownRef = useRef<Layer>({ key: pageKey, children });
+  const [trackedKey, setTrackedKey] = useState(pageKey);
+  const [leaving, setLeaving] = useState<Layer | null>(null);
+  const enter = useRef(new Animated.Value(1)).current;
+  const exit = useRef(new Animated.Value(0)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  // render 中の state 更新（React 公式の「props 変化に応じた state 調整」）。描画前に退場側を確定させるため。
+  if (trackedKey !== pageKey) {
+    setTrackedKey(pageKey);
+    setLeaving(lastShownRef.current);
+  }
+
+  useEffect(() => {
+    lastShownRef.current = { key: pageKey, children };
+  });
+
+  useLayoutEffect(() => {
+    if (!leaving) return;
+    animationRef.current?.stop();
+    // 描画前に初期値へ戻し、新ページが一瞬フル表示されるちらつきを防ぐ。
+    enter.setValue(0);
+    exit.setValue(0);
+    const animation = Animated.parallel([
+      Animated.timing(enter, { toValue: 1, duration: ENTER_MS, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+      Animated.timing(exit, { toValue: 1, duration: EXIT_MS, easing: Easing.in(Easing.cubic), useNativeDriver: false }),
+    ]);
+    animationRef.current = animation;
+    animation.start(({ finished }) => {
+      if (finished) setLeaving(null);
+    });
+    // leaving が差し替わる（遷移開始）ごとにだけ走らせる。
+  }, [leaving, enter, exit]);
+
+  useEffect(() => () => animationRef.current?.stop(), []);
+
+  const enterStyle = {
+    opacity: enter,
+    transform: [{ scale: enter.interpolate({ inputRange: [0, 1], outputRange: [1.15, 1] }) }],
+  };
+  const exitStyle = {
+    opacity: exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+    transform: [{ scale: exit.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] }) }],
+    pointerEvents: 'none' as const,
+  };
+
+  return (
+    <>
+      {leaving ? (
+        <Animated.View key={leaving.key} style={[StyleSheet.absoluteFill, exitStyle]}>
+          {leaving.children}
+          <AnimatedBlur progress={exit} direction="out" />
+        </Animated.View>
+      ) : null}
+      <Animated.View key={pageKey} style={[StyleSheet.absoluteFill, enterStyle]}>
+        {children}
+        {leaving ? <AnimatedBlur progress={enter} direction="in" /> : null}
+      </Animated.View>
+    </>
+  );
 }

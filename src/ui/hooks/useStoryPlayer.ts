@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Animated, AppState, type AppStateStatus, Easing } from 'react-native';
 
 import { resolveAppStateStatus } from '@/ui/appStateStatus';
@@ -71,13 +71,17 @@ export function useStoryPlayer({ pageCount, durationMs = STORY_PAGE_DURATION_MS 
     return () => subscription.remove();
   }, []);
 
-  useEffect(() => {
+  // ページ変更直後の描画で前ページの progress が1フレーム見えないよう、描画前（layout）に初期化する。
+  useLayoutEffect(() => {
     if (startedIndexRef.current !== index) {
       startedIndexRef.current = index;
       remainingMsRef.current = durationMs;
       // 最後のページは自動送りしないため、進行バーは満タンのままにする。
       progress.setValue(index >= lastIndex ? 1 : 0);
     }
+  }, [index, lastIndex, durationMs, progress]);
+
+  useEffect(() => {
     if (index >= lastIndex || paused) {
       return;
     }
@@ -100,7 +104,10 @@ export function useStoryPlayer({ pageCount, durationMs = STORY_PAGE_DURATION_MS 
     return () => {
       clearTimeout(timer);
       animation.stop();
-      remainingMsRef.current = Math.max(0, remaining - (Date.now() - startedAtRef.current));
+      // ページが変わった場合は layout effect で残り時間を初期化済みのため、上書きしない。
+      if (startedIndexRef.current === index) {
+        remainingMsRef.current = Math.max(0, remaining - (Date.now() - startedAtRef.current));
+      }
     };
   }, [index, paused, lastIndex, durationMs, progress]);
 

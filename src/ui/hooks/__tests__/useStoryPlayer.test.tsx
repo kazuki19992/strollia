@@ -103,4 +103,46 @@ describe('ストーリー再生フック useStoryPlayer', () => {
 
     expect(result.current.index).toBe(1);
   });
+
+  test('pause中は進行度が止まり、resumeで残りから進む', async () => {
+    const { result } = await renderHook(() => useStoryPlayer({ pageCount: 3, durationMs: 1000 }));
+
+    await advance(500);
+    await act(async () => result.current.pause());
+    const paused = (result.current.progress as unknown as { __getValue(): number }).__getValue();
+    await advance(2000);
+    expect((result.current.progress as unknown as { __getValue(): number }).__getValue()).toBe(paused);
+    expect(paused).toBeGreaterThan(0);
+    expect(paused).toBeLessThan(1);
+
+    await act(async () => result.current.resume());
+    await advance(500);
+
+    expect(result.current.index).toBe(1);
+  });
+
+  test('ページが変わると進行度は0に戻り、最後のページでは1になる', async () => {
+    const { result } = await renderHook(() => useStoryPlayer({ pageCount: 2, durationMs: 1000 }));
+    const value = () => (result.current.progress as unknown as { __getValue(): number }).__getValue();
+
+    await advance(1000);
+    expect(result.current.index).toBe(1);
+    expect(value()).toBe(1);
+
+    await act(async () => result.current.prev());
+    expect(value()).toBe(0);
+  });
+
+  test('アンマウント後は進行度が動かない（アニメーションとタイマーが止まる）', async () => {
+    const { result, unmount } = await renderHook(() => useStoryPlayer({ pageCount: 3 }));
+    const { progress } = result.current;
+    await advance(1000);
+    const valueAtUnmount = (progress as unknown as { __getValue(): number }).__getValue();
+
+    await unmount();
+    // RTL自身がテスト環境用のタイマーを残すため getTimerCount では判定せず、時間経過後の進行度で止まったことを確認する。
+    await advance(STORY_PAGE_DURATION_MS * 2);
+
+    expect((progress as unknown as { __getValue(): number }).__getValue()).toBe(valueAtUnmount);
+  });
 });

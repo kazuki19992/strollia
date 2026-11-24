@@ -1,5 +1,6 @@
 import { Animated, View } from 'react-native';
 
+import { getStoryProgressLabel } from '@/ui/appText';
 import type { AppStyles } from '@/ui/appStyles';
 
 /** StoryProgressBar の props。 */
@@ -25,7 +26,7 @@ export function StoryProgressBar({ pageCount, index, progress, styles }: StoryPr
       style={styles.storyProgressRow}
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={`${index + 1} / ${pageCount} ページ`}
+      accessibilityLabel={getStoryProgressLabel(index, pageCount)}
     >
       {Array.from({ length: pageCount }, (_, i) => (
         <View key={i} style={styles.storyProgressSegment}>

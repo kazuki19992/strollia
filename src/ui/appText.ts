@@ -197,3 +197,8 @@ export const LANDMARK_PACK_PLUS_TEASER_CTA = 'Plusでもっと挑戦する';
 export const LANDMARK_PACK_PLUS_TEASER_HEADLINE = 'ほかにも色々！';
 /** 販促の見出しの下に小さく置く、Plus用パックの例。全件を並べず「And more!」で締め、件数を伏せる。 */
 export const LANDMARK_PACK_PLUS_TEASER_EXAMPLES = 'のぼれる灯台 日本三景 博物館 And more!';
+
+/** ストーリー進行バーのアクセシビリティラベル（現在ページ / 総ページ数）。 */
+export function getStoryProgressLabel(index: number, pageCount: number): string {
+  return `${index + 1} / ${pageCount} ページ`;
+}

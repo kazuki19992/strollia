@@ -1,5 +1,5 @@
 import { Platform, StyleSheet, Animated } from 'react-native';
-import { cleanup, render, screen, fireEvent, act } from '@testing-library/react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { NUMERIC_DISPLAY_FONT } from '@/theme/fonts';
 import { lightTheme } from '@/theme/theme';
@@ -165,13 +165,41 @@ describe('地図画面 MapScreen', () => {
   });
 
   describe('年間レポートのふりかえりボタン', () => {
-    test('年間レポートがあるときだけボタンを表示する', async () => {
+    test('年間レポートがないときはボタンを表示しない', async () => {
       await render(<MapScreen {...createProps()} />);
-      expect(screen.queryByText('ふりかえり')).toBeNull();
 
-      await cleanup();
+      expect(screen.queryByText('ふりかえり')).toBeNull();
+    });
+
+    test('年間レポートがあるときだけボタンを表示する', async () => {
       await render(<MapScreen {...createProps()} isAnnualReportAvailable annualReportDaysLeft={5} onOpenAnnualReport={jest.fn()} />);
+
       expect(screen.getByText('ふりかえり')).toBeTruthy();
+    });
+
+    test('通常フローの先頭に置かれ、後続の写真ステータス帯の上に表示される(絶対配置ではない)', async () => {
+      await render(
+        <MapScreen
+          {...createProps()}
+          showPhotosOnMap
+          isLoadingPhotos
+          isAnnualReportAvailable
+          annualReportDaysLeft={5}
+          onOpenAnnualReport={jest.fn()}
+        />,
+      );
+
+      // ボタンから上のオーバーレイ(SafeAreaView)までの祖先に絶対配置がないこと。
+      // 絶対配置だとSafeAreaViewのinsetが効かず、iOSでステータスバーの下に潜る
+      let node = screen.getByText('ふりかえり').parent;
+      let checked = 0;
+      while (node && String(node.type) !== 'SafeAreaView') {
+        expect(StyleSheet.flatten(node.props.style)?.position).not.toBe('absolute');
+        checked += 1;
+        node = node.parent;
+      }
+      expect(node).not.toBeNull();
+      expect(checked).toBeGreaterThan(0);
     });
 
     test('バッジに残り日数を表示し、アクセシビリティラベルにも含める', async () => {

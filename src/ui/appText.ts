@@ -220,3 +220,14 @@ export const STAY_PLACES_SHARE_UNAVAILABLE_TITLE = '共有できません';
 export const STAY_PLACES_SHARE_ERROR_MESSAGE = '滞在場所を読み込めないため、共有を準備できません。';
 /** 滞在場所の読み込み中で共有をまだ準備できないときの説明(月次レポートと同じ文言)。 */
 export const STAY_PLACES_SHARE_LOADING_MESSAGE = '滞在場所を確認中です。共有は確認後に利用できます。';
+
+/** 地図画面の年間レポート(ふりかえり)ボタンのラベル。 */
+export const ANNUAL_REPORT_MAP_BUTTON_LABEL = 'ふりかえり';
+/** 年間レポートボタンのバッジ文言。公開終了までの残り日数を表す。 */
+export function formatAnnualReportMapButtonBadge(daysLeft: number): string {
+  return `あと${daysLeft}日`;
+}
+/** 年間レポートボタンのアクセシビリティラベル。残り日数が不明な場合は日数を含めない。 */
+export function formatAnnualReportMapButtonAccessibilityLabel(daysLeft: number | null): string {
+  return daysLeft === null ? '年間レポートをふりかえる' : `年間レポートをふりかえる（${formatAnnualReportMapButtonBadge(daysLeft)}）`;
+}

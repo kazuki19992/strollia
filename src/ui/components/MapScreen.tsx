@@ -9,7 +9,12 @@ import { MapPhotoCluster } from '@/features/photos/photoClusters';
 import { getStayPlaceEmoji } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
 import { formatStayPlacePrivacyRadius } from '@/features/stayPlaces/stayPlacePrivacy';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
-import { PHOTO_LIBRARY_SCANNING_MESSAGE } from '@/ui/appText';
+import {
+  ANNUAL_REPORT_MAP_BUTTON_LABEL,
+  formatAnnualReportMapButtonAccessibilityLabel,
+  formatAnnualReportMapButtonBadge,
+  PHOTO_LIBRARY_SCANNING_MESSAGE,
+} from '@/ui/appText';
 import { AreaLabel } from '@/ui/areaName';
 import { AppTheme } from '@/theme/theme';
 import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
@@ -327,6 +332,31 @@ export function MapScreen({
       </Dialog>
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
+        {/*
+          ふりかえりボタンは通常フローの先頭に置く。SafeAreaViewのinsetは通常フローの子にだけ効き、
+          絶対配置の子には効かない(iOSでステータスバー/Dynamic Islandの下に潜る)ため。
+          後続のステータス帯・権限カードはボタンの下へ押し下げられ、重ならない
+        */}
+        {isAnnualReportAvailable && (
+          <View
+            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'box-none'}
+            // Androidはセーフエリアが効かないため、ステータスバーの高さ分だけ下げる
+            style={[
+              styles.badgeFloatingButtonContainer,
+              { marginTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0) },
+            ]}
+          >
+            <BadgeFloatingButton
+              label={ANNUAL_REPORT_MAP_BUTTON_LABEL}
+              badgeText={annualReportDaysLeft === null ? null : formatAnnualReportMapButtonBadge(annualReportDaysLeft)}
+              accessibilityLabel={formatAnnualReportMapButtonAccessibilityLabel(annualReportDaysLeft)}
+              disabled={isMapDisplayPanelVisible}
+              onPress={() => onOpenAnnualReport?.()}
+              styles={styles}
+            />
+          </View>
+        )}
+
         {!hasAnyLocationPoints && (
           <View style={styles.emptyCard}>
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.emptyTitle}>
@@ -390,25 +420,6 @@ export function MapScreen({
                 {line}
               </Text>
             ))}
-          </View>
-        )}
-
-        {isAnnualReportAvailable && (
-          <View
-            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'box-none'}
-            // Androidはセーフエリアが効かないため、ステータスバーの高さ分だけ下げる
-            style={[styles.badgeFloatingButtonContainer, { top: 12 + (Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0) }]}
-          >
-            <BadgeFloatingButton
-              label="ふりかえり"
-              badgeText={annualReportDaysLeft === null ? null : `あと${annualReportDaysLeft}日`}
-              accessibilityLabel={
-                annualReportDaysLeft === null ? '年間レポートをふりかえる' : `年間レポートをふりかえる（あと${annualReportDaysLeft}日）`
-              }
-              disabled={isMapDisplayPanelVisible}
-              onPress={() => onOpenAnnualReport?.()}
-              styles={styles}
-            />
           </View>
         )}
 

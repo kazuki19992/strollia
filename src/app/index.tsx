@@ -88,6 +88,9 @@ export default function MapRoute(): React.ReactElement {
           onUpdateShowPhotosOnMap={s.updateShowPhotosOnMap}
           onUpdateShowStayPlacesOnMap={s.updateShowStayPlacesOnMap}
           onOpenSettings={s.openSettings}
+          isAnnualReportAvailable={Boolean(s.annualReport)}
+          annualReportDaysLeft={s.annualReportDaysLeft}
+          onOpenAnnualReport={s.openAnnualReport}
           onRequestLocationPermission={s.requestLocationPermission}
           onRecenterOnUserLocation={s.recenterOnUserLocation}
         />

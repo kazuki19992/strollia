@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Image, Platform, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Animated, Image, Platform, Pressable, SafeAreaView, StatusBar, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import { useEffect, useMemo, useState } from 'react';
@@ -14,6 +14,7 @@ import { AreaLabel } from '@/ui/areaName';
 import { AppTheme } from '@/theme/theme';
 import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import { AppStyles } from '@/ui/appStyles';
+import { BadgeFloatingButton } from './BadgeFloatingButton';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
 import { Dialog } from './Dialog';
@@ -138,6 +139,15 @@ export type MapScreenProps = {
   onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
   /** 設定画面を開くハンドラ。 */
   onOpenSettings: () => void;
+  /**
+   * 年間レポートのふりかえりボタンを表示するか。公開期間中で表示できるレポートがあるときだけtrue。
+   * 省略時はfalse。
+   */
+  isAnnualReportAvailable?: boolean;
+  /** 年間レポートの公開終了までの残り日数。ボタンのバッジに表示する。 */
+  annualReportDaysLeft?: number | null;
+  /** 年間レポート(ストーリー)を開くハンドラ。 */
+  onOpenAnnualReport?: () => void;
   /** 位置情報権限要求ハンドラ。 */
   onRequestLocationPermission: () => void;
   /** 現在地へ戻るハンドラ。 */
@@ -190,10 +200,15 @@ export function MapScreen({
   onUpdateShowPhotosOnMap,
   onUpdateShowStayPlacesOnMap,
   onOpenSettings,
+  isAnnualReportAvailable = false,
+  annualReportDaysLeft = null,
+  onOpenAnnualReport,
   onRequestLocationPermission,
   onRecenterOnUserLocation,
   onCustomIconError,
 }: MapScreenProps) {
+  /** 地図表示設定パネルを開いている間は、ふりかえりボタンも他の操作と同じく無効化する。 */
+  const [isMapDisplayPanelVisible, setIsMapDisplayPanelVisible] = useState(false);
   const shouldRenderVisitedGrid = gridOverlayOpacity > 0;
   // カスタム画像マーカーは画像ロード完了までネイティブスナップショットを更新し続ける。
   // ロード後はパフォーマンスのため更新を止める。
@@ -378,7 +393,27 @@ export function MapScreen({
           </View>
         )}
 
+        {isAnnualReportAvailable && (
+          <View
+            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'box-none'}
+            // Androidはセーフエリアが効かないため、ステータスバーの高さ分だけ下げる
+            style={[styles.badgeFloatingButtonContainer, { top: 12 + (Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0) }]}
+          >
+            <BadgeFloatingButton
+              label="ふりかえり"
+              badgeText={annualReportDaysLeft === null ? null : `あと${annualReportDaysLeft}日`}
+              accessibilityLabel={
+                annualReportDaysLeft === null ? '年間レポートをふりかえる' : `年間レポートをふりかえる（あと${annualReportDaysLeft}日）`
+              }
+              disabled={isMapDisplayPanelVisible}
+              onPress={() => onOpenAnnualReport?.()}
+              styles={styles}
+            />
+          </View>
+        )}
+
         <MapBottomDashboard
+          onMapDisplayPanelVisibleChange={setIsMapDisplayPanelVisible}
           styles={styles}
           theme={theme}
           mapType={mapType}

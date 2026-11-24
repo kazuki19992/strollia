@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 import {
   ANNUAL_REPORT_NOTIFICATION_CHANNEL_ID,
+  cancelAnnualReportNotification,
   parseAnnualReportNotification,
   scheduleAnnualReportNotification,
   setupAnnualReportNotificationChannel,
@@ -30,6 +31,23 @@ describe('年間レポート通知 annualReportNotificationService', () => {
 
   afterEach(() => {
     Platform.OS = originalPlatformOS;
+  });
+
+  describe('cancelAnnualReportNotification', () => {
+    it('対象年の予約済み通知を識別子で取り消す', async () => {
+      await cancelAnnualReportNotification(2026);
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('annual-report-2026');
+    });
+
+    it('取り消しに失敗しても例外を投げない', async () => {
+      (Notifications.cancelScheduledNotificationAsync as jest.Mock).mockRejectedValueOnce(new Error('native error'));
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      await expect(cancelAnnualReportNotification(2026)).resolves.toBeUndefined();
+      expect(warnSpy).toHaveBeenCalledWith('Failed to cancel annual report notification:', expect.any(Error));
+      warnSpy.mockRestore();
+    });
   });
 
   describe('setupAnnualReportNotificationChannel', () => {

@@ -4,7 +4,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import { reportInvestigatedError } from '@/config/sentry';
 import { developmentFlags } from '@/config/developmentFlags';
 import { createInitialProgress, runAnnualReportStep } from '@/features/annualReport/annualReportAggregator';
-import { scheduleAnnualReportNotification } from '@/features/annualReport/annualReportNotificationService';
+import { cancelAnnualReportNotification, scheduleAnnualReportNotification } from '@/features/annualReport/annualReportNotificationService';
 import {
   daysUntilPublishEnd,
   isPublishPeriod,
@@ -48,6 +48,11 @@ export type AnnualReportState = {
    * - 開発用フラグ時: 起動時の削除で作り直し中でも通知タップから開く流れを確認できるよう、作り直しが終わるまで待つ(spec §10.1)。
    */
   deferNotificationOpen: (year: number) => void;
+  /**
+   * 「すべてのデータを削除」が成功したあとに呼ぶ。表示中のレポートを消し、予約済みの通知を取り消し、
+   * 実行中の集計・評価の結果を捨てる(削除したレポートを保存し直したり表示し直したりしないため)。
+   */
+  resetAfterDataDeletion: () => void;
 };
 
 /** `useAnnualReportState` の引数。 */
@@ -146,6 +151,11 @@ export function useAnnualReportState({
   const [settledEvaluationCount, setSettledEvaluationCount] = useState(0);
   /** `settledEvaluationCount` の最新値。待ち始めの時点の回数を、レンダーを待たずに記録するために使う。 */
   const settledEvaluationCountRef = useRef(0);
+  /**
+   * データ削除の世代番号。`resetAfterDataDeletion` で増える。
+   * ステップ・評価は開始時の値を覚え、途中で変わっていたら結果を保存・表示せずに終わる。
+   */
+  const dataEpochRef = useRef(0);
   /** アンマウント後に state を更新しないためのフラグ。 */
   const mountedRef = useRef(true);
   /** 最新の runStep。予約したステップから、宣言順に依存せず呼び出すために ref で持つ。 */
@@ -219,8 +229,12 @@ export function useAnnualReportState({
 
   /** 1ステップを実行して結果を保存し、必要なら次を予約する。 */
   async function runStep(window: AnnualReportWindow, progress: AnnualReportProgress): Promise<void> {
+    const epoch = dataEpochRef.current;
+    /** 実行中にデータ削除があったか。あればループは削除時に閉じているため、状態に触れずに終わる。 */
+    const isStale = () => epoch !== dataEpochRef.current;
     try {
       const result = await runAnnualReportStep(window, progress, alwaysAvailableRef.current);
+      if (isStale()) return;
 
       if (restartRequestedRef.current) {
         // 開発用フラグ時に閉じる操作でやり直しを求められた。実行中だった結果は捨てて最初から進める
@@ -231,14 +245,17 @@ export function useAnnualReportState({
 
       if (result.kind === 'progressed') {
         await saveAnnualReportProgress(window.year, result.progress);
+        if (isStale()) return;
         scheduleStep(window, result.progress);
         return;
       }
 
       if (result.kind === 'completed') {
         await completeAnnualReport(window.year, result.payload);
+        if (isStale()) return;
         applyCompletedReport(window, result.payload);
         await scheduleNotificationOnce(window);
+        if (isStale()) return;
       } else {
         // 記録が少ない年はレポートを作らないため何も保存しない。前面復帰のたびに判定し直さないよう覚えておく
         insufficientYearRef.current = window.year;
@@ -253,6 +270,7 @@ export function useAnnualReportState({
       // 保存まで終えてからループを閉じる。途中で前面復帰の評価が走っても二重に集計させないため
       endLoop();
     } catch (error: unknown) {
+      if (isStale()) return;
       failedRef.current = true;
       endLoop();
       reportSafely(error, { year: window.year, nextMonth: progress.nextMonth });
@@ -276,6 +294,7 @@ export function useAnnualReportState({
 
   /** 現在時刻で対象年を決め直し、保存済みレポートの表示か集計の開始を行う。 */
   const evaluate = useCallback(async () => {
+    const epoch = dataEpochRef.current;
     const window = resolveAggregationWindow(nowRef.current(), alwaysAvailableRef.current);
     if (!window) {
       if (mountedRef.current) setDisplay(EMPTY_DISPLAY);
@@ -292,16 +311,20 @@ export function useAnnualReportState({
     const loopWasActive = loopActiveRef.current;
     const generationAtRead = loopGenerationRef.current;
     const record = await getAnnualReport(window.year);
+    // 読み込み中にデータが削除された場合、読んだ記録は削除前のものなので使わない
+    if (epoch !== dataEpochRef.current) return;
     if (record?.status === 'completed') {
       applyCompletedReport(window, record.payload);
       return;
     }
 
-    // 未完了のときは、同じ年のメモリ上のレポート(開発用フラグ時の作り直し中)だけ公開期間中なら表示し続ける
+    // 未完了のときは、開発用フラグ時の作り直し中に限り、同じ年のメモリ上のレポートを公開期間中なら表示し続ける。
+    // 本番で行が無い・未完了なら表示しない(削除済みのレポートを見せ続けないため)
     if (mountedRef.current) {
       const current = nowRef.current();
+      const keepPrevious = alwaysAvailableRef.current;
       setDisplay((previous) =>
-        previous.report && previous.report.year === window.year && isPublishPeriod(current, window.year, alwaysAvailableRef.current)
+        keepPrevious && previous.report && previous.report.year === window.year && isPublishPeriod(current, window.year, true)
           ? { report: previous.report, daysLeft: daysUntilPublishEnd(current, window.publishEnd) }
           : EMPTY_DISPLAY,
       );
@@ -409,6 +432,25 @@ export function useAnnualReportState({
     [isReady, runEvaluate],
   );
 
+  const resetAfterDataDeletion = useCallback(() => {
+    // 実行中のステップ・評価の結果を捨てる。ループは閉じ、予約済みのステップも取り消す
+    dataEpochRef.current += 1;
+    cancelScheduledRef.current?.();
+    cancelScheduledRef.current = null;
+    endLoop();
+    restartRequestedRef.current = false;
+    // 記録が消えたため、記録日数不足・失敗の判定もやり直せるようにする
+    insufficientYearRef.current = null;
+    failedRef.current = false;
+    pendingOpenRef.current = null;
+    if (mountedRef.current) setDisplay(EMPTY_DISPLAY);
+
+    const window = resolveAggregationWindow(nowRef.current(), alwaysAvailableRef.current);
+    if (window) {
+      cancelAnnualReportNotification(window.year).catch(() => undefined);
+    }
+  }, [endLoop]);
+
   return {
     availableReport: display.report,
     daysLeft: display.daysLeft,
@@ -416,5 +458,6 @@ export function useAnnualReportState({
     onReportOpened,
     onReportClosed,
     deferNotificationOpen,
+    resetAfterDataDeletion,
   };
 }

@@ -189,7 +189,7 @@ Expo managed checkoutでは `ios/` や `android/` が存在しない場合があ
 
 - ルート: `src/app/annual-report.tsx`(`/annual-report`、トップレベル。月次レポートと同様に地図から開く)。レポートが無ければ地図へ戻す
 - 機能層: `src/features/annualReport/`。期間判定(`annualReportPeriod.ts`)、集計クエリ・集計(`annualReportQueries.ts` / `annualReportAggregator.ts`)、JSON保存(`annualReportRepository.ts`、`annual_reports` テーブル)、通知(`annualReportNotificationService.ts`)、ページ構成と文言(`annualReportPages.ts` / `annualReportCopy.ts`)
-- 状態: `useAnnualReportState`(集計の起動・途中再開・保存・閉じた後処理)、`useAnnualReportNotificationResponse`(通知タップで画面を開く)を `AppStateProvider` から結線する。GPS記録処理(`backgroundLocationTask` など)には触れない
+- 状態: `useAnnualReportState`(集計の起動・途中再開・保存・閉じた後処理)、`useAnnualReportNotificationResponse`(通知タップで画面を開く)を `AppStateProvider` から結線する。設定の「すべてのデータの削除」が成功したら `resetAfterDataDeletion` で表示中のレポート・実行中の集計・予約済み通知を破棄する。GPS記録処理(`backgroundLocationTask` など)には触れない
 - UI: `src/ui/components/annualReport/`(ストーリー画面と各ページ、固定ダーク配色の `annualReportStyles.ts`)。汎用部品として `StoryProgressBar` / `StoryTransitionView`(ズーム+ぼかし)/ `useStoryPlayer`(7秒自動送り・タップ・長押し)/ `useStoryTimeline` と、地図の `BadgeFloatingButton` を `src/ui/components/` に置く
 - 開発用フラグ: `EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE=true`(`developmentFlags.annualReportAlwaysAvailable`)。期間外でも動作確認でき、記録7日以上の条件を無視し、起動ごとの再集計、レポートを開いたとき・閉じたときの保存データ削除(「保存データなし」から作り直す流れの確認用)、集計完了10秒後の通知予約、ふりかえりボタンの常時表示を行う。production ビルドには設定しない(`scripts/build-and-submit-ios.sh` は `false` を明示する)。設定が紛れ込んでも、`EXPO_PUBLIC_STROLLIA_BUILD_PROFILE=production` のビルドではコード側で常に無効にする
 

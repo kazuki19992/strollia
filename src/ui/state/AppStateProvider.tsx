@@ -951,6 +951,12 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }, []);
 
+  /**
+   * 全削除の成功後に年間レポートの状態をリセットする関数。
+   * useAnnualReportState はこのコールバックより後で呼ぶため、ref 経由で最新の関数を参照する。
+   */
+  const resetAnnualReportAfterDataDeletionRef = useRef<() => void>(() => undefined);
+
   /** 確認ダイアログを挟んで保存済みデータを全削除する。 */
   const deleteAllData = useCallback(async (): Promise<void> => {
     Alert.alert('すべてのデータを削除', '保存済みのGPSログ、訪問エリア、実績の解除状況をすべて削除します。この操作は取り消せません。', [
@@ -961,6 +967,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         onPress: () => {
           deleteAllUserData()
             .then(async () => {
+              // 削除したレポートを表示・共有し続けたり、実行中の集計が保存し直したり、予約済みの通知が届いたりしないようにする
+              resetAnnualReportAfterDataDeletionRef.current();
               // 全削除では landmark_spot_visits / landmark_area_visits も消えるため、スポット・地点の到達も合わせて読み直す
               await refreshDeletedUserDataState(refreshData, stableRefreshAchievementState);
               // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
@@ -1082,6 +1090,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
 
   // 待たせた通知タップは、表示できるようになった時点のレンダーの openAnnualReport で開く
   const annualReportState = useAnnualReportState({ isReady, onDeferredOpen: () => openAnnualReport() });
+  resetAnnualReportAfterDataDeletionRef.current = annualReportState.resetAfterDataDeletion;
   // 保存済みレポートの読み込みが終わるまで待ってから通知タップを処理する(コールドスタートで取りこぼさないため)
   useAnnualReportNotificationResponse({
     isReady: isReady && annualReportState.hasEvaluated,

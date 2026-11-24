@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
-import { AppState } from 'react-native';
+import { Alert, AppState } from 'react-native';
 
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
@@ -281,6 +281,17 @@ jest.mock('@/ui/components/DailyLogDetailScreen', () => {
 });
 jest.mock('@/ui/components/LicenseScreen', () => ({ LicenseScreen: () => null, LicenseDetailScreen: () => null }));
 jest.mock('@/ui/components/DailyLogsScreen', () => ({ DailyLogsScreen: () => null }));
+// 設定画面は「すべてのデータの削除」の結線だけを確かめるため、その操作のボタンだけを描くモックにする
+jest.mock('@/ui/components/SettingsScreen', () => {
+  const { Pressable, Text } = require('react-native');
+  return {
+    SettingsScreen: ({ onDeleteAllData }: { onDeleteAllData: () => void }) => (
+      <Pressable accessibilityLabel="すべてのデータの削除" accessibilityRole="button" onPress={onDeleteAllData}>
+        <Text>すべてのデータの削除</Text>
+      </Pressable>
+    ),
+  };
+});
 
 /** useAnnualReportState が返す内容。各テストで書き換える。 */
 const mockAnnualReportState = {
@@ -290,6 +301,7 @@ const mockAnnualReportState = {
   onReportOpened: jest.fn(),
   onReportClosed: jest.fn(),
   deferNotificationOpen: jest.fn(),
+  resetAfterDataDeletion: jest.fn(),
 };
 
 jest.mock('@/ui/hooks/useAnnualReportState', () => ({
@@ -379,5 +391,25 @@ describe('地図画面の年間レポートふりかえりボタン', () => {
     expect(router.getPathname()).toBe('/annual-report');
     expect(screen.getByText('年間レポート画面')).toBeTruthy();
     expect(mockAnnualReportState.onReportOpened).toHaveBeenCalledTimes(1);
+  });
+  test('設定の「すべてのデータの削除」が成功したら年間レポートの状態をリセットする', async () => {
+    mockAnnualReportState.availableReport = { year: 2026 };
+    mockAnnualReportState.daysLeft = 20;
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    await renderRouter('src/app', { initialUrl: '/settings' });
+    await flushPromises();
+
+    await fireEvent.press(screen.getByLabelText('すべてのデータの削除'));
+    // 確認ダイアログの「削除する」を押したことにする
+    const buttons = alertSpy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
+    await act(async () => {
+      buttons.find((button) => button.text === '削除する')?.onPress?.();
+    });
+    await flushPromises();
+
+    const { deleteAllUserData } = require('@/features/logs/logRepository');
+    expect(deleteAllUserData).toHaveBeenCalledTimes(1);
+    expect(mockAnnualReportState.resetAfterDataDeletion).toHaveBeenCalledTimes(1);
   });
 });

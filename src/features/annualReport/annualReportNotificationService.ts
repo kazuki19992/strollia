@@ -67,6 +67,19 @@ export async function scheduleAnnualReportNotification(year: number, at: Date): 
 }
 
 /**
+ * 対象年の予約済みの年間レポート通知を取り消す。
+ * 「すべてのデータを削除」で消したレポートの通知が、あとから届かないようにするために使う。
+ * 失敗しても呼び出し元を止めない(通知が残るだけで、データの削除自体は済んでいるため)。
+ */
+export async function cancelAnnualReportNotification(year: number): Promise<void> {
+  try {
+    await Notifications.cancelScheduledNotificationAsync(annualReportNotificationId(year));
+  } catch (error: unknown) {
+    console.warn('Failed to cancel annual report notification:', error);
+  }
+}
+
+/**
  * 通知データが年間レポート通知のものであれば対象年を返す。
  *
  * タップ時の遷移先判定に使う。別種の通知や year が整数でないデータは null。

@@ -11,12 +11,6 @@ const mockOpenAppStorePage = jest.fn();
 let mockLatestUpdateNoticeDialogProps: Record<string, unknown> | null = null;
 
 // expo-router の Stack / usePathname / useRouter をスタブ化する
-// 年間レポートの集計は実際の日付(12/16〜1/15)で起動するため、日付に依存しないよう集計期間外として扱う
-jest.mock('@/features/annualReport/annualReportPeriod', () => ({
-  ...jest.requireActual('@/features/annualReport/annualReportPeriod'),
-  resolveAggregationWindow: jest.fn(() => null),
-}));
-
 jest.mock('expo-router', () => ({
   Stack: () => null,
   usePathname: () => mockPathname,

@@ -12,6 +12,9 @@ import type { AnnualReportProgress } from '@/features/annualReport/annualReportT
 import { getLocationPointsByDate, getLocationPointsByMonth } from '@/features/logs/logRepository';
 import type { LocationPoint } from '@/types/gps';
 
+// 共通セットアップ(jest/setupAnnualReportPeriodMock.js)の期間判定モックを外し、実装を使う
+jest.unmock('@/features/annualReport/annualReportPeriod');
+
 // requireActual で toLocalDayStartIso を使うため、クエリモジュールが読む実DB接続を差し替える
 jest.mock('@/db/database', () => ({ db: {} }));
 

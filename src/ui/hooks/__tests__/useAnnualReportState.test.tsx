@@ -14,6 +14,9 @@ import {
 import type { AnnualReportPayloadV1, AnnualReportProgress, AnnualReportRecord } from '@/features/annualReport/annualReportTypes';
 import { useAnnualReportState } from '@/ui/hooks/useAnnualReportState';
 
+// 共通セットアップ(jest/setupAnnualReportPeriodMock.js)の期間判定モックを外し、実装を使う
+jest.unmock('@/features/annualReport/annualReportPeriod');
+
 jest.mock('@/config/sentry', () => ({
   reportInvestigatedError: jest.fn(),
 }));

@@ -6,6 +6,9 @@ import {
   resolveNotificationTime,
 } from '@/features/annualReport/annualReportPeriod';
 
+// 共通セットアップ(jest/setupAnnualReportPeriodMock.js)の期間判定モックを外し、実装を使う
+jest.unmock('@/features/annualReport/annualReportPeriod');
+
 describe('年次レポートの期間判定 annualReportPeriod', () => {
   it('12月15日は集計を起動しない', () => expect(resolveAggregationWindow(new Date(2026, 11, 15, 23, 59), false)).toBeNull());
   it('12月16日は当年を集計期間1/1〜12/15で起動する', () =>

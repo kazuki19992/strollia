@@ -2,12 +2,6 @@ import { render, screen } from '@testing-library/react-native';
 import AppEntry from '@/app/index';
 
 // expo-router のフックをスタブ化する
-// 年間レポートの集計は実際の日付(12/16〜1/15)で起動するため、日付に依存しないよう集計期間外として扱う
-jest.mock('@/features/annualReport/annualReportPeriod', () => ({
-  ...jest.requireActual('@/features/annualReport/annualReportPeriod'),
-  resolveAggregationWindow: jest.fn(() => null),
-}));
-
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
   usePathname: () => '/',

@@ -45,12 +45,6 @@ import { filterDismissedAchievementNotifications } from '@/features/achievements
 import type { LocationPoint } from '@/types/gps';
 import type { GpxImportProgressDialogProps } from '@/ui/components/GpxImportProgressDialog';
 
-// 年間レポートの集計は実際の日付(12/16〜1/15)で起動するため、日付に依存しないよう集計期間外として扱う
-jest.mock('@/features/annualReport/annualReportPeriod', () => ({
-  ...jest.requireActual('@/features/annualReport/annualReportPeriod'),
-  resolveAggregationWindow: jest.fn(() => null),
-}));
-
 jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'Light' },
   impactAsync: jest.fn().mockResolvedValue(undefined),

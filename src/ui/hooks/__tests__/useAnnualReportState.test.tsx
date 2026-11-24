@@ -913,4 +913,72 @@ describe('年間レポート状態hook useAnnualReportState', () => {
 
     expect(result.current.availableReport).toBeNull();
   });
+  describe('前面のまま日付をまたいだとき', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('次の0時を過ぎたら評価し直し、公開開始日ならレポートを表示する', async () => {
+      jest.useFakeTimers();
+      const payload = makePayload(2026);
+      (getAnnualReport as jest.Mock).mockResolvedValue(completedRecord(payload));
+      let current = new Date(2026, 11, 19, 23, 59, 0);
+
+      const { result } = await renderHook(() => useAnnualReportState({ isReady: true, now: () => current, alwaysAvailable: false }));
+      await flushPromises();
+      expect(result.current.availableReport).toBeNull();
+      const callsBefore = (getAnnualReport as jest.Mock).mock.calls.length;
+
+      // 0時の直前ではまだ評価し直さない
+      await act(async () => {
+        jest.advanceTimersByTime(30_000);
+      });
+      expect((getAnnualReport as jest.Mock).mock.calls.length).toBe(callsBefore);
+
+      current = new Date(2026, 11, 20, 0, 0, 5);
+      await act(async () => {
+        jest.advanceTimersByTime(35_000);
+      });
+      await flushPromises();
+
+      expect((getAnnualReport as jest.Mock).mock.calls.length).toBe(callsBefore + 1);
+      expect(result.current.availableReport).toBe(payload);
+      expect(result.current.daysLeft).not.toBeNull();
+    });
+
+    it('背面に回ったら0時の評価を予約しない', async () => {
+      jest.useFakeTimers();
+      (getAnnualReport as jest.Mock).mockResolvedValue(null);
+      const current = new Date(2026, 11, 19, 23, 59, 0);
+
+      await renderHook(() => useAnnualReportState({ isReady: true, now: () => current, alwaysAvailable: false }));
+      await flushPromises();
+      await emitAppState('background');
+      const callsBefore = (getAnnualReport as jest.Mock).mock.calls.length;
+
+      await act(async () => {
+        jest.advanceTimersByTime(2 * 60_000);
+      });
+      await flushPromises();
+
+      expect((getAnnualReport as jest.Mock).mock.calls.length).toBe(callsBefore);
+    });
+
+    it('アンマウントしたら0時の評価を取り消す', async () => {
+      jest.useFakeTimers();
+      (getAnnualReport as jest.Mock).mockResolvedValue(null);
+      const current = new Date(2026, 11, 19, 23, 59, 0);
+
+      const { unmount } = await renderHook(() => useAnnualReportState({ isReady: true, now: () => current, alwaysAvailable: false }));
+      await flushPromises();
+      const callsBefore = (getAnnualReport as jest.Mock).mock.calls.length;
+      await unmount();
+
+      await act(async () => {
+        jest.advanceTimersByTime(2 * 60_000);
+      });
+
+      expect((getAnnualReport as jest.Mock).mock.calls.length).toBe(callsBefore);
+    });
+  });
 });

@@ -67,6 +67,9 @@ export type UseAnnualReportStateArgs = {
   onDeferredOpen?: () => void;
 };
 
+/** 0時を過ぎてから評価し直すまでの余裕(ミリ秒)。 */
+const MIDNIGHT_EVALUATION_DELAY_MS = 1000;
+
 /** 表示用の状態。レポートと残り日数を常に組で更新するため1つにまとめる。 */
 type DisplayState = { report: AnnualReportPayloadV1 | null; daysLeft: number | null };
 
@@ -96,7 +99,7 @@ function scheduleWhenIdle(callback: () => void): () => void {
 /**
  * 年間レポートの集計をアプリ前面で少しずつ進め、表示できるレポートを返すフック。
  *
- * - 起動初期化の完了時と前面復帰時に評価し直す。集計期間外なら何もせず、表示も消す(1/16 以降の復帰など)。
+ * - 起動初期化の完了時・前面復帰時・前面のまま0時を過ぎたときに評価し直す。集計期間外なら何もせず、表示も消す(1/16 以降の復帰など)。
  * - 未完了なら、UI が空いたときに1ステップ(1か月分)ずつ集計し、ステップごとに進捗を保存する。
  *   ステップの間で UI へ制御を返し、背面へ回ったら次を予約しない(GPS のバックグラウンド処理には関与しない)。
  * - ステップは常に1つずつしか実行しない。前面復帰が重なっても二重に走らせず、
@@ -367,14 +370,43 @@ export function useAnnualReportState({
     runEvaluate();
   }, [isReady, runEvaluate]);
 
+  /**
+   * 前面復帰で評価し直し、前面にいる間は次の0時(端末ローカル)にも評価し直す。
+   * 前面のまま日付をまたぐと、公開開始(12/20)・終了(1/16)や残り日数が変わるため(前面復帰だけでは拾えない)。
+   * 背面中とアンマウント後は予約しない。
+   */
   useEffect(() => {
+    let midnightTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearMidnightTimer = () => {
+      if (midnightTimer !== null) clearTimeout(midnightTimer);
+      midnightTimer = null;
+    };
+    const scheduleMidnightEvaluation = () => {
+      clearMidnightTimer();
+      if (!isReady || appStateRef.current !== 'active') return;
+      const current = nowRef.current();
+      const nextMidnight = new Date(current.getFullYear(), current.getMonth(), current.getDate() + 1);
+      // タイマーが少し早く発火しても前日のまま評価しないよう、0時から少し遅らせる
+      const delay = Math.max(nextMidnight.getTime() - current.getTime(), 0) + MIDNIGHT_EVALUATION_DELAY_MS;
+      midnightTimer = setTimeout(() => {
+        midnightTimer = null;
+        runEvaluate();
+        scheduleMidnightEvaluation();
+      }, delay);
+    };
+
+    scheduleMidnightEvaluation();
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       appStateRef.current = state;
       if (state === 'active' && isReady) {
         runEvaluate();
       }
+      scheduleMidnightEvaluation();
     });
-    return () => subscription.remove();
+    return () => {
+      clearMidnightTimer();
+      subscription.remove();
+    };
   }, [isReady, runEvaluate]);
 
   /**

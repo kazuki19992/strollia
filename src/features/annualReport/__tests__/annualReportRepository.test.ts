@@ -140,6 +140,13 @@ describe('年次レポートリポジトリ annualReportRepository', () => {
     expect(args).toContain(JSON.stringify(progress));
   });
 
+  it('途中経過の保存は完成済みの行を上書きしない', async () => {
+    await saveAnnualReportProgress(2026, progress);
+
+    const [sql] = (db.runAsync as jest.Mock).mock.calls[0];
+    expect(sql).toMatch(/ON CONFLICT\(year\) DO UPDATE SET[\s\S]*WHERE annual_reports\.status <> 'completed'/);
+  });
+
   it('完成時はstatusをcompletedにしprogress_jsonをNULLにする', async () => {
     await completeAnnualReport(2026, payload);
 

@@ -47,7 +47,11 @@ export async function getAnnualReport(year: number): Promise<AnnualReportRecord 
   return null;
 }
 
-/** 集計途中の進捗を `in_progress` としてUPSERTする。 */
+/**
+ * 集計途中の進捗を `in_progress` としてUPSERTする。
+ * 完成済みの行は上書きしない(古い進捗を持つ処理が遅れて保存しても、完成したレポートを消さないため。spec §7.2)。
+ * 開発用フラグ時の作り直しは、先に行を削除してから保存するためこの条件に掛からない。
+ */
 export async function saveAnnualReportProgress(year: number, progress: AnnualReportProgress): Promise<void> {
   const now = new Date().toISOString();
   await db.runAsync(
@@ -58,7 +62,8 @@ export async function saveAnnualReportProgress(year: number, progress: AnnualRep
        status = excluded.status,
        progress_json = excluded.progress_json,
        payload_json = NULL,
-       updated_at = excluded.updated_at`,
+       updated_at = excluded.updated_at
+     WHERE annual_reports.status <> 'completed'`,
     year,
     ANNUAL_REPORT_PAYLOAD_VERSION,
     'in_progress',

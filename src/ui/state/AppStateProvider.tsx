@@ -62,6 +62,9 @@ import { useCurrentAreaLabel } from '@/ui/hooks/useCurrentAreaName';
 import { usePremiumAccess } from '@/ui/hooks/usePremiumAccess';
 import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyReportNotificationResponse';
+import { useAnnualReportNotificationResponse } from '@/ui/hooks/useAnnualReportNotificationResponse';
+import { useAnnualReportState } from '@/ui/hooks/useAnnualReportState';
+import type { AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
@@ -160,6 +163,10 @@ export type AppStateContextValue = {
   monthlyReportPoints: LocationPoint[];
   /** 月次エリアレポート。 */
   monthlyAreaReport: MonthlyAreaReport | null;
+  /** 表示できる年間レポート。公開期間中かつ集計完了のときだけ非null。 */
+  annualReport: AnnualReportPayloadV1 | null;
+  /** 年間レポートの公開終了までの残り日数(終了日当日は1)。annualReport が null のときは null。 */
+  annualReportDaysLeft: number | null;
   /** 登録済みの滞在場所。 */
   stayPlaces: StayPlace[];
   /** 現在の契約状態で共有・記録に使う滞在場所。未解決・失敗時はnull。 */
@@ -428,6 +435,10 @@ export type AppStateContextValue = {
   closeLandmarkPack: () => void;
   /** 月次レポート画面へ移動する(Plusゲート付き)。 */
   openMonthlyReport: () => void;
+  /** 年間レポート画面へ移動する。表示できるレポートがなければ何もしない。 */
+  openAnnualReport: () => void;
+  /** 年間レポート画面を閉じて地図へ戻る。 */
+  closeAnnualReport: () => void;
   /** 設定画面へ移動する。 */
   openSettings: () => void;
   /** 滞在場所の設定画面へ移動する。 */
@@ -474,6 +485,8 @@ type AppStateProviderProps = {
     closeLandmarkPack?: () => void;
     /** 月次レポート画面へ移動する。 */
     openMonthlyReport?: () => void;
+    /** 年間レポート画面へ移動する。 */
+    openAnnualReport?: () => void;
     /** 設定画面へ移動する。 */
     openSettings?: () => void;
     /** 滞在場所の設定画面へ移動する。 */
@@ -1062,6 +1075,17 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
 
+  const annualReportState = useAnnualReportState({ isReady });
+  // 保存済みレポートの読み込みが終わるまで待ってから通知タップを処理する(コールドスタートで取りこぼさないため)
+  useAnnualReportNotificationResponse({
+    isReady: isReady && annualReportState.hasEvaluated,
+    onOpenAnnualReport: (year) => {
+      // 公開期間外・対象年違いのタップはストーリーを開かず地図のままにする
+      if (annualReportState.availableReport?.year !== year) return;
+      openAnnualReport();
+    },
+  });
+
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });
   useAchievementDialogEffects({
     activeAchievementNotification,
@@ -1231,6 +1255,26 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     } else {
       navigateToScreen('monthlyReport');
     }
+  }
+
+  /** 年間レポート画面へ移動する。表示できるレポートがない(公開期間外・未完了)なら何もしない。 */
+  function openAnnualReport(): void {
+    if (!annualReportState.availableReport) {
+      return;
+    }
+    annualReportState.onReportOpened();
+    if (navigator?.openAnnualReport) {
+      triggerLightImpactHaptic();
+      navigator.openAnnualReport();
+    } else {
+      navigateToScreen('annualReport');
+    }
+  }
+
+  /** 年間レポート画面を閉じて地図へ戻る。 */
+  function closeAnnualReport(): void {
+    annualReportState.onReportClosed();
+    openMap();
   }
 
   /** 設定画面へ移動する。 */
@@ -1424,6 +1468,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     hasAnyLocationPoints,
     monthlyReportPoints,
     monthlyAreaReport,
+    annualReport: annualReportState.availableReport,
+    annualReportDaysLeft: annualReportState.daysLeft,
     stayPlaces,
     activeStayPlaces,
     stayPlacesStatus,
@@ -1540,6 +1586,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openLandmarkPack,
     closeLandmarkPack,
     openMonthlyReport,
+    openAnnualReport,
+    closeAnnualReport,
     openSettings,
     openStayPlaces,
     openFirstLaunchTutorial,

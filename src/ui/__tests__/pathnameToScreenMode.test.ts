@@ -38,6 +38,10 @@ describe('pathnameToScreenMode', () => {
     expect(pathnameToScreenMode('/monthly-report')).toBe('monthlyReport');
   });
 
+  it('"/annual-report" は annualReport を返す', () => {
+    expect(pathnameToScreenMode('/annual-report')).toBe('annualReport');
+  });
+
   it('"/settings" は settings を返す', () => {
     expect(pathnameToScreenMode('/settings')).toBe('settings');
   });

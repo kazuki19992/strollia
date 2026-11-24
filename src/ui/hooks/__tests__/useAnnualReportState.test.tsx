@@ -1,0 +1,539 @@
+import { act, renderHook } from '@testing-library/react-native';
+import { AppState, type AppStateStatus } from 'react-native';
+
+import { reportInvestigatedError } from '@/config/sentry';
+import { runAnnualReportStep } from '@/features/annualReport/annualReportAggregator';
+import { scheduleAnnualReportNotification } from '@/features/annualReport/annualReportNotificationService';
+import {
+  completeAnnualReport,
+  deleteAnnualReport,
+  getAnnualReport,
+  markAnnualReportNotificationScheduled,
+  saveAnnualReportProgress,
+} from '@/features/annualReport/annualReportRepository';
+import type { AnnualReportPayloadV1, AnnualReportProgress, AnnualReportRecord } from '@/features/annualReport/annualReportTypes';
+import { useAnnualReportState } from '@/ui/hooks/useAnnualReportState';
+
+jest.mock('@/config/sentry', () => ({
+  reportInvestigatedError: jest.fn(),
+}));
+
+// アグリゲーターの実モジュール(createInitialProgress)を読むと SQLite 接続が開かれるため、DB はモックする
+jest.mock('@/db/database', () => ({ db: {} }));
+
+jest.mock('@/features/annualReport/annualReportRepository', () => ({
+  getAnnualReport: jest.fn(),
+  saveAnnualReportProgress: jest.fn().mockResolvedValue(undefined),
+  completeAnnualReport: jest.fn().mockResolvedValue(undefined),
+  markAnnualReportNotificationScheduled: jest.fn().mockResolvedValue(undefined),
+  deleteAnnualReport: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@/features/annualReport/annualReportAggregator', () => ({
+  ...jest.requireActual('@/features/annualReport/annualReportAggregator'),
+  runAnnualReportStep: jest.fn(),
+}));
+
+jest.mock('@/features/annualReport/annualReportNotificationService', () => ({
+  scheduleAnnualReportNotification: jest.fn().mockResolvedValue(true),
+}));
+
+/** 次に実行を待っているアイドルコールバック。ステップ間でUIへ制御を返す挙動を手動で進めるために溜める。 */
+let idleQueue: (() => void)[] = [];
+/** AppState の変化リスナー。前面・背面の切り替えをテストから発火する。 */
+let appStateListener: ((state: AppStateStatus) => void) | null = null;
+
+/** 指定した月の進捗を作る。 */
+function makeProgress(nextMonth: number): AnnualReportProgress {
+  return {
+    nextMonth,
+    activeDates: [],
+    monthlyDistanceMeters: Array.from({ length: 12 }, () => 0),
+    yearRouteSegments: [],
+    farthestCandidate: null,
+  };
+}
+
+/** テスト用の完成レポートを作る。区別できるよう距離だけ変える。 */
+function makePayload(year: number, totalDistanceMeters = 1000): AnnualReportPayloadV1 {
+  return { version: 1, year, totalDistanceMeters } as AnnualReportPayloadV1;
+}
+
+/** 完成済みレコードを作る。 */
+function completedRecord(payload: AnnualReportPayloadV1): AnnualReportRecord {
+  return { year: payload.year, status: 'completed', payload, notificationScheduledAt: null };
+}
+
+/** マイクロタスクを流し切って非同期の state 更新を反映する。 */
+async function flushPromises(): Promise<void> {
+  await act(async () => {
+    for (let index = 0; index < 10; index += 1) {
+      await Promise.resolve();
+    }
+  });
+}
+
+/** 溜まっているアイドルコールバックを1つ実行し、続く非同期処理を流し切る。 */
+async function runNextIdle(): Promise<void> {
+  const callback = idleQueue.shift();
+  if (!callback) {
+    throw new Error('予約済みのステップがありません');
+  }
+  await act(async () => {
+    callback();
+  });
+  await flushPromises();
+}
+
+/** AppState の変化を発火する。 */
+async function emitAppState(state: AppStateStatus): Promise<void> {
+  await act(async () => {
+    appStateListener?.(state);
+  });
+  await flushPromises();
+}
+
+describe('年間レポート状態hook useAnnualReportState', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    idleQueue = [];
+    appStateListener = null;
+    (globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = jest.fn((callback: () => void) => {
+      idleQueue.push(callback);
+      return idleQueue.length;
+    });
+    (globalThis as { cancelIdleCallback?: unknown }).cancelIdleCallback = jest.fn();
+    Object.defineProperty(AppState, 'currentState', { configurable: true, value: 'active', writable: true });
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+      appStateListener = listener as (state: AppStateStatus) => void;
+      return { remove: jest.fn() } as unknown as ReturnType<typeof AppState.addEventListener>;
+    });
+    (getAnnualReport as jest.Mock).mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('期間外では集計しない', async () => {
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 10, 24, 10), alwaysAvailable: false }),
+    );
+    await flushPromises();
+
+    expect(getAnnualReport).not.toHaveBeenCalled();
+    expect(idleQueue).toHaveLength(0);
+    expect(result.current.availableReport).toBeNull();
+    expect(result.current.daysLeft).toBeNull();
+  });
+
+  it('未完了なら1ステップずつ進めて進捗を保存し、完了で completeAnnualReport を呼ぶ', async () => {
+    const payload = makePayload(2026);
+    (runAnnualReportStep as jest.Mock)
+      .mockResolvedValueOnce({ kind: 'progressed', progress: makeProgress(2) })
+      .mockResolvedValueOnce({ kind: 'progressed', progress: makeProgress(3) })
+      .mockResolvedValueOnce({ kind: 'completed', payload });
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }),
+    );
+    await flushPromises();
+
+    // 起動直後はステップを予約するだけで、まだ実行しない
+    expect(getAnnualReport).toHaveBeenCalledWith(2026);
+    expect(runAnnualReportStep).not.toHaveBeenCalled();
+    expect(idleQueue).toHaveLength(1);
+
+    await runNextIdle();
+    expect(runAnnualReportStep).toHaveBeenCalledTimes(1);
+    expect(runAnnualReportStep).toHaveBeenLastCalledWith(
+      expect.objectContaining({ year: 2026, periodEnd: '2026-12-15' }),
+      makeProgress(1),
+      false,
+    );
+    expect(saveAnnualReportProgress).toHaveBeenLastCalledWith(2026, makeProgress(2));
+    expect(idleQueue).toHaveLength(1);
+
+    await runNextIdle();
+    expect(runAnnualReportStep).toHaveBeenCalledTimes(2);
+    expect(runAnnualReportStep).toHaveBeenLastCalledWith(expect.anything(), makeProgress(2), false);
+    expect(saveAnnualReportProgress).toHaveBeenLastCalledWith(2026, makeProgress(3));
+
+    await runNextIdle();
+    expect(completeAnnualReport).toHaveBeenCalledWith(2026, payload);
+    expect(idleQueue).toHaveLength(0);
+    // 12/17は公開前なのでまだ表示しない
+    expect(result.current.availableReport).toBeNull();
+  });
+
+  it('途中まで保存済みなら保存済みの進捗から再開する', async () => {
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(5),
+      notificationScheduledAt: null,
+    });
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'progressed', progress: makeProgress(6) });
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }));
+    await flushPromises();
+    await runNextIdle();
+
+    expect(runAnnualReportStep).toHaveBeenCalledWith(expect.anything(), makeProgress(5), false);
+  });
+
+  it('isReady が false の間は集計しない', async () => {
+    await renderHook(() => useAnnualReportState({ isReady: false, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }));
+    await flushPromises();
+
+    expect(getAnnualReport).not.toHaveBeenCalled();
+  });
+
+  it('12/19に完了したら12/20 9:00で通知を予約し、予約済みを記録する', async () => {
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(13),
+      notificationScheduledAt: null,
+    });
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'completed', payload: makePayload(2026) });
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 19, 15), alwaysAvailable: false }));
+    await flushPromises();
+    await runNextIdle();
+
+    const expectedAt = new Date(2026, 11, 20, 9, 0, 0, 0);
+    expect(scheduleAnnualReportNotification).toHaveBeenCalledWith(2026, expectedAt);
+    expect(markAnnualReportNotificationScheduled).toHaveBeenCalledWith(2026, expectedAt.toISOString());
+  });
+
+  it('通知を予約できなかった場合は予約済みを記録しない', async () => {
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(13),
+      notificationScheduledAt: null,
+    });
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'completed', payload: makePayload(2026) });
+    (scheduleAnnualReportNotification as jest.Mock).mockResolvedValueOnce(false);
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 19, 15), alwaysAvailable: false }));
+    await flushPromises();
+    await runNextIdle();
+
+    expect(scheduleAnnualReportNotification).toHaveBeenCalledTimes(1);
+    expect(markAnnualReportNotificationScheduled).not.toHaveBeenCalled();
+  });
+
+  it('公開期間中に完了したら通知せず、すぐに availableReport と残り日数を返す', async () => {
+    const payload = makePayload(2026);
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(13),
+      notificationScheduledAt: null,
+    });
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'completed', payload });
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 21, 15), alwaysAvailable: false }),
+    );
+    await flushPromises();
+    await runNextIdle();
+
+    expect(scheduleAnnualReportNotification).not.toHaveBeenCalled();
+    expect(result.current.availableReport).toBe(payload);
+    // 12/21〜1/15(当日を1と数える)
+    expect(result.current.daysLeft).toBe(26);
+  });
+
+  it('insufficient なら保存も通知もしない', async () => {
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(13),
+      notificationScheduledAt: null,
+    });
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'insufficient' });
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 19, 15), alwaysAvailable: false }),
+    );
+    await flushPromises();
+    await runNextIdle();
+
+    expect(saveAnnualReportProgress).not.toHaveBeenCalled();
+    expect(completeAnnualReport).not.toHaveBeenCalled();
+    expect(scheduleAnnualReportNotification).not.toHaveBeenCalled();
+    expect(idleQueue).toHaveLength(0);
+    expect(result.current.availableReport).toBeNull();
+  });
+
+  it('背面へ回ったら次のステップを予約しない', async () => {
+    let resolveStep: (value: unknown) => void = () => undefined;
+    (runAnnualReportStep as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStep = resolve;
+        }),
+    );
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }));
+    await flushPromises();
+    await runNextIdle();
+
+    // ステップ実行中に背面へ回る
+    await emitAppState('background');
+    await act(async () => {
+      resolveStep({ kind: 'progressed', progress: makeProgress(2) });
+    });
+    await flushPromises();
+
+    // 実行中のステップは完了させて保存するが、次は予約しない
+    expect(saveAnnualReportProgress).toHaveBeenCalledWith(2026, makeProgress(2));
+    expect(idleQueue).toHaveLength(0);
+  });
+
+  it('背面から前面へ戻ると保存済みの進捗から再開する', async () => {
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'progressed', progress: makeProgress(2) });
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }));
+    await flushPromises();
+    await emitAppState('background');
+    // 背面へ回る前に予約されていたステップは、実行時に背面なら何もしない
+    await runNextIdle();
+    expect(runAnnualReportStep).not.toHaveBeenCalled();
+
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(4),
+      notificationScheduledAt: null,
+    });
+    await emitAppState('active');
+    expect(idleQueue).toHaveLength(1);
+    await runNextIdle();
+
+    expect(runAnnualReportStep).toHaveBeenCalledTimes(1);
+    expect(runAnnualReportStep).toHaveBeenCalledWith(expect.anything(), makeProgress(4), false);
+  });
+
+  it('前面復帰が重なってもステップを同時に実行しない', async () => {
+    (runAnnualReportStep as jest.Mock).mockImplementation(() => new Promise(() => undefined));
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }));
+    await flushPromises();
+    await emitAppState('active');
+    await emitAppState('active');
+
+    expect(idleQueue).toHaveLength(1);
+    await runNextIdle();
+    await emitAppState('active');
+
+    expect(idleQueue).toHaveLength(0);
+    expect(runAnnualReportStep).toHaveBeenCalledTimes(1);
+  });
+
+  it('前面復帰時に日付が1/16になっていれば availableReport が null になる', async () => {
+    const payload = makePayload(2026);
+    (getAnnualReport as jest.Mock).mockResolvedValue(completedRecord(payload));
+    let current = new Date(2027, 0, 15, 22);
+
+    const { result } = await renderHook(() => useAnnualReportState({ isReady: true, now: () => current, alwaysAvailable: false }));
+    await flushPromises();
+
+    expect(result.current.availableReport).toBe(payload);
+    expect(result.current.daysLeft).toBe(1);
+
+    current = new Date(2027, 0, 16, 8);
+    await emitAppState('active');
+
+    expect(result.current.availableReport).toBeNull();
+    expect(result.current.daysLeft).toBeNull();
+  });
+
+  it('保存済みが completed なら集計せずにそれを使う', async () => {
+    const payload = makePayload(2026);
+    (getAnnualReport as jest.Mock).mockResolvedValue(completedRecord(payload));
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 20, 0, 0), alwaysAvailable: false }),
+    );
+    await flushPromises();
+
+    expect(idleQueue).toHaveLength(0);
+    expect(saveAnnualReportProgress).not.toHaveBeenCalled();
+    expect(result.current.availableReport).toBe(payload);
+  });
+
+  it('ステップで例外が出たら Sentry へ記録し、そのセッション中は再試行しない', async () => {
+    const error = new Error('boom');
+    (runAnnualReportStep as jest.Mock).mockRejectedValueOnce(error);
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }));
+    await flushPromises();
+    await runNextIdle();
+
+    expect(reportInvestigatedError).toHaveBeenCalledWith(error, expect.objectContaining({ area: 'annual_report' }));
+    expect(saveAnnualReportProgress).not.toHaveBeenCalled();
+    expect(idleQueue).toHaveLength(0);
+
+    await emitAppState('active');
+    expect(idleQueue).toHaveLength(0);
+  });
+
+  it('開発用フラグ時は起動ごとに作り直す', async () => {
+    (getAnnualReport as jest.Mock).mockResolvedValue(null);
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 5, 10, 10), alwaysAvailable: true }));
+    await flushPromises();
+
+    expect(deleteAnnualReport).toHaveBeenCalledWith(2026);
+    expect((deleteAnnualReport as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
+      (getAnnualReport as jest.Mock).mock.invocationCallOrder[0],
+    );
+    expect(idleQueue).toHaveLength(1);
+
+    // 前面復帰では削除し直さない(起動ごとに1回だけ)
+    await emitAppState('active');
+    expect(deleteAnnualReport).toHaveBeenCalledTimes(1);
+  });
+
+  it('開発用フラグ時は10秒後に通知を予約し、availableReport を返す', async () => {
+    const payload = makePayload(2026);
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'completed', payload });
+    const now = new Date(2026, 5, 10, 10);
+
+    const { result } = await renderHook(() => useAnnualReportState({ isReady: true, now: () => now, alwaysAvailable: true }));
+    await flushPromises();
+    await runNextIdle();
+
+    expect(runAnnualReportStep).toHaveBeenCalledWith(
+      expect.objectContaining({ year: 2026, periodEnd: '2026-06-10' }),
+      makeProgress(1),
+      true,
+    );
+    expect(scheduleAnnualReportNotification).toHaveBeenCalledWith(2026, new Date(now.getTime() + 10_000));
+    expect(result.current.availableReport).toBe(payload);
+  });
+
+  it('開発用フラグ時は画面を開いたときに保存データを削除し、availableReport は保持する', async () => {
+    const payload = makePayload(2026);
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'completed', payload });
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 5, 10, 10), alwaysAvailable: true }),
+    );
+    await flushPromises();
+    await runNextIdle();
+    expect(deleteAnnualReport).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      result.current.onReportOpened();
+    });
+    await flushPromises();
+
+    expect(deleteAnnualReport).toHaveBeenCalledTimes(2);
+    expect(deleteAnnualReport).toHaveBeenLastCalledWith(2026);
+    expect(result.current.availableReport).toBe(payload);
+    expect(idleQueue).toHaveLength(0);
+  });
+
+  it('開発用フラグ時は画面を閉じたときに保存データを削除して集計をやり直し、通知は再予約しない', async () => {
+    const firstPayload = makePayload(2026, 1000);
+    const secondPayload = makePayload(2026, 2000);
+    (runAnnualReportStep as jest.Mock)
+      .mockResolvedValueOnce({ kind: 'completed', payload: firstPayload })
+      .mockResolvedValueOnce({ kind: 'progressed', progress: makeProgress(2) })
+      .mockResolvedValueOnce({ kind: 'completed', payload: secondPayload });
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 5, 10, 10), alwaysAvailable: true }),
+    );
+    await flushPromises();
+    await runNextIdle();
+    expect(scheduleAnnualReportNotification).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      result.current.onReportClosed();
+    });
+    await flushPromises();
+
+    expect(deleteAnnualReport).toHaveBeenCalledTimes(2);
+    expect(idleQueue).toHaveLength(1);
+
+    await runNextIdle();
+    // 最初からやり直し、作り直しが終わるまでは直前のデータを表示し続ける
+    expect(runAnnualReportStep).toHaveBeenLastCalledWith(expect.anything(), makeProgress(1), true);
+    expect(result.current.availableReport).toBe(firstPayload);
+
+    await runNextIdle();
+    expect(completeAnnualReport).toHaveBeenLastCalledWith(2026, secondPayload);
+    expect(result.current.availableReport).toBe(secondPayload);
+    expect(scheduleAnnualReportNotification).toHaveBeenCalledTimes(1);
+  });
+
+  it('開発用フラグ時に集計中に閉じたら、実行中のステップを待ってから最初に戻す', async () => {
+    let resolveStep: (value: unknown) => void = () => undefined;
+    (runAnnualReportStep as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStep = resolve;
+        }),
+    );
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 5, 10, 10), alwaysAvailable: true }),
+    );
+    await flushPromises();
+    await runNextIdle();
+
+    await act(async () => {
+      result.current.onReportClosed();
+    });
+    await flushPromises();
+    // ステップ実行中は新しいステップを同時に予約しない
+    expect(idleQueue).toHaveLength(0);
+
+    await act(async () => {
+      resolveStep({ kind: 'progressed', progress: makeProgress(2) });
+    });
+    await flushPromises();
+
+    // 実行中だった結果は保存せず捨て、最初の月から予約し直す
+    expect(saveAnnualReportProgress).not.toHaveBeenCalled();
+    expect(idleQueue).toHaveLength(1);
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'progressed', progress: makeProgress(2) });
+    await runNextIdle();
+    expect(runAnnualReportStep).toHaveBeenLastCalledWith(expect.anything(), makeProgress(1), true);
+  });
+
+  it('開発用フラグなしでは開閉で保存データを削除しない', async () => {
+    const payload = makePayload(2026);
+    (getAnnualReport as jest.Mock).mockResolvedValue(completedRecord(payload));
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 21, 10), alwaysAvailable: false }),
+    );
+    await flushPromises();
+
+    await act(async () => {
+      result.current.onReportOpened();
+      result.current.onReportClosed();
+    });
+    await flushPromises();
+
+    expect(deleteAnnualReport).not.toHaveBeenCalled();
+    expect(idleQueue).toHaveLength(0);
+    expect(result.current.availableReport).toBe(payload);
+  });
+
+  it('初回の評価が終わると hasEvaluated が true になる', async () => {
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => new Date(2026, 10, 24, 10), alwaysAvailable: false }),
+    );
+    await flushPromises();
+
+    expect(result.current.hasEvaluated).toBe(true);
+  });
+});

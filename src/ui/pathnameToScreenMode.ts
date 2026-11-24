@@ -11,6 +11,7 @@ import type { ScreenMode } from './appTypes';
  * - `/daily-logs` 以下 → `'dailyLogs'`
  * - `/achievements` → `'achievements'`
  * - `/monthly-report` → `'monthlyReport'`
+ * - `/annual-report` → `'annualReport'`
  * - `/settings` 以下 → `'settings'`
  * - 未知のパスは `'map'` にフォールバックする
  */
@@ -28,6 +29,8 @@ export function pathnameToScreenMode(pathname: string): ScreenMode {
       return 'achievements';
     case 'monthly-report':
       return 'monthlyReport';
+    case 'annual-report':
+      return 'annualReport';
     case 'settings':
       return 'settings';
     default:

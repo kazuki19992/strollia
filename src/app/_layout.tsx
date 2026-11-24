@@ -209,6 +209,7 @@ function useRouterNavigator() {
       openLandmarkPack: (packId: string) => router.push(`/achievements/${packId}`),
       closeLandmarkPack: () => router.back(),
       openMonthlyReport: () => router.push('/monthly-report'),
+      openAnnualReport: () => router.push('/annual-report'),
       openSettings: () => router.push('/settings'),
       openStayPlaces: () => router.push('/settings/stay-places'),
     }),

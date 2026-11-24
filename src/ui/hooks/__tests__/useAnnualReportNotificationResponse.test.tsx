@@ -104,4 +104,46 @@ describe('年間レポート通知応答 useAnnualReportNotificationResponse', (
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledWith(2026);
   });
+  it('初期化前にリスナーへ届いたタップは無視し、初期化後にコールドスタート経路で一度だけ開く', async () => {
+    const holder = captureListener();
+    const response = makeResponse('early-1');
+    const onOpenAnnualReport = jest.fn();
+    const { rerender } = await renderHook(
+      ({ isReady }: { isReady: boolean }) => useAnnualReportNotificationResponse({ isReady, onOpenAnnualReport }),
+      { initialProps: { isReady: false } },
+    );
+
+    await act(() => {
+      holder.listener!(response);
+    });
+    expect(onOpenAnnualReport).not.toHaveBeenCalled();
+
+    // 同じタップは useLastNotificationResponse にも残るため、初期化完了後はそちらの経路で開く
+    (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
+    await rerender({ isReady: true });
+
+    expect(onOpenAnnualReport).toHaveBeenCalledTimes(1);
+    expect(onOpenAnnualReport).toHaveBeenCalledWith(2026);
+  });
+
+  it('リスナーで処理した通知IDが lastNotificationResponse にも届いても一度だけ開く', async () => {
+    const holder = captureListener();
+    const response = makeResponse('both-1');
+    const onOpenAnnualReport = jest.fn();
+    const { rerender } = await renderHook(
+      ({ tick }: { tick: number }) => {
+        void tick;
+        return useAnnualReportNotificationResponse({ isReady: true, onOpenAnnualReport });
+      },
+      { initialProps: { tick: 0 } },
+    );
+
+    await act(() => {
+      holder.listener!(response);
+    });
+    (Notifications.useLastNotificationResponse as jest.Mock).mockReturnValue(response);
+    await rerender({ tick: 1 });
+
+    expect(onOpenAnnualReport).toHaveBeenCalledTimes(1);
+  });
 });

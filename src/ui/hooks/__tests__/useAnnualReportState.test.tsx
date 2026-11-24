@@ -718,4 +718,71 @@ describe('年間レポート状態hook useAnnualReportState', () => {
 
     expect(result.current.hasEvaluated).toBe(true);
   });
+  it('前面復帰と通知タップが同時に届き、評価があとから終わって表示できるようになったら一度だけ開く', async () => {
+    const payload = makePayload(2026);
+    (getAnnualReport as jest.Mock).mockResolvedValue(completedRecord(payload));
+    const onDeferredOpen = jest.fn();
+    let current = new Date(2026, 11, 19, 22);
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => current, alwaysAvailable: false, onDeferredOpen }),
+    );
+    await flushPromises();
+    // 12/19 はまだ公開期間前のため表示できない
+    expect(result.current.availableReport).toBeNull();
+
+    // 12/20 9:00 に背面から通知タップで戻る。前面復帰の評価は読み込み待ちのまま、タップの処理が先に届く
+    current = new Date(2026, 11, 20, 9);
+    let resolveRead: (value: unknown) => void = () => undefined;
+    (getAnnualReport as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRead = resolve;
+        }),
+    );
+    await emitAppState('active');
+    await act(async () => {
+      result.current.deferNotificationOpen(2026);
+    });
+    expect(onDeferredOpen).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveRead(completedRecord(payload));
+    });
+    await flushPromises();
+
+    expect(result.current.availableReport).toBe(payload);
+    expect(onDeferredOpen).toHaveBeenCalledTimes(1);
+
+    // 以降の評価で再び開くことはない
+    await emitAppState('active');
+    expect(onDeferredOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('開発用フラグなしで、次の評価でも表示できなければ待っていた通知タップを忘れる', async () => {
+    const payload = makePayload(2026);
+    const onDeferredOpen = jest.fn();
+    let current = new Date(2026, 11, 19, 22);
+    (getAnnualReport as jest.Mock).mockResolvedValue(completedRecord(payload));
+
+    const { result } = await renderHook(() =>
+      useAnnualReportState({ isReady: true, now: () => current, alwaysAvailable: false, onDeferredOpen }),
+    );
+    await flushPromises();
+
+    // 評価が走っていない状態でタップされたら、すぐ評価し直す。まだ公開期間前なので開かない
+    const callsBefore = (getAnnualReport as jest.Mock).mock.calls.length;
+    await act(async () => {
+      result.current.deferNotificationOpen(2026);
+    });
+    await flushPromises();
+    expect((getAnnualReport as jest.Mock).mock.calls.length).toBe(callsBefore + 1);
+    expect(onDeferredOpen).not.toHaveBeenCalled();
+
+    // 後で公開期間に入って表示できるようになっても、忘れた通知タップでは開かない
+    current = new Date(2026, 11, 20, 9);
+    await emitAppState('active');
+    expect(result.current.availableReport).toBe(payload);
+    expect(onDeferredOpen).not.toHaveBeenCalled();
+  });
 });

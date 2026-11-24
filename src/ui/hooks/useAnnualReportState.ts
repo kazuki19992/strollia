@@ -41,10 +41,11 @@ export type AnnualReportState = {
   /** レポート画面を閉じたときに呼ぶ。開発用フラグ時だけ保存データを削除し、集計を最初からやり直す。 */
   onReportClosed: () => void;
   /**
-   * 通知タップで開こうとした年のレポートがまだ表示できないときに呼ぶ。
-   * 開発用フラグ時だけ年を覚えておき、作り直しが終わって表示できるようになったら `onDeferredOpen` を呼ぶ
-   * (起動時の削除で作り直し中でも、通知タップから開く流れを確認できるようにするため。spec §10.1)。
-   * フラグなしでは何もしない(地図のまま)。
+   * 通知タップで開こうとした年のレポートがまだ表示できないときに呼ぶ。年を覚えておき、表示できるようになったら `onDeferredOpen` を呼ぶ。
+   * - 本番: 背面から通知タップで戻ると、前面復帰の評価(非同期)より先にタップが届き、表示状態がまだ古いことがある(spec §8)。
+   *   そのため次の評価が終わるまでだけ待ち、その評価で表示できれば開く。表示できなくても年は忘れる(待ち続けない)。
+   *   評価が走っていなければ、その場で評価し直す。
+   * - 開発用フラグ時: 起動時の削除で作り直し中でも通知タップから開く流れを確認できるよう、作り直しが終わるまで待つ(spec §10.1)。
    */
   deferNotificationOpen: (year: number) => void;
 };
@@ -134,8 +135,17 @@ export function useAnnualReportState({
   const notificationAttemptedRef = useRef(false);
   /** 進行中のループに、最初からのやり直しを求めているか(開発用フラグ時の閉じる操作)。 */
   const restartRequestedRef = useRef(false);
-  /** 開発用フラグ時に、通知タップで開くのを待っている年。 */
-  const pendingOpenYearRef = useRef<number | null>(null);
+  /**
+   * 通知タップで開くのを待っている年と、待ち始めた時点で終わっていた評価の回数。
+   * 本番では、この回数より後に終わった評価で判定して必ず忘れる(待ちを1回の評価に限るため)。
+   */
+  const pendingOpenRef = useRef<{ year: number; settledCountAtDefer: number } | null>(null);
+  /** 実行中の評価の数。通知タップを待たせるとき、評価が走っていなければ評価し直すために使う。 */
+  const evaluationsInFlightRef = useRef(0);
+  /** 終わった評価の回数(state)。本番で待たせた通知タップを、次の評価の完了時に判定するために使う。 */
+  const [settledEvaluationCount, setSettledEvaluationCount] = useState(0);
+  /** `settledEvaluationCount` の最新値。待ち始めの時点の回数を、レンダーを待たずに記録するために使う。 */
+  const settledEvaluationCountRef = useRef(0);
   /** アンマウント後に state を更新しないためのフラグ。 */
   const mountedRef = useRef(true);
   /** 最新の runStep。予約したステップから、宣言順に依存せず呼び出すために ref で持つ。 */
@@ -298,12 +308,17 @@ export function useAnnualReportState({
 
   /** 評価を実行し、例外は Sentry へ記録する(読み込み失敗でアプリを止めない)。 */
   const runEvaluate = useCallback(() => {
+    evaluationsInFlightRef.current += 1;
     evaluate()
       .catch((error: unknown) => {
         reportSafely(error, { stage: 'evaluate' });
       })
       .finally(() => {
-        if (mountedRef.current) setHasEvaluated(true);
+        evaluationsInFlightRef.current -= 1;
+        settledEvaluationCountRef.current += 1;
+        if (!mountedRef.current) return;
+        setHasEvaluated(true);
+        setSettledEvaluationCount(settledEvaluationCountRef.current);
       });
   }, [evaluate]);
 
@@ -331,13 +346,20 @@ export function useAnnualReportState({
     return () => subscription.remove();
   }, [isReady, runEvaluate]);
 
-  /** 待たせていた通知タップの年のレポートが表示できるようになったら開く(開発用フラグ時のみ発生する)。 */
+  /**
+   * 待たせていた通知タップの年を判定する。
+   * 開発用フラグ時は表示できるようになった時点で開く。本番では待ち始めより後の評価が終わった時点でだけ判定し、
+   * 表示できれば開き、できなければ忘れる(評価の途中の表示更新では判定しない)。
+   */
   useEffect(() => {
-    const pendingYear = pendingOpenYearRef.current;
-    if (pendingYear === null || display.report?.year !== pendingYear) return;
-    pendingOpenYearRef.current = null;
-    onDeferredOpenRef.current?.();
-  }, [display.report]);
+    const pending = pendingOpenRef.current;
+    if (pending === null) return;
+    const isAvailable = display.report?.year === pending.year;
+    if (!alwaysAvailableRef.current && settledEvaluationCount <= pending.settledCountAtDefer) return;
+    if (alwaysAvailableRef.current && !isAvailable) return;
+    pendingOpenRef.current = null;
+    if (isAvailable) onDeferredOpenRef.current?.();
+  }, [display.report, settledEvaluationCount]);
 
   const onReportOpened = useCallback(() => {
     if (!alwaysAvailableRef.current) return;
@@ -368,11 +390,16 @@ export function useAnnualReportState({
       });
   }, [startLoop]);
 
-  const deferNotificationOpen = useCallback((year: number) => {
-    // 本番では公開期間外・未完了のタップは地図のままにする(spec §8)。待たせるのは開発用フラグ時だけ
-    if (!alwaysAvailableRef.current) return;
-    pendingOpenYearRef.current = year;
-  }, []);
+  const deferNotificationOpen = useCallback(
+    (year: number) => {
+      pendingOpenRef.current = { year, settledCountAtDefer: settledEvaluationCountRef.current };
+      // 本番で評価が走っていなければ、待ちが次の評価で必ず終わるようにその場で評価し直す
+      if (!alwaysAvailableRef.current && evaluationsInFlightRef.current === 0 && isReady) {
+        runEvaluate();
+      }
+    },
+    [isReady, runEvaluate],
+  );
 
   return {
     availableReport: display.report,

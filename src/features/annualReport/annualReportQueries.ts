@@ -1,4 +1,5 @@
 import { db } from '@/db/database';
+import type { LocationPoint } from '@/types/gps';
 
 /** ハイライトとして返す最大件数。 */
 const HIGHLIGHT_LIMIT = 3;
@@ -20,6 +21,38 @@ export async function getDailyDistanceRows(fromDate: string, toDate: string): Pr
     toDate,
   );
   return rows.map((row) => ({ localDate: row.local_date, pointCount: row.point_count, distanceMeters: row.distance_meters }));
+}
+
+/**
+ * 年次レポートのルート・距離の補完に使うGPSポイント。
+ * `toRenderRouteSegments` と `totalDistanceMeters` が使う列(時刻・日付・生座標・有効座標)だけを持つ。
+ */
+export type AnnualReportRoutePoint = Pick<
+  LocationPoint,
+  'recordedAt' | 'localDate' | 'latitude' | 'longitude' | 'effectiveLatitude' | 'effectiveLongitude'
+>;
+
+/**
+ * 期間内(両端を含む)のGPSポイントを、ルート描画と距離の補完に必要な列だけで日・時刻順に読む。
+ *
+ * 集計はアプリが前面にある間に UI スレッドと同じ JS で動くため、読み込み量を抑える。
+ * `LIKE 'YYYY-MM-%'` ではなく `BETWEEN` で絞り、`location_points(local_date, recorded_at)` のインデックスを
+ * 範囲検索と並べ替えの両方に使わせる(GPS記録の書き込みとの競合時間も短くするため)。
+ */
+export async function getAnnualReportRoutePoints(fromDate: string, toDate: string): Promise<AnnualReportRoutePoint[]> {
+  return db.getAllAsync<AnnualReportRoutePoint>(
+    `SELECT recorded_at AS recordedAt,
+            local_date AS localDate,
+            latitude,
+            longitude,
+            effective_latitude AS effectiveLatitude,
+            effective_longitude AS effectiveLongitude
+     FROM location_points
+     WHERE local_date BETWEEN ? AND ?
+     ORDER BY local_date ASC, recorded_at ASC`,
+    fromDate,
+    toDate,
+  );
 }
 
 /** 期間内に記録した地点が属する都道府県名(重複なし)を返す。 */

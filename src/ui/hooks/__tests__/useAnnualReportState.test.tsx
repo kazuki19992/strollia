@@ -49,10 +49,11 @@ let nextIdleId = 1;
 /** AppState の変化リスナー。前面・背面の切り替えをテストから発火する。 */
 let appStateListener: ((state: AppStateStatus) => void) | null = null;
 
-/** 指定した月の進捗を作る。 */
+/** 指定した月(の前半)から始める進捗を作る。 */
 function makeProgress(nextMonth: number): AnnualReportProgress {
   return {
     nextMonth,
+    nextHalf: 1,
     activeDates: [],
     monthlyDistanceMeters: Array.from({ length: 12 }, () => 0),
     yearRouteSegments: [],

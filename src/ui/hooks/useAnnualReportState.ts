@@ -100,7 +100,7 @@ function scheduleWhenIdle(callback: () => void): () => void {
  * 年間レポートの集計をアプリ前面で少しずつ進め、表示できるレポートを返すフック。
  *
  * - 起動初期化の完了時・前面復帰時・前面のまま0時を過ぎたときに評価し直す。集計期間外なら何もせず、表示も消す(1/16 以降の復帰など)。
- * - 未完了なら、UI が空いたときに1ステップ(1か月分)ずつ集計し、ステップごとに進捗を保存する。
+ * - 未完了なら、UI が空いたときに1ステップ(半月分)ずつ集計し、ステップごとに進捗を保存する。
  *   ステップの間で UI へ制御を返し、背面へ回ったら次を予約しない(GPS のバックグラウンド処理には関与しない)。
  * - ステップは常に1つずつしか実行しない。前面復帰が重なっても二重に走らせず、
  *   読み込み中にループが進んだ評価の古い記録で、完成済みの行を上書きしない(spec §7.2)。
@@ -276,7 +276,7 @@ export function useAnnualReportState({
       if (isStale()) return;
       failedRef.current = true;
       endLoop();
-      reportSafely(error, { year: window.year, nextMonth: progress.nextMonth });
+      reportSafely(error, { year: window.year, nextMonth: progress.nextMonth, nextHalf: progress.nextHalf ?? 1 });
     }
   }
 

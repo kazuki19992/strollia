@@ -2,6 +2,7 @@ import { db } from '@/db/database';
 
 import {
   getAchievementUnlockSummary,
+  getAnnualReportRoutePoints,
   getDailyDistanceRows,
   getLandmarkSpotVisitSummary,
   getNewAdminAreaSummary,
@@ -32,6 +33,41 @@ describe('年次レポートの集計クエリ', () => {
 
     expect(rows).toEqual([{ localDate: '2026-01-02', pointCount: 10, distanceMeters: 1234.5 }]);
     expect(getAllAsync).toHaveBeenCalledWith(expect.stringContaining('point_count > 0'), '2026-01-01', '2026-12-15');
+  });
+
+  test('ルート用ポイントは必要な列だけを、local_date の範囲(インデックスを使う BETWEEN)で日・時刻順に読む', async () => {
+    getAllAsync.mockResolvedValue([
+      {
+        recordedAt: '2026-01-02T00:00:00.000Z',
+        localDate: '2026-01-02',
+        latitude: 35,
+        longitude: 139,
+        effectiveLatitude: null,
+        effectiveLongitude: null,
+      },
+    ]);
+
+    const points = await getAnnualReportRoutePoints('2026-01-01', '2026-01-15');
+
+    const [sql, ...params] = getAllAsync.mock.calls[0];
+    expect(params).toEqual(['2026-01-01', '2026-01-15']);
+    expect(sql).toContain('WHERE local_date BETWEEN ? AND ?');
+    expect(sql).toContain('ORDER BY local_date ASC, recorded_at ASC');
+    expect(sql).not.toContain('LIKE');
+    // 速度・精度などルートと距離に使わない列は読まない
+    expect(sql).not.toMatch(/\b(accuracy|altitude|speed|heading)\b/);
+    expect(sql).toContain('effective_latitude');
+    expect(sql).toContain('effective_longitude');
+    expect(points).toEqual([
+      expect.objectContaining({
+        recordedAt: '2026-01-02T00:00:00.000Z',
+        localDate: '2026-01-02',
+        latitude: 35,
+        longitude: 139,
+        effectiveLatitude: null,
+        effectiveLongitude: null,
+      }),
+    ]);
   });
 
   test('訪問した都道府県名を期間で絞って返す', async () => {

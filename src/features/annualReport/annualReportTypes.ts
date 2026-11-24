@@ -42,6 +42,12 @@ export type AnnualReportPayloadV1 = {
 export type AnnualReportProgress = {
   /** 1〜12は次に集計する月、13は最終ステップ待ち。 */
   nextMonth: number;
+  /**
+   * 次に集計する、月の前半(1: 1〜15日)・後半(2: 16日〜月末)。
+   * 1ステップの読み込み量を抑えるため月を半分に分けている。
+   * 半月分割より前の進捗には無いため省略可能にし、無ければ前半(その月の最初)から再開する。
+   */
+  nextHalf?: 1 | 2;
   activeDates: string[];
   monthlyDistanceMeters: number[];
   yearRouteSegments: AnnualReportCoordinate[][];

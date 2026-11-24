@@ -202,3 +202,21 @@ export const LANDMARK_PACK_PLUS_TEASER_EXAMPLES = 'のぼれる灯台 日本三�
 export function getStoryProgressLabel(index: number, pageCount: number): string {
   return `${index + 1} / ${pageCount} ページ`;
 }
+
+/** 年間レポートの共有で、非表示範囲の滞在場所が写るときの確認ダイアログのタイトル。 */
+export const ANNUAL_REPORT_PRIVACY_DIALOG_TITLE = 'プライベートな滞在場所を隠しますか？';
+/** 年間レポートの共有確認ダイアログの説明文。 */
+export const ANNUAL_REPORT_PRIVACY_DIALOG_MESSAGE =
+  'このページには「共有時に隠す」設定の滞在場所が含まれています。隠すと、その範囲内のルートは共有する画像に表示されません。';
+/** 年間レポートの共有確認ダイアログで、非表示範囲を隠して共有するボタン。 */
+export const ANNUAL_REPORT_SHARE_HIDDEN_LABEL = '隠して共有';
+/** 年間レポートの共有確認ダイアログで、隠さずにそのまま共有するボタン。 */
+export const ANNUAL_REPORT_SHARE_RAW_LABEL = '隠さずに共有';
+/** 年間レポートの共有確認ダイアログで、共有をやめるボタン。 */
+export const ANNUAL_REPORT_SHARE_CANCEL_LABEL = 'キャンセル';
+/** 滞在場所を確認できず、地図を含む画像の共有を始められないときのアラートのタイトル。 */
+export const STAY_PLACES_SHARE_UNAVAILABLE_TITLE = '共有できません';
+/** 滞在場所の読み込みに失敗して共有を準備できないときの説明(月次レポートと同じ文言)。 */
+export const STAY_PLACES_SHARE_ERROR_MESSAGE = '滞在場所を読み込めないため、共有を準備できません。';
+/** 滞在場所の読み込み中で共有をまだ準備できないときの説明(月次レポートと同じ文言)。 */
+export const STAY_PLACES_SHARE_LOADING_MESSAGE = '滞在場所を確認中です。共有は確認後に利用できます。';

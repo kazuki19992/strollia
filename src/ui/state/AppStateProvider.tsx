@@ -439,6 +439,11 @@ export type AppStateContextValue = {
   openAnnualReport: () => void;
   /** 年間レポート画面を閉じて地図へ戻る。 */
   closeAnnualReport: () => void;
+  /**
+   * 閉じるボタン以外(Androidの戻る・スワイプ・リダイレクトなど)で年間レポート画面を離れたときに呼ぶ。
+   * 閉じたときの後処理(開発用フラグ時の保存データ削除と作り直し)だけを行い、画面遷移はしない。
+   */
+  notifyAnnualReportLeft: () => void;
   /** 設定画面へ移動する。 */
   openSettings: () => void;
   /** 滞在場所の設定画面へ移動する。 */
@@ -1282,6 +1287,11 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openMap();
   }
 
+  /** 閉じるボタンを使わずに年間レポート画面を離れたときの後処理。すでに画面は離れているため遷移しない。 */
+  function notifyAnnualReportLeft(): void {
+    annualReportState.onReportClosed();
+  }
+
   /** 設定画面へ移動する。 */
   function openSettings(): void {
     if (navigator?.openSettings) {
@@ -1593,6 +1603,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openMonthlyReport,
     openAnnualReport,
     closeAnnualReport,
+    notifyAnnualReportLeft,
     openSettings,
     openStayPlaces,
     openFirstLaunchTutorial,

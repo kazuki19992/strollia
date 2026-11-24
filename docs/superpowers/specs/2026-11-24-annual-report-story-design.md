@@ -200,7 +200,7 @@
 
 本番は期間限定だが、開発・検証ビルドではいつでも動作を確認できるようにする（ユーザー要望）。
 
-- `src/config/developmentFlags.ts` に `annualReportAlwaysAvailable` を追加し、`EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE=true` で有効にする。production ビルドの環境変数には設定しない。
+- `src/config/developmentFlags.ts` に `annualReportAlwaysAvailable` を追加し、`EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE=true` で有効にする。production ビルドの環境変数には設定しない（`scripts/build-and-submit-ios.sh` は `false` を明示する）。誤って設定されても、`EXPO_PUBLIC_STROLLIA_BUILD_PROFILE` が `production` のビルドでは常に無効として扱う。
 - フラグが有効なときは、以下のように振る舞う。
   - 日付に関係なく、公開期間中として扱う。対象年は現在の年とする。
   - 集計期間は 1月1日〜今日（12月16日以降は 12月15日まで）とする。

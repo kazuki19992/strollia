@@ -26,9 +26,12 @@ export const developmentFlags: Record<
   logPhotoScanMetrics: process.env.EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS === ENABLED_ENV_VALUE,
   /**
    * 年間レポートを期間外でも動作確認できるようにする(対象年は現在の年、記録日数条件も無視)。
-   * production ビルドの環境変数には設定しない。
+   * 有効時は保存データを開閉のたびに削除するため、`.env.local` の設定が紛れ込んでも
+   * production プロファイルのビルドでは常に無効にする(EAS の `EXPO_PUBLIC_STROLLIA_BUILD_PROFILE` で判定)。
    */
-  annualReportAlwaysAvailable: process.env.EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE === ENABLED_ENV_VALUE,
+  annualReportAlwaysAvailable:
+    process.env.EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE === ENABLED_ENV_VALUE &&
+    process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE !== 'production',
 };
 
 /**

@@ -1075,14 +1075,19 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
 
-  const annualReportState = useAnnualReportState({ isReady });
+  // 開発用フラグ時に待たせた通知タップは、作り直しが終わった時点のレンダーの openAnnualReport で開く
+  const annualReportState = useAnnualReportState({ isReady, onDeferredOpen: () => openAnnualReport() });
   // 保存済みレポートの読み込みが終わるまで待ってから通知タップを処理する(コールドスタートで取りこぼさないため)
   useAnnualReportNotificationResponse({
     isReady: isReady && annualReportState.hasEvaluated,
     onOpenAnnualReport: (year) => {
-      // 公開期間外・対象年違いのタップはストーリーを開かず地図のままにする
-      if (annualReportState.availableReport?.year !== year) return;
-      openAnnualReport();
+      if (annualReportState.availableReport?.year === year) {
+        openAnnualReport();
+        return;
+      }
+      // 本番では公開期間外・未完了のタップはストーリーを開かず地図のままにする。
+      // 開発用フラグ時だけ、起動時の作り直しが終わってから開けるよう年を覚えておく
+      annualReportState.deferNotificationOpen(year);
     },
   });
 

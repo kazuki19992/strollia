@@ -40,6 +40,13 @@ export type AnnualReportState = {
   onReportOpened: () => void;
   /** レポート画面を閉じたときに呼ぶ。開発用フラグ時だけ保存データを削除し、集計を最初からやり直す。 */
   onReportClosed: () => void;
+  /**
+   * 通知タップで開こうとした年のレポートがまだ表示できないときに呼ぶ。
+   * 開発用フラグ時だけ年を覚えておき、作り直しが終わって表示できるようになったら `onDeferredOpen` を呼ぶ
+   * (起動時の削除で作り直し中でも、通知タップから開く流れを確認できるようにするため。spec §10.1)。
+   * フラグなしでは何もしない(地図のまま)。
+   */
+  deferNotificationOpen: (year: number) => void;
 };
 
 /** `useAnnualReportState` の引数。 */
@@ -50,6 +57,8 @@ export type UseAnnualReportStateArgs = {
   now?: () => Date;
   /** 開発用フラグ(期間外でも動作させる)。省略時は `developmentFlags.annualReportAlwaysAvailable`。 */
   alwaysAvailable?: boolean;
+  /** `deferNotificationOpen` で待たせた年のレポートが表示できるようになったときに呼ぶ。 */
+  onDeferredOpen?: () => void;
 };
 
 /** 表示用の状態。レポートと残り日数を常に組で更新するため1つにまとめる。 */
@@ -57,6 +66,15 @@ type DisplayState = { report: AnnualReportPayloadV1 | null; daysLeft: number | n
 
 /** 何も表示しない状態。 */
 const EMPTY_DISPLAY: DisplayState = { report: null, daysLeft: null };
+
+/** Sentry への記録自体が失敗しても呼び出し元を巻き込まない(未処理の Promise 拒否にしない)。 */
+function reportSafely(error: unknown, context: Record<string, unknown>): void {
+  try {
+    reportInvestigatedError(error, { area: SENTRY_AREA, context });
+  } catch (reportError: unknown) {
+    console.warn('Failed to report annual report error:', reportError);
+  }
+}
 
 /** UI が空いたときに呼ぶコールバックを予約し、取り消し関数を返す。 */
 function scheduleWhenIdle(callback: () => void): () => void {
@@ -75,8 +93,9 @@ function scheduleWhenIdle(callback: () => void): () => void {
  * - 起動初期化の完了時と前面復帰時に評価し直す。集計期間外なら何もせず、表示も消す(1/16 以降の復帰など)。
  * - 未完了なら、UI が空いたときに1ステップ(1か月分)ずつ集計し、ステップごとに進捗を保存する。
  *   ステップの間で UI へ制御を返し、背面へ回ったら次を予約しない(GPS のバックグラウンド処理には関与しない)。
- * - ステップは常に1つずつしか実行しない。前面復帰が重なっても二重に走らせない。
- * - 例外は Sentry へ記録し、そのセッション中は再試行しない。
+ * - ステップは常に1つずつしか実行しない。前面復帰が重なっても二重に走らせず、
+ *   読み込み中にループが進んだ評価の古い記録で、完成済みの行を上書きしない(spec §7.2)。
+ * - 例外は Sentry へ記録し、そのセッション中は再試行しない。記録日数不足の年も、そのセッション中は再集計しない。
  * - 開発用フラグ時は、起動ごとに1回と、画面の開閉時に保存データを削除して作り直す(spec §10.1)。
  *   通知の予約は起動ごとに1回だけにする(閉じるたびに通知が届くのを避けるため)。
  */
@@ -84,6 +103,7 @@ export function useAnnualReportState({
   isReady,
   now = () => new Date(),
   alwaysAvailable = developmentFlags.annualReportAlwaysAvailable,
+  onDeferredOpen,
 }: UseAnnualReportStateArgs): AnnualReportState {
   const [display, setDisplay] = useState<DisplayState>(EMPTY_DISPLAY);
   const [hasEvaluated, setHasEvaluated] = useState(false);
@@ -91,20 +111,31 @@ export function useAnnualReportState({
   /** 最新の引数をコールバックから参照するための ref。 */
   const nowRef = useRef(now);
   const alwaysAvailableRef = useRef(alwaysAvailable);
+  const onDeferredOpenRef = useRef(onDeferredOpen);
   /** 現在の AppState。背面中は次のステップを予約しない判定に使う。 */
   const appStateRef = useRef<AppStateStatus>(resolveAppStateStatus(AppState.currentState));
   /** 集計ループ(予約〜実行〜保存)が進行中か。二重起動を防ぐ。 */
   const loopActiveRef = useRef(false);
+  /**
+   * ループの開始・終了ごとに増える世代番号。
+   * 評価の読み込み中にループが動いていた・世代が変わった場合、その評価が読んだ記録は古い可能性があるため、
+   * そこからループを始めない(古い進捗の保存で完成済みの行を消さないため)。
+   */
+  const loopGenerationRef = useRef(0);
   /** 予約中のステップの取り消し関数。 */
   const cancelScheduledRef = useRef<(() => void) | null>(null);
   /** ステップで例外が出たか。出たらこのセッション中は再試行しない。 */
   const failedRef = useRef(false);
+  /** 記録日数不足と判定された対象年。前面復帰のたびに最終ステップを繰り返さないよう覚えておく。 */
+  const insufficientYearRef = useRef<number | null>(null);
   /** 開発用フラグ時の、起動ごと1回の作り直し削除を済ませたか。 */
   const launchResetDoneRef = useRef(false);
   /** この起動中に通知の予約を試みたか(起動ごとに1回だけ予約するため)。 */
   const notificationAttemptedRef = useRef(false);
   /** 進行中のループに、最初からのやり直しを求めているか(開発用フラグ時の閉じる操作)。 */
   const restartRequestedRef = useRef(false);
+  /** 開発用フラグ時に、通知タップで開くのを待っている年。 */
+  const pendingOpenYearRef = useRef<number | null>(null);
   /** アンマウント後に state を更新しないためのフラグ。 */
   const mountedRef = useRef(true);
   /** 最新の runStep。予約したステップから、宣言順に依存せず呼び出すために ref で持つ。 */
@@ -113,7 +144,14 @@ export function useAnnualReportState({
   useEffect(() => {
     nowRef.current = now;
     alwaysAvailableRef.current = alwaysAvailable;
+    onDeferredOpenRef.current = onDeferredOpen;
   });
+
+  /** 集計ループを閉じる。世代番号を進め、読み込み中だった評価が古い進捗で再開しないようにする。 */
+  const endLoop = useCallback(() => {
+    loopActiveRef.current = false;
+    loopGenerationRef.current += 1;
+  }, []);
 
   /** 完成レポートを、公開期間中なら表示状態へ反映する。 */
   const applyCompletedReport = useCallback((window: AnnualReportWindow, payload: AnnualReportPayloadV1) => {
@@ -142,21 +180,24 @@ export function useAnnualReportState({
    * 集計ループの次のステップを予約する。背面中や失敗後は予約せずループを終える。
    * 予約したステップは、実行時点で背面に回っていれば何もせず終わる(前面復帰時の評価で再開する)。
    */
-  const scheduleStep = useCallback((window: AnnualReportWindow, progress: AnnualReportProgress) => {
-    if (!mountedRef.current || failedRef.current || appStateRef.current !== 'active') {
-      loopActiveRef.current = false;
-      return;
-    }
-
-    cancelScheduledRef.current = scheduleWhenIdle(() => {
-      cancelScheduledRef.current = null;
-      if (!mountedRef.current || appStateRef.current !== 'active') {
-        loopActiveRef.current = false;
+  const scheduleStep = useCallback(
+    (window: AnnualReportWindow, progress: AnnualReportProgress) => {
+      if (!mountedRef.current || failedRef.current || appStateRef.current !== 'active') {
+        endLoop();
         return;
       }
-      runStepRef.current(window, progress).catch(() => undefined);
-    });
-  }, []);
+
+      cancelScheduledRef.current = scheduleWhenIdle(() => {
+        cancelScheduledRef.current = null;
+        if (!mountedRef.current || appStateRef.current !== 'active') {
+          endLoop();
+          return;
+        }
+        runStepRef.current(window, progress).catch(() => undefined);
+      });
+    },
+    [endLoop],
+  );
 
   /** 1ステップを実行して結果を保存し、必要なら次を予約する。 */
   async function runStep(window: AnnualReportWindow, progress: AnnualReportProgress): Promise<void> {
@@ -180,8 +221,10 @@ export function useAnnualReportState({
         await completeAnnualReport(window.year, result.payload);
         applyCompletedReport(window, result.payload);
         await scheduleNotificationOnce(window);
+      } else {
+        // 記録が少ない年はレポートを作らないため何も保存しない。前面復帰のたびに判定し直さないよう覚えておく
+        insufficientYearRef.current = window.year;
       }
-      // insufficient: 記録が少ない年はレポートを作らないため何も保存しない
 
       if (restartRequestedRef.current) {
         // 完了処理の途中で閉じる操作があった場合も、取りこぼさずに最初からやり直す
@@ -190,11 +233,11 @@ export function useAnnualReportState({
         return;
       }
       // 保存まで終えてからループを閉じる。途中で前面復帰の評価が走っても二重に集計させないため
-      loopActiveRef.current = false;
+      endLoop();
     } catch (error: unknown) {
-      loopActiveRef.current = false;
       failedRef.current = true;
-      reportInvestigatedError(error, { area: SENTRY_AREA, context: { year: window.year, nextMonth: progress.nextMonth } });
+      endLoop();
+      reportSafely(error, { year: window.year, nextMonth: progress.nextMonth });
     }
   }
 
@@ -205,8 +248,9 @@ export function useAnnualReportState({
   /** 集計ループが止まっていれば、指定の進捗から開始する。 */
   const startLoop = useCallback(
     (window: AnnualReportWindow, progress: AnnualReportProgress) => {
-      if (loopActiveRef.current || failedRef.current) return;
+      if (loopActiveRef.current || failedRef.current || insufficientYearRef.current === window.year) return;
       loopActiveRef.current = true;
+      loopGenerationRef.current += 1;
       scheduleStep(window, progress);
     },
     [scheduleStep],
@@ -226,6 +270,9 @@ export function useAnnualReportState({
       await deleteAnnualReport(window.year);
     }
 
+    // 読み込み開始時点のループの状態。読み込み中にループが動いていれば、読んだ記録は古い可能性がある
+    const loopWasActive = loopActiveRef.current;
+    const generationAtRead = loopGenerationRef.current;
     const record = await getAnnualReport(window.year);
     if (record?.status === 'completed') {
       applyCompletedReport(window, record.payload);
@@ -241,6 +288,11 @@ export function useAnnualReportState({
           : EMPTY_DISPLAY,
       );
     }
+
+    if (loopWasActive || generationAtRead !== loopGenerationRef.current) {
+      // 進行中・直前に終わったループが最新の状態を持っている。古い進捗から始めて完成済みの行を上書きしない
+      return;
+    }
     startLoop(window, record?.progress ?? createInitialProgress());
   }, [applyCompletedReport, startLoop]);
 
@@ -248,7 +300,7 @@ export function useAnnualReportState({
   const runEvaluate = useCallback(() => {
     evaluate()
       .catch((error: unknown) => {
-        reportInvestigatedError(error, { area: SENTRY_AREA, context: { stage: 'evaluate' } });
+        reportSafely(error, { stage: 'evaluate' });
       })
       .finally(() => {
         if (mountedRef.current) setHasEvaluated(true);
@@ -279,13 +331,21 @@ export function useAnnualReportState({
     return () => subscription.remove();
   }, [isReady, runEvaluate]);
 
+  /** 待たせていた通知タップの年のレポートが表示できるようになったら開く(開発用フラグ時のみ発生する)。 */
+  useEffect(() => {
+    const pendingYear = pendingOpenYearRef.current;
+    if (pendingYear === null || display.report?.year !== pendingYear) return;
+    pendingOpenYearRef.current = null;
+    onDeferredOpenRef.current?.();
+  }, [display.report]);
+
   const onReportOpened = useCallback(() => {
     if (!alwaysAvailableRef.current) return;
     const window = resolveAggregationWindow(nowRef.current(), true);
     if (!window) return;
     // 表示中のストーリーはメモリ上のデータで再生するため、availableReport は変えない
     deleteAnnualReport(window.year).catch((error: unknown) => {
-      reportInvestigatedError(error, { area: SENTRY_AREA, context: { stage: 'debugDeleteOnOpen' } });
+      reportSafely(error, { stage: 'debugDeleteOnOpen' });
     });
   }, []);
 
@@ -304,9 +364,22 @@ export function useAnnualReportState({
         startLoop(window, createInitialProgress());
       })
       .catch((error: unknown) => {
-        reportInvestigatedError(error, { area: SENTRY_AREA, context: { stage: 'debugDeleteOnClose' } });
+        reportSafely(error, { stage: 'debugDeleteOnClose' });
       });
   }, [startLoop]);
 
-  return { availableReport: display.report, daysLeft: display.daysLeft, hasEvaluated, onReportOpened, onReportClosed };
+  const deferNotificationOpen = useCallback((year: number) => {
+    // 本番では公開期間外・未完了のタップは地図のままにする(spec §8)。待たせるのは開発用フラグ時だけ
+    if (!alwaysAvailableRef.current) return;
+    pendingOpenYearRef.current = year;
+  }, []);
+
+  return {
+    availableReport: display.report,
+    daysLeft: display.daysLeft,
+    hasEvaluated,
+    onReportOpened,
+    onReportClosed,
+    deferNotificationOpen,
+  };
 }

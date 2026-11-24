@@ -30,6 +30,16 @@ describe('年次レポートのルート間引き', () => {
     expect(thinRouteSegments(segments, 100)).toEqual(segments);
   });
 
+  test('短い区間が多く予算が厳しくても、出力の区間はすべて描画できる2点以上になる', () => {
+    const tinySegments = Array.from({ length: 50 }, (_, i) => zigzag(3, 40 + i * 0.01));
+    const segments = [...tinySegments, zigzag(5000, 36)];
+
+    const result = thinRouteSegments(segments, 60);
+
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((segment) => segment.length >= 2)).toBe(true);
+  });
+
   test('合計点数が予算以下になる', () => {
     const segments = [zigzag(1500), zigzag(1500, 36), zigzag(1000, 37)];
 

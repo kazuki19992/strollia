@@ -221,7 +221,10 @@ describe('年次レポートのステップ集計', () => {
   });
 
   test('開発用フラグ時は記録6日でも最終ステップで payload を返す', async () => {
-    const progress = progressWith({ nextMonth: 13, activeDates: ['2026-01-01'] });
+    const progress = progressWith({
+      nextMonth: 13,
+      activeDates: ['2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01', '2026-06-01'],
+    });
 
     const result = await runAnnualReportStep(window2026, progress, true);
 

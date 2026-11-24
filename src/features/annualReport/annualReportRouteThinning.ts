@@ -62,7 +62,10 @@ export function thinRouteSegments(segments: AnnualReportCoordinate[][], budget: 
     return current;
   }
 
-  return current.map((segment) => sampleEvenly(segment, Math.floor((segment.length * budget) / totalPoints)));
+  // 描画できない2点未満の区間は出力しない(sampleEvenly も最低2点を保つが、不変条件をここで明示する)
+  return current
+    .map((segment) => sampleEvenly(segment, Math.floor((segment.length * budget) / totalPoints)))
+    .filter((segment) => segment.length >= 2);
 }
 
 /** 時刻付きルートを等間隔に budget 点以下へ間引く。先頭と末尾を残し、元の時刻順を保つ。 */

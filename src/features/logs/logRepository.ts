@@ -313,5 +313,7 @@ export async function deleteAllUserData(): Promise<void> {
     await txn.runAsync('DELETE FROM location_points');
     await txn.runAsync('DELETE FROM daily_logs');
     await txn.runAsync('DELETE FROM photo_assets');
+    // 年次レポートはGPSログから派生したルート・訪問先を含む個人データのため、全削除の取りこぼしにしない
+    await txn.runAsync('DELETE FROM annual_reports');
   });
 }

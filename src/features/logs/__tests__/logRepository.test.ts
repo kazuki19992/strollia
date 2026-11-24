@@ -236,6 +236,8 @@ describe('全ユーザーデータ削除 deleteAllUserData', () => {
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(11, 'DELETE FROM daily_logs');
     // 写真メタデータ(ジオタグ付き写真のキャッシュ)も端末から確実に消す
     expect(mockTxn.runAsync).toHaveBeenNthCalledWith(12, 'DELETE FROM photo_assets');
+    // 年次レポートはGPSログから派生した個人データ(ルート・訪問先)なので一緒に消す
+    expect(mockTxn.runAsync).toHaveBeenNthCalledWith(13, 'DELETE FROM annual_reports');
   });
 });
 

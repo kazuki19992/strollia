@@ -470,12 +470,15 @@ Visited Grid Overlayでは、有効な観測が存在した100mセルを `visite
 - `landmark_area_visits`
 - `stay_places`
 - `photo_assets`
+- `annual_reports`
 
 `location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
 
 `landmark_spot_visits` は `achievement_unlocks` と対になる到達記録のため、片方だけ残すと「完走実績は未解除なのに全スポット到達済み」という矛盾状態になる。合わせて削除する。`landmark_area_visits` もスポット到達の元データのため同様に削除する。
 
 `photo_assets` は写真ライブラリから読み取ったメタデータのキャッシュだが、撮影位置は端末内に残る個人データであるため削除対象に含める。写真ライブラリ側の写真は削除しない。
+
+`annual_reports` は年間振り返りの集計途中データと完成レポート（間引き済みルート・訪問都道府県を含む）で、GPSログから派生した個人データのため削除対象に含める。
 
 アプリ設定を保持する `app_settings` は、画面表示設定や開発フラグ確認状態などを含むため、初期実装では削除対象外とする。
 

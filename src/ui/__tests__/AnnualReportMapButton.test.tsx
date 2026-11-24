@@ -303,7 +303,9 @@ const mockAnnualReportState = {
   onReportOpened: jest.fn(),
   onReportClosed: jest.fn(),
   deferNotificationOpen: jest.fn(),
+  invalidateForDataDeletion: jest.fn(),
   resetAfterDataDeletion: jest.fn(),
+  onDataDeletionFailed: jest.fn(),
 };
 
 jest.mock('@/ui/hooks/useAnnualReportState', () => ({
@@ -411,6 +413,32 @@ describe('地図画面の年間レポートふりかえりボタン', () => {
     await flushPromises();
 
     expect(deleteAllUserData).toHaveBeenCalledTimes(1);
+    // 削除前のスナップショットで計算中の集計が、削除の後に保存し直さないよう、削除の開始前に無効化する
+    expect(mockAnnualReportState.invalidateForDataDeletion).toHaveBeenCalledTimes(1);
+    expect(mockAnnualReportState.invalidateForDataDeletion.mock.invocationCallOrder[0]).toBeLessThan(
+      (deleteAllUserData as jest.Mock).mock.invocationCallOrder[0],
+    );
     expect(mockAnnualReportState.resetAfterDataDeletion).toHaveBeenCalledTimes(1);
+    expect(mockAnnualReportState.onDataDeletionFailed).not.toHaveBeenCalled();
+  });
+
+  test('「すべてのデータの削除」が失敗したら、年間レポートの集計を再開させ、表示はリセットしない', async () => {
+    (deleteAllUserData as jest.Mock).mockRejectedValueOnce(new Error('locked'));
+    const alertSpy = jest.spyOn(Alert, 'alert');
+
+    await renderRouter('src/app', { initialUrl: '/settings' });
+    await flushPromises();
+
+    await fireEvent.press(screen.getByLabelText('すべてのデータの削除'));
+    const buttons = alertSpy.mock.calls[0][2] as { text: string; onPress?: () => void }[];
+    await act(async () => {
+      buttons.find((button) => button.text === '削除する')?.onPress?.();
+    });
+    await flushPromises();
+
+    expect(mockAnnualReportState.invalidateForDataDeletion).toHaveBeenCalledTimes(1);
+    expect(mockAnnualReportState.onDataDeletionFailed).toHaveBeenCalledTimes(1);
+    expect(mockAnnualReportState.resetAfterDataDeletion).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledWith('削除失敗', 'locked');
   });
 });

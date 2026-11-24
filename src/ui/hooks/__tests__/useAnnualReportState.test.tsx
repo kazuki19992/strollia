@@ -805,6 +805,138 @@ describe('年間レポート状態hook useAnnualReportState', () => {
     expect(result.current.availableReport).toBe(payload);
     expect(onDeferredOpen).not.toHaveBeenCalled();
   });
+  describe('すべてのデータの削除を始める前 invalidateForDataDeletion', () => {
+    it('削除の開始時に計算中だったステップの結果は、削除が終わっても保存しない', async () => {
+      let resolveStep: (value: unknown) => void = () => undefined;
+      (runAnnualReportStep as jest.Mock).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveStep = resolve;
+          }),
+      );
+
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }),
+      );
+      await flushPromises();
+      await runNextIdle();
+
+      // 削除トランザクションの開始前に無効化する。ステップは削除前のスナップショットで計算を続けている
+      await act(async () => {
+        result.current.invalidateForDataDeletion();
+      });
+      await act(async () => {
+        resolveStep({ kind: 'progressed', progress: makeProgress(2) });
+      });
+      await flushPromises();
+      // 削除が成功した
+      await act(async () => {
+        result.current.resetAfterDataDeletion();
+      });
+      await flushPromises();
+
+      expect(saveAnnualReportProgress).not.toHaveBeenCalled();
+      expect(idleQueue).toHaveLength(0);
+    });
+
+    it('削除の開始時に計算中だったステップが完了しても、完成レポートを保存しない', async () => {
+      let resolveStep: (value: unknown) => void = () => undefined;
+      (runAnnualReportStep as jest.Mock).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveStep = resolve;
+          }),
+      );
+
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 21, 10), alwaysAvailable: false }),
+      );
+      await flushPromises();
+      await runNextIdle();
+
+      await act(async () => {
+        result.current.invalidateForDataDeletion();
+      });
+      await act(async () => {
+        resolveStep({ kind: 'completed', payload: makePayload(2026) });
+      });
+      await flushPromises();
+
+      expect(completeAnnualReport).not.toHaveBeenCalled();
+      expect(scheduleAnnualReportNotification).not.toHaveBeenCalled();
+      expect(result.current.availableReport).toBeNull();
+    });
+
+    it('削除中に前面へ戻っても集計を始めず、削除の成功後の前面復帰で始める', async () => {
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }),
+      );
+      await flushPromises();
+      expect(idleQueue).toHaveLength(1);
+
+      await act(async () => {
+        result.current.invalidateForDataDeletion();
+      });
+      expect(idleQueue).toHaveLength(0);
+
+      // 削除前のスナップショットを読む評価からは、ループを始めない(保存が削除の後に回り込むため)
+      await emitAppState('active');
+      expect(idleQueue).toHaveLength(0);
+
+      await act(async () => {
+        result.current.resetAfterDataDeletion();
+      });
+      await emitAppState('active');
+      expect(idleQueue).toHaveLength(1);
+    });
+
+    it('削除に失敗したら、保存済みの進捗から集計を再開する', async () => {
+      (getAnnualReport as jest.Mock).mockResolvedValue({
+        year: 2026,
+        status: 'in_progress',
+        progress: makeProgress(5),
+        notificationScheduledAt: null,
+      });
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }),
+      );
+      await flushPromises();
+
+      await act(async () => {
+        result.current.invalidateForDataDeletion();
+      });
+      expect(idleQueue).toHaveLength(0);
+
+      await act(async () => {
+        result.current.onDataDeletionFailed();
+      });
+      await flushPromises();
+
+      expect(idleQueue).toHaveLength(1);
+      expect(cancelAnnualReportNotification).not.toHaveBeenCalled();
+    });
+  });
+
+  it('ステップの例外を記録するとき、解釈できない進捗は集計で実際に使う形(最初から)に直して記録する', async () => {
+    const error = new Error('boom');
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: { nextMonth: 'broken' },
+      notificationScheduledAt: null,
+    });
+    (runAnnualReportStep as jest.Mock).mockRejectedValueOnce(error);
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 17, 10), alwaysAvailable: false }));
+    await flushPromises();
+    await runNextIdle();
+
+    expect(reportInvestigatedError).toHaveBeenCalledWith(
+      error,
+      expect.objectContaining({ context: { year: 2026, nextMonth: 1, nextHalf: 1 } }),
+    );
+  });
+
   describe('すべてのデータを削除したあと resetAfterDataDeletion', () => {
     it('表示中のレポートを消し、対象年の予約済み通知を取り消す', async () => {
       const payload = makePayload(2026);

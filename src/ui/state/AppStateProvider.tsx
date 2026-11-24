@@ -63,7 +63,7 @@ import { usePremiumAccess } from '@/ui/hooks/usePremiumAccess';
 import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyReportNotificationResponse';
 import { useAnnualReportNotificationResponse } from '@/ui/hooks/useAnnualReportNotificationResponse';
-import { useAnnualReportState } from '@/ui/hooks/useAnnualReportState';
+import { useAnnualReportState, type AnnualReportState } from '@/ui/hooks/useAnnualReportState';
 import type { AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
@@ -952,10 +952,16 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   }, []);
 
   /**
-   * 全削除の成功後に年間レポートの状態をリセットする関数。
+   * 全削除の前後に年間レポートの集計・表示を扱う関数群。
    * useAnnualReportState はこのコールバックより後で呼ぶため、ref 経由で最新の関数を参照する。
    */
-  const resetAnnualReportAfterDataDeletionRef = useRef<() => void>(() => undefined);
+  const annualReportDataDeletionRef = useRef<
+    Pick<AnnualReportState, 'invalidateForDataDeletion' | 'resetAfterDataDeletion' | 'onDataDeletionFailed'>
+  >({
+    invalidateForDataDeletion: () => undefined,
+    resetAfterDataDeletion: () => undefined,
+    onDataDeletionFailed: () => undefined,
+  });
 
   /** 確認ダイアログを挟んで保存済みデータを全削除する。 */
   const deleteAllData = useCallback(async (): Promise<void> => {
@@ -965,10 +971,18 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         text: '削除する',
         style: 'destructive',
         onPress: () => {
+          // 削除は別接続の排他トランザクションで行われ、その間も年間レポートの集計は削除前のデータで計算を続ける。
+          // その保存がロック待ちのあと削除の後に書き込まれないよう、削除を始める前に集計を無効化する
+          annualReportDataDeletionRef.current.invalidateForDataDeletion();
           deleteAllUserData()
+            .catch((error: unknown) => {
+              // データは残っているため、止めた集計を再開してから失敗を伝える
+              annualReportDataDeletionRef.current.onDataDeletionFailed();
+              throw error;
+            })
             .then(async () => {
-              // 削除したレポートを表示・共有し続けたり、実行中の集計が保存し直したり、予約済みの通知が届いたりしないようにする
-              resetAnnualReportAfterDataDeletionRef.current();
+              // 削除したレポートを表示・共有し続けたり、予約済みの通知が届いたりしないようにする
+              annualReportDataDeletionRef.current.resetAfterDataDeletion();
               // 全削除では landmark_spot_visits / landmark_area_visits も消えるため、スポット・地点の到達も合わせて読み直す
               await refreshDeletedUserDataState(refreshData, stableRefreshAchievementState);
               // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
@@ -1090,7 +1104,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
 
   // 待たせた通知タップは、表示できるようになった時点のレンダーの openAnnualReport で開く
   const annualReportState = useAnnualReportState({ isReady, onDeferredOpen: () => openAnnualReport() });
-  resetAnnualReportAfterDataDeletionRef.current = annualReportState.resetAfterDataDeletion;
+  annualReportDataDeletionRef.current = annualReportState;
   // 保存済みレポートの読み込みが終わるまで待ってから通知タップを処理する(コールドスタートで取りこぼさないため)
   useAnnualReportNotificationResponse({
     isReady: isReady && annualReportState.hasEvaluated,

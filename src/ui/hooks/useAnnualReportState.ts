@@ -3,7 +3,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { reportInvestigatedError } from '@/config/sentry';
 import { developmentFlags } from '@/config/developmentFlags';
-import { createInitialProgress, runAnnualReportStep } from '@/features/annualReport/annualReportAggregator';
+import { createInitialProgress, normalizeAnnualReportProgress, runAnnualReportStep } from '@/features/annualReport/annualReportAggregator';
 import { cancelAnnualReportNotification, scheduleAnnualReportNotification } from '@/features/annualReport/annualReportNotificationService';
 import {
   daysUntilPublishEnd,
@@ -49,10 +49,19 @@ export type AnnualReportState = {
    */
   deferNotificationOpen: (year: number) => void;
   /**
+   * 「すべてのデータを削除」の削除トランザクションを始める直前に呼ぶ。実行中の集計・評価の結果を捨て、
+   * 削除が終わるまで集計を始めない。
+   * 削除は別接続の排他トランザクションで書き込みロックを持つため、その間も集計は削除前のスナップショットで計算を続け、
+   * 保存はロック待ちのあと削除の後に実行されてしまう。削除の開始前に止めることで、削除したデータからの再保存を防ぐ。
+   */
+  invalidateForDataDeletion: () => void;
+  /**
    * 「すべてのデータを削除」が成功したあとに呼ぶ。表示中のレポートを消し、予約済みの通知を取り消し、
-   * 実行中の集計・評価の結果を捨てる(削除したレポートを保存し直したり表示し直したりしないため)。
+   * 削除中に読まれた評価の結果も捨てる(削除したレポートを表示・共有させないため)。以後の前面復帰で集計を再開できる。
    */
   resetAfterDataDeletion: () => void;
+  /** 「すべてのデータを削除」が失敗したときに呼ぶ。データは残っているため、表示はそのままにして集計を再開する。 */
+  onDataDeletionFailed: () => void;
 };
 
 /** `useAnnualReportState` の引数。 */
@@ -154,8 +163,10 @@ export function useAnnualReportState({
   const [settledEvaluationCount, setSettledEvaluationCount] = useState(0);
   /** `settledEvaluationCount` の最新値。待ち始めの時点の回数を、レンダーを待たずに記録するために使う。 */
   const settledEvaluationCountRef = useRef(0);
+  /** 「すべてのデータを削除」の実行中か。実行中は集計ループを始めない(保存が削除の後に回り込むため)。 */
+  const dataDeletionInProgressRef = useRef(false);
   /**
-   * データ削除の世代番号。`resetAfterDataDeletion` で増える。
+   * データ削除の世代番号。`invalidateForDataDeletion` と `resetAfterDataDeletion` で増える。
    * ステップ・評価は開始時の値を覚え、途中で変わっていたら結果を保存・表示せずに終わる。
    */
   const dataEpochRef = useRef(0);
@@ -276,7 +287,9 @@ export function useAnnualReportState({
       if (isStale()) return;
       failedRef.current = true;
       endLoop();
-      reportSafely(error, { year: window.year, nextMonth: progress.nextMonth, nextHalf: progress.nextHalf ?? 1 });
+      // 保存済みの進捗が壊れていた場合も、集計で実際に使った位置(最初から)を記録する
+      const attempted = normalizeAnnualReportProgress(progress);
+      reportSafely(error, { year: window.year, nextMonth: attempted.nextMonth, nextHalf: attempted.nextHalf ?? 1 });
     }
   }
 
@@ -287,7 +300,9 @@ export function useAnnualReportState({
   /** 集計ループが止まっていれば、指定の進捗から開始する。 */
   const startLoop = useCallback(
     (window: AnnualReportWindow, progress: AnnualReportProgress) => {
-      if (loopActiveRef.current || failedRef.current || insufficientYearRef.current === window.year) return;
+      if (loopActiveRef.current || failedRef.current || dataDeletionInProgressRef.current || insufficientYearRef.current === window.year) {
+        return;
+      }
       loopActiveRef.current = true;
       loopGenerationRef.current += 1;
       scheduleStep(window, progress);
@@ -464,13 +479,30 @@ export function useAnnualReportState({
     [isReady, runEvaluate],
   );
 
-  const resetAfterDataDeletion = useCallback(() => {
-    // 実行中のステップ・評価の結果を捨てる。ループは閉じ、予約済みのステップも取り消す
+  /** 実行中のステップ・評価の結果を捨て、ループを閉じて予約済みのステップも取り消す。 */
+  const discardInFlightWork = useCallback(() => {
     dataEpochRef.current += 1;
     cancelScheduledRef.current?.();
     cancelScheduledRef.current = null;
     endLoop();
     restartRequestedRef.current = false;
+  }, [endLoop]);
+
+  const invalidateForDataDeletion = useCallback(() => {
+    dataDeletionInProgressRef.current = true;
+    discardInFlightWork();
+  }, [discardInFlightWork]);
+
+  const onDataDeletionFailed = useCallback(() => {
+    dataDeletionInProgressRef.current = false;
+    // 無効化で止めた集計を、保存済みの進捗から再開する
+    if (isReady) runEvaluate();
+  }, [isReady, runEvaluate]);
+
+  const resetAfterDataDeletion = useCallback(() => {
+    dataDeletionInProgressRef.current = false;
+    // 削除中に始まった評価が削除前の記録を読んでいる可能性があるため、ここでも結果を捨てる
+    discardInFlightWork();
     // 記録が消えたため、記録日数不足・失敗の判定もやり直せるようにする
     insufficientYearRef.current = null;
     failedRef.current = false;
@@ -481,7 +513,7 @@ export function useAnnualReportState({
     if (window) {
       cancelAnnualReportNotification(window.year).catch(() => undefined);
     }
-  }, [endLoop]);
+  }, [discardInFlightWork]);
 
   return {
     availableReport: display.report,
@@ -490,6 +522,8 @@ export function useAnnualReportState({
     onReportOpened,
     onReportClosed,
     deferNotificationOpen,
+    invalidateForDataDeletion,
     resetAfterDataDeletion,
+    onDataDeletionFailed,
   };
 }

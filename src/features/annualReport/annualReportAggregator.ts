@@ -92,6 +92,14 @@ function isValidProgress(progress: unknown): progress is AnnualReportProgress {
   );
 }
 
+/**
+ * 保存済みの進捗を、集計で実際に使う形にそろえる。解釈できない進捗は最初からの進捗に置き換える。
+ * ステップの失敗を記録するときも、実際に集計した位置を残すために使う。
+ */
+export function normalizeAnnualReportProgress(progress: unknown): AnnualReportProgress {
+  return isValidProgress(progress) ? progress : createInitialProgress();
+}
+
 /** 日付文字列(YYYY-MM-DD)の翌日を返す。 */
 function nextLocalDate(localDate: string): string {
   const [year, month, day] = localDate.split('-').map(Number);
@@ -252,7 +260,7 @@ export async function runAnnualReportStep(
   progress: AnnualReportProgress,
   alwaysAvailable: boolean,
 ): Promise<AnnualReportStepResult> {
-  const current = isValidProgress(progress) ? progress : createInitialProgress();
+  const current = normalizeAnnualReportProgress(progress);
   if (current.nextMonth <= LAST_MONTH) {
     return { kind: 'progressed', progress: await runHalfMonthStep(window, current) };
   }

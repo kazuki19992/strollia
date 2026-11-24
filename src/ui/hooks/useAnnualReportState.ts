@@ -174,12 +174,20 @@ export function useAnnualReportState({
     }
   }, []);
 
-  /** 完了時の通知を、起動ごとに1回だけ予約する。 */
+  /**
+   * 完了時の通知を、起動ごとに1回だけ予約する。
+   * 本番では、行に予約日時が記録済みなら予約し直さない(同じ年の通知を二度届けないため。spec §7.2)。
+   * 開発用フラグ時は起動ごとに行を削除して作り直すため、この記録は見ない。
+   */
   const scheduleNotificationOnce = useCallback(async (window: AnnualReportWindow) => {
     if (notificationAttemptedRef.current) return;
     const at = resolveNotificationTime(nowRef.current(), window.year, alwaysAvailableRef.current);
     if (!at) return;
     notificationAttemptedRef.current = true;
+    if (!alwaysAvailableRef.current) {
+      const record = await getAnnualReport(window.year);
+      if (record?.notificationScheduledAt) return;
+    }
     const scheduled = await scheduleAnnualReportNotification(window.year, at);
     if (scheduled) {
       await markAnnualReportNotificationScheduled(window.year, at.toISOString());

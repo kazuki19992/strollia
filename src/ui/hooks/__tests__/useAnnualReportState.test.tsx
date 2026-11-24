@@ -223,6 +223,24 @@ describe('年間レポート状態hook useAnnualReportState', () => {
     expect(result.current.daysLeft).toBeNull();
   });
 
+  it('保存済みの行に通知予約日時が記録されていれば、完了しても通知を予約し直さない', async () => {
+    (getAnnualReport as jest.Mock).mockResolvedValue({
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(13),
+      notificationScheduledAt: '2026-12-20T00:00:00.000Z',
+    });
+    (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'completed', payload: makePayload(2026) });
+
+    await renderHook(() => useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 19, 15), alwaysAvailable: false }));
+    await flushPromises();
+    await runNextIdle();
+
+    expect(completeAnnualReport).toHaveBeenCalled();
+    expect(scheduleAnnualReportNotification).not.toHaveBeenCalled();
+    expect(markAnnualReportNotificationScheduled).not.toHaveBeenCalled();
+  });
+
   it('12/19に完了したあと12/20に前面へ戻るとレポートが表示できるようになる', async () => {
     const payload = makePayload(2026);
     (getAnnualReport as jest.Mock).mockResolvedValue({

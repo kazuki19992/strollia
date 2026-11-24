@@ -353,11 +353,11 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `status`                    | TEXT      | `in_progress` / `completed`                                         |
 | `progress_json`             | TEXT NULL | 集計途中の進捗・中間集計値。`completed`になるとNULL                 |
 | `payload_json`              | TEXT NULL | 完成したレポート本体。`completed`のとき必須                         |
-| `notification_scheduled_at` | TEXT NULL | 通知を予約した日時（ISO 8601）。重複予約を防ぐ                      |
+| `notification_scheduled_at` | TEXT NULL | 通知を予約した日時（ISO 8601）。記録済みなら完了時に予約し直さない  |
 | `created_at`                | TEXT      | 作成日時（ISO 8601）                                                |
 | `updated_at`                | TEXT      | 更新日時（ISO 8601）                                                |
 
-一度`completed`になったレポートは、あとからGPXをインポートしても再計算しない。JSONが壊れている行は`null`扱いとし、再集計で作り直す。
+一度`completed`になったレポートは、あとからGPXをインポートしても再計算しない。集計途中の進捗の保存（UPSERT）は`completed`の行を上書きしない。JSONが壊れている行は`null`扱いとし、再集計で作り直す。
 
 ## 5. インデックス方針
 

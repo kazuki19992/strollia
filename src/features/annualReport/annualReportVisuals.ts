@@ -155,3 +155,28 @@ export function resolveRoutePlaybackFrame(playback: AnnualReportRoutePlayback, f
     distanceFraction: clamped,
   };
 }
+
+/**
+ * ルートを始点・終点を残して等間隔に間引き、最大 maxPoints 点にする。
+ * 再生中は毎段階で軌跡の Polyline を描き直すため、点数を抑えて描画負荷を下げる。
+ */
+export function downsampleRoute<T>(route: T[], maxPoints: number): T[] {
+  if (route.length <= maxPoints || maxPoints < 2) {
+    return route;
+  }
+  const lastIndex = route.length - 1;
+  return Array.from({ length: maxPoints }, (_, index) => route[Math.round((index * lastIndex) / (maxPoints - 1))]);
+}
+
+/**
+ * 1件ずつ一定間隔で現れる演出で、経過時間までに現れた件数を steps 段階に切り上げて返す。
+ * 数百のマスを個別にアニメーションさせる代わりに、件数を段階的に増やして再描画の回数を抑えるため。
+ */
+export function quantizeRevealCount(elapsedMs: number, startMs: number, intervalMs: number, total: number, steps: number): number {
+  if (total <= 0 || elapsedMs < startMs) {
+    return 0;
+  }
+  const revealed = Math.min(total, Math.floor((elapsedMs - startMs) / Math.max(intervalMs, 0.001)) + 1);
+  const stepSize = Math.max(1, Math.ceil(total / steps));
+  return Math.min(total, Math.ceil(revealed / stepSize) * stepSize);
+}

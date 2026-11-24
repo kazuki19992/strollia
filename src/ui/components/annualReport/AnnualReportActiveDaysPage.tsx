@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { Animated, Text, useWindowDimensions, View } from 'react-native';
+import { Text, useWindowDimensions, View } from 'react-native';
 
-import { buildCalendarCells } from '@/features/annualReport/annualReportVisuals';
+import { buildCalendarCells, quantizeRevealCount } from '@/features/annualReport/annualReportVisuals';
 import { STORY_PAGE_DURATION_MS } from '@/ui/hooks/useStoryPlayer';
-import { timelineProgress, useStoryTimeline, useStoryTimelineValue } from '@/ui/hooks/useStoryTimeline';
+import { useStoryTimeline, useStoryTimelineValue } from '@/ui/hooks/useStoryTimeline';
 import { AnnualReportRise } from './AnnualReportRise';
 import { ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING, annualReportColors, annualReportStyles } from './annualReportStyles';
 import { countUpValue, RISE_DELAYS_MS, type AnnualReportPageProps } from './annualReportPageProps';
@@ -18,6 +18,8 @@ const LIGHT_START_MS = 900;
 const LIGHT_INTERVAL_MS = 7;
 /** 日数のカウントアップの長さ(ミリ秒)。 */
 const COUNT_UP_MS = 2200;
+/** 点灯件数を増やす段階数。 */
+const LIGHT_STEPS = 40;
 
 /** ページ2: 記録した日数。日数をカウントアップし、1年分のカレンダーのマスを順に点灯する。 */
 export function AnnualReportActiveDaysPage({ payload, paused, completed, contentTop }: AnnualReportPageProps) {
@@ -28,6 +30,9 @@ export function AnnualReportActiveDaysPage({ payload, paused, completed, content
     let litCount = 0;
     return buildCalendarCells(payload.year, payload.activeDates).map((cell) => ({ ...cell, order: cell.active ? litCount++ : -1 }));
   }, [payload.year, payload.activeDates]);
+  const litTotal = payload.activeDates.length;
+  // 365マスを個別に補間すると7秒間ずっとJSで計算し続けるため、点灯件数を約40段階で増やして静的なスタイルで描く
+  const litCount = useStoryTimelineValue(clock, (ms) => quantizeRevealCount(ms, LIGHT_START_MS, LIGHT_INTERVAL_MS, litTotal, LIGHT_STEPS));
   const days = useStoryTimelineValue(clock, (ms) => Math.round(countUpValue(ms, LIGHT_START_MS, COUNT_UP_MS, payload.activeDays)));
   const cellSize = (width - ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING * 2 - CALENDAR_GAP * (CALENDAR_COLUMNS - 1)) / CALENDAR_COLUMNS;
 
@@ -45,22 +50,16 @@ export function AnnualReportActiveDaysPage({ payload, paused, completed, content
       </AnnualReportRise>
       <View style={annualReportStyles.calendar}>
         {cells.map((cell) => {
-          if (!cell.active) {
-            return <View key={cell.date} style={[annualReportStyles.calendarCell, { width: cellSize, height: cellSize }]} />;
-          }
-          const order = cell.order;
+          const lit = cell.active && cell.order < litCount;
           return (
-            <View key={cell.date} style={[annualReportStyles.calendarCell, { width: cellSize, height: cellSize }]}>
-              <Animated.View
-                style={[
-                  annualReportStyles.absoluteFill,
-                  {
-                    backgroundColor: order % 3 === 0 ? annualReportColors.accentDeep : annualReportColors.accent,
-                    opacity: timelineProgress(clock, LIGHT_START_MS + order * LIGHT_INTERVAL_MS, 200),
-                  },
-                ]}
-              />
-            </View>
+            <View
+              key={cell.date}
+              style={[
+                annualReportStyles.calendarCell,
+                { width: cellSize, height: cellSize },
+                lit ? { backgroundColor: cell.order % 3 === 0 ? annualReportColors.accentDeep : annualReportColors.accent } : null,
+              ]}
+            />
           );
         })}
       </View>

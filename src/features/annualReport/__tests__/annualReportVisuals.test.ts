@@ -2,6 +2,8 @@ import {
   buildAreaSampleCells,
   buildCalendarCells,
   createRoutePlayback,
+  downsampleRoute,
+  quantizeRevealCount,
   formatClockTime,
   resolveRoutePlaybackFrame,
 } from '@/features/annualReport/annualReportVisuals';
@@ -99,6 +101,34 @@ describe('年間レポートの表示用データ annualReportVisuals', () => {
 
       expect(frame.position).toEqual({ latitude: 35, longitude: 139 });
       expect(resolveRoutePlaybackFrame(createRoutePlayback([]), 0.5).trail).toEqual([]);
+    });
+  });
+
+  describe('downsampleRoute', () => {
+    const route = Array.from({ length: 1000 }, (_, index) => ({ latitude: 35, longitude: 139 + index / 1000, recordedAt: `t${index}` }));
+
+    it('上限以下ならそのまま返す', () => {
+      expect(downsampleRoute(route.slice(0, 10), 300)).toEqual(route.slice(0, 10));
+    });
+
+    it('上限を超えると始点と終点を残して等間隔に間引く', () => {
+      const sampled = downsampleRoute(route, 300);
+
+      expect(sampled).toHaveLength(300);
+      expect(sampled[0]).toBe(route[0]);
+      expect(sampled[299]).toBe(route[999]);
+    });
+  });
+
+  describe('quantizeRevealCount', () => {
+    it('開始前は0、終了後は全件を返す', () => {
+      expect(quantizeRevealCount(0, 900, 10, 365, 40)).toBe(0);
+      expect(quantizeRevealCount(100_000, 900, 10, 365, 40)).toBe(365);
+    });
+
+    it('途中は段階数に合わせて切り上げた件数を返す', () => {
+      // 100件・10段階なら10件刻み。開始から15件分経過 → 20件
+      expect(quantizeRevealCount(900 + 15 * 10, 900, 10, 100, 10)).toBe(20);
     });
   });
 });

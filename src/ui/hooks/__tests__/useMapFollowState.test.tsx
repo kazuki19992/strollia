@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useRef } from 'react';
+import { Platform } from 'react-native';
 import { useMapFollowState, UseMapFollowStateResult } from '@/ui/hooks/useMapFollowState';
 import type { ResolvedUserLocationIcon } from '@/features/customization/customizationResolver';
 import type { ScreenMode } from '@/ui/appTypes';
@@ -205,6 +206,59 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
   });
 
   describe('applyUserLocation — 現在地と速度の更新', () => {
+    it.each([
+      ['ios', 0],
+      ['android', 1],
+    ] as const)('標準アイコンの現在地と速度を更新し、%s ではカメラ指示を %i 回送る', async (os, expectedCameraCalls) => {
+      const osOverride = jest.replaceProperty(Platform, 'OS', os);
+
+      try {
+        const { result } = await renderMapFollowState();
+        const animateToRegion = jest.fn();
+        (result.current.mapRef as React.MutableRefObject<{ animateToRegion: jest.Mock } | null>).current = { animateToRegion };
+
+        await act(() => {
+          result.current.applyUserLocation(35.681236, 139.767125, 10);
+        });
+
+        expect(result.current.userCoordinate).toEqual({ latitude: 35.681236, longitude: 139.767125 });
+        expect(result.current.currentSpeedKmh).toBe(36);
+        expect(animateToRegion).toHaveBeenCalledTimes(expectedCameraCalls);
+      } finally {
+        osOverride.restore();
+      }
+    });
+
+    it('iOSの標準アイコンでは地図の準備後に初回の縮尺を合わせ、その後の位置更新は地図に任せる', async () => {
+      const osOverride = jest.replaceProperty(Platform, 'OS', 'ios');
+
+      try {
+        const { result } = await renderMapFollowState();
+        const animateToRegion = jest.fn();
+        (result.current.mapRef as React.MutableRefObject<{ animateToRegion: jest.Mock } | null>).current = { animateToRegion };
+
+        await act(() => {
+          result.current.applyUserLocation(35.681236, 139.767125, null);
+        });
+        expect(animateToRegion).not.toHaveBeenCalled();
+
+        await act(() => {
+          result.current.handleMapReady();
+        });
+        expect(animateToRegion).toHaveBeenCalledWith(
+          { latitude: 35.681236, longitude: 139.767125, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+          250,
+        );
+
+        await act(() => {
+          result.current.applyUserLocation(35.6815, 139.7675, null);
+        });
+        expect(animateToRegion).toHaveBeenCalledTimes(1);
+      } finally {
+        osOverride.restore();
+      }
+    });
+
     it('有効な緯度経度で userCoordinate が更新される', async () => {
       const { result } = await renderMapFollowState();
 

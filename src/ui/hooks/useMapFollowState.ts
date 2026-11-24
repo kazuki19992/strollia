@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import MapView from 'react-native-maps';
 import type { LatLng, MapType, Region, UserLocationChangeEvent } from 'react-native-maps';
 
@@ -151,6 +152,8 @@ export function useMapFollowState({
   incrementVisitedGridRefreshVersionRef,
 }: UseMapFollowStateParams): UseMapFollowStateResult {
   const mapRef = useRef<MapView | null>(null);
+  /** 現在地の通常縮尺でカメラを移動済みなら、iOS標準追従に切り替えても初回の縮尺合わせを繰り返さない。 */
+  const hasCenteredMapRef = useRef(false);
   /** Android操作中のonRegionChangeをスロットルするための最終更新時刻。 */
   const regionChangeThrottleRef = useRef(0);
   /**
@@ -254,34 +257,29 @@ export function useMapFollowState({
       clearUserMapGestureIdleSync();
       setGridSyncRegion(region);
       incrementVisitedGridRefreshVersionRef.current();
-      mapRef.current?.animateToRegion(region, animated ? 500 : 250);
+      const map = mapRef.current;
+      if (map) {
+        hasCenteredMapRef.current = true;
+        map.animateToRegion(region, animated ? 500 : 250);
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
     [],
   );
 
-  // カスタムアイコン時はネイティブのfollowsUserLocationが使えないため、このeffectが唯一の
-  // オーナーとして追従センタリングを担う（applyUserLocation側はOS標準時のみセンタリングする）。
-  // 追従中は現在地更新のたびにアプリ側でセンタリングし、OS標準のfollowsUserLocationと同じ挙動にする。
-  //
-  // 起動直後は前景ウォッチの初回更新（getLastKnownPositionAsync）がネイティブ地図の初期化完了より
-  // 先に届くことがあり、その時点のanimateToRegionはネイティブ側で無視される。さらに静止中は
-  // watchPositionAsyncが再発火しないため再センタリングの機会がなく、広域initialRegionで固定されてしまう。
-  // これを防ぐためisMapReady（onMapReadyまたは最初のonRegionChangeCompleteでtrueになる）を
-  // 待ってからセンタリングする。現在地が先に届いていれば準備完了時に、準備完了が先なら現在地
-  // 到着時に、いずれの順序でも確実にセンタリングが走る。
+  // カスタムアイコンはアプリが追従する。iOS標準アイコンはApple Mapsが中心座標を
+  // 追従するため、アプリは初回の縮尺だけ合わせる。どちらも地図の準備と位置取得を待つ。
   useEffect(() => {
-    if (screenMode !== 'map' || userLocationIcon.useNativeUserLocation) {
+    if (screenMode !== 'map' || !isMapReady || !isFollowingUserLocation || !userCoordinate) {
       return;
     }
 
-    if (!isMapReady || !isFollowingUserLocation || !userCoordinate) {
+    if (userLocationIcon.useNativeUserLocation && (Platform.OS !== 'ios' || hasCenteredMapRef.current)) {
       return;
     }
 
     centerOnCoordinate(userCoordinate, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 既存挙動維持のため依存配列を変更しない
-  }, [screenMode, userLocationIcon.useNativeUserLocation, isMapReady, isFollowingUserLocation, userCoordinate]);
+  }, [screenMode, userLocationIcon.useNativeUserLocation, isMapReady, isFollowingUserLocation, userCoordinate, centerOnCoordinate]);
 
   /**
    * 別画面から地図へ戻った直後に、MapViewの再マウントで広域initialRegionへ戻ることを防ぐ。
@@ -342,9 +340,8 @@ export function useMapFollowState({
       setCurrentSpeedKmh(nextSpeedKmh);
     }
 
-    // OS標準アイコン時のみここでセンタリングする。カスタムアイコン時は専用effectが
-    // 唯一のオーナーとして追従するため、ここで重複してanimateToRegionを呼ばない。
-    if (isFollowingUserLocation && userLocationIcon.useNativeUserLocation) {
+    // Androidでは標準アイコンにネイティブのカメラ追従がないため、アプリから移動する。
+    if (Platform.OS !== 'ios' && isFollowingUserLocation && userLocationIcon.useNativeUserLocation) {
       centerOnCoordinate(nextCoordinate, false);
     }
   }

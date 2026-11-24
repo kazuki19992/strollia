@@ -5,6 +5,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { isMapPage, resolveAnnualReportPages, type AnnualReportPageId } from '@/features/annualReport/annualReportPages';
 import type { AnnualReportCoordinate, AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
+import { toFarthestDayPlaybackRoute } from '@/features/annualReport/annualReportVisuals';
 import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { hasPrivacyRadiusInSegments, toPrivacyCoordinateSegments } from '@/features/stayPlaces/privacyRouteSegments';
 import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
@@ -121,9 +122,14 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
     [hiddenStayPlaces, farthestRoute],
   );
 
-  /** 地図ページに描くルート(非表示範囲の判定対象)。 */
+  /**
+   * 地図ページに描くルート(非表示範囲の判定対象)。
+   * 最遠日ページは再生用に間引いたルートを描くため、保存済みのルートと間引いたルートの両方を判定する
+   * (間引くと点の間が直線でつながり、元のルートが避けていた非表示範囲を横切ることがあるため)。
+   */
   function routeSegmentsOf(id: AnnualReportPageId): AnnualReportCoordinate[][] {
-    return id === 'farthestDay' ? farthestRoute : payload.yearRouteSegments;
+    if (id !== 'farthestDay') return payload.yearRouteSegments;
+    return [...farthestRoute, ...farthestRoute.map((segment) => toFarthestDayPlaybackRoute(segment))];
   }
 
   /** 表示中のページを撮って共有する。撮る間は自動送りとページ内アニメーションを止め、完成状態で撮る。 */

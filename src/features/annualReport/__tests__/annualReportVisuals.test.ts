@@ -6,6 +6,7 @@ import {
   quantizeRevealCount,
   formatClockTime,
   resolveRoutePlaybackFrame,
+  toFarthestDayPlaybackRoute,
 } from '@/features/annualReport/annualReportVisuals';
 
 describe('年間レポートの表示用データ annualReportVisuals', () => {
@@ -101,6 +102,19 @@ describe('年間レポートの表示用データ annualReportVisuals', () => {
 
       expect(frame.position).toEqual({ latitude: 35, longitude: 139 });
       expect(resolveRoutePlaybackFrame(createRoutePlayback([]), 0.5).trail).toEqual([]);
+    });
+  });
+
+  describe('toFarthestDayPlaybackRoute', () => {
+    it('最遠日のルートを再生用の最大300点に間引き、始点と終点を残す', () => {
+      const route = Array.from({ length: 500 }, (_, index) => index);
+
+      const sampled = toFarthestDayPlaybackRoute(route);
+
+      expect(sampled).toHaveLength(300);
+      expect(sampled[0]).toBe(0);
+      expect(sampled[299]).toBe(499);
+      expect(sampled).toEqual(downsampleRoute(route, 300));
     });
   });
 

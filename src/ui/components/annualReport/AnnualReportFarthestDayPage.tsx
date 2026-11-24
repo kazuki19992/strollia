@@ -5,9 +5,9 @@ import { Marker, Polyline } from 'react-native-maps';
 import type { AnnualReportCoordinate } from '@/features/annualReport/annualReportTypes';
 import {
   createRoutePlayback,
-  downsampleRoute,
   formatClockTime,
   resolveRoutePlaybackFrame,
+  toFarthestDayPlaybackRoute,
 } from '@/features/annualReport/annualReportVisuals';
 import { formatDailyLogListDateLabel } from '@/ui/dailyLogDisplay';
 import { STORY_PAGE_DURATION_MS } from '@/ui/hooks/useStoryPlayer';
@@ -22,8 +22,6 @@ const PLAYBACK_START_MS = 900;
 const PLAYBACK_MS = 5200;
 /** 再生の段階数。軌跡の再描画回数を抑えるため、進行度をこの段階に量子化する。 */
 const PLAYBACK_STEPS = 200;
-/** 再生に使うルートの最大点数。段階ごとに軌跡を描き直すため、点数を抑える。 */
-const PLAYBACK_MAX_POINTS = 300;
 
 /** ease-in-out(2次)。 */
 function easeInOutQuad(value: number): number {
@@ -50,7 +48,7 @@ export function AnnualReportFarthestDayPage({
 }: AnnualReportFarthestDayPageProps) {
   const clock = useStoryTimeline({ durationMs: STORY_PAGE_DURATION_MS, paused, completed });
   const farthestDay = payload.farthestDay;
-  const route = useMemo(() => downsampleRoute(farthestDay?.route ?? [], PLAYBACK_MAX_POINTS), [farthestDay]);
+  const route = useMemo(() => toFarthestDayPlaybackRoute(farthestDay?.route ?? []), [farthestDay]);
   const playback = useMemo(() => createRoutePlayback(route), [route]);
   const step = useStoryTimelineValue(clock, (ms) =>
     Math.round(easeInOutQuad(clamp01((ms - PLAYBACK_START_MS) / PLAYBACK_MS)) * PLAYBACK_STEPS),

@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
 import type { AnnualReportCoordinate, AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
+import { downsampleRoute } from '@/features/annualReport/annualReportVisuals';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { AnnualReportScreen } from '@/ui/components/annualReport/AnnualReportScreen';
 import { distanceMeters } from '@/utils/distance';
@@ -401,6 +402,33 @@ describe('年間レポートのストーリー画面 AnnualReportScreen', () => 
     expect(captures[0].markers).toBe(0);
     expect(captures[0].coordinates.length).toBeGreaterThan(0);
     expect(allOutsideHome(captures[0].coordinates)).toBe(true);
+  });
+
+  test('最遠日のページは、間引いて描くルートだけが非表示半径を横切る場合も確認ダイアログを出す', async () => {
+    // 500点のルートのうち、間引き(300点)で落ちる1点だけが自宅を北へ大きく迂回する。
+    // 元のルートは自宅を避けるが、間引いたルートは西端から東端へ自宅の上を直線で横切る
+    const total = 500;
+    const kept = new Set(
+      downsampleRoute(
+        Array.from({ length: total }, (_, index) => index),
+        300,
+      ),
+    );
+    const detourIndex = Array.from({ length: total }, (_, index) => index).find((index) => index > total / 2 && !kept.has(index))!;
+    const route = Array.from({ length: total }, (_, index) => ({
+      latitude: index === detourIndex ? 35.05 : 35,
+      longitude: index === detourIndex ? 139 : index < detourIndex ? 138.99 : 139.01,
+      recordedAt: '2026-08-14T12:00:00+09:00',
+    }));
+    const payload = createPayload({ farthestDay: { localDate: '2026-08-14', distanceMeters: 96_400, route } });
+    await render(<AnnualReportScreen payload={payload} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(5);
+    expect(screen.getByText('いちばん遠くまで出かけた日')).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText('このページを共有'));
+
+    expect(screen.getByText('プライベートな滞在場所を隠しますか？')).toBeTruthy();
+    expect(captureRef).not.toHaveBeenCalled();
   });
 
   test('最遠日のページで隠して共有すると、点も範囲内の軌跡も写さない', async () => {

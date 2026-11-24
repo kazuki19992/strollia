@@ -168,6 +168,17 @@ export function downsampleRoute<T>(route: T[], maxPoints: number): T[] {
   return Array.from({ length: maxPoints }, (_, index) => route[Math.round((index * lastIndex) / (maxPoints - 1))]);
 }
 
+/** 最遠日ページで再生に使うルートの最大点数。段階ごとに軌跡を描き直すため、点数を抑える。 */
+export const FARTHEST_DAY_PLAYBACK_MAX_POINTS = 300;
+
+/**
+ * 最遠日ページが地図に描くルート(保存済みルートを再生用に間引いたもの)を返す。
+ * 共有前の非表示半径の判定でも、実際に描く線と同じものを使うためにページと共有で共通化する。
+ */
+export function toFarthestDayPlaybackRoute<T>(route: T[]): T[] {
+  return downsampleRoute(route, FARTHEST_DAY_PLAYBACK_MAX_POINTS);
+}
+
 /**
  * 1件ずつ一定間隔で現れる演出で、経過時間までに現れた件数を steps 段階に切り上げて返す。
  * 数百のマスを個別にアニメーションさせる代わりに、件数を段階的に増やして再描画の回数を抑えるため。

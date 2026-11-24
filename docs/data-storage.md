@@ -342,6 +342,23 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 書き込みは`INSERT OR IGNORE`で行い、初回の到達を正とする。`landmark_spot_visits`は無変更で、パック完走・実績は引き続きそちらだけを見る。`location_recording_state.landmark_candidate_spot_id`は「計測中の地点ID」を指し、円1つのスポットではスポットIDと同値になる。
 
+### 4.17 `annual_reports`
+
+年間振り返りストーリー（年次レポート）の集計途中の進捗と完成レポートを、対象年ごとに1行で保存するテーブル。表示内容が毎年変わりうるため、中身はカラムに分けずJSONで持ち、`payload_version`で解釈を切り替える。
+
+| カラム                      | 型        | 説明                                                                |
+| --------------------------- | --------- | ------------------------------------------------------------------- |
+| `year`                      | INTEGER   | 主キー。対象年                                                      |
+| `payload_version`           | INTEGER   | JSONの形式バージョン（現在は1）。未知の値の行は読み込み時に無視する |
+| `status`                    | TEXT      | `in_progress` / `completed`                                         |
+| `progress_json`             | TEXT NULL | 集計途中の進捗・中間集計値。`completed`になるとNULL                 |
+| `payload_json`              | TEXT NULL | 完成したレポート本体。`completed`のとき必須                         |
+| `notification_scheduled_at` | TEXT NULL | 通知を予約した日時（ISO 8601）。重複予約を防ぐ                      |
+| `created_at`                | TEXT      | 作成日時（ISO 8601）                                                |
+| `updated_at`                | TEXT      | 更新日時（ISO 8601）                                                |
+
+一度`completed`になったレポートは、あとからGPXをインポートしても再計算しない。JSONが壊れている行は`null`扱いとし、再集計で作り直す。
+
 ## 5. インデックス方針
 
 GPSログは時系列検索と日付検索が中心になるため、以下のインデックスを作成する。

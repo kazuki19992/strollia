@@ -1,4 +1,8 @@
-import { toPrivacyRouteSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import {
+  hasPrivacyRadiusInSegments,
+  toPrivacyCoordinateSegments,
+  toPrivacyRouteSegments,
+} from '@/features/stayPlaces/privacyRouteSegments';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import type { LocationPoint } from '@/types/gps';
 
@@ -184,5 +188,119 @@ describe('共有用のプライバシールート区間 toPrivacyRouteSegments',
         { latitude: 35, longitude: 139 + 200 / metersPerLongitudeDegree },
       ],
     ]);
+  });
+});
+
+describe('座標区間の共有用非表示処理 toPrivacyCoordinateSegments', () => {
+  it('範囲内の点は除かれ前後が別区間になる', () => {
+    const result = toPrivacyCoordinateSegments(
+      [
+        [
+          { latitude: 35.002, longitude: 139 },
+          { latitude: 35.003, longitude: 139 },
+          { latitude: 35, longitude: 139 },
+          { latitude: 35.004, longitude: 139 },
+          { latitude: 35.005, longitude: 139 },
+        ],
+      ],
+      [stayPlace()],
+    );
+
+    expect(coordinates(result)).toEqual([
+      [
+        { latitude: 35.002, longitude: 139 },
+        { latitude: 35.003, longitude: 139 },
+      ],
+      [
+        { latitude: 35.004, longitude: 139 },
+        { latitude: 35.005, longitude: 139 },
+      ],
+    ]);
+  });
+
+  it('両端が範囲外でも横切る線分は描かない', () => {
+    const result = toPrivacyCoordinateSegments(
+      [
+        [
+          { latitude: 34.99, longitude: 139 },
+          { latitude: 34.9905, longitude: 139 },
+          { latitude: 35.01, longitude: 139 },
+          { latitude: 35.0105, longitude: 139 },
+        ],
+      ],
+      [stayPlace()],
+    );
+
+    expect(coordinates(result)).toEqual([
+      [
+        { latitude: 34.99, longitude: 139 },
+        { latitude: 34.9905, longitude: 139 },
+      ],
+      [
+        { latitude: 35.01, longitude: 139 },
+        { latitude: 35.0105, longitude: 139 },
+      ],
+    ]);
+  });
+
+  it('非表示半径の設定が壊れていれば空配列', () => {
+    const result = toPrivacyCoordinateSegments(
+      [
+        [
+          { latitude: 36, longitude: 139 },
+          { latitude: 36.001, longitude: 139 },
+        ],
+      ],
+      [stayPlace({ privacyRadiusMeters: Number.NaN })],
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it('半径を持たない滞在場所は区間を変えない', () => {
+    const route = [
+      { latitude: 35, longitude: 139 },
+      { latitude: 35.001, longitude: 139 },
+    ];
+
+    expect(coordinates(toPrivacyCoordinateSegments([route], [stayPlace({ privacyRadiusMeters: null })]))).toEqual([route]);
+  });
+});
+
+describe('非表示半径の有無判定 hasPrivacyRadiusInSegments', () => {
+  it('円にかからなければ false', () => {
+    expect(
+      hasPrivacyRadiusInSegments(
+        [
+          [
+            { latitude: 36, longitude: 139 },
+            { latitude: 36.001, longitude: 139 },
+          ],
+        ],
+        [stayPlace()],
+      ),
+    ).toBe(false);
+  });
+
+  it('点が円内にあれば true', () => {
+    expect(hasPrivacyRadiusInSegments([[{ latitude: 35, longitude: 139 }]], [stayPlace()])).toBe(true);
+  });
+
+  it('両端が円外でも線分が円を横切れば true', () => {
+    expect(
+      hasPrivacyRadiusInSegments(
+        [
+          [
+            { latitude: 34.99, longitude: 139 },
+            { latitude: 35.01, longitude: 139 },
+          ],
+        ],
+        [stayPlace()],
+      ),
+    ).toBe(true);
+  });
+
+  it('半径を持つ滞在場所が無ければ false', () => {
+    expect(hasPrivacyRadiusInSegments([[{ latitude: 35, longitude: 139 }]], [stayPlace({ privacyRadiusMeters: null })])).toBe(false);
   });
 });

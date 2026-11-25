@@ -96,11 +96,11 @@ export function AnnualReportFarthestDayPage({
         </AnnualReportRise>
       </View>
       <AnnualReportRise clock={clock} delayMs={RISE_DELAYS_MS[2]} style={[annualReportStyles.dayCard, { bottom: contentBottom }]}>
-        <View>
+        <View style={annualReportStyles.dayCardItem}>
           <Text style={annualReportStyles.dayCardLabel}>時刻</Text>
           <Text style={annualReportStyles.dayCardValue}>{clockText}</Text>
         </View>
-        <View>
+        <View style={annualReportStyles.dayCardItem}>
           <Text style={annualReportStyles.dayCardLabel}>移動距離</Text>
           {/* 7セグフォントは英字を持たないため、単位は別の Text で通常フォントにする */}
           <View style={annualReportStyles.dayCardValueRow}>

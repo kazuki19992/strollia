@@ -281,12 +281,16 @@ export const annualReportStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.55)',
     borderRadius: 14,
     flexDirection: 'row',
-    gap: 24,
     left: 20,
     paddingHorizontal: 14,
     paddingVertical: 12,
     position: 'absolute',
     right: 20,
+  },
+  /** パネル内の1項目。項目どうしで幅を等分し、各項目を中央に置いて左寄りに見えないようにする。 */
+  dayCardItem: {
+    alignItems: 'center',
+    flex: 1,
   },
   dayCardLabel: {
     color: '#cccccc',

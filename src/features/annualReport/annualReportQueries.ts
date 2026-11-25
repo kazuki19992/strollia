@@ -1,5 +1,8 @@
 import { db } from '@/db/database';
+import type { GridBounds } from '@/features/location/grid/gridCell';
 import type { LocationPoint } from '@/types/gps';
+
+import type { AnnualReportAreaCellIndex } from './annualReportTypes';
 
 /** ハイライトとして返す最大件数。 */
 const HIGHLIGHT_LIMIT = 3;
@@ -109,6 +112,92 @@ export async function getVisitedCellCounts(
     fromIso,
   );
   return { newCellCount: fresh?.count ?? 0, previousCellCount: previous?.count ?? 0 };
+}
+
+/**
+ * 100m のセル番号 x, y を ratio 倍のブロック番号へまとめる SELECT 句。
+ *
+ * SQLite の `/` と `%` は0方向への切り捨てのため、西半球・南半球の負の番号でずれないよう、
+ * `getVisitedCellsInBounds`(visitedCellRepository.ts)と同じ式で余りを非負へ補正してから割る。
+ * `floor()` 関数はビルドオプション依存のため使わない。プレースホルダは ratio を8個受け取る。
+ */
+const BLOCK_COLUMNS = `(x - ((x % ?) + ?) % ?) / ? AS blockX,
+       (y - ((y % ?) + ?) % ?) / ? AS blockY`;
+
+/** `BLOCK_COLUMNS` のプレースホルダへ渡す ratio の並び。 */
+function blockParams(ratio: number): number[] {
+  return Array.from({ length: 8 }, () => ratio);
+}
+
+/** 期間内([fromIso, toIsoExclusive))に初めて塗った 100m マスを ratio 倍のブロックへまとめた個数。 */
+export async function countNewAreaBlocks(fromIso: string, toIsoExclusive: string, ratio: number): Promise<number> {
+  const row = await db.getFirstAsync<{ count: number }>(
+    `SELECT COUNT(*) AS count FROM (
+       SELECT ${BLOCK_COLUMNS}
+       FROM visited_cells
+       WHERE first_visited_at >= ? AND first_visited_at < ?
+       GROUP BY blockX, blockY
+     )`,
+    ...blockParams(ratio),
+    fromIso,
+    toIsoExclusive,
+  );
+  return row?.count ?? 0;
+}
+
+/**
+ * 期間内([fromIso, toIsoExclusive))に初めて塗ったブロックを、初訪問の古い順に limit 件返す。
+ * 同時刻はブロック番号(y, x)順にして結果を安定させる。
+ */
+export async function getNewAreaBlocks(
+  fromIso: string,
+  toIsoExclusive: string,
+  ratio: number,
+  limit: number,
+): Promise<AnnualReportAreaCellIndex[]> {
+  const rows = await db.getAllAsync<{ blockX: number; blockY: number }>(
+    `SELECT ${BLOCK_COLUMNS}
+     FROM visited_cells
+     WHERE first_visited_at >= ? AND first_visited_at < ?
+     GROUP BY blockX, blockY
+     ORDER BY MIN(first_visited_at) ASC, blockY ASC, blockX ASC
+     LIMIT ?`,
+    ...blockParams(ratio),
+    fromIso,
+    toIsoExclusive,
+    limit,
+  );
+  return rows.map((row) => [row.blockX, row.blockY]);
+}
+
+/**
+ * 期間開始(fromIso)前までに塗られていた 100m マスのうち、100m 番号が baseBounds 内のものをブロックへまとめ、
+ * 訪問回数の多い順に limit 件返す。よく通った場所を優先して残すため訪問回数で並べる。
+ */
+export async function getPreviousAreaBlocks(
+  fromIso: string,
+  ratio: number,
+  baseBounds: GridBounds,
+  limit: number,
+): Promise<AnnualReportAreaCellIndex[]> {
+  const rows = await db.getAllAsync<{ blockX: number; blockY: number }>(
+    `SELECT ${BLOCK_COLUMNS}
+     FROM visited_cells
+     WHERE first_visited_at < ?
+       AND x BETWEEN ? AND ?
+       AND y BETWEEN ? AND ?
+     GROUP BY blockX, blockY
+     ORDER BY SUM(visit_count) DESC, blockY ASC, blockX ASC
+     LIMIT ?`,
+    ...blockParams(ratio),
+    fromIso,
+    baseBounds.minX,
+    baseBounds.maxX,
+    baseBounds.minY,
+    baseBounds.maxY,
+    limit,
+  );
+  return rows.map((row) => [row.blockX, row.blockY]);
 }
 
 /** 期間内に解除された実績の件数と、新しい順のハイライト(最大3件)。 */

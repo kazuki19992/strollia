@@ -1,11 +1,14 @@
 import { createInitialProgress, runAnnualReportStep } from '@/features/annualReport/annualReportAggregator';
 import type { AnnualReportWindow } from '@/features/annualReport/annualReportPeriod';
 import {
+  countNewAreaBlocks,
   getAchievementUnlockSummary,
   getAnnualReportRoutePoints,
   getDailyDistanceRows,
   getLandmarkSpotVisitSummary,
   getNewAdminAreaSummary,
+  getNewAreaBlocks,
+  getPreviousAreaBlocks,
   getVisitedCellCounts,
   getVisitedPrefectureNames,
 } from '@/features/annualReport/annualReportQueries';
@@ -28,6 +31,9 @@ jest.mock('@/features/annualReport/annualReportQueries', () => ({
   getVisitedCellCounts: jest.fn(),
   getAchievementUnlockSummary: jest.fn(),
   getLandmarkSpotVisitSummary: jest.fn(),
+  countNewAreaBlocks: jest.fn(),
+  getNewAreaBlocks: jest.fn(),
+  getPreviousAreaBlocks: jest.fn(),
 }));
 
 jest.mock('@/features/logs/logRepository', () => ({
@@ -37,6 +43,9 @@ jest.mock('@/features/logs/logRepository', () => ({
 const mockDailyRows = getDailyDistanceRows as jest.Mock;
 const mockRoutePoints = getAnnualReportRoutePoints as jest.Mock;
 const mockPointsByDate = getLocationPointsByDate as jest.Mock;
+const mockCountNewAreaBlocks = countNewAreaBlocks as jest.Mock;
+const mockGetNewAreaBlocks = getNewAreaBlocks as jest.Mock;
+const mockGetPreviousAreaBlocks = getPreviousAreaBlocks as jest.Mock;
 
 /** 通常時の集計対象(2026年1月1日〜12月15日)。 */
 const window2026: AnnualReportWindow = {
@@ -84,6 +93,9 @@ describe('年次レポートのステップ集計', () => {
     (getVisitedCellCounts as jest.Mock).mockResolvedValue({ newCellCount: 120, previousCellCount: 300 });
     (getAchievementUnlockSummary as jest.Mock).mockResolvedValue({ count: 5, highlights: [{ id: 'a1', unlockedLocalDate: '2026-11-01' }] });
     (getLandmarkSpotVisitSummary as jest.Mock).mockResolvedValue({ count: 2, highlights: [{ id: 's1', visitedLocalDate: '2026-10-01' }] });
+    mockCountNewAreaBlocks.mockResolvedValue(120);
+    mockGetNewAreaBlocks.mockResolvedValue([[10, 20]]);
+    mockGetPreviousAreaBlocks.mockResolvedValue([[11, 20]]);
   });
 
   test('初期進捗は1月から始まり月別距離は0が12個', () => {
@@ -378,6 +390,7 @@ describe('年次レポートのステップ集計', () => {
         newMunicipalityCount: 4,
         newCellCount: 120,
         previousCellCount: 300,
+        newAreaMap: { cellSizeMeters: 100, newCells: [[10, 20]], previousCells: [[11, 20]] },
         achievements: { count: 5, highlights: [{ id: 'a1', unlockedLocalDate: '2026-11-01' }] },
         spots: { count: 2, highlights: [{ id: 's1', visitedLocalDate: '2026-10-01' }] },
       },
@@ -392,5 +405,95 @@ describe('年次レポートのステップ集計', () => {
     if (result.kind !== 'completed') throw new Error('completed を期待');
     expect(result.payload.farthestDay).toBeNull();
     expect(mockPointsByDate).not.toHaveBeenCalled();
+  });
+
+  describe('新しく塗ったエリアの地図用マス(newAreaMap)', () => {
+    /** 最終ステップを迎えた進捗(開発用フラグで記録日数の条件を外して使う)。 */
+    const finalProgress = () => progressWith({ nextMonth: 13 });
+    const fromIso = new Date(2026, 0, 1).toISOString();
+    const toIsoExclusive = new Date(2026, 11, 16).toISOString();
+
+    /** 最終ステップを実行して payload を返す。 */
+    async function buildFinalPayload() {
+      const result = await runAnnualReportStep(window2026, finalProgress(), true);
+      if (result.kind !== 'completed') throw new Error('completed を期待');
+      return result.payload;
+    }
+
+    test('新しいマスが0個なら newAreaMap は null で、ブロックのクエリを呼ばない', async () => {
+      (getVisitedCellCounts as jest.Mock).mockResolvedValue({ newCellCount: 0, previousCellCount: 300 });
+
+      const payload = await buildFinalPayload();
+
+      expect(payload.newAreaMap).toBeNull();
+      expect(mockCountNewAreaBlocks).not.toHaveBeenCalled();
+      expect(mockGetNewAreaBlocks).not.toHaveBeenCalled();
+      expect(mockGetPreviousAreaBlocks).not.toHaveBeenCalled();
+    });
+
+    test('100m で150個を超え200m で150個以下なら、200m のマスで150個まで読む', async () => {
+      mockCountNewAreaBlocks.mockImplementation(async (_from: string, _to: string, ratio: number) => (ratio === 1 ? 151 : 150));
+
+      const payload = await buildFinalPayload();
+
+      expect(payload.newAreaMap?.cellSizeMeters).toBe(200);
+      expect(mockCountNewAreaBlocks).toHaveBeenCalledTimes(2);
+      expect(mockCountNewAreaBlocks).toHaveBeenNthCalledWith(1, fromIso, toIsoExclusive, 1);
+      expect(mockCountNewAreaBlocks).toHaveBeenNthCalledWith(2, fromIso, toIsoExclusive, 2);
+      expect(mockGetNewAreaBlocks).toHaveBeenCalledWith(fromIso, toIsoExclusive, 2, 150);
+    });
+
+    test('すべての段階で150個を超えたら、いちばん大きい10km のマスを使う', async () => {
+      mockCountNewAreaBlocks.mockResolvedValue(1000);
+
+      const payload = await buildFinalPayload();
+
+      expect(payload.newAreaMap?.cellSizeMeters).toBe(10000);
+      expect(mockGetNewAreaBlocks).toHaveBeenCalledWith(fromIso, toIsoExclusive, 100, 150);
+    });
+
+    test('前からのマスは新しいマスと同じ番号を除き、150個までにする', async () => {
+      mockGetNewAreaBlocks.mockResolvedValue([
+        [0, 0],
+        [1, 0],
+      ]);
+      const previous = Array.from({ length: 300 }, (_, index): [number, number] => [index % 3, Math.floor(index / 3)]);
+      mockGetPreviousAreaBlocks.mockResolvedValue(previous);
+
+      const payload = await buildFinalPayload();
+
+      const previousCells = payload.newAreaMap?.previousCells ?? [];
+      expect(previousCells).toHaveLength(150);
+      expect(previousCells).not.toContainEqual([0, 0]);
+      expect(previousCells).not.toContainEqual([1, 0]);
+      expect(previousCells[0]).toEqual([2, 0]);
+      expect(payload.newAreaMap?.newCells).toEqual([
+        [0, 0],
+        [1, 0],
+      ]);
+    });
+
+    test('前からのマスは、新しいブロックの範囲に1ブロックの余白を足した100m 番号の範囲から300件まで読む', async () => {
+      mockCountNewAreaBlocks.mockImplementation(async (_from: string, _to: string, ratio: number) => (ratio === 1 ? 151 : 2));
+      mockGetNewAreaBlocks.mockResolvedValue([
+        [2, 3],
+        [5, -1],
+      ]);
+
+      await buildFinalPayload();
+
+      // ブロック x: 2〜5 → 1〜6 ブロック → 100m 番号 2〜13 / y: -1〜3 → -2〜4 ブロック → -4〜9
+      expect(mockGetPreviousAreaBlocks).toHaveBeenCalledWith(fromIso, 2, { minX: 2, maxX: 13, minY: -4, maxY: 9 }, 300);
+    });
+
+    test('負のブロック番号だけでも、余白付きの100m 番号の範囲を正しく作る', async () => {
+      mockCountNewAreaBlocks.mockImplementation(async (_from: string, _to: string, ratio: number) => (ratio < 5 ? 151 : 1));
+      mockGetNewAreaBlocks.mockResolvedValue([[-10, -20]]);
+
+      await buildFinalPayload();
+
+      // 500m(ratio 5): ブロック x -11〜-9 → 100m 番号 -55〜-41 / y -21〜-19 → -105〜-91
+      expect(mockGetPreviousAreaBlocks).toHaveBeenCalledWith(fromIso, 5, { minX: -55, maxX: -41, minY: -105, maxY: -91 }, 300);
+    });
   });
 });

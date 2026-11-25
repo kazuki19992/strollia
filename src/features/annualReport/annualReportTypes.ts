@@ -7,6 +7,22 @@ export type AnnualReportCoordinate = { latitude: number; longitude: number };
 /** 記録時刻付きの座標(最遠日ルートの再生用)。 */
 export type AnnualReportTimedCoordinate = AnnualReportCoordinate & { recordedAt: string };
 
+/**
+ * マスのセル番号 [x, y]。Web Mercator のメートル座標を `cellSizeMeters` で割った番号で、地図画面の visited grid と同じ座標系。
+ * サンプル表示用の `AnnualReportAreaCell`(annualReportVisuals.ts)と区別するため、番号であることを名前に含めている。
+ */
+export type AnnualReportAreaCellIndex = [number, number];
+
+/** 「新しく塗ったエリア」ページの地図に描くマス。 */
+export type AnnualReportAreaMap = {
+  /** マスの一辺。地図画面と同じ段階(100m〜10km)から、新しいマスが150個以下になる最小の段階。 */
+  cellSizeMeters: number;
+  /** 集計期間内に初めて塗ったマス(最大150個)。初訪問の古い順で、塗る演出の順番に使う。 */
+  newCells: AnnualReportAreaCellIndex[];
+  /** 新しいマスを囲む範囲にある、期間開始前までに塗られていたマス(最大150個)。newCells と同じ番号は含まない。 */
+  previousCells: AnnualReportAreaCellIndex[];
+};
+
 /** 完成した年次レポート本体(payload_version 1)。表示内容が毎年変わりうるためカラムに分けずJSONで保存する。 */
 export type AnnualReportPayloadV1 = {
   version: 1;
@@ -32,6 +48,11 @@ export type AnnualReportPayloadV1 = {
   newCellCount: number;
   /** 期間開始前までに塗られていたエリア数。 */
   previousCellCount: number;
+  /**
+   * 地図に描く新しく塗ったマス。新しいマスが0個なら null。
+   * この項目を追加する前に保存された payload には無いため省略可能にしている(表示側は地図なしで出す)。
+   */
+  newAreaMap?: AnnualReportAreaMap | null;
   /** 最大3件、新しい順。 */
   achievements: { count: number; highlights: { id: string; unlockedLocalDate: string }[] };
   /** 最大3件、新しい順。 */

@@ -21,7 +21,6 @@ export const annualReportColors = {
   barDefault: '#3a3a3a',
   barLow: '#6b6b6b',
   barLowLabel: '#444444',
-  cellEmpty: '#1c1c1c',
   cellOld: '#2f5a4a',
   chip: '#2e2e2e',
   mapOverlay: 'rgba(10,14,20,0.45)',
@@ -376,16 +375,15 @@ export const annualReportStyles = StyleSheet.create({
   },
 
   // ---- 8 エリア ----
-  cells: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 2,
-    marginTop: 22,
+  /** 地図の下端に置く凡例の帯。bottom は画面側で共有ボタンの上に合わせる。 */
+  areaLegend: {
+    left: ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING,
+    position: 'absolute',
+    right: ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING,
   },
   legend: {
     color: '#888888',
     fontSize: 11,
-    marginTop: 10,
   },
 
   // ---- 9 実績 ----

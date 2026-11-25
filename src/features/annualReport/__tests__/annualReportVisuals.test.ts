@@ -1,7 +1,6 @@
 import type { AnnualReportAreaMap } from '@/features/annualReport/annualReportTypes';
 import {
   areaCellToPolygon,
-  buildAreaSampleCells,
   buildCalendarCells,
   createRoutePlayback,
   downsampleRoute,
@@ -53,35 +52,6 @@ describe('年間レポートの表示用データ annualReportVisuals', () => {
 
     it('うるう年は366日になる', () => {
       expect(buildCalendarCells(2028, [])).toHaveLength(366);
-    });
-  });
-
-  describe('buildAreaSampleCells', () => {
-    it('指定したマス数を返し、新旧の比率に応じて塗り分ける', () => {
-      const cells = buildAreaSampleCells(100, 100, 100);
-
-      expect(cells).toHaveLength(100);
-      const oldCount = cells.filter((cell) => cell === 'old').length;
-      const newCount = cells.filter((cell) => cell === 'new').length;
-      expect(oldCount + newCount).toBe(62);
-      expect(newCount).toBe(31);
-    });
-
-    it('新しいエリアが少なくても1マスは新しいエリアとして塗る', () => {
-      const cells = buildAreaSampleCells(100_000, 1, 100);
-
-      expect(cells.filter((cell) => cell === 'new')).toHaveLength(1);
-    });
-
-    it('前年までのエリアが0なら全て新しいエリアになる', () => {
-      const cells = buildAreaSampleCells(0, 5, 50);
-
-      expect(cells.filter((cell) => cell === 'old')).toHaveLength(0);
-      expect(cells.filter((cell) => cell === 'new')).toHaveLength(31);
-    });
-
-    it('同じ入力なら毎回同じ並びになる', () => {
-      expect(buildAreaSampleCells(10, 20, 80)).toEqual(buildAreaSampleCells(10, 20, 80));
     });
   });
 

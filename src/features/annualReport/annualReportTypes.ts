@@ -9,7 +9,6 @@ export type AnnualReportTimedCoordinate = AnnualReportCoordinate & { recordedAt:
 
 /**
  * マスのセル番号 [x, y]。Web Mercator のメートル座標を `cellSizeMeters` で割った番号で、地図画面の visited grid と同じ座標系。
- * サンプル表示用の `AnnualReportAreaCell`(annualReportVisuals.ts)と区別するため、番号であることを名前に含めている。
  */
 export type AnnualReportAreaCellIndex = [number, number];
 

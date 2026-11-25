@@ -1,0 +1,17 @@
+diff --git a/node_modules/expo-notifications/ios/ExpoNotifications/Permissions/ExpoNotificationsPermissionsRequester.swift b/node_modules/expo-notifications/ios/ExpoNotifications/Permissions/ExpoNotificationsPermissionsRequester.swift
+index f684888..818b40d 100644
+--- a/node_modules/expo-notifications/ios/ExpoNotifications/Permissions/ExpoNotificationsPermissionsRequester.swift
++++ b/node_modules/expo-notifications/ios/ExpoNotifications/Permissions/ExpoNotificationsPermissionsRequester.swift
+@@ -20,8 +20,10 @@ public class ExpoNotificationsPermissionsRequester: NSObject, EXPermissionsReque
+     let semaphore = DispatchSemaphore(value: 0)
+     var result: [AnyHashable: Any] = [:]
+ 
+-    UNUserNotificationCenter.current().getNotificationSettings { settings in
+-      result = self.makePermissionsResult(from: settings)
++    // iOS 27では呼び出し元キューを塞いだまま完了ハンドラを待つとデッドロックするため、
++    // 取得はSwift Concurrencyの別エグゼキュータで行い、結果だけをセマフォで受け取る。
++    Task.detached {
++      result = await self.getPermissionsAsync()
+       semaphore.signal()
+     }
+ 

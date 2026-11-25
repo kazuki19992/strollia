@@ -1,5 +1,6 @@
 import {
   buildAreaSampleCells,
+  buildAreaTileLayout,
   buildCalendarCells,
   createRoutePlayback,
   downsampleRoute,
@@ -51,6 +52,36 @@ describe('年間レポートの表示用データ annualReportVisuals', () => {
 
     it('同じ入力なら毎回同じ並びになる', () => {
       expect(buildAreaSampleCells(10, 20, 80)).toEqual(buildAreaSampleCells(10, 20, 80));
+    });
+  });
+
+  describe('buildAreaTileLayout', () => {
+    test('0件はタイルなし(列・行・1枚あたりのマス数もすべて0)', () => {
+      expect(buildAreaTileLayout(0)).toEqual({ columns: 0, rows: 0, tileCount: 0, cellsPerTile: 0 });
+    });
+
+    test('1件は1×1の1枚', () => {
+      expect(buildAreaTileLayout(1)).toEqual({ columns: 1, rows: 1, tileCount: 1, cellsPerTile: 1 });
+    });
+
+    test('7件は3列3行の格子に7枚(正方形に近い形)', () => {
+      expect(buildAreaTileLayout(7)).toEqual({ columns: 3, rows: 3, tileCount: 7, cellsPerTile: 1 });
+    });
+
+    test('100件は10×10で1枚1マス', () => {
+      expect(buildAreaTileLayout(100)).toEqual({ columns: 10, rows: 10, tileCount: 100, cellsPerTile: 1 });
+    });
+
+    test('487件は100枚にまとめ、1枚あたり5マスを表す', () => {
+      expect(buildAreaTileLayout(487)).toEqual({ columns: 10, rows: 10, tileCount: 100, cellsPerTile: 5 });
+    });
+
+    test('100万件でもタイルは100枚のまま(1枚あたりのマス数だけ増える)', () => {
+      expect(buildAreaTileLayout(1_000_000)).toEqual({ columns: 10, rows: 10, tileCount: 100, cellsPerTile: 10_000 });
+    });
+
+    test('上限枚数を指定できる', () => {
+      expect(buildAreaTileLayout(50, 16)).toEqual({ columns: 4, rows: 4, tileCount: 16, cellsPerTile: 4 });
     });
   });
 

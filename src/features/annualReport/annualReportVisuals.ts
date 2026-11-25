@@ -67,6 +67,36 @@ export function buildAreaSampleCells(previousCount: number, newCount: number, ce
   return cells;
 }
 
+/** エリアのタイル広場(ページ8)で描くタイルの上限枚数。マス数に比例して View を増やさないための上限。 */
+export const AREA_TILE_MAX_COUNT = 100;
+
+/** エリアのタイル広場の配置。 */
+export type AnnualReportAreaTileLayout = {
+  /** 格子の列数。 */
+  columns: number;
+  /** 格子の行数。 */
+  rows: number;
+  /** 実際に描くタイルの枚数(最後の行は埋まらないことがある)。 */
+  tileCount: number;
+  /** タイル1枚が代表するマス数。 */
+  cellsPerTile: number;
+};
+
+/**
+ * 新しく塗ったマス数から、タイル広場の配置を決める。
+ *
+ * マスを全部描くと数千〜数万の View になるため、タイルは最大 maxTiles 枚にまとめ、1枚に複数マスを代表させる。
+ * 格子は正方形に近い形(列数 = ceil(√枚数))にする。0件は全部0を返す。
+ */
+export function buildAreaTileLayout(cellCount: number, maxTiles = AREA_TILE_MAX_COUNT): AnnualReportAreaTileLayout {
+  const tileCount = Math.min(Math.max(0, Math.floor(cellCount)), maxTiles);
+  if (tileCount === 0) {
+    return { columns: 0, rows: 0, tileCount: 0, cellsPerTile: 0 };
+  }
+  const columns = Math.ceil(Math.sqrt(tileCount));
+  return { columns, rows: Math.ceil(tileCount / columns), tileCount, cellsPerTile: Math.ceil(cellCount / tileCount) };
+}
+
 /** エポックミリ秒を端末ローカル時刻の `HH:MM` にする。 */
 export function formatClockTime(epochMs: number): string {
   const date = new Date(epochMs);

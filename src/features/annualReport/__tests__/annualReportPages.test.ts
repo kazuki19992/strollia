@@ -85,9 +85,10 @@ describe('年次レポートの表示ページ決定 resolveAnnualReportPages', 
 });
 
 describe('地図ページ判定 isMapPage', () => {
-  it('yearMap / farthestDay / summary だけが地図ページになる', () => {
+  it('yearMap / farthestDay / newAreas / summary だけが地図ページになる', () => {
     expect(isMapPage('yearMap')).toBe(true);
     expect(isMapPage('farthestDay')).toBe(true);
+    expect(isMapPage('newAreas')).toBe(true);
     expect(isMapPage('summary')).toBe(true);
     expect(isMapPage('opening')).toBe(false);
     expect(isMapPage('monthly')).toBe(false);

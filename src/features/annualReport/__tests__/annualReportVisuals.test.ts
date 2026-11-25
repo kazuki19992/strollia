@@ -1,13 +1,44 @@
+import type { AnnualReportAreaMap } from '@/features/annualReport/annualReportTypes';
 import {
+  areaCellToPolygon,
   buildAreaSampleCells,
   buildCalendarCells,
   createRoutePlayback,
   downsampleRoute,
   quantizeRevealCount,
   formatClockTime,
+  hasPrivacyRadiusInAreaMap,
+  hideAreaMapCellsByPrivacy,
+  isAreaCellHiddenByPrivacy,
   resolveRoutePlaybackFrame,
   toFarthestDayPlaybackRoute,
 } from '@/features/annualReport/annualReportVisuals';
+import { cellToPolygonCoordinates, coordinateToGridCell } from '@/features/location/grid/gridCell';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+
+/** テスト用の滞在場所。 */
+function stayPlace(latitude: number, longitude: number, privacyRadiusMeters: number | null): StayPlace {
+  return {
+    id: 1,
+    name: '自宅',
+    iconHexcode: '1F3E0',
+    latitude,
+    longitude,
+    privacyRadiusMeters,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+/** 10km のマスとその中心。 */
+const BIG_CELL_SIZE = 10000;
+const bigGridCell = coordinateToGridCell({ latitude: 35.68, longitude: 139.76 }, BIG_CELL_SIZE);
+const bigCell: [number, number] = [bigGridCell.x, bigGridCell.y];
+const bigCellCorners = cellToPolygonCoordinates(bigGridCell);
+const bigCellCenter = {
+  latitude: (bigCellCorners[0].latitude + bigCellCorners[2].latitude) / 2,
+  longitude: (bigCellCorners[0].longitude + bigCellCorners[2].longitude) / 2,
+};
 
 describe('年間レポートの表示用データ annualReportVisuals', () => {
   describe('buildCalendarCells', () => {
@@ -143,6 +174,71 @@ describe('年間レポートの表示用データ annualReportVisuals', () => {
     it('途中は段階数に合わせて切り上げた件数を返す', () => {
       // 100件・10段階なら10件刻み。開始から15件分経過 → 20件
       expect(quantizeRevealCount(900 + 15 * 10, 900, 10, 100, 10)).toBe(20);
+    });
+  });
+
+  describe('新しく塗ったエリアの地図のマスと非表示範囲', () => {
+    it('areaCellToPolygon はセル番号から地図画面と同じ4頂点を作る', () => {
+      expect(areaCellToPolygon(bigCell, BIG_CELL_SIZE)).toEqual(bigCellCorners);
+    });
+
+    it('非表示範囲の円が大きいマスの内側にすっぽり入り辺に触れない場合も、範囲にかかるとみなす', () => {
+      expect(isAreaCellHiddenByPrivacy(bigCell, BIG_CELL_SIZE, [stayPlace(bigCellCenter.latitude, bigCellCenter.longitude, 100)])).toBe(
+        true,
+      );
+    });
+
+    it('円の中心がマスの外でも、半径がマスの辺にかかれば範囲にかかるとみなす', () => {
+      // 北の辺から約50m 外側に中心を置き、半径100m で辺にかかる
+      const outside = stayPlace(bigCellCorners[2].latitude + 0.00045, bigCellCenter.longitude, 100);
+
+      expect(isAreaCellHiddenByPrivacy(bigCell, BIG_CELL_SIZE, [outside])).toBe(true);
+    });
+
+    it('遠くの滞在場所では隠さない', () => {
+      expect(isAreaCellHiddenByPrivacy(bigCell, BIG_CELL_SIZE, [stayPlace(bigCellCenter.latitude + 1, bigCellCenter.longitude, 100)])).toBe(
+        false,
+      );
+    });
+
+    it('非表示半径を設定していない(null)滞在場所は、マスの中にあっても無視する', () => {
+      expect(isAreaCellHiddenByPrivacy(bigCell, BIG_CELL_SIZE, [stayPlace(bigCellCenter.latitude, bigCellCenter.longitude, null)])).toBe(
+        false,
+      );
+    });
+
+    it('非表示設定が壊れているときは安全側に倒して、すべてのマスを隠す', () => {
+      const broken = [stayPlace(bigCellCenter.latitude + 1, bigCellCenter.longitude, 123)];
+      const areaMap: AnnualReportAreaMap = {
+        cellSizeMeters: BIG_CELL_SIZE,
+        newCells: [bigCell],
+        previousCells: [[bigCell[0] + 1, bigCell[1]]],
+      };
+
+      expect(isAreaCellHiddenByPrivacy(bigCell, BIG_CELL_SIZE, broken)).toBe(true);
+      expect(hideAreaMapCellsByPrivacy(areaMap, broken)).toEqual({ cellSizeMeters: BIG_CELL_SIZE, newCells: [], previousCells: [] });
+    });
+
+    it('hideAreaMapCellsByPrivacy は新しいマス・前からのマスの両方から範囲にかかるマスだけを除く', () => {
+      const neighbor: [number, number] = [bigCell[0] + 3, bigCell[1]];
+      const areaMap: AnnualReportAreaMap = {
+        cellSizeMeters: BIG_CELL_SIZE,
+        newCells: [bigCell, neighbor],
+        previousCells: [bigCell, neighbor],
+      };
+
+      const hidden = hideAreaMapCellsByPrivacy(areaMap, [stayPlace(bigCellCenter.latitude, bigCellCenter.longitude, 100)]);
+
+      expect(hidden).toEqual({ cellSizeMeters: BIG_CELL_SIZE, newCells: [neighbor], previousCells: [neighbor] });
+    });
+
+    it('hasPrivacyRadiusInAreaMap は新しいマス・前からのマスのどちらがかかっても true', () => {
+      const home = [stayPlace(bigCellCenter.latitude, bigCellCenter.longitude, 100)];
+      const far: [number, number] = [bigCell[0] + 5, bigCell[1]];
+
+      expect(hasPrivacyRadiusInAreaMap({ cellSizeMeters: BIG_CELL_SIZE, newCells: [bigCell], previousCells: [] }, home)).toBe(true);
+      expect(hasPrivacyRadiusInAreaMap({ cellSizeMeters: BIG_CELL_SIZE, newCells: [far], previousCells: [bigCell] }, home)).toBe(true);
+      expect(hasPrivacyRadiusInAreaMap({ cellSizeMeters: BIG_CELL_SIZE, newCells: [far], previousCells: [] }, home)).toBe(false);
     });
   });
 });

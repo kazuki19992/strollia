@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
 
+import type { AnnualReportAreaMap } from '@/features/annualReport/annualReportTypes';
 import { type AnnualReportAreaCell, buildAreaSampleCells, quantizeRevealCount } from '@/features/annualReport/annualReportVisuals';
 import { STORY_PAGE_DURATION_MS } from '@/ui/hooks/useStoryPlayer';
 import { useStoryTimeline, useStoryTimelineValue } from '@/ui/hooks/useStoryTimeline';
@@ -31,8 +32,14 @@ function resolveCellColor(cell: { kind: AnnualReportAreaCell; order: number }, p
   return cell.order < settledCount ? annualReportColors.accent : '#ffffff';
 }
 
+/** AnnualReportNewAreasPage の props。 */
+export type AnnualReportNewAreasPageProps = AnnualReportPageProps & {
+  /** 描くマス。隠して共有では非表示範囲を除いたもの。null なら地図なし。 */
+  areaMap: AnnualReportAreaMap | null;
+};
+
 /** ページ8: 新しく塗ったエリア。エリア数をカウントアップし、マスを光らせながら塗る。 */
-export function AnnualReportNewAreasPage({ payload, paused, completed, contentTop }: AnnualReportPageProps) {
+export function AnnualReportNewAreasPage({ payload, paused, completed, contentTop }: AnnualReportNewAreasPageProps) {
   const clock = useStoryTimeline({ durationMs: STORY_PAGE_DURATION_MS, paused, completed });
   const { width } = useWindowDimensions();
   // 塗る順番(新しいエリアのマスだけの通し番号)を前もって振る

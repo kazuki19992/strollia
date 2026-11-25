@@ -5,7 +5,7 @@ export type AnnualReportPageId =
   'opening' | 'activeDays' | 'distance' | 'yearMap' | 'monthly' | 'farthestDay' | 'firstVisits' | 'newAreas' | 'achievements' | 'summary';
 
 /** 地図を描画するページ。共有時に滞在場所の非表示処理が必要になる。 */
-const MAP_PAGE_IDS: ReadonlySet<AnnualReportPageId> = new Set(['yearMap', 'farthestDay', 'summary']);
+const MAP_PAGE_IDS: ReadonlySet<AnnualReportPageId> = new Set(['yearMap', 'farthestDay', 'newAreas', 'summary']);
 
 /**
  * payloadの内容から表示するページを仕様の順序で決める。

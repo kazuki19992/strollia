@@ -1,4 +1,12 @@
-import type { AnnualReportCoordinate, AnnualReportTimedCoordinate } from '@/features/annualReport/annualReportTypes';
+import type {
+  AnnualReportAreaCellIndex,
+  AnnualReportAreaMap,
+  AnnualReportCoordinate,
+  AnnualReportTimedCoordinate,
+} from '@/features/annualReport/annualReportTypes';
+import { cellToPolygonCoordinates } from '@/features/location/grid/gridCell';
+import { hasPrivacyRadiusInSegments } from '@/features/stayPlaces/privacyRouteSegments';
+import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { distanceMeters } from '@/utils/distance';
 
 /** カレンダー表示(ページ2)の1日分のマス。 */
@@ -190,4 +198,56 @@ export function quantizeRevealCount(elapsedMs: number, startMs: number, interval
   const revealed = Math.min(total, Math.floor((elapsedMs - startMs) / Math.max(intervalMs, 0.001)) + 1);
   const stepSize = Math.max(1, Math.ceil(total / steps));
   return Math.min(total, Math.ceil(revealed / stepSize) * stepSize);
+}
+
+/** 地図のマス(セル番号)を、地図画面の visited grid と同じ4頂点(左下から時計回り)にする。 */
+export function areaCellToPolygon(cell: AnnualReportAreaCellIndex, cellSizeMeters: number): AnnualReportCoordinate[] {
+  const [x, y] = cell;
+  return cellToPolygonCoordinates({ cellId: `${cellSizeMeters}:${x}:${y}`, cellSizeMeters, x, y });
+}
+
+/**
+ * マスが「共有時に隠す範囲」にかかるか判定する。
+ *
+ * 外周(始点に戻る閉じた線)が非表示半径の円にかかるかを `hasPrivacyRadiusInSegments` で見る。
+ * それだけでは、10km などの大きいマスの内側に円がすっぽり入って辺に触れない場合を見落とすため、
+ * 非表示半径を持つ滞在場所の中心がマスの緯度経度範囲に入っているかも見る。
+ * 非表示設定が壊れているときは `hasPrivacyRadiusInSegments` が true を返すため、安全側に倒してすべて隠す。
+ */
+export function isAreaCellHiddenByPrivacy(cell: AnnualReportAreaCellIndex, cellSizeMeters: number, stayPlaces: StayPlace[]): boolean {
+  const polygon = areaCellToPolygon(cell, cellSizeMeters);
+  if (hasPrivacyRadiusInSegments([[...polygon, polygon[0]]], stayPlaces)) {
+    return true;
+  }
+  const latitudes = polygon.map((point) => point.latitude);
+  const longitudes = polygon.map((point) => point.longitude);
+  const minLatitude = Math.min(...latitudes);
+  const maxLatitude = Math.max(...latitudes);
+  const minLongitude = Math.min(...longitudes);
+  const maxLongitude = Math.max(...longitudes);
+  return stayPlaces.some(
+    (place) =>
+      place.privacyRadiusMeters != null &&
+      place.latitude >= minLatitude &&
+      place.latitude <= maxLatitude &&
+      place.longitude >= minLongitude &&
+      place.longitude <= maxLongitude,
+  );
+}
+
+/** 「隠して共有」用に、新しいマス・前からのマスから非表示範囲にかかるマスを除いた地図を返す。 */
+export function hideAreaMapCellsByPrivacy(areaMap: AnnualReportAreaMap, stayPlaces: StayPlace[]): AnnualReportAreaMap {
+  const isVisible = (cell: AnnualReportAreaCellIndex) => !isAreaCellHiddenByPrivacy(cell, areaMap.cellSizeMeters, stayPlaces);
+  return {
+    cellSizeMeters: areaMap.cellSizeMeters,
+    newCells: areaMap.newCells.filter(isVisible),
+    previousCells: areaMap.previousCells.filter(isVisible),
+  };
+}
+
+/** 新しいマス・前からのマスのどれかが非表示範囲にかかるか。共有前の確認ダイアログを出すかの判定に使う。 */
+export function hasPrivacyRadiusInAreaMap(areaMap: AnnualReportAreaMap, stayPlaces: StayPlace[]): boolean {
+  return [...areaMap.newCells, ...areaMap.previousCells].some((cell) =>
+    isAreaCellHiddenByPrivacy(cell, areaMap.cellSizeMeters, stayPlaces),
+  );
 }

@@ -3,8 +3,9 @@ import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
-import type { AnnualReportCoordinate, AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
+import type { AnnualReportAreaMap, AnnualReportCoordinate, AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
 import { downsampleRoute } from '@/features/annualReport/annualReportVisuals';
+import { coordinateToGridCell } from '@/features/location/grid/gridCell';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
 import { AnnualReportScreen } from '@/ui/components/annualReport/AnnualReportScreen';
 import { distanceMeters } from '@/utils/distance';
@@ -30,7 +31,11 @@ jest.mock('react-native-view-shot', () => ({
 
 jest.mock('react-native-maps', () => {
   const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
-  return { __esModule: true, default: View, Marker: View, Polyline: View };
+  // Polygon は Polyline の座標集計に混ざらないよう、頂点を別名の prop(polygonCoordinates)へ移して描く
+  function MockPolygon({ coordinates, ...rest }: { coordinates: unknown }) {
+    return <View {...rest} polygonCoordinates={coordinates} />;
+  }
+  return { __esModule: true, default: View, Marker: View, Polyline: View, Polygon: MockPolygon };
 });
 
 jest.mock('react-native-svg', () => {
@@ -161,6 +166,30 @@ function recordCaptures(): { coordinates: AnnualReportCoordinate[]; markers: num
   });
   return captures;
 }
+
+/** 自宅を含む100m のマス。 */
+const homeGridCell = coordinateToGridCell(home);
+
+/** 自宅を含むマスと、自宅から離れたマスを持つ「新しく塗ったエリア」の地図。 */
+const newAreaMapWithHome: AnnualReportAreaMap = {
+  cellSizeMeters: 100,
+  newCells: [
+    [homeGridCell.x, homeGridCell.y],
+    [homeGridCell.x + 50, homeGridCell.y],
+    [homeGridCell.x + 51, homeGridCell.y],
+  ],
+  previousCells: [
+    [homeGridCell.x + 50, homeGridCell.y + 1],
+    [homeGridCell.x, homeGridCell.y + 50],
+  ],
+};
+
+/** 自宅から離れたマスだけの「新しく塗ったエリア」の地図。 */
+const newAreaMapAwayFromHome: AnnualReportAreaMap = {
+  cellSizeMeters: 100,
+  newCells: [[homeGridCell.x + 50, homeGridCell.y]],
+  previousCells: [[homeGridCell.x + 50, homeGridCell.y + 1]],
+};
 
 /** 非表示半径の外にある座標だけか。 */
 function allOutsideHome(coordinates: AnnualReportCoordinate[]): boolean {
@@ -567,5 +596,40 @@ describe('年間レポートのストーリー画面 AnnualReportScreen', () => 
     });
     await advance(7_100);
     expect(screen.getByLabelText('2 / 10 ページ')).toBeTruthy();
+  });
+
+  describe('新しく塗ったエリアのページ', () => {
+    test('マスが非表示範囲にかかるときは、共有前に確認ダイアログを出す', async () => {
+      const payload = createPayload({ newAreaMap: newAreaMapWithHome });
+      await render(<AnnualReportScreen payload={payload} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+      await goForward(7);
+      expect(screen.getByText('新しく塗ったエリア')).toBeTruthy();
+
+      await fireEvent.press(screen.getByLabelText('このページを共有'));
+
+      expect(screen.getByText('プライベートな滞在場所を隠しますか？')).toBeTruthy();
+      expect(captureRef).not.toHaveBeenCalled();
+    });
+
+    test('マスが非表示範囲にかからなければ、確認なしで共有する', async () => {
+      const payload = createPayload({ newAreaMap: newAreaMapAwayFromHome });
+      await render(<AnnualReportScreen payload={payload} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+      await goForward(7);
+
+      await pressAndFinish(screen.getByLabelText('このページを共有'));
+
+      expect(screen.queryByText('プライベートな滞在場所を隠しますか？')).toBeNull();
+      expect(captureRef).toHaveBeenCalledTimes(1);
+    });
+
+    test('地図の無い古い保存データでは、確認なしで共有する', async () => {
+      await render(<AnnualReportScreen payload={createPayload()} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+      await goForward(7);
+
+      await pressAndFinish(screen.getByLabelText('このページを共有'));
+
+      expect(screen.queryByText('プライベートな滞在場所を隠しますか？')).toBeNull();
+      expect(captureRef).toHaveBeenCalledTimes(1);
+    });
   });
 });

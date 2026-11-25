@@ -6,6 +6,7 @@ import {
   getDailyDistanceRows,
   getLandmarkSpotVisitSummary,
   getNewAdminAreaSummary,
+  getNewCellCountsByRow,
   getVisitedCellCounts,
   getVisitedPrefectureNames,
 } from '@/features/annualReport/annualReportQueries';
@@ -26,6 +27,7 @@ jest.mock('@/features/annualReport/annualReportQueries', () => ({
   getVisitedPrefectureNames: jest.fn(),
   getNewAdminAreaSummary: jest.fn(),
   getVisitedCellCounts: jest.fn(),
+  getNewCellCountsByRow: jest.fn(),
   getAchievementUnlockSummary: jest.fn(),
   getLandmarkSpotVisitSummary: jest.fn(),
 }));
@@ -82,6 +84,8 @@ describe('年次レポートのステップ集計', () => {
     (getVisitedPrefectureNames as jest.Mock).mockResolvedValue(['東京都', '神奈川県']);
     (getNewAdminAreaSummary as jest.Mock).mockResolvedValue({ newPrefectures: ['神奈川県'], newMunicipalityCount: 4 });
     (getVisitedCellCounts as jest.Mock).mockResolvedValue({ newCellCount: 120, previousCellCount: 300 });
+    // 赤道付近(y=0)の100mセルは1件10,000m²として数える
+    (getNewCellCountsByRow as jest.Mock).mockResolvedValue([{ cellSizeMeters: 100, y: 0, count: 120 }]);
     (getAchievementUnlockSummary as jest.Mock).mockResolvedValue({ count: 5, highlights: [{ id: 'a1', unlockedLocalDate: '2026-11-01' }] });
     (getLandmarkSpotVisitSummary as jest.Mock).mockResolvedValue({ count: 2, highlights: [{ id: 's1', visitedLocalDate: '2026-10-01' }] });
   });
@@ -349,6 +353,7 @@ describe('年次レポートのステップ集計', () => {
     expect(getVisitedPrefectureNames).toHaveBeenCalledWith('2026-01-01', '2026-12-15');
     expect(getNewAdminAreaSummary).toHaveBeenCalledWith(new Date(2026, 0, 1).toISOString(), new Date(2026, 11, 16).toISOString());
     expect(getVisitedCellCounts).toHaveBeenCalledWith(new Date(2026, 0, 1).toISOString(), new Date(2026, 11, 16).toISOString());
+    expect(getNewCellCountsByRow).toHaveBeenCalledWith(new Date(2026, 0, 1).toISOString(), new Date(2026, 11, 16).toISOString());
     expect(getAchievementUnlockSummary).toHaveBeenCalledWith('2026-01-01', '2026-12-15');
     expect(getLandmarkSpotVisitSummary).toHaveBeenCalledWith('2026-01-01', '2026-12-15');
     expect(result).toEqual({
@@ -377,6 +382,7 @@ describe('年次レポートのステップ集計', () => {
         newPrefectures: ['神奈川県'],
         newMunicipalityCount: 4,
         newCellCount: 120,
+        newAreaSquareMeters: expect.closeTo(1_200_000, 0),
         previousCellCount: 300,
         achievements: { count: 5, highlights: [{ id: 'a1', unlockedLocalDate: '2026-11-01' }] },
         spots: { count: 2, highlights: [{ id: 's1', visitedLocalDate: '2026-10-01' }] },

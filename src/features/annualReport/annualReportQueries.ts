@@ -1,6 +1,8 @@
 import { db } from '@/db/database';
 import type { LocationPoint } from '@/types/gps';
 
+import type { CellRowCount } from './annualReportArea';
+
 /** ハイライトとして返す最大件数。 */
 const HIGHLIGHT_LIMIT = 3;
 
@@ -109,6 +111,24 @@ export async function getVisitedCellCounts(
     fromIso,
   );
   return { newCellCount: fresh?.count ?? 0, previousCellCount: previous?.count ?? 0 };
+}
+
+/**
+ * 期間内に初めて塗られたエリアを、セルサイズと Y 番号(緯度の行)ごとに数える。範囲は [fromIso, toIsoExclusive)。
+ *
+ * 地表での面積は緯度で変わるため、行ごとの件数を返して呼び出し側で実面積へ換算する。
+ * セルの座標そのものは読まないので、件数が多くても返す行数は緯度方向の幅に比例する程度に収まる。
+ */
+export async function getNewCellCountsByRow(fromIso: string, toIsoExclusive: string): Promise<CellRowCount[]> {
+  const rows = await db.getAllAsync<{ cell_size_meters: number; y: number; count: number }>(
+    `SELECT cell_size_meters, y, COUNT(*) AS count
+     FROM visited_cells
+     WHERE first_visited_at >= ? AND first_visited_at < ?
+     GROUP BY cell_size_meters, y`,
+    fromIso,
+    toIsoExclusive,
+  );
+  return rows.map((row) => ({ cellSizeMeters: row.cell_size_meters, y: row.y, count: row.count }));
 }
 
 /** 期間内に解除された実績の件数と、新しい順のハイライト(最大3件)。 */

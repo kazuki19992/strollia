@@ -4,6 +4,7 @@ import type { LocationPoint } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
 import { totalDistanceMeters } from '@/utils/distance';
 
+import { sumGroundAreaSquareMeters } from './annualReportArea';
 import { meetsMinimumActiveDays, type AnnualReportWindow } from './annualReportPeriod';
 import {
   getAchievementUnlockSummary,
@@ -11,6 +12,7 @@ import {
   getDailyDistanceRows,
   getLandmarkSpotVisitSummary,
   getNewAdminAreaSummary,
+  getNewCellCountsByRow,
   getVisitedCellCounts,
   getVisitedPrefectureNames,
   toLocalDayStartIso,
@@ -220,6 +222,7 @@ async function buildPayload(window: AnnualReportWindow, progress: AnnualReportPr
   const visitedPrefectures = await getVisitedPrefectureNames(periodStart, periodEnd);
   const { newPrefectures, newMunicipalityCount } = await getNewAdminAreaSummary(fromIso, toIsoExclusive);
   const { newCellCount, previousCellCount } = await getVisitedCellCounts(fromIso, toIsoExclusive);
+  const newAreaSquareMeters = sumGroundAreaSquareMeters(await getNewCellCountsByRow(fromIso, toIsoExclusive));
   const achievements = await getAchievementUnlockSummary(periodStart, periodEnd);
   const spots = await getLandmarkSpotVisitSummary(periodStart, periodEnd);
 
@@ -238,6 +241,7 @@ async function buildPayload(window: AnnualReportWindow, progress: AnnualReportPr
     newPrefectures,
     newMunicipalityCount,
     newCellCount,
+    newAreaSquareMeters,
     previousCellCount,
     achievements,
     spots,

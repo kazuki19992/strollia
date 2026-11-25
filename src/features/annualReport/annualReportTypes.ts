@@ -30,6 +30,11 @@ export type AnnualReportPayloadV1 = {
   newPrefectures: string[];
   newMunicipalityCount: number;
   newCellCount: number;
+  /**
+   * その年に新しく塗ったエリアの地表での実面積(m²)。緯度ごとのセル数から求める。
+   * このフィールドより前に保存したデータには無いため省略可能(表示側で `newCellCount` から概算する)。
+   */
+  newAreaSquareMeters?: number;
   /** 期間開始前までに塗られていたエリア数。 */
   previousCellCount: number;
   /** 最大3件、新しい順。 */

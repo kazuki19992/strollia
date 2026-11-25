@@ -6,6 +6,7 @@ import {
   getDailyDistanceRows,
   getLandmarkSpotVisitSummary,
   getNewAdminAreaSummary,
+  getNewCellCountsByRow,
   getVisitedCellCounts,
   getVisitedPrefectureNames,
   toLocalDayStartIso,
@@ -109,6 +110,25 @@ describe('年次レポートの集計クエリ', () => {
       '2026-12-16T00:00:00.000Z',
     );
     expect(getFirstAsync).toHaveBeenNthCalledWith(2, expect.stringContaining('visited_cells'), '2026-01-01T00:00:00.000Z');
+  });
+
+  test('新しく塗ったエリアは期間で絞り、セルサイズとY番号ごとの件数を返す', async () => {
+    getAllAsync.mockResolvedValue([
+      { cell_size_meters: 100, y: 4_100, count: 12 },
+      { cell_size_meters: 100, y: 4_101, count: 3 },
+    ]);
+
+    const rows = await getNewCellCountsByRow('2026-01-01T00:00:00.000Z', '2026-12-16T00:00:00.000Z');
+
+    expect(rows).toEqual([
+      { cellSizeMeters: 100, y: 4_100, count: 12 },
+      { cellSizeMeters: 100, y: 4_101, count: 3 },
+    ]);
+    const [sql, ...params] = getAllAsync.mock.calls[0];
+    expect(params).toEqual(['2026-01-01T00:00:00.000Z', '2026-12-16T00:00:00.000Z']);
+    expect(sql).toContain('FROM visited_cells');
+    expect(sql).toContain('first_visited_at >= ? AND first_visited_at < ?');
+    expect(sql).toContain('GROUP BY cell_size_meters, y');
   });
 
   test('実績の解除は件数と新しい順の3件を返す', async () => {

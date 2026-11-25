@@ -175,6 +175,8 @@ export function useMapFollowState({
   // 無視されるため、カスタムアイコンの初回センタリングは準備完了を待ってから実行する。
   // onMapReadyまたは最初のonRegionChangeCompleteでtrueになり、以後リセットされない。
   const [isMapReady, setIsMapReady] = useState(false);
+  /** 準備完了通知とカメラ操作が同じレンダーの間に来ても、通知を受けた時点から準備済みと判定する。 */
+  const isMapReadyRef = useRef(false);
   const [visibleRegion, setVisibleRegion] = useState<Region | null>(null);
   const [gridSyncRegion, setGridSyncRegion] = useState<Region | null>(null);
   const [currentSpeedKmh, setCurrentSpeedKmh] = useState(0);
@@ -259,7 +261,9 @@ export function useMapFollowState({
       incrementVisitedGridRefreshVersionRef.current();
       const map = mapRef.current;
       if (map) {
-        hasCenteredMapRef.current = true;
+        if (isMapReadyRef.current) {
+          hasCenteredMapRef.current = true;
+        }
         map.animateToRegion(region, animated ? 500 : 250);
       }
     },
@@ -369,7 +373,7 @@ export function useMapFollowState({
    * @returns なし。
    */
   function handleRegionChangeComplete(region: Region): void {
-    setIsMapReady(true);
+    handleMapReady();
     regionChangeThrottleRef.current = Date.now();
     setVisibleRegion(region);
     latestRegionRef.current = region;
@@ -415,6 +419,7 @@ export function useMapFollowState({
    * @returns なし。
    */
   function handleMapReady(): void {
+    isMapReadyRef.current = true;
     setIsMapReady(true);
   }
 

@@ -259,6 +259,44 @@ describe('地図追従・センタリングフック useMapFollowState', () => {
       }
     });
 
+    it.each([
+      { timing: '準備完了前', readyBeforeRecenter: false, expectedCameraCalls: 2 },
+      { timing: '準備完了通知の直後', readyBeforeRecenter: true, expectedCameraCalls: 1 },
+    ])(
+      'iOSの標準アイコンで$timingに現在地へ戻っても準備完了後の縮尺合わせは一度だけ行う',
+      async ({ readyBeforeRecenter, expectedCameraCalls }) => {
+        const osOverride = jest.replaceProperty(Platform, 'OS', 'ios');
+
+        try {
+          const { result } = await renderMapFollowState();
+          const animateToRegion = jest.fn();
+          (result.current.mapRef as React.MutableRefObject<{ animateToRegion: jest.Mock } | null>).current = { animateToRegion };
+
+          await act(() => {
+            result.current.applyUserLocation(35.681236, 139.767125, null);
+          });
+
+          await act(() => {
+            if (readyBeforeRecenter) {
+              result.current.handleMapReady();
+              result.current.recenterOnUserLocation();
+            } else {
+              result.current.recenterOnUserLocation();
+              result.current.handleMapReady();
+            }
+          });
+
+          expect(animateToRegion).toHaveBeenCalledTimes(expectedCameraCalls);
+          expect(animateToRegion).toHaveBeenLastCalledWith(
+            { latitude: 35.681236, longitude: 139.767125, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+            readyBeforeRecenter ? 500 : 250,
+          );
+        } finally {
+          osOverride.restore();
+        }
+      },
+    );
+
     it('有効な緯度経度で userCoordinate が更新される', async () => {
       const { result } = await renderMapFollowState();
 

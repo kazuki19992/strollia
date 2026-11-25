@@ -1,56 +1,75 @@
 import { useMemo } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
 
-import { type AnnualReportAreaCell, buildAreaSampleCells, quantizeRevealCount } from '@/features/annualReport/annualReportVisuals';
+import {
+  formatAreaComparison,
+  formatAreaSize,
+  resolveAreaComparison,
+  resolveNewAreaSquareMeters,
+} from '@/features/annualReport/annualReportCopy';
+import { buildAreaTileLayout, quantizeRevealCount } from '@/features/annualReport/annualReportVisuals';
 import { STORY_PAGE_DURATION_MS } from '@/ui/hooks/useStoryPlayer';
 import { useStoryTimeline, useStoryTimelineValue } from '@/ui/hooks/useStoryTimeline';
 import { AnnualReportRise } from './AnnualReportRise';
-import { ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING, annualReportColors, annualReportStyles } from './annualReportStyles';
+import { ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING, AREA_TILE_GAP, annualReportStyles } from './annualReportStyles';
 import { countUpValue, RISE_DELAYS_MS, type AnnualReportPageProps } from './annualReportPageProps';
 
-/** マス目の列数と行数(演出用のサンプルで、実際の地図の位置ではない)。 */
-const CELL_COLUMNS = 18;
-const CELL_ROWS = 16;
-const CELL_GAP = 2;
-/** 塗り始める時刻(ミリ秒)。 */
+/** タイルの板の一辺の上限(px)。 */
+const BOARD_MAX_SIDE = 240;
+/**
+ * 板を斜めにしたときに、見た目の高さが板の一辺の何倍になるか(おおよそ)。
+ * 45°回すと対角線(√2倍)が横幅になり、55°倒すと縦が cos55° ほどに縮むため、余白を含めて 0.9 倍の場所を取る。
+ */
+const BOARD_STAGE_HEIGHT_RATIO = 0.9;
+/** 塗り始める時刻と、最後のタイルを塗り始めるまでの長さ(ミリ秒)。900〜3,300ms に収める。 */
 const PAINT_START_MS = 900;
-/** 1マスずつ塗る間隔の上限と、全体の目安の長さ(ミリ秒)。 */
-const PAINT_INTERVAL_MAX_MS = 25;
-const PAINT_TOTAL_MS = 4000;
-/** 白く光ってから色が落ち着くまでの長さ(ミリ秒)。 */
-const FLASH_MS = 600;
-/** エリア数のカウントアップの長さ(ミリ秒)。 */
-const COUNT_UP_MS = 2400;
-/** 塗る件数を増やす段階数。 */
-const PAINT_STEPS = 40;
+const PAINT_SPAN_MS = 2400;
+/** 塗った直後の白から、緑に落ち着くまでの長さ(ミリ秒)。 */
+const FLASH_MS = 500;
+/** 塗る枚数を増やす段階数。タイル個別に補間せず、16段階の静的なスタイル切り替えで描く。 */
+const PAINT_STEPS = 16;
+/** 広さの比較を出す時刻(ミリ秒)。出現アニメーション(800ms)を含めて 4.8 秒以内に終える。 */
+const COMPARISON_DELAY_MS = 3600;
 
-/** 塗った件数・落ち着いた件数から1マスの色を決める。塗った直後は白く光らせ、FLASH_MS 後に緑へ落ち着かせる。 */
-function resolveCellColor(cell: { kind: AnnualReportAreaCell; order: number }, paintedCount: number, settledCount: number): string {
-  if (cell.kind === 'old') return annualReportColors.cellOld;
-  if (cell.kind === 'empty' || cell.order >= paintedCount) return annualReportColors.cellEmpty;
-  return cell.order < settledCount ? annualReportColors.accent : '#ffffff';
+/**
+ * タイルを塗る順番(0始まり)を、格子の並び順(左上から右へ)ごとに返す。
+ *
+ * 板は右回りに45°回して手前へ倒すため、右下の角(列+行が最大)が最も手前に見える。
+ * 手前から奥へ斜めの波で塗るよう、列+行の大きい順に番号を振る(同じ斜めの列では右から)。
+ */
+function buildPaintOrder(tileCount: number, columns: number): number[] {
+  const indices = Array.from({ length: tileCount }, (_, index) => index);
+  const diagonal = (index: number) => (index % columns) + Math.floor(index / columns);
+  const sorted = [...indices].sort((a, b) => diagonal(b) - diagonal(a) || (b % columns) - (a % columns));
+  const order = Array<number>(tileCount);
+  sorted.forEach((tileIndex, rank) => {
+    order[tileIndex] = rank;
+  });
+  return order;
 }
 
-/** ページ8: 新しく塗ったエリア。エリア数をカウントアップし、マスを光らせながら塗る。 */
+/** ページ8: 新しく塗ったエリア。エリア数をカウントアップし、斜めから見下ろしたタイルの広場を塗り、身近な広さで例える。 */
 export function AnnualReportNewAreasPage({ payload, paused, completed, contentTop }: AnnualReportPageProps) {
   const clock = useStoryTimeline({ durationMs: STORY_PAGE_DURATION_MS, paused, completed });
   const { width } = useWindowDimensions();
-  // 塗る順番(新しいエリアのマスだけの通し番号)を前もって振る
-  const cells = useMemo(() => {
-    let newCount = 0;
-    return buildAreaSampleCells(payload.previousCellCount, payload.newCellCount, CELL_COLUMNS * CELL_ROWS).map((kind) => ({
-      kind,
-      order: kind === 'new' ? newCount++ : -1,
-    }));
-  }, [payload.previousCellCount, payload.newCellCount]);
-  const count = useStoryTimelineValue(clock, (ms) => Math.round(countUpValue(ms, PAINT_START_MS, COUNT_UP_MS, payload.newCellCount)));
-  const cellSize = (width - ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING * 2 - CELL_GAP * (CELL_COLUMNS - 1)) / CELL_COLUMNS;
-  const newTotal = cells.filter((cell) => cell.kind === 'new').length;
-  const interval = Math.min(PAINT_INTERVAL_MAX_MS, PAINT_TOTAL_MS / Math.max(1, newTotal));
-  // 数百マスを個別に補間しない。塗った件数(白く光る)と落ち着いた件数(緑)を約40段階で増やし、静的なスタイルで描く
-  const paintedCount = useStoryTimelineValue(clock, (ms) => quantizeRevealCount(ms, PAINT_START_MS, interval, newTotal, PAINT_STEPS));
+  const layout = useMemo(() => buildAreaTileLayout(payload.newCellCount), [payload.newCellCount]);
+  const paintOrder = useMemo(() => buildPaintOrder(layout.tileCount, layout.columns), [layout.tileCount, layout.columns]);
+  const squareMeters = resolveNewAreaSquareMeters(payload);
+  const comparison = formatAreaComparison(resolveAreaComparison(squareMeters));
+
+  // 45°回すと対角線が横幅になるため、対角線が本文の幅に収まる一辺にする
+  const boardSide = Math.min((width - ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING * 2) / Math.SQRT2, BOARD_MAX_SIDE);
+  const tileSize = layout.columns > 0 ? (boardSide - AREA_TILE_GAP * (layout.columns - 1)) / layout.columns : 0;
+  const boardHeight = layout.rows * tileSize + Math.max(0, layout.rows - 1) * AREA_TILE_GAP;
+
+  const count = useStoryTimelineValue(clock, (ms) => Math.round(countUpValue(ms, PAINT_START_MS, PAINT_SPAN_MS, payload.newCellCount)));
+  const interval = PAINT_SPAN_MS / Math.max(1, layout.tileCount);
+  // 塗った枚数(白)と落ち着いた枚数(緑)を段階的に増やすだけにして、タイル個別の Animated を作らない
+  const paintedCount = useStoryTimelineValue(clock, (ms) =>
+    quantizeRevealCount(ms, PAINT_START_MS, interval, layout.tileCount, PAINT_STEPS),
+  );
   const settledCount = useStoryTimelineValue(clock, (ms) =>
-    quantizeRevealCount(ms, PAINT_START_MS + FLASH_MS, interval, newTotal, PAINT_STEPS),
+    quantizeRevealCount(ms, PAINT_START_MS + FLASH_MS, interval, layout.tileCount, PAINT_STEPS),
   );
 
   return (
@@ -60,25 +79,37 @@ export function AnnualReportNewAreasPage({ payload, paused, completed, contentTo
       </AnnualReportRise>
       <AnnualReportRise clock={clock} delayMs={RISE_DELAYS_MS[1]}>
         <Text style={annualReportStyles.pageMessage}>
+          {'新しく '}
           <Text style={annualReportStyles.accentNumber}>{count}</Text>
-          {' エリアを\n新しく塗りました！'}
+          {' エリアに\n訪れました！'}
         </Text>
       </AnnualReportRise>
-      <View style={annualReportStyles.cells}>
-        {cells.map((cell, index) => (
-          <View
-            key={index}
-            style={{ width: cellSize, height: cellSize, backgroundColor: resolveCellColor(cell, paintedCount, settledCount) }}
-          />
-        ))}
+      <View style={[annualReportStyles.areaStage, { height: boardSide * BOARD_STAGE_HEIGHT_RATIO }]}>
+        {/* 斜め見下ろしの transform は板1枚にだけかける(タイル個別に transform しない) */}
+        <View style={[annualReportStyles.areaBoard, { width: boardSide, height: boardHeight }]}>
+          {paintOrder.map((rank, index) => (
+            <View
+              key={index}
+              testID="annual-report-area-tile"
+              style={[
+                annualReportStyles.areaTile,
+                rank < settledCount
+                  ? annualReportStyles.areaTilePainted
+                  : rank < paintedCount
+                    ? annualReportStyles.areaTileFlash
+                    : annualReportStyles.areaTileEmpty,
+                { width: tileSize, height: tileSize },
+              ]}
+            />
+          ))}
+        </View>
       </View>
-      <AnnualReportRise clock={clock} delayMs={RISE_DELAYS_MS[3]}>
-        <Text style={annualReportStyles.legend}>
-          <Text style={{ color: annualReportColors.cellOld }}>■</Text>
-          {` ${payload.year - 1}年までのエリア　`}
-          <Text style={annualReportStyles.accentText}>■</Text>
-          {` ${payload.year}年にはじめて`}
+      <AnnualReportRise clock={clock} delayMs={COMPARISON_DELAY_MS}>
+        <Text style={annualReportStyles.areaComparisonText}>
+          <Text style={annualReportStyles.accentText}>{comparison}</Text>
+          {' の広さです'}
         </Text>
+        <Text style={annualReportStyles.areaSize}>{formatAreaSize(squareMeters)}</Text>
       </AnnualReportRise>
     </View>
   );

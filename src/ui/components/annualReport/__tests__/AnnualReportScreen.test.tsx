@@ -389,6 +389,43 @@ describe('年間レポートのストーリー画面 AnnualReportScreen', () => 
     expect(screen.getByText('大阪')).toBeTruthy();
   });
 
+  test('新しく塗ったエリアのページは、タイル100枚と身近な広さの比較を出す', async () => {
+    await render(
+      <AnnualReportScreen
+        payload={createPayload({ newCellCount: 487, newAreaSquareMeters: 3_263_000 })}
+        activeStayPlaces={[]}
+        stayPlacesStatus="ready"
+        onClose={jest.fn()}
+      />,
+    );
+    await goForward(7);
+    await advance(5_000);
+
+    expect(screen.getByText('新しく塗ったエリア')).toBeTruthy();
+    expect(screen.getByText(/新しく 487 エリアに/)).toBeTruthy();
+    expect(screen.getByText('皇居の約2.8倍')).toBeTruthy();
+    expect(screen.getByText('約3.3km²')).toBeTruthy();
+    // マス数(487)に比例させず、タイルは最大100枚にまとめて描く
+    expect(screen.getAllByTestId('annual-report-area-tile')).toHaveLength(100);
+  });
+
+  test('実面積を持たない古い保存データでも、エリア数から概算した広さの比較を出す', async () => {
+    await render(
+      <AnnualReportScreen
+        payload={createPayload({ newCellCount: 12 })}
+        activeStayPlaces={[]}
+        stayPlacesStatus="ready"
+        onClose={jest.fn()}
+      />,
+    );
+    await goForward(7);
+    await advance(5_000);
+
+    // 12エリア × 6,700m² = 80,400m² → 東京ドーム 約1.7個分
+    expect(screen.getByText('東京ドーム 約1.7個分')).toBeTruthy();
+    expect(screen.getAllByTestId('annual-report-area-tile')).toHaveLength(12);
+  });
+
   test('月ごとのページは最多と最少の月だけ棒の上に距離を出す', async () => {
     await render(<AnnualReportScreen payload={createPayload()} activeStayPlaces={[]} stayPlacesStatus="ready" onClose={jest.fn()} />);
     await goForward(4);

@@ -9,12 +9,6 @@ export type AnnualReportCalendarCell = {
   active: boolean;
 };
 
-/** エリア表示(ページ8)の1マスの状態。前年までのエリア / その年に初めて塗ったエリア / 未訪問。 */
-export type AnnualReportAreaCell = 'old' | 'new' | 'empty';
-
-/** エリア表示のサンプルで塗られたマスにする割合。実際の地図ではなく雰囲気を見せる飾りのため固定にする。 */
-const AREA_SAMPLE_FILLED_RATIO = 0.62;
-
 /** 2桁ゼロ埋め。 */
 function pad2(value: number): string {
   return String(value).padStart(2, '0');
@@ -31,38 +25,6 @@ export function buildCalendarCells(year: number, activeDates: string[]): AnnualR
   for (const day = new Date(year, 0, 1); day.getFullYear() === year; day.setDate(day.getDate() + 1)) {
     const date = `${year}-${pad2(day.getMonth() + 1)}-${pad2(day.getDate())}`;
     cells.push({ date, active: activeSet.has(date) });
-  }
-  return cells;
-}
-
-/**
- * 新しく塗ったエリアの演出用サンプル(実際の位置ではない)を作る。
- *
- * 塗られたマスの中の新旧の比率を、前年までのエリア数と新しいエリア数の比に合わせる。
- * 新しいエリアが1件以上あれば最低1マスは新しいエリアにする。並びは固定シードで混ぜ、毎回同じ見た目にする。
- */
-export function buildAreaSampleCells(previousCount: number, newCount: number, cellCount: number): AnnualReportAreaCell[] {
-  const filled = Math.round(cellCount * AREA_SAMPLE_FILLED_RATIO);
-  const total = previousCount + newCount;
-  const rawNew = total > 0 ? Math.round((filled * newCount) / total) : 0;
-  const newCells = newCount > 0 ? Math.min(filled, Math.max(1, rawNew)) : 0;
-  const oldCells = total > 0 ? filled - newCells : 0;
-
-  const cells: AnnualReportAreaCell[] = [
-    ...Array<AnnualReportAreaCell>(oldCells).fill('old'),
-    ...Array<AnnualReportAreaCell>(newCells).fill('new'),
-    ...Array<AnnualReportAreaCell>(cellCount - oldCells - newCells).fill('empty'),
-  ];
-
-  // 固定シードの線形合同法で Fisher-Yates シャッフルする(再描画やスナップショットで並びを変えないため)
-  let seed = 7;
-  const random = () => {
-    seed = (seed * 16807) % 2147483647;
-    return seed / 2147483647;
-  };
-  for (let index = cells.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(random() * (index + 1));
-    [cells[index], cells[swapIndex]] = [cells[swapIndex], cells[index]];
   }
   return cells;
 }

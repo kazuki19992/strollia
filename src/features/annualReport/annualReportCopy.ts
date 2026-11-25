@@ -114,6 +114,26 @@ export function resolveNewAreaSquareMeters(payload: { newCellCount: number; newA
   return payload.newAreaSquareMeters ?? payload.newCellCount * FALLBACK_SQUARE_METERS_PER_CELL;
 }
 
+/** 整数を3桁区切りの文字列にする。端末のロケール設定に左右されないよう自前で区切る。 */
+function withThousandsSeparator(value: number): string {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * 面積（m²）を、比較の一文の下に添える大きさの表記にする。
+ * 100km²以上は整数のkm²、0.1km²以上は小数1桁のkm²、それより狭いときはm²を千の位で丸める（最小は約1,000m²）。
+ */
+export function formatAreaSize(squareMeters: number): string {
+  const squareKilometers = squareMeters / 1_000_000;
+  if (squareKilometers >= 100) {
+    return `約${withThousandsSeparator(Math.round(squareKilometers))}km²`;
+  }
+  if (squareKilometers >= 0.1) {
+    return `約${squareKilometers.toFixed(1)}km²`;
+  }
+  return `約${withThousandsSeparator(Math.max(1, Math.round(squareMeters / 1_000)) * 1_000)}m²`;
+}
+
 /** 年間距離から段階を決める。境目（3,000km / 10,000km / 25,000km）ちょうどは上の段階。 */
 export function resolveDistanceTier(totalMeters: number): DistanceTier {
   if (totalMeters >= 25_000_000) return 4;

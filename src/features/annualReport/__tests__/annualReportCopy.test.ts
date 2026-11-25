@@ -1,6 +1,7 @@
 import {
   achievementMessage,
   formatAreaComparison,
+  formatAreaSize,
   mapPageMessage,
   resolveAreaComparison,
   resolveDistanceComparison,
@@ -95,4 +96,12 @@ describe('新しいエリアの面積 resolveNewAreaSquareMeters', () => {
     expect(resolveNewAreaSquareMeters({ newCellCount: 487, newAreaSquareMeters: 3_263_000 })).toBe(3_263_000));
   it('古い保存データ(実面積なし)は緯度35°の1マス6,700m²で概算する', () =>
     expect(resolveNewAreaSquareMeters({ newCellCount: 487 })).toBe(487 * 6_700));
+});
+
+describe('面積の表記 formatAreaSize', () => {
+  it('1km²以上は小数1桁のkm²', () => expect(formatAreaSize(3_263_000)).toBe('約3.3km²'));
+  it('1km²未満でも0.1km²以上は小数1桁のkm²', () => expect(formatAreaSize(400_000)).toBe('約0.4km²'));
+  it('100km²以上は整数で桁区切りを入れる', () => expect(formatAreaSize(2_194_000_000)).toBe('約2,194km²'));
+  it('0.1km²未満はm²を千の位で丸めて桁区切りを入れる', () => expect(formatAreaSize(80_400)).toBe('約80,000m²'));
+  it('千の位で丸めて0になる狭さでも約1,000m²と出す', () => expect(formatAreaSize(300)).toBe('約1,000m²'));
 });

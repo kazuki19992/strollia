@@ -22,7 +22,9 @@ export const annualReportColors = {
   barLow: '#6b6b6b',
   barLowLabel: '#444444',
   cellEmpty: '#1c1c1c',
-  cellOld: '#2f5a4a',
+  cellEmptyEdge: '#121212',
+  tileFlash: '#ffffff',
+  tileFlashEdge: '#cfcfcf',
   chip: '#2e2e2e',
   mapOverlay: 'rgba(10,14,20,0.45)',
   routeFaint: 'rgba(115,199,162,0.25)',
@@ -34,6 +36,8 @@ export const annualReportColors = {
 
 /** ページ本文の左右の余白。 */
 export const ANNUAL_REPORT_PAGE_HORIZONTAL_PADDING = 24;
+/** エリアのタイル広場(ページ8)のタイルどうしの隙間。 */
+export const AREA_TILE_GAP = 2;
 /** セーフエリア上端から本文までの距離(進行バーとヘッダーの下)。 */
 export const ANNUAL_REPORT_PAGE_TOP_OFFSET = 92;
 
@@ -376,16 +380,47 @@ export const annualReportStyles = StyleSheet.create({
   },
 
   // ---- 8 エリア ----
-  cells: {
+  /** タイルの板を置く場所。板は斜めにすると見た目が縮むため、高さは画面側で板の一辺から決める。 */
+  areaStage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 18,
+  },
+  /** 斜めから見下ろしたタイルの板。transform は板1枚にだけかけ、タイル個別には持たせない。 */
+  areaBoard: {
+    alignContent: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 2,
-    marginTop: 22,
+    gap: AREA_TILE_GAP,
+    transform: [{ perspective: 800 }, { rotateX: '55deg' }, { rotateZ: '45deg' }],
   },
-  legend: {
-    color: '#888888',
-    fontSize: 11,
-    marginTop: 10,
+  /** タイル1枚。右と下の縁を暗くして厚みがあるように見せる。 */
+  areaTile: {
+    borderBottomWidth: 2,
+    borderRadius: 2,
+    borderRightWidth: 2,
+  },
+  areaTileEmpty: {
+    backgroundColor: annualReportColors.cellEmpty,
+    borderColor: annualReportColors.cellEmptyEdge,
+  },
+  areaTileFlash: {
+    backgroundColor: annualReportColors.tileFlash,
+    borderColor: annualReportColors.tileFlashEdge,
+  },
+  areaTilePainted: {
+    backgroundColor: annualReportColors.accent,
+    borderColor: annualReportColors.accentDeep,
+  },
+  areaComparisonText: {
+    color: '#cccccc',
+    fontSize: 18,
+    lineHeight: 26,
+  },
+  areaSize: {
+    color: annualReportColors.subtle,
+    fontSize: 12,
+    marginTop: 4,
   },
 
   // ---- 9 実績 ----

@@ -2650,14 +2650,19 @@ describe('App 地図復帰時の表示範囲復元', () => {
     await renderRouter('src/app');
     await flushPromises();
 
+    await act(() => {
+      mockLatestMapScreenProps.onMapReady();
+    });
     await fireEvent.press(screen.getByLabelText('現在地更新'));
 
+    expect(mockLatestMapScreenProps.isFollowingUserLocation).toBe(true);
     expect(mockAnimateToRegion).toHaveBeenCalledWith(userRegion, 250);
 
     await fireEvent.press(screen.getByLabelText('地図をドラッグ'));
     await fireEvent.press(screen.getByLabelText('現在地中心へ地図移動'));
     await fireEvent.press(screen.getByLabelText('現在地更新'));
 
+    expect(mockLatestMapScreenProps.isFollowingUserLocation).toBe(false);
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1);
   });
 

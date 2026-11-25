@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { AppState } from 'react-native';
+import { Animated, AppState } from 'react-native';
 
 import { STORY_PAGE_DURATION_MS, useStoryPlayer } from '@/ui/hooks/useStoryPlayer';
 
@@ -104,20 +104,20 @@ describe('ストーリー再生フック useStoryPlayer', () => {
     expect(result.current.index).toBe(1);
   });
 
-  test('pause中は進行度が止まり、resumeで残りから進む', async () => {
+  test('進行度はネイティブドライバで動かし、resume後は残り時間だけアニメーションする', async () => {
+    // 進行バーは transform で伸ばし、React の再描画に値を上書きされないようネイティブドライバで動かす
+    const timing = jest.spyOn(Animated, 'timing');
     const { result } = await renderHook(() => useStoryPlayer({ pageCount: 3, durationMs: 1000 }));
 
-    await advance(500);
+    expect(timing).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ duration: 1000, useNativeDriver: true }));
+
+    await advance(400);
     await act(async () => result.current.pause());
-    const paused = (result.current.progress as unknown as { __getValue(): number }).__getValue();
     await advance(2000);
-    expect((result.current.progress as unknown as { __getValue(): number }).__getValue()).toBe(paused);
-    expect(paused).toBeGreaterThan(0);
-    expect(paused).toBeLessThan(1);
-
     await act(async () => result.current.resume());
-    await advance(500);
 
+    expect(timing).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ duration: 600, useNativeDriver: true }));
+    await advance(600);
     expect(result.current.index).toBe(1);
   });
 

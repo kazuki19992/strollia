@@ -19,9 +19,10 @@ export type StoryProgressBarProps = {
 /**
  * ページ数で分割した進行バー。現在より前は満タン、現在は progress に追従、後ろは空で表示する。
  *
- * 全バーの幅を「ページ番号 + progress」という1つのアニメーション値から補間する。
- * バーごとに静的な幅とアニメーションの幅を切り替えると、iOS(Fabric)では連打でページが速く進んだときに
- * アニメーション途中の幅がネイティブ側に残ることがあるため、どのバーも常に同じ値へ追従させる。
+ * 全バーの伸び具合を「ページ番号 + progress」という1つのアニメーション値から補間し、横方向の拡大率(scaleX)で描く。
+ * JS で幅を書き換える方式では、iOS(Fabric)で連打してページを素早く進めたときに、React の再描画が
+ * ネイティブ側の値を途中の幅で上書きし、見終わったバーが途中のまま残ることがあった。
+ * そのため progress はネイティブドライバで動かし(`useStoryPlayer`)、バーは常に同じ値へ追従させる。
  */
 export function StoryProgressBar({ pageCount, index, progress, styles }: StoryProgressBarProps) {
   const pageValue = useRef(new Animated.Value(index)).current;
@@ -44,7 +45,12 @@ export function StoryProgressBar({ pageCount, index, progress, styles }: StoryPr
             testID={`story-progress-fill-${i}`}
             style={[
               styles.storyProgressFill,
-              { width: position.interpolate({ inputRange: [i, i + 1], outputRange: ['0%', '100%'], extrapolate: 'clamp' }) },
+              {
+                // 幅ではなく左端を起点に横へ伸ばす。transform ならネイティブドライバで動かせ、
+                // React の再描画がネイティブ側の値を古い値で上書きしない
+                transformOrigin: 'left',
+                transform: [{ scaleX: position.interpolate({ inputRange: [i, i + 1], outputRange: [0, 1], extrapolate: 'clamp' }) }],
+              },
             ]}
           />
         </View>

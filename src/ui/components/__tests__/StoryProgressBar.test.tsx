@@ -5,8 +5,15 @@ import { StoryProgressBar } from '@/ui/components/StoryProgressBar';
 import { createStyles } from '@/ui/appStyles';
 import { lightTheme } from '@/theme/theme';
 
-/** testID から幅スタイルを取り出す。 */
-const widthOf = (id: string) => StyleSheet.flatten(screen.getByTestId(id).props.style).width;
+/**
+ * testID から、バーの伸び具合(横方向の拡大率 scaleX)を `'50%'` のような割合の文字列で取り出す。
+ * 幅ではなく拡大率で伸ばすのは、ネイティブドライバでアニメーションさせるため。
+ */
+const widthOf = (id: string) => {
+  const transform = StyleSheet.flatten(screen.getByTestId(id).props.style).transform as { scaleX?: number }[];
+  const scaleX = transform.find((item) => item.scaleX !== undefined)?.scaleX ?? 1;
+  return `${Math.round(scaleX * 1000) / 10}%`;
+};
 
 describe('ストーリー進行バー StoryProgressBar', () => {
   test('現在より前のバーが満タン、後ろが空になる', async () => {

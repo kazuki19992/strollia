@@ -92,8 +92,8 @@ export function useStoryPlayer({ pageCount, durationMs = STORY_PAGE_DURATION_MS 
       toValue: 1,
       duration: remaining,
       easing: Easing.linear,
-      // 進行バーは width を補間するため、ネイティブドライバは使えない。
-      useNativeDriver: false,
+      // 進行バーは transform(scaleX)で伸ばすため、ネイティブドライバで動かす(StoryProgressBar 参照)。
+      useNativeDriver: true,
     });
     animation.start();
     const timer = setTimeout(() => {

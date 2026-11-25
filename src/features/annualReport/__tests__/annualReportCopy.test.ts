@@ -1,8 +1,11 @@
 import {
   achievementMessage,
+  formatAreaComparison,
   mapPageMessage,
+  resolveAreaComparison,
   resolveDistanceComparison,
   resolveDistanceTier,
+  resolveNewAreaSquareMeters,
   summaryMessage,
 } from '@/features/annualReport/annualReportCopy';
 
@@ -51,4 +54,45 @@ describe('年次レポートの文言 annualReportCopy', () => {
   it('スポットがあれば実績とスポットの文言', () =>
     expect(achievementMessage(12, 3)).toBe('12個の実績解除と、3か所のスポットに到達しました！'));
   it('スポット0なら実績のみの文言', () => expect(achievementMessage(12, 0)).toBe('12個の実績を解除しました！'));
+});
+
+describe('新しいエリアの広さの比較 resolveAreaComparison', () => {
+  it('四国ちょうどは四国の約1倍', () => expect(resolveAreaComparison(18_800_000_000)).toEqual({ label: '四国', value: 1, suffix: '倍' }));
+  it('四国の直前は東京都の倍数になる', () => expect(resolveAreaComparison(18_799_999_999)).toMatchObject({ label: '東京都', value: 8.6 }));
+  it('東京都ちょうどは東京都の約1倍', () => expect(resolveAreaComparison(2_194_000_000)).toMatchObject({ label: '東京都', value: 1 }));
+  it('東京都の直前は琵琶湖の倍数になる', () => expect(resolveAreaComparison(2_193_999_999)).toMatchObject({ label: '琵琶湖', value: 3.3 }));
+  it('琵琶湖ちょうどは琵琶湖の約1倍', () => expect(resolveAreaComparison(669_000_000)).toMatchObject({ label: '琵琶湖', value: 1 }));
+  it('琵琶湖の直前は山手線の内側の倍数になる(東京23区は使わない)', () =>
+    expect(resolveAreaComparison(668_999_999)).toMatchObject({ label: '山手線の内側', value: 11 }));
+  it('山手線の内側ちょうどは約1倍', () => expect(resolveAreaComparison(63_000_000)).toMatchObject({ label: '山手線の内側', value: 1 }));
+  it('山手線の内側の直前は皇居の倍数(10以上は整数)', () =>
+    expect(resolveAreaComparison(62_999_999)).toEqual({ label: '皇居', value: 55, suffix: '倍' }));
+  it('3,263,000m²は皇居の約2.8倍', () => expect(resolveAreaComparison(3_263_000)).toEqual({ label: '皇居', value: 2.8, suffix: '倍' }));
+  it('皇居ちょうどは皇居の約1倍', () => expect(resolveAreaComparison(1_150_000)).toMatchObject({ label: '皇居', value: 1 }));
+  it('皇居の直前は東京ドームの個数(10以上は整数)', () =>
+    expect(resolveAreaComparison(1_149_999)).toEqual({ label: '東京ドーム', value: 25, suffix: '個分' }));
+  it('東京ドームちょうどは約1個分', () => expect(resolveAreaComparison(46_755)).toEqual({ label: '東京ドーム', value: 1, suffix: '個分' }));
+  it('東京ドームの直前はサッカーコートの面数', () =>
+    expect(resolveAreaComparison(46_754)).toEqual({ label: 'サッカーコート', value: 6.5, suffix: '面分' }));
+  it('サッカーコートちょうどは約1面分', () =>
+    expect(resolveAreaComparison(7_140)).toEqual({ label: 'サッカーコート', value: 1, suffix: '面分' }));
+  it('サッカーコートより狭いときは小数で表す(0.5面)', () =>
+    expect(resolveAreaComparison(3_570)).toEqual({ label: 'サッカーコート', value: 0.5, suffix: '面分' }));
+  it('0m²でも例外にせずサッカーコート0面分を返す', () =>
+    expect(resolveAreaComparison(0)).toEqual({ label: 'サッカーコート', value: 0, suffix: '面分' }));
+});
+
+describe('広さの比較の表記 formatAreaComparison', () => {
+  it('地域・皇居は「〇〇の約X倍」', () => expect(formatAreaComparison({ label: '皇居', value: 2.8, suffix: '倍' })).toBe('皇居の約2.8倍'));
+  it('東京ドームは「〇〇 約X個分」', () =>
+    expect(formatAreaComparison({ label: '東京ドーム', value: 12, suffix: '個分' })).toBe('東京ドーム 約12個分'));
+  it('サッカーコートは「〇〇 約X面分」', () =>
+    expect(formatAreaComparison({ label: 'サッカーコート', value: 0.3, suffix: '面分' })).toBe('サッカーコート 約0.3面分'));
+});
+
+describe('新しいエリアの面積 resolveNewAreaSquareMeters', () => {
+  it('保存済みの実面積があればそれを使う', () =>
+    expect(resolveNewAreaSquareMeters({ newCellCount: 487, newAreaSquareMeters: 3_263_000 })).toBe(3_263_000));
+  it('古い保存データ(実面積なし)は緯度35°の1マス6,700m²で概算する', () =>
+    expect(resolveNewAreaSquareMeters({ newCellCount: 487 })).toBe(487 * 6_700));
 });

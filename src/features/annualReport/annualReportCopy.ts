@@ -49,6 +49,71 @@ export function resolveDistanceComparison(totalMeters: number): DistanceComparis
   return { ...rest, value: roundToOneDecimal(totalMeters / baseMeters) };
 }
 
+/** 広さの比較で倍数の後ろに付ける単位。地域・皇居は「倍」、東京ドームは「個分」、サッカーコートは「面分」。 */
+export type AreaComparisonSuffix = '倍' | '個分' | '面分';
+
+/** ページ8に表示する、新しく塗ったエリアの広さの比較結果。 */
+export type AreaComparison = {
+  /** 比較対象の名前（例: `皇居`、`東京ドーム`）。 */
+  label: string;
+  /** 基準面積に対する倍数。10以上は整数、10未満は小数1桁。 */
+  value: number;
+  /** 倍数の後ろに付ける単位。 */
+  suffix: AreaComparisonSuffix;
+};
+
+/** 広さの比較対象の定義。倍数の計算に使う基準面積（m²）を持つ。 */
+type AreaComparisonTarget = Omit<AreaComparison, 'value'> & { baseSquareMeters: number };
+
+/**
+ * 広さの比較対象の一覧。基準面積の大きい順に並べ、最初に1以上になるものを採用する。
+ * 東京23区（約627km²）は琵琶湖（約669km²）とほぼ同じ広さで段階が増えるだけのため載せない。
+ */
+const AREA_COMPARISON_TARGETS: readonly AreaComparisonTarget[] = [
+  { label: '四国', baseSquareMeters: 18_800_000_000, suffix: '倍' },
+  { label: '東京都', baseSquareMeters: 2_194_000_000, suffix: '倍' },
+  { label: '琵琶湖', baseSquareMeters: 669_000_000, suffix: '倍' },
+  { label: '山手線の内側', baseSquareMeters: 63_000_000, suffix: '倍' },
+  { label: '皇居', baseSquareMeters: 1_150_000, suffix: '倍' },
+  { label: '東京ドーム', baseSquareMeters: 46_755, suffix: '個分' },
+  { label: 'サッカーコート', baseSquareMeters: 7_140, suffix: '面分' },
+];
+
+/** 古い保存データの面積概算に使う、緯度35°付近の100mセル1件の地表面積（m²）。 */
+const FALLBACK_SQUARE_METERS_PER_CELL = 6_700;
+
+/** 倍数を表示用に丸める。10以上は整数、10未満は小数1桁にして、大きい数の細かい端数を見せない。 */
+function roundAreaRatio(ratio: number): number {
+  return ratio >= 10 ? Math.round(ratio) : roundToOneDecimal(ratio);
+}
+
+/**
+ * 面積（m²）を、1以上になる最大の比較対象で表す。
+ * どれも1未満（サッカーコート1面未満）のときはサッカーコートの小数にする。0でも例外にしない。
+ */
+export function resolveAreaComparison(squareMeters: number): AreaComparison {
+  const fallback = AREA_COMPARISON_TARGETS[AREA_COMPARISON_TARGETS.length - 1];
+  const target = AREA_COMPARISON_TARGETS.find((candidate) => squareMeters >= candidate.baseSquareMeters) ?? fallback;
+  const { baseSquareMeters, ...rest } = target;
+  return { ...rest, value: roundAreaRatio(squareMeters / baseSquareMeters) };
+}
+
+/** 広さの比較を「皇居の約2.8倍」「東京ドーム 約12個分」「サッカーコート 約0.3面分」の形にする。 */
+export function formatAreaComparison(comparison: AreaComparison): string {
+  if (comparison.suffix === '倍') {
+    return `${comparison.label}の約${comparison.value}倍`;
+  }
+  return `${comparison.label} 約${comparison.value}${comparison.suffix}`;
+}
+
+/**
+ * 新しく塗ったエリアの面積（m²）を返す。
+ * 実面積を保存する前の古いデータには `newAreaSquareMeters` が無いため、日本付近（緯度35°）の1マスの広さで概算する。
+ */
+export function resolveNewAreaSquareMeters(payload: { newCellCount: number; newAreaSquareMeters?: number }): number {
+  return payload.newAreaSquareMeters ?? payload.newCellCount * FALLBACK_SQUARE_METERS_PER_CELL;
+}
+
 /** 年間距離から段階を決める。境目（3,000km / 10,000km / 25,000km）ちょうどは上の段階。 */
 export function resolveDistanceTier(totalMeters: number): DistanceTier {
   if (totalMeters >= 25_000_000) return 4;

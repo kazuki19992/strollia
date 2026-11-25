@@ -38,6 +38,26 @@ jest.mock('react-native-svg', () => {
   return { __esModule: true, default: View, Defs: View, LinearGradient: View, RadialGradient: View, Rect: View, Stop: View };
 });
 
+/** 直近に Modal へ渡された props。確認ダイアログが閉じきった通知(onDismiss)を再現するために控える。 */
+let mockLastModalProps: { onDismiss?: () => void } = {};
+// RN 標準の jest モックは visible=false で要素ごと消え、onDismiss を呼べないため、props を控える Modal に差し替える
+jest.mock('react-native/Libraries/Modal/Modal', () => {
+  const { View } = require('react-native'); // eslint-disable-line @typescript-eslint/no-require-imports
+  function MockModal(props: { visible?: boolean; children?: unknown; onDismiss?: () => void }) {
+    mockLastModalProps = props;
+    return props.visible ? <View>{props.children as never}</View> : null;
+  }
+  return { __esModule: true, default: MockModal };
+});
+
+/** 確認ダイアログの退場アニメーションを流し、iOS のネイティブ Modal が閉じきった通知を送る。 */
+async function finishDialogExit(): Promise<void> {
+  await advance(600);
+  await act(async () => {
+    mockLastModalProps.onDismiss?.();
+  });
+}
+
 /** 非表示半径100mの自宅。 */
 const home: StayPlace = {
   id: 1,
@@ -150,6 +170,8 @@ function allOutsideHome(coordinates: AnnualReportCoordinate[]): boolean {
 /** 共有を押してから、フレーム待ちと共有処理の完了まで流す。 */
 async function pressAndFinish(element: Parameters<typeof fireEvent.press>[0]): Promise<void> {
   await fireEvent.press(element);
+  // 確認ダイアログの選択肢を押した場合は、ダイアログが閉じきってから共有が始まる
+  await finishDialogExit();
   // フレーム待ちは順に予約されるため、マイクロタスクを流しながら少しずつ進める
   for (let index = 0; index < 5; index += 1) {
     await advance(20);
@@ -259,6 +281,30 @@ describe('年間レポートのストーリー画面 AnnualReportScreen', () => 
     expect(capturedCoordinates.every((coordinate) => distanceMeters(coordinate, home) > 100)).toBe(true);
     // 共有後は元のルート表示へ戻る
     expect(collectPolylineCoordinates()).toContainEqual({ latitude: 35, longitude: 139 });
+  });
+
+  test('隠して共有は、確認ダイアログが閉じきるまで撮影も共有シートも始めない', async () => {
+    await render(<AnnualReportScreen payload={createPayload()} activeStayPlaces={[home]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(3);
+    await fireEvent.press(screen.getByLabelText('このページを共有'));
+    await fireEvent.press(screen.getByLabelText('隠して共有'));
+
+    // iOS は閉じている途中の Modal の上に共有シートを出すと、Modal と一緒に閉じられて共有が終わらなくなる
+    // 退場アニメーションが終わっても、Modal が閉じきる(または保険の500msが経つ)までは始めない
+    for (let index = 0; index < 4; index += 1) {
+      await advance(100);
+    }
+    expect(captureRef).not.toHaveBeenCalled();
+    expect(Sharing.shareAsync).not.toHaveBeenCalled();
+
+    await act(async () => {
+      mockLastModalProps.onDismiss?.();
+    });
+    for (let index = 0; index < 5; index += 1) {
+      await advance(20);
+    }
+    expect(captureRef).toHaveBeenCalledTimes(1);
+    expect(Sharing.shareAsync).toHaveBeenCalledTimes(1);
   });
 
   test('隠さずに共有では元のルートのままキャプチャする', async () => {
@@ -455,6 +501,7 @@ describe('年間レポートのストーリー画面 AnnualReportScreen', () => 
     await goForward(3);
     await fireEvent.press(screen.getByLabelText('このページを共有'));
     await fireEvent.press(screen.getByLabelText('隠して共有'));
+    await finishDialogExit();
 
     // フレーム待ちの間に読み込み直し(activeStayPlaces が null になる)
     await rerender(view(null, 'loading'));

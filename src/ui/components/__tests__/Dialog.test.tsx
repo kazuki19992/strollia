@@ -1,4 +1,4 @@
-import { PanResponder, Text } from 'react-native';
+import { PanResponder, Platform, Text } from 'react-native';
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
 import { createStyles } from '@/ui/appStyles';
@@ -17,6 +17,18 @@ jest.mock('@/ui/components/ConfettiOverlay', () => ({
     return null;
   },
 }));
+
+/** 直近に Modal へ渡された props。閉じた後(visible=false)の onDismiss を呼ぶために控える。 */
+let mockLastModalProps: { onDismiss?: () => void } = {};
+// RN 標準の jest モックは visible=false で要素ごと消え、onDismiss を呼べないため、props を控える Modal に差し替える
+jest.mock('react-native/Libraries/Modal/Modal', () => {
+  const { View } = require('react-native');
+  function MockModal(props: { visible?: boolean; children?: unknown; onDismiss?: () => void }) {
+    mockLastModalProps = props;
+    return props.visible ? <View>{props.children as never}</View> : null;
+  }
+  return { __esModule: true, default: MockModal };
+});
 
 const styles = createStyles(lightTheme);
 
@@ -168,5 +180,89 @@ describe('Dialog dismissible', () => {
       </Dialog>,
     );
     expect(screen.getByLabelText('閉じる')).toBeTruthy();
+  });
+});
+
+describe('Dialog onExited', () => {
+  const originalOS = Platform.OS;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: originalOS });
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  /** 表示中のダイアログを親から閉じ、退場アニメーションを流し切る。 */
+  async function closeFromParent(onExited: () => void) {
+    const view = (visible: boolean) => (
+      <Dialog visible={visible} styles={styles} onClose={() => undefined} onExited={onExited}>
+        <Text>本文</Text>
+      </Dialog>
+    );
+    const { rerender } = await render(view(true));
+    await rerender(view(false));
+    // 退場アニメーション(500ms)だけを流し切る
+    await act(() => {
+      jest.advanceTimersByTime(600);
+    });
+  }
+
+  it('iOS では Modal が閉じきった通知(onDismiss)を受けてから onExited を1回呼ぶ', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'ios' });
+    const onExited = jest.fn();
+    await closeFromParent(onExited);
+
+    // 退場アニメーションが終わっただけでは、ネイティブの Modal がまだ閉じきっていない
+    expect(onExited).not.toHaveBeenCalled();
+
+    // ネイティブの Modal が閉じきったときの通知を再現する
+    await act(() => {
+      mockLastModalProps.onDismiss?.();
+    });
+
+    expect(onExited).toHaveBeenCalledTimes(1);
+  });
+
+  it('iOS で onDismiss が届かなくても、Modal を外してから一定時間後に onExited を1回だけ呼ぶ', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'ios' });
+    const onExited = jest.fn();
+    await closeFromParent(onExited);
+    expect(onExited).not.toHaveBeenCalled();
+
+    await act(() => {
+      jest.advanceTimersByTime(500);
+    });
+    expect(onExited).toHaveBeenCalledTimes(1);
+
+    // 遅れて onDismiss が届いても二重には呼ばない
+    await act(() => {
+      mockLastModalProps.onDismiss?.();
+    });
+    expect(onExited).toHaveBeenCalledTimes(1);
+  });
+
+  it('iOS で onDismiss が先に届いたら、一定時間後に重ねて呼ばない', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'ios' });
+    const onExited = jest.fn();
+    await closeFromParent(onExited);
+    await act(() => {
+      mockLastModalProps.onDismiss?.();
+    });
+    await act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(onExited).toHaveBeenCalledTimes(1);
+  });
+
+  it('Android では退場アニメーションが終わって Modal を外したら onExited を1回呼ぶ', async () => {
+    Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
+    const onExited = jest.fn();
+    await closeFromParent(onExited);
+
+    expect(onExited).toHaveBeenCalledTimes(1);
   });
 });

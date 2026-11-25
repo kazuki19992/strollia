@@ -96,6 +96,11 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
   const longPressedRef = useRef(false);
   const [capture, setCapture] = useState<CaptureState | null>(null);
   const [isPrivacyDialogVisible, setIsPrivacyDialogVisible] = useState(false);
+  /**
+   * 確認ダイアログで選んだ共有の予約。ダイアログ(Modal)が閉じきってから共有を始めるために持つ。
+   * iOS は閉じている途中の Modal の上に共有シートを出すと一緒に閉じられ、共有の完了通知が来なくなるため。
+   */
+  const [pendingShare, setPendingShare] = useState<{ hiddenStayPlaces: StayPlace[] | null } | null>(null);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -168,7 +173,7 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
 
   /** 共有ボタン。地図ページは滞在場所の確認(fail-closed)と、非表示範囲がかかるときの確認ダイアログを挟む。 */
   function handleSharePress(): void {
-    if (isSharingRef.current || isPrivacyDialogVisible) {
+    if (isSharingRef.current || isPrivacyDialogVisible || pendingShare != null) {
       return;
     }
     if (isMapPage(pageId)) {
@@ -200,7 +205,15 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
       player.resume();
       return;
     }
-    void startShare(choice === 'hide' ? [...activeStayPlaces] : null);
+    // 共有はダイアログが閉じきってから始める(handlePrivacyDialogExited)
+    setPendingShare({ hiddenStayPlaces: choice === 'hide' ? [...activeStayPlaces] : null });
+  }
+
+  /** 確認ダイアログが閉じきったら、予約していた共有を始める。 */
+  function handlePrivacyDialogExited(): void {
+    if (pendingShare == null) return;
+    setPendingShare(null);
+    void startShare(pendingShare.hiddenStayPlaces);
   }
 
   const pageProps: AnnualReportPageProps = {
@@ -237,8 +250,8 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
     }
   }
 
-  /** 共有中・確認ダイアログ表示中はタップ送りと長押しを受け付けない(その一時停止を解除させないため)。 */
-  const isTapDisabled = capture != null || isPrivacyDialogVisible;
+  /** 共有中・確認ダイアログ表示中(閉じきるまでを含む)はタップ送りと長押しを受け付けない(その一時停止を解除させないため)。 */
+  const isTapDisabled = capture != null || isPrivacyDialogVisible || pendingShare != null;
 
   /** 長押しで一時停止する。共有中など、ほかの理由で止めている間は何もしない。 */
   function handleLongPress(): void {
@@ -319,7 +332,13 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
         onPress={handleSharePress}
       />
 
-      <Dialog visible={isPrivacyDialogVisible} swipeToClose={false} styles={appStyles} onClose={() => handlePrivacyChoice('cancel')}>
+      <Dialog
+        visible={isPrivacyDialogVisible}
+        swipeToClose={false}
+        styles={appStyles}
+        onClose={() => handlePrivacyChoice('cancel')}
+        onExited={handlePrivacyDialogExited}
+      >
         <View style={[appStyles.gifRangeContent, annualReportStyles.dialogContent]}>
           <Text style={appStyles.gifProgressTitle}>{ANNUAL_REPORT_PRIVACY_DIALOG_TITLE}</Text>
           <Text style={appStyles.gifProgressBody}>{ANNUAL_REPORT_PRIVACY_DIALOG_MESSAGE}</Text>

@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, LayoutAnimation, Modal, PanResponder, Pressable, Text, View } from 'react-native';
+import { Animated, LayoutAnimation, Modal, PanResponder, Platform, Pressable, Text, View } from 'react-native';
 
 import { AppStyles } from '@/ui/appStyles';
 import { MODAL_EXIT_TRANSITION_DURATION_MS } from '@/ui/constants/modalTransitions';
@@ -9,6 +9,8 @@ import { ConfettiOverlay } from './ConfettiOverlay';
 
 /** 自動で閉じるまでの待機時間。 */
 const AUTO_CLOSE_DELAY_MS = 10_000;
+/** iOS で Modal の onDismiss が届かない場合に、閉じきったとみなして onExited を呼ぶまでの時間（ミリ秒）。 */
+const IOS_EXIT_FALLBACK_MS = 500;
 /** ダイアログのサイズ変化アニメーションの時間（ミリ秒）。 */
 const DIALOG_RESIZE_DURATION_MS = 300;
 
@@ -53,6 +55,11 @@ export type DialogProps = {
   styles: AppStyles;
   /** 閉じる処理。 */
   onClose: () => void;
+  /**
+   * 退場を終えて Modal が閉じきった後に呼ぶ。閉じた直後に共有シートなど別の画面を出したいときに使う。
+   * iOS は Modal を閉じている途中に別の画面を出すと一緒に閉じられてしまうため、ネイティブの onDismiss を待つ。
+   */
+  onExited?: () => void;
 };
 
 /**
@@ -71,6 +78,7 @@ export function Dialog({
   animationKey = null,
   styles,
   onClose,
+  onExited,
 }: DialogProps) {
   const modalProgress = useRef(new Animated.Value(0)).current;
   const autoCloseProgress = useRef(new Animated.Value(0)).current;
@@ -84,9 +92,57 @@ export function Dialog({
   const [isAutoClosePaused, setIsAutoClosePaused] = useState(false);
   const [isRendered, setIsRendered] = useState(visible);
 
+  const onExitedRef = useRef(onExited);
+  /** 直前の描画で Modal を出していたか。Android で「外した」瞬間を検出するために使う。 */
+  const wasRenderedRef = useRef(isRendered);
+
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    onExitedRef.current = onExited;
+  }, [onExited]);
+
+  /** 今回の退場で onExited をまだ呼んでいないか。onDismiss と保険のタイマーで二重に呼ばないために使う。 */
+  const exitPendingRef = useRef(false);
+  const exitFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** 今回の退場について onExited を1回だけ呼ぶ。 */
+  const notifyExited = useCallback(function notifyExited(): void {
+    if (exitFallbackTimerRef.current) {
+      clearTimeout(exitFallbackTimerRef.current);
+      exitFallbackTimerRef.current = null;
+    }
+    if (!exitPendingRef.current) return;
+    exitPendingRef.current = false;
+    onExitedRef.current?.();
+  }, []);
+
+  // Modal を外したら閉じきった通知を出す。
+  // Android には Modal の onDismiss が無いため即時。iOS は onDismiss を待つが、届かない場合に
+  // 呼び出し側(共有の予約など)が止まったままにならないよう、一定時間後に保険で呼ぶ。
+  useEffect(() => {
+    if (wasRenderedRef.current && !isRendered) {
+      exitPendingRef.current = true;
+      if (Platform.OS === 'ios') {
+        exitFallbackTimerRef.current = setTimeout(notifyExited, IOS_EXIT_FALLBACK_MS);
+      } else {
+        notifyExited();
+      }
+    }
+    if (isRendered) {
+      exitPendingRef.current = false;
+    }
+    wasRenderedRef.current = isRendered;
+  }, [isRendered, notifyExited]);
+
+  useEffect(
+    () => () => {
+      if (exitFallbackTimerRef.current) clearTimeout(exitFallbackTimerRef.current);
+    },
+    [],
+  );
 
   const clearAutoCloseTimer = useCallback(function clearAutoCloseTimer(): void {
     if (autoCloseTimerRef.current) {
@@ -241,6 +297,7 @@ export function Dialog({
       visible={isRendered}
       transparent
       animationType="none"
+      onDismiss={notifyExited}
       onRequestClose={() => {
         if (dismissible) animateOut(true);
       }}

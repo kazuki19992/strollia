@@ -261,8 +261,12 @@ jest.mock('@/ui/generated/ossLicenses', () => ({
   OSS_LICENSES: [],
 }));
 
-// 地図の滞在場所ダイアログは検証対象外。非表示でも兄弟のModalが読み上げ対象を隠すためモックする
-jest.mock('@/ui/components/Dialog', () => ({ Dialog: () => null }));
+// 地図の滞在場所ダイアログは検証対象外。非表示でも兄弟のModalが読み上げ対象を隠すためモックする。
+// 集計中ダイアログの文言を確かめるため、表示中のときだけ中身を Modal なしで描く
+jest.mock('@/ui/components/Dialog', () => ({
+  Dialog: ({ visible, children }: { visible: boolean; children: unknown }) =>
+    visible ? (typeof children === 'function' ? children({ pauseAutoClose: () => undefined }) : children) : null,
+}));
 jest.mock('@/ui/components/TopToast', () => ({ TopToast: () => null }));
 jest.mock('@/ui/components/AchievementDialog', () => ({ AchievementDialog: () => null }));
 jest.mock('@/ui/components/AchievementUnlockModal', () => ({ AchievementUnlockModal: () => null }));
@@ -299,6 +303,7 @@ jest.mock('@/ui/components/SettingsScreen', () => {
 const mockAnnualReportState = {
   availableReport: null as { year: number } | null,
   daysLeft: null as number | null,
+  isAggregating: false,
   hasEvaluated: true,
   onReportOpened: jest.fn(),
   onReportClosed: jest.fn(),
@@ -336,6 +341,7 @@ describe('地図画面の年間レポートふりかえりボタン', () => {
     jest.clearAllMocks();
     mockAnnualReportState.availableReport = null;
     mockAnnualReportState.daysLeft = null;
+    mockAnnualReportState.isAggregating = false;
     Object.defineProperty(AppState, 'currentState', { configurable: true, value: 'active', writable: true });
     const { getBooleanSetting } = require('@/features/settings/settingsRepository');
     (getBooleanSetting as jest.Mock).mockImplementation((key: string, fallback: boolean) =>
@@ -395,6 +401,39 @@ describe('地図画面の年間レポートふりかえりボタン', () => {
     expect(router.getPathname()).toBe('/annual-report');
     expect(screen.getByText('年間レポート画面')).toBeTruthy();
     expect(mockAnnualReportState.onReportOpened).toHaveBeenCalledTimes(1);
+  });
+
+  test('集計中はレポートがなくてもボタンを残り日数付きで表示する', async () => {
+    mockAnnualReportState.isAggregating = true;
+    mockAnnualReportState.daysLeft = 26;
+
+    await renderRouter('src/app');
+    await flushPromises();
+
+    expect(screen.getByText('ふりかえり')).toBeTruthy();
+    expect(screen.getByLabelText('年間レポートをふりかえる（あと26日）')).toBeTruthy();
+  });
+
+  test('集計中に押すとストーリーへ遷移せず、集計中ダイアログを出す', async () => {
+    mockAnnualReportState.isAggregating = true;
+    mockAnnualReportState.daysLeft = 26;
+
+    const router = await renderRouter('src/app');
+    await flushPromises();
+    expect(screen.queryByText('集計中...')).toBeNull();
+
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText('年間レポートをふりかえる（あと26日）'));
+    });
+    await flushPromises();
+
+    expect(router.getPathname()).toBe('/');
+    expect(screen.queryByText('年間レポート画面')).toBeNull();
+    expect(mockAnnualReportState.onReportOpened).not.toHaveBeenCalled();
+    expect(screen.getByText('集計中...')).toBeTruthy();
+    expect(
+      screen.getByText('今年のあしあとをふりかえっています！\nもう少しお待ちください！\n準備ができたら通知でお知らせします'),
+    ).toBeTruthy();
   });
   test('設定の「すべてのデータの削除」が成功したら年間レポートの状態をリセットする', async () => {
     mockAnnualReportState.availableReport = { year: 2026 };

@@ -1114,4 +1114,105 @@ describe('年間レポート状態hook useAnnualReportState', () => {
       expect((getAnnualReport as jest.Mock).mock.calls.length).toBe(callsBefore);
     });
   });
+
+  describe('集計中 isAggregating', () => {
+    /** 公開期間中の未完了の行。 */
+    const inProgressRecord = {
+      year: 2026,
+      status: 'in_progress',
+      progress: makeProgress(13),
+      notificationScheduledAt: null,
+    };
+
+    it('公開期間中でレポートが未完成なら true になり、残り日数も返す', async () => {
+      (getAnnualReport as jest.Mock).mockResolvedValue(inProgressRecord);
+      (runAnnualReportStep as jest.Mock).mockReturnValue(new Promise(() => undefined));
+
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 21, 15), alwaysAvailable: false }),
+      );
+      await flushPromises();
+
+      expect(result.current.isAggregating).toBe(true);
+      expect(result.current.availableReport).toBeNull();
+      // 12/21〜1/15(当日を1と数える)
+      expect(result.current.daysLeft).toBe(26);
+    });
+
+    it('完成したら false になり availableReport が入る', async () => {
+      const payload = makePayload(2026);
+      (getAnnualReport as jest.Mock).mockResolvedValue(inProgressRecord);
+      (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'completed', payload });
+
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 21, 15), alwaysAvailable: false }),
+      );
+      await flushPromises();
+      expect(result.current.isAggregating).toBe(true);
+
+      await runNextIdle();
+
+      expect(result.current.isAggregating).toBe(false);
+      expect(result.current.availableReport).toBe(payload);
+    });
+
+    it('記録日数が足りずレポートを作らない年と分かったら false になり、残り日数も消える', async () => {
+      (getAnnualReport as jest.Mock).mockResolvedValue(inProgressRecord);
+      (runAnnualReportStep as jest.Mock).mockResolvedValueOnce({ kind: 'insufficient' });
+
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 21, 15), alwaysAvailable: false }),
+      );
+      await flushPromises();
+      await runNextIdle();
+
+      expect(result.current.isAggregating).toBe(false);
+      expect(result.current.daysLeft).toBeNull();
+
+      // 前面復帰で評価し直しても、同じ年は集計中に戻さない
+      await emitAppState('active');
+      expect(result.current.isAggregating).toBe(false);
+    });
+
+    it('公開期間前(12/16〜12/19)の集計中は false', async () => {
+      (getAnnualReport as jest.Mock).mockResolvedValue(inProgressRecord);
+      (runAnnualReportStep as jest.Mock).mockReturnValue(new Promise(() => undefined));
+
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 19, 15), alwaysAvailable: false }),
+      );
+      await flushPromises();
+
+      expect(result.current.isAggregating).toBe(false);
+      expect(result.current.daysLeft).toBeNull();
+    });
+
+    it('集計期間外は false', async () => {
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 10, 24, 10), alwaysAvailable: false }),
+      );
+      await flushPromises();
+
+      expect(result.current.isAggregating).toBe(false);
+    });
+
+    it('すべてのデータを削除したあとは false になる', async () => {
+      (getAnnualReport as jest.Mock).mockResolvedValue(inProgressRecord);
+      (runAnnualReportStep as jest.Mock).mockReturnValue(new Promise(() => undefined));
+
+      const { result } = await renderHook(() =>
+        useAnnualReportState({ isReady: true, now: () => new Date(2026, 11, 21, 15), alwaysAvailable: false }),
+      );
+      await flushPromises();
+      expect(result.current.isAggregating).toBe(true);
+
+      await act(async () => {
+        result.current.resetAfterDataDeletion();
+      });
+      await flushPromises();
+
+      expect(result.current.isAggregating).toBe(false);
+      expect(result.current.daysLeft).toBeNull();
+    });
+  });
 });

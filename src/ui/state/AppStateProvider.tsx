@@ -165,8 +165,12 @@ export type AppStateContextValue = {
   monthlyAreaReport: MonthlyAreaReport | null;
   /** 表示できる年間レポート。公開期間中かつ集計完了のときだけ非null。 */
   annualReport: AnnualReportPayloadV1 | null;
-  /** 年間レポートの公開終了までの残り日数(終了日当日は1)。annualReport が null のときは null。 */
+  /** 年間レポートの公開終了までの残り日数(終了日当日は1)。annualReport が null で集計中でもないときは null。 */
   annualReportDaysLeft: number | null;
+  /** 公開期間中で、年間レポートをまだ集計している(完成していない)か。地図のふりかえりボタンはこの間も表示する。 */
+  isAnnualReportAggregating: boolean;
+  /** 集計中にふりかえりボタンを押したときの「集計中」ダイアログを表示しているか。 */
+  isAnnualReportAggregatingDialogVisible: boolean;
   /** 登録済みの滞在場所。 */
   stayPlaces: StayPlace[];
   /** 現在の契約状態で共有・記録に使う滞在場所。未解決・失敗時はnull。 */
@@ -435,8 +439,10 @@ export type AppStateContextValue = {
   closeLandmarkPack: () => void;
   /** 月次レポート画面へ移動する(Plusゲート付き)。 */
   openMonthlyReport: () => void;
-  /** 年間レポート画面へ移動する。表示できるレポートがなければ何もしない。 */
+  /** 年間レポート画面へ移動する。集計中なら「集計中」ダイアログを出し、表示できるレポートがなければ何もしない。 */
   openAnnualReport: () => void;
+  /** 「集計中」ダイアログを閉じる。 */
+  closeAnnualReportAggregatingDialog: () => void;
   /** 年間レポート画面を閉じて地図へ戻る。 */
   closeAnnualReport: () => void;
   /**
@@ -1104,6 +1110,10 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
 
   // 待たせた通知タップは、表示できるようになった時点のレンダーの openAnnualReport で開く
   const annualReportState = useAnnualReportState({ isReady, onDeferredOpen: () => openAnnualReport() });
+  /** 集計中にふりかえりボタンを押したときの「集計中」ダイアログの表示状態。 */
+  const [isAnnualReportAggregatingDialogVisible, setIsAnnualReportAggregatingDialogVisible] = useState(false);
+  /** 「集計中」ダイアログを閉じる。 */
+  const closeAnnualReportAggregatingDialog = useCallback(() => setIsAnnualReportAggregatingDialogVisible(false), []);
   annualReportDataDeletionRef.current = annualReportState;
   // 保存済みレポートの読み込みが終わるまで待ってから通知タップを処理する(コールドスタートで取りこぼさないため)
   useAnnualReportNotificationResponse({
@@ -1290,9 +1300,16 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }
 
-  /** 年間レポート画面へ移動する。表示できるレポートがない(公開期間外・未完了)なら何もしない。 */
+  /**
+   * 年間レポート画面へ移動する。
+   * 公開期間中でまだ集計中なら、ストーリーは開かず「集計中」ダイアログを出す(完成したら通知で知らせる)。
+   * 表示できるレポートがない(公開期間外・記録不足)なら何もしない。
+   */
   function openAnnualReport(): void {
     if (!annualReportState.availableReport) {
+      if (annualReportState.isAggregating) {
+        setIsAnnualReportAggregatingDialogVisible(true);
+      }
       return;
     }
     annualReportState.onReportOpened();
@@ -1508,6 +1525,8 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     monthlyAreaReport,
     annualReport: annualReportState.availableReport,
     annualReportDaysLeft: annualReportState.daysLeft,
+    isAnnualReportAggregating: annualReportState.isAggregating,
+    isAnnualReportAggregatingDialogVisible,
     stayPlaces,
     activeStayPlaces,
     stayPlacesStatus,
@@ -1625,6 +1644,7 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     closeLandmarkPack,
     openMonthlyReport,
     openAnnualReport,
+    closeAnnualReportAggregatingDialog,
     closeAnnualReport,
     notifyAnnualReportLeft,
     openSettings,

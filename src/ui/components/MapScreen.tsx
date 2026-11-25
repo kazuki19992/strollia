@@ -145,7 +145,7 @@ export type MapScreenProps = {
   /** 設定画面を開くハンドラ。 */
   onOpenSettings: () => void;
   /**
-   * 年間レポートのふりかえりボタンを表示するか。公開期間中で表示できるレポートがあるときだけtrue。
+   * 年間レポートのふりかえりボタンを表示するか。公開期間中で、表示できるレポートがあるか集計中のときだけtrue。
    * 省略時はfalse。
    */
   isAnnualReportAvailable?: boolean;

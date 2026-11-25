@@ -29,8 +29,14 @@ const SENTRY_AREA = 'annual_report';
 export type AnnualReportState = {
   /** 公開期間中かつ集計完了のときだけ非null。地図のふりかえりボタンとストーリー画面が使う。 */
   availableReport: AnnualReportPayloadV1 | null;
-  /** 公開終了までの残り日数(終了日当日は1)。availableReport が null のときは null。 */
+  /** 公開終了までの残り日数(終了日当日は1)。availableReport が null で集計中でもないときは null。 */
   daysLeft: number | null;
+  /**
+   * 公開期間中だが、その年のレポートがまだ完成していない(集計中)か。
+   * 地図のふりかえりボタンを出したまま、押したときにストーリーではなく「集計中」ダイアログを出すために使う。
+   * 記録日数不足でレポートを作らない年と分かった場合・公開期間外・完成後は false。
+   */
+  isAggregating: boolean;
   /**
    * 起動後の最初の評価(保存済みレポートの読み込み)が終わったか。
    * 通知タップのコールドスタート処理を、availableReport が確定するまで待たせるために使う。
@@ -79,11 +85,11 @@ export type UseAnnualReportStateArgs = {
 /** 0時を過ぎてから評価し直すまでの余裕(ミリ秒)。 */
 const MIDNIGHT_EVALUATION_DELAY_MS = 1000;
 
-/** 表示用の状態。レポートと残り日数を常に組で更新するため1つにまとめる。 */
-type DisplayState = { report: AnnualReportPayloadV1 | null; daysLeft: number | null };
+/** 表示用の状態。レポート・残り日数・集計中かを常に組で更新するため1つにまとめる。 */
+type DisplayState = { report: AnnualReportPayloadV1 | null; daysLeft: number | null; aggregating: boolean };
 
 /** 何も表示しない状態。 */
-const EMPTY_DISPLAY: DisplayState = { report: null, daysLeft: null };
+const EMPTY_DISPLAY: DisplayState = { report: null, daysLeft: null, aggregating: false };
 
 /** Sentry への記録自体が失敗しても呼び出し元を巻き込まない(未処理の Promise 拒否にしない)。 */
 function reportSafely(error: unknown, context: Record<string, unknown>): void {
@@ -192,7 +198,7 @@ export function useAnnualReportState({
     if (!mountedRef.current) return;
     const current = nowRef.current();
     if (isPublishPeriod(current, window.year, alwaysAvailableRef.current)) {
-      setDisplay({ report: payload, daysLeft: daysUntilPublishEnd(current, window.publishEnd) });
+      setDisplay({ report: payload, daysLeft: daysUntilPublishEnd(current, window.publishEnd), aggregating: false });
     } else {
       setDisplay(EMPTY_DISPLAY);
     }
@@ -273,6 +279,8 @@ export function useAnnualReportState({
       } else {
         // 記録が少ない年はレポートを作らないため何も保存しない。前面復帰のたびに判定し直さないよう覚えておく
         insufficientYearRef.current = window.year;
+        // 完成しないことが確定したため、集計中の表示(ボタン・残り日数)をやめる
+        if (mountedRef.current) setDisplay(EMPTY_DISPLAY);
       }
 
       if (restartRequestedRef.current) {
@@ -337,15 +345,19 @@ export function useAnnualReportState({
     }
 
     // 未完了のときは、開発用フラグ時の作り直し中に限り、同じ年のメモリ上のレポートを公開期間中なら表示し続ける。
-    // 本番で行が無い・未完了なら表示しない(削除済みのレポートを見せ続けないため)
+    // 本番で行が無い・未完了なら、レポートは表示せず、公開期間中なら「集計中」にする(削除済みのレポートを見せ続けないため)。
+    // 記録日数不足と分かっている年は完成しないため、集計中にもしない
     if (mountedRef.current) {
       const current = nowRef.current();
       const keepPrevious = alwaysAvailableRef.current;
-      setDisplay((previous) =>
-        keepPrevious && previous.report && previous.report.year === window.year && isPublishPeriod(current, window.year, true)
-          ? { report: previous.report, daysLeft: daysUntilPublishEnd(current, window.publishEnd) }
-          : EMPTY_DISPLAY,
-      );
+      const inPublishPeriod = isPublishPeriod(current, window.year, alwaysAvailableRef.current);
+      const aggregating = inPublishPeriod && insufficientYearRef.current !== window.year;
+      setDisplay((previous) => {
+        if (keepPrevious && previous.report && previous.report.year === window.year && isPublishPeriod(current, window.year, true)) {
+          return { report: previous.report, daysLeft: daysUntilPublishEnd(current, window.publishEnd), aggregating: false };
+        }
+        return aggregating ? { report: null, daysLeft: daysUntilPublishEnd(current, window.publishEnd), aggregating: true } : EMPTY_DISPLAY;
+      });
     }
 
     if (loopWasActive || generationAtRead !== loopGenerationRef.current) {
@@ -518,6 +530,7 @@ export function useAnnualReportState({
   return {
     availableReport: display.report,
     daysLeft: display.daysLeft,
+    isAggregating: display.aggregating,
     hasEvaluated,
     onReportOpened,
     onReportClosed,

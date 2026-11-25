@@ -6,6 +6,7 @@ import { captureRef } from 'react-native-view-shot';
 import type { AnnualReportCoordinate, AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
 import { downsampleRoute } from '@/features/annualReport/annualReportVisuals';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
+import { resolveRemainingTrophyCount } from '@/ui/components/annualReport/AnnualReportAchievementsPage';
 import { AnnualReportScreen } from '@/ui/components/annualReport/AnnualReportScreen';
 import { distanceMeters } from '@/utils/distance';
 
@@ -424,6 +425,52 @@ describe('年間レポートのストーリー画面 AnnualReportScreen', () => 
     // 12エリア × 6,700m² = 80,400m² → 東京ドーム 約1.7個分
     expect(screen.getByText('東京ドーム 約1.7個分')).toBeTruthy();
     expect(screen.getAllByTestId('annual-report-area-tile')).toHaveLength(12);
+  });
+
+  test('実績とスポットが表示しきれないときは、残りの件数を「ほか N 件」で出す', async () => {
+    const payload = createPayload({
+      achievements: {
+        count: 10,
+        highlights: [
+          { id: 'log-days-31', unlockedLocalDate: '2026-11-01' },
+          { id: 'log-days-7', unlockedLocalDate: '2026-10-01' },
+          { id: 'log-days-1', unlockedLocalDate: '2026-09-01' },
+        ],
+      },
+      spots: { count: 3, highlights: [] },
+    });
+    await render(<AnnualReportScreen payload={payload} activeStayPlaces={[]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(8);
+    await advance(5_000);
+
+    expect(screen.getByText('ほか 10 件')).toBeTruthy();
+  });
+
+  test('実績とスポットが合わせて3件以下なら「ほか N 件」を出さない', async () => {
+    const payload = createPayload({
+      achievements: {
+        count: 3,
+        highlights: [
+          { id: 'log-days-31', unlockedLocalDate: '2026-11-01' },
+          { id: 'log-days-7', unlockedLocalDate: '2026-10-01' },
+          { id: 'log-days-1', unlockedLocalDate: '2026-09-01' },
+        ],
+      },
+      spots: { count: 0, highlights: [] },
+    });
+    await render(<AnnualReportScreen payload={payload} activeStayPlaces={[]} stayPlacesStatus="ready" onClose={jest.fn()} />);
+    await goForward(8);
+    await advance(5_000);
+
+    expect(screen.getByText('解除した実績')).toBeTruthy();
+    expect(screen.queryByText(/^ほか \d+ 件$/)).toBeNull();
+  });
+
+  test('残りの件数は実績とスポットの合計から表示した件数を引き、0未満にしない', () => {
+    const payload = createPayload({ achievements: { count: 10, highlights: [] }, spots: { count: 3, highlights: [] } });
+
+    expect(resolveRemainingTrophyCount(payload, 3)).toBe(10);
+    expect(resolveRemainingTrophyCount(createPayload({ achievements: { count: 2, highlights: [] } }), 3)).toBe(0);
   });
 
   test('月ごとのページは最多と最少の月だけ棒の上に距離を出す', async () => {

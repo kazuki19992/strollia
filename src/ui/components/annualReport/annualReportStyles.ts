@@ -28,8 +28,7 @@ export const annualReportColors = {
   chip: '#2e2e2e',
   mapOverlay: 'rgba(10,14,20,0.45)',
   routeFaint: 'rgba(115,199,162,0.25)',
-  trophyOuter: '#b08000',
-  trophyInner: '#ffe9a0',
+  trophyGlow: 'rgba(115,199,162,0.6)',
   tile: 'rgba(255,255,255,0.06)',
   footprint: 'rgba(115,199,162,0.5)',
 } as const;
@@ -433,18 +432,15 @@ export const annualReportStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 14,
   },
+  /** トロフィー画像・スポットのアイコンを置く場所。背景や枠は付けず、光る輪だけを重ねる。 */
   trophyIcon: {
     alignItems: 'center',
-    backgroundColor: annualReportColors.trophyOuter,
-    borderColor: annualReportColors.trophyInner,
-    borderRadius: 28,
-    borderWidth: 2,
     height: 56,
     justifyContent: 'center',
     width: 56,
   },
   trophyGlow: {
-    borderColor: 'rgba(240,192,64,0.6)',
+    borderColor: annualReportColors.trophyGlow,
     borderRadius: 28,
     borderWidth: 6,
     height: 56,
@@ -452,8 +448,8 @@ export const annualReportStyles = StyleSheet.create({
     width: 56,
   },
   trophyImage: {
-    height: 40,
-    width: 40,
+    height: 52,
+    width: 52,
   },
   trophyTitle: {
     color: annualReportColors.text,
@@ -462,6 +458,10 @@ export const annualReportStyles = StyleSheet.create({
   trophyCaption: {
     color: annualReportColors.subtle,
     fontSize: 11,
+  },
+  trophyRemaining: {
+    color: annualReportColors.subtle,
+    fontSize: 15,
   },
 
   // ---- 10 まとめ ----

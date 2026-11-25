@@ -8,7 +8,7 @@ import { getLandmarkSpotById } from '@/features/landmarks/landmarkCatalog';
 import { STORY_PAGE_DURATION_MS } from '@/ui/hooks/useStoryPlayer';
 import { timelineProgress, useStoryTimeline } from '@/ui/hooks/useStoryTimeline';
 import { AnnualReportRise } from './AnnualReportRise';
-import { annualReportStyles } from './annualReportStyles';
+import { annualReportColors, annualReportStyles } from './annualReportStyles';
 import { RISE_DELAYS_MS, type AnnualReportPageProps } from './annualReportPageProps';
 
 /** トロフィーの最大表示数(spec §4)。 */
@@ -21,6 +21,8 @@ const DROP_EASING = Easing.bezier(0.3, 1.5, 0.5, 1);
 /** 光る(輪が広がって消える)のを始める時刻と1回の長さ(ミリ秒)。2回繰り返す。 */
 const GLOW_START_MS = 2400;
 const GLOW_MS = 800;
+/** 「ほか N 件」を出す時刻(ミリ秒)。最大3件のトロフィーが落ち終わった後にする。 */
+const REMAINING_DELAY_MS = DROP_START_MS + MAX_TROPHIES * DROP_INTERVAL_MS;
 
 /** ページ9に出すトロフィー1件。 */
 export type AnnualReportTrophyItem = {
@@ -74,11 +76,24 @@ export function resolveAnnualReportTrophies(payload: AnnualReportPayloadV1): Ann
   return [...achievements, ...spots].sort((left, right) => right.date.localeCompare(left.date)).slice(0, MAX_TROPHIES);
 }
 
-/** ページ9: 到達したスポットと実績。トロフィーが上から落ちて光る(最大3件)。スポットが0件なら実績だけの文言にする。 */
+/**
+ * 表示しきれなかった実績・スポットの件数を返す(0未満は0)。
+ * 代表は最大3件のため、合計から実際に表示した件数を引いて「ほか N 件」に使う。
+ * マスタから消えて表示できなかった代表も、残りとして数える。
+ */
+export function resolveRemainingTrophyCount(payload: AnnualReportPayloadV1, shown: number): number {
+  return Math.max(0, payload.achievements.count + payload.spots.count - shown);
+}
+
+/**
+ * ページ9: 到達したスポットと実績。トロフィーが上から落ちて光る(最大3件)。スポットが0件なら実績だけの文言にする。
+ * 表示しきれない件数があれば、トロフィーの下に「ほか N 件」を出す。
+ */
 export function AnnualReportAchievementsPage({ payload, paused, completed, contentTop }: AnnualReportPageProps) {
   const clock = useStoryTimeline({ durationMs: STORY_PAGE_DURATION_MS, paused, completed });
   const hasSpots = payload.spots.count > 0;
   const trophies = resolveAnnualReportTrophies(payload);
+  const remaining = resolveRemainingTrophyCount(payload, trophies.length);
 
   return (
     <View style={[annualReportStyles.page, annualReportStyles.pageContent, { paddingTop: contentTop }]}>
@@ -110,6 +125,7 @@ export function AnnualReportAchievementsPage({ payload, paused, completed, conte
                 },
               ]}
             >
+              {/* 金色の丸の座布団はトロフィーが見づらくなるため敷かず、画像を直接置く */}
               <View style={annualReportStyles.trophyIcon}>
                 <Animated.View
                   style={[
@@ -123,7 +139,7 @@ export function AnnualReportAchievementsPage({ payload, paused, completed, conte
                 {trophy.image ? (
                   <Image source={trophy.image} style={annualReportStyles.trophyImage} resizeMode="contain" />
                 ) : (
-                  <MaterialCommunityIcons name="map-marker-star" size={28} color="#5a3d00" />
+                  <MaterialCommunityIcons name="map-marker-star" size={36} color={annualReportColors.accent} />
                 )}
               </View>
               <View>
@@ -133,6 +149,11 @@ export function AnnualReportAchievementsPage({ payload, paused, completed, conte
             </Animated.View>
           );
         })}
+        {remaining > 0 ? (
+          <AnnualReportRise clock={clock} delayMs={REMAINING_DELAY_MS}>
+            <Text style={annualReportStyles.trophyRemaining}>{`ほか ${remaining} 件`}</Text>
+          </AnnualReportRise>
+        ) : null}
       </View>
     </View>
   );

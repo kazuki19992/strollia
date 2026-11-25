@@ -3,7 +3,7 @@ import { Feather, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-ico
 import * as ReactNative from 'react-native';
 import { Alert, Animated, Pressable, Switch, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import type { AreaLabel } from '@/ui/areaName';
@@ -88,6 +88,11 @@ export type MapBottomDashboardProps = {
   hasStayPlaces: boolean;
   /** 滞在場所アイコンを地図に表示するか。 */
   showStayPlacesOnMap: boolean;
+  /**
+   * 地図表示設定パネルの開閉が変わったときの通知。
+   * パネルの状態はこのコンポーネントが持つため、地図上の他の操作(ふりかえりボタンなど)を無効化したい親へ伝える。
+   */
+  onMapDisplayPanelVisibleChange?: (visible: boolean) => void;
   /** 現在地へ戻るハンドラ。 */
   onRecenterOnUserLocation: () => void;
   /** 日別ログ画面を開くハンドラ。 */
@@ -121,6 +126,7 @@ export function MapBottomDashboard({
   isUpdatingPhotoSetting,
   hasStayPlaces,
   showStayPlacesOnMap,
+  onMapDisplayPanelVisibleChange,
   onRecenterOnUserLocation,
   onOpenDailyLogs,
   onOpenAchievements,
@@ -131,6 +137,9 @@ export function MapBottomDashboard({
   onUpdateShowStayPlacesOnMap,
 }: MapBottomDashboardProps) {
   const [isMapDisplayPanelVisible, setIsMapDisplayPanelVisible] = useState(false);
+  useEffect(() => {
+    onMapDisplayPanelVisibleChange?.(isMapDisplayPanelVisible);
+  }, [isMapDisplayPanelVisible, onMapDisplayPanelVisibleChange]);
   const { width: windowWidth } = ReactNative.useWindowDimensions();
   // Providerが無くても落ちないよう、useSafeAreaInsetsではなくContextを直接読む。
   const safeAreaInsets = useContext(SafeAreaInsetsContext) ?? NO_SAFE_AREA_INSETS;

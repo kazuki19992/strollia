@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Animated, Image, Platform, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Animated, Image, Platform, Pressable, SafeAreaView, StatusBar, Text, View } from 'react-native';
 import MapView, { Marker, Polygon, Region, UserLocationChangeEvent } from 'react-native-maps';
 import type { LatLng, MapType } from 'react-native-maps';
 import { useEffect, useMemo, useState } from 'react';
@@ -9,11 +9,17 @@ import { MapPhotoCluster } from '@/features/photos/photoClusters';
 import { getStayPlaceEmoji } from '@/features/stayPlaces/stayPlaceEmojiCatalog';
 import { formatStayPlacePrivacyRadius } from '@/features/stayPlaces/stayPlacePrivacy';
 import type { StayPlace } from '@/features/stayPlaces/stayPlaceTypes';
-import { PHOTO_LIBRARY_SCANNING_MESSAGE } from '@/ui/appText';
+import {
+  ANNUAL_REPORT_MAP_BUTTON_LABEL,
+  formatAnnualReportMapButtonAccessibilityLabel,
+  formatAnnualReportMapButtonBadge,
+  PHOTO_LIBRARY_SCANNING_MESSAGE,
+} from '@/ui/appText';
 import { AreaLabel } from '@/ui/areaName';
 import { AppTheme } from '@/theme/theme';
 import { VisitedGridOverlayCell } from '@/features/map/gridOverlay';
 import { AppStyles } from '@/ui/appStyles';
+import { BadgeFloatingButton } from './BadgeFloatingButton';
 import { MapBottomDashboard } from './MapBottomDashboard';
 import { PhotoClusterMarker } from './PhotoClusterMarker';
 import { Dialog } from './Dialog';
@@ -138,6 +144,15 @@ export type MapScreenProps = {
   onUpdateShowStayPlacesOnMap: (enabled: boolean) => Promise<void>;
   /** 設定画面を開くハンドラ。 */
   onOpenSettings: () => void;
+  /**
+   * 年間レポートのふりかえりボタンを表示するか。公開期間中で、表示できるレポートがあるか集計中のときだけtrue。
+   * 省略時はfalse。
+   */
+  isAnnualReportAvailable?: boolean;
+  /** 年間レポートの公開終了までの残り日数。ボタンのバッジに表示する。 */
+  annualReportDaysLeft?: number | null;
+  /** 年間レポート(ストーリー)を開くハンドラ。 */
+  onOpenAnnualReport?: () => void;
   /** 位置情報権限要求ハンドラ。 */
   onRequestLocationPermission: () => void;
   /** 現在地へ戻るハンドラ。 */
@@ -190,10 +205,15 @@ export function MapScreen({
   onUpdateShowPhotosOnMap,
   onUpdateShowStayPlacesOnMap,
   onOpenSettings,
+  isAnnualReportAvailable = false,
+  annualReportDaysLeft = null,
+  onOpenAnnualReport,
   onRequestLocationPermission,
   onRecenterOnUserLocation,
   onCustomIconError,
 }: MapScreenProps) {
+  /** 地図表示設定パネルを開いている間は、ふりかえりボタンも他の操作と同じく無効化する。 */
+  const [isMapDisplayPanelVisible, setIsMapDisplayPanelVisible] = useState(false);
   const shouldRenderVisitedGrid = gridOverlayOpacity > 0;
   // カスタム画像マーカーは画像ロード完了までネイティブスナップショットを更新し続ける。
   // ロード後はパフォーマンスのため更新を止める。
@@ -312,6 +332,31 @@ export function MapScreen({
       </Dialog>
 
       <SafeAreaView pointerEvents="box-none" style={styles.overlay}>
+        {/*
+          ふりかえりボタンは通常フローの先頭に置く。SafeAreaViewのinsetは通常フローの子にだけ効き、
+          絶対配置の子には効かない(iOSでステータスバー/Dynamic Islandの下に潜る)ため。
+          後続のステータス帯・権限カードはボタンの下へ押し下げられ、重ならない
+        */}
+        {isAnnualReportAvailable && (
+          <View
+            pointerEvents={isMapDisplayPanelVisible ? 'none' : 'box-none'}
+            // Androidはセーフエリアが効かないため、ステータスバーの高さ分だけ下げる
+            style={[
+              styles.badgeFloatingButtonContainer,
+              { marginTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0) },
+            ]}
+          >
+            <BadgeFloatingButton
+              label={ANNUAL_REPORT_MAP_BUTTON_LABEL}
+              badgeText={annualReportDaysLeft === null ? null : formatAnnualReportMapButtonBadge(annualReportDaysLeft)}
+              accessibilityLabel={formatAnnualReportMapButtonAccessibilityLabel(annualReportDaysLeft)}
+              disabled={isMapDisplayPanelVisible}
+              onPress={() => onOpenAnnualReport?.()}
+              styles={styles}
+            />
+          </View>
+        )}
+
         {!hasAnyLocationPoints && (
           <View style={styles.emptyCard}>
             <Text {...FIXED_MAP_UI_TEXT_PROPS} style={styles.emptyTitle}>
@@ -379,6 +424,7 @@ export function MapScreen({
         )}
 
         <MapBottomDashboard
+          onMapDisplayPanelVisibleChange={setIsMapDisplayPanelVisible}
           styles={styles}
           theme={theme}
           mapType={mapType}

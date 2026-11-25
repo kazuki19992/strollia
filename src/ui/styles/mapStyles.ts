@@ -163,6 +163,38 @@ export function createMapStyles(theme: AppTheme) {
       maxWidth: '100%',
       zIndex: 10,
     },
+    // 年間レポートなどのふりかえりボタン(地図左上の通常フロー先頭。右上はOS標準のコンパスがあるため避ける)
+    badgeFloatingButton: {
+      alignItems: 'center',
+      backgroundColor: mapPanelBackground,
+      borderRadius: 20,
+      flexDirection: 'row',
+      gap: 6,
+      height: 40,
+      paddingHorizontal: 14,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.24,
+      shadowRadius: 7,
+    },
+    badgeFloatingButtonBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 9,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    badgeFloatingButtonBadgeText: {
+      color: colors.primaryText,
+      fontSize: 11,
+    },
+    badgeFloatingButtonContainer: {
+      alignSelf: 'flex-start',
+      marginLeft: 12,
+    },
+    badgeFloatingButtonLabel: {
+      color: '#ffffff',
+      fontSize: 14,
+    },
     mapDisplayBackgroundControlsDimmed: {
       opacity: 0.42,
     },

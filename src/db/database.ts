@@ -234,6 +234,17 @@ async function runDatabaseInitialization(): Promise<void> {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS annual_reports (
+      year INTEGER PRIMARY KEY,
+      payload_version INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      progress_json TEXT NULL,
+      payload_json TEXT NULL,
+      notification_scheduled_at TEXT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_location_points_recorded_at
       ON location_points(recorded_at);
 

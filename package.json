@@ -97,6 +97,9 @@
       "^@modules/(.*)$": "<rootDir>/modules/$1",
       "\\.svg$": "<rootDir>/__mocks__/svgMock.js"
     },
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest/setupAnnualReportPeriodMock.js"
+    ],
     "clearMocks": true
   }
 }

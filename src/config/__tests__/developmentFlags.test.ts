@@ -7,6 +7,8 @@ const DEVELOPMENT_FLAG_ENV_NAMES = [
   'EXPO_PUBLIC_LOG_VISITED_GRID_METRICS',
   'EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS',
   'EXPO_PUBLIC_PHOTO_SCAN_LIMIT',
+  'EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE',
+  'EXPO_PUBLIC_STROLLIA_BUILD_PROFILE',
 ] as const;
 
 /** process.envに値を設定し、undefinedなら削除する。 */
@@ -46,6 +48,33 @@ describe('開発用フラグ developmentFlags', () => {
 
     expect(hasEnabledDevelopmentFlags()).toBe(false);
     expect(shouldResetAchievementsOnLaunch()).toBe(false);
+  });
+
+  it('production 以外のビルドでは環境変数で年間レポートの常時表示を有効にできる', () => {
+    const { developmentFlags } = loadDevelopmentFlagsModule({
+      EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE: 'true',
+      EXPO_PUBLIC_STROLLIA_BUILD_PROFILE: 'preview',
+    });
+
+    expect(developmentFlags.annualReportAlwaysAvailable).toBe(true);
+  });
+
+  it('production ビルドでは環境変数が true でも年間レポートの常時表示を有効にしない', () => {
+    const { developmentFlags } = loadDevelopmentFlagsModule({
+      EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE: 'true',
+      EXPO_PUBLIC_STROLLIA_BUILD_PROFILE: 'production',
+    });
+
+    expect(developmentFlags.annualReportAlwaysAvailable).toBe(false);
+  });
+
+  it('年間レポートの常時表示は環境変数が true 以外なら無効にする', () => {
+    const { developmentFlags } = loadDevelopmentFlagsModule({
+      EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE: 'false',
+      EXPO_PUBLIC_STROLLIA_BUILD_PROFILE: 'development',
+    });
+
+    expect(developmentFlags.annualReportAlwaysAvailable).toBe(false);
   });
 
   it('環境変数でPlus仮有効化フラグを有効にできる', () => {

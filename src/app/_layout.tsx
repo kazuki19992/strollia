@@ -13,6 +13,7 @@ import { GpxImportProgressDialog } from '@/ui/components/GpxImportProgressDialog
 import { PhotoLibrarySyncDialog } from '@/ui/components/PhotoLibrarySyncDialog';
 import { PhotoPreviewModals } from '@/ui/components/PhotoPreviewModals';
 import { PhotoDeletedDialog } from '@/ui/components/PhotoDeletedDialog';
+import { AnnualReportAggregatingDialog } from '@/ui/components/AnnualReportAggregatingDialog';
 import { PremiumPaywallModal } from '@/ui/components/PremiumPaywallModal';
 import { TopToast } from '@/ui/components/TopToast';
 import { AppStateProvider, useAppState } from '@/ui/state/AppStateProvider';
@@ -167,6 +168,13 @@ function RootLayoutContent(): React.ReactElement {
         stage={s.gpxImportProgressStage}
       />
 
+      {/* 年間レポートの集計中にふりかえりボタンを押したときの案内 */}
+      <AnnualReportAggregatingDialog
+        visible={s.isAnnualReportAggregatingDialogVisible}
+        styles={s.styles}
+        onClose={s.closeAnnualReportAggregatingDialog}
+      />
+
       {/* 削除済みのときだけモーダルで止め、再読み込み導線を出す(設計書 §4.5) */}
       <PhotoDeletedDialog
         visible={s.photoUnavailableReason === 'deleted'}
@@ -209,6 +217,7 @@ function useRouterNavigator() {
       openLandmarkPack: (packId: string) => router.push(`/achievements/${packId}`),
       closeLandmarkPack: () => router.back(),
       openMonthlyReport: () => router.push('/monthly-report'),
+      openAnnualReport: () => router.push('/annual-report'),
       openSettings: () => router.push('/settings'),
       openStayPlaces: () => router.push('/settings/stay-places'),
     }),

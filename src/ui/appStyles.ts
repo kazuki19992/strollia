@@ -6,6 +6,7 @@ import { createCommonStyles } from './styles/commonStyles';
 import { createDailyLogStyles } from './styles/dailyLogStyles';
 import { createMapStyles } from './styles/mapStyles';
 import { createSettingsStyles } from './styles/settingsStyles';
+import { createStoryStyles } from './styles/storyStyles';
 
 /**
  * 現在のテーマから画面全体のStyleSheetを生成する。
@@ -24,6 +25,7 @@ export function createStyles(theme: AppTheme) {
     ...createSettingsStyles(theme),
     ...createDailyLogStyles(theme),
     ...createCommonStyles(theme),
+    ...createStoryStyles(theme),
   });
 }
 

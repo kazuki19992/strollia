@@ -152,7 +152,7 @@ describe('appStyles 分割後のキー網羅検証', () => {
       expect(styles.reportNavigationOverlay).toBeDefined();
     });
 
-    test('全449キーが存在する（過不足なし）', () => {
+    test('全457キーが存在する（過不足なし）', () => {
       const styles = createStyles(theme);
       const keys = Object.keys(styles);
 
@@ -180,7 +180,9 @@ describe('appStyles 分割後のキー網羅検証', () => {
       //       + ラベル(labelBadge・labelBadgeText、旧plusBadge)2キー + リスト行titleAccessoryスロット(appListItemTitleRow・TitleInRow)2キー
       //       + Plus用パックのグラデーション導線(landmarkPackTeaser・HiddenArea・CtaArea)3キー
       //       + 購入導線の販促文(landmarkPackTeaserPromotion・Headline・Examples・Note)4キー + 説明文の中央揃え(descriptionTextCentered)1キー
-      expect(keys.length).toBe(449);
+      //       + ストーリー進行バー(storyProgressRow・Segment・Fill)3キー
+      //       + バッジ付きフローティングボタン(badgeFloatingButton・Container・Label・Badge・BadgeText)5キー
+      expect(keys.length).toBe(457);
     });
   });
 });

@@ -17,6 +17,11 @@
 - `react-test-renderer` の直接 import / require は禁止(ESLint で error)。テスト API は下記の RTL を使う
 - `@testing-library/react-native` は v14(Expo SDK 58 移行時に更新)。`render` / `renderHook` / `fireEvent` / `act` / `rerender` / `unmount` と `expo-router/testing-library` の `renderRouter` はすべて Promise を返すので、必ず `await` する。`await` し忘れると「overlapping act() calls」で失敗する。詳細は `node_modules/@testing-library/react-native/docs/guides/migration-v14.md`
 
+## 共通セットアップのモック
+
+- `jest/setupAnnualReportPeriodMock.js`(`package.json` の `setupFilesAfterEnv`)が、全テストで `@/features/annualReport/annualReportPeriod` の `resolveAggregationWindow` を `null`(集計期間外)に固定している。AppStateProvider は実際の日付で年間レポートの集計を起動する(12/16〜1/15)ため、`renderRouter('src/app')` など実 Provider を描画するテストがその時期だけ壊れるのを防ぐ
+- 期間判定や年間レポートの集計そのものを検証するテストでは、ファイル先頭で `jest.unmock('@/features/annualReport/annualReportPeriod');` を書いて実装を使う(例: `annualReportPeriod.test.ts`, `useAnnualReportState.test.tsx`)
+
 ## リポジトリテストの実例
 
 `src/features/settings/__tests__/settingsRepository.test.ts` のパターン:

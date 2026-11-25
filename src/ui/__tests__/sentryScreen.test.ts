@@ -27,6 +27,20 @@ describe('Sentry画面名解決', () => {
     ).toBe('Settings:LicenseDetail');
   });
 
+  it('年間レポート画面は AnnualReport を返す', () => {
+    expect(
+      resolveSentryScreenName({
+        dailyLogsScreenName: 'DailyLogs:DailyLogList',
+        firstLaunchTutorialMode: 'hidden',
+        isFirstLaunchTutorialVisible: false,
+        isPremiumPaywallVisible: false,
+        isPhotoPreviewVisible: false,
+        screenMode: 'annualReport',
+        settingsScreenName: 'Settings:SettingsHome',
+      }),
+    ).toBe('AnnualReport');
+  });
+
   it('実績スタックは子画面名を使い、未指定なら AchievementList を返す', () => {
     expect(
       resolveSentryScreenName({

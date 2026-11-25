@@ -72,11 +72,11 @@ module.exports = [
 
   // src/ui/components/ 配下では StyleSheet.create を禁止する。
   // スタイルは src/ui/appStyles.ts の createStyles(theme) に集約すること。
-  // src/ui/appStyles.ts と reports/reportStyles.ts は集約先のため対象外。
+  // src/ui/appStyles.ts と reports/reportStyles.ts・annualReport/annualReportStyles.ts(固定ダークのストーリー専用)は集約先のため対象外。
   // COMMON_RESTRICTED_SYNTAX を展開して全共通禁止セレクタを維持する。
   {
     files: ['src/ui/components/**/*.{ts,tsx}'],
-    ignores: ['src/ui/components/reports/reportStyles.ts'],
+    ignores: ['src/ui/components/reports/reportStyles.ts', 'src/ui/components/annualReport/annualReportStyles.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

@@ -3,7 +3,11 @@ const ENABLED_ENV_VALUE = 'true';
 
 /** 開発・検証用の一時フラグを集約する。 */
 export const developmentFlags: Record<
-  'enablePremiumAccessWithoutRevenueCat' | 'resetAchievementsOnLaunch' | 'logVisitedGridMetrics' | 'logPhotoScanMetrics',
+  | 'enablePremiumAccessWithoutRevenueCat'
+  | 'resetAchievementsOnLaunch'
+  | 'logVisitedGridMetrics'
+  | 'logPhotoScanMetrics'
+  | 'annualReportAlwaysAvailable',
   boolean
 > = {
   /** RevenueCat導入前にStrollia Plus特典を仮に有効化する。 */
@@ -20,6 +24,14 @@ export const developmentFlags: Record<
    * 判断がついたら表示ごと削除する。
    */
   logPhotoScanMetrics: process.env.EXPO_PUBLIC_LOG_PHOTO_SCAN_METRICS === ENABLED_ENV_VALUE,
+  /**
+   * 年間レポートを期間外でも動作確認できるようにする(対象年は現在の年、記録日数条件も無視)。
+   * 有効時は保存データを開閉のたびに削除するため、`.env.local` の設定が紛れ込んでも
+   * production プロファイルのビルドでは常に無効にする(EAS の `EXPO_PUBLIC_STROLLIA_BUILD_PROFILE` で判定)。
+   */
+  annualReportAlwaysAvailable:
+    process.env.EXPO_PUBLIC_ANNUAL_REPORT_ALWAYS_AVAILABLE === ENABLED_ENV_VALUE &&
+    process.env.EXPO_PUBLIC_STROLLIA_BUILD_PROFILE !== 'production',
 };
 
 /**

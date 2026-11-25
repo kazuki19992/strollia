@@ -47,6 +47,8 @@ export function resolveSentryScreenName(input: ResolveSentryScreenNameInput): st
       return 'Map';
     case 'monthlyReport':
       return 'MonthlyReport';
+    case 'annualReport':
+      return 'AnnualReport';
     case 'settings':
       return input.settingsScreenName;
   }

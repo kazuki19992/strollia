@@ -164,6 +164,78 @@ describe('地図画面 MapScreen', () => {
     expect(screen.queryByText('メニュー')).toBeNull();
   });
 
+  describe('年間レポートのふりかえりボタン', () => {
+    test('年間レポートがないときはボタンを表示しない', async () => {
+      await render(<MapScreen {...createProps()} />);
+
+      expect(screen.queryByText('ふりかえり')).toBeNull();
+    });
+
+    test('年間レポートがあるときだけボタンを表示する', async () => {
+      await render(<MapScreen {...createProps()} isAnnualReportAvailable annualReportDaysLeft={5} onOpenAnnualReport={jest.fn()} />);
+
+      expect(screen.getByText('ふりかえり')).toBeTruthy();
+    });
+
+    test('通常フローの先頭に置かれ、後続の写真ステータス帯の上に表示される(絶対配置ではない)', async () => {
+      await render(
+        <MapScreen
+          {...createProps()}
+          showPhotosOnMap
+          isLoadingPhotos
+          isAnnualReportAvailable
+          annualReportDaysLeft={5}
+          onOpenAnnualReport={jest.fn()}
+        />,
+      );
+
+      // ボタンから上のオーバーレイ(SafeAreaView)までの祖先に絶対配置がないこと。
+      // 絶対配置だとSafeAreaViewのinsetが効かず、iOSでステータスバーの下に潜る
+      let node = screen.getByText('ふりかえり').parent;
+      let checked = 0;
+      while (node && String(node.type) !== 'SafeAreaView') {
+        expect(StyleSheet.flatten(node.props.style)?.position).not.toBe('absolute');
+        checked += 1;
+        node = node.parent;
+      }
+      expect(node).not.toBeNull();
+      expect(checked).toBeGreaterThan(0);
+    });
+
+    test('バッジに残り日数を表示し、アクセシビリティラベルにも含める', async () => {
+      await render(<MapScreen {...createProps()} isAnnualReportAvailable annualReportDaysLeft={12} onOpenAnnualReport={jest.fn()} />);
+
+      expect(screen.getByText('あと12日')).toBeTruthy();
+      expect(screen.getByLabelText('年間レポートをふりかえる（あと12日）')).toBeTruthy();
+    });
+
+    test('押すと年間レポートを開くハンドラを呼ぶ', async () => {
+      const onOpenAnnualReport = jest.fn();
+      await render(
+        <MapScreen {...createProps()} isAnnualReportAvailable annualReportDaysLeft={3} onOpenAnnualReport={onOpenAnnualReport} />,
+      );
+
+      await fireEvent.press(screen.getByLabelText('年間レポートをふりかえる（あと3日）'));
+
+      expect(onOpenAnnualReport).toHaveBeenCalledTimes(1);
+    });
+
+    test('地図表示設定パネルを開いている間は押せず、閉じると再び押せる', async () => {
+      const onOpenAnnualReport = jest.fn();
+      await render(
+        <MapScreen {...createProps()} isAnnualReportAvailable annualReportDaysLeft={3} onOpenAnnualReport={onOpenAnnualReport} />,
+      );
+
+      await fireEvent.press(screen.getByLabelText('マップの表示'));
+      await fireEvent.press(screen.getByLabelText('年間レポートをふりかえる（あと3日）'));
+      expect(onOpenAnnualReport).not.toHaveBeenCalled();
+
+      await fireEvent.press(screen.getByLabelText('マップ表示設定を閉じる'));
+      await fireEvent.press(screen.getByLabelText('年間レポートをふりかえる（あと3日）'));
+      expect(onOpenAnnualReport).toHaveBeenCalledTimes(1);
+    });
+  });
+
   test('有効な滞在場所のマーカーをタップするとアイコン・太字の名前・非表示範囲を表示する', async () => {
     const place: StayPlace = {
       id: 1,

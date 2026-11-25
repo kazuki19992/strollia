@@ -342,6 +342,23 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 
 書き込みは`INSERT OR IGNORE`で行い、初回の到達を正とする。`landmark_spot_visits`は無変更で、パック完走・実績は引き続きそちらだけを見る。`location_recording_state.landmark_candidate_spot_id`は「計測中の地点ID」を指し、円1つのスポットではスポットIDと同値になる。
 
+### 4.17 `annual_reports`
+
+年間振り返りストーリー（年次レポート）の集計途中の進捗と完成レポートを、対象年ごとに1行で保存するテーブル。表示内容が毎年変わりうるため、中身はカラムに分けずJSONで持ち、`payload_version`で解釈を切り替える。
+
+| カラム                      | 型        | 説明                                                                |
+| --------------------------- | --------- | ------------------------------------------------------------------- |
+| `year`                      | INTEGER   | 主キー。対象年                                                      |
+| `payload_version`           | INTEGER   | JSONの形式バージョン（現在は1）。未知の値の行は読み込み時に無視する |
+| `status`                    | TEXT      | `in_progress` / `completed`                                         |
+| `progress_json`             | TEXT NULL | 集計途中の進捗・中間集計値。`completed`になるとNULL                 |
+| `payload_json`              | TEXT NULL | 完成したレポート本体。`completed`のとき必須                         |
+| `notification_scheduled_at` | TEXT NULL | 通知を予約した日時（ISO 8601）。記録済みなら完了時に予約し直さない  |
+| `created_at`                | TEXT      | 作成日時（ISO 8601）                                                |
+| `updated_at`                | TEXT      | 更新日時（ISO 8601）                                                |
+
+一度`completed`になったレポートは、あとからGPXをインポートしても再計算しない。集計途中の進捗の保存（UPSERT）は`completed`の行を上書きしない。JSONが壊れている行は`null`扱いとし、再集計で作り直す。
+
 ## 5. インデックス方針
 
 GPSログは時系列検索と日付検索が中心になるため、以下のインデックスを作成する。
@@ -420,6 +437,7 @@ Visited Grid Overlayでは、有効な観測が存在した100mセルを `visite
 
 - `getLocationPointsBounds(): Promise<LocationPointsBounds | null>` — 地図の初期表示範囲を算出するため、SQLの集計クエリ(`SELECT MIN(latitude), MAX(latitude), MIN(longitude), MAX(longitude), COUNT(*) FROM location_points WHERE ...`)で緯度経度の最小値・最大値・ポイント総数を取得する。この方式ではポイント本体をアプリメモリへロードしないため、記録年数に依存せず高速に動作する。
 - `getLocationPointsByMonth(yearMonth: string): Promise<LocationPoint[]>` — 月次レポート画面で対象月のポイントを取得する。月単位に限定することで、データ量を管理可能に保つ。
+- `getAnnualReportRoutePoints(fromDate: string, toDate: string): Promise<AnnualReportRoutePoint[]>`（`src/features/annualReport/annualReportQueries.ts`）— 年間レポートの半月ステップ集計で、ルート描画と距離の補完に必要な列（時刻・日付・生座標・有効座標）だけを取得する。`local_date BETWEEN ? AND ?` と `ORDER BY local_date, recorded_at` で `location_points(local_date, recorded_at)` のインデックスを使い、前面での集計中の読み込み量とGPS記録の書き込みとの競合を抑える。
 - `getLocationPointsByDates(localDates: string[]): Promise<LocationPoint[]>` — 日別ログの距離値が欠落している日の距離を計算するため、該当日付のみのポイントを取得する。フォールバック計算の対象を最小限に制限し、毎回全データ走査を避ける。
 
 この設計により、2026-07-14に発生したメモリ超過クラッシュ(記録ポイント数が多い端末で全ポイント配列の作成時にスプレッド展開が`RangeError`を起こす問題)を回避する。
@@ -453,12 +471,15 @@ Visited Grid Overlayでは、有効な観測が存在した100mセルを `visite
 - `landmark_area_visits`
 - `stay_places`
 - `photo_assets`
+- `annual_reports`
 
 `location_point_admin_areas` はGPSポイントから派生する行政区域対応表のため、元データ削除時に合わせて削除する。
 
 `landmark_spot_visits` は `achievement_unlocks` と対になる到達記録のため、片方だけ残すと「完走実績は未解除なのに全スポット到達済み」という矛盾状態になる。合わせて削除する。`landmark_area_visits` もスポット到達の元データのため同様に削除する。
 
 `photo_assets` は写真ライブラリから読み取ったメタデータのキャッシュだが、撮影位置は端末内に残る個人データであるため削除対象に含める。写真ライブラリ側の写真は削除しない。
+
+`annual_reports` は年間振り返りの集計途中データと完成レポート（間引き済みルート・訪問都道府県を含む）で、GPSログから派生した個人データのため削除対象に含める。削除トランザクションの開始前に実行中の年間レポート集計を無効化し、削除が終わるまで集計を始めない（削除前のスナップショットで計算した結果が、書き込みロック待ちのあと削除の後に保存されるのを防ぐため）。削除の成功後は、メモリ上の表示中のレポートも消し、予約済みの年間レポート通知も取り消す（削除したレポートを同じセッションで表示・共有させないため）。削除に失敗した場合は集計を再開する。
 
 アプリ設定を保持する `app_settings` は、画面表示設定や開発フラグ確認状態などを含むため、初期実装では削除対象外とする。
 

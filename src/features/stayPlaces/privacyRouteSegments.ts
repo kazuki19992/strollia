@@ -27,12 +27,53 @@ export function toPrivacyRouteSegments(points: LocationPoint[], activeStayPlaces
   }
 
   return toRoutePointSegments(points)
-    .flatMap((routeSegment, routeSegmentIndex) => splitVisiblePoints(routeSegment, activeStayPlaces, routeSegmentIndex))
+    .flatMap((routeSegment, routeSegmentIndex) =>
+      splitVisibleCoordinates(routeSegment.map(toCoordinate), activeStayPlaces, routeSegmentIndex, routeSegment[0]?.recordedAt ?? 'route'),
+    )
     .filter((segment) => segment.coordinates.length > 1);
 }
 
-/** 非表示半径内または不正座標で閉じた、描画可能な可視点区間を作る。 */
-function splitVisiblePoints(points: LocationPoint[], activeStayPlaces: StayPlace[], routeSegmentIndex: number): RouteSegment[] {
+/**
+ * 座標区間(間引き済みの年間ルートなど)へ非表示半径を適用した共有用の描画区間を作る。
+ *
+ * `toPrivacyRouteSegments` と同じ規則で、範囲内の点を落とし、範囲を横切る線分を描かず、
+ * 前後を別区間にする。間引き後は点間が長く線分が円を横切りやすいため、線分単位で判定する。
+ * 非表示設定が壊れている場合は安全側へ倒して空配列を返す。
+ */
+export function toPrivacyCoordinateSegments(segments: RouteCoordinate[][], activeStayPlaces: StayPlace[]): RouteSegment[] {
+  if (hasInvalidPrivacyStayPlace(activeStayPlaces)) {
+    return [];
+  }
+
+  return segments
+    .flatMap((segment, segmentIndex) => splitVisibleCoordinates(segment, activeStayPlaces, segmentIndex, 'segment'))
+    .filter((segment) => segment.coordinates.length > 1);
+}
+
+/**
+ * 非表示半径を持つ滞在場所の円に、どれかの点または線分がかかるか判定する。
+ * 共有前の確認ダイアログを出すかの判定に使う。設定が壊れている場合は
+ * 共有結果が非表示になるため、確認が必要とみなして true を返す。
+ */
+export function hasPrivacyRadiusInSegments(segments: RouteCoordinate[][], activeStayPlaces: StayPlace[]): boolean {
+  if (hasInvalidPrivacyStayPlace(activeStayPlaces)) {
+    return true;
+  }
+
+  return segments.some(
+    (segment) =>
+      segment.some((coordinate) => isValidRouteCoordinate(coordinate) && isHiddenByPrivacyRadius(coordinate, activeStayPlaces)) ||
+      routeCrossesPrivacyRadius(segment, activeStayPlaces),
+  );
+}
+
+/** 非表示半径内または不正座標で閉じた、描画可能な可視座標区間を作る。idPrefixは区間IDの接頭辞。 */
+function splitVisibleCoordinates(
+  coordinates: RouteCoordinate[],
+  activeStayPlaces: StayPlace[],
+  routeSegmentIndex: number,
+  idPrefix: string,
+): RouteSegment[] {
   const segments: RouteSegment[] = [];
   let visiblePoints: RouteCoordinate[] = [];
 
@@ -40,7 +81,7 @@ function splitVisiblePoints(points: LocationPoint[], activeStayPlaces: StayPlace
     if (visiblePoints.length > 1) {
       const simplified = simplifyRouteCoordinates(visiblePoints, DEFAULT_ROUTE_SIMPLIFY_TOLERANCE_METERS);
       segments.push({
-        id: `${points[0]?.recordedAt ?? 'route'}-${routeSegmentIndex}-${segments.length}`,
+        id: `${idPrefix}-${routeSegmentIndex}-${segments.length}`,
         // Douglas-Peuckerが中間点を落とすと、元は半径を避けた折れ線が非表示範囲を
         // 横切る直線へ変わることがある。再検証し、危険なら安全な元の折れ線を使う。
         coordinates: routeCrossesPrivacyRadius(simplified, activeStayPlaces) ? visiblePoints : simplified,
@@ -49,8 +90,7 @@ function splitVisiblePoints(points: LocationPoint[], activeStayPlaces: StayPlace
     visiblePoints = [];
   };
 
-  for (const point of points) {
-    const coordinate = toCoordinate(point);
+  for (const coordinate of coordinates) {
     if (!isValidRouteCoordinate(coordinate) || isHiddenByPrivacyRadius(coordinate, activeStayPlaces)) {
       closeSegment();
       continue;

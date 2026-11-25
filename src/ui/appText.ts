@@ -197,3 +197,43 @@ export const LANDMARK_PACK_PLUS_TEASER_CTA = 'Plusでもっと挑戦する';
 export const LANDMARK_PACK_PLUS_TEASER_HEADLINE = 'ほかにも色々！';
 /** 販促の見出しの下に小さく置く、Plus用パックの例。全件を並べず「And more!」で締め、件数を伏せる。 */
 export const LANDMARK_PACK_PLUS_TEASER_EXAMPLES = 'のぼれる灯台 日本三景 博物館 And more!';
+
+/** ストーリー進行バーのアクセシビリティラベル（現在ページ / 総ページ数）。 */
+export function getStoryProgressLabel(index: number, pageCount: number): string {
+  return `${index + 1} / ${pageCount} ページ`;
+}
+
+/** 年間レポートの共有で、非表示範囲の滞在場所が写るときの確認ダイアログのタイトル。 */
+export const ANNUAL_REPORT_PRIVACY_DIALOG_TITLE = 'プライベートな滞在場所を隠しますか？';
+/** 年間レポートの共有確認ダイアログの説明文。 */
+export const ANNUAL_REPORT_PRIVACY_DIALOG_MESSAGE =
+  'このページには「共有時に隠す」設定の滞在場所が含まれています。隠すと、その範囲内のルートは共有する画像に表示されません。';
+/** 年間レポートの共有確認ダイアログで、非表示範囲を隠して共有するボタン。 */
+export const ANNUAL_REPORT_SHARE_HIDDEN_LABEL = '隠して共有';
+/** 年間レポートの共有確認ダイアログで、隠さずにそのまま共有するボタン。 */
+export const ANNUAL_REPORT_SHARE_RAW_LABEL = '隠さずに共有';
+/** 年間レポートの共有確認ダイアログで、共有をやめるボタン。 */
+export const ANNUAL_REPORT_SHARE_CANCEL_LABEL = 'キャンセル';
+/** 滞在場所を確認できず、地図を含む画像の共有を始められないときのアラートのタイトル。 */
+export const STAY_PLACES_SHARE_UNAVAILABLE_TITLE = '共有できません';
+/** 滞在場所の読み込みに失敗して共有を準備できないときの説明(月次レポートと同じ文言)。 */
+export const STAY_PLACES_SHARE_ERROR_MESSAGE = '滞在場所を読み込めないため、共有を準備できません。';
+/** 滞在場所の読み込み中で共有をまだ準備できないときの説明(月次レポートと同じ文言)。 */
+export const STAY_PLACES_SHARE_LOADING_MESSAGE = '滞在場所を確認中です。共有は確認後に利用できます。';
+
+/** 年間レポートの集計中に、ふりかえりボタンを押したときのダイアログのタイトル。 */
+export const ANNUAL_REPORT_AGGREGATING_DIALOG_TITLE = '集計中...';
+/** 年間レポートの集計中に、ふりかえりボタンを押したときのダイアログの本文(3行)。 */
+export const ANNUAL_REPORT_AGGREGATING_DIALOG_MESSAGE =
+  '今年のあしあとをふりかえっています！\nもう少しお待ちください！\n準備ができたら通知でお知らせします';
+
+/** 地図画面の年間レポート(ふりかえり)ボタンのラベル。 */
+export const ANNUAL_REPORT_MAP_BUTTON_LABEL = 'ふりかえり';
+/** 年間レポートボタンのバッジ文言。公開終了までの残り日数を表す。 */
+export function formatAnnualReportMapButtonBadge(daysLeft: number): string {
+  return `あと${daysLeft}日`;
+}
+/** 年間レポートボタンのアクセシビリティラベル。残り日数が不明な場合は日数を含めない。 */
+export function formatAnnualReportMapButtonAccessibilityLabel(daysLeft: number | null): string {
+  return daysLeft === null ? '年間レポートをふりかえる' : `年間レポートをふりかえる（${formatAnnualReportMapButtonBadge(daysLeft)}）`;
+}

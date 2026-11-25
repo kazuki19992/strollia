@@ -44,6 +44,10 @@ jest.mock('@/features/achievements/achievementNotificationService', () => ({
   setupAchievementNotificationChannel: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@/features/annualReport/annualReportNotificationService', () => ({
+  setupAnnualReportNotificationChannel: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/features/reports/monthlyReportNotificationService', () => ({
   setupMonthlyReportNotificationChannel: jest.fn().mockResolvedValue(undefined),
   syncMonthlyReportNotification: jest.fn().mockResolvedValue(undefined),

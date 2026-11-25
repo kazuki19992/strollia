@@ -62,6 +62,9 @@ import { useCurrentAreaLabel } from '@/ui/hooks/useCurrentAreaName';
 import { usePremiumAccess } from '@/ui/hooks/usePremiumAccess';
 import { useVisitedGridOverlay } from '@/ui/hooks/useVisitedGridOverlay';
 import { useMonthlyReportNotificationResponse } from '@/ui/hooks/useMonthlyReportNotificationResponse';
+import { useAnnualReportNotificationResponse } from '@/ui/hooks/useAnnualReportNotificationResponse';
+import { useAnnualReportState, type AnnualReportState } from '@/ui/hooks/useAnnualReportState';
+import type { AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
 import { useUserLocationIconSetting } from '@/ui/hooks/useUserLocationIconSetting';
 import { useMapFollowState } from '@/ui/hooks/useMapFollowState';
 import { usePhotoClusters } from '@/ui/hooks/usePhotoClusters';
@@ -160,6 +163,14 @@ export type AppStateContextValue = {
   monthlyReportPoints: LocationPoint[];
   /** 月次エリアレポート。 */
   monthlyAreaReport: MonthlyAreaReport | null;
+  /** 表示できる年間レポート。公開期間中かつ集計完了のときだけ非null。 */
+  annualReport: AnnualReportPayloadV1 | null;
+  /** 年間レポートの公開終了までの残り日数(終了日当日は1)。annualReport が null で集計中でもないときは null。 */
+  annualReportDaysLeft: number | null;
+  /** 公開期間中で、年間レポートをまだ集計している(完成していない)か。地図のふりかえりボタンはこの間も表示する。 */
+  isAnnualReportAggregating: boolean;
+  /** 集計中にふりかえりボタンを押したときの「集計中」ダイアログを表示しているか。 */
+  isAnnualReportAggregatingDialogVisible: boolean;
   /** 登録済みの滞在場所。 */
   stayPlaces: StayPlace[];
   /** 現在の契約状態で共有・記録に使う滞在場所。未解決・失敗時はnull。 */
@@ -428,6 +439,17 @@ export type AppStateContextValue = {
   closeLandmarkPack: () => void;
   /** 月次レポート画面へ移動する(Plusゲート付き)。 */
   openMonthlyReport: () => void;
+  /** 年間レポート画面へ移動する。集計中なら「集計中」ダイアログを出し、表示できるレポートがなければ何もしない。 */
+  openAnnualReport: () => void;
+  /** 「集計中」ダイアログを閉じる。 */
+  closeAnnualReportAggregatingDialog: () => void;
+  /** 年間レポート画面を閉じて地図へ戻る。 */
+  closeAnnualReport: () => void;
+  /**
+   * 閉じるボタン以外(Androidの戻る・スワイプ・リダイレクトなど)で年間レポート画面を離れたときに呼ぶ。
+   * 閉じたときの後処理(開発用フラグ時の保存データ削除と作り直し)だけを行い、画面遷移はしない。
+   */
+  notifyAnnualReportLeft: () => void;
   /** 設定画面へ移動する。 */
   openSettings: () => void;
   /** 滞在場所の設定画面へ移動する。 */
@@ -474,6 +496,8 @@ type AppStateProviderProps = {
     closeLandmarkPack?: () => void;
     /** 月次レポート画面へ移動する。 */
     openMonthlyReport?: () => void;
+    /** 年間レポート画面へ移動する。 */
+    openAnnualReport?: () => void;
     /** 設定画面へ移動する。 */
     openSettings?: () => void;
     /** 滞在場所の設定画面へ移動する。 */
@@ -933,6 +957,18 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     }
   }, []);
 
+  /**
+   * 全削除の前後に年間レポートの集計・表示を扱う関数群。
+   * useAnnualReportState はこのコールバックより後で呼ぶため、ref 経由で最新の関数を参照する。
+   */
+  const annualReportDataDeletionRef = useRef<
+    Pick<AnnualReportState, 'invalidateForDataDeletion' | 'resetAfterDataDeletion' | 'onDataDeletionFailed'>
+  >({
+    invalidateForDataDeletion: () => undefined,
+    resetAfterDataDeletion: () => undefined,
+    onDataDeletionFailed: () => undefined,
+  });
+
   /** 確認ダイアログを挟んで保存済みデータを全削除する。 */
   const deleteAllData = useCallback(async (): Promise<void> => {
     Alert.alert('すべてのデータを削除', '保存済みのGPSログ、訪問エリア、実績の解除状況をすべて削除します。この操作は取り消せません。', [
@@ -941,8 +977,18 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
         text: '削除する',
         style: 'destructive',
         onPress: () => {
+          // 削除は別接続の排他トランザクションで行われ、その間も年間レポートの集計は削除前のデータで計算を続ける。
+          // その保存がロック待ちのあと削除の後に書き込まれないよう、削除を始める前に集計を無効化する
+          annualReportDataDeletionRef.current.invalidateForDataDeletion();
           deleteAllUserData()
+            .catch((error: unknown) => {
+              // データは残っているため、止めた集計を再開してから失敗を伝える
+              annualReportDataDeletionRef.current.onDataDeletionFailed();
+              throw error;
+            })
             .then(async () => {
+              // 削除したレポートを表示・共有し続けたり、予約済みの通知が届いたりしないようにする
+              annualReportDataDeletionRef.current.resetAfterDataDeletion();
               // 全削除では landmark_spot_visits / landmark_area_visits も消えるため、スポット・地点の到達も合わせて読み直す
               await refreshDeletedUserDataState(refreshData, stableRefreshAchievementState);
               // 取り消せない操作の完了は、見落としやすいトーストではなくAlertで明示する
@@ -1061,6 +1107,27 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
   });
 
   useMonthlyReportNotificationResponse({ isReady, onOpenMonthlyReport: openMonthlyReport });
+
+  // 待たせた通知タップは、表示できるようになった時点のレンダーの openAnnualReport で開く
+  const annualReportState = useAnnualReportState({ isReady, onDeferredOpen: () => openAnnualReport() });
+  /** 集計中にふりかえりボタンを押したときの「集計中」ダイアログの表示状態。 */
+  const [isAnnualReportAggregatingDialogVisible, setIsAnnualReportAggregatingDialogVisible] = useState(false);
+  /** 「集計中」ダイアログを閉じる。 */
+  const closeAnnualReportAggregatingDialog = useCallback(() => setIsAnnualReportAggregatingDialogVisible(false), []);
+  annualReportDataDeletionRef.current = annualReportState;
+  // 保存済みレポートの読み込みが終わるまで待ってから通知タップを処理する(コールドスタートで取りこぼさないため)
+  useAnnualReportNotificationResponse({
+    isReady: isReady && annualReportState.hasEvaluated,
+    onOpenAnnualReport: (year) => {
+      if (annualReportState.availableReport?.year === year) {
+        openAnnualReport();
+        return;
+      }
+      // 背面から戻った直後は前面復帰の評価がまだ終わっておらず、表示状態が古いことがある。
+      // 本番では次の評価が終わるまでだけ待ち(表示できなければ地図のまま)、開発用フラグ時は作り直しが終わるまで待つ
+      annualReportState.deferNotificationOpen(year);
+    },
+  });
 
   useKeepScreenAwake({ enabled: keepScreenAwake, appState, tag: KEEP_AWAKE_TAG });
   useAchievementDialogEffects({
@@ -1231,6 +1298,38 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     } else {
       navigateToScreen('monthlyReport');
     }
+  }
+
+  /**
+   * 年間レポート画面へ移動する。
+   * 公開期間中でまだ集計中なら、ストーリーは開かず「集計中」ダイアログを出す(完成したら通知で知らせる)。
+   * 表示できるレポートがない(公開期間外・記録不足)なら何もしない。
+   */
+  function openAnnualReport(): void {
+    if (!annualReportState.availableReport) {
+      if (annualReportState.isAggregating) {
+        setIsAnnualReportAggregatingDialogVisible(true);
+      }
+      return;
+    }
+    annualReportState.onReportOpened();
+    if (navigator?.openAnnualReport) {
+      triggerLightImpactHaptic();
+      navigator.openAnnualReport();
+    } else {
+      navigateToScreen('annualReport');
+    }
+  }
+
+  /** 年間レポート画面を閉じて地図へ戻る。 */
+  function closeAnnualReport(): void {
+    annualReportState.onReportClosed();
+    openMap();
+  }
+
+  /** 閉じるボタンを使わずに年間レポート画面を離れたときの後処理。すでに画面は離れているため遷移しない。 */
+  function notifyAnnualReportLeft(): void {
+    annualReportState.onReportClosed();
   }
 
   /** 設定画面へ移動する。 */
@@ -1424,6 +1523,10 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     hasAnyLocationPoints,
     monthlyReportPoints,
     monthlyAreaReport,
+    annualReport: annualReportState.availableReport,
+    annualReportDaysLeft: annualReportState.daysLeft,
+    isAnnualReportAggregating: annualReportState.isAggregating,
+    isAnnualReportAggregatingDialogVisible,
     stayPlaces,
     activeStayPlaces,
     stayPlacesStatus,
@@ -1540,6 +1643,10 @@ export function AppStateProvider({ children, navigator, currentScreenMode }: App
     openLandmarkPack,
     closeLandmarkPack,
     openMonthlyReport,
+    openAnnualReport,
+    closeAnnualReportAggregatingDialog,
+    closeAnnualReport,
+    notifyAnnualReportLeft,
     openSettings,
     openStayPlaces,
     openFirstLaunchTutorial,

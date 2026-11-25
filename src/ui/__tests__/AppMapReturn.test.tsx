@@ -746,10 +746,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('初回に権限不足でも復帰後に権限が揃ったら自動で記録開始する', async () => {
-    let appStateHandler: ((state: string) => void) | null = null;
+    // AppState を購読するフックが複数あるため、登録中のリスナー全員へ配る(年間レポートの集計フックも購読する)
+    const appStateHandlers = new Set<(state: string) => void>();
+    const appStateHandler = (state: string) => appStateHandlers.forEach((handler) => handler(state));
     const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
-      appStateHandler = handler;
-      return { remove: jest.fn() } as any;
+      appStateHandlers.add(handler);
+      return { remove: () => appStateHandlers.delete(handler) } as any;
     });
     (getLocationPermissionState as jest.Mock)
       .mockResolvedValueOnce({
@@ -773,7 +775,7 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(startBackgroundLocationRecording).not.toHaveBeenCalled();
 
     await act(async () => {
-      appStateHandler?.('active');
+      appStateHandler('active');
     });
     await flushPromises();
 
@@ -835,10 +837,12 @@ describe('App 地図復帰時の表示範囲復元', () => {
   });
 
   test('inactiveとbackgroundでは前景限定監視を解除し、active復帰後に再開する', async () => {
-    let appStateHandler: ((state: string) => void) | null = null;
+    // AppState を購読するフックが複数あるため、登録中のリスナー全員へ配る(年間レポートの集計フックも購読する)
+    const appStateHandlers = new Set<(state: string) => void>();
+    const appStateHandler = (state: string) => appStateHandlers.forEach((handler) => handler(state));
     const addEventListenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_event: any, handler: any) => {
-      appStateHandler = handler;
-      return { remove: jest.fn() } as any;
+      appStateHandlers.add(handler);
+      return { remove: () => appStateHandlers.delete(handler) } as any;
     });
     (getLocationPermissionState as jest.Mock).mockResolvedValue({
       foregroundGranted: true,
@@ -852,17 +856,17 @@ describe('App 地図復帰時の表示範囲復元', () => {
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });
 
     await act(async () => {
-      appStateHandler?.('inactive');
+      appStateHandler('inactive');
     });
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
 
     await act(async () => {
-      appStateHandler?.('background');
+      appStateHandler('background');
     });
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: false, shouldPersist: false });
 
     await act(async () => {
-      appStateHandler?.('active');
+      appStateHandler('active');
     });
     await flushPromises();
     expect(mockLatestForegroundLocationOptions).toMatchObject({ enabled: true, shouldPersist: true });

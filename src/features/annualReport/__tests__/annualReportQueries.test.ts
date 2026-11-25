@@ -1,14 +1,11 @@
 import { db } from '@/db/database';
 
 import {
-  countNewAreaBlocks,
   getAchievementUnlockSummary,
   getAnnualReportRoutePoints,
   getDailyDistanceRows,
   getLandmarkSpotVisitSummary,
   getNewAdminAreaSummary,
-  getNewAreaBlocks,
-  getPreviousAreaBlocks,
   getVisitedCellCounts,
   getVisitedPrefectureNames,
   toLocalDayStartIso,
@@ -144,67 +141,5 @@ describe('年次レポートの集計クエリ', () => {
 
   test('ローカル日の開始時刻をISO文字列にする', () => {
     expect(toLocalDayStartIso('2026-12-16')).toBe(new Date(2026, 11, 16, 0, 0, 0, 0).toISOString());
-  });
-
-  describe('新しく塗ったエリアの地図用ブロック', () => {
-    /** 負のセル番号でも floor 除算になる SQLite の式(x 列)。 */
-    const floorDivisionX = '(x - ((x % ?) + ?) % ?) / ?';
-    const floorDivisionY = '(y - ((y % ?) + ?) % ?) / ?';
-
-    test('countNewAreaBlocks は期間内に初めて塗ったマスを ratio 倍のブロックへまとめた個数を返す', async () => {
-      getFirstAsync.mockResolvedValue({ count: 42 });
-
-      const count = await countNewAreaBlocks('2026-01-01T00:00:00.000Z', '2026-12-16T00:00:00.000Z', 5);
-
-      expect(count).toBe(42);
-      const [sql, ...params] = getFirstAsync.mock.calls[0];
-      expect(sql).toContain('first_visited_at >= ? AND first_visited_at < ?');
-      expect(sql).toContain(floorDivisionX);
-      expect(sql).toContain(floorDivisionY);
-      expect(sql).not.toMatch(/floor\(/i);
-      expect(params).toEqual([5, 5, 5, 5, 5, 5, 5, 5, '2026-01-01T00:00:00.000Z', '2026-12-16T00:00:00.000Z']);
-    });
-
-    test('countNewAreaBlocks は行が無ければ0を返す', async () => {
-      getFirstAsync.mockResolvedValue(null);
-
-      await expect(countNewAreaBlocks('2026-01-01T00:00:00.000Z', '2026-12-16T00:00:00.000Z', 1)).resolves.toBe(0);
-    });
-
-    test('getNewAreaBlocks は初めて塗った古い順に limit 件のブロック番号を [x, y] で返す', async () => {
-      getAllAsync.mockResolvedValue([
-        { blockX: 10, blockY: -3 },
-        { blockX: -1, blockY: 4 },
-      ]);
-
-      const cells = await getNewAreaBlocks('2026-01-01T00:00:00.000Z', '2026-12-16T00:00:00.000Z', 2, 150);
-
-      expect(cells).toEqual([
-        [10, -3],
-        [-1, 4],
-      ]);
-      const [sql, ...params] = getAllAsync.mock.calls[0];
-      expect(sql).toContain('first_visited_at >= ? AND first_visited_at < ?');
-      expect(sql).toContain(floorDivisionX);
-      expect(sql).toMatch(/ORDER BY MIN\(first_visited_at\) ASC, blockY ASC, blockX ASC/);
-      expect(sql).toContain('LIMIT ?');
-      expect(params).toEqual([2, 2, 2, 2, 2, 2, 2, 2, '2026-01-01T00:00:00.000Z', '2026-12-16T00:00:00.000Z', 150]);
-    });
-
-    test('getPreviousAreaBlocks は期間開始前のマスを範囲内で絞り、訪問回数の多い順に limit 件返す', async () => {
-      getAllAsync.mockResolvedValue([{ blockX: 3, blockY: 7 }]);
-
-      const cells = await getPreviousAreaBlocks('2026-01-01T00:00:00.000Z', 10, { minX: -20, maxX: 39, minY: 50, maxY: 89 }, 300);
-
-      expect(cells).toEqual([[3, 7]]);
-      const [sql, ...params] = getAllAsync.mock.calls[0];
-      expect(sql).toContain('first_visited_at < ?');
-      expect(sql).toContain('x BETWEEN ? AND ?');
-      expect(sql).toContain('y BETWEEN ? AND ?');
-      expect(sql).toContain(floorDivisionX);
-      expect(sql).toMatch(/ORDER BY SUM\(visit_count\) DESC/);
-      expect(sql).toContain('LIMIT ?');
-      expect(params).toEqual([10, 10, 10, 10, 10, 10, 10, 10, '2026-01-01T00:00:00.000Z', -20, 39, 50, 89, 300]);
-    });
   });
 });

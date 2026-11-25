@@ -1,6 +1,4 @@
-import type { GridBounds } from '@/features/location/grid/gridCell';
 import { getLocationPointsByDate } from '@/features/logs/logRepository';
-import { GRID_OVERLAY_CONFIG } from '@/features/map/config/gridOverlayConfig';
 import { toRenderRouteSegments } from '@/features/map/routeMapper';
 import type { LocationPoint } from '@/types/gps';
 import { toLocalDate } from '@/utils/date';
@@ -8,14 +6,11 @@ import { totalDistanceMeters } from '@/utils/distance';
 
 import { meetsMinimumActiveDays, type AnnualReportWindow } from './annualReportPeriod';
 import {
-  countNewAreaBlocks,
   getAchievementUnlockSummary,
   getAnnualReportRoutePoints,
   getDailyDistanceRows,
   getLandmarkSpotVisitSummary,
   getNewAdminAreaSummary,
-  getNewAreaBlocks,
-  getPreviousAreaBlocks,
   getVisitedCellCounts,
   getVisitedPrefectureNames,
   toLocalDayStartIso,
@@ -30,8 +25,6 @@ import {
 } from './annualReportRouteThinning';
 import {
   ANNUAL_REPORT_PAYLOAD_VERSION,
-  type AnnualReportAreaCellIndex,
-  type AnnualReportAreaMap,
   type AnnualReportCoordinate,
   type AnnualReportPayloadV1,
   type AnnualReportProgress,
@@ -43,15 +36,6 @@ const LAST_MONTH = 12;
 
 /** 月の前半の最終日。前半は1〜15日、後半は16日〜月末を集計する。 */
 const FIRST_HALF_LAST_DAY = 15;
-
-/**
- * 「新しく塗ったエリア」の地図に描く新しいマス・前からのマスそれぞれの上限。
- * 地図上の図形の数(最大300個)を他の地図ページと同程度に抑えるため。
- */
-const AREA_MAP_CELL_LIMIT = 150;
-
-/** 前からのマスを読む件数。新しいマスと重なるブロックを除いても上限まで残るよう、上限の2倍を読む。 */
-const AREA_MAP_PREVIOUS_FETCH_LIMIT = AREA_MAP_CELL_LIMIT * 2;
 
 /** 半月ステップ1回が使える座標数の目安。月の予算を前半・後半で分ける。 */
 const HALF_MONTH_ROUTE_POINT_BUDGET = Math.floor(MONTH_ROUTE_POINT_BUDGET / 2);
@@ -223,59 +207,6 @@ async function loadFarthestDayRoute(localDate: string): Promise<AnnualReportTime
   return thinTimedRoute(route, FARTHEST_DAY_POINT_BUDGET);
 }
 
-/**
- * 新しいブロックの範囲に1ブロック分の余白を足し、100m のセル番号の範囲へ戻す。
- * 前からのマスは、この範囲(新しいマスのまわり)だけから読む。
- */
-function toPaddedBaseBounds(cells: AnnualReportAreaCellIndex[], ratio: number): GridBounds {
-  const xs = cells.map(([x]) => x);
-  const ys = cells.map(([, y]) => y);
-  return {
-    minX: (Math.min(...xs) - 1) * ratio,
-    maxX: (Math.max(...xs) + 2) * ratio - 1,
-    minY: (Math.min(...ys) - 1) * ratio,
-    maxY: (Math.max(...ys) + 2) * ratio - 1,
-  };
-}
-
-/**
- * 「新しく塗ったエリア」ページの地図に描くマスを集計する。新しいマスが0個なら null。
- *
- * マスの大きさは地図画面と同じ段階から、新しいマスが上限以下になる最小の段階を選ぶ(どれも超えたら最大段階で古い順に上限まで)。
- * 前からのマスは新しいマスのまわりから読み、新しいマスと同じブロックは「新しい」扱いにして除く。
- */
-async function loadNewAreaMap(fromIso: string, toIsoExclusive: string, newCellCount: number): Promise<AnnualReportAreaMap | null> {
-  if (newCellCount === 0) {
-    return null;
-  }
-
-  const { baseCellSizeMeters, displayCellSizesMeters } = GRID_OVERLAY_CONFIG;
-  let cellSizeMeters = displayCellSizesMeters[displayCellSizesMeters.length - 1];
-  for (const size of displayCellSizesMeters) {
-    if ((await countNewAreaBlocks(fromIso, toIsoExclusive, size / baseCellSizeMeters)) <= AREA_MAP_CELL_LIMIT) {
-      cellSizeMeters = size;
-      break;
-    }
-  }
-  const ratio = cellSizeMeters / baseCellSizeMeters;
-
-  const newCells = await getNewAreaBlocks(fromIso, toIsoExclusive, ratio, AREA_MAP_CELL_LIMIT);
-  if (newCells.length === 0) {
-    return null;
-  }
-
-  const newKeys = new Set(newCells.map(([x, y]) => `${x}:${y}`));
-  const previousCandidates = await getPreviousAreaBlocks(
-    fromIso,
-    ratio,
-    toPaddedBaseBounds(newCells, ratio),
-    AREA_MAP_PREVIOUS_FETCH_LIMIT,
-  );
-  const previousCells = previousCandidates.filter(([x, y]) => !newKeys.has(`${x}:${y}`)).slice(0, AREA_MAP_CELL_LIMIT);
-
-  return { cellSizeMeters, newCells, previousCells };
-}
-
 /** 全月の進捗とサマリークエリから payload を組み立てる。 */
 async function buildPayload(window: AnnualReportWindow, progress: AnnualReportProgress): Promise<AnnualReportPayloadV1> {
   const { periodStart, periodEnd } = window;
@@ -289,7 +220,6 @@ async function buildPayload(window: AnnualReportWindow, progress: AnnualReportPr
   const visitedPrefectures = await getVisitedPrefectureNames(periodStart, periodEnd);
   const { newPrefectures, newMunicipalityCount } = await getNewAdminAreaSummary(fromIso, toIsoExclusive);
   const { newCellCount, previousCellCount } = await getVisitedCellCounts(fromIso, toIsoExclusive);
-  const newAreaMap = await loadNewAreaMap(fromIso, toIsoExclusive, newCellCount);
   const achievements = await getAchievementUnlockSummary(periodStart, periodEnd);
   const spots = await getLandmarkSpotVisitSummary(periodStart, periodEnd);
 
@@ -309,7 +239,6 @@ async function buildPayload(window: AnnualReportWindow, progress: AnnualReportPr
     newMunicipalityCount,
     newCellCount,
     previousCellCount,
-    newAreaMap,
     achievements,
     spots,
   };

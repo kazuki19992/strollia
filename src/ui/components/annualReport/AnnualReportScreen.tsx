@@ -4,12 +4,8 @@ import { Alert, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { isMapPage, resolveAnnualReportPages, type AnnualReportPageId } from '@/features/annualReport/annualReportPages';
-import type { AnnualReportAreaMap, AnnualReportCoordinate, AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
-import {
-  hasPrivacyRadiusInAreaMap,
-  hideAreaMapCellsByPrivacy,
-  toFarthestDayPlaybackRoute,
-} from '@/features/annualReport/annualReportVisuals';
+import type { AnnualReportCoordinate, AnnualReportPayloadV1 } from '@/features/annualReport/annualReportTypes';
+import { toFarthestDayPlaybackRoute } from '@/features/annualReport/annualReportVisuals';
 import { shareViewAsPng } from '@/features/export/capturedViewShare';
 import { hasPrivacyRadiusInSegments, toPrivacyCoordinateSegments } from '@/features/stayPlaces/privacyRouteSegments';
 import type { StayPlacesStatus } from '@/features/stayPlaces/stayPlaceAccess';
@@ -126,35 +122,19 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
         : payload.yearRouteSegments,
     [hiddenStayPlaces, payload.yearRouteSegments],
   );
-  // 古い保存データには newAreaMap が無いため null にそろえる
-  const sourceAreaMap = payload.newAreaMap ?? null;
-  const areaMap = useMemo<AnnualReportAreaMap | null>(
-    () => (sourceAreaMap && hiddenStayPlaces ? hideAreaMapCellsByPrivacy(sourceAreaMap, hiddenStayPlaces) : sourceAreaMap),
-    [hiddenStayPlaces, sourceAreaMap],
-  );
   const farthestPrivacySegments = useMemo(
     () => (hiddenStayPlaces ? toPrivacyCoordinateSegments(farthestRoute, hiddenStayPlaces).map((segment) => segment.coordinates) : null),
     [hiddenStayPlaces, farthestRoute],
   );
 
   /**
-   * 地図ページの描画内容が、非表示範囲の滞在場所にかかるか(共有前の確認ダイアログを出すか)。
+   * 地図ページに描くルート(非表示範囲の判定対象)。
    * 最遠日ページは再生用に間引いたルートを描くため、保存済みのルートと間引いたルートの両方を判定する
    * (間引くと点の間が直線でつながり、元のルートが避けていた非表示範囲を横切ることがあるため)。
-   * 新しく塗ったエリアのページはルートではなくマスを描くため、マスで判定する(地図の無い古いデータは描くものが無い)。
    */
-  function pageTouchesPrivacyRadius(id: AnnualReportPageId, stayPlaces: StayPlace[]): boolean {
-    switch (id) {
-      case 'newAreas':
-        return sourceAreaMap != null && hasPrivacyRadiusInAreaMap(sourceAreaMap, stayPlaces);
-      case 'farthestDay':
-        return hasPrivacyRadiusInSegments(
-          [...farthestRoute, ...farthestRoute.map((segment) => toFarthestDayPlaybackRoute(segment))],
-          stayPlaces,
-        );
-      default:
-        return hasPrivacyRadiusInSegments(payload.yearRouteSegments, stayPlaces);
-    }
+  function routeSegmentsOf(id: AnnualReportPageId): AnnualReportCoordinate[][] {
+    if (id !== 'farthestDay') return payload.yearRouteSegments;
+    return [...farthestRoute, ...farthestRoute.map((segment) => toFarthestDayPlaybackRoute(segment))];
   }
 
   /** 表示中のページを撮って共有する。撮る間は自動送りとページ内アニメーションを止め、完成状態で撮る。 */
@@ -197,12 +177,12 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
       return;
     }
     if (isMapPage(pageId)) {
-      // 設定が壊れていても判定は true を返すため、先に読込状態を確認して共有自体を止める
+      // 設定が壊れていても hasPrivacyRadiusInSegments は true を返すため、先に読込状態を確認して共有自体を止める
       if (stayPlacesStatus !== 'ready' || activeStayPlaces == null) {
         alertStayPlacesUnavailable();
         return;
       }
-      if (pageTouchesPrivacyRadius(pageId, activeStayPlaces)) {
+      if (hasPrivacyRadiusInSegments(routeSegmentsOf(pageId), activeStayPlaces)) {
         player.pause();
         setIsPrivacyDialogVisible(true);
         return;
@@ -262,7 +242,7 @@ export function AnnualReportScreen({ payload, activeStayPlaces, stayPlacesStatus
       case 'firstVisits':
         return <AnnualReportFirstVisitsPage {...pageProps} />;
       case 'newAreas':
-        return <AnnualReportNewAreasPage {...pageProps} areaMap={areaMap} />;
+        return <AnnualReportNewAreasPage {...pageProps} />;
       case 'achievements':
         return <AnnualReportAchievementsPage {...pageProps} />;
       case 'summary':

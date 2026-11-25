@@ -357,8 +357,6 @@ RevenueCatの設定・通信エラーはPlus無効の確定とは扱わない。
 | `created_at`                | TEXT      | 作成日時（ISO 8601）                                                |
 | `updated_at`                | TEXT      | 更新日時（ISO 8601）                                                |
 
-`payload_json` の `newAreaMap`（省略可能）は「新しく塗ったエリア」ページの地図に描くマスで、`{ cellSizeMeters, newCells, previousCells }` を持つ。`newCells` は集計期間内に初めて塗った100mセルを地図画面と同じ段階（100m〜10km）のマスへSQLでまとめたセル番号 `[x, y]`（最大150個、初訪問の古い順）、`previousCells` はそのまわりの期間開始前から塗られていたマス（最大150個、訪問回数の多い順、`newCells` と同じ番号は除く）。新しいマスが0個なら `null`。この項目より前に保存された payload には無いため、表示側は地図なしで数とエリア凡例だけを出す（`payload_version` は1のまま）。
-
 一度`completed`になったレポートは、あとからGPXをインポートしても再計算しない。集計途中の進捗の保存（UPSERT）は`completed`の行を上書きしない。JSONが壊れている行は`null`扱いとし、再集計で作り直す。
 
 ## 5. インデックス方針
